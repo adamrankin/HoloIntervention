@@ -35,7 +35,7 @@ Relevant links are listed here as shortcuts for future developers.
  * https://msdn.microsoft.com/en-us/library/windows/apps/windows.graphics.holographic.aspx
 
 ## HoloLens C++/CX Samples
-* https://github.com/Microsoft/Windows-universal-samples/tree/master/Samples/HolographicSpatialMapping
+* https://github.com/Microsoft/Windows-universal-samples/tree/master/Samples/
 
 ## C++/CX Documentation
 * https://blogs.msdn.microsoft.com/vcblog/2012/08/29/ccx-part-0-of-n-an-introduction/
