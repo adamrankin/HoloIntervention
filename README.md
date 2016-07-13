@@ -25,7 +25,12 @@ Relevant links are listed here as shortcuts for future developers;
  * https://msdn.microsoft.com/en-us/library/windows/apps/windows.perception.spatial.surfaces.aspx
  * https://msdn.microsoft.com/en-us/library/windows/apps/windows.perception.spatial.aspx
 * https://msdn.microsoft.com/en-us/library/windows/apps/windows.graphics.holographic.aspx
-* https://msdn.microsoft.com/en-us/library/windows/apps/windows.ui.input.spatial.spatialpointerpose.aspx
+* https://msdn.microsoft.com/en-us/library/windows/apps/windows.perception.spatial
+ * https://msdn.microsoft.com/en-us/library/windows/apps/windows.ui.input.spatial.spatialpointerpose.aspx
+ * https://msdn.microsoft.com/en-us/library/windows/apps/windows.perception.spatial.spatialanchormanager.aspx
+ * https://msdn.microsoft.com/en-us/library/windows/apps/windows.perception.spatial.spatiallocator.aspx
+ * https://msdn.microsoft.com/en-us/library/windows/apps/windows.perception.spatial.spatialanchorrawcoordinatesystemadjustedeventargs.aspx
+ * https://msdn.microsoft.com/en-us/library/windows/apps/windows.perception.spatial.spatialcoordinatesystem.aspx
 
 ## HoloLens C++/CX Samples
 * https://github.com/Microsoft/Windows-universal-samples/tree/master/Samples/HolographicSpatialMapping
@@ -36,3 +41,8 @@ Relevant links are listed here as shortcuts for future developers;
  * https://blogs.msdn.microsoft.com/vcblog/2012/09/17/ccx-part-2-of-n-types-that-wear-hats/
  * https://blogs.msdn.microsoft.com/vcblog/2012/10/05/ccx-part-3-of-n-under-construction/
  * https://blogs.msdn.microsoft.com/vcblog/2012/10/19/ccx-part-4-of-n-static-member-functions/
+
+# Questions
+* Place hologram on table, move table, does hologram move? Does table size matter? (anchoring surfaces inquiry)
+* Place hologram on table, look away, look back, how far did hologram move?
+* Place hologram on table with no clutter vs. with clutter?
