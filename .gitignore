@@ -5,3 +5,6 @@
 /TrackedUltrasound/*.user
 /TrackedUltrasound/Debug/*.cache
 /TrackedUltrasound/Release/*.cache
+/TrackedUltrasound/Release
+/TrackedUltrasound/Debug
+/TrackedUltrasound/Generated Files

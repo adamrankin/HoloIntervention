@@ -5,6 +5,8 @@
 #include <windows.graphics.directx.direct3d11.interop.h>
 #include <Collection.h>
 
+#include <string>
+
 using namespace concurrency;
 using namespace Platform;
 using namespace Windows::Foundation;
@@ -30,16 +32,10 @@ namespace TrackedUltrasound
 
     m_holographicSpace = holographicSpace;
 
-    //
-    // TODO: Add code here to initialize your holographic content.
-    //
-
-#ifdef DRAW_SAMPLE_CONTENT
-    // Initialize the sample hologram.
-    m_spinningCubeRenderer = std::make_unique<SpinningCubeRenderer>( m_deviceResources );
+    // Initialize the renderers
+    m_gazeCursorRenderer = std::make_unique<GazeCursorRenderer>( m_deviceResources );
 
     m_spatialInputHandler = std::make_unique<SpatialInputHandler>();
-#endif
 
     // Use the default SpatialLocator to track the motion of the device.
     m_locator = SpatialLocator::GetDefault();
@@ -120,7 +116,7 @@ namespace TrackedUltrasound
 
   TrackedUltrasoundMain::~TrackedUltrasoundMain()
   {
-    // Deregister device notification.
+    // De-register device notification.
     m_deviceResources->RegisterDeviceNotify( nullptr );
 
     UnregisterHolographicEventHandlers();
@@ -151,32 +147,20 @@ namespace TrackedUltrasound
     // for creating the stereo view matrices when rendering the sample content.
     SpatialCoordinateSystem^ currentCoordinateSystem = m_referenceFrame->CoordinateSystem;
 
-#ifdef DRAW_SAMPLE_CONTENT
     // Check for new input state since the last frame.
-    SpatialInteractionSourceState^ pointerState = m_spatialInputHandler->CheckForInput();
+    SpatialInteractionSourceState^ pointerState = m_spatialInputHandler->CheckForPressedInput();
     if ( pointerState != nullptr )
     {
-      // When a Pressed gesture is detected, the sample hologram will be repositioned
-      // two meters in front of the user.
-      m_spinningCubeRenderer->PositionHologram(
-        pointerState->TryGetPointerPose( currentCoordinateSystem )
-      );
+      m_gazeCursorRenderer->ToggleCursor();
     }
-#endif
 
     m_timer.Tick( [&]()
     {
-      //
-      // TODO: Update scene objects.
-      //
       // Put time-based updates here. By default this code will run once per frame,
       // but if you change the StepTimer to use a fixed time step this code will
       // run as many times as needed to get to the current step.
-      //
 
-#ifdef DRAW_SAMPLE_CONTENT
-      m_spinningCubeRenderer->Update( m_timer );
-#endif
+      m_gazeCursorRenderer->Update( m_timer, pointerState->TryGetPointerPose( currentCoordinateSystem ) );
     } );
 
     // We complete the frame update by using information about our content positioning
@@ -184,7 +168,6 @@ namespace TrackedUltrasound
 
     for ( auto cameraPose : prediction->CameraPoses )
     {
-#ifdef DRAW_SAMPLE_CONTENT
       // The HolographicCameraRenderingParameters class provides access to set
       // the image stabilization parameters.
       HolographicCameraRenderingParameters^ renderingParameters = holographicFrame->GetRenderingParameters( cameraPose );
@@ -197,11 +180,9 @@ namespace TrackedUltrasound
       // since that is the only hologram available for the user to focus on.
       // You can also set the relative velocity and facing of that content; the sample
       // hologram is at a fixed point so we only need to indicate its position.
-      renderingParameters->SetFocusPoint(
-        currentCoordinateSystem,
-        m_spinningCubeRenderer->GetPosition()
-      );
-#endif
+
+      // TODO : update to be the position of the slice renderer
+      //renderingParameters->SetFocusPoint( currentCoordinateSystem, m_spinningCubeRenderer->GetPosition() );
     }
 
     // The holographic frame will be used to get up-to-date view and projection matrices and
@@ -228,12 +209,11 @@ namespace TrackedUltrasound
     // matrix, such as lighting maps.
     //
 
-    // Lock the set of holographic camera resources, then draw to each camera
-    // in this frame.
+    // Lock the set of holographic camera resources, then draw to each camera in this frame.
     return m_deviceResources->UseHolographicCameraResources<bool>(
              [this, holographicFrame]( std::map<UINT32, std::unique_ptr<DX::CameraResources>>& cameraResourceMap )
     {
-      // Up-to-date frame predictions enhance the effectiveness of image stablization and
+      // Up-to-date frame predictions enhance the effectiveness of image stabilization and
       // allow more accurate positioning of holograms.
       holographicFrame->UpdateCurrentPrediction();
       HolographicFramePrediction^ prediction = holographicFrame->CurrentPrediction;
@@ -282,14 +262,13 @@ namespace TrackedUltrasound
         // Attach the view/projection constant buffer for this camera to the graphics pipeline.
         bool cameraActive = pCameraResources->AttachViewProjectionBuffer( m_deviceResources );
 
-#ifdef DRAW_SAMPLE_CONTENT
         // Only render world-locked content when positional tracking is active.
         if ( cameraActive )
         {
           // Draw the sample hologram.
-          m_spinningCubeRenderer->Render();
+          m_gazeCursorRenderer->Render();
         }
-#endif
+
         atLeastOneCameraRendered = true;
       }
 
@@ -299,40 +278,70 @@ namespace TrackedUltrasound
 
   void TrackedUltrasoundMain::SaveAppState()
   {
-    //
-    // TODO: Insert code here to save your app state.
-    //       This method is called when the app is about to suspend.
-    //
-    //       For example, store information in the SpatialAnchorStore.
-    //
+    task<SpatialAnchorStore^> requestTask( SpatialAnchorManager::RequestStoreAsync() );
+    auto saveTask = requestTask.then( [&]( SpatialAnchorStore ^ store ) -> bool
+    {
+      if ( store == nullptr )
+      {
+        return false;
+      }
+
+      int i( 0 );
+      bool succeeded( true );
+      for ( auto pair : m_spatialAnchors )
+      {
+        if ( !store->TrySave( pair->Key + i.ToString(), pair->Value ) )
+        {
+          succeeded = false;
+        }
+      }
+
+      return succeeded;
+    } );
+
+    bool result = saveTask.get();
   }
 
   void TrackedUltrasoundMain::LoadAppState()
   {
-    //
-    // TODO: Insert code here to load your app state.
-    //       This method is called when the app resumes.
-    //
-    //       For example, load information from the SpatialAnchorStore.
-    //
+    m_spatialAnchors->Clear();
+
+    task<SpatialAnchorStore^> requestTask( SpatialAnchorManager::RequestStoreAsync() );
+    auto loadTask = requestTask.then( [&]( SpatialAnchorStore ^ store ) -> bool
+    {
+      if ( store == nullptr )
+      {
+        return false;
+      }
+
+      int i( 0 );
+      for ( auto anchor : m_spatialAnchors )
+      {
+        Windows::Foundation::Collections::IMapView<Platform::String^, SpatialAnchor^>^ output = store->GetAllSavedAnchors();
+        for ( auto pair : output )
+        {
+          m_spatialAnchors->Insert( pair->Key, pair->Value );
+        }
+      }
+
+      return true;
+    } );
+
+    bool result = loadTask.get();
   }
 
   // Notifies classes that use Direct3D device resources that the device resources
   // need to be released before this method returns.
   void TrackedUltrasoundMain::OnDeviceLost()
   {
-#ifdef DRAW_SAMPLE_CONTENT
-    m_spinningCubeRenderer->ReleaseDeviceDependentResources();
-#endif
+    m_gazeCursorRenderer->ReleaseDeviceDependentResources();
   }
 
   // Notifies classes that use Direct3D device resources that the device resources
   // may now be recreated.
   void TrackedUltrasoundMain::OnDeviceRestored()
   {
-#ifdef DRAW_SAMPLE_CONTENT
-    m_spinningCubeRenderer->CreateDeviceDependentResources();
-#endif
+    m_gazeCursorRenderer->CreateDeviceDependentResources();
   }
 
   void TrackedUltrasoundMain::OnLocatabilityChanged( SpatialLocator^ sender, Object^ args )
@@ -412,12 +421,10 @@ namespace TrackedUltrasound
       //
     } );
 
-    // Before letting this callback return, ensure that all references to the back buffer
-    // are released.
+    // Before letting this callback return, ensure that all references to the back buffer are released.
     // Since this function may be called at any time, the RemoveHolographicCamera function
     // waits until it can get a lock on the set of holographic camera resources before
-    // deallocating resources for this camera. At 60 frames per second this wait should
-    // not take long.
+    // deallocating resources for this camera. At 60 frames per second this wait should not take long.
     m_deviceResources->RemoveHolographicCamera( args->Camera );
   }
 
