@@ -9,3 +9,30 @@
 
 # License
 This project is released under the [Apache 2 license](LICENSE).
+
+# Documentation
+Relevant links are listed here as shortcuts for future developers;
+
+## HoloLens Forums
+* https://forums.hololens.com/categories/questions-and-answers
+ * http://forums.hololens.com/discussion/803/hololens-position-in-world-in-real-time-c
+
+## Holographic Documentation
+* https://developer.microsoft.com/en-us/windows/holographic/documentation
+ * https://developer.microsoft.com/en-us/windows/holographic/coordinate_systems_in_directx
+ * https://developer.microsoft.com/en-us/windows/holographic/gaze_and_gestures_in_directx
+* https://msdn.microsoft.com/en-us/library/windows/apps/windows.perception.aspx
+ * https://msdn.microsoft.com/en-us/library/windows/apps/windows.perception.spatial.surfaces.aspx
+ * https://msdn.microsoft.com/en-us/library/windows/apps/windows.perception.spatial.aspx
+* https://msdn.microsoft.com/en-us/library/windows/apps/windows.graphics.holographic.aspx
+* https://msdn.microsoft.com/en-us/library/windows/apps/windows.ui.input.spatial.spatialpointerpose.aspx
+
+## HoloLens C++/CX Samples
+* https://github.com/Microsoft/Windows-universal-samples/tree/master/Samples/HolographicSpatialMapping
+
+## C++/CX Documentation
+* https://blogs.msdn.microsoft.com/vcblog/2012/08/29/ccx-part-0-of-n-an-introduction/
+ * https://blogs.msdn.microsoft.com/vcblog/2012/09/05/ccx-part-1-of-n-a-simple-class/
+ * https://blogs.msdn.microsoft.com/vcblog/2012/09/17/ccx-part-2-of-n-types-that-wear-hats/
+ * https://blogs.msdn.microsoft.com/vcblog/2012/10/05/ccx-part-3-of-n-under-construction/
+ * https://blogs.msdn.microsoft.com/vcblog/2012/10/19/ccx-part-4-of-n-static-member-functions/
