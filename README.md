@@ -19,6 +19,13 @@ Relevant links are listed here as shortcuts for future developers.
 
 ## Windows API Documentation
 * https://developer.microsoft.com/en-us/windows/holographic/voice_input_in_directx
+
+## Windows Holographic Documentation
+* https://developer.microsoft.com/en-us/windows/holographic/all_pages
+* https://developer.microsoft.com/en-us/windows/holographic/documentation
+ * https://developer.microsoft.com/en-us/windows/holographic/coordinate_systems_in_directx
+ * https://developer.microsoft.com/en-us/windows/holographic/gaze_and_gestures_in_directx
+ * https://msdn.microsoft.com/en-us/library/windows/apps/windows.graphics.holographic.aspx
 * https://msdn.microsoft.com/en-us/library/windows/apps/windows.ui.input.spatial.spatialpointerpose.aspx
 * https://msdn.microsoft.com/en-us/library/windows/apps/windows.perception.aspx
  * https://msdn.microsoft.com/en-us/library/windows/apps/windows.perception.spatial
@@ -27,12 +34,6 @@ Relevant links are listed here as shortcuts for future developers.
   * https://msdn.microsoft.com/en-us/library/windows/apps/windows.perception.spatial.spatiallocator.aspx
   * https://msdn.microsoft.com/en-us/library/windows/apps/windows.perception.spatial.spatialanchorrawcoordinatesystemadjustedeventargs.aspx
   * https://msdn.microsoft.com/en-us/library/windows/apps/windows.perception.spatial.spatialcoordinatesystem.aspx
-
-## Windows Holographic Documentation
-* https://developer.microsoft.com/en-us/windows/holographic/documentation
- * https://developer.microsoft.com/en-us/windows/holographic/coordinate_systems_in_directx
- * https://developer.microsoft.com/en-us/windows/holographic/gaze_and_gestures_in_directx
- * https://msdn.microsoft.com/en-us/library/windows/apps/windows.graphics.holographic.aspx
 
 ## HoloLens C++/CX Samples
 * https://github.com/Microsoft/Windows-universal-samples/tree/master/Samples/
