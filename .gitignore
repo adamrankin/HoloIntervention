@@ -8,3 +8,5 @@
 /TrackedUltrasound/Release
 /TrackedUltrasound/Debug
 /TrackedUltrasound/Generated Files
+/*.db
+/ipch/TRACKEDULTRASOUND-aa719dd9/*.ipch

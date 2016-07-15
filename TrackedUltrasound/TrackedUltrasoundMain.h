@@ -84,5 +84,8 @@ namespace TrackedUltrasound
     Windows::Foundation::EventRegistrationToken m_cameraAddedToken;
     Windows::Foundation::EventRegistrationToken m_cameraRemovedToken;
     Windows::Foundation::EventRegistrationToken m_locatabilityChangedToken;
+
+    // Store the current state of locatability
+    Windows::Perception::Spatial::SpatialLocatability m_locatability;
   };
 }

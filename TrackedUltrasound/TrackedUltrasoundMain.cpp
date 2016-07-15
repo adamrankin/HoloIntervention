@@ -183,8 +183,25 @@ namespace TrackedUltrasound
       // You can also set the relative velocity and facing of that content; the sample
       // hologram is at a fixed point so we only need to indicate its position.
 
-      // TODO : update to be the position of the slice renderer
-      //renderingParameters->SetFocusPoint( currentCoordinateSystem, m_spinningCubeRenderer->GetPosition() );
+      if ( m_gazeCursorRenderer->IsCursorEnabled() )
+      {
+        // Set the focus to be the cursor
+        try
+        {
+          renderingParameters->SetFocusPoint( currentCoordinateSystem, m_gazeCursorRenderer->GetPosition(), m_gazeCursorRenderer->GetNormal() );
+        }
+        catch ( Platform::Exception^ ex )
+        {
+          // Turn the cursor off and output the message
+          m_gazeCursorRenderer->ToggleCursor();
+          OutputDebugStringW( ex->Message->Data() );
+        }
+      }
+      else
+      {
+        // TODO : update to be the position of the slice renderer
+        // TODO : implement slice renderer
+      }
     }
 
     // The holographic frame will be used to get up-to-date view and projection matrices and
@@ -238,36 +255,17 @@ namespace TrackedUltrasound
         context->ClearRenderTargetView( targets[0], DirectX::Colors::Transparent );
         context->ClearDepthStencilView( depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0 );
 
-        //
-        // TODO: Replace the sample content with your own content.
-        //
-        // Notes regarding holographic content:
-        //    * For drawing, remember that you have the potential to fill twice as many pixels
-        //      in a stereoscopic render target as compared to a non-stereoscopic render target
-        //      of the same resolution. Avoid unnecessary or repeated writes to the same pixel,
-        //      and only draw holograms that the user can see.
-        //    * To help occlude hologram geometry, you can create a depth map using geometry
-        //      data obtained via the surface mapping APIs. You can use this depth map to avoid
-        //      rendering holograms that are intended to be hidden behind tables, walls,
-        //      monitors, and so on.
-        //    * Black pixels will appear transparent to the user wearing the device, but you
-        //      should still use alpha blending to draw semitransparent holograms. You should
-        //      also clear the screen to Transparent as shown above.
-        //
-
-
         // The view and projection matrices for each holographic camera will change
         // every frame. This function refreshes the data in the constant buffer for
         // the holographic camera indicated by cameraPose.
         pCameraResources->UpdateViewProjectionBuffer( m_deviceResources, cameraPose, m_referenceFrame->CoordinateSystem );
-
-        // Attach the view/projection constant buffer for this camera to the graphics pipeline.
-        bool cameraActive = pCameraResources->AttachViewProjectionBuffer( m_deviceResources );
+        bool activeCamera = pCameraResources->AttachViewProjectionBuffer(m_deviceResources);
 
         // Only render world-locked content when positional tracking is active.
-        if ( cameraActive )
+
+        // Draw the gaze cursor if it's active
+        if ( activeCamera && m_locatability == Windows::Perception::Spatial::SpatialLocatability::PositionalTrackingActive )
         {
-          // Draw the sample hologram.
           m_gazeCursorRenderer->Render();
         }
 
@@ -348,6 +346,8 @@ namespace TrackedUltrasound
 
   void TrackedUltrasoundMain::OnLocatabilityChanged( SpatialLocator^ sender, Object^ args )
   {
+    m_locatability = sender->Locatability;
+
     switch ( sender->Locatability )
     {
     case SpatialLocatability::Unavailable:
