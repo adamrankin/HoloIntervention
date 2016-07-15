@@ -1,12 +1,17 @@
 #pragma once
 
-#include "Common\DeviceResources.h"
-#include "Common\StepTimer.h"
-#include "Content\GazeCursorRenderer.h"
-#include "Content\SpatialInputHandler.h"
+// Local Includes
+#include "DeviceResources.h"
+#include "GazeCursorRenderer.h"
+#include "OmnidirectionalSound.h"
+#include "SpatialInputHandler.h"
+#include "StepTimer.h"
 
-#include <collection.h>
+// std includes
 #include <vector>
+
+// winrt includes
+#include <collection.h>
 
 using namespace Windows::Perception::Spatial;
 
@@ -87,5 +92,7 @@ namespace TrackedUltrasound
 
     // Store the current state of locatability
     Windows::Perception::Spatial::SpatialLocatability m_locatability;
+
+    std::unique_ptr<TrackedUltrasound::Sound::OmnidirectionalSound> m_cursorSound;
   };
 }

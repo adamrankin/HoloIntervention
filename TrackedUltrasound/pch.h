@@ -16,3 +16,16 @@
 #include <map>
 #include <mutex>
 
+#include <collection.h>
+#include <ppltasks.h>
+
+#include <XAudio2.h>
+#include <xapo.h>
+#include <hrtfapoapi.h>
+#include <DirectXMath.h>
+#include <wrl\client.h>
+#include <wrl\implements.h>
+#include <mfapi.h>
+#include <mfidl.h>
+#include <mfreadwrite.h>
+#include <strsafe.h>

@@ -1,11 +1,14 @@
+
+// local includes
 #include "pch.h"
+#include "DirectXHelper.h"
 #include "TrackedUltrasoundMain.h"
-#include "Common\DirectXHelper.h"
 
-#include <windows.graphics.directx.direct3d11.interop.h>
-#include <Collection.h>
-
+// std includes
 #include <string>
+
+// winrt includes
+#include <windows.graphics.directx.direct3d11.interop.h>
 
 using namespace concurrency;
 using namespace Platform;
@@ -21,9 +24,26 @@ namespace TrackedUltrasound
   // Loads and initializes application assets when the application is loaded.
   TrackedUltrasoundMain::TrackedUltrasoundMain( const std::shared_ptr<DX::DeviceResources>& deviceResources )
     : m_deviceResources( deviceResources )
+    , m_cursorSound( nullptr )
   {
     // Register to be notified if the device is lost or recreated.
     m_deviceResources->RegisterDeviceNotify( this );
+
+    m_cursorSound = std::make_unique<TrackedUltrasound::Sound::OmnidirectionalSound>();
+    auto loadTask = m_cursorSound->InitializeAsync(L"Assets/cursor_toggle.wav");
+    loadTask.then([&](task<HRESULT> previousTask)
+    {
+      try
+      {
+        previousTask.wait();
+        m_cursorSound->SetEnvironment(HrtfEnvironment::Small);
+      }
+      catch (const std::exception& e)
+      {
+        OutputDebugStringA(e.what());
+        m_cursorSound.reset();
+      }
+    });
   }
 
   void TrackedUltrasoundMain::SetHolographicSpace( HolographicSpace^ holographicSpace )
@@ -151,7 +171,9 @@ namespace TrackedUltrasound
     SpatialInteractionSourceState^ pointerState = m_spatialInputHandler->CheckForPressedInput();
     if ( pointerState != nullptr )
     {
+      m_cursorSound->OnUpdate(0, 0, 0);
       m_gazeCursorRenderer->ToggleCursor();
+      m_cursorSound->StartOnce();
     }
 
     m_timer.Tick( [&]()

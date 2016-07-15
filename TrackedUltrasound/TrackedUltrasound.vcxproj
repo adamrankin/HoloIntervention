@@ -54,28 +54,28 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Link>
-      <AdditionalDependencies>d2d1.lib; d3d11.lib; dxgi.lib; dwrite.lib; windowscodecs.lib; %(AdditionalDependencies); </AdditionalDependencies>
+      <AdditionalDependencies>d2d1.lib;d3d11.lib;dxgi.lib;dwrite.lib;windowscodecs.lib;Mfreadwrite.lib;mfplat.lib;Mfuuid.lib;hrtfapo.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories); $(VCInstallDir)\lib\store; $(VCInstallDir)\lib</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>mincore.lib;kernel32.lib;ole32.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
     <ClCompile>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(IntermediateOutputPath);$(SolutionDir)DirectXTK\Inc;$(ProjectDir)Content;$(ProjectDir)Common</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(IntermediateOutputPath);$(SolutionDir)DirectXTK\Inc;$(ProjectDir)Content\Rendering;$(ProjectDir)Content\Input;$(ProjectDir)Content\Sound;$(ProjectDir)Content;$(ProjectDir)Common</AdditionalIncludeDirectories>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Link>
-      <AdditionalDependencies>d2d1.lib; d3d11.lib; dxgi.lib; dwrite.lib; windowscodecs.lib; %(AdditionalDependencies); </AdditionalDependencies>
+      <AdditionalDependencies>d2d1.lib;d3d11.lib;dxgi.lib;dwrite.lib;windowscodecs.lib;Mfreadwrite.lib;mfplat.lib;Mfuuid.lib;hrtfapo.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories); $(VCInstallDir)\lib\store; $(VCInstallDir)\lib</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>mincore.lib;kernel32.lib;ole32.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
     <ClCompile>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(IntermediateOutputPath);$(SolutionDir)DirectXTK\Inc;$(ProjectDir)Content;$(ProjectDir)Common</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(IntermediateOutputPath);$(SolutionDir)DirectXTK\Inc;$(ProjectDir)Content\Rendering;$(ProjectDir)Content\Input;$(ProjectDir)Content\Sound;$(ProjectDir)Content;$(ProjectDir)Common</AdditionalIncludeDirectories>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
@@ -91,23 +91,32 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AppView.h" />
-    <ClInclude Include="Content\GazeCursorRenderer.h" />
+    <ClInclude Include="Common\DirectXHelper.h" />
+    <ClInclude Include="Common\StepTimer.h" />
+    <ClInclude Include="Content\Input\SpatialInputHandler.h" />
+    <ClInclude Include="Content\Rendering\GazeCursorRenderer.h" />
+    <ClInclude Include="Content\Rendering\ShaderStructures.h" />
+    <ClInclude Include="Content\Sound\AudioFileReader.h" />
+    <ClInclude Include="Content\Sound\CardioidSound.h" />
+    <ClInclude Include="Content\Sound\OmnidirectionalSound.h" />
+    <ClInclude Include="Content\Sound\VoiceCallback.h" />
+    <ClInclude Include="Content\Sound\XAudio2Helpers.h" />
     <ClInclude Include="TrackedUltrasoundMain.h" />
     <ClInclude Include="Common\DeviceResources.h" />
-    <ClInclude Include="Common\DirectXHelper.h" />
     <ClInclude Include="Common\CameraResources.h" />
-    <ClInclude Include="Common\StepTimer.h" />
-    <ClInclude Include="Content\SpatialInputHandler.h" />
-    <ClInclude Include="Content\ShaderStructures.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AppView.cpp" />
-    <ClCompile Include="Content\GazeCursorRenderer.cpp" />
+    <ClCompile Include="Content\Input\SpatialInputHandler.cpp" />
+    <ClCompile Include="Content\Rendering\GazeCursorRenderer.cpp" />
+    <ClCompile Include="Content\Sound\AudioFileReader.cpp" />
+    <ClCompile Include="Content\Sound\CardioidSound.cpp" />
+    <ClCompile Include="Content\Sound\OmnidirectionalSound.cpp" />
+    <ClCompile Include="Content\Sound\VoiceCallback.cpp" />
     <ClCompile Include="TrackedUltrasoundMain.cpp" />
     <ClCompile Include="Common\DeviceResources.cpp" />
     <ClCompile Include="Common\CameraResources.cpp" />
-    <ClCompile Include="Content\SpatialInputHandler.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -117,9 +126,11 @@
       <SubType>Designer</SubType>
     </AppxManifest>
     <Media Include="Assets\cursor_toggle.wav" />
-    <Media Include="Assets\model.cmo">
+    <None Include="Assets\model.cmo">
       <FileType>Document</FileType>
-    </Media>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
+    </None>
     <None Include="TrackedUltrasound_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>
@@ -129,25 +140,25 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Content\GeometryShader.hlsl">
+    <FxCompile Include="Content\Rendering\GeometryShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Geometry</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Geometry</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
     </FxCompile>
-    <FxCompile Include="Content\PixelShader.hlsl">
+    <FxCompile Include="Content\Rendering\PixelShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
     </FxCompile>
-    <FxCompile Include="Content\VertexShader.hlsl">
+    <FxCompile Include="Content\Rendering\VertexShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
     </FxCompile>
-    <FxCompile Include="Content\VPRTVertexShader.hlsl">
+    <FxCompile Include="Content\Rendering\VPRTVertexShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
