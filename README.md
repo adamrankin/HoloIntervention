@@ -25,7 +25,9 @@ Relevant links are listed here as shortcuts for future developers.
 * https://developer.microsoft.com/en-us/windows/holographic/documentation
  * https://developer.microsoft.com/en-us/windows/holographic/coordinate_systems_in_directx
  * https://developer.microsoft.com/en-us/windows/holographic/gaze_and_gestures_in_directx
- * https://msdn.microsoft.com/en-us/library/windows/apps/windows.graphics.holographic.aspx
+ * https://developer.microsoft.com/en-us/windows/holographic/rendering_in_directx
+ * https://developer.microsoft.com/en-us/windows/holographic/spatial_sound_in_directx
+* https://msdn.microsoft.com/en-us/library/windows/apps/windows.graphics.holographic.aspx
 * https://msdn.microsoft.com/en-us/library/windows/apps/windows.ui.input.spatial.spatialpointerpose.aspx
 * https://msdn.microsoft.com/en-us/library/windows/apps/windows.perception.aspx
  * https://msdn.microsoft.com/en-us/library/windows/apps/windows.perception.spatial
