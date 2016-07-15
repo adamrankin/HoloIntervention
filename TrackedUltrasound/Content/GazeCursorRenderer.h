@@ -1,42 +1,42 @@
 #pragma once
 
-#include "..\Common\DeviceResources.h"
-#include "..\Common\StepTimer.h"
-#include "ShaderStructures.h"
+// Local includes
+#include <DeviceResources.h>
+#include <StepTimer.h>
+
+// DirectXTK includes
+#include <Effects.h>
+#include <CommonStates.h>
+#include <Model.h>
+#include <SimpleMath.h>
 
 using namespace Windows::UI::Input::Spatial;
 
 namespace TrackedUltrasound
 {
-  // This sample renderer instantiates a basic rendering pipeline.
   class GazeCursorRenderer
   {
   public:
-    GazeCursorRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources);
+    GazeCursorRenderer( const std::shared_ptr<DX::DeviceResources>& deviceResources );
     void CreateDeviceDependentResources();
     void ReleaseDeviceDependentResources();
-    void Update(const DX::StepTimer& timer, SpatialPointerPose^ pointerPose);
+    void Update( const DX::StepTimer& timer, SpatialPointerPose^ pointerPose );
     void Render();
 
-    void EnableCursor(bool enable);
+    void EnableCursor( bool enable );
     void ToggleCursor();
 
   private:
     // Cached pointer to device resources.
     std::shared_ptr<DX::DeviceResources> m_deviceResources;
 
-    // Direct3D resources for cube geometry.
-    Microsoft::WRL::ComPtr<ID3D11InputLayout> m_inputLayout;
-    Microsoft::WRL::ComPtr<ID3D11Buffer> m_vertexBuffer;
-    Microsoft::WRL::ComPtr<ID3D11Buffer> m_indexBuffer;
-    Microsoft::WRL::ComPtr<ID3D11VertexShader> m_vertexShader;
-    Microsoft::WRL::ComPtr<ID3D11GeometryShader> m_geometryShader;
-    Microsoft::WRL::ComPtr<ID3D11PixelShader> m_pixelShader;
-    Microsoft::WRL::ComPtr<ID3D11Buffer> m_modelConstantBuffer;
-
-    // System resources for cube geometry.
-    ModelConstantBuffer m_modelConstantBufferData;
-    uint32 m_indexCount = 0;
+    // Resources for model rendering
+    DirectX::SimpleMath::Matrix m_viewMatrix;
+    DirectX::SimpleMath::Matrix m_projectionMatrix;
+    DirectX::SimpleMath::Matrix m_modelMatrix;
+    std::unique_ptr<DirectX::CommonStates> m_states;
+    std::unique_ptr<DirectX::IEffectFactory> m_fxFactory;
+    std::unique_ptr<DirectX::Model> m_model;
 
     // Variables used with the rendering loop.
     bool m_loadingComplete = false;

@@ -159,8 +159,10 @@ namespace TrackedUltrasound
       // Put time-based updates here. By default this code will run once per frame,
       // but if you change the StepTimer to use a fixed time step this code will
       // run as many times as needed to get to the current step.
-
-      m_gazeCursorRenderer->Update( m_timer, pointerState->TryGetPointerPose( currentCoordinateSystem ) );
+      if ( pointerState != nullptr )
+      {
+        m_gazeCursorRenderer->Update( m_timer, pointerState->TryGetPointerPose( currentCoordinateSystem ) );
+      }
     } );
 
     // We complete the frame update by using information about our content positioning
