@@ -40,6 +40,14 @@ Relevant links are listed here as shortcuts for future developers.
 ## HoloLens C++/CX Samples
 * https://github.com/Microsoft/Windows-universal-samples/tree/master/Samples/
 
+## Direct3D 11 Rendering
+* https://msdn.microsoft.com/en-us/library/windows/desktop/bb509638(v=vs.85).aspx
+* https://msdn.microsoft.com/en-us/library/windows/desktop/bb509705(v=vs.85).aspx
+* https://msdn.microsoft.com/en-us/library/windows/desktop/bb509635(v=vs.85).aspx
+* https://msdn.microsoft.com/en-us/library/windows/desktop/bb944006(v=vs.85).aspx
+* https://msdn.microsoft.com/en-us/library/windows/desktop/bb509704(v=vs.85).aspx
+* https://msdn.microsoft.com/en-us/library/windows/desktop/bb509703(v=vs.85).aspx
+
 ## C++/CX Documentation
 * https://blogs.msdn.microsoft.com/vcblog/2012/08/29/ccx-part-0-of-n-an-introduction/
  * https://blogs.msdn.microsoft.com/vcblog/2012/09/05/ccx-part-1-of-n-a-simple-class/
