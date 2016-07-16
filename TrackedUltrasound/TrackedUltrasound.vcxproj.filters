@@ -1,0 +1,162 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="TrackedUltrasoundMain.cpp" />
+    <ClCompile Include="Common\CameraResources.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="Common\DeviceResources.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Rendering\GazeCursorRenderer.cpp">
+      <Filter>Content\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Input\SpatialInputHandler.cpp">
+      <Filter>Content\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Sound\CardioidSound.cpp">
+      <Filter>Content\Sound</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Sound\OmnidirectionalSound.cpp">
+      <Filter>Content\Sound</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Sound\AudioFileReader.cpp">
+      <Filter>Content\Sound</Filter>
+    </ClCompile>
+    <ClCompile Include="AppView.cpp">
+      <Filter>Infrastructure</Filter>
+    </ClCompile>
+    <ClCompile Include="pch.cpp">
+      <Filter>Infrastructure</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Sound\VoiceCallback.cpp">
+      <Filter>Content\Sound</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="TrackedUltrasoundMain.h" />
+    <ClInclude Include="Common\CameraResources.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\DeviceResources.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\DirectXHelper.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\StepTimer.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Rendering\GazeCursorRenderer.h">
+      <Filter>Content\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Rendering\ShaderStructures.h">
+      <Filter>Content\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Input\SpatialInputHandler.h">
+      <Filter>Content\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Sound\OmnidirectionalSound.h">
+      <Filter>Content\Sound</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Sound\CardioidSound.h">
+      <Filter>Content\Sound</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Sound\AudioFileReader.h">
+      <Filter>Content\Sound</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Sound\XAudio2Helpers.h">
+      <Filter>Content\Sound</Filter>
+    </ClInclude>
+    <ClInclude Include="AppView.h">
+      <Filter>Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="pch.h">
+      <Filter>Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Sound\VoiceCallback.h">
+      <Filter>Content\Sound</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Assets\LockScreenLogo.scale-200.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\SplashScreen.scale-200.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\Square44x44Logo.scale-200.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\Square44x44Logo.targetsize-24_altform-unplated.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\Square150x150Logo.scale-200.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\StoreLogo.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\Wide310x150Logo.scale-200.png">
+      <Filter>Assets</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Assets\model.cmo">
+      <Filter>Assets</Filter>
+    </None>
+    <None Include="TrackedUltrasound_TemporaryKey.pfx">
+      <Filter>Infrastructure</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Content">
+      <UniqueIdentifier>{507ac04a-d4d2-4268-8c32-6a5cc166065b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Common">
+      <UniqueIdentifier>{0eb88fd4-8091-49ac-98ab-63580abfdeaf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Assets">
+      <UniqueIdentifier>{74ca8f7e-e0f6-4d44-97fc-967ebecfdfea}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Rendering">
+      <UniqueIdentifier>{f3c8fff4-d384-41c3-88f8-5e2d69cb3d4a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Rendering\Shaders">
+      <UniqueIdentifier>{a66cb79e-3bd1-49ab-bb5e-5f90ae7059ae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Input">
+      <UniqueIdentifier>{9132ee02-53bc-432a-ac22-75dcf34aa9b5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Sound">
+      <UniqueIdentifier>{031e77a3-6751-4cb2-ad0e-b25982ce2362}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Infrastructure">
+      <UniqueIdentifier>{88e029e1-6999-4f08-8aa0-7ef8f99bc1b0}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Media Include="Assets\cursor_toggle.wav">
+      <Filter>Assets</Filter>
+    </Media>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Content\Rendering\GeometryShader.hlsl">
+      <Filter>Content\Rendering\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Rendering\PixelShader.hlsl">
+      <Filter>Content\Rendering\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Rendering\VertexShader.hlsl">
+      <Filter>Content\Rendering\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Rendering\VPRTVertexShader.hlsl">
+      <Filter>Content\Rendering\Shaders</Filter>
+    </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <AppxManifest Include="Package.appxmanifest">
+      <Filter>Infrastructure</Filter>
+    </AppxManifest>
+  </ItemGroup>
+</Project>

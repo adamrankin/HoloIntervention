@@ -46,6 +46,7 @@ namespace TrackedUltrasound
       std::shared_ptr<VoiceCallback>  _callBack = nullptr;
       AudioFileReader                 _audioFile;
       ComPtr<IXAudio2>                _xaudio2;
+      // TODO : maintain list of voices, periodically remove playonce voices to prevent memory leak
       IXAudio2SourceVoice*            _sourceVoice = nullptr;
       ComPtr<IXAPOHrtfParameters>     _hrtfParams;
       HrtfEnvironment                 _environment = HrtfEnvironment::Outdoors;

@@ -1,7 +1,6 @@
 /.vs
 /Debug
 /Release
-/TrackedUltrasound/*.filters
 /TrackedUltrasound/*.user
 /TrackedUltrasound/Debug/*.cache
 /TrackedUltrasound/Release/*.cache
