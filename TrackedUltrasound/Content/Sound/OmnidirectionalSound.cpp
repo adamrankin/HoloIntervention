@@ -61,17 +61,13 @@ namespace TrackedUltrasound
         // The source voice is used to submit audio data and control playback.
         if ( SUCCEEDED( hr ) )
         {
-          hr = SetupXAudio2( _audioFile.GetFormat(), xapo.Get(), &_xaudio2, &_sourceVoice, &(*_callBack) );
-        }
-
-        // Submit audio data to the source voice.
-        if ( SUCCEEDED( hr ) )
-        {
-          XAUDIO2_BUFFER buffer{};
-          buffer.AudioBytes = static_cast<UINT32>( _audioFile.GetSize() );
-          buffer.pAudioData = _audioFile.GetData();
-          buffer.LoopCount = XAUDIO2_LOOP_INFINITE;
-          hr = _sourceVoice->SubmitSourceBuffer( &buffer );
+          IXAudio2SourceVoice* voice = nullptr;
+          hr = SetupXAudio2( _audioFile.GetFormat(), xapo.Get(), &_xaudio2, &voice, &(*_callBack) );
+          if (voice != nullptr)
+          {
+            // We don't need this voice as a new one is created when Start is called
+            delete voice;
+          }
         }
 
         return hr;
@@ -81,56 +77,78 @@ namespace TrackedUltrasound
     //----------------------------------------------------------------------------
     OmnidirectionalSound::~OmnidirectionalSound()
     {
-      if ( _sourceVoice )
+      for (auto pair : _sourceVoices)
       {
-        _sourceVoice->DestroyVoice();
+        delete pair.first;
       }
+      _sourceVoices.clear();
     }
 
     //----------------------------------------------------------------------------
     HRESULT OmnidirectionalSound::Start()
     {
-      _xaudio2->CreateSourceVoice(&_sourceVoice, _audioFile.GetFormat(), 0, XAUDIO2_DEFAULT_FREQ_RATIO, &(*_callBack));
-      XAUDIO2_BUFFER buffer{};
-      buffer.AudioBytes = static_cast<UINT32>(_audioFile.GetSize());
-      buffer.pAudioData = _audioFile.GetData();
-      buffer.LoopCount = XAUDIO2_LOOP_INFINITE;
-      auto hr = _sourceVoice->SubmitSourceBuffer(&buffer);
-
-      if (SUCCEEDED(hr))
+      IXAudio2SourceVoice* voice = nullptr;
+      _xaudio2->CreateSourceVoice(&voice, _audioFile.GetFormat(), 0, XAUDIO2_DEFAULT_FREQ_RATIO, &(*_callBack));
+      if (voice != nullptr)
       {
-        _lastTick = GetTickCount64();
-        return _sourceVoice->Start();
+        XAUDIO2_BUFFER buffer{};
+        buffer.AudioBytes = static_cast<UINT32>(_audioFile.GetSize());
+        buffer.pAudioData = _audioFile.GetData();
+        buffer.LoopCount = XAUDIO2_LOOP_INFINITE;
+        auto hr = voice->SubmitSourceBuffer(&buffer);
+
+        if (SUCCEEDED(hr))
+        {
+          _lastTick = GetTickCount64();
+          return voice->Start();
+        }
+
+        _sourceVoices[voice] = false;
+
+        return hr;
       }
 
-      return hr;
+      return S_FALSE;
     }
 
     //----------------------------------------------------------------------------
     HRESULT OmnidirectionalSound::StartOnce()
     {
-      _xaudio2->CreateSourceVoice(&_sourceVoice, _audioFile.GetFormat(), 0, XAUDIO2_DEFAULT_FREQ_RATIO, &(*_callBack));
-      XAUDIO2_BUFFER buffer{};
-      buffer.AudioBytes = static_cast<UINT32>(_audioFile.GetSize());
-      buffer.pAudioData = _audioFile.GetData();
-      buffer.LoopBegin = XAUDIO2_NO_LOOP_REGION;
-      buffer.LoopLength = 0;
-      buffer.LoopCount = 0;
-      auto hr = _sourceVoice->SubmitSourceBuffer(&buffer);
-
-      if (SUCCEEDED(hr))
+      IXAudio2SourceVoice* voice = nullptr;
+      _xaudio2->CreateSourceVoice(&voice, _audioFile.GetFormat(), 0, XAUDIO2_DEFAULT_FREQ_RATIO, &(*_callBack));
+      if (voice != nullptr)
       {
-        _lastTick = GetTickCount64();
-        return _sourceVoice->Start();
+        XAUDIO2_BUFFER buffer{};
+        buffer.AudioBytes = static_cast<UINT32>(_audioFile.GetSize());
+        buffer.pAudioData = _audioFile.GetData();
+        buffer.LoopBegin = XAUDIO2_NO_LOOP_REGION;
+        buffer.LoopLength = 0;
+        buffer.LoopCount = 0;
+        auto hr = voice->SubmitSourceBuffer(&buffer);
+
+        if (SUCCEEDED(hr))
+        {
+          _lastTick = GetTickCount64();
+          return voice->Start();
+        }
+
+        _sourceVoices[voice] = true;
+
+        return hr;
       }
 
-      return hr;
+      return S_FALSE;
     }
 
     //----------------------------------------------------------------------------
     HRESULT OmnidirectionalSound::Stop()
     {
-      return _sourceVoice->Stop();
+      for (auto pair : _sourceVoices)
+      {
+        pair.first->Stop();
+      }
+
+      return S_OK;
     }
 
     //----------------------------------------------------------------------------

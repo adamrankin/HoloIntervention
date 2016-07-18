@@ -61,7 +61,7 @@
     <ClCompile>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(IntermediateOutputPath);$(SolutionDir)DirectXTK\Inc;$(ProjectDir)Content\Rendering;$(ProjectDir)Content\Input;$(ProjectDir)Content\Sound;$(ProjectDir)Content;$(ProjectDir)Common</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(IntermediateOutputPath);$(SolutionDir)DirectXTK\Inc;$(ProjectDir)Content\SpatialMapping;$(ProjectDir)Content\Rendering;$(ProjectDir)Content\Input;$(ProjectDir)Content\Sound;$(ProjectDir)Content;$(ProjectDir)Common</AdditionalIncludeDirectories>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
@@ -101,6 +101,10 @@
     <ClInclude Include="Content\Sound\OmnidirectionalSound.h" />
     <ClInclude Include="Content\Sound\VoiceCallback.h" />
     <ClInclude Include="Content\Sound\XAudio2Helpers.h" />
+    <ClInclude Include="Content\SpatialMapping\GetDataFromIBuffer.h" />
+    <ClInclude Include="Content\SpatialMapping\SpatialSurfaceAPI.h" />
+    <ClInclude Include="Content\SpatialMapping\SpatialSurfaceCollection.h" />
+    <ClInclude Include="Content\SpatialMapping\SurfaceMesh.h" />
     <ClInclude Include="TrackedUltrasoundMain.h" />
     <ClInclude Include="Common\DeviceResources.h" />
     <ClInclude Include="Common\CameraResources.h" />
@@ -114,6 +118,9 @@
     <ClCompile Include="Content\Sound\CardioidSound.cpp" />
     <ClCompile Include="Content\Sound\OmnidirectionalSound.cpp" />
     <ClCompile Include="Content\Sound\VoiceCallback.cpp" />
+    <ClCompile Include="Content\SpatialMapping\SpatialSurfaceAPI.cpp" />
+    <ClCompile Include="Content\SpatialMapping\SpatialSurfaceCollection.cpp" />
+    <ClCompile Include="Content\SpatialMapping\SurfaceMesh.cpp" />
     <ClCompile Include="TrackedUltrasoundMain.cpp" />
     <ClCompile Include="Common\DeviceResources.cpp" />
     <ClCompile Include="Common\CameraResources.cpp" />

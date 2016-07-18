@@ -32,6 +32,15 @@
     <ClCompile Include="Content\Sound\VoiceCallback.cpp">
       <Filter>Content\Sound</Filter>
     </ClCompile>
+    <ClCompile Include="Content\SpatialMapping\SurfaceMesh.cpp">
+      <Filter>Content\SpatialMapping</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\SpatialMapping\SpatialSurfaceCollection.cpp">
+      <Filter>Content\SpatialMapping</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\SpatialMapping\SpatialSurfaceAPI.cpp">
+      <Filter>Content\SpatialMapping</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TrackedUltrasoundMain.h" />
@@ -76,6 +85,18 @@
     </ClInclude>
     <ClInclude Include="Content\Sound\VoiceCallback.h">
       <Filter>Content\Sound</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\SpatialMapping\SurfaceMesh.h">
+      <Filter>Content\SpatialMapping</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\SpatialMapping\SpatialSurfaceCollection.h">
+      <Filter>Content\SpatialMapping</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\SpatialMapping\GetDataFromIBuffer.h">
+      <Filter>Content\SpatialMapping</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\SpatialMapping\SpatialSurfaceAPI.h">
+      <Filter>Content\SpatialMapping</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -133,6 +154,9 @@
     </Filter>
     <Filter Include="Infrastructure">
       <UniqueIdentifier>{88e029e1-6999-4f08-8aa0-7ef8f99bc1b0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\SpatialMapping">
+      <UniqueIdentifier>{8bb4f3fd-9ef8-4ef9-8452-9539e6344ece}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

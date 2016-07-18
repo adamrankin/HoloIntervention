@@ -6,6 +6,7 @@
 #include "OmnidirectionalSound.h"
 #include "SpatialInputHandler.h"
 #include "StepTimer.h"
+#include "SpatialSurfaceAPI.h"
 
 // std includes
 #include <vector>
@@ -14,10 +15,10 @@
 #include <collection.h>
 
 using namespace Windows::Perception::Spatial;
+using namespace TrackedUltrasound::Spatial;
 
 namespace TrackedUltrasound
 {
-
   // Updates, renders, and presents holographic content using Direct3D.
   class TrackedUltrasoundMain : public DX::IDeviceNotify
   {
@@ -70,9 +71,6 @@ namespace TrackedUltrasound
     // Cached pointer to device resources.
     std::shared_ptr<DX::DeviceResources> m_deviceResources;
 
-    // List of spatial anchors
-    Platform::Collections::Map<Platform::String^, SpatialAnchor^>^ m_spatialAnchors;
-
     // Render loop timer.
     DX::StepTimer m_timer;
 
@@ -93,6 +91,10 @@ namespace TrackedUltrasound
     // Store the current state of locatability
     Windows::Perception::Spatial::SpatialLocatability m_locatability;
 
+    // Access to a spatial surface API
+    std::unique_ptr<SpatialSurfaceAPI> m_spatialSurfaceApi;
+
+    // Sound assets
     std::unique_ptr<TrackedUltrasound::Sound::OmnidirectionalSound> m_cursorSound;
   };
 }

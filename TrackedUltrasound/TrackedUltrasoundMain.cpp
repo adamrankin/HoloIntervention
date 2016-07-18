@@ -10,17 +10,21 @@
 // winrt includes
 #include <windows.graphics.directx.direct3d11.interop.h>
 
-using namespace concurrency;
 using namespace Platform;
-using namespace Windows::Foundation;
+using namespace Windows::Foundation::Collections;
 using namespace Windows::Foundation::Numerics;
+using namespace Windows::Foundation;
+using namespace Windows::Graphics::DirectX;
 using namespace Windows::Graphics::Holographic;
+using namespace Windows::Perception::Spatial::Surfaces;
 using namespace Windows::Perception::Spatial;
 using namespace Windows::UI::Input::Spatial;
+using namespace concurrency;
 using namespace std::placeholders;
 
 namespace TrackedUltrasound
 {
+  //----------------------------------------------------------------------------
   // Loads and initializes application assets when the application is loaded.
   TrackedUltrasoundMain::TrackedUltrasoundMain( const std::shared_ptr<DX::DeviceResources>& deviceResources )
     : m_deviceResources( deviceResources )
@@ -30,22 +34,32 @@ namespace TrackedUltrasound
     m_deviceResources->RegisterDeviceNotify( this );
 
     m_cursorSound = std::make_unique<TrackedUltrasound::Sound::OmnidirectionalSound>();
-    auto loadTask = m_cursorSound->InitializeAsync(L"Assets/cursor_toggle.wav");
-    loadTask.then([&](task<HRESULT> previousTask)
+    auto loadTask = m_cursorSound->InitializeAsync( L"Assets/cursor_toggle.wav" );
+    loadTask.then( [&]( task<HRESULT> previousTask )
     {
       try
       {
         previousTask.wait();
-        m_cursorSound->SetEnvironment(HrtfEnvironment::Small);
+        m_cursorSound->SetEnvironment( HrtfEnvironment::Small );
       }
-      catch (const std::exception& e)
+      catch ( const std::exception& e )
       {
-        OutputDebugStringA(e.what());
+        OutputDebugStringA( e.what() );
         m_cursorSound.reset();
       }
-    });
+    } );
   }
 
+  //----------------------------------------------------------------------------
+  TrackedUltrasoundMain::~TrackedUltrasoundMain()
+  {
+    // De-register device notification.
+    m_deviceResources->RegisterDeviceNotify( nullptr );
+
+    UnregisterHolographicEventHandlers();
+  }
+
+  //----------------------------------------------------------------------------
   void TrackedUltrasoundMain::SetHolographicSpace( HolographicSpace^ holographicSpace )
   {
     UnregisterHolographicEventHandlers();
@@ -56,6 +70,8 @@ namespace TrackedUltrasound
     m_gazeCursorRenderer = std::make_unique<GazeCursorRenderer>( m_deviceResources );
 
     m_spatialInputHandler = std::make_unique<SpatialInputHandler>();
+
+    m_spatialSurfaceApi = std::make_unique<SpatialSurfaceAPI>( m_deviceResources );
 
     // Use the default SpatialLocator to track the motion of the device.
     m_locator = SpatialLocator::GetDefault();
@@ -107,8 +123,11 @@ namespace TrackedUltrasound
     //   indicates to be of special interest. Anchor positions do not drift, but can be corrected; the
     //   anchor will use the corrected position starting in the next frame after the correction has
     //   occurred.
+
+    m_spatialSurfaceApi->InitializeSurfaceObserver( m_referenceFrame->CoordinateSystem );
   }
 
+  //----------------------------------------------------------------------------
   void TrackedUltrasoundMain::UnregisterHolographicEventHandlers()
   {
     if ( m_holographicSpace != nullptr )
@@ -134,14 +153,7 @@ namespace TrackedUltrasound
     }
   }
 
-  TrackedUltrasoundMain::~TrackedUltrasoundMain()
-  {
-    // De-register device notification.
-    m_deviceResources->RegisterDeviceNotify( nullptr );
-
-    UnregisterHolographicEventHandlers();
-  }
-
+  //----------------------------------------------------------------------------
   // Updates the application state once per frame.
   HolographicFrame^ TrackedUltrasoundMain::Update()
   {
@@ -171,7 +183,7 @@ namespace TrackedUltrasound
     SpatialInteractionSourceState^ pointerState = m_spatialInputHandler->CheckForPressedInput();
     if ( pointerState != nullptr )
     {
-      m_cursorSound->OnUpdate(0, 0, 0);
+      m_cursorSound->OnUpdate( 0, 0, 0 );
       m_gazeCursorRenderer->ToggleCursor();
       m_cursorSound->StartOnce();
     }
@@ -185,6 +197,7 @@ namespace TrackedUltrasound
       {
         m_gazeCursorRenderer->Update( m_timer, pointerState->TryGetPointerPose( currentCoordinateSystem ) );
       }
+      m_spatialSurfaceApi->Update(m_timer, currentCoordinateSystem);
     } );
 
     // We complete the frame update by using information about our content positioning
@@ -231,6 +244,7 @@ namespace TrackedUltrasound
     return holographicFrame;
   }
 
+  //----------------------------------------------------------------------------
   // Renders the current frame to each holographic camera, according to the
   // current application and spatial positioning state. Returns true if the
   // frame was rendered to at least one camera.
@@ -241,14 +255,6 @@ namespace TrackedUltrasound
     {
       return false;
     }
-
-    //
-    // TODO: Add code for pre-pass rendering here.
-    //
-    // Take care of any tasks that are not specific to an individual holographic
-    // camera. This includes anything that doesn't need the final view or projection
-    // matrix, such as lighting maps.
-    //
 
     // Lock the set of holographic camera resources, then draw to each camera in this frame.
     return m_deviceResources->UseHolographicCameraResources<bool>(
@@ -281,7 +287,7 @@ namespace TrackedUltrasound
         // every frame. This function refreshes the data in the constant buffer for
         // the holographic camera indicated by cameraPose.
         pCameraResources->UpdateViewProjectionBuffer( m_deviceResources, cameraPose, m_referenceFrame->CoordinateSystem );
-        bool activeCamera = pCameraResources->AttachViewProjectionBuffer(m_deviceResources);
+        bool activeCamera = pCameraResources->AttachViewProjectionBuffer( m_deviceResources );
 
         // Only render world-locked content when positional tracking is active.
 
@@ -298,60 +304,19 @@ namespace TrackedUltrasound
     } );
   }
 
+  //----------------------------------------------------------------------------
   void TrackedUltrasoundMain::SaveAppState()
   {
-    task<SpatialAnchorStore^> requestTask( SpatialAnchorManager::RequestStoreAsync() );
-    auto saveTask = requestTask.then( [&]( SpatialAnchorStore ^ store ) -> bool
-    {
-      if ( store == nullptr )
-      {
-        return false;
-      }
-
-      int i( 0 );
-      bool succeeded( true );
-      for ( auto pair : m_spatialAnchors )
-      {
-        if ( !store->TrySave( pair->Key + i.ToString(), pair->Value ) )
-        {
-          succeeded = false;
-        }
-      }
-
-      return succeeded;
-    } );
-
-    bool result = saveTask.get();
+    m_spatialSurfaceApi->SaveAppState();
   }
 
+  //----------------------------------------------------------------------------
   void TrackedUltrasoundMain::LoadAppState()
   {
-    m_spatialAnchors->Clear();
-
-    task<SpatialAnchorStore^> requestTask( SpatialAnchorManager::RequestStoreAsync() );
-    auto loadTask = requestTask.then( [&]( SpatialAnchorStore ^ store ) -> bool
-    {
-      if ( store == nullptr )
-      {
-        return false;
-      }
-
-      int i( 0 );
-      for ( auto anchor : m_spatialAnchors )
-      {
-        Windows::Foundation::Collections::IMapView<Platform::String^, SpatialAnchor^>^ output = store->GetAllSavedAnchors();
-        for ( auto pair : output )
-        {
-          m_spatialAnchors->Insert( pair->Key, pair->Value );
-        }
-      }
-
-      return true;
-    } );
-
-    bool result = loadTask.get();
+    m_spatialSurfaceApi->LoadAppState();
   }
 
+  //----------------------------------------------------------------------------
   // Notifies classes that use Direct3D device resources that the device resources
   // need to be released before this method returns.
   void TrackedUltrasoundMain::OnDeviceLost()
@@ -359,6 +324,7 @@ namespace TrackedUltrasound
     m_gazeCursorRenderer->ReleaseDeviceDependentResources();
   }
 
+  //----------------------------------------------------------------------------
   // Notifies classes that use Direct3D device resources that the device resources
   // may now be recreated.
   void TrackedUltrasoundMain::OnDeviceRestored()
@@ -366,6 +332,7 @@ namespace TrackedUltrasound
     m_gazeCursorRenderer->CreateDeviceDependentResources();
   }
 
+  //----------------------------------------------------------------------------
   void TrackedUltrasoundMain::OnLocatabilityChanged( SpatialLocator^ sender, Object^ args )
   {
     m_locatability = sender->Locatability;
@@ -400,6 +367,7 @@ namespace TrackedUltrasound
     }
   }
 
+  //----------------------------------------------------------------------------
   void TrackedUltrasoundMain::OnCameraAdded(
     HolographicSpace^ sender,
     HolographicSpaceCameraAddedEventArgs^ args
@@ -432,6 +400,7 @@ namespace TrackedUltrasound
     } );
   }
 
+  //----------------------------------------------------------------------------
   void TrackedUltrasoundMain::OnCameraRemoved(
     HolographicSpace^ sender,
     HolographicSpaceCameraRemovedEventArgs^ args
@@ -451,5 +420,4 @@ namespace TrackedUltrasound
     // deallocating resources for this camera. At 60 frames per second this wait should not take long.
     m_deviceResources->RemoveHolographicCamera( args->Camera );
   }
-
 }

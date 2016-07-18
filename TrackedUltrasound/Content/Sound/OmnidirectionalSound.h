@@ -11,12 +11,18 @@
 
 #pragma once
 
+// Local includes
 #include "AudioFileReader.h"
 #include "VoiceCallback.h"
 #include "XAudio2Helpers.h"
+
+// WinRT includes
 #include <hrtfapoapi.h>
 #include <ppltasks.h>
 #include <wrl.h>
+
+// STL includes
+#include <map>
 
 using namespace Microsoft::WRL;
 using namespace concurrency;
@@ -37,21 +43,23 @@ namespace TrackedUltrasound
       HRESULT Stop();
       HRESULT OnUpdate( _In_ float angularVelocity, _In_ float height, _In_ float radius );
       HRESULT SetEnvironment( _In_ HrtfEnvironment environment );
-      HrtfEnvironment GetEnvironment() { return _environment; }
+      HrtfEnvironment GetEnvironment()
+      {
+        return _environment;
+      }
 
     private:
       HrtfPosition ComputePositionInOrbit( _In_ float height, _In_ float radius, _In_ float angle );
 
     private:
-      std::shared_ptr<VoiceCallback>  _callBack = nullptr;
-      AudioFileReader                 _audioFile;
-      ComPtr<IXAudio2>                _xaudio2;
-      // TODO : maintain list of voices, periodically remove playonce voices to prevent memory leak
-      IXAudio2SourceVoice*            _sourceVoice = nullptr;
-      ComPtr<IXAPOHrtfParameters>     _hrtfParams;
-      HrtfEnvironment                 _environment = HrtfEnvironment::Outdoors;
-      ULONGLONG                       _lastTick = 0;
-      float                           _angle = 0;
+      std::shared_ptr<VoiceCallback>          _callBack = nullptr;
+      AudioFileReader                         _audioFile;
+      ComPtr<IXAudio2>                        _xaudio2;
+      std::map<IXAudio2SourceVoice*, bool>    _sourceVoices;
+      ComPtr<IXAPOHrtfParameters>             _hrtfParams;
+      HrtfEnvironment                         _environment = HrtfEnvironment::Outdoors;
+      ULONGLONG                               _lastTick = 0;
+      float                                   _angle = 0;
     };
   }
 }
