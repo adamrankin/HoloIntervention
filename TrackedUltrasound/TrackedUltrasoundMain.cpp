@@ -34,7 +34,8 @@ namespace TrackedUltrasound
     m_deviceResources->RegisterDeviceNotify( this );
 
     m_cursorSound = std::make_unique<TrackedUltrasound::Sound::OmnidirectionalSound>();
-    auto loadTask = m_cursorSound->InitializeAsync( L"Assets/cursor_toggle.wav" );
+    // TODO : magic values for now
+    auto loadTask = m_cursorSound->InitializeAsync( L"Assets/cursor_toggle.wav", 2, 3, 1 );
     loadTask.then( [&]( task<HRESULT> previousTask )
     {
       try
@@ -183,7 +184,6 @@ namespace TrackedUltrasound
     SpatialInteractionSourceState^ pointerState = m_spatialInputHandler->CheckForPressedInput();
     if ( pointerState != nullptr )
     {
-      m_cursorSound->OnUpdate( 0, 0, 0 );
       m_gazeCursorRenderer->ToggleCursor();
       m_cursorSound->StartOnce();
     }
@@ -197,6 +197,7 @@ namespace TrackedUltrasound
       {
         m_gazeCursorRenderer->Update( m_timer, pointerState->TryGetPointerPose( currentCoordinateSystem ) );
       }
+      m_cursorSound->Update(m_timer);
       m_spatialSurfaceApi->Update(m_timer, currentCoordinateSystem);
     } );
 

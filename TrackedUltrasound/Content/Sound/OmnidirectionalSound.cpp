@@ -23,18 +23,22 @@ namespace TrackedUltrasound
   {
     //----------------------------------------------------------------------------
     _Use_decl_annotations_
-    task<HRESULT> OmnidirectionalSound::InitializeAsync( LPCWSTR filename )
+    task<HRESULT> OmnidirectionalSound::InitializeAsync( LPCWSTR filename, float angularVelocity, float height, float radius )
     {
-      return create_task( [=]()->HRESULT
+      _angularVelocity = angularVelocity;
+      _height = height;
+      _radius = radius;
+
+      return create_task( [ = ]()->HRESULT
       {
-        _callBack = std::make_shared<VoiceCallback>(*this);
+        _callBack = std::make_shared<VoiceCallback>( *this );
 
         auto task = _audioFile.InitializeAsync( filename );
         auto hr = task.get();
 
-        if (FAILED(hr))
+        if ( FAILED( hr ) )
         {
-          throw Platform::Exception::CreateException(hr);
+          throw Platform::Exception::CreateException( hr );
         }
 
         ComPtr<IXAPO> xapo;
@@ -62,13 +66,15 @@ namespace TrackedUltrasound
         if ( SUCCEEDED( hr ) )
         {
           IXAudio2SourceVoice* voice = nullptr;
-          hr = SetupXAudio2( _audioFile.GetFormat(), xapo.Get(), &_xaudio2, &voice, &(*_callBack) );
-          if (voice != nullptr)
+          hr = SetupXAudio2( _audioFile.GetFormat(), xapo.Get(), &_xaudio2, &voice, &( *_callBack ) );
+          if ( voice != nullptr )
           {
             // We don't need this voice as a new one is created when Start is called
-            delete voice;
+            voice->DestroyVoice();
           }
         }
+
+        m_resourcesLoaded = true;
 
         return hr;
       } );
@@ -77,9 +83,10 @@ namespace TrackedUltrasound
     //----------------------------------------------------------------------------
     OmnidirectionalSound::~OmnidirectionalSound()
     {
-      for (auto pair : _sourceVoices)
+      std::lock_guard<std::mutex> lock( m_voiceMutex );
+      for ( auto pair : _sourceVoices )
       {
-        delete pair.first;
+        pair.first->DestroyVoice();
       }
       _sourceVoices.clear();
     }
@@ -88,22 +95,21 @@ namespace TrackedUltrasound
     HRESULT OmnidirectionalSound::Start()
     {
       IXAudio2SourceVoice* voice = nullptr;
-      _xaudio2->CreateSourceVoice(&voice, _audioFile.GetFormat(), 0, XAUDIO2_DEFAULT_FREQ_RATIO, &(*_callBack));
-      if (voice != nullptr)
+      _xaudio2->CreateSourceVoice( &voice, _audioFile.GetFormat(), 0, XAUDIO2_DEFAULT_FREQ_RATIO, &( *_callBack ) );
+      if ( voice != nullptr )
       {
+        std::lock_guard<std::mutex> lock( m_voiceMutex );
         XAUDIO2_BUFFER buffer{};
-        buffer.AudioBytes = static_cast<UINT32>(_audioFile.GetSize());
+        buffer.AudioBytes = static_cast<UINT32>( _audioFile.GetSize() );
         buffer.pAudioData = _audioFile.GetData();
         buffer.LoopCount = XAUDIO2_LOOP_INFINITE;
-        auto hr = voice->SubmitSourceBuffer(&buffer);
+        auto hr = voice->SubmitSourceBuffer( &buffer );
 
-        if (SUCCEEDED(hr))
+        if ( SUCCEEDED( hr ) )
         {
-          _lastTick = GetTickCount64();
+          _sourceVoices[voice] = false;
           return voice->Start();
         }
-
-        _sourceVoices[voice] = false;
 
         return hr;
       }
@@ -115,24 +121,23 @@ namespace TrackedUltrasound
     HRESULT OmnidirectionalSound::StartOnce()
     {
       IXAudio2SourceVoice* voice = nullptr;
-      _xaudio2->CreateSourceVoice(&voice, _audioFile.GetFormat(), 0, XAUDIO2_DEFAULT_FREQ_RATIO, &(*_callBack));
-      if (voice != nullptr)
+      _xaudio2->CreateSourceVoice( &voice, _audioFile.GetFormat(), 0, XAUDIO2_DEFAULT_FREQ_RATIO, &( *_callBack ) );
+      if ( voice != nullptr )
       {
+        std::lock_guard<std::mutex> lock( m_voiceMutex );
         XAUDIO2_BUFFER buffer{};
-        buffer.AudioBytes = static_cast<UINT32>(_audioFile.GetSize());
+        buffer.AudioBytes = static_cast<UINT32>( _audioFile.GetSize() );
         buffer.pAudioData = _audioFile.GetData();
         buffer.LoopBegin = XAUDIO2_NO_LOOP_REGION;
         buffer.LoopLength = 0;
         buffer.LoopCount = 0;
-        auto hr = voice->SubmitSourceBuffer(&buffer);
+        auto hr = voice->SubmitSourceBuffer( &buffer );
 
-        if (SUCCEEDED(hr))
+        if ( SUCCEEDED( hr ) )
         {
-          _lastTick = GetTickCount64();
+          _sourceVoices[voice] = true;
           return voice->Start();
         }
-
-        _sourceVoices[voice] = true;
 
         return hr;
       }
@@ -143,7 +148,8 @@ namespace TrackedUltrasound
     //----------------------------------------------------------------------------
     HRESULT OmnidirectionalSound::Stop()
     {
-      for (auto pair : _sourceVoices)
+      std::lock_guard<std::mutex> lock( m_voiceMutex );
+      for ( auto pair : _sourceVoices )
       {
         pair.first->Stop();
       }
@@ -160,18 +166,56 @@ namespace TrackedUltrasound
     }
 
     //----------------------------------------------------------------------------
+    HrtfEnvironment OmnidirectionalSound::GetEnvironment()
+    {
+      return _environment;
+    }
+
+    //----------------------------------------------------------------------------
     // This method is called on every dispatcher timer tick.
     // Caller passes in the information necessary to compute the source position.
     _Use_decl_annotations_
-    HRESULT OmnidirectionalSound::OnUpdate( float angularVelocity, float height, float radius )
+    void OmnidirectionalSound::Update( const DX::StepTimer& timer )
     {
-      auto tick = GetTickCount64();
-      auto elapsedTime = tick - _lastTick;
-      _lastTick = tick;
-      _angle += elapsedTime * angularVelocity;
+      if( !m_resourcesLoaded )
+      {
+        return;
+      }
+
+      const float timeElapsed = static_cast<float>( timer.GetTotalSeconds() );
+
+      {
+        std::lock_guard<std::mutex> lock( m_voiceMutex );
+        XAUDIO2_VOICE_STATE state;
+        std::vector<IXAudio2SourceVoice*> toErase;
+        for ( auto pair : _sourceVoices )
+        {
+          if ( pair.second )
+          {
+            pair.first->GetState( &state );
+            if ( state.BuffersQueued == 0 )
+            {
+              // TODO : instead of polling all voices every frame, use callback to indicate finished
+              // TODO : re-use voices instead of creating/destroying
+              pair.first->DestroyVoice();
+              toErase.push_back( pair.first );
+            }
+          }
+        }
+
+        for ( auto voice : toErase )
+        {
+          _sourceVoices.erase( _sourceVoices.find( voice ) );
+        }
+      }
+
+      // TODO : this class assumes a single voice... we are running multiple voices
+      // TODO : create multiple sounds at the main level?
+      // TODO : we need a spatialsoundAPI...
+      _angle += timeElapsed * _angularVelocity;
       _angle = _angle > HRTF_2PI ? ( _angle - HRTF_2PI ) : _angle;
-      auto position = ComputePositionInOrbit( height, radius, _angle );
-      return _hrtfParams->SetSourcePosition( &position );
+      auto position = ComputePositionInOrbit( _height, _radius, _angle );
+      _hrtfParams->SetSourcePosition( &position );
     }
 
     //----------------------------------------------------------------------------
