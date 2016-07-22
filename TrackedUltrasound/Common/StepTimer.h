@@ -32,7 +32,7 @@ namespace DX
     double GetTotalSeconds() const                        { return TicksToSeconds( m_totalTicks );    }
 
     // Get total number of updates since start of the program.
-    uint32 GetFrameCount() const                          { return m_frameCount;                    }
+    uint64 GetFrameCount() const                          { return m_frameCount;                    }
 
     // Get the current framerate.
     uint32 GetFramesPerSecond() const                     { return m_framesPerSecond;               }
@@ -109,7 +109,7 @@ namespace DX
       timeDelta *= TicksPerSecond;
       timeDelta /= m_qpcFrequency;
 
-      uint32 lastFrameCount = m_frameCount;
+      uint64 lastFrameCount = m_frameCount;
 
       if ( m_isFixedTimeStep )
       {
@@ -177,7 +177,7 @@ namespace DX
     uint64 m_leftOverTicks;
 
     // Members for tracking the framerate.
-    uint32 m_frameCount;
+    uint64 m_frameCount;
     uint32 m_framesPerSecond;
     uint32 m_framesThisSecond;
     uint64 m_qpcSecondCounter;

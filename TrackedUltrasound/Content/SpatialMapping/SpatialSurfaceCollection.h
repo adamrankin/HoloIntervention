@@ -22,6 +22,9 @@
 // WinRT includes
 #include <ppltasks.h>
 
+using namespace Windows::Perception::Spatial::Surfaces;
+using namespace Windows::Perception::Spatial;
+
 namespace TrackedUltrasound
 {
   namespace Spatial
@@ -30,22 +33,46 @@ namespace TrackedUltrasound
     {
     public:
       SpatialSurfaceCollection( const std::shared_ptr<DX::DeviceResources>& deviceResources );
-      void Update( DX::StepTimer const& timer, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem );
+      void Update( DX::StepTimer const& timer, SpatialCoordinateSystem^ coordinateSystem );
 
       bool HasSurface( Platform::Guid id );
-      void AddSurface( Platform::Guid id, Windows::Perception::Spatial::Surfaces::SpatialSurfaceInfo^ newSurface );
-      void UpdateSurface( Platform::Guid id, Windows::Perception::Spatial::Surfaces::SpatialSurfaceInfo^ newSurface );
+      void AddSurface( Platform::Guid id, SpatialSurfaceInfo^ newSurface );
+      void UpdateSurface( Platform::Guid id, SpatialSurfaceInfo^ newSurface );
       void RemoveSurface( Platform::Guid id );
       void ClearSurfaces();
 
+      bool TestRayIntersection( const DX::StepTimer& timer,
+                                const std::vector<double>& origin,
+                                const std::vector<double>& direction,
+                                std::vector<double>& outResult );
+
       Windows::Foundation::DateTime GetLastUpdateTime( Platform::Guid id );
 
-      void HideInactiveMeshes(
-        Windows::Foundation::Collections::IMapView<Platform::Guid,
-        Windows::Perception::Spatial::Surfaces::SpatialSurfaceInfo^>^ const& surfaceCollection );
+      void HideInactiveMeshes( Windows::Foundation::Collections::IMapView<Platform::Guid, SpatialSurfaceInfo^>^ const& surfaceCollection );
 
     private:
-      Concurrency::task<void> AddOrUpdateSurfaceAsync( Platform::Guid id, Windows::Perception::Spatial::Surfaces::SpatialSurfaceInfo^ newSurface );
+      concurrency::task<HRESULT> CreateComputeShaderAsync( const std::wstring& srcFile,
+          ID3D11Device* pDevice,
+          ID3D11ComputeShader** ppShaderOut );
+
+      HRESULT CreateConstantBuffer( ID3D11Device* device );
+
+      void SetConstants( ID3D11DeviceContext* context, const std::vector<double>& rayOrigin, const std::vector<double>& rayDirection );
+
+      Concurrency::task<void> AddOrUpdateSurfaceAsync( Platform::Guid id,
+          SpatialSurfaceInfo^ newSurface );
+
+    private:
+      Microsoft::WRL::ComPtr<ID3D11Buffer>            m_constantBuffer = nullptr;
+      Microsoft::WRL::ComPtr<ID3D11ComputeShader>     m_d3d11ComputeShader = nullptr;
+      bool                                            m_shaderLoaded = false;
+      std::unique_ptr<concurrency::task<HRESULT>>     m_shaderLoadTask = nullptr;
+
+      struct ConstantBuffer
+      {
+        double rayOrigin[3];
+        double rayDirection[3];
+      };
 
       // The set of surfaces in the collection.
       std::map<Platform::Guid, SurfaceMesh>           m_meshCollection;
@@ -63,7 +90,7 @@ namespace TrackedUltrasound
       std::shared_ptr<DX::DeviceResources>            m_deviceResources;
 
       // The duration of time, in seconds, a mesh is allowed to remain inactive before deletion.
-      const float c_maxInactiveMeshTime = 120.f;
+      const float                                     c_maxInactiveMeshTime = 120.f;
     };
   }
 }

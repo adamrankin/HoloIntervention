@@ -10,8 +10,9 @@
 
 struct InputBufferType
 {
-  double vertexPosition[3];
-  double vertexNormal[3];
+  double vertexOne[3];
+  double vertexTwo[3];
+  double vertexThree[3];
 };
 
 struct OutputBufferType

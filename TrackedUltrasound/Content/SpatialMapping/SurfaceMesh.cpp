@@ -58,7 +58,7 @@ namespace TrackedUltrasound
     {
       m_surfaceMesh = surfaceMesh;
 
-      auto updateTask = UpdateDeviceBasedResourcesAsync(device);
+      auto updateTask = UpdateDeviceBasedResourcesAsync( device );
     }
 
     //----------------------------------------------------------------------------
@@ -134,50 +134,24 @@ namespace TrackedUltrasound
     }
 
     //--------------------------------------------------------------------------------------
-    void SurfaceMesh::SetConstants( ID3D11DeviceContext* context, const std::vector<double>& rayOrigin, const std::vector<double>& rayDirection )
-    {
-      ConstantBuffer cb;
-      context->UpdateSubresource( m_constantBuffer.Get(), 0, nullptr, &cb, 0, 0 );
-      context->CSSetConstantBuffers( 0, 1, &m_constantBuffer );
-    }
-
-    //--------------------------------------------------------------------------------------
-    void SurfaceMesh::RunComputeShader( ID3D11DeviceContext* pContext,
-                                        ID3D11ComputeShader* pComputeShader,
+    void SurfaceMesh::RunComputeShader( ID3D11DeviceContext& context,
+                                        ID3D11ComputeShader& computeShader,
                                         uint32 nNumViews, ID3D11ShaderResourceView** pShaderResourceViews,
-                                        ID3D11Buffer* pCBCS,
-                                        void* pCSData,
-                                        DWORD dwNumDataBytes,
                                         ID3D11UnorderedAccessView* pUnorderedAccessView,
                                         uint32 Xthreads,
                                         uint32 Ythreads,
                                         uint32 Zthreads )
     {
-      pContext->CSSetShader( pComputeShader, nullptr, 0 );
-      pContext->CSSetShaderResources( 0, nNumViews, pShaderResourceViews );
-      pContext->CSSetUnorderedAccessViews( 0, 1, &pUnorderedAccessView, nullptr );
-      if ( pCBCS && pCSData )
-      {
-        D3D11_MAPPED_SUBRESOURCE MappedResource;
-        pContext->Map( pCBCS, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedResource );
-        memcpy( MappedResource.pData, pCSData, dwNumDataBytes );
-        pContext->Unmap( pCBCS, 0 );
-        ID3D11Buffer* ppCB[1] = { pCBCS };
-        pContext->CSSetConstantBuffers( 0, 1, ppCB );
-      }
+      context.CSSetShaderResources( 0, nNumViews, pShaderResourceViews );
+      context.CSSetUnorderedAccessViews( 0, 1, &pUnorderedAccessView, nullptr );
 
-      pContext->Dispatch( Xthreads, Ythreads, Zthreads );
-
-      pContext->CSSetShader( nullptr, nullptr, 0 );
+      context.Dispatch( Xthreads, Ythreads, Zthreads );
 
       ID3D11UnorderedAccessView* ppUAViewnullptr[1] = { nullptr };
-      pContext->CSSetUnorderedAccessViews( 0, 1, ppUAViewnullptr, nullptr );
+      context.CSSetUnorderedAccessViews( 0, 1, ppUAViewnullptr, nullptr );
 
       ID3D11ShaderResourceView* ppSRVnullptr[2] = { nullptr, nullptr };
-      pContext->CSSetShaderResources( 0, 2, ppSRVnullptr );
-
-      ID3D11Buffer* ppCBnullptr[1] = { nullptr };
-      pContext->CSSetConstantBuffers( 0, 1, ppCBnullptr );
+      context.CSSetShaderResources( 0, 2, ppSRVnullptr );
     }
 
     //----------------------------------------------------------------------------
@@ -189,7 +163,9 @@ namespace TrackedUltrasound
         return;
       }
 
-      if ( m_surfaceMesh->TriangleIndices->ElementCount < 3 )
+      m_indexCount = m_surfaceMesh->TriangleIndices->ElementCount;
+
+      if ( m_indexCount < 3 )
       {
         m_isActive = false;
         return;
@@ -199,40 +175,46 @@ namespace TrackedUltrasound
       auto taskOptions = Concurrency::task_options();
       auto task = concurrency::create_task( [this, device]()
       {
-        auto createTask = CreateComputeShaderAsync( L"ms-appx:///CSRayTriangleIntersection.cso", "CSMain", device, &m_d3d11ComputeShader );
-        if( FAILED( createTask.get() ) )
-        {
-          throw std::exception( "Cannot create compute shader. Aborting." );
-        }
-
         Windows::Storage::Streams::IBuffer^ positions = m_surfaceMesh->VertexPositions->Data;
         Windows::Storage::Streams::IBuffer^ normals = m_surfaceMesh->VertexNormals->Data;
         Windows::Storage::Streams::IBuffer^ indices = m_surfaceMesh->TriangleIndices->Data;
 
         CreateStructuredBuffer( device, sizeof( InputBufferType ), positions, m_meshBuffer.GetAddressOf() );
-        CreateStructuredBuffer( device, sizeof( InputBufferType ), normals, m_normalBuffer.GetAddressOf() );
+        CreateStructuredBuffer( device, sizeof( InputBufferType ), indices, m_indexBuffer.GetAddressOf() );
         CreateStructuredBuffer( device, sizeof( OutputBufferType ), 1, m_outputBuffer.GetAddressOf() );
 
 #if defined(_DEBUG) || defined(PROFILE)
         if ( m_meshBuffer )
-        { m_meshBuffer->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "MeshBuffer" ) - 1, "MeshBuffer" ); }
-        if ( m_normalBuffer )
-        { m_normalBuffer->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "NormalBuffer" ) - 1, "NormalBuffer" ); }
+        {
+          m_meshBuffer->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "MeshBuffer" ) - 1, "MeshBuffer" );
+        }
+        if ( m_indexBuffer )
+        {
+          m_indexBuffer->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "IndexBuffer" ) - 1, "IndexBuffer" );
+        }
         if ( m_outputBuffer )
-        { m_outputBuffer->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "OutputBuffer" ) - 1, "OutputBuffer" ); }
+        {
+          m_outputBuffer->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "OutputBuffer" ) - 1, "OutputBuffer" );
+        }
 #endif
 
         CreateBufferSRV( device, m_meshBuffer.Get(), &m_meshSRV );
-        CreateBufferSRV( device, m_normalBuffer.Get(), &m_normalSRV );
+        CreateBufferSRV( device, m_indexBuffer.Get(), &m_indexSRV );
         CreateBufferUAV( device, m_outputBuffer.Get(), &m_outputUAV );
 
 #if defined(_DEBUG) || defined(PROFILE)
         if ( m_meshSRV )
-        { m_meshSRV->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "Mesh SRV" ) - 1, "Mesh SRV" ); }
-        if ( m_normalSRV )
-        { m_normalSRV->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "Normal SRV" ) - 1, "Normal SRV" ); }
+        {
+          m_meshSRV->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "Mesh SRV" ) - 1, "Mesh SRV" );
+        }
+        if ( m_indexSRV )
+        {
+          m_indexSRV->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "Index SRV" ) - 1, "Index SRV" );
+        }
         if ( m_outputUAV )
-        { m_outputUAV->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "Output UAV" ) - 1, "Output UAV" ); }
+        {
+          m_outputUAV->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "Output UAV" ) - 1, "Output UAV" );
+        }
 #endif
 
         m_lastUpdateTime = m_surfaceMesh->SurfaceInfo->UpdateTime;
@@ -263,38 +245,11 @@ namespace TrackedUltrasound
     void SurfaceMesh::ReleaseVertexResources()
     {
       m_meshSRV = nullptr;
-      m_normalSRV = nullptr;
+      m_indexSRV = nullptr;
       m_outputUAV = nullptr;
       m_meshBuffer = nullptr;
-      m_normalBuffer = nullptr;
+      m_indexBuffer = nullptr;
       m_outputBuffer = nullptr;
-      m_d3d11ComputeShader = nullptr;
-    }
-
-    //--------------------------------------------------------------------------------------
-    concurrency::task<HRESULT> SurfaceMesh::CreateComputeShaderAsync( const std::wstring& srcFile,
-        const std::string& functionName,
-        ID3D11Device* pDevice,
-        ID3D11ComputeShader** ppShaderOut )
-    {
-      concurrency::task<std::vector<byte>> loadVSTask = DX::ReadDataAsync( srcFile );
-      return loadVSTask.then( [ = ]( std::vector<byte> data )
-      {
-        if ( !pDevice || !ppShaderOut )
-        {
-          return E_INVALIDARG;
-        }
-
-        HRESULT hr = pDevice->CreateComputeShader( &data.front(), data.size(), nullptr, ppShaderOut );
-
-#if defined(_DEBUG) || defined(PROFILE)
-        if ( SUCCEEDED( hr ) )
-        {
-          ( *ppShaderOut )->SetPrivateData( WKPDID_D3DDebugObjectName, functionName.length(), functionName.c_str() );
-        }
-#endif
-        return hr;
-      } );
     }
 
     //--------------------------------------------------------------------------------------
@@ -362,7 +317,6 @@ namespace TrackedUltrasound
     }
 
     //--------------------------------------------------------------------------------------
-    _Use_decl_annotations_
     HRESULT SurfaceMesh::CreateBufferUAV( ID3D11Device* pDevice,
                                           ID3D11Buffer* pBuffer,
                                           ID3D11UnorderedAccessView** ppUAVOut )
@@ -551,26 +505,13 @@ namespace TrackedUltrasound
     }
 
     //----------------------------------------------------------------------------
-    HRESULT SurfaceMesh::CreateConstantBuffer( ID3D11Device* device )
+    bool SurfaceMesh::TestRayIntersection( ID3D11DeviceContext& context,
+                                           ID3D11ComputeShader& computeShader,
+                                           const DX::StepTimer& timer,
+                                           std::vector<double>& outResult )
     {
-      // Create the Const Buffer
-      D3D11_BUFFER_DESC constant_buffer_desc;
-      ZeroMemory( &constant_buffer_desc, sizeof( constant_buffer_desc ) );
-      constant_buffer_desc.ByteWidth = sizeof( ConstantBuffer );
-      constant_buffer_desc.Usage = D3D11_USAGE_DEFAULT;
-      constant_buffer_desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-      constant_buffer_desc.CPUAccessFlags = 0;
-      auto hr = device->CreateBuffer( &constant_buffer_desc, nullptr, m_constantBuffer.GetAddressOf() );
-      if ( FAILED( hr ) )
-      {
-        return hr;
-      }
-
-#if defined(_DEBUG) || defined(PROFILE)
-      m_constantBuffer->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "ConstantBuffer" ) - 1, "ConstantBuffer" );
-#endif
-
-      return hr;
+      ID3D11ShaderResourceView* aRViews[2] = { m_meshSRV.Get(), m_indexSRV.Get() };
+      RunComputeShader( context, computeShader, 2, aRViews, m_outputUAV.Get(), m_indexCount, 1, 1 );
     }
   }
 }
