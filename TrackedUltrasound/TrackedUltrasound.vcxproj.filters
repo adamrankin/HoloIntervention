@@ -158,6 +158,9 @@
     <Filter Include="Content\SpatialMapping">
       <UniqueIdentifier>{8bb4f3fd-9ef8-4ef9-8452-9539e6344ece}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Content\SpatialMapping\Shaders">
+      <UniqueIdentifier>{cf251a3f-b817-4279-80f7-9f2bc80047d7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Media Include="Assets\cursor_toggle.wav">
@@ -176,6 +179,9 @@
     </FxCompile>
     <FxCompile Include="Content\Rendering\VPRTVertexShader.hlsl">
       <Filter>Content\Rendering\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\SpatialMapping\Shaders\CSRayTriangleIntersection.hlsl">
+      <Filter>Content\SpatialMapping\Shaders</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>

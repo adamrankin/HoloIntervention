@@ -50,9 +50,6 @@ namespace TrackedUltrasound
         auto& pair = *iter;
         auto& surfaceMesh = pair.second;
 
-        // Update the surface mesh.
-        surfaceMesh.UpdateTransform( m_deviceResources->GetD3DDeviceContext(), timer, coordinateSystem );
-
         // Check to see if the mesh has expired.
         float lastActiveTime = surfaceMesh.GetLastActiveTime();
         float inactiveDuration = timeElapsed - lastActiveTime;
@@ -60,11 +57,13 @@ namespace TrackedUltrasound
         {
           // Surface mesh is expired.
           m_meshCollection.erase( iter++ );
+          continue;
         }
-        else
-        {
-          ++iter;
-        }
+
+        // Update the surface mesh.
+        surfaceMesh.UpdateTransform( m_deviceResources->GetD3DDeviceContext(), timer, coordinateSystem );
+
+        ++iter;
       };
     }
 
@@ -96,10 +95,10 @@ namespace TrackedUltrasound
           std::lock_guard<std::mutex> guard( m_meshCollectionLock );
 
           auto& surfaceMesh = m_meshCollection[id];
-          surfaceMesh.UpdateSurface( mesh );
+          surfaceMesh.UpdateSurface( mesh, m_deviceResources->GetD3DDevice() );
           surfaceMesh.SetIsActive( true );
         }
-      }, task_continuation_context::use_current() );
+      });
 
       return processMeshTask;
     }

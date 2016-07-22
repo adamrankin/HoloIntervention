@@ -82,7 +82,7 @@ namespace DX
   // Parameter: HolographicSpace ^ holographicSpace
   void DeviceResources::SetHolographicSpace( HolographicSpace^ holographicSpace )
   {
-    // Cache the holographic space. Used to re-initalize during device-lost scenarios.
+    // Cache the holographic space. Used to re-initialize during device-lost scenarios.
     m_holographicSpace = holographicSpace;
 
     InitializeUsingHolographicSpace();
@@ -111,7 +111,7 @@ namespace DX
     if ( ( id.HighPart != 0 ) && ( id.LowPart != 0 ) )
     {
       UINT createFlags = 0;
-#ifdef DEBUG
+#ifdef _DEBUG
       if ( SdkLayersAvailable() )
       {
         createFlags |= DXGI_CREATE_FACTORY_DEBUG;
@@ -141,7 +141,15 @@ namespace DX
       m_dxgiAdapter.Reset();
     }
 
-    CreateDeviceResources();
+    try
+    {
+      CreateDeviceResources();
+    }
+    catch (const std::exception& e)
+    {
+      OutputDebugStringA(e.what());
+      return;
+    }
 
     m_holographicSpace->SetDirect3D11Device( m_d3dInteropDevice );
   }
@@ -254,6 +262,12 @@ namespace DX
     if ( options.VPAndRTArrayIndexFromAnyShaderFeedingRasterizer )
     {
       m_supportsVprt = true;
+    }
+    D3D11_FEATURE_DATA_DOUBLES hwopts;
+    m_d3dDevice->CheckFeatureSupport(D3D11_FEATURE_DOUBLES, &hwopts, sizeof(hwopts));
+    if (!hwopts.DoublePrecisionFloatShaderOps)
+    {
+      throw std::exception("No hardware double-precision capable device found. Cannot create D3D device!");
     }
   }
 
