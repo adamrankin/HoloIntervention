@@ -59,9 +59,6 @@
     <ClInclude Include="Content\Rendering\GazeCursorRenderer.h">
       <Filter>Content\Rendering</Filter>
     </ClInclude>
-    <ClInclude Include="Content\Rendering\ShaderStructures.h">
-      <Filter>Content\Rendering</Filter>
-    </ClInclude>
     <ClInclude Include="Content\Input\SpatialInputHandler.h">
       <Filter>Content\Input</Filter>
     </ClInclude>
@@ -96,6 +93,12 @@
       <Filter>Content\SpatialMapping</Filter>
     </ClInclude>
     <ClInclude Include="Content\SpatialMapping\GetDataFromIBuffer.h">
+      <Filter>Content\SpatialMapping</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Rendering\ShaderStructures.h">
+      <Filter>Content\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\SpatialMapping\SpatialShaderStructures.h">
       <Filter>Content\SpatialMapping</Filter>
     </ClInclude>
   </ItemGroup>

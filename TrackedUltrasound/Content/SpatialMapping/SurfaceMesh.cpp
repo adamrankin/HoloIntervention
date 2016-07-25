@@ -14,9 +14,10 @@
 // Local includes
 #include "DirectXHelper.h"
 #include "GetDataFromIBuffer.h"
+#include "SpatialShaderStructures.h"
+#include "SpatialSurfaceCollection.h"
 #include "StepTimer.h"
 #include "SurfaceMesh.h"
-#include "SpatialSurfaceCollection.h"
 
 // winrt includes
 #include <ppltasks.h>
@@ -301,17 +302,20 @@ namespace TrackedUltrasound
       {
         std::lock_guard<std::mutex> lock( m_meshResourcesMutex );
         outHitPosition.clear();
+        outHitPosition.assign(3, 0.0f);
         outHitNormal.clear();
+        outHitNormal.assign(3, 0.0f);
 
-        if ( frameNumber == m_lastFrameNumberComputed )
+        if ( m_lastFrameNumberComputed != 0 && frameNumber < m_lastFrameNumberComputed + NUMBER_OF_FRAMES_BEFORE_RECOMPUTE )
         {
           // Asked twice in the same frame, return the cached result
           std::copy( m_rayIntersectionResults.begin(), m_rayIntersectionResults.begin() + 3, outHitPosition.begin() );
-          std::copy( m_rayIntersectionResults.begin() + 2, m_rayIntersectionResults.end(), outHitNormal.begin() );
+          std::copy( m_rayIntersectionResults.begin() + 3, m_rayIntersectionResults.end(), outHitNormal.begin() );
           return m_hasLastComputedHit;
         }
 
         // TODO : implement pre-check using OBB
+        //m_surfaceMesh->SurfaceInfo->TryGetBounds()
 
         ID3D11ShaderResourceView* aRViews[2] = { m_meshSRV, m_indexSRV };
         // Send in the number of triangles as the number of thread groups to dispatch
@@ -331,34 +335,23 @@ namespace TrackedUltrasound
 
       m_lastFrameNumberComputed = frameNumber;
       m_rayIntersectionResults.clear();
-
-      auto pointVec = XMLoadFloat3( &XMFLOAT3( result->intersectionPoint[0], result->intersectionPoint[1], result->intersectionPoint[2] ) );
-      auto transformedPointVec = XMVector3Transform( pointVec, XMLoadFloat4x4( &m_meshToWorldTransform ) );
-      XMFLOAT3 pointOut;
-      XMStoreFloat3( &pointOut, transformedPointVec );
-
-      m_rayIntersectionResults.push_back( pointOut.x );
-      m_rayIntersectionResults.push_back( pointOut.y );
-      m_rayIntersectionResults.push_back( pointOut.z );
-
-      auto normalVec = XMLoadFloat3( &XMFLOAT3( result->intersectionNormal[0], result->intersectionNormal[1], result->intersectionNormal[2] ) );
-      auto transformedNormalVec = XMVector3Transform( normalVec, XMLoadFloat4x4( &m_meshToWorldTransform ) );
-      XMFLOAT3 normalOut;
-      XMStoreFloat3( &normalOut, transformedNormalVec );
-
-      m_rayIntersectionResults.push_back( normalOut.x );
-      m_rayIntersectionResults.push_back( normalOut.y );
-      m_rayIntersectionResults.push_back( normalOut.z );
+      m_rayIntersectionResults.push_back( result->intersectionPoint[0] );
+      m_rayIntersectionResults.push_back( result->intersectionPoint[1] );
+      m_rayIntersectionResults.push_back( result->intersectionPoint[2] );
+      m_rayIntersectionResults.push_back( result->intersectionNormal[0] );
+      m_rayIntersectionResults.push_back( result->intersectionNormal[1] );
+      m_rayIntersectionResults.push_back( result->intersectionNormal[2] );
 
       if ( result->intersectionPoint[0] != 0.0f || result->intersectionPoint[1] != 0.0f || result->intersectionPoint[2] != 0.0f ||
            result->intersectionNormal[0] != 0.0f || result->intersectionNormal[1] != 0.0f || result->intersectionNormal[2] != 0.0f )
       {
-        outHitPosition.push_back( pointOut.x );
-        outHitPosition.push_back( pointOut.y );
-        outHitPosition.push_back( pointOut.z );
-        outHitNormal.push_back( normalOut.x );
-        outHitNormal.push_back( normalOut.y );
-        outHitNormal.push_back( normalOut.z );
+        outHitPosition[0] = result->intersectionPoint[0];
+        outHitPosition[1] = result->intersectionPoint[1];
+        outHitPosition[2] = result->intersectionPoint[2];
+
+        outHitNormal[0] = result->intersectionNormal[0];
+        outHitNormal[1] = result->intersectionNormal[1];
+        outHitNormal[2] = result->intersectionNormal[2];
 
         m_hasLastComputedHit = true;
         return true;
@@ -395,26 +388,14 @@ namespace TrackedUltrasound
     //----------------------------------------------------------------------------
     void SurfaceMesh::SetRayConstants( ID3D11DeviceContext* context, ID3D11Buffer* constantBuffer, const float3 rayOrigin, const float3 rayDirection )
     {
-      // Ray constants are in world coordinate system, transform them to mesh coordinate system by multiplying by inverse of m_meshToWorld
-      auto worldToMesh = XMMatrixInverse( NULL, XMLoadFloat4x4( &m_meshToWorldTransform ) );
-
-      auto rayOriginVec = XMLoadFloat3( &XMFLOAT3( rayOrigin.x, rayOrigin.y, rayOrigin.z ) );
-      auto transformedOriginVec = XMVector3Transform( rayOriginVec, worldToMesh );
-      XMFLOAT3 originOut;
-      XMStoreFloat3( &originOut, transformedOriginVec );
-
-      auto rayDirectionVec = XMLoadFloat3( &XMFLOAT3( rayDirection.x, rayDirection.y, rayDirection.z ) );
-      auto transformedDirectionVec = XMVector3Transform(rayDirectionVec, worldToMesh );
-      XMFLOAT3 dirOut;
-      XMStoreFloat3( &dirOut, transformedDirectionVec );
-
-      SpatialSurfaceCollection::ConstantBuffer cb;
-      cb.rayOrigin[0] = originOut.x;
-      cb.rayOrigin[1] = originOut.y;
-      cb.rayOrigin[2] = originOut.z;
-      cb.rayDirection[0] = dirOut.x;
-      cb.rayDirection[1] = dirOut.y;
-      cb.rayDirection[2] = dirOut.z;
+      ConstantBuffer cb;
+      cb.rayOrigin[0] = rayOrigin.x;
+      cb.rayOrigin[1] = rayOrigin.y;
+      cb.rayOrigin[2] = rayOrigin.z;
+      cb.rayDirection[0] = rayDirection.x;
+      cb.rayDirection[1] = rayDirection.y;
+      cb.rayDirection[2] = rayDirection.z;
+      cb.meshToWorld = m_meshToWorldTransform;
 
       context->UpdateSubresource( constantBuffer, 0, nullptr, &cb, 0, 0 );
       context->CSSetConstantBuffers( 0, 1, &constantBuffer );

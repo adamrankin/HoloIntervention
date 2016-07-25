@@ -5,6 +5,7 @@
 #include "StepTimer.h"
 
 // WinRT includes
+#include <agents.h>
 #include <functional>
 #include <ppltasks.h>
 #include <sstream>
@@ -178,6 +179,21 @@ namespace TrackedUltrasound
           // If the surface observer was successfully created, we can initialize our
           // collection by pulling the current data set.
           auto mapContainingSurfaceCollection = m_surfaceObserver->GetObservedSurfaces();
+          if (mapContainingSurfaceCollection->Size == 0)
+          {
+            OutputDebugStringA("Mesh collection size is 0. Trying again after a delay.\n");
+            auto fire_once = new concurrency::timer<int>(5, 0, nullptr, false);
+            // Create a call object that sets the completion event after the timer fires.
+            auto callback = new concurrency::call<int>([=](int)
+            {
+              this->InitializeSurfaceObserver(coordinateSystem);
+            });
+
+            // Connect the timer to the callback and start the timer.
+            fire_once->link_target(callback);
+            fire_once->start();
+            return;
+          }
           for ( auto const& pair : mapContainingSurfaceCollection )
           {
             // Store the ID and metadata for each surface.

@@ -8,6 +8,7 @@
 
 cbuffer ConstantBuffer : register( b0 )
 {
+  float4x4 meshToWorld;
   float4 rayOrigin;
   float4 rayDirection;
 };
@@ -38,17 +39,24 @@ RWStructuredBuffer<OutputBufferType> resultBuffer : register( u0 );
 void main( uint3 DTid : SV_DispatchThreadID )
 {
   // Algorithm courtesy of https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
+  // See:
+  //    1. Möller T, Trumbore B. Fast, Minimum Storage Ray-triangle Intersection. J Graph Tools. 1997 Oct;2(1):21–28. 
 
-  float3 v0 = { meshBuffer[indexBuffer[( DTid.x * 3 )].index].vertex.x, meshBuffer[indexBuffer[( DTid.x * 3 )].index].vertex.y, meshBuffer[indexBuffer[( DTid.x * 3 )].index].vertex.z };
-  float3 v1 = { meshBuffer[indexBuffer[( DTid.x * 3 ) + 1].index].vertex.x, meshBuffer[indexBuffer[( DTid.x * 3 ) + 1].index].vertex.y, meshBuffer[indexBuffer[( DTid.x * 3 ) + 1].index].vertex.z };
-  float3 v2 = { meshBuffer[indexBuffer[( DTid.x * 3 ) + 2].index].vertex.x, meshBuffer[indexBuffer[( DTid.x * 3 ) + 2].index].vertex.y, meshBuffer[indexBuffer[( DTid.x * 3 ) + 2].index].vertex.z };
+  float4 v0 = { meshBuffer[indexBuffer[( DTid.x * 3 )].index].vertex.x, meshBuffer[indexBuffer[( DTid.x * 3 )].index].vertex.y, meshBuffer[indexBuffer[( DTid.x * 3 )].index].vertex.z, 1 };
+  float4 v1 = { meshBuffer[indexBuffer[( DTid.x * 3 ) + 1].index].vertex.x, meshBuffer[indexBuffer[( DTid.x * 3 ) + 1].index].vertex.y, meshBuffer[indexBuffer[( DTid.x * 3 ) + 1].index].vertex.z, 1 };
+  float4 v2 = { meshBuffer[indexBuffer[( DTid.x * 3 ) + 2].index].vertex.x, meshBuffer[indexBuffer[( DTid.x * 3 ) + 2].index].vertex.y, meshBuffer[indexBuffer[( DTid.x * 3 ) + 2].index].vertex.z, 1 };
+
+  // Transform the vertex position into world space.
+  v0 = mul(v0, meshToWorld);
+  v1 = mul(v1, meshToWorld);
+  v2 = mul(v2, meshToWorld);
 
   float3 rayOrigin3 = { rayOrigin[0], rayOrigin[1], rayOrigin[2] };
   float3 rayDirection3 = { rayDirection[0], rayDirection[1], rayDirection[2] };
 
   //Find vectors for two edges sharing v0
-  float3 e1 = v1 - v0;
-  float3 e2 = v2 - v0;
+  float3 e1 = { v1.x - v0.x, v1.y - v0.y, v1.z - v0.z };
+  float3 e2 = { v2.x - v0.x, v2.y - v0.y, v2.z - v0.z };
 
   //Begin calculating determinant - also used to calculate u parameter
   float3 P = cross( rayDirection3, e2 );
@@ -65,7 +73,7 @@ void main( uint3 DTid : SV_DispatchThreadID )
   float inv_det = 1.f / det;
 
   //calculate distance from V1 to ray origin
-  float3 T = rayOrigin3 - v0;
+  float3 T = { rayOrigin3.x - v0.x, rayOrigin3.y - v0.y, rayOrigin3.z - v0.z };
 
   //Calculate u parameter and test bound
   float u = dot( T, P ) * inv_det;
@@ -96,9 +104,9 @@ void main( uint3 DTid : SV_DispatchThreadID )
     float3 normal = cross(e1, e2);
 
     //ray intersection
-    resultBuffer[0].intersectionPoint.x = 1.2345;
-    resultBuffer[0].intersectionPoint.y = t;
-    resultBuffer[0].intersectionPoint.z = t;
+    resultBuffer[0].intersectionPoint.x = rayOrigin.x + t*rayDirection.x;
+    resultBuffer[0].intersectionPoint.y = rayOrigin.y + t*rayDirection.y;
+    resultBuffer[0].intersectionPoint.z = rayOrigin.z + t*rayDirection.z;
     resultBuffer[0].intersectionNormal.x = normal.x;
     resultBuffer[0].intersectionNormal.y = normal.y;
     resultBuffer[0].intersectionNormal.z = normal.z;

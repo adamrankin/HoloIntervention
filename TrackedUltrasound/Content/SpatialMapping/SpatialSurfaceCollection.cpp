@@ -13,6 +13,7 @@
 
 // Local includes
 #include "DirectXHelper.h"
+#include "SpatialShaderStructures.h"
 #include "SpatialSurfaceCollection.h"
 #include "StepTimer.h"
 
@@ -54,7 +55,7 @@ namespace TrackedUltrasound
             _com_error err( hr, NULL );
             LPCTSTR errMsg = err.ErrorMessage();
             std::stringstream ss;
-            ss << "Unable to load shader: " << errMsg << ".";
+            ss << "Unable to load shader: " << errMsg << ".\n";
             OutputDebugStringA( ss.str().c_str() );
           }
         }
@@ -216,7 +217,7 @@ namespace TrackedUltrasound
         auto result = m_shaderLoadTask->get();
         if ( FAILED( result ) )
         {
-          OutputDebugStringA( "Unable to load shader. Aborting." );
+          OutputDebugStringA( "Unable to load shader. Aborting.\n" );
           return false;
         }
       }

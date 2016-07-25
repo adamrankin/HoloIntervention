@@ -33,13 +33,6 @@ namespace TrackedUltrasound
     class SpatialSurfaceCollection
     {
     public:
-      struct ConstantBuffer
-      {
-        // Constant buffers must have a a ByteWidth multiple of 16
-        float rayOrigin[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-        float rayDirection[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-      };
-
       SpatialSurfaceCollection( const std::shared_ptr<DX::DeviceResources>& deviceResources );
       ~SpatialSurfaceCollection();
 

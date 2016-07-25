@@ -109,22 +109,6 @@ namespace TrackedUltrasound
       ID3D11ShaderResourceView*    m_indexSRV = nullptr;
       ID3D11UnorderedAccessView*   m_outputUAV = nullptr;
 
-      struct VertexBufferType
-      {
-        float vertex[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-      };
-
-      struct IndexBufferType
-      {
-        uint32 index;
-      };
-
-      struct OutputBufferType
-      {
-        float intersectionPoint[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-        float intersectionNormal[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-      };
-
       uint32                          m_vertexStride = 0;
       uint32                          m_normalStride = 0;
 
@@ -140,7 +124,7 @@ namespace TrackedUltrasound
       bool                            m_hasLastComputedHit = false;
       std::vector<float>              m_rayIntersectionResults;
       uint64                          m_lastFrameNumberComputed = 0;
-      const uint32                    NUMBER_OF_FRAMES_BEFORE_RECOMPUTE = 1;
+      const uint32                    NUMBER_OF_FRAMES_BEFORE_RECOMPUTE = 2; // This translates into FPS/NUMBER_OF_FRAMES_BEFORE_RECOMPUTE recomputations per sec
 
       DirectX::XMFLOAT4X4             m_meshToWorldTransform;
       DirectX::XMFLOAT4X4             m_normalToWorldTransform;
