@@ -43,6 +43,10 @@ namespace TrackedUltrasound
         previousTask.wait();
         m_cursorSound->SetEnvironment( HrtfEnvironment::Small );
       }
+      catch ( Platform::Exception^ e )
+      {
+        OutputDebugStringW( e->Message->Data() );
+      }
       catch ( const std::exception& e )
       {
         OutputDebugStringA( e.what() );
@@ -67,65 +71,36 @@ namespace TrackedUltrasound
 
     m_holographicSpace = holographicSpace;
 
-    // Initialize the renderers
+    // Initialize the system components
     m_gazeCursorRenderer = std::make_unique<GazeCursorRenderer>( m_deviceResources );
-
     m_spatialInputHandler = std::make_unique<SpatialInputHandler>();
-
     m_spatialSurfaceApi = std::make_unique<SpatialSurfaceAPI>( m_deviceResources );
 
     // Use the default SpatialLocator to track the motion of the device.
     m_locator = SpatialLocator::GetDefault();
 
-    // Be able to respond to changes in the positional tracking state.
     m_locatabilityChangedToken =
       m_locator->LocatabilityChanged +=
         ref new Windows::Foundation::TypedEventHandler<SpatialLocator^, Object^>(
           std::bind( &TrackedUltrasoundMain::OnLocatabilityChanged, this, _1, _2 )
         );
 
-    // Respond to camera added events by creating any resources that are specific
-    // to that camera, such as the back buffer render target view.
-    // When we add an event handler for CameraAdded, the API layer will avoid putting
-    // the new camera in new HolographicFrames until we complete the deferral we created
-    // for that handler, or return from the handler without creating a deferral. This
-    // allows the app to take more than one frame to finish creating resources and
-    // loading assets for the new holographic camera.
-    // This function should be registered before the app creates any HolographicFrames.
     m_cameraAddedToken =
       m_holographicSpace->CameraAdded +=
         ref new Windows::Foundation::TypedEventHandler<HolographicSpace^, HolographicSpaceCameraAddedEventArgs^>(
           std::bind( &TrackedUltrasoundMain::OnCameraAdded, this, _1, _2 )
         );
 
-    // Respond to camera removed events by releasing resources that were created for that
-    // camera.
-    // When the app receives a CameraRemoved event, it releases all references to the back
-    // buffer right away. This includes render target views, Direct2D target bitmaps, and so on.
-    // The app must also ensure that the back buffer is not attached as a render target, as
-    // shown in DeviceResources::ReleaseResourcesForBackBuffer.
     m_cameraRemovedToken =
       m_holographicSpace->CameraRemoved +=
         ref new Windows::Foundation::TypedEventHandler<HolographicSpace^, HolographicSpaceCameraRemovedEventArgs^>(
           std::bind( &TrackedUltrasoundMain::OnCameraRemoved, this, _1, _2 )
         );
 
-    // The simplest way to render world-locked holograms is to create a stationary reference frame
-    // when the app is launched. This is roughly analogous to creating a "world" coordinate system
-    // with the origin placed at the device's position as the app is launched.
-    m_referenceFrame = m_locator->CreateStationaryFrameOfReferenceAtCurrentLocation();
+    m_attachedReferenceFrame = m_locator->CreateAttachedFrameOfReferenceAtCurrentHeading();
+    m_stationaryReferenceFrame = m_locator->CreateStationaryFrameOfReferenceAtCurrentLocation();
 
-    // Notes on spatial tracking APIs:
-    // * Stationary reference frames are designed to provide a best-fit position relative to the
-    //   overall space. Individual positions within that reference frame are allowed to drift slightly
-    //   as the device learns more about the environment.
-    // * When precise placement of individual holograms is required, a SpatialAnchor should be used to
-    //   anchor the individual hologram to a position in the real world - for example, a point the user
-    //   indicates to be of special interest. Anchor positions do not drift, but can be corrected; the
-    //   anchor will use the corrected position starting in the next frame after the correction has
-    //   occurred.
-
-    m_spatialSurfaceApi->InitializeSurfaceObserver( m_referenceFrame->CoordinateSystem );
+    m_spatialSurfaceApi->InitializeSurfaceObserver( m_stationaryReferenceFrame->CoordinateSystem );
   }
 
   //----------------------------------------------------------------------------
@@ -158,27 +133,12 @@ namespace TrackedUltrasound
   // Updates the application state once per frame.
   HolographicFrame^ TrackedUltrasoundMain::Update()
   {
-    // Before doing the timer update, there is some work to do per-frame
-    // to maintain holographic rendering. First, we will get information
-    // about the current frame.
-
-    // The HolographicFrame has information that the app needs in order
-    // to update and render the current frame. The app begins each new
-    // frame by calling CreateNextFrame.
     HolographicFrame^ holographicFrame = m_holographicSpace->CreateNextFrame();
-
-    // Get a prediction of where holographic cameras will be when this frame
-    // is presented.
     HolographicFramePrediction^ prediction = holographicFrame->CurrentPrediction;
 
-    // Back buffers can change from frame to frame. Validate each buffer, and recreate
-    // resource views and depth buffers as needed.
     m_deviceResources->EnsureCameraResources( holographicFrame, prediction );
 
-    // Next, we get a coordinate system from the attached frame of reference that is
-    // associated with the current frame. Later, this coordinate system is used for
-    // for creating the stereo view matrices when rendering the sample content.
-    SpatialCoordinateSystem^ currentCoordinateSystem = m_referenceFrame->CoordinateSystem;
+    SpatialCoordinateSystem^ currentCoordinateSystem = m_attachedReferenceFrame->GetStationaryCoordinateSystemAtTimestamp( prediction->Timestamp );
 
     // Check for new input state since the last frame.
     SpatialInteractionSourceState^ pointerState = m_spatialInputHandler->CheckForPressedInput();
@@ -188,36 +148,34 @@ namespace TrackedUltrasound
       m_cursorSound->StartOnce();
     }
 
+    // Time-based updates
     m_timer.Tick( [&]()
     {
-      // Put time-based updates here. By default this code will run once per frame,
-      // but if you change the StepTimer to use a fixed time step this code will
-      // run as many times as needed to get to the current step.
-      if ( pointerState != nullptr )
+      m_cursorSound->Update( m_timer );
+      m_spatialSurfaceApi->Update( m_timer, currentCoordinateSystem );
+
+      // Update the gaze vector in the gaze renderer
+      if ( m_gazeCursorRenderer->IsCursorEnabled() )
       {
-        m_gazeCursorRenderer->Update( m_timer, pointerState->TryGetPointerPose( currentCoordinateSystem ) );
+        SpatialPointerPose^ pose = SpatialPointerPose::TryGetAtTimestamp( currentCoordinateSystem, prediction->Timestamp );
+        const float3 position = pose->Head->Position;
+        const float3 direction = pose->Head->ForwardDirection;
+
+        std::vector<float> outHitPosition;
+        std::vector<float> outHitNormal;
+        bool hit = m_spatialSurfaceApi->TestRayIntersection( position, direction, outHitPosition, outHitNormal );
+
+        if ( hit )
+        {
+          m_gazeCursorRenderer->Update( &outHitPosition.front(), &outHitNormal.front() );
+        }
       }
-      m_cursorSound->Update(m_timer);
-      m_spatialSurfaceApi->Update(m_timer, currentCoordinateSystem);
     } );
 
-    // We complete the frame update by using information about our content positioning
-    // to set the focus point.
-
+    // We complete the frame update by using information about our content positioning to set the focus point.
     for ( auto cameraPose : prediction->CameraPoses )
     {
-      // The HolographicCameraRenderingParameters class provides access to set
-      // the image stabilization parameters.
       HolographicCameraRenderingParameters^ renderingParameters = holographicFrame->GetRenderingParameters( cameraPose );
-
-      // SetFocusPoint informs the system about a specific point in your scene to
-      // prioritize for image stabilization. The focus point is set independently
-      // for each holographic camera.
-      // You should set the focus point near the content that the user is looking at.
-      // In this example, we put the focus point at the center of the sample hologram,
-      // since that is the only hologram available for the user to focus on.
-      // You can also set the relative velocity and facing of that content; the sample
-      // hologram is at a fixed point so we only need to indicate its position.
 
       if ( m_gazeCursorRenderer->IsCursorEnabled() )
       {
@@ -240,8 +198,6 @@ namespace TrackedUltrasound
       }
     }
 
-    // The holographic frame will be used to get up-to-date view and projection matrices and
-    // to present the swap chain.
     return holographicFrame;
   }
 
@@ -266,6 +222,9 @@ namespace TrackedUltrasound
       holographicFrame->UpdateCurrentPrediction();
       HolographicFramePrediction^ prediction = holographicFrame->CurrentPrediction;
 
+      SpatialCoordinateSystem^ currentCoordinateSystem =
+        m_attachedReferenceFrame->GetStationaryCoordinateSystemAtTimestamp( prediction->Timestamp );
+
       bool atLeastOneCameraRendered = false;
       for ( auto cameraPose : prediction->CameraPoses )
       {
@@ -287,13 +246,13 @@ namespace TrackedUltrasound
         // The view and projection matrices for each holographic camera will change
         // every frame. This function refreshes the data in the constant buffer for
         // the holographic camera indicated by cameraPose.
-        pCameraResources->UpdateViewProjectionBuffer( m_deviceResources, cameraPose, m_referenceFrame->CoordinateSystem );
+        pCameraResources->UpdateViewProjectionBuffer( m_deviceResources, cameraPose, currentCoordinateSystem );
         bool activeCamera = pCameraResources->AttachViewProjectionBuffer( m_deviceResources );
 
         // Only render world-locked content when positional tracking is active.
 
         // Draw the gaze cursor if it's active
-        if ( activeCamera && m_locatability == Windows::Perception::Spatial::SpatialLocatability::PositionalTrackingActive )
+        if ( m_gazeCursorRenderer->IsCursorEnabled() && activeCamera && m_locatability == Windows::Perception::Spatial::SpatialLocatability::PositionalTrackingActive )
         {
           m_gazeCursorRenderer->Render();
         }

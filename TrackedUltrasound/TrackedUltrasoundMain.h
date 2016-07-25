@@ -81,7 +81,10 @@ namespace TrackedUltrasound
     Windows::Perception::Spatial::SpatialLocator^ m_locator;
 
     // A reference frame attached to the holographic camera.
-    Windows::Perception::Spatial::SpatialStationaryFrameOfReference^ m_referenceFrame;
+    Windows::Perception::Spatial::SpatialLocatorAttachedFrameOfReference^ m_attachedReferenceFrame;
+
+    // A reference frame placed in the environment.
+    Windows::Perception::Spatial::SpatialStationaryFrameOfReference^      m_stationaryReferenceFrame;
 
     // Event registration tokens.
     Windows::Foundation::EventRegistrationToken m_cameraAddedToken;

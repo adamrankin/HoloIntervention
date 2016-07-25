@@ -16,13 +16,21 @@
 #include "SpatialSurfaceCollection.h"
 #include "StepTimer.h"
 
+// Windows includes
+#include <comdef.h>
+
+// STL includes
+#include <sstream>
+
 using namespace Concurrency;
 using namespace DX;
+using namespace Platform;
 using namespace Windows::Foundation::Collections;
 using namespace Windows::Foundation::Numerics;
-using namespace Windows::Perception::Spatial;
+using namespace Windows::Foundation::Numerics;
+using namespace Windows::Graphics::DirectX;
 using namespace Windows::Perception::Spatial::Surfaces;
-using namespace Platform;
+using namespace Windows::Perception::Spatial;
 
 namespace TrackedUltrasound
 {
@@ -36,7 +44,37 @@ namespace TrackedUltrasound
 
       auto createTask = CreateComputeShaderAsync( L"ms-appx:///CSRayTriangleIntersection.cso", deviceResources->GetD3DDevice(), &m_d3d11ComputeShader );
       m_shaderLoadTask = std::make_unique< concurrency::task<HRESULT> >( createTask );
+      m_shaderLoadTask->then( [&]( concurrency::task<HRESULT> previousTask )
+      {
+        try
+        {
+          auto hr = previousTask.get();
+          if ( FAILED( hr ) )
+          {
+            _com_error err( hr, NULL );
+            LPCTSTR errMsg = err.ErrorMessage();
+            std::stringstream ss;
+            ss << "Unable to load shader: " << errMsg << ".";
+            OutputDebugStringA( ss.str().c_str() );
+          }
+        }
+        catch ( Platform::Exception^ e )
+        {
+          OutputDebugStringW( e->Message->Data() );
+        }
+        catch ( const std::exception& e )
+        {
+          OutputDebugStringA( e.what() );
+        }
+      } );
     };
+
+    //----------------------------------------------------------------------------
+    SpatialSurfaceCollection::~SpatialSurfaceCollection()
+    {
+      SAFE_RELEASE( m_constantBuffer );
+      SAFE_RELEASE( m_d3d11ComputeShader );
+    }
 
     //----------------------------------------------------------------------------
     // Called once per frame, maintains and updates the mesh collection.
@@ -70,24 +108,44 @@ namespace TrackedUltrasound
       };
     }
 
-    //--------------------------------------------------------------------------------------
-    void SpatialSurfaceCollection::SetConstants( ID3D11DeviceContext* context, const std::vector<double>& rayOrigin, const std::vector<double>& rayDirection )
+    //----------------------------------------------------------------------------
+    void SpatialSurfaceCollection::AddSurface( Guid id, SpatialSurfaceInfo^ newSurface, SpatialSurfaceMeshOptions^ meshOptions )
     {
-      ConstantBuffer cb;
-      context->UpdateSubresource( m_constantBuffer.Get(), 0, nullptr, &cb, 0, 0 );
-      context->CSSetConstantBuffers( 0, 1, &m_constantBuffer );
+      AddOrUpdateSurfaceAsync( id, newSurface, meshOptions ).then( [&]( concurrency::task<void> previousTask )
+      {
+        try
+        {
+          previousTask.wait();
+        }
+        catch ( Platform::Exception^ e )
+        {
+          OutputDebugStringW( e->Message->Data() );
+        }
+        catch ( const std::exception& e )
+        {
+          OutputDebugStringA( e.what() );
+        }
+      } );
     }
 
     //----------------------------------------------------------------------------
-    void SpatialSurfaceCollection::AddSurface( Guid id, SpatialSurfaceInfo^ newSurface )
+    void SpatialSurfaceCollection::UpdateSurface( Guid id, SpatialSurfaceInfo^ newSurface, SpatialSurfaceMeshOptions^ meshOptions )
     {
-      AddOrUpdateSurfaceAsync( id, newSurface );
-    }
-
-    //----------------------------------------------------------------------------
-    void SpatialSurfaceCollection::UpdateSurface( Guid id, SpatialSurfaceInfo^ newSurface )
-    {
-      AddOrUpdateSurfaceAsync( id, newSurface );
+      AddOrUpdateSurfaceAsync( id, newSurface, meshOptions ).then( [&]( concurrency::task<void> previousTask )
+      {
+        try
+        {
+          previousTask.wait();
+        }
+        catch ( Platform::Exception^ e )
+        {
+          OutputDebugStringW( e->Message->Data() );
+        }
+        catch ( const std::exception& e )
+        {
+          OutputDebugStringA( e.what() );
+        }
+      } );
     }
 
     //----------------------------------------------------------------------------
@@ -100,7 +158,8 @@ namespace TrackedUltrasound
       constant_buffer_desc.Usage = D3D11_USAGE_DEFAULT;
       constant_buffer_desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
       constant_buffer_desc.CPUAccessFlags = 0;
-      auto hr = device->CreateBuffer( &constant_buffer_desc, nullptr, m_constantBuffer.GetAddressOf() );
+
+      auto hr = device->CreateBuffer( &constant_buffer_desc, nullptr, &m_constantBuffer );
       if ( FAILED( hr ) )
       {
         return hr;
@@ -114,16 +173,14 @@ namespace TrackedUltrasound
     }
 
     //----------------------------------------------------------------------------
-    Concurrency::task<void> SpatialSurfaceCollection::AddOrUpdateSurfaceAsync( Guid id, SpatialSurfaceInfo^ newSurface )
+    Concurrency::task<void> SpatialSurfaceCollection::AddOrUpdateSurfaceAsync( Guid id, SpatialSurfaceInfo^ newSurface, SpatialSurfaceMeshOptions^ meshOptions )
     {
-      auto options = ref new SpatialSurfaceMeshOptions();
-      options->IncludeVertexNormals = true;
-
       // The level of detail setting is used to limit mesh complexity, by limiting the number
       // of triangles per cubic meter.
-      auto createMeshTask = create_task( newSurface->TryComputeLatestMeshAsync( m_maxTrianglesPerCubicMeter, options ) );
-      auto processMeshTask = createMeshTask.then( [this, id]( SpatialSurfaceMesh ^ mesh )
+      auto createMeshTask = create_task( newSurface->TryComputeLatestMeshAsync( m_maxTrianglesPerCubicMeter, meshOptions ) );
+      auto processMeshTask = createMeshTask.then( [this, id]( concurrency::task<SpatialSurfaceMesh^> meshTask )
       {
+        auto mesh = meshTask.get();
         if ( mesh != nullptr )
         {
           std::lock_guard<std::mutex> guard( m_meshCollectionLock );
@@ -152,7 +209,7 @@ namespace TrackedUltrasound
     }
 
     //----------------------------------------------------------------------------
-    bool SpatialSurfaceCollection::TestRayIntersection( const DX::StepTimer& timer, const std::vector<double>& origin, const std::vector<double>& direction, std::vector<double>& outResult )
+    bool SpatialSurfaceCollection::TestRayIntersection( uint64_t frameNumber, const float3 rayOrigin, const float3 rayDirection, std::vector<float>& outHitPosition, std::vector<float>& outHitNormal )
     {
       if ( !m_shaderLoaded )
       {
@@ -164,23 +221,23 @@ namespace TrackedUltrasound
         }
       }
 
-      m_deviceResources->GetD3DDeviceContext()->CSSetShader( m_d3d11ComputeShader.Get(), nullptr, 0 );
+      m_deviceResources->GetD3DDeviceContext()->CSSetShader( m_d3d11ComputeShader, nullptr, 0 );
 
-      SetConstants( m_deviceResources->GetD3DDeviceContext(), origin, direction );
-
-      // TODO : implement pre-check using OBB
+      bool result( false );
       for ( auto& pair : m_meshCollection )
       {
-        if ( pair.second.TestRayIntersection( *m_deviceResources->GetD3DDeviceContext(), *( m_d3d11ComputeShader.Get() ), timer, outResult ) )
+        pair.second.SetRayConstants( m_deviceResources->GetD3DDeviceContext(), m_constantBuffer, rayOrigin, rayDirection );
+
+        if ( pair.second.TestRayIntersection( *m_deviceResources->GetD3DDevice(), *m_deviceResources->GetD3DDeviceContext(), *m_d3d11ComputeShader, frameNumber, outHitPosition, outHitNormal ) )
         {
-          return true;
+          result = true;
+          break;
         }
       }
 
       m_deviceResources->GetD3DDeviceContext()->CSSetShader( nullptr, nullptr, 0 );
 
-      ID3D11Buffer* ppCBnullptr[1] = { nullptr };
-      m_deviceResources->GetD3DDeviceContext()->CSSetConstantBuffers( 0, 1, ppCBnullptr );
+      return result;
     }
 
     //----------------------------------------------------------------------------
@@ -211,15 +268,26 @@ namespace TrackedUltrasound
           return E_INVALIDARG;
         }
 
-        HRESULT hr = pDevice->CreateComputeShader( &data.front(), data.size(), nullptr, ppShaderOut );
+        auto hr = pDevice->CreateComputeShader( &data.front(), data.size(), nullptr, ppShaderOut );
+
+        if ( FAILED( hr ) )
+        {
+          throw std::exception( "Unable to create compute shader. Aborting." );
+        }
 
 #if defined(_DEBUG) || defined(PROFILE)
         if ( SUCCEEDED( hr ) )
         {
           ( *ppShaderOut )->SetPrivateData( WKPDID_D3DDebugObjectName, strlen( "main" ) - 1, "main" );
         }
-
 #endif
+
+        hr = CreateConstantBuffer( pDevice );
+
+        if ( FAILED( hr ) || m_constantBuffer == NULL )
+        {
+          throw std::exception( "Unable to create constant buffer. Aborting." );
+        }
 
         m_shaderLoaded = true;
 

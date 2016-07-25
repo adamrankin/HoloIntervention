@@ -92,10 +92,10 @@
     <ClInclude Include="Content\SpatialMapping\SpatialSurfaceCollection.h">
       <Filter>Content\SpatialMapping</Filter>
     </ClInclude>
-    <ClInclude Include="Content\SpatialMapping\GetDataFromIBuffer.h">
+    <ClInclude Include="Content\SpatialMapping\SpatialSurfaceAPI.h">
       <Filter>Content\SpatialMapping</Filter>
     </ClInclude>
-    <ClInclude Include="Content\SpatialMapping\SpatialSurfaceAPI.h">
+    <ClInclude Include="Content\SpatialMapping\GetDataFromIBuffer.h">
       <Filter>Content\SpatialMapping</Filter>
     </ClInclude>
   </ItemGroup>

@@ -16,6 +16,7 @@
 #include "GetDataFromIBuffer.h"
 #include "StepTimer.h"
 #include "SurfaceMesh.h"
+#include "SpatialSurfaceCollection.h"
 
 // winrt includes
 #include <ppltasks.h>
@@ -28,10 +29,6 @@ using namespace Windows::Perception::Spatial;
 using namespace Windows::Perception::Spatial::Surfaces;
 using namespace Windows::Foundation::Numerics;
 
-#ifndef SAFE_RELEASE
-#define SAFE_RELEASE(p)      { if (p) { (p)->Release(); (p)=nullptr; } }
-#endif
-
 namespace TrackedUltrasound
 {
   namespace Spatial
@@ -39,18 +36,17 @@ namespace TrackedUltrasound
     //----------------------------------------------------------------------------
     SurfaceMesh::SurfaceMesh()
     {
-      std::lock_guard<std::mutex> lock( m_meshResourcesMutex );
-
-      ReleaseDeviceDependentResources();
       m_lastUpdateTime.UniversalTime = 0;
     }
 
     //----------------------------------------------------------------------------
     SurfaceMesh::~SurfaceMesh()
     {
-      std::lock_guard<std::mutex> lock( m_meshResourcesMutex );
-
       ReleaseDeviceDependentResources();
+
+      std::lock_guard<std::mutex> lock( m_meshResourcesMutex );
+      SAFE_RELEASE( m_outputUAV );
+      SAFE_RELEASE( m_outputBuffer );
     }
 
     //----------------------------------------------------------------------------
@@ -58,18 +54,20 @@ namespace TrackedUltrasound
     {
       m_surfaceMesh = surfaceMesh;
 
-      auto updateTask = UpdateDeviceBasedResourcesAsync( device );
-    }
-
-    //----------------------------------------------------------------------------
-    concurrency::task<void> SurfaceMesh::UpdateDeviceBasedResourcesAsync( ID3D11Device* device )
-    {
-      return concurrency::create_task( [ = ]()
+      auto updateTask = UpdateDeviceBasedResourcesAsync( device ).then( [&]( concurrency::task<void> previousTask )
       {
-        std::lock_guard<std::mutex> lock( m_meshResourcesMutex );
-
-        ReleaseDeviceDependentResources();
-        CreateDeviceDependentResources( device );
+        try
+        {
+          previousTask.wait();
+        }
+        catch ( Platform::Exception^ e )
+        {
+          OutputDebugStringW( e->Message->Data() );
+        }
+        catch ( const std::exception& e )
+        {
+          OutputDebugStringA( e.what() );
+        }
       } );
     }
 
@@ -82,6 +80,8 @@ namespace TrackedUltrasound
         // Not yet ready.
         m_isActive = false;
       }
+
+      std::lock_guard<std::mutex> lock( m_meshResourcesMutex );
 
       // If the surface is active this frame, we need to update its transform.
       XMMATRIX transform;
@@ -133,27 +133,6 @@ namespace TrackedUltrasound
       );
     }
 
-    //--------------------------------------------------------------------------------------
-    void SurfaceMesh::RunComputeShader( ID3D11DeviceContext& context,
-                                        ID3D11ComputeShader& computeShader,
-                                        uint32 nNumViews, ID3D11ShaderResourceView** pShaderResourceViews,
-                                        ID3D11UnorderedAccessView* pUnorderedAccessView,
-                                        uint32 Xthreads,
-                                        uint32 Ythreads,
-                                        uint32 Zthreads )
-    {
-      context.CSSetShaderResources( 0, nNumViews, pShaderResourceViews );
-      context.CSSetUnorderedAccessViews( 0, 1, &pUnorderedAccessView, nullptr );
-
-      context.Dispatch( Xthreads, Ythreads, Zthreads );
-
-      ID3D11UnorderedAccessView* ppUAViewnullptr[1] = { nullptr };
-      context.CSSetUnorderedAccessViews( 0, 1, ppUAViewnullptr, nullptr );
-
-      ID3D11ShaderResourceView* ppSRVnullptr[2] = { nullptr, nullptr };
-      context.CSSetShaderResources( 0, 2, ppSRVnullptr );
-    }
-
     //----------------------------------------------------------------------------
     void SurfaceMesh::CreateVertexResources( ID3D11Device* device )
     {
@@ -163,30 +142,57 @@ namespace TrackedUltrasound
         return;
       }
 
-      m_indexCount = m_surfaceMesh->TriangleIndices->ElementCount;
-
-      if ( m_indexCount < 3 )
       {
-        m_isActive = false;
-        return;
+        std::lock_guard<std::mutex> lock( m_meshResourcesMutex );
+        m_indexCount = m_surfaceMesh->TriangleIndices->ElementCount;
+
+        if ( m_indexCount < 3 )
+        {
+          m_isActive = false;
+          return;
+        }
       }
 
       // Surface mesh resources are created off-thread
-      auto taskOptions = Concurrency::task_options();
       auto task = concurrency::create_task( [this, device]()
       {
-        Windows::Storage::Streams::IBuffer^ positions = m_surfaceMesh->VertexPositions->Data;
-        Windows::Storage::Streams::IBuffer^ normals = m_surfaceMesh->VertexNormals->Data;
-        Windows::Storage::Streams::IBuffer^ indices = m_surfaceMesh->TriangleIndices->Data;
+        std::lock_guard<std::mutex> lock( m_meshResourcesMutex );
 
-        CreateStructuredBuffer( device, sizeof( InputBufferType ), positions, m_meshBuffer.GetAddressOf() );
-        CreateStructuredBuffer( device, sizeof( InputBufferType ), indices, m_indexBuffer.GetAddressOf() );
-        CreateStructuredBuffer( device, sizeof( OutputBufferType ), 1, m_outputBuffer.GetAddressOf() );
+        SpatialSurfaceMeshBuffer^ positions = m_surfaceMesh->VertexPositions;
+        SpatialSurfaceMeshBuffer^ indices = m_surfaceMesh->TriangleIndices;
+
+        auto hr = CreateStructuredBuffer( device, sizeof( VertexBufferType ), positions, &m_vertexPositionBuffer );
+        if ( FAILED( hr ) || m_vertexPositionBuffer == NULL )
+        {
+          throw std::exception( "Unable to create vertex position buffer." );
+        }
+
+        hr = CreateStructuredBuffer( device, sizeof( IndexBufferType ), indices, &m_indexBuffer );
+        if ( FAILED( hr ) || m_indexBuffer == NULL )
+        {
+          throw std::exception( "Unable to create index buffer." );
+        }
+
+        if ( m_outputBuffer == NULL )
+        {
+          // Prevent multiple allocations, the output buffer never changes, so don't delete/recreate it
+          hr = CreateStructuredBuffer( device, sizeof( OutputBufferType ), 1, &m_outputBuffer );
+          if ( FAILED( hr ) || m_outputBuffer == NULL )
+          {
+            throw std::exception( "Unable to create output result buffer." );
+          }
+
+          hr = CreateReadbackBuffer( device, sizeof( OutputBufferType ), 1, &m_readBackBuffer );
+          if ( FAILED( hr ) || m_readBackBuffer == NULL )
+          {
+            throw std::exception( "Unable to create readback buffer." );
+          }
+        }
 
 #if defined(_DEBUG) || defined(PROFILE)
-        if ( m_meshBuffer )
+        if ( m_vertexPositionBuffer )
         {
-          m_meshBuffer->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "MeshBuffer" ) - 1, "MeshBuffer" );
+          m_vertexPositionBuffer->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "MeshBuffer" ) - 1, "MeshBuffer" );
         }
         if ( m_indexBuffer )
         {
@@ -196,11 +202,29 @@ namespace TrackedUltrasound
         {
           m_outputBuffer->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "OutputBuffer" ) - 1, "OutputBuffer" );
         }
+        if ( m_readBackBuffer )
+        {
+          m_readBackBuffer->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "ReadbackBuffer" ) - 1, "ReadbackBuffer" );
+        }
 #endif
 
-        CreateBufferSRV( device, m_meshBuffer.Get(), &m_meshSRV );
-        CreateBufferSRV( device, m_indexBuffer.Get(), &m_indexSRV );
-        CreateBufferUAV( device, m_outputBuffer.Get(), &m_outputUAV );
+        hr = CreateBufferSRV( *device, *m_vertexPositionBuffer, positions, &m_meshSRV );
+        if ( FAILED( hr ) || m_meshSRV == NULL )
+        {
+          throw std::exception( "Unable to create position shader resource view." );
+        }
+
+        hr = CreateBufferSRV( *device, *m_indexBuffer, indices, &m_indexSRV );
+        if ( FAILED( hr ) || m_indexSRV == NULL )
+        {
+          throw std::exception( "Unable to create index shader resource view." );
+        }
+
+        CreateBufferUAV( *device, *m_outputBuffer, &m_outputUAV );
+        if ( FAILED( hr ) || m_outputUAV == NULL )
+        {
+          throw std::exception( "Unable to create output access view." );
+        }
 
 #if defined(_DEBUG) || defined(PROFILE)
         if ( m_meshSRV )
@@ -226,11 +250,15 @@ namespace TrackedUltrasound
         {
           previousTask.wait();
         }
+        catch ( Platform::Exception^ e )
+        {
+          OutputDebugStringW( e->Message->Data() );
+          m_loadingComplete = false;
+        }
         catch ( const std::exception& e )
         {
           OutputDebugStringA( e.what() );
           m_loadingComplete = false;
-          return;
         }
       } );
     }
@@ -244,18 +272,168 @@ namespace TrackedUltrasound
     //----------------------------------------------------------------------------
     void SurfaceMesh::ReleaseVertexResources()
     {
-      m_meshSRV = nullptr;
-      m_indexSRV = nullptr;
-      m_outputUAV = nullptr;
-      m_meshBuffer = nullptr;
-      m_indexBuffer = nullptr;
-      m_outputBuffer = nullptr;
+      std::lock_guard<std::mutex> lock( m_meshResourcesMutex );
+
+      SAFE_RELEASE( m_meshSRV );
+      SAFE_RELEASE( m_indexSRV );
+      SAFE_RELEASE( m_outputUAV );
+      SAFE_RELEASE( m_vertexPositionBuffer );
+      SAFE_RELEASE( m_indexBuffer );
+    }
+
+    //----------------------------------------------------------------------------
+    void SurfaceMesh::ReleaseDeviceDependentResources()
+    {
+      // Clear out active resources.
+      ReleaseVertexResources();
+
+      m_loadingComplete = false;
+    }
+
+    //----------------------------------------------------------------------------
+    bool SurfaceMesh::TestRayIntersection( ID3D11Device& device,
+                                           ID3D11DeviceContext& context,
+                                           ID3D11ComputeShader& computeShader,
+                                           uint64_t frameNumber,
+                                           std::vector<float>& outHitPosition,
+                                           std::vector<float>& outHitNormal )
+    {
+      {
+        std::lock_guard<std::mutex> lock( m_meshResourcesMutex );
+        outHitPosition.clear();
+        outHitNormal.clear();
+
+        if ( frameNumber == m_lastFrameNumberComputed )
+        {
+          // Asked twice in the same frame, return the cached result
+          std::copy( m_rayIntersectionResults.begin(), m_rayIntersectionResults.begin() + 3, outHitPosition.begin() );
+          std::copy( m_rayIntersectionResults.begin() + 2, m_rayIntersectionResults.end(), outHitNormal.begin() );
+          return m_hasLastComputedHit;
+        }
+
+        // TODO : implement pre-check using OBB
+
+        ID3D11ShaderResourceView* aRViews[2] = { m_meshSRV, m_indexSRV };
+        // Send in the number of triangles as the number of thread groups to dispatch
+        // triangleCount = m_indexCount/3
+        RunComputeShader( context, computeShader, 2, aRViews, m_outputUAV, m_indexCount / 3, 1, 1 );
+
+        context.CopyResource( m_readBackBuffer, m_outputBuffer );
+      }
+
+      D3D11_MAPPED_SUBRESOURCE MappedResource;
+      OutputBufferType* result;
+      context.Map( m_readBackBuffer, 0, D3D11_MAP_READ, 0, &MappedResource );
+
+      result = ( OutputBufferType* )MappedResource.pData;
+
+      context.Unmap( m_readBackBuffer, 0 );
+
+      m_lastFrameNumberComputed = frameNumber;
+      m_rayIntersectionResults.clear();
+
+      auto pointVec = XMLoadFloat3( &XMFLOAT3( result->intersectionPoint[0], result->intersectionPoint[1], result->intersectionPoint[2] ) );
+      auto transformedPointVec = XMVector3Transform( pointVec, XMLoadFloat4x4( &m_meshToWorldTransform ) );
+      XMFLOAT3 pointOut;
+      XMStoreFloat3( &pointOut, transformedPointVec );
+
+      m_rayIntersectionResults.push_back( pointOut.x );
+      m_rayIntersectionResults.push_back( pointOut.y );
+      m_rayIntersectionResults.push_back( pointOut.z );
+
+      auto normalVec = XMLoadFloat3( &XMFLOAT3( result->intersectionNormal[0], result->intersectionNormal[1], result->intersectionNormal[2] ) );
+      auto transformedNormalVec = XMVector3Transform( normalVec, XMLoadFloat4x4( &m_meshToWorldTransform ) );
+      XMFLOAT3 normalOut;
+      XMStoreFloat3( &normalOut, transformedNormalVec );
+
+      m_rayIntersectionResults.push_back( normalOut.x );
+      m_rayIntersectionResults.push_back( normalOut.y );
+      m_rayIntersectionResults.push_back( normalOut.z );
+
+      if ( result->intersectionPoint[0] != 0.0f || result->intersectionPoint[1] != 0.0f || result->intersectionPoint[2] != 0.0f ||
+           result->intersectionNormal[0] != 0.0f || result->intersectionNormal[1] != 0.0f || result->intersectionNormal[2] != 0.0f )
+      {
+        outHitPosition.push_back( pointOut.x );
+        outHitPosition.push_back( pointOut.y );
+        outHitPosition.push_back( pointOut.z );
+        outHitNormal.push_back( normalOut.x );
+        outHitNormal.push_back( normalOut.y );
+        outHitNormal.push_back( normalOut.z );
+
+        m_hasLastComputedHit = true;
+        return true;
+      }
+
+      m_hasLastComputedHit = false;
+      return false;
+    }
+
+    //----------------------------------------------------------------------------
+    const bool& SurfaceMesh::GetIsActive() const
+    {
+      return m_isActive;
+    }
+
+    //----------------------------------------------------------------------------
+    const float& SurfaceMesh::GetLastActiveTime() const
+    {
+      return m_lastActiveTime;
+    }
+
+    //----------------------------------------------------------------------------
+    const Windows::Foundation::DateTime& SurfaceMesh::GetLastUpdateTime() const
+    {
+      return m_lastUpdateTime;
+    }
+
+    //----------------------------------------------------------------------------
+    void SurfaceMesh::SetIsActive( const bool& isActive )
+    {
+      m_isActive = isActive;
+    }
+
+    //----------------------------------------------------------------------------
+    void SurfaceMesh::SetRayConstants( ID3D11DeviceContext* context, ID3D11Buffer* constantBuffer, const float3 rayOrigin, const float3 rayDirection )
+    {
+      // Ray constants are in world coordinate system, transform them to mesh coordinate system by multiplying by inverse of m_meshToWorld
+      auto worldToMesh = XMMatrixInverse( NULL, XMLoadFloat4x4( &m_meshToWorldTransform ) );
+
+      auto rayOriginVec = XMLoadFloat3( &XMFLOAT3( rayOrigin.x, rayOrigin.y, rayOrigin.z ) );
+      auto transformedOriginVec = XMVector3Transform( rayOriginVec, worldToMesh );
+      XMFLOAT3 originOut;
+      XMStoreFloat3( &originOut, transformedOriginVec );
+
+      auto rayDirectionVec = XMLoadFloat3( &XMFLOAT3( rayDirection.x, rayDirection.y, rayDirection.z ) );
+      auto transformedDirectionVec = XMVector3Transform(rayDirectionVec, worldToMesh );
+      XMFLOAT3 dirOut;
+      XMStoreFloat3( &dirOut, transformedDirectionVec );
+
+      SpatialSurfaceCollection::ConstantBuffer cb;
+      cb.rayOrigin[0] = originOut.x;
+      cb.rayOrigin[1] = originOut.y;
+      cb.rayOrigin[2] = originOut.z;
+      cb.rayDirection[0] = dirOut.x;
+      cb.rayDirection[1] = dirOut.y;
+      cb.rayDirection[2] = dirOut.z;
+
+      context->UpdateSubresource( constantBuffer, 0, nullptr, &cb, 0, 0 );
+      context->CSSetConstantBuffers( 0, 1, &constantBuffer );
+    }
+
+    //----------------------------------------------------------------------------
+    concurrency::task<void> SurfaceMesh::UpdateDeviceBasedResourcesAsync( ID3D11Device* device )
+    {
+      return concurrency::create_task( [ = ]()
+      {
+        ReleaseDeviceDependentResources();
+        CreateDeviceDependentResources( device );
+      } );
     }
 
     //--------------------------------------------------------------------------------------
     HRESULT SurfaceMesh::CreateStructuredBuffer( ID3D11Device* pDevice,
-        uint32 uElementSize,
-        IBuffer^ buffer,
+        uint32 uStructureSize,
+        SpatialSurfaceMeshBuffer^ buffer,
         ID3D11Buffer** ppBufOut )
     {
       *ppBufOut = nullptr;
@@ -263,11 +441,11 @@ namespace TrackedUltrasound
       D3D11_BUFFER_DESC desc;
       ZeroMemory( &desc, sizeof( desc ) );
       desc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
-      desc.ByteWidth = uElementSize * buffer->Length;
+      desc.ByteWidth = buffer->Data->Length;
       desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-      desc.StructureByteStride = uElementSize;
+      desc.StructureByteStride = uStructureSize;
 
-      D3D11_SUBRESOURCE_DATA bufferBytes = { TrackedUltrasound::GetDataFromIBuffer( buffer ), 0, 0 };
+      D3D11_SUBRESOURCE_DATA bufferBytes = { TrackedUltrasound::GetDataFromIBuffer( buffer->Data ), 0, 0 };
       return pDevice->CreateBuffer( &desc, &bufferBytes, ppBufOut );
     }
 
@@ -281,6 +459,7 @@ namespace TrackedUltrasound
 
       D3D11_BUFFER_DESC desc;
       ZeroMemory( &desc, sizeof( desc ) );
+      desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
       desc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
       desc.ByteWidth = uElementSize * uCount;
       desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
@@ -289,229 +468,85 @@ namespace TrackedUltrasound
       return pDevice->CreateBuffer( &desc, nullptr, ppBufOut );
     }
 
+    //----------------------------------------------------------------------------
+    HRESULT SurfaceMesh::CreateReadbackBuffer( ID3D11Device* pDevice, uint32 uElementSize, uint32 uCount, ID3D11Buffer** ppBufOut )
+    {
+      D3D11_BUFFER_DESC readback_buffer_desc;
+      ZeroMemory( &readback_buffer_desc, sizeof( readback_buffer_desc ) );
+      readback_buffer_desc.ByteWidth = uElementSize * uCount;
+      readback_buffer_desc.Usage = D3D11_USAGE_STAGING;
+      readback_buffer_desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+      readback_buffer_desc.StructureByteStride = uElementSize;
+
+      return pDevice->CreateBuffer( &readback_buffer_desc, nullptr, ppBufOut );
+    }
+
     //--------------------------------------------------------------------------------------
-    HRESULT SurfaceMesh::CreateBufferSRV( ID3D11Device* pDevice,
-                                          ID3D11Buffer* pBuffer,
+    HRESULT SurfaceMesh::CreateBufferSRV( ID3D11Device& device,
+                                          ID3D11Buffer& computeShaderBuffer,
+                                          SpatialSurfaceMeshBuffer^ buffer,
                                           ID3D11ShaderResourceView** ppSRVOut )
     {
       D3D11_BUFFER_DESC descBuf;
       ZeroMemory( &descBuf, sizeof( descBuf ) );
-      pBuffer->GetDesc( &descBuf );
+      computeShaderBuffer.GetDesc( &descBuf );
 
       D3D11_SHADER_RESOURCE_VIEW_DESC desc;
       ZeroMemory( &desc, sizeof( desc ) );
       desc.ViewDimension = D3D11_SRV_DIMENSION_BUFFEREX;
       desc.BufferEx.FirstElement = 0;
+      desc.Format = DXGI_FORMAT_UNKNOWN;
+      desc.BufferEx.NumElements = descBuf.ByteWidth / descBuf.StructureByteStride;
 
-      if ( descBuf.MiscFlags & D3D11_RESOURCE_MISC_BUFFER_STRUCTURED )
-      {
-        desc.Format = DXGI_FORMAT_UNKNOWN;
-        desc.BufferEx.NumElements = descBuf.ByteWidth / descBuf.StructureByteStride;
-      }
-      else
-      {
-        return E_INVALIDARG;
-      }
-
-      return pDevice->CreateShaderResourceView( pBuffer, &desc, ppSRVOut );
+      return device.CreateShaderResourceView( &computeShaderBuffer, &desc, ppSRVOut );
     }
 
     //--------------------------------------------------------------------------------------
-    HRESULT SurfaceMesh::CreateBufferUAV( ID3D11Device* pDevice,
-                                          ID3D11Buffer* pBuffer,
+    HRESULT SurfaceMesh::CreateBufferUAV( ID3D11Device& device,
+                                          ID3D11Buffer& computeShaderBuffer,
                                           ID3D11UnorderedAccessView** ppUAVOut )
     {
       D3D11_BUFFER_DESC descBuf;
       ZeroMemory( &descBuf, sizeof( descBuf ) );
-      pBuffer->GetDesc( &descBuf );
+      computeShaderBuffer.GetDesc( &descBuf );
 
       D3D11_UNORDERED_ACCESS_VIEW_DESC desc;
       ZeroMemory( &desc, sizeof( desc ) );
       desc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
       desc.Buffer.FirstElement = 0;
+      desc.Format = DXGI_FORMAT_UNKNOWN;
+      desc.Buffer.NumElements = descBuf.ByteWidth / descBuf.StructureByteStride;
 
-      if ( descBuf.MiscFlags & D3D11_RESOURCE_MISC_BUFFER_STRUCTURED )
-      {
-        desc.Format = DXGI_FORMAT_UNKNOWN;      // Format must be must be DXGI_FORMAT_UNKNOWN, when creating a View of a Structured Buffer
-        desc.Buffer.NumElements = descBuf.ByteWidth / descBuf.StructureByteStride;
-      }
-      else
-      {
-        return E_INVALIDARG;
-      }
-
-      return pDevice->CreateUnorderedAccessView( pBuffer, &desc, ppUAVOut );
+      return device.CreateUnorderedAccessView( &computeShaderBuffer, &desc, ppUAVOut );
     }
 
-    //----------------------------------------------------------------------------
-    void SurfaceMesh::ReleaseDeviceDependentResources()
+    //--------------------------------------------------------------------------------------
+    void SurfaceMesh::RunComputeShader( ID3D11DeviceContext& context,
+                                        ID3D11ComputeShader& computeShader,
+                                        uint32 nNumViews, ID3D11ShaderResourceView** pShaderResourceViews,
+                                        ID3D11UnorderedAccessView* pUnorderedAccessView,
+                                        uint32 xThreadGroups,
+                                        uint32 yThreadGroups,
+                                        uint32 zThreadGroups )
     {
-      // Clear out active resources.
-      ReleaseVertexResources();
+      OutputBufferType output;
+      context.UpdateSubresource( m_outputBuffer, 0, nullptr, &output, 0, 0 );
 
-      m_loadingComplete = false;
-    }
+      // Set the shaders resources
+      context.CSSetShaderResources( 0, nNumViews, pShaderResourceViews );
+      context.CSSetUnorderedAccessViews( 0, 1, &pUnorderedAccessView, nullptr );
 
-    //----------------------------------------------------------------------------
-    void SurfaceMesh::SetIsActive( const bool& isActive )
-    {
-      m_isActive = isActive;
-    }
+      // The total number of thread groups creates is x*y*z, the number of threads in a thread group is determined by numthreads(i,j,k) in the shader code
+      context.Dispatch( xThreadGroups, yThreadGroups, zThreadGroups );
 
-    //----------------------------------------------------------------------------
-    const Windows::Foundation::DateTime& SurfaceMesh::GetLastUpdateTime() const
-    {
-      return m_lastUpdateTime;
-    }
+      ID3D11UnorderedAccessView* ppUAViewnullptr[1] = { nullptr };
+      context.CSSetUnorderedAccessViews( 0, 1, ppUAViewnullptr, nullptr );
 
-    //----------------------------------------------------------------------------
-    const float& SurfaceMesh::GetLastActiveTime() const
-    {
-      return m_lastActiveTime;
-    }
+      ID3D11ShaderResourceView* ppSRVnullptr[2] = { nullptr, nullptr };
+      context.CSSetShaderResources( 0, 2, ppSRVnullptr );
 
-    //----------------------------------------------------------------------------
-    const bool& SurfaceMesh::GetIsActive() const
-    {
-      return m_isActive;
-    }
-
-    //----------------------------------------------------------------------------
-    concurrency::task<void> SurfaceMesh::ComputeAndStoreOBBAsync()
-    {
-      return concurrency::create_task( [&]()
-      {
-
-      } );
-
-      /*
-      // Compute an OBB from the list of points given. Return the corner point
-      // and the three axes defining the orientation of the OBB. Also return
-      // a sorted list of relative "sizes" of axes for comparison purposes.
-      //void vtkOBBTree::ComputeOBB(vtkPoints *pts, double corner[3], double max[3],
-      //double mid[3], double min[3], double size[3])
-      int i;
-      int pointId;
-      double x[3], mean[3], xp[3], *v[3], v0[3], v1[3], v2[3];
-      double* a[3], a0[3], a1[3], a2[3];
-      double tMin[3], tMax[3], closest[3], t;
-
-      //
-      // Compute mean
-      //
-      int numPts = m_surfaceMesh->VertexPositions->ElementCount;
-      mean[0] = mean[1] = mean[2] = 0.0;
-      for ( pointId = 0; pointId < numPts; pointId++ )
-      {
-        pts->GetPoint( pointId, x );
-        for ( i = 0; i < 3; i++ )
-        {
-          mean[i] += x[i];
-        }
-      }
-      for ( i = 0; i < 3; i++ )
-      {
-        mean[i] /= numPts;
-      }
-
-      //
-      // Compute covariance matrix
-      //
-      a[0] = a0;
-      a[1] = a1;
-      a[2] = a2;
-      for ( i = 0; i < 3; i++ )
-      {
-        a0[i] = a1[i] = a2[i] = 0.0;
-      }
-
-      for ( pointId = 0; pointId < numPts; pointId++ )
-      {
-        pts->GetPoint( pointId, x );
-        xp[0] = x[0] - mean[0];
-        xp[1] = x[1] - mean[1];
-        xp[2] = x[2] - mean[2];
-        for ( i = 0; i < 3; i++ )
-        {
-          a0[i] += xp[0] * xp[i];
-          a1[i] += xp[1] * xp[i];
-          a2[i] += xp[2] * xp[i];
-        }
-      }//for all points
-
-      for ( i = 0; i < 3; i++ )
-      {
-        a0[i] /= numPts;
-        a1[i] /= numPts;
-        a2[i] /= numPts;
-      }
-
-      //
-      // Extract axes (i.e., eigenvectors) from covariance matrix.
-      //
-      v[0] = v0;
-      v[1] = v1;
-      v[2] = v2;
-      vtkMath::Jacobi( a, size, v );
-      max[0] = v[0][0];
-      max[1] = v[1][0];
-      max[2] = v[2][0];
-      mid[0] = v[0][1];
-      mid[1] = v[1][1];
-      mid[2] = v[2][1];
-      min[0] = v[0][2];
-      min[1] = v[1][2];
-      min[2] = v[2][2];
-
-      for ( i = 0; i < 3; i++ )
-      {
-        a[0][i] = mean[i] + max[i];
-        a[1][i] = mean[i] + mid[i];
-        a[2][i] = mean[i] + min[i];
-      }
-
-      //
-      // Create oriented bounding box by projecting points onto eigenvectors.
-      //
-      tMin[0] = tMin[1] = tMin[2] = VTK_DOUBLE_MAX;
-      tMax[0] = tMax[1] = tMax[2] = -VTK_DOUBLE_MAX;
-
-      for ( pointId = 0; pointId < numPts; pointId++ )
-      {
-        pts->GetPoint( pointId, x );
-        for ( i = 0; i < 3; i++ )
-        {
-          vtkLine::DistanceToLine( x, mean, a[i], t, closest );
-          if ( t < tMin[i] )
-          {
-            tMin[i] = t;
-          }
-          if ( t > tMax[i] )
-          {
-            tMax[i] = t;
-          }
-        }
-      }//for all points
-
-      for ( i = 0; i < 3; i++ )
-      {
-        corner[i] = mean[i] + tMin[0] * max[i] + tMin[1] * mid[i] + tMin[2] * min[i];
-
-        max[i] = ( tMax[0] - tMin[0] ) * max[i];
-        mid[i] = ( tMax[1] - tMin[1] ) * mid[i];
-        min[i] = ( tMax[2] - tMin[2] ) * min[i];
-      }
-      */
-    }
-
-    //----------------------------------------------------------------------------
-    bool SurfaceMesh::TestRayIntersection( ID3D11DeviceContext& context,
-                                           ID3D11ComputeShader& computeShader,
-                                           const DX::StepTimer& timer,
-                                           std::vector<double>& outResult )
-    {
-      ID3D11ShaderResourceView* aRViews[2] = { m_meshSRV.Get(), m_indexSRV.Get() };
-      RunComputeShader( context, computeShader, 2, aRViews, m_outputUAV.Get(), m_indexCount, 1, 1 );
+      ID3D11Buffer* ppCBnullptr[1] = { nullptr };
+      context.CSSetConstantBuffers( 0, 1, ppCBnullptr );
     }
   }
 }

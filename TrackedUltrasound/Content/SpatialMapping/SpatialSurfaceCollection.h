@@ -22,6 +22,7 @@
 // WinRT includes
 #include <ppltasks.h>
 
+using namespace Windows::Foundation::Numerics;
 using namespace Windows::Perception::Spatial::Surfaces;
 using namespace Windows::Perception::Spatial;
 
@@ -32,19 +33,29 @@ namespace TrackedUltrasound
     class SpatialSurfaceCollection
     {
     public:
+      struct ConstantBuffer
+      {
+        // Constant buffers must have a a ByteWidth multiple of 16
+        float rayOrigin[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+        float rayDirection[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+      };
+
       SpatialSurfaceCollection( const std::shared_ptr<DX::DeviceResources>& deviceResources );
+      ~SpatialSurfaceCollection();
+
       void Update( DX::StepTimer const& timer, SpatialCoordinateSystem^ coordinateSystem );
 
       bool HasSurface( Platform::Guid id );
-      void AddSurface( Platform::Guid id, SpatialSurfaceInfo^ newSurface );
-      void UpdateSurface( Platform::Guid id, SpatialSurfaceInfo^ newSurface );
+      void AddSurface( Platform::Guid id, SpatialSurfaceInfo^ newSurface, SpatialSurfaceMeshOptions^ meshOptions );
+      void UpdateSurface( Platform::Guid id, SpatialSurfaceInfo^ newSurface, SpatialSurfaceMeshOptions^ meshOptions );
       void RemoveSurface( Platform::Guid id );
       void ClearSurfaces();
 
-      bool TestRayIntersection( const DX::StepTimer& timer,
-                                const std::vector<double>& origin,
-                                const std::vector<double>& direction,
-                                std::vector<double>& outResult );
+      bool TestRayIntersection( uint64_t frameNumber,
+                                const float3 rayOrigin,
+                                const float3 rayDirection,
+                                std::vector<float>& outHitPosition,
+                                std::vector<float>& outHitNormal );
 
       Windows::Foundation::DateTime GetLastUpdateTime( Platform::Guid id );
 
@@ -55,24 +66,17 @@ namespace TrackedUltrasound
           ID3D11Device* pDevice,
           ID3D11ComputeShader** ppShaderOut );
 
-      HRESULT CreateConstantBuffer( ID3D11Device* device );
-
-      void SetConstants( ID3D11DeviceContext* context, const std::vector<double>& rayOrigin, const std::vector<double>& rayDirection );
+      HRESULT CreateConstantBuffer(ID3D11Device* device);
 
       Concurrency::task<void> AddOrUpdateSurfaceAsync( Platform::Guid id,
-          SpatialSurfaceInfo^ newSurface );
+          SpatialSurfaceInfo^ newSurface,
+          SpatialSurfaceMeshOptions^ meshOptions );
 
     private:
-      Microsoft::WRL::ComPtr<ID3D11Buffer>            m_constantBuffer = nullptr;
-      Microsoft::WRL::ComPtr<ID3D11ComputeShader>     m_d3d11ComputeShader = nullptr;
+      ID3D11Buffer*                                   m_constantBuffer = nullptr;
+      ID3D11ComputeShader*                            m_d3d11ComputeShader = nullptr;
       bool                                            m_shaderLoaded = false;
       std::unique_ptr<concurrency::task<HRESULT>>     m_shaderLoadTask = nullptr;
-
-      struct ConstantBuffer
-      {
-        double rayOrigin[3];
-        double rayDirection[3];
-      };
 
       // The set of surfaces in the collection.
       std::map<Platform::Guid, SurfaceMesh>           m_meshCollection;

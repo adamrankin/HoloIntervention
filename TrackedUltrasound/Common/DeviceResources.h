@@ -3,6 +3,10 @@
 
 #include "CameraResources.h"
 
+#ifndef SAFE_RELEASE
+#define SAFE_RELEASE(p)      { if (p) { (p)->Release(); (p)=nullptr; } }
+#endif
+
 namespace DX
 {
   // Provides an interface for an application that owns DeviceResources to be notified of the device being lost or created.

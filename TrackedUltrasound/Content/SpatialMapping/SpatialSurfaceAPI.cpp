@@ -41,6 +41,9 @@ namespace TrackedUltrasound
     //----------------------------------------------------------------------------
     void SpatialSurfaceAPI::Update( DX::StepTimer const& timer, SpatialCoordinateSystem^ coordinateSystem )
     {
+      // Cache the current frame number
+      m_FrameNumber = timer.GetFrameCount();
+
       // Keep the surface observer positioned at the device's location.
       UpdateSurfaceObserverPosition( coordinateSystem );
 
@@ -58,42 +61,28 @@ namespace TrackedUltrasound
         auto id = pair->Key;
         auto surfaceInfo = pair->Value;
 
-        // Choose whether to add, or update the surface.
-        // In this example, new surfaces are treated differently by highlighting them in a different
-        // color. This allows you to observe changes in the spatial map that are due to new meshes,
-        // as opposed to mesh updates.
-        // In your app, you might choose to process added surfaces differently than updated
-        // surfaces. For example, you might prioritize processing of added surfaces, and
-        // defer processing of updates to existing surfaces.
         if ( m_surfaceCollection->HasSurface( id ) )
         {
           if ( m_surfaceCollection->GetLastUpdateTime( id ).UniversalTime < surfaceInfo->UpdateTime.UniversalTime )
           {
             // Update existing surface.
-            m_surfaceCollection->UpdateSurface( id, surfaceInfo );
+            m_surfaceCollection->UpdateSurface( id, surfaceInfo, m_surfaceMeshOptions );
           }
         }
         else
         {
           // New surface.
-          m_surfaceCollection->AddSurface( id, surfaceInfo );
+          m_surfaceCollection->AddSurface( id, surfaceInfo, m_surfaceMeshOptions );
         }
       }
 
-      // Sometimes, a mesh will fall outside the area that is currently visible to
-      // the surface observer. In this code sample, we "sleep" any meshes that are
-      // not included in the surface collection to avoid rendering them.
-      // The system can including them in the collection again later, in which case
-      // they will no longer be hidden.
       m_surfaceCollection->HideInactiveMeshes( surfaceCollection );
     }
 
     //----------------------------------------------------------------------------
     void SpatialSurfaceAPI::UpdateSurfaceObserverPosition( SpatialCoordinateSystem^ coordinateSystem )
     {
-      // In this example, we specify one area to be observed using an axis-aligned
-      // bounding box 20 meters wide, and 5 meters tall, that is centered at the
-      // origin of coordinateSystem.
+      // 20 meters wide, and 5 meters tall, centered at the origin of coordinateSystem.
       SpatialBoundingBox aabb =
       {
         { 0.f,  0.f, 0.f },
@@ -104,14 +93,13 @@ namespace TrackedUltrasound
       {
         SpatialBoundingVolume^ bounds = SpatialBoundingVolume::FromBox( coordinateSystem, aabb );
         m_surfaceObserver->SetBoundingVolume( bounds );
-
-        // Note that it is possible to set multiple bounding volumes. Pseudocode:
-        //     m_surfaceObserver->SetBoundingVolumes(/* iterable collection of bounding volumes*/);
-        //
-        // It is also possible to use other bounding shapes - such as a view frustum. Pseudocode:
-        //     SpatialBoundingVolume^ bounds = SpatialBoundingVolume::FromFrustum(coordinateSystem, viewFrustum);
-        //     m_surfaceObserver->SetBoundingVolume(bounds);
       }
+    }
+
+    //----------------------------------------------------------------------------
+    bool SpatialSurfaceAPI::TestRayIntersection(const float3 rayOrigin, const float3 rayDirection, std::vector<float>& outHitPosition, std::vector<float>& outHitNormal)
+    {
+      return m_surfaceCollection->TestRayIntersection(m_FrameNumber, rayOrigin, rayDirection, outHitPosition, outHitNormal);
     }
 
     //----------------------------------------------------------------------------
@@ -140,23 +128,22 @@ namespace TrackedUltrasound
             m_surfaceMeshOptions = ref new SpatialSurfaceMeshOptions();
             IVectorView<DirectXPixelFormat>^ supportedVertexPositionFormats = m_surfaceMeshOptions->SupportedVertexPositionFormats;
             unsigned int formatIndex = 0;
-            if ( supportedVertexPositionFormats->IndexOf( DirectXPixelFormat::R16G16B16A16IntNormalized, &formatIndex ) )
+            if ( supportedVertexPositionFormats->IndexOf( DirectXPixelFormat::R32G32B32A32Float, &formatIndex ) )
             {
-              m_surfaceMeshOptions->VertexPositionFormat = DirectXPixelFormat::R16G16B16A16IntNormalized;
+              m_surfaceMeshOptions->VertexPositionFormat = DirectXPixelFormat::R32G32B32A32Float;
             }
             IVectorView<DirectXPixelFormat>^ supportedVertexNormalFormats = m_surfaceMeshOptions->SupportedVertexNormalFormats;
-            if ( supportedVertexNormalFormats->IndexOf( DirectXPixelFormat::R8G8B8A8IntNormalized, &formatIndex ) )
+            if ( supportedVertexNormalFormats->IndexOf( DirectXPixelFormat::R32G32B32A32Float, &formatIndex ) )
             {
-              m_surfaceMeshOptions->VertexNormalFormat = DirectXPixelFormat::R8G8B8A8IntNormalized;
+              m_surfaceMeshOptions->VertexNormalFormat = DirectXPixelFormat::R32G32B32A32Float;
             }
 
-            // Our shader pipeline can handle a variety of triangle index formats, so we don't specify one here.
-            // The code for doing so would be as follows:
-            //IVectorView<DirectXPixelFormat>^ supportedTriangleIndexFormats = m_surfaceMeshOptions->SupportedTriangleIndexFormats;
-            //if (supportedTriangleIndexFormats->IndexOf(DirectXPixelFormat::R16UInt, &formatIndex))
-            //{
-            //    m_surfaceMeshOptions->TriangleIndexFormat = DirectXPixelFormat::R16UInt;
-            //}
+            // Our shader pipeline can handle a variety of triangle index formats
+            IVectorView<DirectXPixelFormat>^ supportedTriangleIndexFormats = m_surfaceMeshOptions->SupportedTriangleIndexFormats;
+            if (supportedTriangleIndexFormats->IndexOf(DirectXPixelFormat::R32UInt, &formatIndex))
+            {
+                m_surfaceMeshOptions->TriangleIndexFormat = DirectXPixelFormat::R32UInt;
+            }
 
             // Create the observer.
             m_surfaceObserver = ref new SpatialSurfaceObserver();
@@ -196,7 +183,7 @@ namespace TrackedUltrasound
             // Store the ID and metadata for each surface.
             auto const& id = pair->Key;
             auto const& surfaceInfo = pair->Value;
-            m_surfaceCollection->AddSurface( id, surfaceInfo );
+            m_surfaceCollection->AddSurface( id, surfaceInfo, m_surfaceMeshOptions);
           }
 
           // We can also subscribe to an event to receive up-to-date data.

@@ -19,9 +19,10 @@
 // STD includes
 #include <vector>
 
-using namespace Windows::Storage::Streams;
+using namespace Windows::Foundation::Numerics;
 using namespace Windows::Perception::Spatial::Surfaces;
 using namespace Windows::Perception::Spatial;
+using namespace Windows::Storage::Streams;
 
 namespace TrackedUltrasound
 {
@@ -45,10 +46,12 @@ namespace TrackedUltrasound
       void ReleaseVertexResources();
       void ReleaseDeviceDependentResources();
 
-      bool TestRayIntersection( ID3D11DeviceContext& context,
+      bool TestRayIntersection( ID3D11Device& device,
+                                ID3D11DeviceContext& context,
                                 ID3D11ComputeShader& computeShader,
-                                const DX::StepTimer& timer,
-                                std::vector<double>& outResult );
+                                uint64_t frameNumber,
+                                std::vector<float>& outHitPosition,
+                                std::vector<float>& outHitNormal );
 
       const bool& GetIsActive() const;
       const float& GetLastActiveTime() const;
@@ -56,14 +59,17 @@ namespace TrackedUltrasound
 
       void SetIsActive( const bool& isActive );
 
+      void SetRayConstants(ID3D11DeviceContext* context,
+        ID3D11Buffer* constantBuffer,
+        const float3 rayOrigin,
+        const float3 rayDirection);
+
     private:
       concurrency::task<void> UpdateDeviceBasedResourcesAsync( ID3D11Device* device );
 
-      concurrency::task<void> ComputeAndStoreOBBAsync();
-
       HRESULT CreateStructuredBuffer( ID3D11Device* pDevice,
-                                      uint32 uElementSize,
-                                      IBuffer^ buffer,
+                                      uint32 uStructureSize,
+                                      SpatialSurfaceMeshBuffer^ buffer,
                                       ID3D11Buffer** ppBufOut );
 
       HRESULT CreateStructuredBuffer( ID3D11Device* pDevice,
@@ -71,12 +77,18 @@ namespace TrackedUltrasound
                                       uint32 uCount,
                                       ID3D11Buffer** ppBufOut );
 
-      HRESULT CreateBufferSRV( ID3D11Device* pDevice,
-                               ID3D11Buffer* pBuffer,
+      HRESULT CreateReadbackBuffer( ID3D11Device* pDevice,
+                                    uint32 uElementSize,
+                                    uint32 uCount,
+                                    ID3D11Buffer** ppBufOut );
+
+      HRESULT CreateBufferSRV( ID3D11Device& pDevice,
+                               ID3D11Buffer& computeShaderBuffer,
+                               SpatialSurfaceMeshBuffer^ buffer,
                                ID3D11ShaderResourceView** ppSRVOut );
 
-      HRESULT CreateBufferUAV( ID3D11Device* pDevice,
-                               ID3D11Buffer* pBuffer,
+      HRESULT CreateBufferUAV( ID3D11Device& device,
+                               ID3D11Buffer& computeShaderBuffer,
                                ID3D11UnorderedAccessView** pUAVOut );
 
       void RunComputeShader( ID3D11DeviceContext& context,
@@ -86,30 +98,35 @@ namespace TrackedUltrasound
                              uint32 Xthreads, uint32 Ythreads, uint32 Zthreads );
 
     private:
-      SpatialSurfaceMesh^                                 m_surfaceMesh = nullptr;
+      SpatialSurfaceMesh^          m_surfaceMesh = nullptr;
 
-      Microsoft::WRL::ComPtr<ID3D11Buffer>                m_meshBuffer = nullptr;
-      Microsoft::WRL::ComPtr<ID3D11Buffer>                m_indexBuffer = nullptr;
-      Microsoft::WRL::ComPtr<ID3D11Buffer>                m_outputBuffer = nullptr;
+      ID3D11Buffer*                m_vertexPositionBuffer = nullptr;
+      ID3D11Buffer*                m_indexBuffer = nullptr;
+      ID3D11Buffer*                m_outputBuffer = nullptr;
+      ID3D11Buffer*                m_readBackBuffer = nullptr;
 
-      Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>    m_meshSRV = nullptr;
-      Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>    m_indexSRV = nullptr;
-      Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>   m_outputUAV = nullptr;
+      ID3D11ShaderResourceView*    m_meshSRV = nullptr;
+      ID3D11ShaderResourceView*    m_indexSRV = nullptr;
+      ID3D11UnorderedAccessView*   m_outputUAV = nullptr;
 
-      struct InputBufferType
+      struct VertexBufferType
       {
-        double vertexOne[3];
-        double vertexTwo[3];
-        double vertexThree[3];
+        float vertex[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+      };
+
+      struct IndexBufferType
+      {
+        uint32 index;
       };
 
       struct OutputBufferType
       {
-        double intersectionPoint[3];
+        float intersectionPoint[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+        float intersectionNormal[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
       };
 
-      unsigned int                    m_vertexStride = 0;
-      unsigned int                    m_normalStride = 0;
+      uint32                          m_vertexStride = 0;
+      uint32                          m_normalStride = 0;
 
       Windows::Foundation::DateTime   m_lastUpdateTime;
 
@@ -117,13 +134,13 @@ namespace TrackedUltrasound
       bool                            m_isActive = false;
       float                           m_lastActiveTime = -1.f;
 
-      unsigned int                    m_indexCount = 0;
+      uint32                          m_indexCount = 0;
 
       // Ray-triangle intersection related behavior variables
-      bool                            m_rayComputed = false;
-      double                          m_rayIntersectionPoint[3] = { 0.0, 0.0, 0.0 };
-      unsigned long                   m_lastFrameNumberComputed = 0;
-      const unsigned int              NUMBER_OF_FRAMES_BEFORE_RECOMPUTE = 2;
+      bool                            m_hasLastComputedHit = false;
+      std::vector<float>              m_rayIntersectionResults;
+      uint64                          m_lastFrameNumberComputed = 0;
+      const uint32                    NUMBER_OF_FRAMES_BEFORE_RECOMPUTE = 1;
 
       DirectX::XMFLOAT4X4             m_meshToWorldTransform;
       DirectX::XMFLOAT4X4             m_normalToWorldTransform;
