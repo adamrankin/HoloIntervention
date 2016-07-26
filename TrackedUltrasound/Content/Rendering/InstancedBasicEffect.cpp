@@ -25,17 +25,36 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "pch.h"
 #include "InstancedBasicEffect.h"
 #include "InstancedEffectBase.h"
-#include "RenderShaderStructures.h"
 
 // DirectXTK includes
 #include <EffectCommon.h>
 
 using namespace DirectX;
 
+// Constant buffer layout. Must match the shader!
+struct InstancedBasicEffectConstants
+{
+  XMVECTOR diffuseColor;
+  XMVECTOR emissiveColor;
+  XMVECTOR specularColorAndPower;
+
+  XMVECTOR lightDirection[IEffectLights::MaxDirectionalLights];
+  XMVECTOR lightDiffuseColor[IEffectLights::MaxDirectionalLights];
+  XMVECTOR lightSpecularColor[IEffectLights::MaxDirectionalLights];
+
+  XMVECTOR eyePosition[2];
+
+  XMVECTOR fogColor;
+  XMVECTOR fogVector[2];
+
+  XMMATRIX world;
+  XMVECTOR worldInverseTranspose[3];
+};
+
 // Traits type describes our characteristics to the EffectBase template.
 struct BasicEffectTraits
 {
-  typedef TrackedUltrasound::Rendering::BasicLightingConstants ConstantBufferType;
+  typedef InstancedBasicEffectConstants ConstantBufferType;
 
   static const int VertexShaderCount = 1;
   static const int PixelShaderCount = 1;
@@ -195,15 +214,7 @@ namespace TrackedUltrasound
     // Sets our state onto the D3D device.
     void InstancedBasicEffect::Impl::Apply( _In_ ID3D11DeviceContext* deviceContext )
     {
-      // Compute derived parameter values.
-      XMMATRIX* matrix[2] = { &constants.worldViewProj[0], &constants.worldViewProj[1] };
-      matrices.SetConstants( dirtyFlags, matrix );
-
-      const XMMATRIX* worldViewMatrices[2] = { &matrices.worldView[0], &matrices.worldView[1] };
-      fog.SetConstants( dirtyFlags, worldViewMatrices, constants.fogVector );
-
-      XMVECTOR* eyePositions[2] = { &constants.eyePosition[0], &constants.eyePosition[1] };
-      lights.SetConstants( dirtyFlags, matrices, constants.world, constants.worldInverseTranspose, eyePositions, constants.diffuseColor, constants.emissiveColor, lightingEnabled );
+      lights.SetConstants( dirtyFlags, matrices, constants.world, constants.worldInverseTranspose, constants.diffuseColor, constants.emissiveColor, lightingEnabled );
 
       // Set the texture.
       if ( textureEnabled )
@@ -268,31 +279,21 @@ namespace TrackedUltrasound
     }
 
 
-    void XM_CALLCONV InstancedBasicEffect::SetView( const XMMATRIX* view[2] )
+    void XM_CALLCONV InstancedBasicEffect::SetView( FXMMATRIX view )
     {
-      pImpl->matrices.view[0] = ( *view[0] );
-      pImpl->matrices.view[1] = ( *view[1] );
-
-      pImpl->dirtyFlags |= EffectDirtyFlags::WorldViewProj | EffectDirtyFlags::EyePosition | EffectDirtyFlags::FogVector;
+      // Do nothing, instanced view is managed by DX::CameraResources
     }
 
 
-    void XM_CALLCONV InstancedBasicEffect::SetProjection( const XMMATRIX* projection[2] )
+    void XM_CALLCONV InstancedBasicEffect::SetProjection( FXMMATRIX projection )
     {
-      pImpl->matrices.projection[0] = ( *projection[0] );
-      pImpl->matrices.projection[1] = ( *projection[1] );
-
-      pImpl->dirtyFlags |= EffectDirtyFlags::WorldViewProj;
+      // Do nothing, instanced view is managed by DX::CameraResources
     }
 
 
-    void XM_CALLCONV InstancedBasicEffect::SetMatrices( FXMMATRIX world, const XMMATRIX* view[2], const XMMATRIX* projection[2] )
+    void XM_CALLCONV InstancedBasicEffect::SetMatrices( FXMMATRIX world, CXMMATRIX view, CXMMATRIX projection )
     {
       pImpl->matrices.world = world;
-      pImpl->matrices.view[0] = ( *view[0] );
-      pImpl->matrices.view[1] = ( *view[1] );
-      pImpl->matrices.projection[0] = ( *projection[0] );
-      pImpl->matrices.projection[1] = ( *projection[1] );
 
       pImpl->dirtyFlags |= EffectDirtyFlags::WorldViewProj | EffectDirtyFlags::WorldInverseTranspose | EffectDirtyFlags::EyePosition | EffectDirtyFlags::FogVector;
     }

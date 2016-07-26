@@ -96,7 +96,6 @@
     <ClInclude Include="Content\Input\SpatialInputHandler.h" />
     <ClInclude Include="Content\Rendering\InstancedBasicEffect.h" />
     <ClInclude Include="Content\Rendering\GazeCursorRenderer.h" />
-    <ClInclude Include="Content\Rendering\IEffectStereoMatrices.h" />
     <ClInclude Include="Content\Rendering\InstancedEffectBase.h" />
     <ClInclude Include="Content\Rendering\InstancedEffectFactory.h" />
     <ClInclude Include="Content\Sound\AudioFileReader.h" />
@@ -119,7 +118,6 @@
     <ClCompile Include="Content\Input\SpatialInputHandler.cpp" />
     <ClCompile Include="Content\Rendering\InstancedBasicEffect.cpp" />
     <ClCompile Include="Content\Rendering\GazeCursorRenderer.cpp" />
-    <ClCompile Include="Content\Rendering\IEffectStereoMatrices.cpp" />
     <ClCompile Include="Content\Rendering\InstancedEffectBase.cpp" />
     <ClCompile Include="Content\Rendering\InstancedEffectFactory.cpp" />
     <ClCompile Include="Content\Sound\AudioFileReader.cpp" />

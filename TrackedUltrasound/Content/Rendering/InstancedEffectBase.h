@@ -29,29 +29,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 namespace DirectX
 {
-  struct EffectStereoMatrices
-  {
-    EffectStereoMatrices();
-
-    XMMATRIX world;
-    XMMATRIX view[2];
-    XMMATRIX projection[2];
-    XMMATRIX worldView[2];
-
-    void SetConstants( _Inout_ int& dirtyFlags, _Inout_ XMMATRIX* worldViewProjConstant[2] );
-  };
-
-  struct EffectStereoFog
-  {
-    EffectStereoFog();
-
-    bool enabled;
-    float start;
-    float end;
-
-    void XM_CALLCONV SetConstants( _Inout_ int& dirtyFlags, _In_ const XMMATRIX* worldView[2], _Inout_ XMVECTOR fogVectorConstant[2] );
-  };
-
   struct EffectStereoLights : public EffectColor
   {
     EffectStereoLights();
@@ -73,10 +50,9 @@ namespace DirectX
                               _Out_writes_all_( MaxDirectionalLights ) XMVECTOR* lightDiffuseConstant,
                               _Out_writes_all_( MaxDirectionalLights ) XMVECTOR* lightSpecularConstant );
     void SetConstants( _Inout_ int& dirtyFlags,
-                       _In_ EffectStereoMatrices const& matrices,
+                       _In_ EffectMatrices const& matrices,
                        _Inout_ XMMATRIX& worldConstant,
                        _Inout_updates_( 3 ) XMVECTOR worldInverseTransposeConstant[3],
-                       _Inout_ XMVECTOR* eyePositionConstant[2],
                        _Inout_ XMVECTOR& diffuseColorConstant,
                        _Inout_ XMVECTOR& emissiveColorConstant,
                        bool lightingEnabled );
@@ -105,8 +81,8 @@ namespace DirectX
     // Fields.
     typename Traits::ConstantBufferType constants;
 
-    EffectStereoMatrices matrices;
-    EffectStereoFog fog;
+    EffectMatrices matrices;
+    EffectFog fog;
 
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> texture;
 

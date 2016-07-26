@@ -28,7 +28,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "DeviceResources.h"
 #include "InstancedBasicEffect.h"
 #include "InstancedEffectFactory.h"
-#include "RenderShaderStructures.h"
 #include "StepTimer.h"
 
 //  WinRT includes
@@ -71,8 +70,8 @@ namespace TrackedUltrasound
       float3                                          m_gazeTargetNormal;
 
       // DirectXTK resources for the cursor model
-      std::unique_ptr<InstancedEffectFactory>         m_effectFactory;
-      std::unique_ptr<DirectX::Model>                 m_model;
+      std::unique_ptr<InstancedEffectFactory>         m_effectFactory = nullptr;
+      std::unique_ptr<DirectX::Model>                 m_model = nullptr;
 
       // Variables used with the rendering loop.
       bool                                            m_loadingComplete = false;

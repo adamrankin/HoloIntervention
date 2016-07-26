@@ -26,97 +26,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 namespace DirectX
 {
-  // Constructor initializes default matrix values.
-  EffectStereoMatrices::EffectStereoMatrices()
-  {
-    world = XMMatrixIdentity();
-    view[0] = XMMatrixIdentity();
-    view[1] = XMMatrixIdentity();
-    projection[0] = XMMatrixIdentity();
-    projection[1] = XMMatrixIdentity();
-    worldView[0] = XMMatrixIdentity();
-    worldView[1] = XMMatrixIdentity();
-  }
-
-  // Constructor initializes default fog settings.
-  EffectStereoFog::EffectStereoFog()
-  {
-    enabled = false;
-    start = 0;
-    end = 1;
-  }
-
-  // Lazily recomputes the combined world+view+projection matrix.
-  _Use_decl_annotations_ void EffectStereoMatrices::SetConstants( int& dirtyFlags, XMMATRIX* worldViewProjConstant[2] )
-  {
-    if ( dirtyFlags & EffectDirtyFlags::WorldViewProj )
-    {
-      worldView[0] = XMMatrixMultiply( world, view[0] );
-      worldView[1] = XMMatrixMultiply( world, view[1] );
-
-      (*worldViewProjConstant[0]) = XMMatrixTranspose( XMMatrixMultiply( worldView[0], projection[0] ) );
-      (*worldViewProjConstant[1]) = XMMatrixTranspose( XMMatrixMultiply( worldView[1], projection[1] ) );
-
-      dirtyFlags &= ~EffectDirtyFlags::WorldViewProj;
-      dirtyFlags |= EffectDirtyFlags::ConstantBuffer;
-    }
-  }
-
-  // Lazily recomputes the derived vector used by shader fog calculations.
-  _Use_decl_annotations_
-  void XM_CALLCONV EffectStereoFog::SetConstants( int& dirtyFlags, const XMMATRIX* worldView[2], XMVECTOR fogVectorConstant[2] )
-  {
-    if ( enabled )
-    {
-      if ( dirtyFlags & ( EffectDirtyFlags::FogVector | EffectDirtyFlags::FogEnable ) )
-      {
-        if ( start == end )
-        {
-          // Degenerate case: force everything to 100% fogged if start and end are the same.
-          static const XMVECTORF32 fullyFogged = { 0, 0, 0, 1 };
-
-          fogVectorConstant[0] = fullyFogged;
-          fogVectorConstant[1] = fullyFogged;
-        }
-        else
-        {
-          // We want to transform vertex positions into view space, take the resulting
-          // Z value, then scale and offset according to the fog start/end distances.
-          // Because we only care about the Z component, the shader can do all this
-          // with a single dot product, using only the Z row of the world+view matrix.
-
-          // _13, _23, _33, _43
-          std::vector<XMVECTOR> worldViewZVec;
-          worldViewZVec.push_back( XMVectorMergeXY( XMVectorMergeZW( worldView[0]->r[0], worldView[0]->r[2] ),
-                                   XMVectorMergeZW( worldView[0]->r[1], worldView[0]->r[3] ) ) );
-          worldViewZVec.push_back( XMVectorMergeXY( XMVectorMergeZW( worldView[1]->r[0], worldView[1]->r[2] ),
-                                   XMVectorMergeZW( worldView[1]->r[1], worldView[1]->r[3] ) ) );
-
-          // 0, 0, 0, fogStart
-          XMVECTOR wOffset = XMVectorSwizzle<1, 2, 3, 0>( XMLoadFloat( &start ) );
-
-          fogVectorConstant[0] = ( worldViewZVec[0] + wOffset ) / ( start - end );
-          fogVectorConstant[1] = ( worldViewZVec[1] + wOffset ) / ( start - end );
-        }
-
-        dirtyFlags &= ~( EffectDirtyFlags::FogVector | EffectDirtyFlags::FogEnable );
-        dirtyFlags |= EffectDirtyFlags::ConstantBuffer;
-      }
-    }
-    else
-    {
-      // When fog is disabled, make sure the fog vector is reset to zero.
-      if ( dirtyFlags & EffectDirtyFlags::FogEnable )
-      {
-        fogVectorConstant[0] = g_XMZero;
-        fogVectorConstant[1] = g_XMZero;
-
-        dirtyFlags &= ~EffectDirtyFlags::FogEnable;
-        dirtyFlags |= EffectDirtyFlags::ConstantBuffer;
-      }
-    }
-  }
-
   // Constructor initializes default light settings.
   EffectStereoLights::EffectStereoLights()
   {
@@ -160,10 +69,9 @@ namespace DirectX
 
   // Lazily recomputes derived parameter values used by shader lighting calculations.
   _Use_decl_annotations_ void EffectStereoLights::SetConstants( int& dirtyFlags,
-      EffectStereoMatrices const& matrices,
+    EffectMatrices const& matrices,
       XMMATRIX& worldConstant,
       XMVECTOR worldInverseTransposeConstant[3],
-      XMVECTOR* eyePositionConstant[2],
       XMVECTOR& diffuseColorConstant,
       XMVECTOR& emissiveColorConstant,
       bool lightingEnabled )
@@ -182,19 +90,6 @@ namespace DirectX
         worldInverseTransposeConstant[2] = worldInverse.r[2];
 
         dirtyFlags &= ~EffectDirtyFlags::WorldInverseTranspose;
-        dirtyFlags |= EffectDirtyFlags::ConstantBuffer;
-      }
-
-      // Eye position vector.
-      if ( dirtyFlags & EffectDirtyFlags::EyePosition )
-      {
-        XMMATRIX viewInverse = XMMatrixInverse( nullptr, matrices.view[0] );
-        (*eyePositionConstant[0]) = viewInverse.r[3];
-
-        viewInverse = XMMatrixInverse(nullptr, matrices.view[1]);
-        (*eyePositionConstant[1]) = viewInverse.r[3];
-
-        dirtyFlags &= ~EffectDirtyFlags::EyePosition;
         dirtyFlags |= EffectDirtyFlags::ConstantBuffer;
       }
     }

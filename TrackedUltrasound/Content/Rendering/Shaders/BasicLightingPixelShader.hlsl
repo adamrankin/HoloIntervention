@@ -19,7 +19,12 @@ cbuffer Parameters : register(b0)
 
   float4x4 World                  : packoffset(c16);
   float3x3 WorldInverseTranspose  : packoffset(c20);
-  float4x4 WorldViewProj[2]       : packoffset(c23);
+};
+
+// A constant buffer that stores each set of view and projection matrices in column-major format.
+cbuffer ViewProjectionConstantBuffer : register(b1)
+{
+  float4x4 viewProjection[2];
 };
 
 struct PSInput

@@ -12,29 +12,38 @@ cbuffer Parameters : register(b0)
   float3 LightDiffuseColor[3]     : packoffset(c6);
   float3 LightSpecularColor[3]    : packoffset(c9);
 
+  // TODO : EyePosition has been removed, is translation component of view matrix
   float3 EyePosition[2]           : packoffset(c12);
 
   float3 FogColor                 : packoffset(c14);
-  float4 FogVector                : packoffset(c15);
+  // TODO : calculate fog vector in shader, has been removed from code
+  float4 FogVector[2]             : packoffset(c15);
 
-  float4x4 World                  : packoffset(c16);
-  float3x3 WorldInverseTranspose  : packoffset(c20);
-  float4x4 WorldViewProj[2]       : packoffset(c23);
+  float4x4 World                  : packoffset(c17);
+  float3x3 WorldInverseTranspose  : packoffset(c21);
+};
+
+// A constant buffer that stores each set of view and projection matrices in column-major format.
+cbuffer ViewProjectionConstantBuffer : register(b1)
+{
+  float4x4 viewProjection[2];
 };
 
 struct VertexShaderOutput
 {
   float4 Diffuse    : COLOR0;
   float4 Specular   : COLOR1;
-  float4 PositionPS : POSITION;
+  float4 PositionPS : SV_Position;
   uint rtvId        : SV_RenderTargetArrayIndex; // SV_InstanceID % 2
 };
 
 struct VertexShaderInput
 {
-  float4 Position : POSITION;
-  float3 Normal   : NORMAL;
-  float4 Color    : COLOR;
+  float4 Position : SV_Position;
+  float3 Normal   : NORMAL0;
+  float4 Tangent  : TANGENT0;
+  float4 Color    : COLOR0;
+  float2 TexCoord : TEXCOORD0;
   uint instId     : SV_InstanceID;
 };
 
@@ -44,9 +53,9 @@ struct ColorPair
   float3 Specular;
 };
 
-float ComputeFogFactor(float4 position)
+float ComputeFogFactor(float4 position, uint idx)
 {
-  return saturate(dot(position, FogVector));
+  return saturate(dot(position, FogVector[idx]));
 }
 
 ColorPair ComputeLights(float3 eyeVector, float3 worldNormal, uniform int numLights)
@@ -94,9 +103,11 @@ VertexShaderOutput main(VertexShaderInput vin)
 
   ColorPair lightResult = ComputeLights(eyeVector, worldNormal, 1);
 
-  vout.PositionPS = mul(vin.Position, WorldViewProj[idx]);
+  float4x4 worldViewProj = mul(viewProjection[idx], World);
+
+  vout.PositionPS = mul(vin.Position, worldViewProj);
   vout.Diffuse = float4(lightResult.Diffuse, DiffuseColor.a);
-  vout.Specular = float4(lightResult.Specular, ComputeFogFactor(vin.Position));
+  vout.Specular = float4(lightResult.Specular, ComputeFogFactor(vin.Position, idx));
 
   vout.Diffuse *= vin.Color;
 

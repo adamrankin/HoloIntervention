@@ -23,9 +23,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-// Local includes
-#include <IEffectStereoMatrices.h>
-
 // DirectXTK includes
 #include <Effects.h>
 
@@ -35,7 +32,7 @@ namespace TrackedUltrasound
 {
   namespace Rendering
   {
-    class InstancedBasicEffect : public IEffect, public IEffectStereoMatrices, public IEffectLights, public IEffectFog
+    class InstancedBasicEffect : public IEffect, public IEffectMatrices, public IEffectLights, public IEffectFog
     {
     public:
       explicit InstancedBasicEffect(_In_ ID3D11Device* device);
@@ -54,9 +51,9 @@ namespace TrackedUltrasound
 
       // Camera settings.
       void XM_CALLCONV SetWorld(FXMMATRIX value) override;
-      void XM_CALLCONV SetView(const XMMATRIX* value[2]) override;
-      void XM_CALLCONV SetProjection(const XMMATRIX* value[2]) override;
-      void XM_CALLCONV SetMatrices(FXMMATRIX world, const XMMATRIX* view[2], const XMMATRIX* projection[2]) override;
+      void XM_CALLCONV SetView(FXMMATRIX value) override;
+      void XM_CALLCONV SetProjection(FXMMATRIX value) override;
+      void XM_CALLCONV SetMatrices(FXMMATRIX world, CXMMATRIX view, CXMMATRIX projection) override;
 
       // Material settings.
       void XM_CALLCONV SetDiffuseColor(FXMVECTOR value);

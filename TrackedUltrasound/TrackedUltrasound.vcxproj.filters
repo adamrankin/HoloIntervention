@@ -41,9 +41,6 @@
     <ClCompile Include="Content\SpatialMapping\SpatialSurfaceAPI.cpp">
       <Filter>Content\SpatialMapping</Filter>
     </ClCompile>
-    <ClCompile Include="Content\Rendering\IEffectStereoMatrices.cpp">
-      <Filter>Content\Rendering</Filter>
-    </ClCompile>
     <ClCompile Include="Content\Rendering\InstancedEffectBase.cpp">
       <Filter>Content\Rendering</Filter>
     </ClCompile>
@@ -109,9 +106,6 @@
       <Filter>Content\SpatialMapping</Filter>
     </ClInclude>
     <ClInclude Include="Content\Rendering\InstancedEffectBase.h">
-      <Filter>Content\Rendering</Filter>
-    </ClInclude>
-    <ClInclude Include="Content\Rendering\IEffectStereoMatrices.h">
       <Filter>Content\Rendering</Filter>
     </ClInclude>
     <ClInclude Include="Content\Rendering\InstancedBasicEffect.h">

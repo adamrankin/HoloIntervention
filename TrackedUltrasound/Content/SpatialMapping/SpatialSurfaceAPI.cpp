@@ -205,7 +205,7 @@ namespace TrackedUltrasound
           if (mapContainingSurfaceCollection->Size == 0)
           {
             OutputDebugStringA("Mesh collection size is 0. Trying again after a delay.\n");
-            auto fire_once = new concurrency::timer<int>(5, 0, nullptr, false);
+            auto fire_once = new concurrency::timer<int>(INIT_SURFACE_RETRY_DELAY_MS, 0, nullptr, false);
             // Create a call object that sets the completion event after the timer fires.
             auto callback = new concurrency::call<int>([=](int)
             {

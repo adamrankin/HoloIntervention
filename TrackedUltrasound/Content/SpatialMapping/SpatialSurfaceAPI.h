@@ -78,6 +78,8 @@ namespace TrackedUltrasound
 
       // List of spatial anchors
       Platform::Collections::Map<Platform::String^, SpatialAnchor^>^ m_spatialAnchors;
+
+      const uint32 INIT_SURFACE_RETRY_DELAY_MS = 100;
     };
   }
 }
