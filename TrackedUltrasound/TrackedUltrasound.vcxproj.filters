@@ -95,11 +95,11 @@
     <ClInclude Include="Content\SpatialMapping\GetDataFromIBuffer.h">
       <Filter>Content\SpatialMapping</Filter>
     </ClInclude>
-    <ClInclude Include="Content\Rendering\ShaderStructures.h">
-      <Filter>Content\Rendering</Filter>
-    </ClInclude>
     <ClInclude Include="Content\SpatialMapping\SpatialShaderStructures.h">
       <Filter>Content\SpatialMapping</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Rendering\RenderShaderStructures.h">
+      <Filter>Content\Rendering</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -126,12 +126,10 @@
     </Image>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Assets\model.cmo">
-      <Filter>Assets</Filter>
-    </None>
     <None Include="TrackedUltrasound_TemporaryKey.pfx">
       <Filter>Infrastructure</Filter>
     </None>
+    <None Include="Assets\Models\gaze_cursor.cmo" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Content">
@@ -166,9 +164,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <Media Include="Assets\cursor_toggle.wav">
-      <Filter>Assets</Filter>
-    </Media>
+    <Media Include="Assets\Sounds\cursor_toggle.wav" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Content\Rendering\GeometryShader.hlsl">

@@ -20,7 +20,6 @@ using namespace Windows::Perception::Spatial::Surfaces;
 using namespace Windows::Perception::Spatial;
 using namespace Windows::UI::Input::Spatial;
 using namespace concurrency;
-using namespace std::placeholders;
 
 namespace TrackedUltrasound
 {
@@ -35,7 +34,7 @@ namespace TrackedUltrasound
 
     m_cursorSound = std::make_unique<TrackedUltrasound::Sound::OmnidirectionalSound>();
     // TODO : magic values for now
-    auto loadTask = m_cursorSound->InitializeAsync( L"Assets/cursor_toggle.wav", 2, 3, 1 );
+    auto loadTask = m_cursorSound->InitializeAsync( L"Assets/Sounds/cursor_toggle.wav", 2, 3, 1 );
     loadTask.then( [&]( task<HRESULT> previousTask )
     {
       try
@@ -82,19 +81,19 @@ namespace TrackedUltrasound
     m_locatabilityChangedToken =
       m_locator->LocatabilityChanged +=
         ref new Windows::Foundation::TypedEventHandler<SpatialLocator^, Object^>(
-          std::bind( &TrackedUltrasoundMain::OnLocatabilityChanged, this, _1, _2 )
+          std::bind( &TrackedUltrasoundMain::OnLocatabilityChanged, this, std::placeholders::_1, std::placeholders::_2 )
         );
 
     m_cameraAddedToken =
       m_holographicSpace->CameraAdded +=
         ref new Windows::Foundation::TypedEventHandler<HolographicSpace^, HolographicSpaceCameraAddedEventArgs^>(
-          std::bind( &TrackedUltrasoundMain::OnCameraAdded, this, _1, _2 )
+          std::bind( &TrackedUltrasoundMain::OnCameraAdded, this, std::placeholders::_1, std::placeholders::_2 )
         );
 
     m_cameraRemovedToken =
       m_holographicSpace->CameraRemoved +=
         ref new Windows::Foundation::TypedEventHandler<HolographicSpace^, HolographicSpaceCameraRemovedEventArgs^>(
-          std::bind( &TrackedUltrasoundMain::OnCameraRemoved, this, _1, _2 )
+          std::bind( &TrackedUltrasoundMain::OnCameraRemoved, this, std::placeholders::_1, std::placeholders::_2 )
         );
 
     m_attachedReferenceFrame = m_locator->CreateAttachedFrameOfReferenceAtCurrentHeading();

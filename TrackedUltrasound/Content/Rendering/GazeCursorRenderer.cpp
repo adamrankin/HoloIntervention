@@ -1,8 +1,12 @@
 #include "pch.h"
 #include "GazeCursorRenderer.h"
-#include "Common\DirectXHelper.h"
+#include "DirectXHelper.h"
+
+// DirectXTK includes
+#include "Model.h"
 
 using namespace Concurrency;
+using namespace DirectX;
 using namespace Windows::Foundation;
 using namespace Windows::Storage::Streams;
 using namespace Windows::Storage;
@@ -14,8 +18,6 @@ namespace TrackedUltrasound
   // Loads vertex and pixel shaders from files and instantiates the cube geometry.
   GazeCursorRenderer::GazeCursorRenderer( const std::shared_ptr<DX::DeviceResources>& deviceResources )
     : m_deviceResources( deviceResources )
-    , m_loadingComplete( false )
-    , m_enableCursor( false )
   {
     CreateDeviceDependentResources();
   }
@@ -46,6 +48,7 @@ namespace TrackedUltrasound
     const auto context = m_deviceResources->GetD3DDeviceContext();
 
     // Each vertex is one instance of the VertexPositionColor struct.
+    
     const UINT stride = sizeof( VertexPositionColor );
     const UINT offset = 0;
     context->IASetVertexBuffers(
@@ -134,7 +137,6 @@ namespace TrackedUltrasound
   //----------------------------------------------------------------------------
   Numerics::float3 GazeCursorRenderer::GetNormal() const
   {
-    // TODO : calculate and store intersection normal
     return Numerics::float3( 0, 1, 0 );
   }
 
@@ -241,103 +243,10 @@ namespace TrackedUltrasound
     auto loadShadersTask = LoadShadersAsync();
 
     std::shared_ptr<std::vector<uint8_t>> meshDataVector = std::make_shared<std::vector<uint8_t>>();
-    loadShadersTask.then([this, meshDataVector]()
+    loadShadersTask.then([&]()
     {
-      create_task(StorageFile::GetFileFromApplicationUriAsync(ref new Windows::Foundation::Uri("ms-appx:///Assets/model.cmo"))).then([=](Windows::Storage::StorageFile^ storageFile)
-      {
-        create_task(FileIO::ReadBufferAsync(storageFile)).then([=](IBuffer^ buffer)
-        {
-          DataReader^ reader = DataReader::FromBuffer(buffer);
-          meshDataVector->resize(reader->UnconsumedBufferLength);
-
-          if (!meshDataVector->empty())
-          {
-            reader->ReadBytes(::Platform::ArrayReference<unsigned char>(&(*meshDataVector)[0], meshDataVector->size()));
-          }
-
-          return meshDataVector;
-        }).then([this](task<std::shared_ptr<std::vector<uint8_t>>> previousTask)
-        {
-          std::shared_ptr<std::vector<uint8_t>> meshDataVector = previousTask.get();
-
-          auto device = m_deviceResources->GetD3DDevice();
-
-          /* ----------- model loading reference code ----------------
-          // Load mesh vertices. Each vertex has a position and a color.
-          // Note that the cube size has changed from the default DirectX app
-          // template. Windows Holographic is scaled in meters, so to draw the
-          // cube at a comfortable size we made the cube width 0.2 m (20 cm).
-          static const VertexPositionColor cubeVertices[] =
-          {
-          { XMFLOAT3(-0.1f, -0.1f, -0.1f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
-          { XMFLOAT3(-0.1f, -0.1f,  0.1f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
-          { XMFLOAT3(-0.1f,  0.1f, -0.1f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
-          { XMFLOAT3(-0.1f,  0.1f,  0.1f), XMFLOAT3(0.0f, 1.0f, 1.0f) },
-          { XMFLOAT3( 0.1f, -0.1f, -0.1f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
-          { XMFLOAT3( 0.1f, -0.1f,  0.1f), XMFLOAT3(1.0f, 0.0f, 1.0f) },
-          { XMFLOAT3( 0.1f,  0.1f, -0.1f), XMFLOAT3(1.0f, 1.0f, 0.0f) },
-          { XMFLOAT3( 0.1f,  0.1f,  0.1f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
-          };
-
-          D3D11_SUBRESOURCE_DATA vertexBufferData = {0};
-          vertexBufferData.pSysMem = cubeVertices;
-          vertexBufferData.SysMemPitch = 0;
-          vertexBufferData.SysMemSlicePitch = 0;
-          const CD3D11_BUFFER_DESC vertexBufferDesc(sizeof(cubeVertices), D3D11_BIND_VERTEX_BUFFER);
-          DX::ThrowIfFailed(
-          m_deviceResources->GetD3DDevice()->CreateBuffer(
-          &vertexBufferDesc,
-          &vertexBufferData,
-          &m_vertexBuffer
-          )
-          );
-
-          // Load mesh indices. Each trio of indices represents
-          // a triangle to be rendered on the screen.
-          // For example: 2,1,0 means that the vertices with indexes
-          // 2, 1, and 0 from the vertex buffer compose the
-          // first triangle of this mesh.
-          // Note that the winding order is clockwise by default.
-          static const unsigned short cubeIndices [] =
-          {
-          2,1,0, // -x
-          2,3,1,
-
-          6,4,5, // +x
-          6,5,7,
-
-          0,1,5, // -y
-          0,5,4,
-
-          2,6,7, // +y
-          2,7,3,
-
-          0,4,6, // -z
-          0,6,2,
-
-          1,3,7, // +z
-          1,7,5,
-          };
-
-          m_indexCount = ARRAYSIZE(cubeIndices);
-
-          D3D11_SUBRESOURCE_DATA indexBufferData = {0};
-          indexBufferData.pSysMem          = cubeIndices;
-          indexBufferData.SysMemPitch      = 0;
-          indexBufferData.SysMemSlicePitch = 0;
-          const CD3D11_BUFFER_DESC indexBufferDesc(sizeof(cubeIndices), D3D11_BIND_INDEX_BUFFER);
-          DX::ThrowIfFailed(
-          m_deviceResources->GetD3DDevice()->CreateBuffer(
-          &indexBufferDesc,
-          &indexBufferData,
-          &m_indexBuffer
-          )
-          );
-          ----------- end model loading reference code ---------------- */
-
-          // TODO : load vertices, colors, and indices from file
-        });
-      });
+      m_effectFactory = std::make_unique<DGSLEffectFactory>();
+      Model::CreateFromCMO(m_deviceResources->GetD3DDevice(), L"Assets/Models/gaze_cursor.cmo", fxFactory);
     });
   }
 

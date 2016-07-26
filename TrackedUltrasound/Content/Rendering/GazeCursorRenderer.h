@@ -9,8 +9,12 @@
 //  WinRT includes
 #include <ppltasks.h>
 
+// DirectXTK includes
+#include <Effects.h>
+
 using namespace Windows::Foundation;
 using namespace Windows::UI::Input::Spatial;
+using namespace Windows::Foundation::Numerics;
 
 namespace TrackedUltrasound
 {
@@ -34,11 +38,12 @@ namespace TrackedUltrasound
     concurrency::task<void> LoadShadersAsync();
 
     // Cached pointer to device resources.
-    std::shared_ptr<DX::DeviceResources>            m_deviceResources;
+    std::shared_ptr<DX::DeviceResources>            m_deviceResources = nullptr;
+    std::unique_ptr<DirectX::DGSLEffectFactory>     m_effectFactory = nullptr;
 
     // Gaze origin and direction
-    float                                           m_gazeTargetPosition[3];
-    float                                           m_gazeTargetNormal[3];
+    float3                                           m_gazeTargetPosition;
+    float3                                           m_gazeTargetNormal;
 
     // Direct3D resources for cube geometry.
     Microsoft::WRL::ComPtr<ID3D11InputLayout>       m_inputLayout;
