@@ -1,10 +1,25 @@
-//--------------------------------------------------------------------------------------
-// File: CSRayTriangleIntersection.hlsl
-//
-// This file contains the Compute Shader to calculate the intersection of a ray and a triangle
-//
-// Copyright (c) Microsoft Corporation. All rights reserved.
-//--------------------------------------------------------------------------------------
+/*====================================================================
+Copyright(c) 2016 Adam Rankin
+
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files(the "Software"),
+to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and / or sell copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following conditions :
+
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL
+THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
+====================================================================*/
 
 cbuffer ConstantBuffer : register( b0 )
 {
@@ -55,8 +70,8 @@ void main( uint3 DTid : SV_DispatchThreadID )
   float3 rayDirection3 = { rayDirection[0], rayDirection[1], rayDirection[2] };
 
   //Find vectors for two edges sharing v0
-  float3 e1 = { v1.x - v0.x, v1.y - v0.y, v1.z - v0.z };
-  float3 e2 = { v2.x - v0.x, v2.y - v0.y, v2.z - v0.z };
+  float3 e1 = v1.xyz - v0.xyz;
+  float3 e2 = v2.xyz - v0.xyz;
 
   //Begin calculating determinant - also used to calculate u parameter
   float3 P = cross( rayDirection3, e2 );
@@ -73,7 +88,7 @@ void main( uint3 DTid : SV_DispatchThreadID )
   float inv_det = 1.f / det;
 
   //calculate distance from V1 to ray origin
-  float3 T = { rayOrigin3.x - v0.x, rayOrigin3.y - v0.y, rayOrigin3.z - v0.z };
+  float3 T = rayOrigin3.xyz - v0.xyz;
 
   //Calculate u parameter and test bound
   float u = dot( T, P ) * inv_det;

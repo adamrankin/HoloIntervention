@@ -182,6 +182,12 @@
     <FxCompile Include="Content\SpatialMapping\Shaders\CSRayTriangleIntersection.hlsl">
       <Filter>Content\SpatialMapping\Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="Content\Rendering\BasicLightingVertexShader.hlsl">
+      <Filter>Content\Rendering\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Rendering\BasicLightingPixelShader.hlsl">
+      <Filter>Content\Rendering\Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest">

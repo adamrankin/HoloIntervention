@@ -1,13 +1,25 @@
-//*********************************************************
-//
-// Copyright (c) Microsoft. All rights reserved.
-// This code is licensed under the MIT License (MIT).
-// THIS CODE IS PROVIDED *AS IS* WITHOUT WARRANTY OF
-// ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING ANY
-// IMPLIED WARRANTIES OF FITNESS FOR A PARTICULAR
-// PURPOSE, MERCHANTABILITY, OR NON-INFRINGEMENT.
-//
-//*********************************************************
+/*====================================================================
+Copyright(c) 2016 Adam Rankin
+
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files(the "Software"),
+to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and / or sell copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following conditions :
+
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL
+THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
+====================================================================*/
 
 #include "pch.h"
 
@@ -296,21 +308,19 @@ namespace TrackedUltrasound
                                            ID3D11DeviceContext& context,
                                            ID3D11ComputeShader& computeShader,
                                            uint64_t frameNumber,
-                                           std::vector<float>& outHitPosition,
-                                           std::vector<float>& outHitNormal )
+                                           float3& outHitPosition,
+                                           float3& outHitNormal )
     {
       {
         std::lock_guard<std::mutex> lock( m_meshResourcesMutex );
-        outHitPosition.clear();
-        outHitPosition.assign(3, 0.0f);
-        outHitNormal.clear();
-        outHitNormal.assign(3, 0.0f);
+        outHitPosition = float3::zero();
+        outHitNormal = float3::zero();
 
         if ( m_lastFrameNumberComputed != 0 && frameNumber < m_lastFrameNumberComputed + NUMBER_OF_FRAMES_BEFORE_RECOMPUTE )
         {
           // Asked twice in the same frame, return the cached result
-          std::copy( m_rayIntersectionResults.begin(), m_rayIntersectionResults.begin() + 3, outHitPosition.begin() );
-          std::copy( m_rayIntersectionResults.begin() + 3, m_rayIntersectionResults.end(), outHitNormal.begin() );
+          outHitPosition = m_rayIntersectionResultPosition;
+          outHitNormal = m_rayIntersectionResultNormal;
           return m_hasLastComputedHit;
         }
 
@@ -334,25 +344,12 @@ namespace TrackedUltrasound
       context.Unmap( m_readBackBuffer, 0 );
 
       m_lastFrameNumberComputed = frameNumber;
-      m_rayIntersectionResults.clear();
-      m_rayIntersectionResults.push_back( result->intersectionPoint[0] );
-      m_rayIntersectionResults.push_back( result->intersectionPoint[1] );
-      m_rayIntersectionResults.push_back( result->intersectionPoint[2] );
-      m_rayIntersectionResults.push_back( result->intersectionNormal[0] );
-      m_rayIntersectionResults.push_back( result->intersectionNormal[1] );
-      m_rayIntersectionResults.push_back( result->intersectionNormal[2] );
+      outHitPosition = m_rayIntersectionResultPosition = float3( result->intersectionPoint[0], result->intersectionPoint[1], result->intersectionPoint[2] );
+      outHitNormal = m_rayIntersectionResultNormal = float3( result->intersectionNormal[0], result->intersectionNormal[1], result->intersectionNormal[2] );
 
       if ( result->intersectionPoint[0] != 0.0f || result->intersectionPoint[1] != 0.0f || result->intersectionPoint[2] != 0.0f ||
            result->intersectionNormal[0] != 0.0f || result->intersectionNormal[1] != 0.0f || result->intersectionNormal[2] != 0.0f )
       {
-        outHitPosition[0] = result->intersectionPoint[0];
-        outHitPosition[1] = result->intersectionPoint[1];
-        outHitPosition[2] = result->intersectionPoint[2];
-
-        outHitNormal[0] = result->intersectionNormal[0];
-        outHitNormal[1] = result->intersectionNormal[1];
-        outHitNormal[2] = result->intersectionNormal[2];
-
         m_hasLastComputedHit = true;
         return true;
       }

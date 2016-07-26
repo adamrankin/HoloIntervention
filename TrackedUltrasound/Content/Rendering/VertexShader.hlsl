@@ -14,6 +14,7 @@ cbuffer ViewProjectionConstantBuffer : register(b1)
 struct VertexShaderInput
 {
     min16float3 pos     : POSITION;
+    min16float3 normal  : NORMAL0;
     min16float3 color   : COLOR0;
     uint        instId  : SV_InstanceID;
 };
