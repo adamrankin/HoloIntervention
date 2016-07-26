@@ -26,6 +26,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "CameraResources.h"
 #include "DeviceResources.h"
+#include "InstancedBasicEffect.h"
+#include "InstancedEffectFactory.h"
 #include "RenderShaderStructures.h"
 #include "StepTimer.h"
 
@@ -42,36 +44,39 @@ using namespace Windows::Foundation::Numerics;
 
 namespace TrackedUltrasound
 {
-  class GazeCursorRenderer
+  namespace Rendering
   {
-  public:
-    GazeCursorRenderer( const std::shared_ptr<DX::DeviceResources>& deviceResources );
-    concurrency::task<void> CreateDeviceDependentResourcesAsync();
-    void ReleaseDeviceDependentResources();
-    void Update(float3 gazeTargetPosition, float3 gazeTargetNormal);
-    void Render();
+    class GazeCursorRenderer
+    {
+    public:
+      GazeCursorRenderer( const std::shared_ptr<DX::DeviceResources>& deviceResources );
+      concurrency::task<void> CreateDeviceDependentResourcesAsync();
+      void ReleaseDeviceDependentResources();
+      void Update( float3 gazeTargetPosition, float3 gazeTargetNormal );
+      void Render();
 
-    void EnableCursor( bool enable );
-    void ToggleCursor();
-    bool IsCursorEnabled() const;
+      void EnableCursor( bool enable );
+      void ToggleCursor();
+      bool IsCursorEnabled() const;
 
-    Numerics::float3 GetPosition() const;
-    Numerics::float3 GetNormal() const;
+      Numerics::float3 GetPosition() const;
+      Numerics::float3 GetNormal() const;
 
-  private:
-    // Cached pointer to device resources.
-    std::shared_ptr<DX::DeviceResources>            m_deviceResources = nullptr;
-    DirectX::EffectFactory                          m_effectFactory;
+    private:
+      // Cached pointer to device resources.
+      std::shared_ptr<DX::DeviceResources>            m_deviceResources = nullptr;
 
-    // Gaze origin and direction
-    float3                                          m_gazeTargetPosition;
-    float3                                          m_gazeTargetNormal;
+      // Gaze origin and direction
+      float3                                          m_gazeTargetPosition;
+      float3                                          m_gazeTargetNormal;
 
-    // DirectXTK resources for the cursor model
-    std::unique_ptr<DirectX::Model>                 m_model;
+      // DirectXTK resources for the cursor model
+      std::unique_ptr<InstancedEffectFactory>         m_effectFactory;
+      std::unique_ptr<DirectX::Model>                 m_model;
 
-    // Variables used with the rendering loop.
-    bool                                            m_loadingComplete = false;
-    bool                                            m_enableCursor = false;
-  };
+      // Variables used with the rendering loop.
+      bool                                            m_loadingComplete = false;
+      bool                                            m_enableCursor = false;
+    };
+  }
 }

@@ -33,7 +33,8 @@ struct VertexShaderOutput
 struct VertexShaderInput
 {
   float4 Position : POSITION;
-  float3 Normal   : NORMAL0;
+  float3 Normal   : NORMAL;
+  float4 Color    : COLOR;
   uint instId     : SV_InstanceID;
 };
 
@@ -96,6 +97,8 @@ VertexShaderOutput main(VertexShaderInput vin)
   vout.PositionPS = mul(vin.Position, WorldViewProj[idx]);
   vout.Diffuse = float4(lightResult.Diffuse, DiffuseColor.a);
   vout.Specular = float4(lightResult.Specular, ComputeFogFactor(vin.Position));
+
+  vout.Diffuse *= vin.Color;
 
   // Set the render target array index.
   vout.rtvId = idx;

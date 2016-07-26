@@ -41,6 +41,16 @@
     <ClCompile Include="Content\SpatialMapping\SpatialSurfaceAPI.cpp">
       <Filter>Content\SpatialMapping</Filter>
     </ClCompile>
+    <ClCompile Include="Content\Rendering\IEffectStereoMatrices.cpp">
+      <Filter>Content\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Rendering\InstancedEffectBase.cpp">
+      <Filter>Content\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Rendering\InstancedBasicEffect.cpp">
+      <Filter>Content\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Rendering\InstancedEffectFactory.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TrackedUltrasoundMain.h" />
@@ -98,9 +108,16 @@
     <ClInclude Include="Content\SpatialMapping\SpatialShaderStructures.h">
       <Filter>Content\SpatialMapping</Filter>
     </ClInclude>
-    <ClInclude Include="Content\Rendering\RenderShaderStructures.h">
+    <ClInclude Include="Content\Rendering\InstancedEffectBase.h">
       <Filter>Content\Rendering</Filter>
     </ClInclude>
+    <ClInclude Include="Content\Rendering\IEffectStereoMatrices.h">
+      <Filter>Content\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Rendering\InstancedBasicEffect.h">
+      <Filter>Content\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Rendering\InstancedEffectFactory.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\LockScreenLogo.scale-200.png">
@@ -129,7 +146,9 @@
     <None Include="TrackedUltrasound_TemporaryKey.pfx">
       <Filter>Infrastructure</Filter>
     </None>
-    <None Include="Assets\Models\gaze_cursor.cmo" />
+    <None Include="Assets\Models\gaze_cursor.cmo">
+      <Filter>Assets</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Content">
@@ -164,28 +183,25 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <Media Include="Assets\Sounds\cursor_toggle.wav" />
-  </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="Content\Rendering\GeometryShader.hlsl">
-      <Filter>Content\Rendering\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Content\Rendering\PixelShader.hlsl">
-      <Filter>Content\Rendering\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Content\Rendering\VertexShader.hlsl">
-      <Filter>Content\Rendering\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Content\Rendering\VPRTVertexShader.hlsl">
-      <Filter>Content\Rendering\Shaders</Filter>
-    </FxCompile>
     <FxCompile Include="Content\SpatialMapping\Shaders\CSRayTriangleIntersection.hlsl">
       <Filter>Content\SpatialMapping\Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Content\Rendering\BasicLightingVertexShader.hlsl">
+    <FxCompile Include="Content\Rendering\Shaders\VPRTVertexShader.hlsl">
       <Filter>Content\Rendering\Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Content\Rendering\BasicLightingPixelShader.hlsl">
+    <FxCompile Include="Content\Rendering\Shaders\BasicLightingPixelShader.hlsl">
+      <Filter>Content\Rendering\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Rendering\Shaders\BasicLightingVertexShader.hlsl">
+      <Filter>Content\Rendering\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Rendering\Shaders\PixelShader.hlsl">
+      <Filter>Content\Rendering\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Rendering\Shaders\VertexShader.hlsl">
+      <Filter>Content\Rendering\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Rendering\Shaders\GeometryShader.hlsl">
       <Filter>Content\Rendering\Shaders</Filter>
     </FxCompile>
   </ItemGroup>
@@ -193,5 +209,10 @@
     <AppxManifest Include="Package.appxmanifest">
       <Filter>Infrastructure</Filter>
     </AppxManifest>
+  </ItemGroup>
+  <ItemGroup>
+    <Media Include="Assets\Sounds\cursor_toggle.wav">
+      <Filter>Assets</Filter>
+    </Media>
   </ItemGroup>
 </Project>

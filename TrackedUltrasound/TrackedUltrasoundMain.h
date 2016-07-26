@@ -38,7 +38,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <collection.h>
 
 using namespace Windows::Perception::Spatial;
-using namespace TrackedUltrasound::Spatial;
 
 namespace TrackedUltrasound
 {
@@ -86,7 +85,7 @@ namespace TrackedUltrasound
     void UnregisterHolographicEventHandlers();
 
     // Renderer for showing the gaze cursor
-    std::unique_ptr<GazeCursorRenderer> m_gazeCursorRenderer;
+    std::unique_ptr<Rendering::GazeCursorRenderer> m_gazeCursorRenderer;
 
     // Listens for the Pressed spatial input event.
     std::shared_ptr<SpatialInputHandler> m_spatialInputHandler;
@@ -118,7 +117,7 @@ namespace TrackedUltrasound
     Windows::Perception::Spatial::SpatialLocatability m_locatability;
 
     // Access to a spatial surface API
-    std::unique_ptr<SpatialSurfaceAPI> m_spatialSurfaceApi;
+    std::unique_ptr<Spatial::SpatialSurfaceAPI> m_spatialSurfaceApi;
 
     // Sound assets
     std::unique_ptr<TrackedUltrasound::Sound::OmnidirectionalSound> m_cursorSound;

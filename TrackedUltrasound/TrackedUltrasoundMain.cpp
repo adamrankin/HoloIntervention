@@ -93,9 +93,9 @@ namespace TrackedUltrasound
     m_holographicSpace = holographicSpace;
 
     // Initialize the system components
-    m_gazeCursorRenderer = std::make_unique<GazeCursorRenderer>( m_deviceResources );
+    m_gazeCursorRenderer = std::make_unique<Rendering::GazeCursorRenderer>( m_deviceResources );
     m_spatialInputHandler = std::make_unique<SpatialInputHandler>();
-    m_spatialSurfaceApi = std::make_unique<SpatialSurfaceAPI>( m_deviceResources );
+    m_spatialSurfaceApi = std::make_unique<Spatial::SpatialSurfaceAPI>( m_deviceResources );
 
     // Use the default SpatialLocator to track the motion of the device.
     m_locator = SpatialLocator::GetDefault();
