@@ -193,17 +193,12 @@ namespace DX
       // Otherwise, the set of view transforms can be retrieved.
       HolographicStereoTransform viewCoordinateSystemTransform = viewTransformContainer->Value;
 
-      // Update the view matrices. Holographic cameras (such as Microsoft HoloLens) are
-      // constantly moving relative to the world. The view matrices need to be updated
-      // every frame.
-      XMStoreFloat4x4(
-        &viewProjectionConstantBufferData.viewProjection[0],
-        XMMatrixTranspose( XMLoadFloat4x4( &viewCoordinateSystemTransform.Left ) * XMLoadFloat4x4( &cameraProjectionTransform.Left ) )
-      );
-      XMStoreFloat4x4(
-        &viewProjectionConstantBufferData.viewProjection[1],
-        XMMatrixTranspose( XMLoadFloat4x4( &viewCoordinateSystemTransform.Right ) * XMLoadFloat4x4( &cameraProjectionTransform.Right ) )
-      );
+      viewProjectionConstantBufferData.eyePosition[0] = XMFLOAT4(viewCoordinateSystemTransform.Left.m14, viewCoordinateSystemTransform.Left.m24, viewCoordinateSystemTransform.Left.m34, 1.0f);
+      viewProjectionConstantBufferData.eyePosition[1] = XMFLOAT4(viewCoordinateSystemTransform.Right.m14, viewCoordinateSystemTransform.Right.m24, viewCoordinateSystemTransform.Right.m34, 1.0f);
+
+      // XMMatrixTranspose because CPU memory treats items in row-major order, but hlsl treats them in column-major order
+      XMStoreFloat4x4( &viewProjectionConstantBufferData.viewProjection[0], XMMatrixTranspose( XMLoadFloat4x4( &viewCoordinateSystemTransform.Left ) * XMLoadFloat4x4( &cameraProjectionTransform.Left ) ) );
+      XMStoreFloat4x4( &viewProjectionConstantBufferData.viewProjection[1], XMMatrixTranspose( XMLoadFloat4x4( &viewCoordinateSystemTransform.Right ) * XMLoadFloat4x4( &cameraProjectionTransform.Right ) ) );
     }
 
     // Use the D3D device context to update Direct3D device-based resources.

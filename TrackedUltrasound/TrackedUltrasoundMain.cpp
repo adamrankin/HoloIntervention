@@ -205,6 +205,10 @@ namespace TrackedUltrasound
         {
           renderingParameters->SetFocusPoint( currentCoordinateSystem, m_gazeCursorRenderer->GetPosition(), m_gazeCursorRenderer->GetNormal() );
         }
+        catch (Platform::InvalidArgumentException ^ iex)
+        {
+          continue;
+        }
         catch ( Platform::Exception^ ex )
         {
           // Turn the cursor off and output the message

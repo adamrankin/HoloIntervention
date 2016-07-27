@@ -7,7 +7,8 @@ namespace DX
   // Constant buffer used to send the view-projection matrices to the shader pipeline.
   struct ViewProjectionConstantBuffer
   {
-    DirectX::XMFLOAT4X4 viewProjection[2];
+    DirectX::XMFLOAT4     eyePosition[2];
+    DirectX::XMFLOAT4X4   viewProjection[2];
   };
 
   // Assert that the constant buffer remains 16-byte aligned (best practice).

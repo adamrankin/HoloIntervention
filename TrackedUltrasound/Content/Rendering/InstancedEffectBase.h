@@ -96,9 +96,15 @@ namespace DirectX
     void ApplyShaders( _In_ ID3D11DeviceContext* deviceContext, int permutation );
 
     // Helper returns the default texture.
-    ID3D11ShaderResourceView* GetDefaultTexture() { return mDeviceResources->GetDefaultTexture(); }
+    ID3D11ShaderResourceView* GetDefaultTexture()
+    {
+      return mDeviceResources->GetDefaultTexture();
+    }
 
   protected:
+    // Static arrays hold all the precompiled shader permutations that support setting of render target array at any stage of the pipeline.
+    static const ShaderBytecode VPRTVertexShaderBytecode[Traits::VertexShaderCount];
+
     // Static arrays hold all the precompiled shader permutations.
     static const ShaderBytecode VertexShaderBytecode[Traits::VertexShaderCount];
     static const ShaderBytecode PixelShaderBytecode[Traits::PixelShaderCount];
@@ -110,42 +116,54 @@ namespace DirectX
     // D3D constant buffer holds a copy of the same data as the public 'constants' field.
     ConstantBuffer<typename Traits::ConstantBufferType> mConstantBuffer;
 
+    // Whether or not the given device supports VPRT
+    bool m_supportsVPRT = false;
+
     // Only one of these helpers is allocated per D3D device, even if there are multiple effect instances.
     class DeviceResources : protected EffectDeviceResources
     {
     public:
       DeviceResources( _In_ ID3D11Device* device )
-        : EffectDeviceResources( device )
-      { }
-
+        : EffectDeviceResources(device)
+      {
+        // Check for device support for the optional feature that allows setting the render target array index from the vertex shader stage.
+        D3D11_FEATURE_DATA_D3D11_OPTIONS3 options;
+        device->CheckFeatureSupport(D3D11_FEATURE_D3D11_OPTIONS3, &options, sizeof(options));
+        if (options.VPAndRTArrayIndexFromAnyShaderFeedingRasterizer)
+        {
+          m_supportsVPRT = true;
+        }
+      }
 
       // Gets or lazily creates the specified vertex shader permutation.
       ID3D11VertexShader* GetVertexShader( int permutation )
       {
         int shaderIndex = VertexShaderIndices[permutation];
 
-        return DemandCreateVertexShader( mVertexShaders[shaderIndex], VertexShaderBytecode[shaderIndex] );
+        return DemandCreateVertexShader(m_supportsVPRT ? mVPRTVertexShaders[shaderIndex] : mVertexShaders[shaderIndex],
+          m_supportsVPRT ? VPRTVertexShaderBytecode[shaderIndex] : VertexShaderBytecode[shaderIndex]);
       }
-
 
       // Gets or lazily creates the specified pixel shader permutation.
       ID3D11PixelShader* GetPixelShader( int permutation )
       {
         int shaderIndex = PixelShaderIndices[permutation];
 
-        return DemandCreatePixelShader( mPixelShaders[shaderIndex], PixelShaderBytecode[shaderIndex] );
+        return DemandCreatePixelShader(mPixelShaders[shaderIndex], PixelShaderBytecode[shaderIndex]);
       }
 
-
       // Gets or lazily creates the default texture
-      ID3D11ShaderResourceView* GetDefaultTexture() { return EffectDeviceResources::GetDefaultTexture(); }
-
+      ID3D11ShaderResourceView* GetDefaultTexture()
+      {
+        return EffectDeviceResources::GetDefaultTexture();
+      }
 
     private:
+      bool m_supportsVPRT = false;
+      Microsoft::WRL::ComPtr<ID3D11VertexShader> mVPRTVertexShaders[Traits::VertexShaderCount];
       Microsoft::WRL::ComPtr<ID3D11VertexShader> mVertexShaders[Traits::VertexShaderCount];
       Microsoft::WRL::ComPtr<ID3D11PixelShader> mPixelShaders[Traits::PixelShaderCount];
     };
-
 
     // Per-device resources.
     std::shared_ptr<DeviceResources> mDeviceResources;
@@ -160,7 +178,13 @@ namespace DirectX
     mDeviceResources( deviceResourcesPool.DemandCreate( device ) ),
     constants{}
   {
-
+    // Check for device support for the optional feature that allows setting the render target array index from the vertex shader stage.
+    D3D11_FEATURE_DATA_D3D11_OPTIONS3 options;
+    device->CheckFeatureSupport( D3D11_FEATURE_D3D11_OPTIONS3, &options, sizeof( options ) );
+    if ( options.VPAndRTArrayIndexFromAnyShaderFeedingRasterizer )
+    {
+      m_supportsVPRT = true;
+    }
   }
 
   //----------------------------------------------------------------------------
@@ -168,8 +192,7 @@ namespace DirectX
   void DirectX::InstancedEffectBase<Traits>::GetVertexShaderBytecode( int permutation, _Out_ void const** pShaderByteCode, _Out_ size_t* pByteCodeLength )
   {
     int shaderIndex = VertexShaderIndices[permutation];
-
-    ShaderBytecode const& bytecode = VertexShaderBytecode[shaderIndex];
+    ShaderBytecode const& bytecode = m_supportsVPRT ? VPRTVertexShaderBytecode[shaderIndex] : VertexShaderBytecode[shaderIndex];
 
     *pShaderByteCode = bytecode.code;
     *pByteCodeLength = bytecode.length;

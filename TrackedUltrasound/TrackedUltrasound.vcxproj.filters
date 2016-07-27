@@ -189,13 +189,13 @@
     <FxCompile Include="Content\Rendering\Shaders\BasicLightingVertexShader.hlsl">
       <Filter>Content\Rendering\Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Content\Rendering\Shaders\PixelShader.hlsl">
+    <FxCompile Include="Content\Rendering\Shaders\VPRTBasicLightingVertexShader.hlsl">
       <Filter>Content\Rendering\Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Content\Rendering\Shaders\VertexShader.hlsl">
+    <FxCompile Include="Content\Rendering\Shaders\PCIGeometryShader.hlsl">
       <Filter>Content\Rendering\Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Content\Rendering\Shaders\GeometryShader.hlsl">
+    <FxCompile Include="Content\Rendering\Shaders\PCCIGeometryShader.hlsl">
       <Filter>Content\Rendering\Shaders</Filter>
     </FxCompile>
   </ItemGroup>

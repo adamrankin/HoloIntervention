@@ -42,14 +42,11 @@ struct InstancedBasicEffectConstants
   XMVECTOR lightDiffuseColor[IEffectLights::MaxDirectionalLights];
   XMVECTOR lightSpecularColor[IEffectLights::MaxDirectionalLights];
 
-  XMVECTOR eyePosition[2];
-
-  XMVECTOR fogColor;
-  XMVECTOR fogVector[2];
-
   XMMATRIX world;
   XMVECTOR worldInverseTranspose[3];
 };
+
+static_assert((sizeof(InstancedBasicEffectConstants) % (sizeof(float) * 4)) == 0, "InstancedBasicEffectConstants size must be 16-byte aligned (16 bytes is the length of four floats).");
 
 // Traits type describes our characteristics to the EffectBase template.
 struct BasicEffectTraits
@@ -62,11 +59,42 @@ struct BasicEffectTraits
 };
 
 // Load pre-compiled vertex shaders
+#include <VPRTBasicLightingVertexShader.inc>
+
+const ShaderBytecode InstancedEffectBase<BasicEffectTraits>::VPRTVertexShaderBytecode[] =
+{
+  { VPRTBasicLightingVertexShader,              sizeof(VPRTBasicLightingVertexShader) },
+  /*
+  { BasicEffect_VSBasicNoFog,               sizeof(BasicEffect_VSBasicNoFog) },
+  { BasicEffect_VSBasicVc,                  sizeof(BasicEffect_VSBasicVc) },
+  { BasicEffect_VSBasicVcNoFog,             sizeof(BasicEffect_VSBasicVcNoFog) },
+  { BasicEffect_VSBasicTx,                  sizeof(BasicEffect_VSBasicTx) },
+  { BasicEffect_VSBasicTxNoFog,             sizeof(BasicEffect_VSBasicTxNoFog) },
+  { BasicEffect_VSBasicTxVc,                sizeof(BasicEffect_VSBasicTxVc) },
+  { BasicEffect_VSBasicTxVcNoFog,           sizeof(BasicEffect_VSBasicTxVcNoFog) },
+
+  { BasicEffect_VSBasicVertexLighting,      sizeof(BasicEffect_VSBasicVertexLighting) },
+  { BasicEffect_VSBasicVertexLightingVc,    sizeof(BasicEffect_VSBasicVertexLightingVc) },
+  { BasicEffect_VSBasicVertexLightingTx,    sizeof(BasicEffect_VSBasicVertexLightingTx) },
+  { BasicEffect_VSBasicVertexLightingTxVc,  sizeof(BasicEffect_VSBasicVertexLightingTxVc) },
+
+  { BasicEffect_VSBasicOneLight,            sizeof(BasicEffect_VSBasicOneLight) },
+  { BasicEffect_VSBasicOneLightVc,          sizeof(BasicEffect_VSBasicOneLightVc) },
+  { BasicEffect_VSBasicOneLightTx,          sizeof(BasicEffect_VSBasicOneLightTx) },
+  { BasicEffect_VSBasicOneLightTxVc,        sizeof(BasicEffect_VSBasicOneLightTxVc) },
+
+  { BasicEffect_VSBasicPixelLighting,       sizeof(BasicEffect_VSBasicPixelLighting) },
+  { BasicEffect_VSBasicPixelLightingVc,     sizeof(BasicEffect_VSBasicPixelLightingVc) },
+  { BasicEffect_VSBasicPixelLightingTx,     sizeof(BasicEffect_VSBasicPixelLightingTx) },
+  { BasicEffect_VSBasicPixelLightingTxVc,   sizeof(BasicEffect_VSBasicPixelLightingTxVc) },
+  */
+};
+
 #include <BasicLightingVertexShader.inc>
 
 const ShaderBytecode InstancedEffectBase<BasicEffectTraits>::VertexShaderBytecode[] =
 {
-  { BasicLightingVertexShader,              sizeof( BasicLightingVertexShader ) },
+  { BasicLightingVertexShader,              sizeof(BasicLightingVertexShader) },
   /*
   { BasicEffect_VSBasicNoFog,               sizeof(BasicEffect_VSBasicNoFog) },
   { BasicEffect_VSBasicVc,                  sizeof(BasicEffect_VSBasicVc) },
@@ -444,7 +472,8 @@ namespace TrackedUltrasound
 
     void XM_CALLCONV InstancedBasicEffect::SetFogColor( FXMVECTOR value )
     {
-      pImpl->constants.fogColor = value;
+      // TODO : restore fog effect to list of implemented shaders
+      //pImpl->constants.fogColor = value;
 
       pImpl->dirtyFlags |= EffectDirtyFlags::ConstantBuffer;
     }

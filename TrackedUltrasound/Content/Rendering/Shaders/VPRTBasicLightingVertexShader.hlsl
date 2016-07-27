@@ -20,7 +20,7 @@ cbuffer Parameters : register(b0)
 cbuffer ViewProjectionConstantBuffer : register(b1)
 {
   float4 EyePosition[2];
-  float4x4 viewProjection[2];
+  float4x4 ViewProjection[2];
 };
 
 struct VertexShaderOutput
@@ -28,7 +28,7 @@ struct VertexShaderOutput
   float4 PositionPS : SV_Position;
   float4 Diffuse    : COLOR0;
   float4 Specular   : COLOR1;
-  uint viewId       : TEXCOORD0;  // SV_InstanceID % 2
+  uint rtvId        : SV_RenderTargetArrayIndex; // SV_InstanceID % 2
 };
 
 struct VertexShaderInput
@@ -92,7 +92,7 @@ VertexShaderOutput main(VertexShaderInput vin)
 
   ColorPair lightResult = ComputeLights(eyeVector, worldNormal, 1);
 
-  float4x4 worldViewProj = mul(viewProjection[idx], World);
+  float4x4 worldViewProj = mul(ViewProjection[idx], World);
 
   vout.PositionPS = mul(vin.Position, worldViewProj);
   vout.Diffuse = float4(lightResult.Diffuse, DiffuseColor.a);
@@ -100,8 +100,8 @@ VertexShaderOutput main(VertexShaderInput vin)
 
   vout.Diffuse *= vin.Color;
 
-  // Pass the eye index to the geometry shader so it can set the render target array index
-  vout.viewId = idx;
+  // Set the render target array index.
+  vout.rtvId = idx;
 
   return vout;
 }

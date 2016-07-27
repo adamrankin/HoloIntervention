@@ -32,6 +32,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 //  WinRT includes
 #include <ppltasks.h>
+#include <wrl.h>
 
 // DirectXTK includes
 #include <CommonStates.h>
@@ -75,6 +76,9 @@ namespace TrackedUltrasound
       float3                                          m_gazeTargetPosition;
       float3                                          m_gazeTargetNormal;
       DirectX::SimpleMath::Matrix                     m_world;
+      
+      // DirectX resources for the renderer
+      Microsoft::WRL::ComPtr<ID3D11GeometryShader>    m_geometryShader = nullptr; // Geometry shader is only needed if VPRT is not supported
 
       // DirectXTK resources for the cursor model
       std::unique_ptr<DirectX::CommonStates>          m_states;
