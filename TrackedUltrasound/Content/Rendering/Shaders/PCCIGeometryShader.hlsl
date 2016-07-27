@@ -1,17 +1,17 @@
 // Per-vertex data from the vertex shader.
 struct GeometryShaderInput
 {
-  float4 PositionPS : SV_Position;
-  float4 Diffuse    : COLOR0;
-  float4 Specular   : COLOR1;
+  min16float4 PositionPS : SV_Position;
+  min16float4 Diffuse    : COLOR0;
+  min16float4 Specular   : COLOR1;
   uint instId       : TEXCOORD0;  // SV_InstanceID % 2
 };
 
 struct GeometryShaderOutput
 {
   min16float4 pos : SV_POSITION;
-  float4 Diffuse  : COLOR0;
-  float4 Specular : COLOR1;
+  min16float4 Diffuse  : COLOR0;
+  min16float4 Specular : COLOR1;
   uint rtvId      : SV_RenderTargetArrayIndex;
 };
 
