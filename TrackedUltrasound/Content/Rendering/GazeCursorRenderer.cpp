@@ -58,6 +58,12 @@ namespace TrackedUltrasound
       }
 
       // Get the gaze direction relative to the given coordinate system.
+      XMFLOAT3 pos(gazeTargetPosition.x, gazeTargetPosition.y, gazeTargetPosition.z);
+      XMFLOAT3 dir(gazeTargetNormal.x, gazeTargetNormal.y, gazeTargetNormal.z);
+      XMFLOAT3 up(0, 1, 0);
+      m_world = XMMatrixLookToLH(XMLoadFloat3(&pos), XMLoadFloat3(&dir), XMLoadFloat3(&up));
+
+      // These are stored to be available for focus point querying
       m_gazeTargetPosition = gazeTargetPosition;
       m_gazeTargetNormal = gazeTargetNormal;
     }
@@ -72,6 +78,28 @@ namespace TrackedUltrasound
       }
 
       const auto context = m_deviceResources->GetD3DDeviceContext();
+
+      // Draw opaque parts
+      for (auto it = m_model->meshes.cbegin(); it != m_model->meshes.cend(); ++it)
+      {
+        auto mesh = it->get();
+        assert(mesh != 0);
+
+        mesh->PrepareForRendering(context, *m_states, false, false);
+
+        DrawMesh(*mesh, false);
+      }
+
+      // Draw alpha parts
+      for (auto it = m_model->meshes.cbegin(); it != m_model->meshes.cend(); ++it)
+      {
+        auto mesh = it->get();
+        assert(mesh != 0);
+
+        mesh->PrepareForRendering(context, *m_states, true, false);
+
+        DrawMesh(*mesh, true);
+      }
     }
 
     //----------------------------------------------------------------------------
@@ -105,10 +133,58 @@ namespace TrackedUltrasound
     }
 
     //----------------------------------------------------------------------------
+    void GazeCursorRenderer::DrawMesh(const DirectX::ModelMesh& mesh, bool alpha)
+    {
+      assert(m_deviceResources->GetD3DDeviceContext() != 0);
+
+      for (auto it = mesh.meshParts.cbegin(); it != mesh.meshParts.cend(); ++it)
+      {
+        auto part = (*it).get();
+        assert(part != 0);
+
+        if (part->isAlpha != alpha)
+        {
+          // Skip alpha parts when drawing opaque or skip opaque parts if drawing alpha
+          continue;
+        }
+
+        auto imatrices = dynamic_cast<IEffectMatrices*>(part->effect.get());
+        if (imatrices)
+        {
+          imatrices->SetMatrices(m_world, SimpleMath::Matrix::Identity, SimpleMath::Matrix::Identity);
+        }
+
+        DrawMeshPart(*part);
+      }
+    }
+
+    //----------------------------------------------------------------------------
+    void GazeCursorRenderer::DrawMeshPart(const DirectX::ModelMeshPart& part)
+    {
+      m_deviceResources->GetD3DDeviceContext()->IASetInputLayout(part.inputLayout.Get());
+
+      auto vb = part.vertexBuffer.Get();
+      UINT vbStride = part.vertexStride;
+      UINT vbOffset = 0;
+      m_deviceResources->GetD3DDeviceContext()->IASetVertexBuffers(0, 1, &vb, &vbStride, &vbOffset);
+      m_deviceResources->GetD3DDeviceContext()->IASetIndexBuffer(part.indexBuffer.Get(), part.indexFormat, 0);
+
+      assert(part.effect != nullptr);
+      part.effect->Apply(m_deviceResources->GetD3DDeviceContext());
+
+      // TODO : set any state before doing any rendering
+
+      m_deviceResources->GetD3DDeviceContext()->IASetPrimitiveTopology(part.primitiveType);
+
+      m_deviceResources->GetD3DDeviceContext()->DrawIndexedInstanced(part.indexCount, 2, part.startIndex, part.vertexOffset, 0);
+    }
+
+    //----------------------------------------------------------------------------
     concurrency::task<void> GazeCursorRenderer::CreateDeviceDependentResourcesAsync()
     {
       return concurrency::create_task( [&]()
       {
+        m_states = std::make_unique<CommonStates>(m_deviceResources->GetD3DDevice());
         m_effectFactory = std::make_unique<InstancedEffectFactory>(m_deviceResources->GetD3DDevice());
         try
         {
@@ -118,14 +194,17 @@ namespace TrackedUltrasound
         {
           OutputDebugStringA(e.what());
         }
+        m_loadingComplete = true;
       } );
     }
 
     //----------------------------------------------------------------------------
     void GazeCursorRenderer::ReleaseDeviceDependentResources()
     {
+      m_loadingComplete = false;
       m_model = nullptr;
       m_effectFactory = nullptr;
+      m_states = nullptr;
     }
   }
 }

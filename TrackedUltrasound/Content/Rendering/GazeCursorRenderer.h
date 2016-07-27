@@ -34,8 +34,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <ppltasks.h>
 
 // DirectXTK includes
+#include <CommonStates.h>
 #include <Effects.h>
 #include <Model.h>
+#include <SimpleMath.h>
 
 using namespace Windows::Foundation;
 using namespace Windows::UI::Input::Spatial;
@@ -62,14 +64,20 @@ namespace TrackedUltrasound
       Numerics::float3 GetNormal() const;
 
     private:
+      void DrawMesh(const DirectX::ModelMesh& mesh, bool alpha);
+      void DrawMeshPart(const DirectX::ModelMeshPart& part);
+
+    private:
       // Cached pointer to device resources.
       std::shared_ptr<DX::DeviceResources>            m_deviceResources = nullptr;
 
       // Gaze origin and direction
       float3                                          m_gazeTargetPosition;
       float3                                          m_gazeTargetNormal;
+      DirectX::SimpleMath::Matrix                     m_world;
 
       // DirectXTK resources for the cursor model
+      std::unique_ptr<DirectX::CommonStates>          m_states;
       std::unique_ptr<InstancedEffectFactory>         m_effectFactory = nullptr;
       std::unique_ptr<DirectX::Model>                 m_model = nullptr;
 
