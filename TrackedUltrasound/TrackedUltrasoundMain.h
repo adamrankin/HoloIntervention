@@ -67,7 +67,7 @@ namespace TrackedUltrasound
     virtual void OnDeviceLost();
     virtual void OnDeviceRestored();
 
-  private:
+  protected:
     // Asynchronously creates resources for new holographic cameras.
     void OnCameraAdded( Windows::Graphics::Holographic::HolographicSpace^ sender,
                         Windows::Graphics::Holographic::HolographicSpaceCameraAddedEventArgs^ args );
@@ -84,6 +84,11 @@ namespace TrackedUltrasound
     // Clears event registration state. Used when changing to a new HolographicSpace
     // and when tearing down AppMain.
     void UnregisterHolographicEventHandlers();
+
+    // Check for any voice input commands
+
+  protected:
+    void HandleVoiceInput();
 
     // Renderer for showing the gaze cursor
     std::unique_ptr<Rendering::GazeCursorRenderer> m_gazeCursorRenderer;

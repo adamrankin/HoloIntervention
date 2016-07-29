@@ -47,9 +47,14 @@
     <ClCompile Include="Content\Rendering\InstancedBasicEffect.cpp">
       <Filter>Content\Rendering</Filter>
     </ClCompile>
-    <ClCompile Include="Content\Rendering\InstancedEffectFactory.cpp" />
     <ClCompile Include="Content\Input\VoiceInputHandler.cpp">
       <Filter>Content\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Rendering\NotificationRenderer.cpp">
+      <Filter>Content\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Rendering\InstancedEffectFactory.cpp">
+      <Filter>Content\Rendering</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -114,9 +119,17 @@
     <ClInclude Include="Content\Rendering\InstancedBasicEffect.h">
       <Filter>Content\Rendering</Filter>
     </ClInclude>
-    <ClInclude Include="Content\Rendering\InstancedEffectFactory.h" />
     <ClInclude Include="Content\Input\VoiceInputHandler.h">
       <Filter>Content\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\Common.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Rendering\NotificationRenderer.h">
+      <Filter>Content\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Rendering\InstancedEffectFactory.h">
+      <Filter>Content\Rendering</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

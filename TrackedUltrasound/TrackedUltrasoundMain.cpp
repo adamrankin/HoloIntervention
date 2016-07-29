@@ -23,6 +23,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // local includes
 #include "pch.h"
+#include "Common.h"
 #include "DirectXHelper.h"
 #include "TrackedUltrasoundMain.h"
 
@@ -162,23 +163,7 @@ namespace TrackedUltrasound
 
     SpatialCoordinateSystem^ currentCoordinateSystem = m_attachedReferenceFrame->GetStationaryCoordinateSystemAtTimestamp( prediction->Timestamp );
 
-    // Check for new input state since the last frame.
-    if (!m_voiceInputHandler->GetLastCommand().empty())
-    {
-      if (m_voiceInputHandler->GetLastCommand().compare(L"show") == 0)
-      {
-        m_cursorSound->StartOnce();
-        m_gazeCursorRenderer->EnableCursor(true);
-      }
-      else if (m_voiceInputHandler->GetLastCommand().compare(L"hide") == 0)
-      {
-        m_cursorSound->StartOnce();
-        m_gazeCursorRenderer->EnableCursor(false);
-      }
-
-      // Mark the command as handled
-      m_voiceInputHandler->MarkCommandProcessed();
-    }
+    HandleVoiceInput();
 
     // Time-based updates
     m_timer.Tick( [&]()
@@ -243,7 +228,6 @@ namespace TrackedUltrasound
   // frame was rendered to at least one camera.
   bool TrackedUltrasoundMain::Render( Windows::Graphics::Holographic::HolographicFrame^ holographicFrame )
   {
-    // Don't try to render anything before the first Update.
     if ( m_timer.GetFrameCount() == 0 )
     {
       return false;
@@ -279,9 +263,6 @@ namespace TrackedUltrasound
         context->ClearRenderTargetView( targets[0], DirectX::Colors::Transparent );
         context->ClearDepthStencilView( depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0 );
 
-        // The view and projection matrices for each holographic camera will change
-        // every frame. This function refreshes the data in the constant buffer for
-        // the holographic camera indicated by cameraPose.
         pCameraResources->UpdateViewProjectionBuffer( m_deviceResources, cameraPose, currentCoordinateSystem );
         bool activeCamera = pCameraResources->AttachViewProjectionBuffer( m_deviceResources );
 
@@ -374,25 +355,14 @@ namespace TrackedUltrasound
     HolographicCamera^ holographicCamera = args->Camera;
     create_task( [this, deferral, holographicCamera]()
     {
-      //
       // TODO: Allocate resources for the new camera and load any content specific to
       //       that camera. Note that the render target size (in pixels) is a property
       //       of the HolographicCamera object, and can be used to create off-screen
       //       render targets that match the resolution of the HolographicCamera.
-      //
 
-      // Create device-based resources for the holographic camera and add it to the list of
-      // cameras used for updates and rendering. Notes:
-      //   * Since this function may be called at any time, the AddHolographicCamera function
-      //     waits until it can get a lock on the set of holographic camera resources before
-      //     adding the new camera. At 60 frames per second this wait should not take long.
-      //   * A subsequent Update will take the back buffer from the RenderingParameters of this
-      //     camera's CameraPose and use it to create the ID3D11RenderTargetView for this camera.
-      //     Content can then be rendered for the HolographicCamera.
       m_deviceResources->AddHolographicCamera( holographicCamera );
 
-      // Holographic frame predictions will not include any information about this camera until
-      // the deferral is completed.
+      // Holographic frame predictions will not include any information about this camera until the deferral is completed.
       deferral->Complete();
     } );
   }
@@ -405,16 +375,34 @@ namespace TrackedUltrasound
   {
     create_task( [this]()
     {
-      //
       // TODO: Asynchronously unload or deactivate content resources (not back buffer
       //       resources) that are specific only to the camera that was removed.
-      //
     } );
 
-    // Before letting this callback return, ensure that all references to the back buffer are released.
-    // Since this function may be called at any time, the RemoveHolographicCamera function
-    // waits until it can get a lock on the set of holographic camera resources before
-    // deallocating resources for this camera. At 60 frames per second this wait should not take long.
     m_deviceResources->RemoveHolographicCamera( args->Camera );
+  }
+
+  //----------------------------------------------------------------------------
+  void TrackedUltrasoundMain::HandleVoiceInput()
+  {
+    // Check for new input state since the last frame.
+    if (!m_voiceInputHandler->GetLastCommand().empty())
+    {
+      if (m_voiceInputHandler->GetLastCommand().compare(L"show") == 0)
+      {
+        m_cursorSound->StartOnce();
+        m_gazeCursorRenderer->EnableCursor(true);
+        ShowToast(L"Cursor on.");
+      }
+      else if (m_voiceInputHandler->GetLastCommand().compare(L"hide") == 0)
+      {
+        m_cursorSound->StartOnce();
+        m_gazeCursorRenderer->EnableCursor(false);
+        ShowToast(L"Cursor off.");
+      }
+
+      // Mark the command as handled
+      m_voiceInputHandler->MarkCommandProcessed();
+    }
   }
 }
