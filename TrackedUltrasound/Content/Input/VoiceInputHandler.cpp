@@ -24,17 +24,82 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "pch.h"
 #include "VoiceInputHandler.h"
 
+// Windows includes
+#include <ppltasks.h>
+#include <vccorlib.h>
+
+using namespace concurrency;
+using namespace Windows::Foundation;
+using namespace Windows::Media::SpeechRecognition;
+
 namespace TrackedUltrasound
 {
   namespace Input
   {
+    //----------------------------------------------------------------------------
     VoiceInputHandler::VoiceInputHandler()
+      : m_speechRecognizer(ref new SpeechRecognizer())
     {
+      Platform::Collections::Vector<Platform::String^>^ speechCommandList = ref new Platform::Collections::Vector<Platform::String^>();
+
+      speechCommandList->Append(Platform::StringReference(L"show"));
+      m_speechCommandData.push_back(true);
+      speechCommandList->Append(Platform::StringReference(L"hide"));
+      m_speechCommandData.push_back(false);
+
+      SpeechRecognitionListConstraint^ spConstraint = ref new SpeechRecognitionListConstraint(speechCommandList);
+      m_speechRecognizer->Constraints->Clear();
+      m_speechRecognizer->Constraints->Append(spConstraint);
+      create_task(m_speechRecognizer->CompileConstraintsAsync()).then([this](SpeechRecognitionCompilationResult^ compilationResult)
+      {
+        if (compilationResult->Status == SpeechRecognitionResultStatus::Success)
+        {
+          m_speechDetectedEventToken = m_speechRecognizer->ContinuousRecognitionSession->ResultGenerated +=
+            ref new TypedEventHandler<SpeechContinuousRecognitionSession^, SpeechContinuousRecognitionResultGeneratedEventArgs^>(
+              std::bind(&VoiceInputHandler::OnResultGenerated, this, std::placeholders::_1, std::placeholders::_2)
+              );
+          m_speechRecognizer->ContinuousRecognitionSession->StartAsync();
+          m_speechBeingDetected = true;
+        }
+        else
+        {
+          // Handle errors here.
+          OutputDebugStringA("Unable to compile speech patterns.");
+        }
+      });
     }
 
-
+    //----------------------------------------------------------------------------
     VoiceInputHandler::~VoiceInputHandler()
     {
+      if (m_speechBeingDetected)
+      {
+        m_speechRecognizer->ContinuousRecognitionSession->ResultGenerated -= m_speechDetectedEventToken;
+        auto stopTask = create_task(m_speechRecognizer->ContinuousRecognitionSession->StopAsync());
+        stopTask.wait();
+      }
     }
+
+    //----------------------------------------------------------------------------
+    std::wstring VoiceInputHandler::GetLastCommand()
+    {
+      return m_lastCommandDetected;
+    }
+
+    //----------------------------------------------------------------------------
+    void VoiceInputHandler::MarkCommandProcessed()
+    {
+      m_lastCommandDetected = L"";
+    }
+
+    //----------------------------------------------------------------------------
+    void VoiceInputHandler::OnResultGenerated(SpeechContinuousRecognitionSession ^sender, SpeechContinuousRecognitionResultGeneratedEventArgs ^args)
+    {
+      if (args->Result->RawConfidence > 0.5f)
+      {
+        m_lastCommandDetected = std::wstring(args->Result->Text->Data());
+      }
+    }
+
   }
 }
