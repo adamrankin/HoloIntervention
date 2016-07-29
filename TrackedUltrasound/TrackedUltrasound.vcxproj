@@ -96,6 +96,7 @@
     <ClInclude Include="Common\DirectXHelper.h" />
     <ClInclude Include="Common\StepTimer.h" />
     <ClInclude Include="Content\Input\SpatialInputHandler.h" />
+    <ClInclude Include="Content\Input\VoiceInputHandler.h" />
     <ClInclude Include="Content\Rendering\InstancedBasicEffect.h" />
     <ClInclude Include="Content\Rendering\GazeCursorRenderer.h" />
     <ClInclude Include="Content\Rendering\InstancedEffectBase.h" />
@@ -118,6 +119,7 @@
   <ItemGroup>
     <ClCompile Include="AppView.cpp" />
     <ClCompile Include="Content\Input\SpatialInputHandler.cpp" />
+    <ClCompile Include="Content\Input\VoiceInputHandler.cpp" />
     <ClCompile Include="Content\Rendering\InstancedBasicEffect.cpp" />
     <ClCompile Include="Content\Rendering\GazeCursorRenderer.cpp" />
     <ClCompile Include="Content\Rendering\InstancedEffectBase.cpp" />

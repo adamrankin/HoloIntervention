@@ -48,6 +48,9 @@
       <Filter>Content\Rendering</Filter>
     </ClCompile>
     <ClCompile Include="Content\Rendering\InstancedEffectFactory.cpp" />
+    <ClCompile Include="Content\Input\VoiceInputHandler.cpp">
+      <Filter>Content\Input</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TrackedUltrasoundMain.h" />
@@ -112,6 +115,9 @@
       <Filter>Content\Rendering</Filter>
     </ClInclude>
     <ClInclude Include="Content\Rendering\InstancedEffectFactory.h" />
+    <ClInclude Include="Content\Input\VoiceInputHandler.h">
+      <Filter>Content\Input</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\LockScreenLogo.scale-200.png">

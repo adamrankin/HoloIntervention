@@ -28,8 +28,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "GazeCursorRenderer.h"
 #include "OmnidirectionalSound.h"
 #include "SpatialInputHandler.h"
-#include "StepTimer.h"
 #include "SpatialSurfaceAPI.h"
+#include "StepTimer.h"
+#include "VoiceInputHandler.h"
 
 // std includes
 #include <vector>
@@ -87,8 +88,10 @@ namespace TrackedUltrasound
     // Renderer for showing the gaze cursor
     std::unique_ptr<Rendering::GazeCursorRenderer> m_gazeCursorRenderer;
 
-    // Listens for the Pressed spatial input event.
-    std::shared_ptr<SpatialInputHandler> m_spatialInputHandler;
+    // Spatial input event handler
+    std::shared_ptr<Input::SpatialInputHandler> m_spatialInputHandler;
+    // Voice input event handler
+    std::shared_ptr<Input::VoiceInputHandler> m_voiceInputHandler;
 
     // Cached pointer to device resources.
     std::shared_ptr<DX::DeviceResources> m_deviceResources;

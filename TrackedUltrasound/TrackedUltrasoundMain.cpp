@@ -94,7 +94,7 @@ namespace TrackedUltrasound
 
     // Initialize the system components
     m_gazeCursorRenderer = std::make_unique<Rendering::GazeCursorRenderer>( m_deviceResources );
-    m_spatialInputHandler = std::make_unique<SpatialInputHandler>();
+    m_spatialInputHandler = std::make_unique<Input::SpatialInputHandler>();
     m_spatialSurfaceApi = std::make_unique<Spatial::SpatialSurfaceAPI>( m_deviceResources );
 
     // Use the default SpatialLocator to track the motion of the device.
