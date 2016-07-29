@@ -46,8 +46,10 @@ namespace TrackedUltrasound
       void OnResultGenerated(SpeechContinuousRecognitionSession ^sender, SpeechContinuousRecognitionResultGeneratedEventArgs ^args);
 
     protected:
+      // Used for cleaning up
       bool m_speechBeingDetected = false;
 
+      // Store the last command detected
       std::wstring m_lastCommandDetected;
 
       // API objects used to process voice input
@@ -56,6 +58,8 @@ namespace TrackedUltrasound
 
       // Event registration token.
       Windows::Foundation::EventRegistrationToken m_speechDetectedEventToken;
+
+      const float MINIMUM_CONFIDENCE_FOR_DETECTION = 0.65f; // [0,1]
     };
   }
 }

@@ -95,7 +95,7 @@ namespace TrackedUltrasound
     //----------------------------------------------------------------------------
     void VoiceInputHandler::OnResultGenerated(SpeechContinuousRecognitionSession ^sender, SpeechContinuousRecognitionResultGeneratedEventArgs ^args)
     {
-      if (args->Result->RawConfidence > 0.5f)
+      if (args->Result->RawConfidence > MINIMUM_CONFIDENCE_FOR_DETECTION)
       {
         m_lastCommandDetected = std::wstring(args->Result->Text->Data());
       }

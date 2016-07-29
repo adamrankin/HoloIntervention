@@ -95,6 +95,7 @@ namespace TrackedUltrasound
     // Initialize the system components
     m_gazeCursorRenderer = std::make_unique<Rendering::GazeCursorRenderer>( m_deviceResources );
     m_spatialInputHandler = std::make_unique<Input::SpatialInputHandler>();
+    m_voiceInputHandler = std::make_unique<Input::VoiceInputHandler>();
     m_spatialSurfaceApi = std::make_unique<Spatial::SpatialSurfaceAPI>( m_deviceResources );
 
     // Use the default SpatialLocator to track the motion of the device.
@@ -162,11 +163,21 @@ namespace TrackedUltrasound
     SpatialCoordinateSystem^ currentCoordinateSystem = m_attachedReferenceFrame->GetStationaryCoordinateSystemAtTimestamp( prediction->Timestamp );
 
     // Check for new input state since the last frame.
-    SpatialInteractionSourceState^ pointerState = m_spatialInputHandler->CheckForPressedInput();
-    if ( pointerState != nullptr )
+    if (!m_voiceInputHandler->GetLastCommand().empty())
     {
-      m_gazeCursorRenderer->ToggleCursor();
-      m_cursorSound->StartOnce();
+      if (m_voiceInputHandler->GetLastCommand().compare(L"show") == 0)
+      {
+        m_cursorSound->StartOnce();
+        m_gazeCursorRenderer->EnableCursor(true);
+      }
+      else if (m_voiceInputHandler->GetLastCommand().compare(L"hide") == 0)
+      {
+        m_cursorSound->StartOnce();
+        m_gazeCursorRenderer->EnableCursor(false);
+      }
+
+      // Mark the command as handled
+      m_voiceInputHandler->MarkCommandProcessed();
     }
 
     // Time-based updates

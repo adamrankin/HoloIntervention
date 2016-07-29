@@ -109,7 +109,7 @@ namespace TrackedUltrasound
     Windows::Perception::Spatial::SpatialLocatorAttachedFrameOfReference^ m_attachedReferenceFrame;
 
     // A reference frame placed in the environment.
-    Windows::Perception::Spatial::SpatialStationaryFrameOfReference^      m_stationaryReferenceFrame;
+    Windows::Perception::Spatial::SpatialStationaryFrameOfReference^ m_stationaryReferenceFrame;
 
     // Event registration tokens.
     Windows::Foundation::EventRegistrationToken m_cameraAddedToken;
