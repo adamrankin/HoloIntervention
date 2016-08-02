@@ -55,38 +55,13 @@ namespace TrackedUltrasound
     {
       m_meshCollection.clear();
 
-      auto createTask = CreateComputeShaderAsync( L"ms-appx:///CSRayTriangleIntersection.cso", deviceResources->GetD3DDevice(), &m_d3d11ComputeShader );
-      m_shaderLoadTask = std::make_unique< concurrency::task<HRESULT> >( createTask );
-      m_shaderLoadTask->then( [&]( concurrency::task<HRESULT> previousTask )
-      {
-        try
-        {
-          auto hr = previousTask.get();
-          if ( FAILED( hr ) )
-          {
-            _com_error err( hr, NULL );
-            LPCTSTR errMsg = err.ErrorMessage();
-            std::stringstream ss;
-            ss << "Unable to load shader: " << errMsg << ".\n";
-            OutputDebugStringA( ss.str().c_str() );
-          }
-        }
-        catch ( Platform::Exception^ e )
-        {
-          OutputDebugStringW( e->Message->Data() );
-        }
-        catch ( const std::exception& e )
-        {
-          OutputDebugStringA( e.what() );
-        }
-      } );
+      CreateDeviceDependentResourcesAsync();
     };
 
     //----------------------------------------------------------------------------
     SpatialSurfaceCollection::~SpatialSurfaceCollection()
     {
-      SAFE_RELEASE( m_constantBuffer );
-      SAFE_RELEASE( m_d3d11ComputeShader );
+      ReleaseDeviceDependentResources();
     }
 
     //----------------------------------------------------------------------------
@@ -105,9 +80,9 @@ namespace TrackedUltrasound
         auto& surfaceMesh = pair.second;
 
         // Check to see if the mesh has expired.
-        float lastActiveTime = surfaceMesh.GetLastActiveTime();
+        float lastActiveTime = surfaceMesh->GetLastActiveTime();
         float inactiveDuration = timeElapsed - lastActiveTime;
-        if ( inactiveDuration > c_maxInactiveMeshTime )
+        if ( inactiveDuration > MAX_INACTIVE_MESH_TIME_SEC )
         {
           // Surface mesh is expired.
           m_meshCollection.erase( iter++ );
@@ -115,10 +90,61 @@ namespace TrackedUltrasound
         }
 
         // Update the surface mesh.
-        surfaceMesh.UpdateTransform( m_deviceResources->GetD3DDeviceContext(), timer, coordinateSystem );
+        surfaceMesh->UpdateTransform( timer, coordinateSystem );
 
         ++iter;
       };
+    }
+
+    //----------------------------------------------------------------------------
+    concurrency::task<void> SpatialSurfaceCollection::CreateDeviceDependentResourcesAsync()
+    {
+      auto meshTask = create_task([&]()
+      {
+        std::lock_guard<std::mutex> guard(m_meshCollectionLock);
+
+        for (auto iter = m_meshCollection.begin(); iter != m_meshCollection.end(); )
+        {
+          auto& pair = *iter;
+          auto& surfaceMesh = pair.second;
+
+          surfaceMesh->CreateDeviceDependentResources();
+        }
+      });
+
+      auto createTask = CreateComputeShaderAsync( L"ms-appx:///CSRayTriangleIntersection.cso" );
+      m_shaderLoadTask = std::make_unique< concurrency::task<HRESULT> >( createTask );
+      auto finalTask = m_shaderLoadTask->then( [&]( HRESULT hr )
+      {
+        if ( FAILED( hr ) )
+        {
+          _com_error err( hr, NULL );
+          LPCTSTR errMsg = err.ErrorMessage();
+          std::stringstream ss;
+          ss << "Unable to load shader: " << errMsg << ".\n";
+          OutputDebugStringA( ss.str().c_str() );
+        }
+
+        hr = CreateConstantBuffer();
+        if ( FAILED( hr ) )
+        {
+          OutputDebugStringA( "Unable to load constant buffer in SpatialSurfaceCollection." );
+          ReleaseDeviceDependentResources();
+        }
+
+        m_resourcesLoaded = true;
+      } );
+
+      return meshTask && finalTask;
+    }
+
+    //----------------------------------------------------------------------------
+    void SpatialSurfaceCollection::ReleaseDeviceDependentResources()
+    {
+      m_resourcesLoaded = false;
+      m_shaderLoadTask = nullptr;
+      m_d3d11ComputeShader = nullptr;
+      m_constantBuffer = nullptr;
     }
 
     //----------------------------------------------------------------------------
@@ -162,7 +188,7 @@ namespace TrackedUltrasound
     }
 
     //----------------------------------------------------------------------------
-    HRESULT SpatialSurfaceCollection::CreateConstantBuffer( ID3D11Device* device )
+    HRESULT SpatialSurfaceCollection::CreateConstantBuffer()
     {
       // Create the Const Buffer
       D3D11_BUFFER_DESC constant_buffer_desc;
@@ -172,7 +198,7 @@ namespace TrackedUltrasound
       constant_buffer_desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
       constant_buffer_desc.CPUAccessFlags = 0;
 
-      auto hr = device->CreateBuffer( &constant_buffer_desc, nullptr, &m_constantBuffer );
+      auto hr = m_deviceResources->GetD3DDevice()->CreateBuffer( &constant_buffer_desc, nullptr, &m_constantBuffer );
       if ( FAILED( hr ) )
       {
         return hr;
@@ -198,9 +224,14 @@ namespace TrackedUltrasound
         {
           std::lock_guard<std::mutex> guard( m_meshCollectionLock );
 
-          auto& surfaceMesh = m_meshCollection[id];
-          surfaceMesh.UpdateSurface( mesh, m_deviceResources->GetD3DDevice() );
-          surfaceMesh.SetIsActive( true );
+          if (m_meshCollection.find(id) == m_meshCollection.end())
+          {
+            // Create a new surface and insert it
+            m_meshCollection[id] = std::make_shared<SurfaceMesh>(m_deviceResources);
+          }
+          auto surfaceMesh = m_meshCollection[id];
+          surfaceMesh->UpdateSurface( mesh );
+          surfaceMesh->SetIsActive( true );
         }
       } );
 
@@ -224,7 +255,7 @@ namespace TrackedUltrasound
     //----------------------------------------------------------------------------
     bool SpatialSurfaceCollection::TestRayIntersection( uint64_t frameNumber, const float3 rayOrigin, const float3 rayDirection, float3& outHitPosition, float3& outHitNormal )
     {
-      if ( !m_shaderLoaded )
+      if ( !m_resourcesLoaded )
       {
         auto result = m_shaderLoadTask->get();
         if ( FAILED( result ) )
@@ -234,14 +265,14 @@ namespace TrackedUltrasound
         }
       }
 
-      m_deviceResources->GetD3DDeviceContext()->CSSetShader( m_d3d11ComputeShader, nullptr, 0 );
+      m_deviceResources->GetD3DDeviceContext()->CSSetShader( m_d3d11ComputeShader.Get(), nullptr, 0 );
 
       bool result( false );
       for ( auto& pair : m_meshCollection )
       {
-        pair.second.SetRayConstants( m_deviceResources->GetD3DDeviceContext(), m_constantBuffer, rayOrigin, rayDirection );
+        pair.second->SetRayConstants( *m_deviceResources->GetD3DDeviceContext(), m_constantBuffer.Get(), rayOrigin, rayDirection );
 
-        if ( pair.second.TestRayIntersection( *m_deviceResources->GetD3DDevice(), *m_deviceResources->GetD3DDeviceContext(), *m_d3d11ComputeShader, frameNumber, outHitPosition, outHitNormal ) )
+        if ( pair.second->TestRayIntersection( *m_deviceResources->GetD3DDevice(), *m_deviceResources->GetD3DDeviceContext(), *m_d3d11ComputeShader.Get(), frameNumber, outHitPosition, outHitNormal ) )
         {
           result = true;
           break;
@@ -264,45 +295,29 @@ namespace TrackedUltrasound
         const auto& id = pair.first;
         auto& surfaceMesh = pair.second;
 
-        surfaceMesh.SetIsActive( surfaceCollection->HasKey( id ) ? true : false );
+        surfaceMesh->SetIsActive( surfaceCollection->HasKey( id ) ? true : false );
       };
     }
 
     //--------------------------------------------------------------------------------------
-    concurrency::task<HRESULT> SpatialSurfaceCollection::CreateComputeShaderAsync( const std::wstring& srcFile,
-        ID3D11Device* pDevice,
-        ID3D11ComputeShader** ppShaderOut )
+    concurrency::task<HRESULT> SpatialSurfaceCollection::CreateComputeShaderAsync( const std::wstring& srcFile )
     {
       concurrency::task<std::vector<byte>> loadVSTask = DX::ReadDataAsync( srcFile );
       return loadVSTask.then( [ = ]( std::vector<byte> data )
       {
-        if ( !pDevice || !ppShaderOut )
-        {
-          return E_INVALIDARG;
-        }
-
-        auto hr = pDevice->CreateComputeShader( &data.front(), data.size(), nullptr, ppShaderOut );
+        auto hr = m_deviceResources->GetD3DDevice()->CreateComputeShader( &data.front(), data.size(), nullptr, &m_d3d11ComputeShader );
 
         if ( FAILED( hr ) )
         {
-          throw std::exception( "Unable to create compute shader. Aborting." );
+          return hr;
         }
 
 #if defined(_DEBUG) || defined(PROFILE)
         if ( SUCCEEDED( hr ) )
         {
-          ( *ppShaderOut )->SetPrivateData( WKPDID_D3DDebugObjectName, strlen( "main" ) - 1, "main" );
+          m_d3d11ComputeShader->SetPrivateData( WKPDID_D3DDebugObjectName, strlen( "main" ) - 1, "main" );
         }
 #endif
-
-        hr = CreateConstantBuffer( pDevice );
-
-        if ( FAILED( hr ) || m_constantBuffer == NULL )
-        {
-          throw std::exception( "Unable to create constant buffer. Aborting." );
-        }
-
-        m_shaderLoaded = true;
 
         return hr;
       } );
@@ -323,7 +338,7 @@ namespace TrackedUltrasound
       if ( meshIter != m_meshCollection.end() )
       {
         auto const& mesh = meshIter->second;
-        return mesh.GetLastUpdateTime();
+        return mesh->GetLastUpdateTime();
       }
       else
       {

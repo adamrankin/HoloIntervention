@@ -44,11 +44,16 @@ namespace TrackedUltrasound
   {
     class SpatialSurfaceCollection
     {
+      typedef std::map<Platform::Guid, std::shared_ptr<SurfaceMesh> > GuidMeshMap;
+
     public:
       SpatialSurfaceCollection( const std::shared_ptr<DX::DeviceResources>& deviceResources );
       ~SpatialSurfaceCollection();
 
       void Update( DX::StepTimer const& timer, SpatialCoordinateSystem^ coordinateSystem );
+
+      concurrency::task<void> CreateDeviceDependentResourcesAsync();
+      void ReleaseDeviceDependentResources();
 
       bool HasSurface( Platform::Guid id );
       void AddSurface( Platform::Guid id, SpatialSurfaceInfo^ newSurface, SpatialSurfaceMeshOptions^ meshOptions );
@@ -66,25 +71,20 @@ namespace TrackedUltrasound
 
       void HideInactiveMeshes( Windows::Foundation::Collections::IMapView<Platform::Guid, SpatialSurfaceInfo^>^ const& surfaceCollection );
 
-    private:
-      concurrency::task<HRESULT> CreateComputeShaderAsync( const std::wstring& srcFile,
-          ID3D11Device* pDevice,
-          ID3D11ComputeShader** ppShaderOut );
+    protected:
+      concurrency::task<HRESULT> CreateComputeShaderAsync( const std::wstring& srcFile );
 
-      HRESULT CreateConstantBuffer( ID3D11Device* device );
+      HRESULT CreateConstantBuffer();
 
       Concurrency::task<void> AddOrUpdateSurfaceAsync( Platform::Guid id,
           SpatialSurfaceInfo^ newSurface,
           SpatialSurfaceMeshOptions^ meshOptions );
 
-    private:
-      ID3D11Buffer*                                   m_constantBuffer = nullptr;
-      ID3D11ComputeShader*                            m_d3d11ComputeShader = nullptr;
-      bool                                            m_shaderLoaded = false;
+    protected:
+      Microsoft::WRL::ComPtr<ID3D11Buffer>            m_constantBuffer = nullptr;
+      Microsoft::WRL::ComPtr<ID3D11ComputeShader>     m_d3d11ComputeShader = nullptr;
+      bool                                            m_resourcesLoaded = false;
       std::unique_ptr<concurrency::task<HRESULT>>     m_shaderLoadTask = nullptr;
-
-      // The set of surfaces in the collection.
-      std::map<Platform::Guid, SurfaceMesh>           m_meshCollection;
 
       // A way to lock map access.
       std::mutex                                      m_meshCollectionLock;
@@ -99,7 +99,10 @@ namespace TrackedUltrasound
       std::shared_ptr<DX::DeviceResources>            m_deviceResources;
 
       // The duration of time, in seconds, a mesh is allowed to remain inactive before deletion.
-      const float                                     c_maxInactiveMeshTime = 120.f;
+      const float                                     MAX_INACTIVE_MESH_TIME_SEC = 120.f;
+
+      // The set of surfaces in the collection.
+      GuidMeshMap                                     m_meshCollection;
     };
   }
 }

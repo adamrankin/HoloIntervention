@@ -34,9 +34,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 // winrt includes
 #include <ppltasks.h>
 
-// directx includes
+// DirectX includes
 #include <d3dcompiler.h>
 
+using namespace concurrency;
 using namespace DirectX;
 using namespace Windows::Perception::Spatial;
 using namespace Windows::Perception::Spatial::Surfaces;
@@ -47,7 +48,8 @@ namespace TrackedUltrasound
   namespace Spatial
   {
     //----------------------------------------------------------------------------
-    SurfaceMesh::SurfaceMesh()
+    SurfaceMesh::SurfaceMesh( const std::shared_ptr<DX::DeviceResources>& deviceResources )
+      : m_deviceResources( deviceResources )
     {
       m_lastUpdateTime.UniversalTime = 0;
     }
@@ -56,37 +58,18 @@ namespace TrackedUltrasound
     SurfaceMesh::~SurfaceMesh()
     {
       ReleaseDeviceDependentResources();
-
-      std::lock_guard<std::mutex> lock( m_meshResourcesMutex );
-      SAFE_RELEASE( m_outputUAV );
-      SAFE_RELEASE( m_outputBuffer );
     }
 
     //----------------------------------------------------------------------------
-    void SurfaceMesh::UpdateSurface( SpatialSurfaceMesh^ surfaceMesh, ID3D11Device* device )
+    void SurfaceMesh::UpdateSurface( SpatialSurfaceMesh^ surfaceMesh )
     {
       m_surfaceMesh = surfaceMesh;
-
-      auto updateTask = UpdateDeviceBasedResourcesAsync( device ).then( [&]( concurrency::task<void> previousTask )
-      {
-        try
-        {
-          previousTask.wait();
-        }
-        catch ( Platform::Exception^ e )
-        {
-          OutputDebugStringW( e->Message->Data() );
-        }
-        catch ( const std::exception& e )
-        {
-          OutputDebugStringA( e.what() );
-        }
-      } );
+      UpdateDeviceBasedResources();
     }
 
     //----------------------------------------------------------------------------
     // Spatial Mapping surface meshes each have a transform. This transform is updated every frame.
-    void SurfaceMesh::UpdateTransform( ID3D11DeviceContext* context, DX::StepTimer const& timer, SpatialCoordinateSystem^ baseCoordinateSystem )
+    void SurfaceMesh::UpdateTransform( DX::StepTimer const& timer, SpatialCoordinateSystem^ baseCoordinateSystem )
     {
       if ( m_surfaceMesh == nullptr )
       {
@@ -147,158 +130,68 @@ namespace TrackedUltrasound
     }
 
     //----------------------------------------------------------------------------
-    void SurfaceMesh::CreateVertexResources( ID3D11Device* device )
+    void SurfaceMesh::CreateDeviceDependentResources()
     {
-      if ( m_surfaceMesh == nullptr )
-      {
-        m_isActive = false;
-        return;
-      }
-
-      {
-        std::lock_guard<std::mutex> lock( m_meshResourcesMutex );
-        m_indexCount = m_surfaceMesh->TriangleIndices->ElementCount;
-
-        if ( m_indexCount < 3 )
+        if ( m_surfaceMesh == nullptr )
         {
           m_isActive = false;
           return;
         }
-      }
 
-      // Surface mesh resources are created off-thread
-      auto task = concurrency::create_task( [this, device]()
-      {
+        {
+          std::lock_guard<std::mutex> lock( m_meshResourcesMutex );
+          m_indexCount = m_surfaceMesh->TriangleIndices->ElementCount;
+
+          if ( m_indexCount < 3 )
+          {
+            m_isActive = false;
+            return;
+          }
+        }
+
         std::lock_guard<std::mutex> lock( m_meshResourcesMutex );
 
         SpatialSurfaceMeshBuffer^ positions = m_surfaceMesh->VertexPositions;
         SpatialSurfaceMeshBuffer^ indices = m_surfaceMesh->TriangleIndices;
 
-        auto hr = CreateStructuredBuffer( device, sizeof( VertexBufferType ), positions, &m_vertexPositionBuffer );
-        if ( FAILED( hr ) || m_vertexPositionBuffer == NULL )
-        {
-          throw std::exception( "Unable to create vertex position buffer." );
-        }
-
-        hr = CreateStructuredBuffer( device, sizeof( IndexBufferType ), indices, &m_indexBuffer );
-        if ( FAILED( hr ) || m_indexBuffer == NULL )
-        {
-          throw std::exception( "Unable to create index buffer." );
-        }
-
-        if ( m_outputBuffer == NULL )
-        {
-          // Prevent multiple allocations, the output buffer never changes, so don't delete/recreate it
-          hr = CreateStructuredBuffer( device, sizeof( OutputBufferType ), 1, &m_outputBuffer );
-          if ( FAILED( hr ) || m_outputBuffer == NULL )
-          {
-            throw std::exception( "Unable to create output result buffer." );
-          }
-
-          hr = CreateReadbackBuffer( device, sizeof( OutputBufferType ), 1, &m_readBackBuffer );
-          if ( FAILED( hr ) || m_readBackBuffer == NULL )
-          {
-            throw std::exception( "Unable to create readback buffer." );
-          }
-        }
+        DX::ThrowIfFailed( CreateStructuredBuffer( sizeof( VertexBufferType ), positions, m_vertexPositionBuffer.GetAddressOf() ) );
+        DX::ThrowIfFailed( CreateStructuredBuffer( sizeof( IndexBufferType ), indices, m_indexBuffer.GetAddressOf() ) );
+        DX::ThrowIfFailed( CreateStructuredBuffer( sizeof( OutputBufferType ), 1, m_outputBuffer.GetAddressOf() ) );
+        DX::ThrowIfFailed( CreateReadbackBuffer( sizeof( OutputBufferType ), 1 ) );
 
 #if defined(_DEBUG) || defined(PROFILE)
-        if ( m_vertexPositionBuffer )
-        {
-          m_vertexPositionBuffer->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "MeshBuffer" ) - 1, "MeshBuffer" );
-        }
-        if ( m_indexBuffer )
-        {
-          m_indexBuffer->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "IndexBuffer" ) - 1, "IndexBuffer" );
-        }
-        if ( m_outputBuffer )
-        {
-          m_outputBuffer->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "OutputBuffer" ) - 1, "OutputBuffer" );
-        }
-        if ( m_readBackBuffer )
-        {
-          m_readBackBuffer->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "ReadbackBuffer" ) - 1, "ReadbackBuffer" );
-        }
+        m_vertexPositionBuffer->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "MeshBuffer" ) - 1, "MeshBuffer" );
+        m_indexBuffer->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "IndexBuffer" ) - 1, "IndexBuffer" );
+        m_outputBuffer->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "OutputBuffer" ) - 1, "OutputBuffer" );
+        m_readBackBuffer->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "ReadbackBuffer" ) - 1, "ReadbackBuffer" );
 #endif
 
-        hr = CreateBufferSRV( *device, *m_vertexPositionBuffer, positions, &m_meshSRV );
-        if ( FAILED( hr ) || m_meshSRV == NULL )
-        {
-          throw std::exception( "Unable to create position shader resource view." );
-        }
-
-        hr = CreateBufferSRV( *device, *m_indexBuffer, indices, &m_indexSRV );
-        if ( FAILED( hr ) || m_indexSRV == NULL )
-        {
-          throw std::exception( "Unable to create index shader resource view." );
-        }
-
-        CreateBufferUAV( *device, *m_outputBuffer, &m_outputUAV );
-        if ( FAILED( hr ) || m_outputUAV == NULL )
-        {
-          throw std::exception( "Unable to create output access view." );
-        }
+        DX::ThrowIfFailed( CreateBufferSRV( m_vertexPositionBuffer, positions, m_meshSRV.GetAddressOf() ) );
+        DX::ThrowIfFailed( CreateBufferSRV( m_indexBuffer, indices, m_indexSRV.GetAddressOf() ) );
+        DX::ThrowIfFailed( CreateBufferUAV( m_outputBuffer, m_outputUAV.GetAddressOf() ) );
 
 #if defined(_DEBUG) || defined(PROFILE)
-        if ( m_meshSRV )
-        {
-          m_meshSRV->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "Mesh SRV" ) - 1, "Mesh SRV" );
-        }
-        if ( m_indexSRV )
-        {
-          m_indexSRV->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "Index SRV" ) - 1, "Index SRV" );
-        }
-        if ( m_outputUAV )
-        {
-          m_outputUAV->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "Output UAV" ) - 1, "Output UAV" );
-        }
+        m_meshSRV->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "Mesh SRV" ) - 1, "Mesh SRV" );
+        m_indexSRV->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "Index SRV" ) - 1, "Index SRV" );
+        m_outputUAV->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "Output UAV" ) - 1, "Output UAV" );
 #endif
 
         m_lastUpdateTime = m_surfaceMesh->SurfaceInfo->UpdateTime;
 
         m_loadingComplete = true;
-      } ).then( [&]( concurrency::task<void> previousTask )
-      {
-        try
-        {
-          previousTask.wait();
-        }
-        catch ( Platform::Exception^ e )
-        {
-          OutputDebugStringW( e->Message->Data() );
-          m_loadingComplete = false;
-        }
-        catch ( const std::exception& e )
-        {
-          OutputDebugStringA( e.what() );
-          m_loadingComplete = false;
-        }
-      } );
-    }
-
-    //----------------------------------------------------------------------------
-    void SurfaceMesh::CreateDeviceDependentResources( ID3D11Device* device )
-    {
-      CreateVertexResources( device );
-    }
-
-    //----------------------------------------------------------------------------
-    void SurfaceMesh::ReleaseVertexResources()
-    {
-      std::lock_guard<std::mutex> lock( m_meshResourcesMutex );
-
-      SAFE_RELEASE( m_meshSRV );
-      SAFE_RELEASE( m_indexSRV );
-      SAFE_RELEASE( m_outputUAV );
-      SAFE_RELEASE( m_vertexPositionBuffer );
-      SAFE_RELEASE( m_indexBuffer );
     }
 
     //----------------------------------------------------------------------------
     void SurfaceMesh::ReleaseDeviceDependentResources()
     {
       // Clear out active resources.
-      ReleaseVertexResources();
+      m_meshSRV.Reset();
+      m_indexSRV.Reset();
+      m_outputUAV.Reset();
+      m_vertexPositionBuffer.Reset();
+      m_indexBuffer.Reset();
+      m_outputBuffer.Reset();
+      m_readBackBuffer.Reset();
 
       m_loadingComplete = false;
     }
@@ -327,21 +220,21 @@ namespace TrackedUltrasound
         // TODO : implement pre-check using OBB
         //m_surfaceMesh->SurfaceInfo->TryGetBounds()
 
-        ID3D11ShaderResourceView* aRViews[2] = { m_meshSRV, m_indexSRV };
+        ID3D11ShaderResourceView* aRViews[2] = { m_meshSRV.Get(), m_indexSRV.Get() };
         // Send in the number of triangles as the number of thread groups to dispatch
         // triangleCount = m_indexCount/3
-        RunComputeShader( context, computeShader, 2, aRViews, m_outputUAV, m_indexCount / 3, 1, 1 );
+        RunComputeShader( context, computeShader, 2, aRViews, m_outputUAV.Get(), m_indexCount / 3, 1, 1 );
 
-        context.CopyResource( m_readBackBuffer, m_outputBuffer );
+        context.CopyResource( m_readBackBuffer.Get(), m_outputBuffer.Get() );
       }
 
       D3D11_MAPPED_SUBRESOURCE MappedResource;
       OutputBufferType* result;
-      context.Map( m_readBackBuffer, 0, D3D11_MAP_READ, 0, &MappedResource );
+      context.Map( m_readBackBuffer.Get(), 0, D3D11_MAP_READ, 0, &MappedResource );
 
       result = ( OutputBufferType* )MappedResource.pData;
 
-      context.Unmap( m_readBackBuffer, 0 );
+      context.Unmap( m_readBackBuffer.Get(), 0 );
 
       m_lastFrameNumberComputed = frameNumber;
       outHitPosition = m_rayIntersectionResultPosition = float3( result->intersectionPoint[0], result->intersectionPoint[1], result->intersectionPoint[2] );
@@ -383,7 +276,10 @@ namespace TrackedUltrasound
     }
 
     //----------------------------------------------------------------------------
-    void SurfaceMesh::SetRayConstants( ID3D11DeviceContext* context, ID3D11Buffer* constantBuffer, const float3 rayOrigin, const float3 rayDirection )
+    void SurfaceMesh::SetRayConstants( ID3D11DeviceContext& context,
+                                       ID3D11Buffer* constantBuffer,
+                                       const float3 rayOrigin,
+                                       const float3 rayDirection )
     {
       ConstantBuffer cb;
       cb.rayOrigin[0] = rayOrigin.x;
@@ -394,28 +290,20 @@ namespace TrackedUltrasound
       cb.rayDirection[2] = rayDirection.z;
       cb.meshToWorld = m_meshToWorldTransform;
 
-      context->UpdateSubresource( constantBuffer, 0, nullptr, &cb, 0, 0 );
-      context->CSSetConstantBuffers( 0, 1, &constantBuffer );
+      context.UpdateSubresource( constantBuffer, 0, nullptr, &cb, 0, 0 );
+      context.CSSetConstantBuffers( 0, 1, &constantBuffer );
     }
 
     //----------------------------------------------------------------------------
-    concurrency::task<void> SurfaceMesh::UpdateDeviceBasedResourcesAsync( ID3D11Device* device )
+    void SurfaceMesh::UpdateDeviceBasedResources()
     {
-      return concurrency::create_task( [ = ]()
-      {
-        ReleaseDeviceDependentResources();
-        CreateDeviceDependentResources( device );
-      } );
+      ReleaseDeviceDependentResources();
+      CreateDeviceDependentResources();
     }
 
     //--------------------------------------------------------------------------------------
-    HRESULT SurfaceMesh::CreateStructuredBuffer( ID3D11Device* pDevice,
-        uint32 uStructureSize,
-        SpatialSurfaceMeshBuffer^ buffer,
-        ID3D11Buffer** ppBufOut )
+    HRESULT SurfaceMesh::CreateStructuredBuffer( uint32 uStructureSize, SpatialSurfaceMeshBuffer^ buffer, ID3D11Buffer** target )
     {
-      *ppBufOut = nullptr;
-
       D3D11_BUFFER_DESC desc;
       ZeroMemory( &desc, sizeof( desc ) );
       desc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
@@ -424,17 +312,12 @@ namespace TrackedUltrasound
       desc.StructureByteStride = uStructureSize;
 
       D3D11_SUBRESOURCE_DATA bufferBytes = { TrackedUltrasound::GetDataFromIBuffer( buffer->Data ), 0, 0 };
-      return pDevice->CreateBuffer( &desc, &bufferBytes, ppBufOut );
+      return m_deviceResources->GetD3DDevice()->CreateBuffer( &desc, &bufferBytes, target );
     }
 
     //--------------------------------------------------------------------------------------
-    HRESULT SurfaceMesh::CreateStructuredBuffer( ID3D11Device* pDevice,
-        uint32 uElementSize,
-        uint32 uCount,
-        ID3D11Buffer** ppBufOut )
+    HRESULT SurfaceMesh::CreateStructuredBuffer( uint32 uElementSize, uint32 uCount, ID3D11Buffer** target )
     {
-      *ppBufOut = nullptr;
-
       D3D11_BUFFER_DESC desc;
       ZeroMemory( &desc, sizeof( desc ) );
       desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
@@ -443,11 +326,11 @@ namespace TrackedUltrasound
       desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
       desc.StructureByteStride = uElementSize;
 
-      return pDevice->CreateBuffer( &desc, nullptr, ppBufOut );
+      return m_deviceResources->GetD3DDevice()->CreateBuffer( &desc, nullptr, target );
     }
 
     //----------------------------------------------------------------------------
-    HRESULT SurfaceMesh::CreateReadbackBuffer( ID3D11Device* pDevice, uint32 uElementSize, uint32 uCount, ID3D11Buffer** ppBufOut )
+    HRESULT SurfaceMesh::CreateReadbackBuffer( uint32 uElementSize, uint32 uCount )
     {
       D3D11_BUFFER_DESC readback_buffer_desc;
       ZeroMemory( &readback_buffer_desc, sizeof( readback_buffer_desc ) );
@@ -456,18 +339,17 @@ namespace TrackedUltrasound
       readback_buffer_desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
       readback_buffer_desc.StructureByteStride = uElementSize;
 
-      return pDevice->CreateBuffer( &readback_buffer_desc, nullptr, ppBufOut );
+      return m_deviceResources->GetD3DDevice()->CreateBuffer( &readback_buffer_desc, nullptr, &m_readBackBuffer );
     }
 
     //--------------------------------------------------------------------------------------
-    HRESULT SurfaceMesh::CreateBufferSRV( ID3D11Device& device,
-                                          ID3D11Buffer& computeShaderBuffer,
+    HRESULT SurfaceMesh::CreateBufferSRV( ComPtr<ID3D11Buffer> computeShaderBuffer,
                                           SpatialSurfaceMeshBuffer^ buffer,
                                           ID3D11ShaderResourceView** ppSRVOut )
     {
       D3D11_BUFFER_DESC descBuf;
       ZeroMemory( &descBuf, sizeof( descBuf ) );
-      computeShaderBuffer.GetDesc( &descBuf );
+      computeShaderBuffer->GetDesc( &descBuf );
 
       D3D11_SHADER_RESOURCE_VIEW_DESC desc;
       ZeroMemory( &desc, sizeof( desc ) );
@@ -476,17 +358,16 @@ namespace TrackedUltrasound
       desc.Format = DXGI_FORMAT_UNKNOWN;
       desc.BufferEx.NumElements = descBuf.ByteWidth / descBuf.StructureByteStride;
 
-      return device.CreateShaderResourceView( &computeShaderBuffer, &desc, ppSRVOut );
+      return m_deviceResources->GetD3DDevice()->CreateShaderResourceView( computeShaderBuffer.Get(), &desc, ppSRVOut );
     }
 
     //--------------------------------------------------------------------------------------
-    HRESULT SurfaceMesh::CreateBufferUAV( ID3D11Device& device,
-                                          ID3D11Buffer& computeShaderBuffer,
+    HRESULT SurfaceMesh::CreateBufferUAV( ComPtr<ID3D11Buffer> computeShaderBuffer,
                                           ID3D11UnorderedAccessView** ppUAVOut )
     {
       D3D11_BUFFER_DESC descBuf;
       ZeroMemory( &descBuf, sizeof( descBuf ) );
-      computeShaderBuffer.GetDesc( &descBuf );
+      computeShaderBuffer->GetDesc( &descBuf );
 
       D3D11_UNORDERED_ACCESS_VIEW_DESC desc;
       ZeroMemory( &desc, sizeof( desc ) );
@@ -495,7 +376,7 @@ namespace TrackedUltrasound
       desc.Format = DXGI_FORMAT_UNKNOWN;
       desc.Buffer.NumElements = descBuf.ByteWidth / descBuf.StructureByteStride;
 
-      return device.CreateUnorderedAccessView( &computeShaderBuffer, &desc, ppUAVOut );
+      return m_deviceResources->GetD3DDevice()->CreateUnorderedAccessView( computeShaderBuffer.Get(), &desc, ppUAVOut );
     }
 
     //--------------------------------------------------------------------------------------
@@ -508,14 +389,14 @@ namespace TrackedUltrasound
                                         uint32 zThreadGroups )
     {
       OutputBufferType output;
-      context.UpdateSubresource( m_outputBuffer, 0, nullptr, &output, 0, 0 );
+      context.UpdateSubresource( m_outputBuffer.Get(), 0, nullptr, &output, 0, 0 );
 
       // Set the shaders resources
       context.CSSetShaderResources( 0, nNumViews, pShaderResourceViews );
       context.CSSetUnorderedAccessViews( 0, 1, &pUnorderedAccessView, nullptr );
 
       // The total number of thread groups creates is x*y*z, the number of threads in a thread group is determined by numthreads(i,j,k) in the shader code
-      context.Dispatch( xThreadGroups, yThreadGroups, zThreadGroups );
+      //context.Dispatch( xThreadGroups, yThreadGroups, zThreadGroups );
 
       ID3D11UnorderedAccessView* ppUAViewnullptr[1] = { nullptr };
       context.CSSetUnorderedAccessViews( 0, 1, ppUAViewnullptr, nullptr );

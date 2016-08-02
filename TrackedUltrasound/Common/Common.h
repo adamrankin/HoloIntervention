@@ -26,15 +26,16 @@ OTHER DEALINGS IN THE SOFTWARE.
 using namespace Windows::Data::Xml::Dom;
 using namespace Windows::UI::Notifications;
 
+#include <windows.h>
 #include <string>
 
-void ShowToast( Platform::String^ message )
+namespace TrackedUltrasound
 {
-  // TODO : access singleton notification manager and send a request to the renderer
-};
+  void ShowToast(Platform::String^ message);
 
-template<class T>
-const T& clamp( const T& x, const T& upper, const T& lower )
-{
-  return min( upper, max( x, lower ) );
+  template<class T>
+  const T& clamp(const T& x, const T& upper, const T& lower)
+  {
+    return min(upper, max(x, lower));
+  }
 }

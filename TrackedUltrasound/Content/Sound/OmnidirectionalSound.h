@@ -62,16 +62,16 @@ namespace TrackedUltrasound
       HrtfPosition ComputePositionInOrbit( _In_ float height, _In_ float radius, _In_ float angle );
 
     private:
-      float                                   _angularVelocity;
-      float                                   _height;
-      float                                   _radius;
-      std::shared_ptr<VoiceCallback>          _callBack = nullptr;
-      AudioFileReader                         _audioFile;
-      ComPtr<IXAudio2>                        _xaudio2;
-      std::map<IXAudio2SourceVoice*, bool>    _sourceVoices;
-      ComPtr<IXAPOHrtfParameters>             _hrtfParams;
-      HrtfEnvironment                         _environment = HrtfEnvironment::Outdoors;
-      float                                   _angle = 0;
+      float                                   m_angularVelocity;
+      float                                   m_height;
+      float                                   m_radius;
+      std::shared_ptr<VoiceCallback>          m_callBack = nullptr;
+      AudioFileReader                         m_audioFile;
+      ComPtr<IXAudio2>                        m_xaudio2;
+      std::map<IXAudio2SourceVoice*, bool>    m_sourceVoices;
+      ComPtr<IXAPOHrtfParameters>             m_hrtfParams;
+      HrtfEnvironment                         m_environment = HrtfEnvironment::Outdoors;
+      float                                   m_angle = 0;
       std::mutex                              m_voiceMutex;
       bool                                    m_resourcesLoaded = false;
     };

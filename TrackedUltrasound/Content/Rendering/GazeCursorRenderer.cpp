@@ -45,7 +45,7 @@ namespace TrackedUltrasound
     GazeCursorRenderer::GazeCursorRenderer( const std::shared_ptr<DX::DeviceResources>& deviceResources )
       : m_deviceResources( deviceResources )
     {
-      CreateDeviceDependentResourcesAsync();
+      CreateDeviceDependentResources();
     }
 
     //----------------------------------------------------------------------------
@@ -188,60 +188,57 @@ namespace TrackedUltrasound
 
       m_deviceResources->GetD3DDeviceContext()->IASetPrimitiveTopology( part.primitiveType );
 
-      m_deviceResources->GetD3DDeviceContext()->DrawIndexedInstanced( part.indexCount, 2, part.startIndex, part.vertexOffset, 0 );
+      //m_deviceResources->GetD3DDeviceContext()->DrawIndexedInstanced( part.indexCount, 2, part.startIndex, part.vertexOffset, 0 );
     }
 
     //----------------------------------------------------------------------------
-    concurrency::task<void> GazeCursorRenderer::CreateDeviceDependentResourcesAsync()
+    void GazeCursorRenderer::CreateDeviceDependentResources()
     {
-      return concurrency::create_task( [&]()
+      m_states = std::make_unique<CommonStates>( m_deviceResources->GetD3DDevice() );
+      m_effectFactory = std::make_unique<InstancedEffectFactory>( m_deviceResources->GetD3DDevice() );
+      try
       {
-        m_states = std::make_unique<CommonStates>( m_deviceResources->GetD3DDevice() );
-        m_effectFactory = std::make_unique<InstancedEffectFactory>( m_deviceResources->GetD3DDevice() );
-        try
-        {
-          m_model = Model::CreateFromCMO( m_deviceResources->GetD3DDevice(), L"Assets/Models/gaze_cursor.cmo", *m_effectFactory );
-        }
-        catch ( const std::exception& e )
-        {
-          OutputDebugStringA( e.what() );
-        }
+        m_model = Model::CreateFromCMO( m_deviceResources->GetD3DDevice(), L"Assets/Models/gaze_cursor.cmo", *m_effectFactory );
+      }
+      catch ( const std::exception& e )
+      {
+        OutputDebugStringA( e.what() );
+      }
 
-        if ( !m_deviceResources->GetDeviceSupportsVprt() )
+      if ( !m_deviceResources->GetDeviceSupportsVprt() )
+      {
+        // Load a geometry shader that can pass through the render target index
+        // PCCI = Position, color, color, instanceId
+        auto loadGSTask = DX::ReadDataAsync( L"ms-appx:///PCCIGeometryShader.cso" );
+        auto createGSTask = loadGSTask.then( [this]( const std::vector<byte>& fileData )
         {
-          // Load a geometry shader that can pass through the render target index
-          // PCCI = Position, color, color, instanceId
-          auto loadGSTask = DX::ReadDataAsync( L"ms-appx:///PCCIGeometryShader.cso" );
-          auto createGSTask = loadGSTask.then( [this]( const std::vector<byte>& fileData )
+          DX::ThrowIfFailed(
+            m_deviceResources->GetD3DDevice()->CreateGeometryShader(
+              fileData.data(),
+              fileData.size(),
+              nullptr,
+              &m_geometryShader
+            )
+          );
+        } ).then( [this]( concurrency::task<void> previousTask )
+        {
+          try
           {
-            DX::ThrowIfFailed(
-              m_deviceResources->GetD3DDevice()->CreateGeometryShader(
-                fileData.data(),
-                fileData.size(),
-                nullptr,
-                &m_geometryShader
-              )
-            );
-          } ).then( [this]( concurrency::task<void> previousTask )
+            previousTask.wait();
+          }
+          catch ( const std::exception& e )
           {
-            try
-            {
-              previousTask.wait();
-            }
-            catch ( const std::exception& e )
-            {
-              OutputDebugStringA( e.what() );
-            }
+            OutputDebugStringA( e.what() );
+          }
 
-            m_loadingComplete = true;
-          } );
-
-        }
-        else
-        {
           m_loadingComplete = true;
-        }
-      } );
+        } );
+
+      }
+      else
+      {
+        m_loadingComplete = true;
+      }
     }
 
     //----------------------------------------------------------------------------

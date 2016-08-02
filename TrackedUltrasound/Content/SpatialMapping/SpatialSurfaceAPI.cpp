@@ -75,6 +75,18 @@ namespace TrackedUltrasound
     }
 
     //----------------------------------------------------------------------------
+    concurrency::task<void> SpatialSurfaceAPI::CreateDeviceDependentResourcesAsync()
+    {
+      return m_surfaceCollection->CreateDeviceDependentResourcesAsync();
+    }
+
+    //----------------------------------------------------------------------------
+    void SpatialSurfaceAPI::ReleaseDeviceDependentResources()
+    {
+      m_surfaceCollection->ReleaseDeviceDependentResources();
+    }
+
+    //----------------------------------------------------------------------------
     void SpatialSurfaceAPI::OnSurfacesChanged( SpatialSurfaceObserver^ sender, Object^ args )
     {
       IMapView<Guid, SpatialSurfaceInfo^>^ const& surfaceCollection = sender->GetObservedSurfaces();

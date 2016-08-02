@@ -23,14 +23,21 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-// Local Includes
+// Common Includes
 #include "DeviceResources.h"
-#include "GazeCursorRenderer.h"
-#include "OmnidirectionalSound.h"
-#include "SpatialInputHandler.h"
 #include "SpatialSurfaceAPI.h"
 #include "StepTimer.h"
+
+// Sound includes
+#include "OmnidirectionalSound.h"
+
+// Input includes
+#include "SpatialInputHandler.h"
 #include "VoiceInputHandler.h"
+
+// Rendering includes
+#include "GazeCursorRenderer.h"
+#include "NotificationRenderer.h"
 
 // std includes
 #include <vector>
@@ -85,13 +92,16 @@ namespace TrackedUltrasound
     // and when tearing down AppMain.
     void UnregisterHolographicEventHandlers();
 
-    // Check for any voice input commands
+    // Initialize audio assets
+    concurrency::task<void> InitializeAudioAssetsAsync();
 
-  protected:
+    // Check for any voice input commands
     void HandleVoiceInput();
 
-    // Renderer for showing the gaze cursor
+  protected:
+    // Renderers
     std::unique_ptr<Rendering::GazeCursorRenderer> m_gazeCursorRenderer;
+    std::unique_ptr<Rendering::NotificationRenderer> m_notificationRenderer;
 
     // Spatial input event handler
     std::shared_ptr<Input::SpatialInputHandler> m_spatialInputHandler;

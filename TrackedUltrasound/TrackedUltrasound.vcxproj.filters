@@ -56,6 +56,15 @@
     <ClCompile Include="Content\Rendering\InstancedEffectFactory.cpp">
       <Filter>Content\Rendering</Filter>
     </ClCompile>
+    <ClCompile Include="Common\Common.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Rendering\TextRenderer.cpp">
+      <Filter>Content\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Rendering\DistanceFieldRenderer.cpp">
+      <Filter>Content\Rendering</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TrackedUltrasoundMain.h" />
@@ -131,6 +140,12 @@
     <ClInclude Include="Content\Rendering\InstancedEffectFactory.h">
       <Filter>Content\Rendering</Filter>
     </ClInclude>
+    <ClInclude Include="Content\Rendering\TextRenderer.h">
+      <Filter>Content\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Rendering\DistanceFieldRenderer.h">
+      <Filter>Content\Rendering</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\LockScreenLogo.scale-200.png">
@@ -194,13 +209,19 @@
     <Filter Include="Content\SpatialMapping\Shaders">
       <UniqueIdentifier>{cf251a3f-b817-4279-80f7-9f2bc80047d7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Content\Rendering\Shaders\NotificationRenderer">
+      <UniqueIdentifier>{9f0bc8f6-897c-4546-9772-3d3fafc172d1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Rendering\Shaders\DistanceFieldRenderer">
+      <UniqueIdentifier>{320080b2-5521-45fc-b18a-2d51c36702c3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Rendering\Shaders\Passthrough Geometry">
+      <UniqueIdentifier>{e3f2040d-dfd3-418f-8209-0f02e7887cc0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Content\SpatialMapping\Shaders\CSRayTriangleIntersection.hlsl">
       <Filter>Content\SpatialMapping\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Content\Rendering\Shaders\VPRTVertexShader.hlsl">
-      <Filter>Content\Rendering\Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Content\Rendering\Shaders\BasicLightingPixelShader.hlsl">
       <Filter>Content\Rendering\Shaders</Filter>
@@ -211,11 +232,29 @@
     <FxCompile Include="Content\Rendering\Shaders\VPRTBasicLightingVertexShader.hlsl">
       <Filter>Content\Rendering\Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Content\Rendering\Shaders\PCIGeometryShader.hlsl">
-      <Filter>Content\Rendering\Shaders</Filter>
+    <FxCompile Include="Content\Rendering\Shaders\NotificationVPRTVertexShader.hlsl">
+      <Filter>Content\Rendering\Shaders\NotificationRenderer</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Rendering\Shaders\NotificationVertexShader.hlsl">
+      <Filter>Content\Rendering\Shaders\NotificationRenderer</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Rendering\Shaders\NotificationUseDistanceFieldPixelShader.hlsl">
+      <Filter>Content\Rendering\Shaders\NotificationRenderer</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Rendering\Shaders\DFRFullscreenQuadVertexShader.hlsl">
+      <Filter>Content\Rendering\Shaders\DistanceFieldRenderer</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Rendering\Shaders\DFRCreateDistanceFieldPixelShader.hlsl">
+      <Filter>Content\Rendering\Shaders\DistanceFieldRenderer</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Rendering\Shaders\PCTIGeometryShader.hlsl">
+      <Filter>Content\Rendering\Shaders\Passthrough Geometry</Filter>
     </FxCompile>
     <FxCompile Include="Content\Rendering\Shaders\PCCIGeometryShader.hlsl">
-      <Filter>Content\Rendering\Shaders</Filter>
+      <Filter>Content\Rendering\Shaders\Passthrough Geometry</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Rendering\Shaders\PCIGeometryShader.hlsl">
+      <Filter>Content\Rendering\Shaders\Passthrough Geometry</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>

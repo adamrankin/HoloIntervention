@@ -41,6 +41,9 @@ namespace TrackedUltrasound
 
       void Update( DX::StepTimer const& timer, SpatialCoordinateSystem^ coordinateSystem );
 
+      concurrency::task<void> CreateDeviceDependentResourcesAsync();
+      void ReleaseDeviceDependentResources();
+
       // Handle surface change events.
       void OnSurfacesChanged( SpatialSurfaceObserver^ sender, Platform::Object^ args );
 
@@ -64,22 +67,22 @@ namespace TrackedUltrasound
       uint64 m_FrameNumber;
 
       // Event registration tokens.
-      Windows::Foundation::EventRegistrationToken m_surfaceObserverEventToken;
+      Windows::Foundation::EventRegistrationToken                       m_surfaceObserverEventToken;
 
       // Keep a reference to the device resources
-      std::shared_ptr<DX::DeviceResources> m_deviceResources;
+      std::shared_ptr<DX::DeviceResources>                              m_deviceResources;
 
       // Obtains spatial mapping data from the device in real time.
-      SpatialSurfaceObserver^ m_surfaceObserver;
-      SpatialSurfaceMeshOptions^ m_surfaceMeshOptions;
+      SpatialSurfaceObserver^                                           m_surfaceObserver;
+      SpatialSurfaceMeshOptions^                                        m_surfaceMeshOptions;
 
       // A data handler for surface meshes.
-      std::unique_ptr<SpatialSurfaceCollection> m_surfaceCollection;
+      std::unique_ptr<SpatialSurfaceCollection>                         m_surfaceCollection;
 
       // List of spatial anchors
-      Platform::Collections::Map<Platform::String^, SpatialAnchor^>^ m_spatialAnchors;
+      Platform::Collections::Map<Platform::String^, SpatialAnchor^>^    m_spatialAnchors;
 
-      const uint32 INIT_SURFACE_RETRY_DELAY_MS = 100;
+      const uint32                                                      INIT_SURFACE_RETRY_DELAY_MS = 100;
     };
   }
 }

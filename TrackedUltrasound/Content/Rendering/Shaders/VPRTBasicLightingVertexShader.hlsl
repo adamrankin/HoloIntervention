@@ -25,20 +25,20 @@ cbuffer ViewProjectionConstantBuffer : register(b1)
 
 struct VertexShaderOutput
 {
-  min16float4 PositionPS : SV_Position;
-  min16float4 Diffuse    : COLOR0;
-  min16float4 Specular   : COLOR1;
-  uint rtvId        : SV_RenderTargetArrayIndex; // SV_InstanceID % 2
+  min16float4 PositionPS  : SV_Position;
+  min16float4 Diffuse     : COLOR0;
+  min16float4 Specular    : COLOR1;
+  uint rtvId              : SV_RenderTargetArrayIndex; // SV_InstanceID % 2
 };
 
 struct VertexShaderInput
 {
-  min16float4 Position : SV_Position;
-  min16float3 Normal   : NORMAL0;
-  min16float4 Tangent  : TANGENT0;
-  min16float4 Color    : COLOR0;
-  min16float2 TexCoord : TEXCOORD0;
-  uint instId     : SV_InstanceID;
+  min16float4 Position  : POSITION;
+  min16float3 Normal    : NORMAL0;
+  min16float4 Tangent   : TANGENT0;
+  min16float4 Color     : COLOR0;
+  min16float2 TexCoord  : TEXCOORD0;
+  uint instId           : SV_InstanceID;
 };
 
 struct ColorPair

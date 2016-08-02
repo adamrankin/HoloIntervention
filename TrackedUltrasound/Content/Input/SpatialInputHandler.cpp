@@ -44,8 +44,8 @@ namespace TrackedUltrasound
       // Bind a handler to the SourcePressed event.
       m_sourcePressedEventToken =
         m_interactionManager->SourcePressed +=
-          ref new TypedEventHandler<SpatialInteractionManager^, SpatialInteractionSourceEventArgs^>(
-            bind( &SpatialInputHandler::OnSourcePressed, this, _1, _2 )
+        ref new TypedEventHandler<SpatialInteractionManager^, SpatialInteractionSourceEventArgs^>(
+          bind(&SpatialInputHandler::OnSourcePressed, this, _1, _2)
           );
     }
 

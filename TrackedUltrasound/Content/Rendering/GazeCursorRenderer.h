@@ -52,7 +52,7 @@ namespace TrackedUltrasound
     {
     public:
       GazeCursorRenderer( const std::shared_ptr<DX::DeviceResources>& deviceResources );
-      concurrency::task<void> CreateDeviceDependentResourcesAsync();
+      void CreateDeviceDependentResources();
       void ReleaseDeviceDependentResources();
       void Update( float3 gazeTargetPosition, float3 gazeTargetNormal );
       void Render();
@@ -64,11 +64,11 @@ namespace TrackedUltrasound
       Numerics::float3 GetPosition() const;
       Numerics::float3 GetNormal() const;
 
-    private:
+    protected:
       void DrawMesh(const DirectX::ModelMesh& mesh, bool alpha);
       void DrawMeshPart(const DirectX::ModelMeshPart& part);
 
-    private:
+    protected:
       // Cached pointer to device resources.
       std::shared_ptr<DX::DeviceResources>            m_deviceResources = nullptr;
 

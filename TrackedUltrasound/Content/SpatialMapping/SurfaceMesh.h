@@ -31,6 +31,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 // STD includes
 #include <vector>
 
+using namespace concurrency;
+using namespace Microsoft::WRL;
 using namespace Windows::Foundation::Numerics;
 using namespace Windows::Perception::Spatial::Surfaces;
 using namespace Windows::Perception::Spatial;
@@ -43,19 +45,15 @@ namespace TrackedUltrasound
     class SurfaceMesh final
     {
     public:
-      SurfaceMesh();
+      SurfaceMesh( const std::shared_ptr<DX::DeviceResources>& deviceResources );
       ~SurfaceMesh();
 
-      void UpdateSurface( SpatialSurfaceMesh^ surface,
-                          ID3D11Device* device );
+      void UpdateSurface( SpatialSurfaceMesh^ surface );
 
-      void UpdateTransform( ID3D11DeviceContext* context,
-                            DX::StepTimer const& timer,
+      void UpdateTransform( DX::StepTimer const& timer,
                             SpatialCoordinateSystem^ baseCoordinateSystem );
 
-      void CreateVertexResources( ID3D11Device* device );
-      void CreateDeviceDependentResources( ID3D11Device* device );
-      void ReleaseVertexResources();
+      void CreateDeviceDependentResources();
       void ReleaseDeviceDependentResources();
 
       bool TestRayIntersection( ID3D11Device& device,
@@ -71,37 +69,31 @@ namespace TrackedUltrasound
 
       void SetIsActive( const bool& isActive );
 
-      void SetRayConstants( ID3D11DeviceContext* context,
+      void SetRayConstants( ID3D11DeviceContext& context,
                             ID3D11Buffer* constantBuffer,
                             const float3 rayOrigin,
                             const float3 rayDirection );
 
     private:
-      concurrency::task<void> UpdateDeviceBasedResourcesAsync( ID3D11Device* device );
+      void UpdateDeviceBasedResources();
 
-      HRESULT CreateStructuredBuffer( ID3D11Device* pDevice,
-                                      uint32 uStructureSize,
+      HRESULT CreateStructuredBuffer( uint32 uStructureSize,
                                       SpatialSurfaceMeshBuffer^ buffer,
-                                      ID3D11Buffer** ppBufOut );
+                                      ID3D11Buffer** target );
 
-      HRESULT CreateStructuredBuffer( ID3D11Device* pDevice,
-                                      uint32 uElementSize,
+      HRESULT CreateStructuredBuffer( uint32 uElementSize,
                                       uint32 uCount,
-                                      ID3D11Buffer** ppBufOut );
+                                      ID3D11Buffer** target );
 
-      HRESULT CreateReadbackBuffer( ID3D11Device* pDevice,
-                                    uint32 uElementSize,
-                                    uint32 uCount,
-                                    ID3D11Buffer** ppBufOut );
+      HRESULT CreateReadbackBuffer( uint32 uElementSize,
+                                    uint32 uCount );
 
-      HRESULT CreateBufferSRV( ID3D11Device& pDevice,
-                               ID3D11Buffer& computeShaderBuffer,
+      HRESULT CreateBufferSRV( ComPtr<ID3D11Buffer> computeShaderBuffer,
                                SpatialSurfaceMeshBuffer^ buffer,
                                ID3D11ShaderResourceView** ppSRVOut );
 
-      HRESULT CreateBufferUAV( ID3D11Device& device,
-                               ID3D11Buffer& computeShaderBuffer,
-                               ID3D11UnorderedAccessView** pUAVOut );
+      HRESULT CreateBufferUAV( ComPtr<ID3D11Buffer> computeShaderBuffer,
+                               ID3D11UnorderedAccessView** ppUAVOut );
 
       void RunComputeShader( ID3D11DeviceContext& context,
                              ID3D11ComputeShader& computeShader,
@@ -110,39 +102,37 @@ namespace TrackedUltrasound
                              uint32 Xthreads, uint32 Ythreads, uint32 Zthreads );
 
     private:
-      SpatialSurfaceMesh^          m_surfaceMesh = nullptr;
+      std::shared_ptr<DX::DeviceResources>  m_deviceResources;
+      SpatialSurfaceMesh^                   m_surfaceMesh = nullptr;
 
-      ID3D11Buffer*                m_vertexPositionBuffer = nullptr;
-      ID3D11Buffer*                m_indexBuffer = nullptr;
-      ID3D11Buffer*                m_outputBuffer = nullptr;
-      ID3D11Buffer*                m_readBackBuffer = nullptr;
+      ComPtr<ID3D11Buffer>                  m_vertexPositionBuffer = nullptr;
+      ComPtr<ID3D11Buffer>                  m_indexBuffer = nullptr;
+      ComPtr<ID3D11Buffer>                  m_outputBuffer = nullptr;
+      ComPtr<ID3D11Buffer>                  m_readBackBuffer = nullptr;
 
-      ID3D11ShaderResourceView*    m_meshSRV = nullptr;
-      ID3D11ShaderResourceView*    m_indexSRV = nullptr;
-      ID3D11UnorderedAccessView*   m_outputUAV = nullptr;
+      ComPtr<ID3D11ShaderResourceView>      m_meshSRV = nullptr;
+      ComPtr<ID3D11ShaderResourceView>      m_indexSRV = nullptr;
+      ComPtr<ID3D11UnorderedAccessView>     m_outputUAV = nullptr;
 
-      uint32                          m_vertexStride = 0;
-      uint32                          m_normalStride = 0;
+      Windows::Foundation::DateTime         m_lastUpdateTime;
 
-      Windows::Foundation::DateTime   m_lastUpdateTime;
+      bool                                  m_loadingComplete = false;
+      bool                                  m_isActive = false;
+      float                                 m_lastActiveTime = -1.f;
 
-      bool                            m_loadingComplete = false;
-      bool                            m_isActive = false;
-      float                           m_lastActiveTime = -1.f;
-
-      uint32                          m_indexCount = 0;
+      uint32                                m_indexCount = 0;
 
       // Ray-triangle intersection related behavior variables
-      bool                            m_hasLastComputedHit = false;
-      float3                          m_rayIntersectionResultPosition;
-      float3                          m_rayIntersectionResultNormal;
-      uint64                          m_lastFrameNumberComputed = 0;
-      const uint32                    NUMBER_OF_FRAMES_BEFORE_RECOMPUTE = 2; // This translates into FPS/NUMBER_OF_FRAMES_BEFORE_RECOMPUTE recomputations per sec
+      bool                                  m_hasLastComputedHit = false;
+      float3                                m_rayIntersectionResultPosition;
+      float3                                m_rayIntersectionResultNormal;
+      uint64                                m_lastFrameNumberComputed = 0;
+      static const uint32                   NUMBER_OF_FRAMES_BEFORE_RECOMPUTE = 2; // This translates into FPS/NUMBER_OF_FRAMES_BEFORE_RECOMPUTE recomputations per sec
 
-      DirectX::XMFLOAT4X4             m_meshToWorldTransform;
-      DirectX::XMFLOAT4X4             m_normalToWorldTransform;
+      DirectX::XMFLOAT4X4                   m_meshToWorldTransform;
+      DirectX::XMFLOAT4X4                   m_normalToWorldTransform;
 
-      std::mutex                      m_meshResourcesMutex;
+      std::mutex                            m_meshResourcesMutex;
     };
   }
 }
