@@ -1,3 +1,6 @@
 [submodule "DirectXTK"]
 	path = DirectXTK
 	url = https://github.com/Microsoft/DirectXTK.git
+[submodule "UWPOpenIGTLink"]
+	path = UWPOpenIGTLink
+	url = https://github.com/IGSIO/UWPOpenIGTLink.git

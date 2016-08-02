@@ -8,8 +8,8 @@
     <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
     <AppContainerApplication>true</AppContainerApplication>
     <ApplicationType>Windows Store</ApplicationType>
-    <WindowsTargetPlatformVersion>10.0.10586.0</WindowsTargetPlatformVersion>
-    <WindowsTargetPlatformMinVersion>10.0.10240.0</WindowsTargetPlatformMinVersion>
+    <WindowsTargetPlatformVersion>10.0.14393.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformMinVersion>10.0.10586.0</WindowsTargetPlatformMinVersion>
     <ApplicationTypeRevision>10.0</ApplicationTypeRevision>
     <EnableDotNetNativeCompatibleProfile>true</EnableDotNetNativeCompatibleProfile>
   </PropertyGroup>
@@ -61,7 +61,7 @@
     <ClCompile>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(IntermediateOutputPath);$(SolutionDir)DirectXTK\Src;$(SolutionDir)DirectXTK\Inc;$(SolutionDir)$(Configuration)\$(ProjectName);$(ProjectDir)Content\Notification;$(ProjectDir)Content\SpatialMapping;$(ProjectDir)Content\Rendering;$(ProjectDir)Content\Input;$(ProjectDir)Content\Sound;$(ProjectDir)Content;$(ProjectDir)Common</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(IntermediateOutputPath);$(SolutionDir)DirectXTK\Src;$(SolutionDir)DirectXTK\Inc;$(SolutionDir)$(Configuration)\$(ProjectName);$(ProjectDir)Content\Notifications;$(ProjectDir)Content\SpatialMapping;$(ProjectDir)Content\IGTLink;$(ProjectDir)Content\Rendering;$(ProjectDir)Content\Input;$(ProjectDir)Content\Sound;$(ProjectDir)Content;$(ProjectDir)Common;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink</AdditionalIncludeDirectories>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
@@ -76,7 +76,7 @@
     <ClCompile>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(IntermediateOutputPath);$(SolutionDir)DirectXTK\Src;$(SolutionDir)DirectXTK\Inc;$(SolutionDir)$(Configuration)\$(ProjectName);$(ProjectDir)Content\Notification;$(ProjectDir)Content\SpatialMapping;$(ProjectDir)Content\Rendering;$(ProjectDir)Content\Input;$(ProjectDir)Content\Sound;$(ProjectDir)Content;$(ProjectDir)Common</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(IntermediateOutputPath);$(SolutionDir)DirectXTK\Src;$(SolutionDir)DirectXTK\Inc;$(SolutionDir)$(Configuration)\$(ProjectName);$(ProjectDir)Content\Notifications;$(ProjectDir)Content\SpatialMapping;$(ProjectDir)Content\IGTLink;$(ProjectDir)Content\Rendering;$(ProjectDir)Content\Input;$(ProjectDir)Content\Sound;$(ProjectDir)Content;$(ProjectDir)Common;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink</AdditionalIncludeDirectories>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
@@ -96,9 +96,10 @@
     <ClInclude Include="Common\Common.h" />
     <ClInclude Include="Common\DirectXHelper.h" />
     <ClInclude Include="Common\StepTimer.h" />
+    <ClInclude Include="Content\IGTLink\IGTLinkIF.h" />
     <ClInclude Include="Content\Input\SpatialInputHandler.h" />
     <ClInclude Include="Content\Input\VoiceInputHandler.h" />
-    <ClInclude Include="Content\Notification\NotificationsAPI.h" />
+    <ClInclude Include="Content\Notifications\NotificationsAPI.h" />
     <ClInclude Include="Content\Rendering\DistanceFieldRenderer.h" />
     <ClInclude Include="Content\Rendering\InstancedBasicEffect.h" />
     <ClInclude Include="Content\Rendering\GazeCursorRenderer.h" />
@@ -126,9 +127,10 @@
   <ItemGroup>
     <ClCompile Include="AppView.cpp" />
     <ClCompile Include="Common\Common.cpp" />
+    <ClCompile Include="Content\IGTLink\IGTLinkIF.cpp" />
     <ClCompile Include="Content\Input\SpatialInputHandler.cpp" />
     <ClCompile Include="Content\Input\VoiceInputHandler.cpp" />
-    <ClCompile Include="Content\Notification\NotificationsAPI.cpp" />
+    <ClCompile Include="Content\Notifications\NotificationsAPI.cpp" />
     <ClCompile Include="Content\Rendering\DistanceFieldRenderer.cpp" />
     <ClCompile Include="Content\Rendering\InstancedBasicEffect.cpp" />
     <ClCompile Include="Content\Rendering\GazeCursorRenderer.cpp" />
@@ -161,12 +163,6 @@
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
     </None>
     <None Include="TrackedUltrasound_TemporaryKey.pfx" />
-  </ItemGroup>
-  <ItemGroup>
-    <Reference Include="UWPOpenIGTLink">
-      <HintPath>..\..\UWPOpenIGTLink\$(Configuration)\UWPOpenIGTLink\UWPOpenIGTLink.winmd</HintPath>
-      <IsWinMDFile>true</IsWinMDFile>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Content\Rendering\Shaders\BasicLightingPixelShader.hlsl">
@@ -288,6 +284,16 @@
   </ItemGroup>
   <ItemGroup>
     <Media Include="Assets\Sounds\cursor_toggle.wav" />
+    <Media Include="Assets\Sounds\input_fail.mp3" />
+    <Media Include="Assets\Sounds\input_ok.mp3" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DirectXTK\DirectXTK_Windows10.vcxproj">
+      <Project>{f4776924-619c-42c7-88b2-82c947ccc9e7}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\UWPOpenIGTLink\UWPOpenIGTLink\UWPOpenIGTLink.vcxproj">
+      <Project>{341616a4-cfc4-47cf-87e3-58d619b8475a}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

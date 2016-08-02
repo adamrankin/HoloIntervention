@@ -49,29 +49,22 @@ namespace TrackedUltrasound
     {
     public:
       virtual ~OmnidirectionalSound();
-      task<HRESULT> InitializeAsync( _In_ LPCWSTR filename, _In_ float angularVelocity, _In_ float height, _In_ float radius);
+      task<HRESULT> InitializeAsync( _In_ LPCWSTR filename );
 
       HRESULT Start();
       HRESULT StartOnce();
       HRESULT Stop();
-      void Update(const DX::StepTimer& timer);
+      void Update( const DX::StepTimer& timer );
       HRESULT SetEnvironment( _In_ HrtfEnvironment environment );
       HrtfEnvironment GetEnvironment();
 
-    private:
-      HrtfPosition ComputePositionInOrbit( _In_ float height, _In_ float radius, _In_ float angle );
-
-    private:
-      float                                   m_angularVelocity;
-      float                                   m_height;
-      float                                   m_radius;
+    protected:
       std::shared_ptr<VoiceCallback>          m_callBack = nullptr;
       AudioFileReader                         m_audioFile;
       ComPtr<IXAudio2>                        m_xaudio2;
       std::map<IXAudio2SourceVoice*, bool>    m_sourceVoices;
       ComPtr<IXAPOHrtfParameters>             m_hrtfParams;
       HrtfEnvironment                         m_environment = HrtfEnvironment::Outdoors;
-      float                                   m_angle = 0;
       std::mutex                              m_voiceMutex;
       bool                                    m_resourcesLoaded = false;
     };

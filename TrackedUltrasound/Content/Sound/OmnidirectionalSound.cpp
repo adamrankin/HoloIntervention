@@ -35,12 +35,8 @@ namespace TrackedUltrasound
   {
     //----------------------------------------------------------------------------
     _Use_decl_annotations_
-    task<HRESULT> OmnidirectionalSound::InitializeAsync( LPCWSTR filename, float angularVelocity, float height, float radius )
+    task<HRESULT> OmnidirectionalSound::InitializeAsync( LPCWSTR filename )
     {
-      m_angularVelocity = angularVelocity;
-      m_height = height;
-      m_radius = radius;
-
       return create_task( [ = ]() -> HRESULT
       {
         m_callBack = std::make_shared<VoiceCallback>( *this );
@@ -223,22 +219,8 @@ namespace TrackedUltrasound
       // TODO : this class assumes a single voice... we are running multiple voices
       // TODO : create multiple sounds at the main level?
       // TODO : we need a spatialsoundAPI...
-      m_angle += timeElapsed * m_angularVelocity;
-      m_angle = m_angle > HRTF_2PI ? ( m_angle - HRTF_2PI ) : m_angle;
-      auto position = ComputePositionInOrbit( m_height, m_radius, m_angle );
-      m_hrtfParams->SetSourcePosition( &position );
-    }
-
-    //----------------------------------------------------------------------------
-    _Use_decl_annotations_
-    HrtfPosition OmnidirectionalSound::ComputePositionInOrbit( float height, float radius, float angle )
-    {
-      // Calculate the position of the source based on height relative to listener's head, radius of orbit and angle relative to the listener.
-      // APO uses right-handed coordinate system where negative z-axis is forward and positive z-axis is backward.
-      // All coordinates use real-world units (meters).
-      float x = radius * sin( angle );
-      float z = -radius * cos( angle );
-      return HrtfPosition{ x, height , z };
+      HrtfPosition pos = { 0, 0, 0 };
+      m_hrtfParams->SetSourcePosition( &pos );
     }
   }
 }

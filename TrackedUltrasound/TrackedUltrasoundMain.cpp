@@ -78,6 +78,7 @@ namespace TrackedUltrasound
     m_spatialInputHandler = std::make_unique<Input::SpatialInputHandler>();
     m_voiceInputHandler = std::make_unique<Input::VoiceInputHandler>();
     m_spatialSurfaceApi = std::make_unique<Spatial::SpatialSurfaceAPI>( m_deviceResources );
+    m_igtLinkIF = std::make_unique<IGTLink::IGTLinkIF>();
 
     InitializeAudioAssetsAsync();
 
@@ -124,8 +125,7 @@ namespace TrackedUltrasound
     {
       m_cursorSound = std::make_unique<TrackedUltrasound::Sound::OmnidirectionalSound>();
 
-      // TODO : magic values for now
-      auto loadTask = m_cursorSound->InitializeAsync( L"Assets/Sounds/cursor_toggle.wav", 2, 3, 1 );
+      auto loadTask = m_cursorSound->InitializeAsync( L"Assets/Sounds/input_ok.mp3" );
       loadTask.then( [&]( task<HRESULT> previousTask )
       {
         try

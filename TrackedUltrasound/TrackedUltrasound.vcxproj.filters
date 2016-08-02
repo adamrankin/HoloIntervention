@@ -71,9 +71,10 @@
     <ClCompile Include="Content\Rendering\TextRenderer.cpp">
       <Filter>Content\Rendering\NotificationRenderer</Filter>
     </ClCompile>
-    <ClCompile Include="Content\Notification\NotificationsAPI.cpp">
-      <Filter>Content\Notification</Filter>
+    <ClCompile Include="Content\Notifications\NotificationsAPI.cpp">
+      <Filter>Content\Notifications</Filter>
     </ClCompile>
+    <ClCompile Include="Content\IGTLink\IGTLinkIF.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TrackedUltrasoundMain.h" />
@@ -161,9 +162,10 @@
     <ClInclude Include="Content\Rendering\TextRenderer.h">
       <Filter>Content\Rendering\NotificationRenderer</Filter>
     </ClInclude>
-    <ClInclude Include="Content\Notification\NotificationsAPI.h">
-      <Filter>Content\Notification</Filter>
+    <ClInclude Include="Content\Notifications\NotificationsAPI.h">
+      <Filter>Content\Notifications</Filter>
     </ClInclude>
+    <ClInclude Include="Content\IGTLink\IGTLinkIF.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\LockScreenLogo.scale-200.png">
@@ -248,8 +250,11 @@
     <Filter Include="Content\Rendering\SliceRenderer\Shaders">
       <UniqueIdentifier>{ed7455e3-3b7a-43be-9d87-196368144a64}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Content\Notification">
+    <Filter Include="Content\Notifications">
       <UniqueIdentifier>{828d142c-791a-453d-9db1-729b679a943c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\IGTLink">
+      <UniqueIdentifier>{5cbfa541-c5c4-47c9-a0d2-d754fbe0669f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -309,6 +314,12 @@
   </ItemGroup>
   <ItemGroup>
     <Media Include="Assets\Sounds\cursor_toggle.wav">
+      <Filter>Assets</Filter>
+    </Media>
+    <Media Include="Assets\Sounds\input_ok.mp3">
+      <Filter>Assets</Filter>
+    </Media>
+    <Media Include="Assets\Sounds\input_fail.mp3">
       <Filter>Assets</Filter>
     </Media>
   </ItemGroup>

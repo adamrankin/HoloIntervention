@@ -41,6 +41,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Notification includes
 #include "NotificationsAPI.h"
 
+// IGTLink includes
+#include "IGTLinkIF.h"
+
 // std includes
 #include <vector>
 
@@ -108,9 +111,12 @@ namespace TrackedUltrasound
     std::unique_ptr<Rendering::GazeCursorRenderer>        m_gazeCursorRenderer;
 
     // Spatial input event handler
-    std::shared_ptr<Input::SpatialInputHandler>           m_spatialInputHandler;
+    std::unique_ptr<Input::SpatialInputHandler>           m_spatialInputHandler;
     // Voice input event handler
-    std::shared_ptr<Input::VoiceInputHandler>             m_voiceInputHandler;
+    std::unique_ptr<Input::VoiceInputHandler>             m_voiceInputHandler;
+
+    // Interface that manages a network connection to an IGT link server
+    std::unique_ptr<IGTLink::IGTLinkIF>                   m_igtLinkIF;
 
     // Notification API
     std::unique_ptr<Notifications::NotificationsAPI>      m_notificationAPI;
