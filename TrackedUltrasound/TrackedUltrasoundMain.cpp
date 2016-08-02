@@ -74,7 +74,7 @@ namespace TrackedUltrasound
 
     // Initialize the system components
     m_gazeCursorRenderer = std::make_unique<Rendering::GazeCursorRenderer>( m_deviceResources );
-    m_notificationRenderer = std::make_unique<Rendering::NotificationRenderer>( m_deviceResources );
+    m_notificationAPI = std::make_unique<Notifications::NotificationsAPI>( m_deviceResources );
     m_spatialInputHandler = std::make_unique<Input::SpatialInputHandler>();
     m_voiceInputHandler = std::make_unique<Input::VoiceInputHandler>();
     m_spatialSurfaceApi = std::make_unique<Spatial::SpatialSurfaceAPI>( m_deviceResources );
@@ -114,7 +114,7 @@ namespace TrackedUltrasound
     SpatialCoordinateSystem^ currentCoordinateSystem = m_attachedReferenceFrame->GetStationaryCoordinateSystemAtTimestamp(prediction->Timestamp);
 
     SpatialPointerPose^ pose = SpatialPointerPose::TryGetAtTimestamp(currentCoordinateSystem, prediction->Timestamp);
-    m_notificationRenderer->Initialize(pose);
+    m_notificationAPI->Initialize(pose);
   }
 
   //----------------------------------------------------------------------------
@@ -194,7 +194,7 @@ namespace TrackedUltrasound
 
       // Allow notification system to update
       SpatialPointerPose^ pose = SpatialPointerPose::TryGetAtTimestamp( currentCoordinateSystem, prediction->Timestamp );
-      m_notificationRenderer->Update( pose, m_timer );
+      m_notificationAPI->Update( pose, m_timer );
 
       // Update the gaze vector in the gaze renderer
       if ( m_gazeCursorRenderer->IsCursorEnabled() )
@@ -219,11 +219,11 @@ namespace TrackedUltrasound
     {
       HolographicCameraRenderingParameters^ renderingParameters = holographicFrame->GetRenderingParameters( cameraPose );
 
-      if ( m_notificationRenderer->IsShowingNotification() )
+      if ( m_notificationAPI->IsShowingNotification() )
       {
-        float3 const& focusPointPosition = m_notificationRenderer->GetPosition();
+        float3 const& focusPointPosition = m_notificationAPI->GetPosition();
         float3        focusPointNormal = focusPointPosition == float3( 0.f ) ? float3( 0.f, 0.f, 1.f ) : -normalize( focusPointPosition );
-        float3 const& focusPointVelocity = m_notificationRenderer->GetVelocity();
+        float3 const& focusPointVelocity = m_notificationAPI->GetVelocity();
 
         renderingParameters->SetFocusPoint(
           currentCoordinateSystem,
@@ -283,9 +283,6 @@ namespace TrackedUltrasound
       SpatialCoordinateSystem^ currentCoordinateSystem =
         m_attachedReferenceFrame->GetStationaryCoordinateSystemAtTimestamp( prediction->Timestamp );
 
-      // Give the renderers the chance to render to targets other than the stereoscopic back buffer
-      m_notificationRenderer->AltRTRender();
-
       bool atLeastOneCameraRendered = false;
       for ( auto cameraPose : prediction->CameraPoses )
       {
@@ -315,9 +312,9 @@ namespace TrackedUltrasound
           m_gazeCursorRenderer->Render();
         }
 
-        if ( m_notificationRenderer->IsShowingNotification() )
+        if ( m_notificationAPI->IsShowingNotification() )
         {
-          m_notificationRenderer->Render();
+          m_notificationAPI->GetRenderer()->Render();
         }
         atLeastOneCameraRendered = true;
       }
@@ -339,6 +336,12 @@ namespace TrackedUltrasound
   }
 
   //----------------------------------------------------------------------------
+  std::unique_ptr<Notifications::NotificationsAPI>& TrackedUltrasoundMain::GetNotificationsAPI()
+  {
+    return m_notificationAPI;
+  }
+
+  //----------------------------------------------------------------------------
   // Notifies classes that use Direct3D device resources that the device resources
   // need to be released before this method returns.
   void TrackedUltrasoundMain::OnDeviceLost()
@@ -346,7 +349,7 @@ namespace TrackedUltrasound
     m_spatialSurfaceApi->ReleaseDeviceDependentResources();
 
     m_gazeCursorRenderer->ReleaseDeviceDependentResources();
-    m_notificationRenderer->ReleaseDeviceDependentResources();
+    m_notificationAPI->ReleaseDeviceDependentResources();
   }
 
   //----------------------------------------------------------------------------
@@ -355,7 +358,7 @@ namespace TrackedUltrasound
   void TrackedUltrasoundMain::OnDeviceRestored()
   {
     m_gazeCursorRenderer->CreateDeviceDependentResources();
-    m_notificationRenderer->CreateDeviceDependentResources();
+    m_notificationAPI->CreateDeviceDependentResources();
     m_spatialSurfaceApi->CreateDeviceDependentResourcesAsync();
   }
 
@@ -441,13 +444,13 @@ namespace TrackedUltrasound
       {
         m_cursorSound->StartOnce();
         m_gazeCursorRenderer->EnableCursor( true );
-        m_notificationRenderer->QueueMessage( L"Cursor on.\n" );
+        m_notificationAPI->QueueMessage( L"Cursor on.\n" );
       }
       else if ( m_voiceInputHandler->GetLastCommand().compare( L"hide" ) == 0 )
       {
         m_cursorSound->StartOnce();
         m_gazeCursorRenderer->EnableCursor( false );
-        m_notificationRenderer->QueueMessage( L"Cursor off.\n" );
+        m_notificationAPI->QueueMessage( L"Cursor off.\n" );
       }
 
       // Mark the command as handled

@@ -27,24 +27,14 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "DirectXHelper.h"
 #include "NotificationRenderer.h"
 
-// DirectXTK includes
-#include <DDSTextureLoader.h>
-
 using namespace DirectX;
 
 namespace TrackedUltrasound
 {
   namespace Rendering
   {
-    const double NotificationRenderer::MAXIMUM_REQUESTED_DURATION_SEC = 10.0;
-    const double NotificationRenderer::DEFAULT_NOTIFICATION_DURATION_SEC = 3.0;
     const uint32 NotificationRenderer::BLUR_TARGET_WIDTH_PIXEL = 256;
     const uint32 NotificationRenderer::OFFSCREEN_RENDER_TARGET_WIDTH_PIXEL = 2048;
-    const DirectX::XMFLOAT4 NotificationRenderer::SHOWING_ALPHA_VALUE = XMFLOAT4( 1.f, 1.f, 1.f, 1.f );
-    const DirectX::XMFLOAT4 NotificationRenderer::HIDDEN_ALPHA_VALUE = XMFLOAT4( 0.f, 0.f, 0.f, 0.f );
-    const Windows::Foundation::Numerics::float3 NotificationRenderer::NOTIFICATION_SCREEN_OFFSET = float3( 0.f, -0.13f, 0.f );
-    const float NotificationRenderer::NOTIFICATION_DISTANCE_OFFSET = 2.2f;
-    const float NotificationRenderer::LERP_RATE = 4.0;
 
     //----------------------------------------------------------------------------
     NotificationRenderer::NotificationRenderer( const std::shared_ptr<DX::DeviceResources>& deviceResources )
@@ -60,189 +50,22 @@ namespace TrackedUltrasound
     }
 
     //----------------------------------------------------------------------------
-    void NotificationRenderer::Initialize( SpatialPointerPose^ pointerPose )
-    {
-      SetPose(pointerPose);
-    }
-
-    //----------------------------------------------------------------------------
-    void NotificationRenderer::QueueMessage( const std::string& message, double duration )
-    {
-      this->QueueMessage( std::wstring( message.begin(), message.end() ), duration );
-    }
-
-    //----------------------------------------------------------------------------
-    void NotificationRenderer::QueueMessage( Platform::String^ message, double duration )
-    {
-      this->QueueMessage( std::wstring( message->Data() ), duration );
-    }
-
-    //----------------------------------------------------------------------------
-    void NotificationRenderer::QueueMessage( const std::wstring& message, double duration )
-    {
-      duration = clamp<double>( duration, MAXIMUM_REQUESTED_DURATION_SEC, 0.1 );
-
-      std::lock_guard<std::mutex> guard( m_messageQueueMutex );
-      MessageDuration mt( message, duration );
-      m_messages.push_back( mt );
-    }
-
-    //----------------------------------------------------------------------------
-    void NotificationRenderer::Update( SpatialPointerPose^ pose, const DX::StepTimer& timer )
+    void NotificationRenderer::Update( NotificationConstantBuffer& buffer )
     {
       if ( !m_loadingComplete )
       {
         return;
       }
 
-      // The following code updates any relevant timers depending on state
-      auto elapsedTimeSec = timer.GetElapsedSeconds();
-      if ( m_animationState == SHOWING )
-      {
-        // Accumulate the total time shown
-        m_messageTimeElapsedSec += elapsedTimeSec;
-      }
-
-      // The following code manages state transition
-      if( m_animationState == HIDDEN && m_messages.size() > 0 )
-      {
-        m_animationState = FADING_IN;
-        m_fadeTime = c_maxFadeTime;
-
-        GrabNextMessage();
-      }
-      else if ( m_animationState == SHOWING && m_messageTimeElapsedSec > m_currentMessage.second )
-      {
-        // The time for the current message has ended
-
-        if ( m_messages.size() > 0 )
-        {
-          // There is a new message to show, switch to it, do not do any fade
-          // TODO : in the future, add a blink animation of some type
-          GrabNextMessage();
-
-          // Reset timer for new message
-          m_messageTimeElapsedSec = 0.0;
-        }
-        else
-        {
-          m_animationState = FADING_OUT;
-          m_fadeTime = c_maxFadeTime;
-        }
-      }
-      else if ( m_animationState == FADING_IN )
-      {
-        if ( !IsFading() )
-        {
-          // animation has finished, switch to showing
-          m_animationState = SHOWING;
-          m_messageTimeElapsedSec = 0.f;
-        }
-      }
-      else if ( m_animationState == FADING_OUT )
-      {
-        if ( m_messages.size() > 0 )
-        {
-          // A message has come in while we were fading out, reverse and fade back in
-          GrabNextMessage();
-
-          m_animationState = FADING_IN;
-          m_fadeTime = c_maxFadeTime - m_fadeTime; // reverse the fade
-        }
-
-        if ( !IsFading() )
-        {
-          // animation has finished, switch to HIDDEN
-          m_animationState = HIDDEN;
-        }
-      }
-
-      if ( IsShowingNotification() )
-      {
-        UpdateHologramPosition( pose, timer );
-
-        CalculateWorldMatrix();
-        CalculateAlpha( timer );
-        CalculateVelocity( 1.f / static_cast<float>( timer.GetElapsedSeconds() ) );
-
-        // Update the model transform buffer for the hologram.
-        m_deviceResources->GetD3DDeviceContext()->UpdateSubresource(
-          m_modelConstantBuffer.Get(),
-          0,
-          nullptr,
-          &m_constantBufferData,
-          0,
-          0
-        );
-      }
-    }
-
-    //----------------------------------------------------------------------------
-    void NotificationRenderer::AltRTRender()
-    {
-      // Ensure distance field renderer has a chance to render if the text has changed
-      if ( m_distanceFieldRenderer->GetRenderCount() == 0 )
-      {
-        m_textRenderer->RenderTextOffscreen( m_currentMessage.first );
-        m_distanceFieldRenderer->RenderDistanceField( m_textRenderer->GetTexture() );
-      }
-    }
-
-    //----------------------------------------------------------------------------
-    void NotificationRenderer::CalculateAlpha( const DX::StepTimer& timer )
-    {
-      const float deltaTime = static_cast<float>( timer.GetElapsedSeconds() );
-
-      if ( IsFading() )
-      {
-        // Fade the quad in, or out.
-        if ( m_animationState == FADING_IN )
-        {
-          const float fadeLerp = 1.f - ( m_fadeTime / c_maxFadeTime );
-          m_constantBufferData.hologramColorFadeMultiplier = XMFLOAT4( fadeLerp, fadeLerp, fadeLerp, 1.f );
-        }
-        else
-        {
-          const float fadeLerp = ( m_fadeTime / c_maxFadeTime );
-          m_constantBufferData.hologramColorFadeMultiplier = XMFLOAT4( fadeLerp, fadeLerp, fadeLerp, 1.f );
-        }
-        m_fadeTime -= deltaTime;
-      }
-      else
-      {
-        m_constantBufferData.hologramColorFadeMultiplier = ( m_animationState == SHOWING ? SHOWING_ALPHA_VALUE : HIDDEN_ALPHA_VALUE );
-      }
-    }
-
-    //----------------------------------------------------------------------------
-    void NotificationRenderer::CalculateWorldMatrix()
-    {
-      XMVECTOR facingNormal = XMVector3Normalize( -XMLoadFloat3( &m_position ) );
-      XMVECTOR xAxisRotation = XMVector3Normalize( XMVectorSet( XMVectorGetZ( facingNormal ), 0.f, -XMVectorGetX( facingNormal ), 0.f ) );
-      XMVECTOR yAxisRotation = XMVector3Normalize( XMVector3Cross( facingNormal, xAxisRotation ) );
-
-      // Construct the 4x4 rotation matrix.
-      XMMATRIX rotationMatrix = XMMATRIX( xAxisRotation, yAxisRotation, facingNormal, XMVectorSet( 0.f, 0.f, 0.f, 1.f ) );
-      const XMMATRIX modelTranslation = XMMatrixTranslationFromVector( XMLoadFloat3( &m_position ) );
-      XMStoreFloat4x4( &m_constantBufferData.worldMatrix, XMMatrixTranspose( rotationMatrix * modelTranslation ) );
-    }
-
-    //----------------------------------------------------------------------------
-    void NotificationRenderer::GrabNextMessage()
-    {
-      if ( m_messages.size() == 0 )
-      {
-        return;
-      }
-      m_currentMessage = m_messages.front();
-      m_messages.pop_front();
-      m_distanceFieldRenderer->ResetRenderCount();
-    }
-
-    //----------------------------------------------------------------------------
-    bool NotificationRenderer::IsFading() const
-    {
-      return m_fadeTime > 0.f;
+      // Update the model transform buffer for the hologram.
+      m_deviceResources->GetD3DDeviceContext()->UpdateSubresource(
+        m_modelConstantBuffer.Get(),
+        0,
+        nullptr,
+        &buffer,
+        0,
+        0
+      );
     }
 
     //----------------------------------------------------------------------------
@@ -321,32 +144,11 @@ namespace TrackedUltrasound
     }
 
     //----------------------------------------------------------------------------
-    bool NotificationRenderer::IsShowingNotification() const
+    void NotificationRenderer::RenderText(const std::wstring& message)
     {
-      return m_animationState != HIDDEN;
-    }
-
-    //----------------------------------------------------------------------------
-    void NotificationRenderer::UpdateHologramPosition( SpatialPointerPose^ pointerPose, const DX::StepTimer& timer )
-    {
-      const float& deltaTime = static_cast<float>( timer.GetElapsedSeconds() );
-
-      if ( pointerPose != nullptr )
-      {
-        // Get the gaze direction relative to the given coordinate system.
-        const float3 headPosition = pointerPose->Head->Position;
-        const float3 headDirection = pointerPose->Head->ForwardDirection;
-
-        // Offset the view to centered, lower quadrant
-        const float3 offsetFromGazeAtTwoMeters = headPosition + ( float3( NOTIFICATION_DISTANCE_OFFSET ) * ( headDirection + NOTIFICATION_SCREEN_OFFSET ) );
-
-        // Use linear interpolation to smooth the position over time
-        const float3 smoothedPosition = lerp( m_position, offsetFromGazeAtTwoMeters, deltaTime * LERP_RATE );
-
-        // This will be used as the translation component of the hologram's model transform.
-        m_lastPosition = m_position;
-        m_position = smoothedPosition;
-      }
+      m_distanceFieldRenderer->ResetRenderCount();
+      m_textRenderer->RenderTextOffscreen(message);
+      m_distanceFieldRenderer->RenderDistanceField(m_textRenderer->GetTexture());
     }
 
     //----------------------------------------------------------------------------
@@ -556,34 +358,6 @@ namespace TrackedUltrasound
       m_indexBuffer.Reset();
 
       m_quadTextureSamplerState.Reset();
-    }
-
-    //----------------------------------------------------------------------------
-    void NotificationRenderer::SetPose( SpatialPointerPose^ pointerPose )
-    {
-      const float3 headPosition = pointerPose->Head->Position;
-      const float3 headDirection = pointerPose->Head->ForwardDirection;
-
-      m_lastPosition = m_position = headPosition + ( float3( NOTIFICATION_DISTANCE_OFFSET ) * ( headDirection + NOTIFICATION_SCREEN_OFFSET ) );
-    }
-
-    //----------------------------------------------------------------------------
-    const Windows::Foundation::Numerics::float3& NotificationRenderer::GetPosition() const
-    {
-      return m_position;
-    }
-
-    //----------------------------------------------------------------------------
-    const Windows::Foundation::Numerics::float3& NotificationRenderer::GetVelocity() const
-    {
-      return m_velocity;
-    }
-
-    //----------------------------------------------------------------------------
-    void NotificationRenderer::CalculateVelocity( float oneOverDeltaTime )
-    {
-      const float3 deltaPosition = m_position - m_lastPosition; // meters
-      m_velocity = deltaPosition * oneOverDeltaTime; // meters per second
     }
   }
 }

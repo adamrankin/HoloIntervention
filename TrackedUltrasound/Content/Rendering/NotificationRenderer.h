@@ -34,9 +34,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Windows includes
 #include <ppltasks.h>
 
-// STD includes
-#include <deque>
-
 using namespace Concurrency;
 using namespace DirectX;
 using namespace Microsoft::WRL;
@@ -48,14 +45,14 @@ namespace TrackedUltrasound
 {
   namespace Rendering
   {
+    struct NotificationConstantBuffer
+    {
+      XMFLOAT4X4 worldMatrix;
+      XMFLOAT4   hologramColorFadeMultiplier;
+    };
+
     class NotificationRenderer
     {
-      struct NotificationConstantBuffer
-      {
-        XMFLOAT4X4 worldMatrix;
-        XMFLOAT4   hologramColorFadeMultiplier;
-      };
-
       struct VertexPositionColorTex
       {
         XMFLOAT3 pos;
@@ -63,56 +60,18 @@ namespace TrackedUltrasound
         XMFLOAT2 texCoord;
       };
 
-      typedef std::pair<std::wstring, double> MessageDuration;
-      typedef std::deque<MessageDuration> MessageQueue;
-
-      enum AnimationState
-      {
-        SHOWING,
-        FADING_IN,
-        FADING_OUT,
-        HIDDEN
-      };
-
     public:
       NotificationRenderer( const std::shared_ptr<DX::DeviceResources>& deviceResources );
       ~NotificationRenderer();
 
-      // Set the initial pose of the message
-      void Initialize( SpatialPointerPose^ pointerPose );
+      void Update( NotificationConstantBuffer& buffer );
 
-      // Add a message to the queue to render
-      // TODO : this should be extracted to a TimedNotificationQueue class so that the renderer is just a renderer
-      void QueueMessage( const std::string& message, double duration = DEFAULT_NOTIFICATION_DURATION_SEC );
-      void QueueMessage( const std::wstring& message, double duration = DEFAULT_NOTIFICATION_DURATION_SEC );
-      void QueueMessage( Platform::String^ message, double duration = DEFAULT_NOTIFICATION_DURATION_SEC );
-
-      void Update( SpatialPointerPose^ pointerPose, const DX::StepTimer& timer );
-
-      // Render any content to non-HoloLens render targets
-      void AltRTRender();
       void Render();
+      void RenderText( const std::wstring& message );
 
       // D3D device related controls
       void CreateDeviceDependentResources();
       void ReleaseDeviceDependentResources();
-
-      // Override the current lerp and force the position
-      void SetPose( SpatialPointerPose^ pointerPose );
-
-      // Accessors
-      bool IsShowingNotification() const;
-      const float3& GetPosition() const;
-      const float3& GetVelocity() const;
-
-    protected:
-      void UpdateHologramPosition( SpatialPointerPose^ pointerPose, const DX::StepTimer& timer );
-
-      void CalculateWorldMatrix();
-      void CalculateAlpha( const DX::StepTimer& timer );
-      void CalculateVelocity( float oneOverDeltaTime );
-      void GrabNextMessage();
-      bool IsFading() const;
 
     protected:
       // Cached pointer to device resources.
@@ -136,47 +95,18 @@ namespace TrackedUltrasound
 
       // Variables used with the rendering loop.
       bool                                                m_loadingComplete = false;
-      float3                                              m_position = { 0.f, 0.f, -2.f };
-      float3                                              m_lastPosition = { 0.f, 0.f, -2.f };
-      float3                                              m_velocity = { 0.f, 0.f, 0.f };
 
       // If the current D3D Device supports VPRT, we can avoid using a geometry
       // shader just to set the render target array index.
       bool                                                m_usingVprtShaders = false;
 
-      // Number of seconds it takes to fade the hologram in, or out.
-      const float                                         c_maxFadeTime = 1.f;
-
-      // Timer used to fade the hologram in, or out.
-      float                                               m_fadeTime = 0.f;
-
-      // Whether or not the hologram is fading in, or out.
-      AnimationState                                      m_animationState = HIDDEN;
-
       // Text renderer
       std::unique_ptr<TextRenderer>                       m_textRenderer = nullptr;
       std::unique_ptr<DistanceFieldRenderer>              m_distanceFieldRenderer = nullptr;
 
-      // List of messages to show, in order (fifo)
-      MessageQueue                                        m_messages;
-      MessageDuration                                     m_currentMessage;
-
-      // Lock protection when accessing message list
-      std::mutex                                          m_messageQueueMutex;
-
-      // Cached value of the total time the current message has been showing
-      double                                              m_messageTimeElapsedSec = 0.0f;
-
-      // Constants relating to behavior of the notification renderer
-      static const double                                 MAXIMUM_REQUESTED_DURATION_SEC;
-      static const double                                 DEFAULT_NOTIFICATION_DURATION_SEC;
-      static const uint32                                 BLUR_TARGET_WIDTH_PIXEL;
-      static const uint32                                 OFFSCREEN_RENDER_TARGET_WIDTH_PIXEL;
-      static const XMFLOAT4                               SHOWING_ALPHA_VALUE;
-      static const XMFLOAT4                               HIDDEN_ALPHA_VALUE;
-      static const float3                                 NOTIFICATION_SCREEN_OFFSET;
-      static const float                                  NOTIFICATION_DISTANCE_OFFSET;
-      static const float                                  LERP_RATE;
+      // Rendering related constants
+      static const uint32 BLUR_TARGET_WIDTH_PIXEL;
+      static const uint32 OFFSCREEN_RENDER_TARGET_WIDTH_PIXEL;
     };
   }
 }

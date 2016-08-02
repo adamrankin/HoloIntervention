@@ -37,7 +37,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Rendering includes
 #include "GazeCursorRenderer.h"
-#include "NotificationRenderer.h"
+
+// Notification includes
+#include "NotificationsAPI.h"
 
 // std includes
 #include <vector>
@@ -70,9 +72,13 @@ namespace TrackedUltrasound
     void SaveAppState();
     void LoadAppState();
 
+    // Provide access to the notifications API
+    std::unique_ptr<Notifications::NotificationsAPI>& GetNotificationsAPI();
+
     // IDeviceNotify
     virtual void OnDeviceLost();
     virtual void OnDeviceRestored();
+
   protected:
     // Asynchronously creates resources for new holographic cameras.
     void OnCameraAdded( Windows::Graphics::Holographic::HolographicSpace^ sender,
@@ -99,44 +105,46 @@ namespace TrackedUltrasound
 
   protected:
     // Renderers
-    std::unique_ptr<Rendering::GazeCursorRenderer> m_gazeCursorRenderer;
-    std::unique_ptr<Rendering::NotificationRenderer> m_notificationRenderer;
+    std::unique_ptr<Rendering::GazeCursorRenderer>        m_gazeCursorRenderer;
 
     // Spatial input event handler
-    std::shared_ptr<Input::SpatialInputHandler> m_spatialInputHandler;
+    std::shared_ptr<Input::SpatialInputHandler>           m_spatialInputHandler;
     // Voice input event handler
-    std::shared_ptr<Input::VoiceInputHandler> m_voiceInputHandler;
+    std::shared_ptr<Input::VoiceInputHandler>             m_voiceInputHandler;
+
+    // Notification API
+    std::unique_ptr<Notifications::NotificationsAPI>      m_notificationAPI;
 
     // Cached pointer to device resources.
-    std::shared_ptr<DX::DeviceResources> m_deviceResources;
+    std::shared_ptr<DX::DeviceResources>                  m_deviceResources;
 
     // Render loop timer.
-    DX::StepTimer m_timer;
+    DX::StepTimer                                         m_timer;
 
     // Represents the holographic space around the user.
-    Windows::Graphics::Holographic::HolographicSpace^ m_holographicSpace;
+    Windows::Graphics::Holographic::HolographicSpace^     m_holographicSpace;
 
     // SpatialLocator that is attached to the primary camera.
-    Windows::Perception::Spatial::SpatialLocator^ m_locator;
+    Windows::Perception::Spatial::SpatialLocator^         m_locator;
 
     // A reference frame attached to the holographic camera.
-    Windows::Perception::Spatial::SpatialLocatorAttachedFrameOfReference^ m_attachedReferenceFrame;
+    Windows::Perception::Spatial::SpatialLocatorAttachedFrameOfReference^   m_attachedReferenceFrame;
 
     // A reference frame placed in the environment.
-    Windows::Perception::Spatial::SpatialStationaryFrameOfReference^ m_stationaryReferenceFrame;
+    Windows::Perception::Spatial::SpatialStationaryFrameOfReference^        m_stationaryReferenceFrame;
 
     // Event registration tokens.
-    Windows::Foundation::EventRegistrationToken m_cameraAddedToken;
-    Windows::Foundation::EventRegistrationToken m_cameraRemovedToken;
-    Windows::Foundation::EventRegistrationToken m_locatabilityChangedToken;
+    Windows::Foundation::EventRegistrationToken           m_cameraAddedToken;
+    Windows::Foundation::EventRegistrationToken           m_cameraRemovedToken;
+    Windows::Foundation::EventRegistrationToken           m_locatabilityChangedToken;
 
     // Store the current state of locatability
-    Windows::Perception::Spatial::SpatialLocatability m_locatability;
+    Windows::Perception::Spatial::SpatialLocatability     m_locatability;
 
     // Access to a spatial surface API
-    std::unique_ptr<Spatial::SpatialSurfaceAPI> m_spatialSurfaceApi;
+    std::unique_ptr<Spatial::SpatialSurfaceAPI>           m_spatialSurfaceApi;
 
     // Sound assets
-    std::unique_ptr<TrackedUltrasound::Sound::OmnidirectionalSound> m_cursorSound;
+    std::unique_ptr<Sound::OmnidirectionalSound>          m_cursorSound;
   };
 }

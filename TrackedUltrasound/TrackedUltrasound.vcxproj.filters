@@ -71,6 +71,9 @@
     <ClCompile Include="Content\Rendering\TextRenderer.cpp">
       <Filter>Content\Rendering\NotificationRenderer</Filter>
     </ClCompile>
+    <ClCompile Include="Content\Notification\NotificationsAPI.cpp">
+      <Filter>Content\Notification</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TrackedUltrasoundMain.h" />
@@ -158,6 +161,9 @@
     <ClInclude Include="Content\Rendering\TextRenderer.h">
       <Filter>Content\Rendering\NotificationRenderer</Filter>
     </ClInclude>
+    <ClInclude Include="Content\Notification\NotificationsAPI.h">
+      <Filter>Content\Notification</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\LockScreenLogo.scale-200.png">
@@ -241,6 +247,9 @@
     </Filter>
     <Filter Include="Content\Rendering\SliceRenderer\Shaders">
       <UniqueIdentifier>{ed7455e3-3b7a-43be-9d87-196368144a64}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Notification">
+      <UniqueIdentifier>{828d142c-791a-453d-9db1-729b679a943c}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
