@@ -104,6 +104,8 @@
     <ClInclude Include="Content\Rendering\InstancedEffectBase.h" />
     <ClInclude Include="Content\Rendering\InstancedEffectFactory.h" />
     <ClInclude Include="Content\Rendering\NotificationRenderer.h" />
+    <ClInclude Include="Content\Rendering\SliceEntry.h" />
+    <ClInclude Include="Content\Rendering\SliceRenderer.h" />
     <ClInclude Include="Content\Rendering\TextRenderer.h" />
     <ClInclude Include="Content\Sound\AudioFileReader.h" />
     <ClInclude Include="Content\Sound\CardioidSound.h" />
@@ -131,6 +133,8 @@
     <ClCompile Include="Content\Rendering\InstancedEffectBase.cpp" />
     <ClCompile Include="Content\Rendering\InstancedEffectFactory.cpp" />
     <ClCompile Include="Content\Rendering\NotificationRenderer.cpp" />
+    <ClCompile Include="Content\Rendering\SliceEntry.cpp" />
+    <ClCompile Include="Content\Rendering\SliceRenderer.cpp" />
     <ClCompile Include="Content\Rendering\TextRenderer.cpp" />
     <ClCompile Include="Content\Sound\AudioFileReader.cpp" />
     <ClCompile Include="Content\Sound\CardioidSound.cpp" />
@@ -223,6 +227,30 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Geometry</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Geometry</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Content\Rendering\Shaders\PTIGeometryShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Geometry</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Geometry</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Content\Rendering\Shaders\SlicePixelShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Content\Rendering\Shaders\SliceVertexShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Content\Rendering\Shaders\SliceVPRTVertexShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
     </FxCompile>
     <FxCompile Include="Content\Rendering\Shaders\VPRTBasicLightingVertexShader.hlsl">

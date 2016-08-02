@@ -13,7 +13,7 @@
 #include "DirectXHelper.h"
 #include "DistanceFieldRenderer.h"
 
-using namespace concurrency;
+using namespace Concurrency;
 using namespace DirectX;
 
 namespace TrackedUltrasound

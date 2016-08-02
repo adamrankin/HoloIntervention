@@ -41,7 +41,7 @@ namespace TrackedUltrasound
 
       void Update( DX::StepTimer const& timer, SpatialCoordinateSystem^ coordinateSystem );
 
-      concurrency::task<void> CreateDeviceDependentResourcesAsync();
+      Concurrency::task<void> CreateDeviceDependentResourcesAsync();
       void ReleaseDeviceDependentResources();
 
       // Handle surface change events.

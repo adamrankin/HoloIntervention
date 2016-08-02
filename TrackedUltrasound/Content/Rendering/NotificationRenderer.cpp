@@ -42,6 +42,9 @@ namespace TrackedUltrasound
     const uint32 NotificationRenderer::OFFSCREEN_RENDER_TARGET_WIDTH_PIXEL = 2048;
     const DirectX::XMFLOAT4 NotificationRenderer::SHOWING_ALPHA_VALUE = XMFLOAT4( 1.f, 1.f, 1.f, 1.f );
     const DirectX::XMFLOAT4 NotificationRenderer::HIDDEN_ALPHA_VALUE = XMFLOAT4( 0.f, 0.f, 0.f, 0.f );
+    const Windows::Foundation::Numerics::float3 NotificationRenderer::NOTIFICATION_SCREEN_OFFSET = float3( 0.f, -0.13f, 0.f );
+    const float NotificationRenderer::NOTIFICATION_DISTANCE_OFFSET = 2.2f;
+    const float NotificationRenderer::LERP_RATE = 4.0;
 
     //----------------------------------------------------------------------------
     NotificationRenderer::NotificationRenderer( const std::shared_ptr<DX::DeviceResources>& deviceResources )
@@ -54,6 +57,12 @@ namespace TrackedUltrasound
     NotificationRenderer::~NotificationRenderer()
     {
       ReleaseDeviceDependentResources();
+    }
+
+    //----------------------------------------------------------------------------
+    void NotificationRenderer::Initialize( SpatialPointerPose^ pointerPose )
+    {
+      SetPose(pointerPose);
     }
 
     //----------------------------------------------------------------------------
@@ -79,7 +88,7 @@ namespace TrackedUltrasound
     }
 
     //----------------------------------------------------------------------------
-    void NotificationRenderer::Update( const DX::StepTimer& timer )
+    void NotificationRenderer::Update( SpatialPointerPose^ pose, const DX::StepTimer& timer )
     {
       if ( !m_loadingComplete )
       {
@@ -148,22 +157,24 @@ namespace TrackedUltrasound
         }
       }
 
-	  if (IsShowingNotification())
-	  {
-		  CalculateWorldMatrix();
-		  CalculateAlpha(timer);
-		  CalculateVelocity(1.f / static_cast<float>(timer.GetElapsedSeconds()));
+      if ( IsShowingNotification() )
+      {
+        UpdateHologramPosition( pose, timer );
 
-		  // Update the model transform buffer for the hologram.
-		  m_deviceResources->GetD3DDeviceContext()->UpdateSubresource(
-			  m_modelConstantBuffer.Get(),
-			  0,
-			  nullptr,
-			  &m_constantBufferData,
-			  0,
-			  0
-		  );
-	  }
+        CalculateWorldMatrix();
+        CalculateAlpha( timer );
+        CalculateVelocity( 1.f / static_cast<float>( timer.GetElapsedSeconds() ) );
+
+        // Update the model transform buffer for the hologram.
+        m_deviceResources->GetD3DDeviceContext()->UpdateSubresource(
+          m_modelConstantBuffer.Get(),
+          0,
+          nullptr,
+          &m_constantBufferData,
+          0,
+          0
+        );
+      }
     }
 
     //----------------------------------------------------------------------------
@@ -327,12 +338,10 @@ namespace TrackedUltrasound
         const float3 headDirection = pointerPose->Head->ForwardDirection;
 
         // Offset the view to centered, lower quadrant
-        const float3 offset = float3( 0.f, -0.13f, 0.f );
-        constexpr float offsetDistanceFromUser = 2.2f; // meters
-        const float3 offsetFromGazeAtTwoMeters = headPosition + ( float3( offsetDistanceFromUser ) * ( headDirection + offset ) );
+        const float3 offsetFromGazeAtTwoMeters = headPosition + ( float3( NOTIFICATION_DISTANCE_OFFSET ) * ( headDirection + NOTIFICATION_SCREEN_OFFSET ) );
 
         // Use linear interpolation to smooth the position over time
-        const float3 smoothedPosition = lerp( m_position, offsetFromGazeAtTwoMeters, deltaTime * c_lerpRate );
+        const float3 smoothedPosition = lerp( m_position, offsetFromGazeAtTwoMeters, deltaTime * LERP_RATE );
 
         // This will be used as the translation component of the hologram's model transform.
         m_lastPosition = m_position;
@@ -475,12 +484,12 @@ namespace TrackedUltrasound
         {
           {
             // -z
-            0,2,3,
-            0,1,2,
+            0, 2, 3,
+            0, 1, 2,
 
             // +z
-            2,0,3,
-            1,0,2,
+            2, 0, 3,
+            1, 0, 2,
           }
         };
 
@@ -547,6 +556,15 @@ namespace TrackedUltrasound
       m_indexBuffer.Reset();
 
       m_quadTextureSamplerState.Reset();
+    }
+
+    //----------------------------------------------------------------------------
+    void NotificationRenderer::SetPose( SpatialPointerPose^ pointerPose )
+    {
+      const float3 headPosition = pointerPose->Head->Position;
+      const float3 headDirection = pointerPose->Head->ForwardDirection;
+
+      m_lastPosition = m_position = headPosition + ( float3( NOTIFICATION_DISTANCE_OFFSET ) * ( headDirection + NOTIFICATION_SCREEN_OFFSET ) );
     }
 
     //----------------------------------------------------------------------------

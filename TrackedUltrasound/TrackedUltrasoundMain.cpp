@@ -42,7 +42,7 @@ using namespace Windows::Graphics::Holographic;
 using namespace Windows::Perception::Spatial::Surfaces;
 using namespace Windows::Perception::Spatial;
 using namespace Windows::UI::Input::Spatial;
-using namespace concurrency;
+using namespace Concurrency;
 
 namespace TrackedUltrasound
 {
@@ -106,10 +106,19 @@ namespace TrackedUltrasound
     m_stationaryReferenceFrame = m_locator->CreateStationaryFrameOfReferenceAtCurrentLocation();
 
     m_spatialSurfaceApi->InitializeSurfaceObserver( m_stationaryReferenceFrame->CoordinateSystem );
+
+    // Create a bogus frame to grab sensor data
+    HolographicFrame^ holographicFrame = m_holographicSpace->CreateNextFrame();
+    HolographicFramePrediction^ prediction = holographicFrame->CurrentPrediction;
+
+    SpatialCoordinateSystem^ currentCoordinateSystem = m_attachedReferenceFrame->GetStationaryCoordinateSystemAtTimestamp(prediction->Timestamp);
+
+    SpatialPointerPose^ pose = SpatialPointerPose::TryGetAtTimestamp(currentCoordinateSystem, prediction->Timestamp);
+    m_notificationRenderer->Initialize(pose);
   }
 
   //----------------------------------------------------------------------------
-  concurrency::task<void> TrackedUltrasoundMain::InitializeAudioAssetsAsync()
+  Concurrency::task<void> TrackedUltrasoundMain::InitializeAudioAssetsAsync()
   {
     return create_task( [this]()
     {
@@ -184,17 +193,12 @@ namespace TrackedUltrasound
       m_spatialSurfaceApi->Update( m_timer, currentCoordinateSystem );
 
       // Allow notification system to update
-      if ( m_notificationRenderer->IsShowingNotification() )
-      {
-        SpatialPointerPose^ pose = SpatialPointerPose::TryGetAtTimestamp( currentCoordinateSystem, prediction->Timestamp );
-        m_notificationRenderer->UpdateHologramPosition( pose, m_timer );
-      }
-      m_notificationRenderer->Update( m_timer );
+      SpatialPointerPose^ pose = SpatialPointerPose::TryGetAtTimestamp( currentCoordinateSystem, prediction->Timestamp );
+      m_notificationRenderer->Update( pose, m_timer );
 
       // Update the gaze vector in the gaze renderer
       if ( m_gazeCursorRenderer->IsCursorEnabled() )
       {
-        SpatialPointerPose^ pose = SpatialPointerPose::TryGetAtTimestamp( currentCoordinateSystem, prediction->Timestamp );
         const float3 position = pose->Head->Position;
         const float3 direction = pose->Head->ForwardDirection;
 
@@ -204,6 +208,7 @@ namespace TrackedUltrasound
 
         if ( hit )
         {
+          // Update the gaze cursor renderer with the pose to render
           m_gazeCursorRenderer->Update( outHitPosition, outHitNormal );
         }
       }
@@ -278,8 +283,8 @@ namespace TrackedUltrasound
       SpatialCoordinateSystem^ currentCoordinateSystem =
         m_attachedReferenceFrame->GetStationaryCoordinateSystemAtTimestamp( prediction->Timestamp );
 
-	  // Give the renderers the chance to render to targets other than the stereoscopic back buffer 
-	  m_notificationRenderer->AltRTRender();
+      // Give the renderers the chance to render to targets other than the stereoscopic back buffer
+      m_notificationRenderer->AltRTRender();
 
       bool atLeastOneCameraRendered = false;
       for ( auto cameraPose : prediction->CameraPoses )

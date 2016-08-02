@@ -37,10 +37,11 @@ OTHER DEALINGS IN THE SOFTWARE.
 // STD includes
 #include <deque>
 
-using namespace concurrency;
+using namespace Concurrency;
 using namespace DirectX;
 using namespace Microsoft::WRL;
 using namespace Windows::Foundation::Numerics;
+using namespace Windows::Graphics::Holographic;
 using namespace Windows::UI::Input::Spatial;
 
 namespace TrackedUltrasound
@@ -77,29 +78,36 @@ namespace TrackedUltrasound
       NotificationRenderer( const std::shared_ptr<DX::DeviceResources>& deviceResources );
       ~NotificationRenderer();
 
+      // Set the initial pose of the message
+      void Initialize( SpatialPointerPose^ pointerPose );
+
+      // Add a message to the queue to render
+      // TODO : this should be extracted to a TimedNotificationQueue class so that the renderer is just a renderer
       void QueueMessage( const std::string& message, double duration = DEFAULT_NOTIFICATION_DURATION_SEC );
       void QueueMessage( const std::wstring& message, double duration = DEFAULT_NOTIFICATION_DURATION_SEC );
       void QueueMessage( Platform::String^ message, double duration = DEFAULT_NOTIFICATION_DURATION_SEC );
 
-      void Update( const DX::StepTimer& timer );
+      void Update( SpatialPointerPose^ pointerPose, const DX::StepTimer& timer );
 
       // Render any content to non-HoloLens render targets
       void AltRTRender();
-
-      // Render to stereoscopic HoloLens RTs
       void Render();
 
-      bool IsShowingNotification() const;
-
-      void UpdateHologramPosition( SpatialPointerPose^ pointerPose, const DX::StepTimer& timer );
-
+      // D3D device related controls
       void CreateDeviceDependentResources();
       void ReleaseDeviceDependentResources();
 
+      // Override the current lerp and force the position
+      void SetPose( SpatialPointerPose^ pointerPose );
+
+      // Accessors
+      bool IsShowingNotification() const;
       const float3& GetPosition() const;
       const float3& GetVelocity() const;
 
     protected:
+      void UpdateHologramPosition( SpatialPointerPose^ pointerPose, const DX::StepTimer& timer );
+
       void CalculateWorldMatrix();
       void CalculateAlpha( const DX::StepTimer& timer );
       void CalculateVelocity( float oneOverDeltaTime );
@@ -136,9 +144,6 @@ namespace TrackedUltrasound
       // shader just to set the render target array index.
       bool                                                m_usingVprtShaders = false;
 
-      // This is the rate at which the hologram position is interpolated (LERPed) to the current location.
-      const float                                         c_lerpRate = 4.0f;
-
       // Number of seconds it takes to fade the hologram in, or out.
       const float                                         c_maxFadeTime = 1.f;
 
@@ -156,6 +161,7 @@ namespace TrackedUltrasound
       MessageQueue                                        m_messages;
       MessageDuration                                     m_currentMessage;
 
+      // Lock protection when accessing message list
       std::mutex                                          m_messageQueueMutex;
 
       // Cached value of the total time the current message has been showing
@@ -168,6 +174,9 @@ namespace TrackedUltrasound
       static const uint32                                 OFFSCREEN_RENDER_TARGET_WIDTH_PIXEL;
       static const XMFLOAT4                               SHOWING_ALPHA_VALUE;
       static const XMFLOAT4                               HIDDEN_ALPHA_VALUE;
+      static const float3                                 NOTIFICATION_SCREEN_OFFSET;
+      static const float                                  NOTIFICATION_DISTANCE_OFFSET;
+      static const float                                  LERP_RATE;
     };
   }
 }

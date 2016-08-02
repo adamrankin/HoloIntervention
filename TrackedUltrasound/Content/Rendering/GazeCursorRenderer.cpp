@@ -220,7 +220,7 @@ namespace TrackedUltrasound
               &m_geometryShader
             )
           );
-        } ).then( [this]( concurrency::task<void> previousTask )
+        } ).then( [this]( Concurrency::task<void> previousTask )
         {
           try
           {

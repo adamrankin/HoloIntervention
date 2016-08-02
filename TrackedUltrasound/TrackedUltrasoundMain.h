@@ -73,7 +73,6 @@ namespace TrackedUltrasound
     // IDeviceNotify
     virtual void OnDeviceLost();
     virtual void OnDeviceRestored();
-
   protected:
     // Asynchronously creates resources for new holographic cameras.
     void OnCameraAdded( Windows::Graphics::Holographic::HolographicSpace^ sender,
@@ -93,7 +92,7 @@ namespace TrackedUltrasound
     void UnregisterHolographicEventHandlers();
 
     // Initialize audio assets
-    concurrency::task<void> InitializeAudioAssetsAsync();
+    Concurrency::task<void> InitializeAudioAssetsAsync();
 
     // Check for any voice input commands
     void HandleVoiceInput();

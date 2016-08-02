@@ -16,7 +16,7 @@
 #include <vector>
 #include <ppltasks.h>
 
-using namespace concurrency;
+using namespace Concurrency;
 
 namespace TrackedUltrasound
 {

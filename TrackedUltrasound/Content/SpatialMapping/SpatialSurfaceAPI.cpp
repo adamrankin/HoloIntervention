@@ -39,7 +39,7 @@ using namespace Windows::Foundation;
 using namespace Windows::Graphics::DirectX;
 using namespace Windows::Perception::Spatial::Surfaces;
 using namespace Windows::Perception::Spatial;
-using namespace concurrency;
+using namespace Concurrency;
 
 namespace TrackedUltrasound
 {
@@ -75,7 +75,7 @@ namespace TrackedUltrasound
     }
 
     //----------------------------------------------------------------------------
-    concurrency::task<void> SpatialSurfaceAPI::CreateDeviceDependentResourcesAsync()
+    Concurrency::task<void> SpatialSurfaceAPI::CreateDeviceDependentResourcesAsync()
     {
       return m_surfaceCollection->CreateDeviceDependentResourcesAsync();
     }
@@ -217,9 +217,9 @@ namespace TrackedUltrasound
           if (mapContainingSurfaceCollection->Size == 0)
           {
             OutputDebugStringA("Mesh collection size is 0. Trying again after a delay.\n");
-            auto fire_once = new concurrency::timer<int>(INIT_SURFACE_RETRY_DELAY_MS, 0, nullptr, false);
+            auto fire_once = new Concurrency::timer<int>(INIT_SURFACE_RETRY_DELAY_MS, 0, nullptr, false);
             // Create a call object that sets the completion event after the timer fires.
-            auto callback = new concurrency::call<int>([=](int)
+            auto callback = new Concurrency::call<int>([=](int)
             {
               this->InitializeSurfaceObserver(coordinateSystem);
             });

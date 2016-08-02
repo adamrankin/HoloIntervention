@@ -28,7 +28,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <ppltasks.h>
 #include <vccorlib.h>
 
-using namespace concurrency;
+using namespace Concurrency;
 using namespace Windows::Foundation;
 using namespace Windows::Media::SpeechRecognition;
 

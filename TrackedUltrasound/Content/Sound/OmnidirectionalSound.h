@@ -38,7 +38,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <map>
 
 using namespace Microsoft::WRL;
-using namespace concurrency;
+using namespace Concurrency;
 
 namespace TrackedUltrasound
 {

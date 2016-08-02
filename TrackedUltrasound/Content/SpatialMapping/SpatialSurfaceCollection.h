@@ -52,7 +52,7 @@ namespace TrackedUltrasound
 
       void Update( DX::StepTimer const& timer, SpatialCoordinateSystem^ coordinateSystem );
 
-      concurrency::task<void> CreateDeviceDependentResourcesAsync();
+      Concurrency::task<void> CreateDeviceDependentResourcesAsync();
       void ReleaseDeviceDependentResources();
 
       bool HasSurface( Platform::Guid id );
@@ -72,7 +72,7 @@ namespace TrackedUltrasound
       void HideInactiveMeshes( Windows::Foundation::Collections::IMapView<Platform::Guid, SpatialSurfaceInfo^>^ const& surfaceCollection );
 
     protected:
-      concurrency::task<HRESULT> CreateComputeShaderAsync( const std::wstring& srcFile );
+      Concurrency::task<HRESULT> CreateComputeShaderAsync( const std::wstring& srcFile );
 
       HRESULT CreateConstantBuffer();
 
@@ -84,7 +84,7 @@ namespace TrackedUltrasound
       Microsoft::WRL::ComPtr<ID3D11Buffer>            m_constantBuffer = nullptr;
       Microsoft::WRL::ComPtr<ID3D11ComputeShader>     m_d3d11ComputeShader = nullptr;
       bool                                            m_resourcesLoaded = false;
-      std::unique_ptr<concurrency::task<HRESULT>>     m_shaderLoadTask = nullptr;
+      std::unique_ptr<Concurrency::task<HRESULT>>     m_shaderLoadTask = nullptr;
 
       // A way to lock map access.
       std::mutex                                      m_meshCollectionLock;

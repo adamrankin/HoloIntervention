@@ -37,7 +37,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 // DirectX includes
 #include <d3dcompiler.h>
 
-using namespace concurrency;
+using namespace Concurrency;
 using namespace DirectX;
 using namespace Windows::Perception::Spatial;
 using namespace Windows::Perception::Spatial::Surfaces;

@@ -31,7 +31,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 // STD includes
 #include <vector>
 
-using namespace concurrency;
+using namespace Concurrency;
 using namespace Microsoft::WRL;
 using namespace Windows::Foundation::Numerics;
 using namespace Windows::Perception::Spatial::Surfaces;

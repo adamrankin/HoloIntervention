@@ -97,7 +97,7 @@ namespace TrackedUltrasound
     }
 
     //----------------------------------------------------------------------------
-    concurrency::task<void> SpatialSurfaceCollection::CreateDeviceDependentResourcesAsync()
+    Concurrency::task<void> SpatialSurfaceCollection::CreateDeviceDependentResourcesAsync()
     {
       auto meshTask = create_task([&]()
       {
@@ -113,7 +113,7 @@ namespace TrackedUltrasound
       });
 
       auto createTask = CreateComputeShaderAsync( L"ms-appx:///CSRayTriangleIntersection.cso" );
-      m_shaderLoadTask = std::make_unique< concurrency::task<HRESULT> >( createTask );
+      m_shaderLoadTask = std::make_unique< Concurrency::task<HRESULT> >( createTask );
       auto finalTask = m_shaderLoadTask->then( [&]( HRESULT hr )
       {
         if ( FAILED( hr ) )
@@ -150,7 +150,7 @@ namespace TrackedUltrasound
     //----------------------------------------------------------------------------
     void SpatialSurfaceCollection::AddSurface( Guid id, SpatialSurfaceInfo^ newSurface, SpatialSurfaceMeshOptions^ meshOptions )
     {
-      AddOrUpdateSurfaceAsync( id, newSurface, meshOptions ).then( [&]( concurrency::task<void> previousTask )
+      AddOrUpdateSurfaceAsync( id, newSurface, meshOptions ).then( [&]( Concurrency::task<void> previousTask )
       {
         try
         {
@@ -170,7 +170,7 @@ namespace TrackedUltrasound
     //----------------------------------------------------------------------------
     void SpatialSurfaceCollection::UpdateSurface( Guid id, SpatialSurfaceInfo^ newSurface, SpatialSurfaceMeshOptions^ meshOptions )
     {
-      AddOrUpdateSurfaceAsync( id, newSurface, meshOptions ).then( [&]( concurrency::task<void> previousTask )
+      AddOrUpdateSurfaceAsync( id, newSurface, meshOptions ).then( [&]( Concurrency::task<void> previousTask )
       {
         try
         {
@@ -217,7 +217,7 @@ namespace TrackedUltrasound
       // The level of detail setting is used to limit mesh complexity, by limiting the number
       // of triangles per cubic meter.
       auto createMeshTask = create_task( newSurface->TryComputeLatestMeshAsync( m_maxTrianglesPerCubicMeter, meshOptions ) );
-      auto processMeshTask = createMeshTask.then( [this, id]( concurrency::task<SpatialSurfaceMesh^> meshTask )
+      auto processMeshTask = createMeshTask.then( [this, id]( Concurrency::task<SpatialSurfaceMesh^> meshTask )
       {
         auto mesh = meshTask.get();
         if ( mesh != nullptr )
@@ -300,9 +300,9 @@ namespace TrackedUltrasound
     }
 
     //--------------------------------------------------------------------------------------
-    concurrency::task<HRESULT> SpatialSurfaceCollection::CreateComputeShaderAsync( const std::wstring& srcFile )
+    Concurrency::task<HRESULT> SpatialSurfaceCollection::CreateComputeShaderAsync( const std::wstring& srcFile )
     {
-      concurrency::task<std::vector<byte>> loadVSTask = DX::ReadDataAsync( srcFile );
+      Concurrency::task<std::vector<byte>> loadVSTask = DX::ReadDataAsync( srcFile );
       return loadVSTask.then( [ = ]( std::vector<byte> data )
       {
         auto hr = m_deviceResources->GetD3DDevice()->CreateComputeShader( &data.front(), data.size(), nullptr, &m_d3d11ComputeShader );

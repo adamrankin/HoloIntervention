@@ -8,5 +8,5 @@
 /TrackedUltrasound/Debug
 /TrackedUltrasound/Generated Files
 /*.db
-/*.ipch
 /HoloIntervention.VC.VC.opendb
+*.ipch
