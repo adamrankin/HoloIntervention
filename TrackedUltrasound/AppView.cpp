@@ -137,6 +137,12 @@ namespace TrackedUltrasound
   }
 
   //----------------------------------------------------------------------------
+  Notifications::NotificationsAPI& AppView::GetNotificationAPI()
+  {
+    return m_main->GetNotificationsAPI();
+  }
+
+  //----------------------------------------------------------------------------
   void AppView::OnViewActivated(CoreApplicationView^ sender, IActivatedEventArgs^ args)
   {
     // Run() won't start until the CoreWindow is activated.

@@ -23,6 +23,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 ====================================================================*/
 
 // Common Includes
+#include "AppView.h"
 #include "DeviceResources.h"
 #include "StepTimer.h"
 

@@ -38,9 +38,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Rendering includes
 #include "GazeCursorRenderer.h"
 
-// Notification includes
-#include "NotificationsAPI.h"
-
 // IGTLink includes
 #include "IGTLinkIF.h"
 
@@ -54,6 +51,11 @@ using namespace Windows::Perception::Spatial;
 
 namespace TrackedUltrasound
 {
+  namespace Notifications
+  {
+    class NotificationsAPI;
+  }
+
   // Updates, renders, and presents holographic content using Direct3D.
   class TrackedUltrasoundMain : public DX::IDeviceNotify
   {
@@ -76,7 +78,7 @@ namespace TrackedUltrasound
     void LoadAppState();
 
     // Provide access to the notifications API
-    std::unique_ptr<Notifications::NotificationsAPI>& GetNotificationsAPI();
+    Notifications::NotificationsAPI& GetNotificationsAPI();
 
     // IDeviceNotify
     virtual void OnDeviceLost();

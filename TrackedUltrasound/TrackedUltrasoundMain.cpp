@@ -27,6 +27,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "DirectXHelper.h"
 #include "TrackedUltrasoundMain.h"
 
+// Notification includes
+#include "NotificationsAPI.h"
+
 // std includes
 #include <string>
 
@@ -112,10 +115,10 @@ namespace TrackedUltrasound
     HolographicFrame^ holographicFrame = m_holographicSpace->CreateNextFrame();
     HolographicFramePrediction^ prediction = holographicFrame->CurrentPrediction;
 
-    SpatialCoordinateSystem^ currentCoordinateSystem = m_attachedReferenceFrame->GetStationaryCoordinateSystemAtTimestamp(prediction->Timestamp);
+    SpatialCoordinateSystem^ currentCoordinateSystem = m_attachedReferenceFrame->GetStationaryCoordinateSystemAtTimestamp( prediction->Timestamp );
 
-    SpatialPointerPose^ pose = SpatialPointerPose::TryGetAtTimestamp(currentCoordinateSystem, prediction->Timestamp);
-    m_notificationAPI->Initialize(pose);
+    SpatialPointerPose^ pose = SpatialPointerPose::TryGetAtTimestamp( currentCoordinateSystem, prediction->Timestamp );
+    m_notificationAPI->Initialize( pose );
   }
 
   //----------------------------------------------------------------------------
@@ -134,11 +137,11 @@ namespace TrackedUltrasound
         }
         catch ( Platform::Exception^ e )
         {
-          OutputDebugStringW( e->Message->Data() );
+          m_notificationAPI->QueueMessage(e->Message);
         }
         catch ( const std::exception& e )
         {
-          OutputDebugStringA( e.what() );
+          m_notificationAPI->QueueMessage(e.what());
           m_cursorSound.reset();
         }
 
@@ -247,7 +250,7 @@ namespace TrackedUltrasound
         {
           // Turn the cursor off and output the message
           m_gazeCursorRenderer->ToggleCursor();
-          OutputDebugStringW( ex->Message->Data() );
+          m_notificationAPI->QueueMessage(ex->Message);
         }
       }
       else
@@ -336,9 +339,9 @@ namespace TrackedUltrasound
   }
 
   //----------------------------------------------------------------------------
-  std::unique_ptr<Notifications::NotificationsAPI>& TrackedUltrasoundMain::GetNotificationsAPI()
+  Notifications::NotificationsAPI& TrackedUltrasoundMain::GetNotificationsAPI()
   {
-    return m_notificationAPI;
+    return *m_notificationAPI.get();
   }
 
   //----------------------------------------------------------------------------
@@ -374,7 +377,7 @@ namespace TrackedUltrasound
     {
       String^ message = L"Warning! Positional tracking is " +
                         sender->Locatability.ToString() + L".\n";
-      OutputDebugStringW( message->Data() );
+      m_notificationAPI->QueueMessage(message);
     }
     break;
 
@@ -407,11 +410,6 @@ namespace TrackedUltrasound
     HolographicCamera^ holographicCamera = args->Camera;
     create_task( [this, deferral, holographicCamera]()
     {
-      // TODO: Allocate resources for the new camera and load any content specific to
-      //       that camera. Note that the render target size (in pixels) is a property
-      //       of the HolographicCamera object, and can be used to create off-screen
-      //       render targets that match the resolution of the HolographicCamera.
-
       m_deviceResources->AddHolographicCamera( holographicCamera );
 
       // Holographic frame predictions will not include any information about this camera until the deferral is completed.

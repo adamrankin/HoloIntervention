@@ -74,7 +74,9 @@
     <ClCompile Include="Content\Notifications\NotificationsAPI.cpp">
       <Filter>Content\Notifications</Filter>
     </ClCompile>
-    <ClCompile Include="Content\IGTLink\IGTLinkIF.cpp" />
+    <ClCompile Include="Content\IGTLink\IGTLinkIF.cpp">
+      <Filter>Content\IGTLink</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TrackedUltrasoundMain.h" />
@@ -165,7 +167,9 @@
     <ClInclude Include="Content\Notifications\NotificationsAPI.h">
       <Filter>Content\Notifications</Filter>
     </ClInclude>
-    <ClInclude Include="Content\IGTLink\IGTLinkIF.h" />
+    <ClInclude Include="Content\IGTLink\IGTLinkIF.h">
+      <Filter>Content\IGTLink</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\LockScreenLogo.scale-200.png">

@@ -54,7 +54,6 @@ namespace TrackedUltrasound
 
       // API objects used to process voice input
       SpeechRecognizer^ m_speechRecognizer;
-      std::vector<bool> m_speechCommandData;
 
       // Event registration token.
       Windows::Foundation::EventRegistrationToken m_speechDetectedEventToken;

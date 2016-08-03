@@ -23,21 +23,52 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "pch.h"
+#include "AppView.h"
 #include "IGTLinkIF.h"
+#include "NotificationsAPI.h"
+
+// Windows includes
+#include <ppltasks.h>
+
+using namespace Concurrency;
 
 namespace TrackedUltrasound
 {
   namespace IGTLink
   {
+    const double IGTLinkIF::CONNECT_TIMEOUT_SEC = 3.0;
+
     //----------------------------------------------------------------------------
     IGTLinkIF::IGTLinkIF()
-      : igtClient(ref new UWPOpenIGTLink::IGTLinkClient())
+      : m_igtClient(ref new UWPOpenIGTLink::IGTLinkClient())
     {
     }
 
     //----------------------------------------------------------------------------
     IGTLinkIF::~IGTLinkIF()
     {
+    }
+
+    //----------------------------------------------------------------------------
+    bool IGTLinkIF::Connect()
+    {
+      auto connectTask = create_task(m_igtClient->ConnectAsync(CONNECT_TIMEOUT_SEC)).then([this](bool result) -> bool
+      {
+        if (!result)
+        {
+          TrackedUltrasound::instance()->GetNotificationAPI().QueueMessage(L"IGT Connection failed.");
+        }
+
+        return result;
+      });
+
+      return connectTask.get();
+    }
+
+    //----------------------------------------------------------------------------
+    void IGTLinkIF::Disconnect()
+    {
+      m_igtClient->DisconnectAsync();
     }
   }
 }

@@ -23,11 +23,17 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
+// Local includes
 #include "DeviceResources.h"
 #include "TrackedUltrasoundMain.h"
 
 namespace TrackedUltrasound
 {
+  namespace Notifications
+  {
+    class NotificationsAPI;
+  }
+
   // IFrameworkView class. Connects the app with the Windows shell and handles application lifecycle events.
   ref class AppView sealed : public Windows::ApplicationModel::Core::IFrameworkView
   {
@@ -40,6 +46,10 @@ namespace TrackedUltrasound
     virtual void Load( Platform::String ^ entryPoint );
     virtual void Run();
     virtual void Uninitialize();
+
+  internal:
+    // Provide app wide access to the notifications
+    Notifications::NotificationsAPI& GetNotificationAPI();
 
   protected:
     // Application lifecycle event handlers.

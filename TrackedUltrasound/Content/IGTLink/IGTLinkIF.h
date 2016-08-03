@@ -23,6 +23,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
+// Windows includes
+#include <ppltasks.h>
+
 namespace TrackedUltrasound
 {
   namespace IGTLink
@@ -33,8 +36,15 @@ namespace TrackedUltrasound
       IGTLinkIF();
       ~IGTLinkIF();
 
+      bool Connect();
+      void Disconnect();
+
     protected:
-      UWPOpenIGTLink::IGTLinkClient^ igtClient;
+      // Link to an IGT server
+      UWPOpenIGTLink::IGTLinkClient^    m_igtClient;
+
+      // Constants relating to IGT behavior
+      static const double               CONNECT_TIMEOUT_SEC;
     };
   }
 }

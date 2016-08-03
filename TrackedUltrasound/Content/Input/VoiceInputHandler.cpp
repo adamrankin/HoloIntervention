@@ -21,8 +21,10 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 ====================================================================*/
 
+// Local includes
 #include "pch.h"
 #include "VoiceInputHandler.h"
+#include "NotificationsAPI.h"
 
 // Windows includes
 #include <ppltasks.h>
@@ -43,13 +45,14 @@ namespace TrackedUltrasound
       Platform::Collections::Vector<Platform::String^>^ speechCommandList = ref new Platform::Collections::Vector<Platform::String^>();
 
       speechCommandList->Append(Platform::StringReference(L"show"));
-      m_speechCommandData.push_back(true);
       speechCommandList->Append(Platform::StringReference(L"hide"));
-      m_speechCommandData.push_back(false);
+      speechCommandList->Append(Platform::StringReference(L"connect"));
+      speechCommandList->Append(Platform::StringReference(L"disconnect"));
 
       SpeechRecognitionListConstraint^ spConstraint = ref new SpeechRecognitionListConstraint(speechCommandList);
       m_speechRecognizer->Constraints->Clear();
       m_speechRecognizer->Constraints->Append(spConstraint);
+
       create_task(m_speechRecognizer->CompileConstraintsAsync()).then([this](SpeechRecognitionCompilationResult^ compilationResult)
       {
         if (compilationResult->Status == SpeechRecognitionResultStatus::Success)
@@ -64,7 +67,7 @@ namespace TrackedUltrasound
         else
         {
           // Handle errors here.
-          OutputDebugStringA("Unable to compile speech patterns.");
+          TrackedUltrasound::instance()->GetNotificationAPI().QueueMessage(L"Unable to compile speech patterns.");
         }
       });
     }
@@ -100,6 +103,5 @@ namespace TrackedUltrasound
         m_lastCommandDetected = std::wstring(args->Result->Text->Data());
       }
     }
-
   }
 }
