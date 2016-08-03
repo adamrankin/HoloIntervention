@@ -27,11 +27,18 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "SliceEntry.h"
 
 using namespace SimpleMath;
+using namespace Windows::Foundation::Numerics;
+using namespace Windows::UI::Input::Spatial;
 
 namespace TrackedUltrasound
 {
   namespace Rendering
   {
+
+    const float3 SliceEntry::LOCKED_SLICE_SCREEN_OFFSET = { 0.1f, 0.1f, 0.f };
+    const float SliceEntry::LOCKED_SLICE_DISTANCE_OFFSET = 2.0f;
+    const float SliceEntry::LERP_RATE = 2.0f;
+
     //----------------------------------------------------------------------------
     SliceEntry::SliceEntry( uint32 width, uint32 height )
       : m_id( 0 )
@@ -39,6 +46,7 @@ namespace TrackedUltrasound
       , m_height( height )
       , m_imageData( nullptr )
       , m_showing( true )
+      , m_headLocked( false )
       , m_currentPose( SimpleMath::Matrix::Identity )
       , m_lastPose( SimpleMath::Matrix::Identity )
     {
@@ -57,7 +65,7 @@ namespace TrackedUltrasound
     }
 
     //----------------------------------------------------------------------------
-    void SliceEntry::Update( const DX::StepTimer& timer )
+    void SliceEntry::Update( SpatialPointerPose^ pose, const DX::StepTimer& timer )
     {
       const float& deltaTime = static_cast<float>( timer.GetElapsedSeconds() );
 
@@ -66,23 +74,60 @@ namespace TrackedUltrasound
       Vector3 currentTranslation;
       m_currentPose.Decompose( currentScale, currentRotation, currentTranslation );
 
-      Vector3 desiredScale;
-      Quaternion desiredRotation;
-      Vector3 desiredTranslation;
-      m_desiredPose.Decompose( desiredScale, desiredRotation, desiredTranslation );
-
-      Vector3 smoothedScale = Vector3::Lerp( currentScale, desiredScale, deltaTime * LERP_RATE );
-      Quaternion smoothedRotation = Quaternion::Slerp( currentRotation, desiredRotation, deltaTime * LERP_RATE );
-      Vector3 smoothedTranslation = Vector3::Lerp( currentTranslation, desiredTranslation, deltaTime * LERP_RATE );
-
       m_lastPose = m_currentPose;
-      m_currentPose = Matrix::CreateScale( smoothedScale ) * Matrix::CreateFromQuaternion( smoothedRotation ) * Matrix::CreateTranslation( smoothedTranslation );
+
+      // Calculate new smoothed currentPose
+      if ( !m_headLocked )
+      {
+        Vector3 desiredScale;
+        Quaternion desiredRotation;
+        Vector3 desiredTranslation;
+        m_desiredPose.Decompose( desiredScale, desiredRotation, desiredTranslation );
+
+        Vector3 smoothedScale = Vector3::Lerp( currentScale, desiredScale, deltaTime * LERP_RATE );
+        Quaternion smoothedRotation = Quaternion::Slerp( currentRotation, desiredRotation, deltaTime * LERP_RATE );
+        Vector3 smoothedTranslation = Vector3::Lerp( currentTranslation, desiredTranslation, deltaTime * LERP_RATE );
+
+        m_currentPose = Matrix::CreateScale( smoothedScale ) * Matrix::CreateFromQuaternion( smoothedRotation ) * Matrix::CreateTranslation( smoothedTranslation );
+      }
+      else
+      {
+        const float3 offsetFromGazeAtTwoMeters = pose->Head->Position + ( float3( LOCKED_SLICE_DISTANCE_OFFSET ) * ( pose->Head->ForwardDirection + LOCKED_SLICE_SCREEN_OFFSET ) );
+
+        // Use linear interpolation to smooth the position over time
+        float3 f3_currentTranslation = { currentTranslation.x, currentTranslation.y, currentTranslation.z };
+        const float3 smoothedPosition = lerp( f3_currentTranslation, offsetFromGazeAtTwoMeters, deltaTime * LERP_RATE );
+
+        XMVECTOR facingNormal = XMVector3Normalize( -XMLoadFloat3( &smoothedPosition ) );
+        XMVECTOR xAxisRotation = XMVector3Normalize( XMVectorSet( XMVectorGetZ( facingNormal ), 0.f, -XMVectorGetX( facingNormal ), 0.f ) );
+        XMVECTOR yAxisRotation = XMVector3Normalize( XMVector3Cross( facingNormal, xAxisRotation ) );
+
+        // Construct the 4x4 pose matrix.
+        XMStoreFloat4x4( &m_currentPose,
+                         XMMatrixTranspose( XMMATRIX( xAxisRotation, yAxisRotation, facingNormal,
+                         XMVectorSet( 0.f, 0.f, 0.f, 1.f ) ) * XMMatrixTranslationFromVector( XMLoadFloat3( &smoothedPosition ) ) ) );
+      }
+
+      m_constantBuffer.worldMatrix = m_currentPose;
+
+      if ( m_loadingComplete )
+      {
+        // Update the model transform buffer for the hologram.
+        m_deviceResources->GetD3DDeviceContext()->UpdateSubresource(
+          m_sliceConstantBuffer.Get(),
+          0,
+          nullptr,
+          &m_constantBuffer,
+          0,
+          0
+        );
+      }
     }
 
     //----------------------------------------------------------------------------
     void SliceEntry::Render( uint32 indexCount )
     {
-      if ( !m_showing )
+      if ( !m_showing || !m_loadingComplete )
       {
         return;
       }
@@ -122,9 +167,12 @@ namespace TrackedUltrasound
     {
       this->m_imageData = imageData;
 
-      // Copy data to texture subresource
-      const auto context = m_deviceResources->GetD3DDeviceContext();
-      context->UpdateSubresource( m_texture.Get(), 0, nullptr, imageData, 0, 0 );
+      if ( m_loadingComplete )
+      {
+        // Copy data to texture sub-resource
+        const auto context = m_deviceResources->GetD3DDeviceContext();
+        context->UpdateSubresource( m_texture.Get(), 0, nullptr, imageData, 0, 0 );
+      }
     }
 
     //----------------------------------------------------------------------------
@@ -177,11 +225,14 @@ namespace TrackedUltrasound
           &m_vertexBuffer
         )
       );
+
+      m_loadingComplete = true;
     }
 
     //----------------------------------------------------------------------------
     void SliceEntry::ReleaseDeviceDependentResources()
     {
+      m_loadingComplete = false;
       m_vertexBuffer.Reset();
       m_sliceConstantBuffer.Reset();
       m_texture.Reset();

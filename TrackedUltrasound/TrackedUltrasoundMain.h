@@ -37,6 +37,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Rendering includes
 #include "GazeCursorRenderer.h"
+#include "SliceRenderer.h"
 
 // IGTLink includes
 #include "IGTLinkIF.h"
@@ -111,6 +112,7 @@ namespace TrackedUltrasound
   protected:
     // Renderers
     std::unique_ptr<Rendering::GazeCursorRenderer>        m_gazeCursorRenderer;
+    std::unique_ptr<Rendering::SliceRenderer>             m_sliceRenderer;
 
     // Spatial input event handler
     std::unique_ptr<Input::SpatialInputHandler>           m_spatialInputHandler;

@@ -32,6 +32,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 using namespace DirectX;
 using namespace Microsoft::WRL;
+using namespace Windows::Foundation::Numerics;
+using namespace Windows::UI::Input::Spatial;
 
 namespace TrackedUltrasound
 {
@@ -51,13 +53,13 @@ namespace TrackedUltrasound
     class SliceEntry
     {
     public:
-      SliceEntry(uint32 width, uint32 height);
+      SliceEntry( uint32 width, uint32 height );
       ~SliceEntry();
 
-      void Update( const DX::StepTimer& timer );
-      void Render(uint32 indexCount);
+      void Update( SpatialPointerPose^ pose, const DX::StepTimer& timer );
+      void Render( uint32 indexCount );
 
-      void SetImageData(byte* imageData);
+      void SetImageData( byte* imageData );
       byte* GetImageData() const;
 
       // D3D device related controls
@@ -69,6 +71,7 @@ namespace TrackedUltrasound
       uint32                                m_height;
       SliceConstantBuffer                   m_constantBuffer;
       bool                                  m_showing;
+      bool                                  m_headLocked;
       SimpleMath::Matrix                    m_desiredPose;
       SimpleMath::Matrix                    m_currentPose;
       SimpleMath::Matrix                    m_lastPose;
@@ -81,12 +84,15 @@ namespace TrackedUltrasound
       ComPtr<ID3D11ShaderResourceView>      m_shaderResourceView;
       ComPtr<ID3D11Buffer>                  m_vertexBuffer;
       ComPtr<ID3D11Buffer>                  m_sliceConstantBuffer;
+      bool                                  m_loadingComplete;
 
       // image data vars
       byte*                                 m_imageData;
 
-      // This is the rate at which the hologram position is interpolated (LERPed) to the current location.
-      const float                           LERP_RATE = 4.0f;
+      // Constants relating to slice renderer behavior
+      static const float3                                 LOCKED_SLICE_SCREEN_OFFSET;
+      static const float                                  LOCKED_SLICE_DISTANCE_OFFSET;
+      static const float                                  LERP_RATE;
     };
   }
 }

@@ -76,7 +76,7 @@ namespace TrackedUltrasound
       void CreateDeviceDependentResources();
       void ReleaseDeviceDependentResources();
 
-      void Update( const DX::StepTimer& timer );
+      void Update( SpatialPointerPose^ pose, const DX::StepTimer& timer );
       void Render();
 
     protected:

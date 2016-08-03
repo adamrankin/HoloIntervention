@@ -51,15 +51,15 @@ namespace TrackedUltrasound
     //----------------------------------------------------------------------------
     uint32 SliceRenderer::AddSlice( byte* imageData, uint32 width, uint32 height )
     {
-      SliceEntry entry(width, height);
+      SliceEntry entry( width, height );
       entry.m_id = m_nextUnusedSliceId;
-      entry.SetImageData(imageData);
+      entry.SetImageData( imageData );
       entry.m_constantBuffer.worldMatrix = SimpleMath::Matrix::Identity;
       entry.m_showing = true;
       entry.m_desiredPose = entry.m_currentPose = entry.m_lastPose = SimpleMath::Matrix::Identity;
 
       std::lock_guard<std::mutex> guard( m_sliceMapMutex );
-      m_slices.push_back(entry);
+      m_slices.push_back( entry );
 
       m_nextUnusedSliceId++;
       return m_nextUnusedSliceId - 1;
@@ -70,14 +70,14 @@ namespace TrackedUltrasound
     {
       std::lock_guard<std::mutex> guard( m_sliceMapMutex );
       SliceEntry* slice;
-      if (FindSlice(sliceId, slice))
+      if ( FindSlice( sliceId, slice ) )
       {
         slice->ReleaseDeviceDependentResources();
-        for (auto sliceIter = m_slices.begin(); sliceIter != m_slices.end(); ++sliceIter)
+        for ( auto sliceIter = m_slices.begin(); sliceIter != m_slices.end(); ++sliceIter )
         {
-          if (sliceIter->m_id == sliceId)
+          if ( sliceIter->m_id == sliceId )
           {
-            m_slices.erase(sliceIter);
+            m_slices.erase( sliceIter );
             return;
           }
         }
@@ -89,7 +89,7 @@ namespace TrackedUltrasound
     {
       std::lock_guard<std::mutex> guard( m_sliceMapMutex );
       SliceEntry* slice;
-      if (FindSlice(sliceId, slice))
+      if ( FindSlice( sliceId, slice ) )
       {
         slice->m_showing = true;
       }
@@ -100,7 +100,7 @@ namespace TrackedUltrasound
     {
       std::lock_guard<std::mutex> guard( m_sliceMapMutex );
       SliceEntry* slice;
-      if (FindSlice(sliceId, slice))
+      if ( FindSlice( sliceId, slice ) )
       {
         slice->m_showing = false;
       }
@@ -148,19 +148,19 @@ namespace TrackedUltrasound
       m_usingVprtShaders = m_deviceResources->GetDeviceSupportsVprt();
 
       // Load shaders asynchronously.
-      task<std::vector<byte>> loadVSTask = DX::ReadDataAsync(m_usingVprtShaders ? L"ms-appx:///SliceVprtVertexShader.cso" : L"ms-appx:///SliceVertexShader.cso");
-      task<std::vector<byte>> loadPSTask = DX::ReadDataAsync(L"ms-appx:///SlicePixelShader.cso");
+      task<std::vector<byte>> loadVSTask = DX::ReadDataAsync( m_usingVprtShaders ? L"ms-appx:///SliceVprtVertexShader.cso" : L"ms-appx:///SliceVertexShader.cso" );
+      task<std::vector<byte>> loadPSTask = DX::ReadDataAsync( L"ms-appx:///SlicePixelShader.cso" );
 
       task<std::vector<byte>> loadGSTask;
-      if (!m_usingVprtShaders)
+      if ( !m_usingVprtShaders )
       {
         // Load the pass-through geometry shader.
         // position, color, texture, index
-        loadGSTask = DX::ReadDataAsync(L"ms-appx:///PTIGeometryShader.cso");
+        loadGSTask = DX::ReadDataAsync( L"ms-appx:///PTIGeometryShader.cso" );
       }
 
       // After the vertex shader file is loaded, create the shader and input layout.
-      task<void> createVSTask = loadVSTask.then([this](const std::vector<byte>& fileData)
+      task<void> createVSTask = loadVSTask.then( [this]( const std::vector<byte>& fileData )
       {
         DX::ThrowIfFailed(
           m_deviceResources->GetD3DDevice()->CreateVertexShader(
@@ -188,10 +188,10 @@ namespace TrackedUltrasound
             &m_inputLayout
           )
         );
-      });
+      } );
 
       // After the pixel shader file is loaded, create the shader and constant buffer.
-      task<void> createPSTask = loadPSTask.then([this](const std::vector<byte>& fileData)
+      task<void> createPSTask = loadPSTask.then( [this]( const std::vector<byte>& fileData )
       {
         DX::ThrowIfFailed(
           m_deviceResources->GetD3DDevice()->CreatePixelShader(
@@ -201,13 +201,13 @@ namespace TrackedUltrasound
             &m_pixelShader
           )
         );
-      });
+      } );
 
       task<void> createGSTask;
-      if (!m_usingVprtShaders)
+      if ( !m_usingVprtShaders )
       {
         // After the geometry shader file is loaded, create the shader.
-        createGSTask = loadGSTask.then([this](const std::vector<byte>& fileData)
+        createGSTask = loadGSTask.then( [this]( const std::vector<byte>& fileData )
         {
           DX::ThrowIfFailed(
             m_deviceResources->GetD3DDevice()->CreateGeometryShader(
@@ -217,12 +217,12 @@ namespace TrackedUltrasound
               &m_geometryShader
             )
           );
-        });
+        } );
       }
 
       // Once all shaders are loaded, create the mesh.
-      task<void> shaderTaskGroup = m_usingVprtShaders ? (createPSTask && createVSTask) : (createPSTask && createVSTask && createGSTask);
-      task<void> finishLoadingTask = shaderTaskGroup.then([this]()
+      task<void> shaderTaskGroup = m_usingVprtShaders ? ( createPSTask && createVSTask ) : ( createPSTask && createVSTask && createGSTask );
+      task<void> finishLoadingTask = shaderTaskGroup.then( [this]()
       {
         constexpr std::array<unsigned short, 12> quadIndices =
         {
@@ -243,7 +243,7 @@ namespace TrackedUltrasound
         indexBufferData.pSysMem = quadIndices.data();
         indexBufferData.SysMemPitch = 0;
         indexBufferData.SysMemSlicePitch = 0;
-        const CD3D11_BUFFER_DESC indexBufferDesc(sizeof(unsigned short) * quadIndices.size(), D3D11_BIND_INDEX_BUFFER);
+        const CD3D11_BUFFER_DESC indexBufferDesc( sizeof( unsigned short ) * quadIndices.size(), D3D11_BIND_INDEX_BUFFER );
         DX::ThrowIfFailed(
           m_deviceResources->GetD3DDevice()->CreateBuffer(
             &indexBufferDesc,
@@ -253,7 +253,7 @@ namespace TrackedUltrasound
         );
 
         D3D11_SAMPLER_DESC desc;
-        ZeroMemory(&desc, sizeof(D3D11_SAMPLER_DESC));
+        ZeroMemory( &desc, sizeof( D3D11_SAMPLER_DESC ) );
         desc.Filter = D3D11_FILTER_ANISOTROPIC;
         desc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
         desc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
@@ -275,14 +275,14 @@ namespace TrackedUltrasound
           )
         );
 
-        for (auto slice : m_slices)
+        for ( auto slice : m_slices )
         {
           slice.CreateDeviceDependentResources();
         }
 
         // After the assets are loaded, the quad is ready to be rendered.
         m_loadingComplete = true;
-      });
+      } );
     }
 
     //----------------------------------------------------------------------------
@@ -294,16 +294,19 @@ namespace TrackedUltrasound
       m_geometryShader.Reset();
       m_pixelShader.Reset();
 
-      for (auto slice : m_slices)
+      for ( auto slice : m_slices )
       {
         slice.ReleaseDeviceDependentResources();
       }
     }
 
     //----------------------------------------------------------------------------
-    void SliceRenderer::Update( const DX::StepTimer& timer )
+    void SliceRenderer::Update( SpatialPointerPose^ pose, const DX::StepTimer& timer )
     {
-
+      for (auto slice : m_slices)
+      {
+        slice.Update(pose, timer);
+      }
     }
 
     //----------------------------------------------------------------------------
@@ -323,8 +326,8 @@ namespace TrackedUltrasound
         DXGI_FORMAT_R16_UINT, // Each index is one 16-bit unsigned integer (short).
         0
       );
-      context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-      context->IASetInputLayout(m_inputLayout.Get());
+      context->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
+      context->IASetInputLayout( m_inputLayout.Get() );
 
       // Attach the vertex shader.
       context->VSSetShader(
@@ -333,7 +336,7 @@ namespace TrackedUltrasound
         0
       );
 
-      if (!m_usingVprtShaders)
+      if ( !m_usingVprtShaders )
       {
         context->GSSetShader(
           m_geometryShader.Get(),
@@ -356,7 +359,7 @@ namespace TrackedUltrasound
 
       for ( auto sliceEntry : m_slices )
       {
-        sliceEntry.Render(m_indexCount);
+        sliceEntry.Render( m_indexCount );
       }
     }
 

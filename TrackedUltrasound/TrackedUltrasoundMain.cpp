@@ -80,6 +80,7 @@ namespace TrackedUltrasound
 
     // Initialize the system components
     m_gazeCursorRenderer = std::make_unique<Rendering::GazeCursorRenderer>( m_deviceResources );
+    m_sliceRenderer = std::make_unique<Rendering::SliceRenderer>( m_deviceResources );
     m_notificationAPI = std::make_unique<Notifications::NotificationsAPI>( m_deviceResources );
     m_spatialInputHandler = std::make_unique<Input::SpatialInputHandler>();
     m_voiceInputHandler = std::make_unique<Input::VoiceInputHandler>();
@@ -141,11 +142,11 @@ namespace TrackedUltrasound
         }
         catch ( Platform::Exception^ e )
         {
-          m_notificationAPI->QueueMessage(e->Message);
+          m_notificationAPI->QueueMessage( e->Message );
         }
         catch ( const std::exception& e )
         {
-          m_notificationAPI->QueueMessage(e.what());
+          m_notificationAPI->QueueMessage( e.what() );
           m_cursorSound.reset();
         }
 
@@ -194,11 +195,11 @@ namespace TrackedUltrasound
     // Time-based updates
     m_timer.Tick( [&]()
     {
+      SpatialPointerPose^ pose = SpatialPointerPose::TryGetAtTimestamp( currentCoordinateSystem, prediction->Timestamp );
+
       m_cursorSound->Update( m_timer );
       m_spatialSurfaceApi->Update( m_timer, currentCoordinateSystem );
-
-      // Allow notification system to update
-      SpatialPointerPose^ pose = SpatialPointerPose::TryGetAtTimestamp( currentCoordinateSystem, prediction->Timestamp );
+      m_sliceRenderer->Update( pose, m_timer );
       m_notificationAPI->Update( pose, m_timer );
 
       // Update the gaze vector in the gaze renderer
@@ -252,7 +253,7 @@ namespace TrackedUltrasound
         {
           // Turn the cursor off and output the message
           m_gazeCursorRenderer->ToggleCursor();
-          m_notificationAPI->QueueMessage(ex->Message);
+          m_notificationAPI->QueueMessage( ex->Message );
         }
       }
       else
@@ -347,22 +348,19 @@ namespace TrackedUltrasound
   }
 
   //----------------------------------------------------------------------------
-  // Notifies classes that use Direct3D device resources that the device resources
-  // need to be released before this method returns.
   void TrackedUltrasoundMain::OnDeviceLost()
   {
     m_spatialSurfaceApi->ReleaseDeviceDependentResources();
-
     m_gazeCursorRenderer->ReleaseDeviceDependentResources();
+    m_sliceRenderer->ReleaseDeviceDependentResources();
     m_notificationAPI->ReleaseDeviceDependentResources();
   }
 
   //----------------------------------------------------------------------------
-  // Notifies classes that use Direct3D device resources that the device resources
-  // may now be recreated.
   void TrackedUltrasoundMain::OnDeviceRestored()
   {
     m_gazeCursorRenderer->CreateDeviceDependentResources();
+    m_sliceRenderer->CreateDeviceDependentResources();
     m_notificationAPI->CreateDeviceDependentResources();
     m_spatialSurfaceApi->CreateDeviceDependentResourcesAsync();
   }
@@ -379,7 +377,7 @@ namespace TrackedUltrasound
     {
       String^ message = L"Warning! Positional tracking is " +
                         sender->Locatability.ToString() + L".\n";
-      m_notificationAPI->QueueMessage(message);
+      m_notificationAPI->QueueMessage( message );
     }
     break;
 
@@ -442,42 +440,42 @@ namespace TrackedUltrasound
     callbacks[L"show"] = [this]()
     {
       m_cursorSound->StartOnce();
-      m_gazeCursorRenderer->EnableCursor(true);
-      m_notificationAPI->QueueMessage(L"Cursor on.\n");
+      m_gazeCursorRenderer->EnableCursor( true );
+      m_notificationAPI->QueueMessage( L"Cursor on.\n" );
     };
 
     callbacks[L"hide"] = [this]()
     {
       m_cursorSound->StartOnce();
-      m_gazeCursorRenderer->EnableCursor(false);
-      m_notificationAPI->QueueMessage(L"Cursor off.\n");
+      m_gazeCursorRenderer->EnableCursor( false );
+      m_notificationAPI->QueueMessage( L"Cursor off.\n" );
     };
 
     callbacks[L"connect"] = [this]()
     {
       m_cursorSound->StartOnce();
-      m_notificationAPI->QueueMessage(L"Connecting...\n");
-      m_igtLinkIF->ConnectAsync().then([this](bool result)
+      m_notificationAPI->QueueMessage( L"Connecting...\n" );
+      m_igtLinkIF->ConnectAsync().then( [this]( bool result )
       {
-        if (result)
+        if ( result )
         {
-          m_notificationAPI->QueueMessage(L"Connection successful.");
+          m_notificationAPI->QueueMessage( L"Connection successful." );
         }
         else
         {
-          m_notificationAPI->QueueMessage(L"Connection failed.");
+          m_notificationAPI->QueueMessage( L"Connection failed." );
         }
-      });
+      } );
     };
 
     callbacks[L"disconnect"] = [this]()
     {
       m_cursorSound->StartOnce();
-      m_notificationAPI->QueueMessage(L"Disconnected.\n");
+      m_notificationAPI->QueueMessage( L"Disconnected.\n" );
       m_igtLinkIF->Disconnect();
     };
 
-    m_voiceInputHandler->RegisterCallbacks(callbacks);
+    m_voiceInputHandler->RegisterCallbacks( callbacks );
   }
 
 }
