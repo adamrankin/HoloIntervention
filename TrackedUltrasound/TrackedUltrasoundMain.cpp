@@ -30,10 +30,13 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Notification includes
 #include "NotificationsAPI.h"
 
-// std includes
+// STD includes
 #include <string>
 
-// winrt includes
+// Voice includes
+#include "VoiceInputHandler.h"
+
+// Windows includes
 #include <windows.graphics.directx.direct3d11.interop.h>
 
 using namespace Platform;
@@ -84,6 +87,7 @@ namespace TrackedUltrasound
     m_igtLinkIF = std::make_unique<IGTLink::IGTLinkIF>();
 
     InitializeAudioAssetsAsync();
+    InitializeVoiceSystem();
 
     // Use the default SpatialLocator to track the motion of the device.
     m_locator = SpatialLocator::GetDefault();
@@ -186,8 +190,6 @@ namespace TrackedUltrasound
     m_deviceResources->EnsureCameraResources( holographicFrame, prediction );
 
     SpatialCoordinateSystem^ currentCoordinateSystem = m_attachedReferenceFrame->GetStationaryCoordinateSystemAtTimestamp( prediction->Timestamp );
-
-    HandleVoiceInput();
 
     // Time-based updates
     m_timer.Tick( [&]()
@@ -433,26 +435,49 @@ namespace TrackedUltrasound
   }
 
   //----------------------------------------------------------------------------
-  void TrackedUltrasoundMain::HandleVoiceInput()
+  void TrackedUltrasoundMain::InitializeVoiceSystem()
   {
-    // Check for new input state since the last frame.
-    if ( !m_voiceInputHandler->GetLastCommand().empty() )
-    {
-      if ( m_voiceInputHandler->GetLastCommand().compare( L"show" ) == 0 )
-      {
-        m_cursorSound->StartOnce();
-        m_gazeCursorRenderer->EnableCursor( true );
-        m_notificationAPI->QueueMessage( L"Cursor on.\n" );
-      }
-      else if ( m_voiceInputHandler->GetLastCommand().compare( L"hide" ) == 0 )
-      {
-        m_cursorSound->StartOnce();
-        m_gazeCursorRenderer->EnableCursor( false );
-        m_notificationAPI->QueueMessage( L"Cursor off.\n" );
-      }
+    Input::VoiceInputCallbackMap callbacks;
 
-      // Mark the command as handled
-      m_voiceInputHandler->MarkCommandProcessed();
-    }
+    callbacks[L"show"] = [this]()
+    {
+      m_cursorSound->StartOnce();
+      m_gazeCursorRenderer->EnableCursor(true);
+      m_notificationAPI->QueueMessage(L"Cursor on.\n");
+    };
+
+    callbacks[L"hide"] = [this]()
+    {
+      m_cursorSound->StartOnce();
+      m_gazeCursorRenderer->EnableCursor(false);
+      m_notificationAPI->QueueMessage(L"Cursor off.\n");
+    };
+
+    callbacks[L"connect"] = [this]()
+    {
+      m_cursorSound->StartOnce();
+      m_notificationAPI->QueueMessage(L"Connecting...\n");
+      m_igtLinkIF->ConnectAsync().then([this](bool result)
+      {
+        if (result)
+        {
+          m_notificationAPI->QueueMessage(L"Connection successful.");
+        }
+        else
+        {
+          m_notificationAPI->QueueMessage(L"Connection failed.");
+        }
+      });
+    };
+
+    callbacks[L"disconnect"] = [this]()
+    {
+      m_cursorSound->StartOnce();
+      m_notificationAPI->QueueMessage(L"Disconnected.\n");
+      m_igtLinkIF->Disconnect();
+    };
+
+    m_voiceInputHandler->RegisterCallbacks(callbacks);
   }
+
 }

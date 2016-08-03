@@ -36,7 +36,7 @@ namespace TrackedUltrasound
       IGTLinkIF();
       ~IGTLinkIF();
 
-      bool Connect();
+      concurrency::task<bool> ConnectAsync(double timeoutSec = CONNECT_TIMEOUT_SEC);
       void Disconnect();
 
     protected:

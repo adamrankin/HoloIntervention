@@ -33,7 +33,7 @@ namespace TrackedUltrasound
   namespace Notifications
   {
     const double NotificationsAPI::MAXIMUM_REQUESTED_DURATION_SEC = 10.0;
-    const double NotificationsAPI::DEFAULT_NOTIFICATION_DURATION_SEC = 3.0;
+    const double NotificationsAPI::DEFAULT_NOTIFICATION_DURATION_SEC = 1.5;
     const DirectX::XMFLOAT4 NotificationsAPI::SHOWING_ALPHA_VALUE = XMFLOAT4(1.f, 1.f, 1.f, 1.f);
     const DirectX::XMFLOAT4 NotificationsAPI::HIDDEN_ALPHA_VALUE = XMFLOAT4(0.f, 0.f, 0.f, 0.f);
     const Windows::Foundation::Numerics::float3 NotificationsAPI::NOTIFICATION_SCREEN_OFFSET = float3(0.f, -0.13f, 0.f);

@@ -24,7 +24,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // STD includes
-#include <vector>
+#include <functional>
+#include <map>
 #include <string>
 
 using namespace Windows::Media::SpeechRecognition;
@@ -33,32 +34,34 @@ namespace TrackedUltrasound
 {
   namespace Input
   {
+    // command, function
+    typedef std::map<std::wstring, std::function<void()>> VoiceInputCallbackMap;
+
     class VoiceInputHandler
     {
     public:
       VoiceInputHandler();
       ~VoiceInputHandler();
 
-      std::wstring GetLastCommand();
-      void MarkCommandProcessed();
+      void RegisterCallbacks( VoiceInputCallbackMap& callbacks );
 
     protected:
-      void OnResultGenerated(SpeechContinuousRecognitionSession ^sender, SpeechContinuousRecognitionResultGeneratedEventArgs ^args);
+      void OnResultGenerated( SpeechContinuousRecognitionSession^ sender, SpeechContinuousRecognitionResultGeneratedEventArgs^ args );
 
     protected:
       // Used for cleaning up
-      bool m_speechBeingDetected = false;
-
-      // Store the last command detected
-      std::wstring m_lastCommandDetected;
+      bool                                                  m_speechBeingDetected = false;
 
       // API objects used to process voice input
-      SpeechRecognizer^ m_speechRecognizer;
+      SpeechRecognizer^                                     m_speechRecognizer;
+
+      // Store the command related details
+      VoiceInputCallbackMap                                 m_callbacks;
 
       // Event registration token.
-      Windows::Foundation::EventRegistrationToken m_speechDetectedEventToken;
+      Windows::Foundation::EventRegistrationToken           m_speechDetectedEventToken;
 
-      const float MINIMUM_CONFIDENCE_FOR_DETECTION = 0.5f; // [0,1]
+      const float                                           MINIMUM_CONFIDENCE_FOR_DETECTION = 0.5f; // [0,1]
     };
   }
 }

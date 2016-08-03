@@ -50,19 +50,9 @@ namespace TrackedUltrasound
     }
 
     //----------------------------------------------------------------------------
-    bool IGTLinkIF::Connect()
+    concurrency::task<bool> IGTLinkIF::ConnectAsync(double timeoutSec)
     {
-      auto connectTask = create_task(m_igtClient->ConnectAsync(CONNECT_TIMEOUT_SEC)).then([this](bool result) -> bool
-      {
-        if (!result)
-        {
-          TrackedUltrasound::instance()->GetNotificationAPI().QueueMessage(L"IGT Connection failed.");
-        }
-
-        return result;
-      });
-
-      return connectTask.get();
+      return create_task(m_igtClient->ConnectAsync(timeoutSec));
     }
 
     //----------------------------------------------------------------------------

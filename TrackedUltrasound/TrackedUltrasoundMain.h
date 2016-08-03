@@ -106,7 +106,7 @@ namespace TrackedUltrasound
     Concurrency::task<void> InitializeAudioAssetsAsync();
 
     // Check for any voice input commands
-    void HandleVoiceInput();
+    void InitializeVoiceSystem();
 
   protected:
     // Renderers
