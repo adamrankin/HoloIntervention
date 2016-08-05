@@ -61,7 +61,7 @@ namespace TrackedUltrasound
       // Event registration token.
       Windows::Foundation::EventRegistrationToken           m_speechDetectedEventToken;
 
-      const float                                           MINIMUM_CONFIDENCE_FOR_DETECTION = 0.5f; // [0,1]
+      const float                                           MINIMUM_CONFIDENCE_FOR_DETECTION = 0.4f; // [0,1]
     };
   }
 }

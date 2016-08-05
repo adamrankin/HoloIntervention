@@ -29,6 +29,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Windows includes
 #include <ppltasks.h>
+#include <vccorlib.h>
 
 using namespace Concurrency;
 
@@ -42,6 +43,9 @@ namespace TrackedUltrasound
     IGTLinkIF::IGTLinkIF()
       : m_igtClient(ref new UWPOpenIGTLink::IGTLinkClient())
     {
+      // TODO : remove temp code
+      m_igtClient->ServerHost = L"172.16.80.1";
+      //m_igtClient->RegisterTrackedFrameCallback(&TrackedFrameCallback);
     }
 
     //----------------------------------------------------------------------------
@@ -58,7 +62,25 @@ namespace TrackedUltrasound
     //----------------------------------------------------------------------------
     void IGTLinkIF::Disconnect()
     {
-      m_igtClient->DisconnectAsync();
+      m_igtClient->Disconnect();
+    }
+
+    //----------------------------------------------------------------------------
+    void IGTLinkIF::SetHostname(const std::wstring& hostname)
+    {
+      m_igtClient->ServerHost = ref new Platform::String(hostname.c_str());
+    }
+
+    //----------------------------------------------------------------------------
+    void IGTLinkIF::SetPort(int32 port)
+    {
+      m_igtClient->ServerPort = port;
+    }
+
+    //----------------------------------------------------------------------------
+    void IGTLinkIF::TrackedFrameCallback(igtl::TrackedFrameMessage* message)
+    {
+      // TODO : this function will be called whenever a tracked frame is received
     }
   }
 }

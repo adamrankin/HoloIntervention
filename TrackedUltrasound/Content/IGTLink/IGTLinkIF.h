@@ -26,6 +26,11 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Windows includes
 #include <ppltasks.h>
 
+// IGT forward declarations
+namespace igtl
+{
+  class TrackedFrameMessage;
+}
 namespace TrackedUltrasound
 {
   namespace IGTLink
@@ -36,12 +41,20 @@ namespace TrackedUltrasound
       IGTLinkIF();
       ~IGTLinkIF();
 
-      concurrency::task<bool> ConnectAsync(double timeoutSec = CONNECT_TIMEOUT_SEC);
+      concurrency::task<bool> ConnectAsync( double timeoutSec = CONNECT_TIMEOUT_SEC );
       void Disconnect();
+
+      void SetHostname( const std::wstring& hostname );
+      void SetPort( int32 port );
+
+    protected:
+      void TrackedFrameCallback(igtl::TrackedFrameMessage* message);
 
     protected:
       // Link to an IGT server
       UWPOpenIGTLink::IGTLinkClient^    m_igtClient;
+
+      uint64                            m_trackedFrameCallbackToken;
 
       // Constants relating to IGT behavior
       static const double               CONNECT_TIMEOUT_SEC;

@@ -87,6 +87,14 @@ namespace TrackedUltrasound
     m_spatialSurfaceApi = std::make_unique<Spatial::SpatialSurfaceAPI>( m_deviceResources );
     m_igtLinkIF = std::make_unique<IGTLink::IGTLinkIF>();
 
+    m_igtLinkIF->ConnectAsync().then([this](bool result)
+    {
+      if (result)
+      {
+        m_notificationAPI->QueueMessage(L"Connected.");
+      }
+    });
+
     InitializeAudioAssetsAsync();
     InitializeVoiceSystem();
 
