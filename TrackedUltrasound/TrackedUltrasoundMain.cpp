@@ -86,6 +86,7 @@ namespace TrackedUltrasound
     m_voiceInputHandler = std::make_unique<Input::VoiceInputHandler>();
     m_spatialSurfaceApi = std::make_unique<Spatial::SpatialSurfaceAPI>( m_deviceResources );
     m_igtLinkIF = std::make_unique<IGTLink::IGTLinkIF>();
+    m_trackedFrameReceivedToken = m_igtLinkIF->RegisterTrackedFrameCallback(TrackedFrameCallback);
 
     m_igtLinkIF->ConnectAsync().then([this](bool result)
     {
@@ -484,6 +485,12 @@ namespace TrackedUltrasound
     };
 
     m_voiceInputHandler->RegisterCallbacks( callbacks );
+  }
+
+  //----------------------------------------------------------------------------
+  void TrackedUltrasoundMain::TrackedFrameCallback(UWPOpenIGTLink::TrackedFrame^ frame)
+  {
+
   }
 
 }

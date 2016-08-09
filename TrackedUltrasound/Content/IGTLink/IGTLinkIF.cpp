@@ -31,6 +31,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <ppltasks.h>
 #include <vccorlib.h>
 
+// IGT includes
+#include <igtlMessageBase.h>
+
 using namespace Concurrency;
 
 namespace TrackedUltrasound
@@ -45,7 +48,6 @@ namespace TrackedUltrasound
     {
       // TODO : remove temp code
       m_igtClient->ServerHost = L"172.16.80.1";
-      //m_igtClient->RegisterTrackedFrameCallback(&TrackedFrameCallback);
     }
 
     //----------------------------------------------------------------------------
@@ -78,9 +80,65 @@ namespace TrackedUltrasound
     }
 
     //----------------------------------------------------------------------------
-    void IGTLinkIF::TrackedFrameCallback(igtl::TrackedFrameMessage* message)
+    bool IGTLinkIF::GetOldestTrackedFrame(UWPOpenIGTLink::TrackedFrame^ frame)
     {
-      // TODO : this function will be called whenever a tracked frame is received
+      return m_igtClient->GetOldestTrackedFrame(frame);
+    }
+
+    //----------------------------------------------------------------------------
+    bool IGTLinkIF::GetLatestTrackedFrame(UWPOpenIGTLink::TrackedFrame^ frame)
+    {
+      return m_igtClient->GetLatestTrackedFrame(frame);
+    }
+
+    //----------------------------------------------------------------------------
+    bool IGTLinkIF::GetOldestCommand(UWPOpenIGTLink::Command^ cmd)
+    {
+      return m_igtClient->GetOldestCommand(cmd);
+    }
+
+    //----------------------------------------------------------------------------
+    bool IGTLinkIF::GetLatestCommand(UWPOpenIGTLink::Command^ cmd)
+    {
+      return m_igtClient->GetLatestCommand(cmd);
+    }
+
+    //----------------------------------------------------------------------------
+    uint64 IGTLinkIF::RegisterTrackedFrameCallback(std::function<void(UWPOpenIGTLink::TrackedFrame^)>& function)
+    {
+      std::lock_guard<std::mutex> guard(m_callbackMutex);
+      m_trackedFrameCallbacks[m_lastUnusedCallbackToken] = function;
+
+      m_lastUnusedCallbackToken++;
+      return m_lastUnusedCallbackToken - 1;
+    }
+
+    //----------------------------------------------------------------------------
+    bool IGTLinkIF::UnregisterTrackedFrameCallback(uint64 token)
+    {
+      std::lock_guard<std::mutex> guard(m_callbackMutex);
+      if (m_trackedFrameCallbacks.find(token) != m_trackedFrameCallbacks.end())
+      {
+        m_trackedFrameCallbacks.erase(m_trackedFrameCallbacks.find(token));
+        return true;
+      }
+
+      return false;
+    }
+
+    //----------------------------------------------------------------------------
+    void IGTLinkIF::DataProcessingPump(IGTLinkIF& self, concurrency::cancellation_token token)
+    {
+      auto frame = ref new UWPOpenIGTLink::TrackedFrame();
+      while (!token.is_canceled())
+      {
+        if (!self.m_igtClient->GetLatestTrackedFrame(frame))
+        {
+          // No new frames, wait a bit
+          std::this_thread::sleep_for(std::chrono::milliseconds(33));
+          continue;
+        }
+      }
     }
   }
 }

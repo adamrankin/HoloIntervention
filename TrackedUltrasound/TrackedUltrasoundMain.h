@@ -109,6 +109,9 @@ namespace TrackedUltrasound
     // Check for any voice input commands
     void InitializeVoiceSystem();
 
+    // Callback when a frame is received by the system over IGTlink
+    void TrackedFrameCallback(UWPOpenIGTLink::TrackedFrame^ frame);
+
   protected:
     // Renderers
     std::unique_ptr<Rendering::GazeCursorRenderer>        m_gazeCursorRenderer;
@@ -147,6 +150,7 @@ namespace TrackedUltrasound
     Windows::Foundation::EventRegistrationToken           m_cameraAddedToken;
     Windows::Foundation::EventRegistrationToken           m_cameraRemovedToken;
     Windows::Foundation::EventRegistrationToken           m_locatabilityChangedToken;
+    uint64                                                m_trackedFrameReceivedToken;
 
     // Store the current state of locatability
     Windows::Perception::Spatial::SpatialLocatability     m_locatability;

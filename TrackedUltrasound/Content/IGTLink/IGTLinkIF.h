@@ -31,6 +31,7 @@ namespace igtl
 {
   class TrackedFrameMessage;
 }
+
 namespace TrackedUltrasound
 {
   namespace IGTLink
@@ -40,21 +41,51 @@ namespace TrackedUltrasound
     public:
       IGTLinkIF();
       ~IGTLinkIF();
-
+      
+      /// Connect to the server specified by SetHostname() and SetPort()
+      /// If connected to a server, disconnects first.
       concurrency::task<bool> ConnectAsync( double timeoutSec = CONNECT_TIMEOUT_SEC );
+
+      /// Disconnect from the server
       void Disconnect();
 
+      /// Set the hostname to connect to
       void SetHostname( const std::wstring& hostname );
+
+      /// Set the port to connect to
       void SetPort( int32 port );
 
+      // Callback functions for when a frame is received
+      uint64 RegisterTrackedFrameCallback(std::function<void(UWPOpenIGTLink::TrackedFrame^)>& function);
+      bool UnregisterTrackedFrameCallback(uint64 token);
+
     protected:
-      void TrackedFrameCallback(igtl::TrackedFrameMessage* message);
+      /// Threaded function to pull data from the IGT client buffer and send it to the system
+      static void DataProcessingPump(IGTLinkIF& self, concurrency::cancellation_token token);
+
+      /// Retrieve the oldest tracked frame
+      bool GetOldestTrackedFrame(UWPOpenIGTLink::TrackedFrame^ frame);
+
+      /// Retrieve the latest tracked frame
+      bool GetLatestTrackedFrame(UWPOpenIGTLink::TrackedFrame^ frame);
+
+      /// Retrieve the oldest command
+      bool GetOldestCommand(UWPOpenIGTLink::Command^ cmd);
+
+      /// Retrieve the latest command
+      bool GetLatestCommand(UWPOpenIGTLink::Command^ cmd);
 
     protected:
       // Link to an IGT server
       UWPOpenIGTLink::IGTLinkClient^    m_igtClient;
 
-      uint64                            m_trackedFrameCallbackToken;
+      // Tracked frame callbacks
+      std::map < uint64, std::function<void(UWPOpenIGTLink::TrackedFrame^)> >     m_trackedFrameCallbacks;
+      uint64                                                                      m_lastUnusedCallbackToken = 0;
+      std::mutex                                                                  m_callbackMutex;
+
+      // Cancellation token source to stop the data processing pump
+      cancellation_token_source m_cancellationTokenSource;
 
       // Constants relating to IGT behavior
       static const double               CONNECT_TIMEOUT_SEC;
