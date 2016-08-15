@@ -25,6 +25,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "pch.h"
 #include "DirectXHelper.h"
 #include "SliceRenderer.h"
+#include "GetDataFromIBuffer.h"
 
 // STD includes
 #include <sstream>
@@ -49,14 +50,50 @@ namespace TrackedUltrasound
     }
 
     //----------------------------------------------------------------------------
-    uint32 SliceRenderer::AddSlice( byte* imageData, uint32 width, uint32 height )
+    uint32 SliceRenderer::AddSlice()
     {
-      SliceEntry entry( width, height );
-      entry.m_id = m_nextUnusedSliceId;
-      entry.SetImageData( imageData );
-      entry.m_constantBuffer.worldMatrix = SimpleMath::Matrix::Identity;
-      entry.m_showing = true;
-      entry.m_desiredPose = entry.m_currentPose = entry.m_lastPose = SimpleMath::Matrix::Identity;
+      std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>( m_deviceResources );
+      entry->m_id = m_nextUnusedSliceId;
+      entry->m_showing = false;
+      std::lock_guard<std::mutex> guard( m_sliceMapMutex );
+      m_slices.push_back( entry );
+
+      // Initialize the constant buffer of the slice
+      entry->ReleaseDeviceDependentResources();
+      entry->CreateDeviceDependentResources();
+
+      m_nextUnusedSliceId++;
+      return m_nextUnusedSliceId - 1;
+    }
+
+    //----------------------------------------------------------------------------
+    uint32 SliceRenderer::AddSlice( std::shared_ptr<byte*> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, float4x4 embeddedImageTransform )
+    {
+      std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>( m_deviceResources );
+      entry->m_id = m_nextUnusedSliceId;
+      DirectX::XMFLOAT4X4 mat;
+      XMStoreFloat4x4( &mat, XMMatrixTranspose( DirectX::XMLoadFloat4x4( &embeddedImageTransform ) ) );
+      entry->m_constantBuffer.worldMatrix = entry->m_desiredPose = entry->m_currentPose = entry->m_lastPose = mat;
+      entry->SetImageData( imageData, width, height, pixelFormat );
+      entry->m_showing = true;
+
+      std::lock_guard<std::mutex> guard( m_sliceMapMutex );
+      m_slices.push_back( entry );
+
+      m_nextUnusedSliceId++;
+      return m_nextUnusedSliceId - 1;
+    }
+
+    //----------------------------------------------------------------------------
+    uint32 SliceRenderer::AddSlice( IBuffer^ imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, float4x4 embeddedImageTransform )
+    {
+      std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>( m_deviceResources );
+      entry->m_id = m_nextUnusedSliceId;
+      DirectX::XMFLOAT4X4 mat;
+      XMStoreFloat4x4( &mat, DirectX::XMLoadFloat4x4( &embeddedImageTransform ) );
+      entry->m_constantBuffer.worldMatrix = entry->m_desiredPose = entry->m_currentPose = entry->m_lastPose = mat;
+      entry->SetImageData( std::make_shared<byte*>( TrackedUltrasound::GetDataFromIBuffer( imageData ) ), width, height, pixelFormat );
+      entry->m_showing = true;
 
       std::lock_guard<std::mutex> guard( m_sliceMapMutex );
       m_slices.push_back( entry );
@@ -69,13 +106,13 @@ namespace TrackedUltrasound
     void SliceRenderer::RemoveSlice( uint32 sliceId )
     {
       std::lock_guard<std::mutex> guard( m_sliceMapMutex );
-      SliceEntry* slice;
+      std::shared_ptr<SliceEntry> slice;
       if ( FindSlice( sliceId, slice ) )
       {
         slice->ReleaseDeviceDependentResources();
         for ( auto sliceIter = m_slices.begin(); sliceIter != m_slices.end(); ++sliceIter )
         {
-          if ( sliceIter->m_id == sliceId )
+          if ( ( *sliceIter )->m_id == sliceId )
           {
             m_slices.erase( sliceIter );
             return;
@@ -85,10 +122,24 @@ namespace TrackedUltrasound
     }
 
     //----------------------------------------------------------------------------
+    void SliceRenderer::UpdateSlice( uint32 sliceId, std::shared_ptr<byte*> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, float4x4 embeddedImageTransform )
+    {
+      std::lock_guard<std::mutex> guard( m_sliceMapMutex );
+      std::shared_ptr<SliceEntry> slice;
+      if ( FindSlice( sliceId, slice ) )
+      {
+        DirectX::XMFLOAT4X4 mat;
+        XMStoreFloat4x4( &mat, XMMatrixTranspose( DirectX::XMLoadFloat4x4( &embeddedImageTransform ) ) );
+        slice->SetDesiredPose( mat );
+        slice->SetImageData( imageData, width, height, pixelFormat );
+      }
+    }
+
+    //----------------------------------------------------------------------------
     void SliceRenderer::ShowSlice( uint32 sliceId )
     {
       std::lock_guard<std::mutex> guard( m_sliceMapMutex );
-      SliceEntry* slice;
+      std::shared_ptr<SliceEntry> slice;
       if ( FindSlice( sliceId, slice ) )
       {
         slice->m_showing = true;
@@ -99,7 +150,7 @@ namespace TrackedUltrasound
     void SliceRenderer::HideSlice( uint32 sliceId )
     {
       std::lock_guard<std::mutex> guard( m_sliceMapMutex );
-      SliceEntry* slice;
+      std::shared_ptr<SliceEntry> slice;
       if ( FindSlice( sliceId, slice ) )
       {
         slice->m_showing = false;
@@ -110,7 +161,7 @@ namespace TrackedUltrasound
     void SliceRenderer::SetSliceVisible( uint32 sliceId, bool show )
     {
       std::lock_guard<std::mutex> guard( m_sliceMapMutex );
-      SliceEntry* slice;
+      std::shared_ptr<SliceEntry> slice;
       if ( FindSlice( sliceId, slice ) )
       {
         slice->m_showing = show;
@@ -118,24 +169,42 @@ namespace TrackedUltrasound
     }
 
     //----------------------------------------------------------------------------
-    void SliceRenderer::SetSlicePose( uint32 sliceId, const XMFLOAT4X4& pose )
+    void SliceRenderer::SetSlicePose( uint32 sliceId, const float4x4& pose )
     {
       std::lock_guard<std::mutex> guard( m_sliceMapMutex );
-      SliceEntry* slice;
+      std::shared_ptr<SliceEntry> slice;
       if ( FindSlice( sliceId, slice ) )
       {
-        slice->m_currentPose = slice->m_desiredPose = slice->m_lastPose = pose;
+        DirectX::XMFLOAT4X4 mat;
+        XMStoreFloat4x4( &mat, XMMatrixTranspose( DirectX::XMLoadFloat4x4( &pose ) ) );
+        slice->m_currentPose = slice->m_desiredPose = slice->m_lastPose = mat;
       }
     }
 
     //----------------------------------------------------------------------------
-    void SliceRenderer::SetDesiredSlicePose( uint32 sliceId, const XMFLOAT4X4& pose )
+    bool SliceRenderer::GetSlicePose( uint32 sliceId, float4x4& outPose )
     {
       std::lock_guard<std::mutex> guard( m_sliceMapMutex );
-      SliceEntry* slice;
+      std::shared_ptr<SliceEntry> slice;
       if ( FindSlice( sliceId, slice ) )
       {
-        slice->m_desiredPose = pose;
+        DirectX::XMStoreFloat4x4( &outPose, XMMatrixTranspose( XMLoadFloat4x4( &slice->m_currentPose ) ) );
+        return true;
+      }
+
+      return false;
+    }
+
+    //----------------------------------------------------------------------------
+    void SliceRenderer::SetDesiredSlicePose( uint32 sliceId, const float4x4& pose )
+    {
+      std::lock_guard<std::mutex> guard( m_sliceMapMutex );
+      std::shared_ptr<SliceEntry> slice;
+      if ( FindSlice( sliceId, slice ) )
+      {
+        DirectX::XMFLOAT4X4 mat;
+        XMStoreFloat4x4( &mat, XMMatrixTranspose( DirectX::XMLoadFloat4x4( &pose ) ) );
+        slice->SetDesiredPose( mat );
       }
     }
 
@@ -277,7 +346,7 @@ namespace TrackedUltrasound
 
         for ( auto slice : m_slices )
         {
-          slice.CreateDeviceDependentResources();
+          slice->CreateDeviceDependentResources();
         }
 
         // After the assets are loaded, the quad is ready to be rendered.
@@ -296,16 +365,16 @@ namespace TrackedUltrasound
 
       for ( auto slice : m_slices )
       {
-        slice.ReleaseDeviceDependentResources();
+        slice->ReleaseDeviceDependentResources();
       }
     }
 
     //----------------------------------------------------------------------------
     void SliceRenderer::Update( SpatialPointerPose^ pose, const DX::StepTimer& timer )
     {
-      for (auto slice : m_slices)
+      for ( auto slice : m_slices )
       {
-        slice.Update(pose, timer);
+        slice->Update( pose, timer );
       }
     }
 
@@ -359,18 +428,18 @@ namespace TrackedUltrasound
 
       for ( auto sliceEntry : m_slices )
       {
-        sliceEntry.Render( m_indexCount );
+        sliceEntry->Render( m_indexCount );
       }
     }
 
     //----------------------------------------------------------------------------
-    bool SliceRenderer::FindSlice( uint32 sliceId, SliceEntry*& sliceEntry )
+    bool SliceRenderer::FindSlice( uint32 sliceId, std::shared_ptr<SliceEntry>& sliceEntry )
     {
       for ( auto slice : m_slices )
       {
-        if ( slice.m_id == sliceId )
+        if ( slice->m_id == sliceId )
         {
-          sliceEntry = &slice;
+          sliceEntry = slice;
           return true;
         }
       }

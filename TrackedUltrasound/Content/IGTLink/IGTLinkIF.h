@@ -41,7 +41,7 @@ namespace TrackedUltrasound
     public:
       IGTLinkIF();
       ~IGTLinkIF();
-      
+
       /// Connect to the server specified by SetHostname() and SetPort()
       /// If connected to a server, disconnects first.
       concurrency::task<bool> ConnectAsync( double timeoutSec = CONNECT_TIMEOUT_SEC );
@@ -49,19 +49,14 @@ namespace TrackedUltrasound
       /// Disconnect from the server
       void Disconnect();
 
+      /// Accessor to connected state
+      bool IsConnected();
+
       /// Set the hostname to connect to
       void SetHostname( const std::wstring& hostname );
 
       /// Set the port to connect to
       void SetPort( int32 port );
-
-      // Callback functions for when a frame is received
-      uint64 RegisterTrackedFrameCallback(std::function<void(UWPOpenIGTLink::TrackedFrame^)>& function);
-      bool UnregisterTrackedFrameCallback(uint64 token);
-
-    protected:
-      /// Threaded function to pull data from the IGT client buffer and send it to the system
-      static void DataProcessingPump(IGTLinkIF& self, concurrency::cancellation_token token);
 
       /// Retrieve the oldest tracked frame
       bool GetOldestTrackedFrame(UWPOpenIGTLink::TrackedFrame^ frame);
@@ -76,16 +71,15 @@ namespace TrackedUltrasound
       bool GetLatestCommand(UWPOpenIGTLink::Command^ cmd);
 
     protected:
+      /// Threaded function to pull data from the IGT client buffer and send it to the system
+      static void DataProcessingPump( IGTLinkIF& self, concurrency::cancellation_token token );
+
+    protected:
       // Link to an IGT server
       UWPOpenIGTLink::IGTLinkClient^    m_igtClient;
 
-      // Tracked frame callbacks
-      std::map < uint64, std::function<void(UWPOpenIGTLink::TrackedFrame^)> >     m_trackedFrameCallbacks;
-      uint64                                                                      m_lastUnusedCallbackToken = 0;
-      std::mutex                                                                  m_callbackMutex;
-
       // Cancellation token source to stop the data processing pump
-      cancellation_token_source m_cancellationTokenSource;
+      cancellation_token_source         m_cancellationTokenSource;
 
       // Constants relating to IGT behavior
       static const double               CONNECT_TIMEOUT_SEC;

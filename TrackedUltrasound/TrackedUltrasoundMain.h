@@ -117,6 +117,9 @@ namespace TrackedUltrasound
     std::unique_ptr<Rendering::GazeCursorRenderer>        m_gazeCursorRenderer;
     std::unique_ptr<Rendering::SliceRenderer>             m_sliceRenderer;
 
+    // Slice related behaviors
+    uint32                                                m_sliceToken = 0;
+
     // Spatial input event handler
     std::unique_ptr<Input::SpatialInputHandler>           m_spatialInputHandler;
     // Voice input event handler
@@ -124,6 +127,7 @@ namespace TrackedUltrasound
 
     // Interface that manages a network connection to an IGT link server
     std::unique_ptr<IGTLink::IGTLinkIF>                   m_igtLinkIF;
+    UWPOpenIGTLink::TrackedFrame^                         m_latestFrame;
 
     // Notification API
     std::unique_ptr<Notifications::NotificationsAPI>      m_notificationAPI;

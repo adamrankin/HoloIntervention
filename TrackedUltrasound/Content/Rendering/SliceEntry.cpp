@@ -26,6 +26,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "DirectXHelper.h"
 #include "SliceEntry.h"
 
+// DirectXTex includes
+#include <DirectXTex.h>
+
 using namespace SimpleMath;
 using namespace Windows::Foundation::Numerics;
 using namespace Windows::UI::Input::Spatial;
@@ -40,28 +43,25 @@ namespace TrackedUltrasound
     const float SliceEntry::LERP_RATE = 2.0f;
 
     //----------------------------------------------------------------------------
-    SliceEntry::SliceEntry( uint32 width, uint32 height )
+    SliceEntry::SliceEntry( const std::shared_ptr<DX::DeviceResources>& deviceResources )
       : m_id( 0 )
-      , m_width( width )
-      , m_height( height )
+      , m_width( 0 )
+      , m_height( 0 )
       , m_imageData( nullptr )
       , m_showing( true )
       , m_headLocked( false )
       , m_currentPose( SimpleMath::Matrix::Identity )
       , m_lastPose( SimpleMath::Matrix::Identity )
+      , m_desiredPose( SimpleMath::Matrix::Identity )
+      , m_pixelFormat( DXGI_FORMAT_UNKNOWN )
+      , m_deviceResources( deviceResources )
     {
-      CreateDeviceDependentResources();
     }
 
     //----------------------------------------------------------------------------
     SliceEntry::~SliceEntry()
     {
       ReleaseDeviceDependentResources();
-
-      if ( m_imageData != nullptr )
-      {
-        delete m_imageData;
-      }
     }
 
     //----------------------------------------------------------------------------
@@ -104,30 +104,30 @@ namespace TrackedUltrasound
 
         // Construct the 4x4 pose matrix.
         XMStoreFloat4x4( &m_currentPose,
-                         XMMatrixTranspose( XMMATRIX( xAxisRotation, yAxisRotation, facingNormal,
-                         XMVectorSet( 0.f, 0.f, 0.f, 1.f ) ) * XMMatrixTranslationFromVector( XMLoadFloat3( &smoothedPosition ) ) ) );
+                         XMMatrixTranspose(
+                           XMMATRIX( xAxisRotation,
+                                     yAxisRotation,
+                                     facingNormal,
+                                     XMVectorSet( 0.f, 0.f, 0.f, 1.f ) ) * XMMatrixTranslationFromVector( XMLoadFloat3( &smoothedPosition ) ) ) );
       }
 
       m_constantBuffer.worldMatrix = m_currentPose;
 
-      if ( m_loadingComplete )
-      {
-        // Update the model transform buffer for the hologram.
-        m_deviceResources->GetD3DDeviceContext()->UpdateSubresource(
-          m_sliceConstantBuffer.Get(),
-          0,
-          nullptr,
-          &m_constantBuffer,
-          0,
-          0
-        );
-      }
+      // Update the model transform buffer for the hologram.
+      m_deviceResources->GetD3DDeviceContext()->UpdateSubresource(
+        m_sliceConstantBuffer.Get(),
+        0,
+        nullptr,
+        &m_constantBuffer,
+        0,
+        0
+      );
     }
 
     //----------------------------------------------------------------------------
     void SliceEntry::Render( uint32 indexCount )
     {
-      if ( !m_showing || !m_loadingComplete )
+      if ( !m_showing )
       {
         return;
       }
@@ -163,53 +163,78 @@ namespace TrackedUltrasound
     }
 
     //----------------------------------------------------------------------------
-    void SliceEntry::SetImageData( byte* imageData )
+    void SliceEntry::SetImageData( std::shared_ptr<byte*> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat )
     {
-      this->m_imageData = imageData;
-
-      if ( m_loadingComplete )
+      if ( width != m_width || height != m_height || pixelFormat != m_pixelFormat )
       {
-        // Copy data to texture sub-resource
-        const auto context = m_deviceResources->GetD3DDeviceContext();
-        context->UpdateSubresource( m_texture.Get(), 0, nullptr, imageData, 0, 0 );
+        m_width = width;
+        m_height = height;
+        m_pixelFormat = pixelFormat;
+        ReleaseDeviceDependentResources();
+        CreateDeviceDependentResources();
       }
+
+      m_imageData = imageData;
+
+      m_deviceResources->GetD3DDeviceContext()->UpdateSubresource(
+        m_texture.Get(),
+        0,
+        nullptr,
+        *m_imageData,
+        m_width * DirectX::BitsPerPixel( pixelFormat ) / 8,
+        m_width * m_height * DirectX::BitsPerPixel( pixelFormat ) / 8
+      );
     }
 
     //----------------------------------------------------------------------------
-    byte* SliceEntry::GetImageData() const
+    std::shared_ptr<byte*> SliceEntry::GetImageData() const
     {
       return m_imageData;
     }
 
     //----------------------------------------------------------------------------
+    void SliceEntry::SetDesiredPose( const DirectX::XMFLOAT4X4& matrix )
+    {
+      m_desiredPose = matrix;
+    }
+
+    //----------------------------------------------------------------------------
     void SliceEntry::CreateDeviceDependentResources()
     {
-      // Create the texture that will store the image data
-      // TODO : support more formats?
-      CD3D11_TEXTURE2D_DESC textureDesc( DXGI_FORMAT_R8_UNORM, m_width, m_height, 1, 1, D3D11_BIND_SHADER_RESOURCE );
-      m_deviceResources->GetD3DDevice()->CreateTexture2D( &textureDesc, nullptr, &m_texture );
-
-      // Create read and write views for the off-screen render target.
-      m_deviceResources->GetD3DDevice()->CreateShaderResourceView( m_texture.Get(), nullptr, &m_shaderResourceView );
-
       const CD3D11_BUFFER_DESC constantBufferDesc( sizeof( SliceConstantBuffer ), D3D11_BIND_CONSTANT_BUFFER );
-      DX::ThrowIfFailed(
-        m_deviceResources->GetD3DDevice()->CreateBuffer(
-          &constantBufferDesc,
-          nullptr,
-          &m_sliceConstantBuffer
-        )
-      );
+      DX::ThrowIfFailed( m_deviceResources->GetD3DDevice()->CreateBuffer( &constantBufferDesc, nullptr, &m_sliceConstantBuffer ) );
 
-      // TODO : these vertices can be changed to transform the texture, I think, perhaps that should be in the world matrix?
-      // If so, move this back to the slice renderer to save on VRAM
+      if ( m_pixelFormat != DXGI_FORMAT_UNKNOWN && m_width > 0 && m_height > 0 )
+      {
+        // Create the texture that will store the image data
+        CD3D11_TEXTURE2D_DESC textureDesc( m_pixelFormat, m_width, m_height, 1, 1, D3D11_BIND_SHADER_RESOURCE );
+        DX::ThrowIfFailed( m_deviceResources->GetD3DDevice()->CreateTexture2D( &textureDesc, nullptr, &m_texture ) );
+        DX::ThrowIfFailed( m_deviceResources->GetD3DDevice()->CreateShaderResourceView( m_texture.Get(), nullptr, &m_shaderResourceView ) );
+      }
+
+      // Determine x and y scaling from world matrix
+      Vector3 scale;
+      Quaternion rotation;
+      Vector3 translate;
+      m_desiredPose.Decompose( scale, rotation, translate );
+
+      // world matrix is IJK to world in mm
+      // HoloLens scale is in m
+      scale /= 1000;
+
+      // Vertices should match the aspect ratio of the image size
+      float bottom = -( m_height / 2 * scale.y );
+      float left = -( m_width / 2 * scale.x );
+      float right = m_width / 2 * scale.x;
+      float top = m_height / 2 * scale.y;
+
       static const std::array<VertexPositionTexture, 4> quadVertices =
       {
         {
-          { XMFLOAT3( -0.2f,  0.2f, 0.f ), XMFLOAT2( 0.f, 0.f ) },
-          { XMFLOAT3( 0.2f,  0.2f, 0.f ), XMFLOAT2( 1.f, 0.f ) },
-          { XMFLOAT3( 0.2f, -0.2f, 0.f ), XMFLOAT2( 1.f, 1.f ) },
-          { XMFLOAT3( -0.2f, -0.2f, 0.f ), XMFLOAT2( 0.f, 1.f ) },
+          { XMFLOAT3( left, top, 0.f ), XMFLOAT2( 0.f, 0.f ) },
+          { XMFLOAT3( right, top, 0.f ), XMFLOAT2( 1.f, 0.f ) },
+          { XMFLOAT3( right, bottom, 0.f ), XMFLOAT2( 1.f, 1.f ) },
+          { XMFLOAT3( left, bottom, 0.f ), XMFLOAT2( 0.f, 1.f ) },
         }
       };
 
@@ -218,25 +243,16 @@ namespace TrackedUltrasound
       vertexBufferData.SysMemPitch = 0;
       vertexBufferData.SysMemSlicePitch = 0;
       const CD3D11_BUFFER_DESC vertexBufferDesc( sizeof( VertexPositionTexture ) * quadVertices.size(), D3D11_BIND_VERTEX_BUFFER );
-      DX::ThrowIfFailed(
-        m_deviceResources->GetD3DDevice()->CreateBuffer(
-          &vertexBufferDesc,
-          &vertexBufferData,
-          &m_vertexBuffer
-        )
-      );
-
-      m_loadingComplete = true;
+      DX::ThrowIfFailed( m_deviceResources->GetD3DDevice()->CreateBuffer( &vertexBufferDesc, &vertexBufferData, &m_vertexBuffer ) );
     }
 
     //----------------------------------------------------------------------------
     void SliceEntry::ReleaseDeviceDependentResources()
     {
-      m_loadingComplete = false;
       m_vertexBuffer.Reset();
       m_sliceConstantBuffer.Reset();
-      m_texture.Reset();
       m_shaderResourceView.Reset();
+      m_texture.Reset();
     }
   }
 }

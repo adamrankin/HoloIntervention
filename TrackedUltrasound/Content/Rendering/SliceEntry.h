@@ -53,28 +53,29 @@ namespace TrackedUltrasound
     class SliceEntry
     {
     public:
-      SliceEntry( uint32 width, uint32 height );
+      SliceEntry( const std::shared_ptr<DX::DeviceResources>& deviceResources );
       ~SliceEntry();
 
       void Update( SpatialPointerPose^ pose, const DX::StepTimer& timer );
       void Render( uint32 indexCount );
 
-      void SetImageData( byte* imageData );
-      byte* GetImageData() const;
+      void SetImageData( std::shared_ptr<byte*> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat );
+      std::shared_ptr<byte*> GetImageData() const;
+
+      void SetDesiredPose( const DirectX::XMFLOAT4X4& matrix );
 
       // D3D device related controls
       void CreateDeviceDependentResources();
       void ReleaseDeviceDependentResources();
 
       uint32                                m_id;
-      uint32                                m_width;
-      uint32                                m_height;
       SliceConstantBuffer                   m_constantBuffer;
       bool                                  m_showing;
       bool                                  m_headLocked;
       SimpleMath::Matrix                    m_desiredPose;
       SimpleMath::Matrix                    m_currentPose;
       SimpleMath::Matrix                    m_lastPose;
+      DXGI_FORMAT                           m_pixelFormat;
 
     protected:
       // Cached pointer to device resources.
@@ -84,15 +85,17 @@ namespace TrackedUltrasound
       ComPtr<ID3D11ShaderResourceView>      m_shaderResourceView;
       ComPtr<ID3D11Buffer>                  m_vertexBuffer;
       ComPtr<ID3D11Buffer>                  m_sliceConstantBuffer;
-      bool                                  m_loadingComplete;
 
       // image data vars
-      byte*                                 m_imageData;
+      std::shared_ptr<byte*>                m_imageData;
+      uint16                                m_width;
+      uint16                                m_height;
+      std::mutex                            m_imageAccessMutex;
 
       // Constants relating to slice renderer behavior
-      static const float3                                 LOCKED_SLICE_SCREEN_OFFSET;
-      static const float                                  LOCKED_SLICE_DISTANCE_OFFSET;
-      static const float                                  LERP_RATE;
+      static const float3                   LOCKED_SLICE_SCREEN_OFFSET;
+      static const float                    LOCKED_SLICE_DISTANCE_OFFSET;
+      static const float                    LERP_RATE;
     };
   }
 }

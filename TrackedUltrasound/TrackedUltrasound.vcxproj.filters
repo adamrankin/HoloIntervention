@@ -8,9 +8,6 @@
     <ClCompile Include="Common\DeviceResources.cpp">
       <Filter>Common</Filter>
     </ClCompile>
-    <ClCompile Include="Content\Rendering\GazeCursorRenderer.cpp">
-      <Filter>Content\Rendering</Filter>
-    </ClCompile>
     <ClCompile Include="Content\Input\SpatialInputHandler.cpp">
       <Filter>Content\Input</Filter>
     </ClCompile>
@@ -41,17 +38,8 @@
     <ClCompile Include="Content\SpatialMapping\SpatialSurfaceAPI.cpp">
       <Filter>Content\SpatialMapping</Filter>
     </ClCompile>
-    <ClCompile Include="Content\Rendering\InstancedEffectBase.cpp">
-      <Filter>Content\Rendering</Filter>
-    </ClCompile>
-    <ClCompile Include="Content\Rendering\InstancedBasicEffect.cpp">
-      <Filter>Content\Rendering</Filter>
-    </ClCompile>
     <ClCompile Include="Content\Input\VoiceInputHandler.cpp">
       <Filter>Content\Input</Filter>
-    </ClCompile>
-    <ClCompile Include="Content\Rendering\InstancedEffectFactory.cpp">
-      <Filter>Content\Rendering</Filter>
     </ClCompile>
     <ClCompile Include="Common\Common.cpp">
       <Filter>Common</Filter>
@@ -77,6 +65,18 @@
     <ClCompile Include="Content\IGTLink\IGTLinkIF.cpp">
       <Filter>Content\IGTLink</Filter>
     </ClCompile>
+    <ClCompile Include="Content\Rendering\GazeCursorRenderer.cpp">
+      <Filter>Content\Rendering\Gaze Cursor</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Rendering\InstancedBasicEffect.cpp">
+      <Filter>Content\Rendering\Gaze Cursor\DirectXTK</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Rendering\InstancedEffectBase.cpp">
+      <Filter>Content\Rendering\Gaze Cursor\DirectXTK</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Rendering\InstancedEffectFactory.cpp">
+      <Filter>Content\Rendering\Gaze Cursor\DirectXTK</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TrackedUltrasoundMain.h" />
@@ -91,9 +91,6 @@
     </ClInclude>
     <ClInclude Include="Common\StepTimer.h">
       <Filter>Common</Filter>
-    </ClInclude>
-    <ClInclude Include="Content\Rendering\GazeCursorRenderer.h">
-      <Filter>Content\Rendering</Filter>
     </ClInclude>
     <ClInclude Include="Content\Input\SpatialInputHandler.h">
       <Filter>Content\Input</Filter>
@@ -134,20 +131,11 @@
     <ClInclude Include="Content\SpatialMapping\SpatialShaderStructures.h">
       <Filter>Content\SpatialMapping</Filter>
     </ClInclude>
-    <ClInclude Include="Content\Rendering\InstancedEffectBase.h">
-      <Filter>Content\Rendering</Filter>
-    </ClInclude>
-    <ClInclude Include="Content\Rendering\InstancedBasicEffect.h">
-      <Filter>Content\Rendering</Filter>
-    </ClInclude>
     <ClInclude Include="Content\Input\VoiceInputHandler.h">
       <Filter>Content\Input</Filter>
     </ClInclude>
     <ClInclude Include="Common\Common.h">
       <Filter>Common</Filter>
-    </ClInclude>
-    <ClInclude Include="Content\Rendering\InstancedEffectFactory.h">
-      <Filter>Content\Rendering</Filter>
     </ClInclude>
     <ClInclude Include="Content\Rendering\SliceRenderer.h">
       <Filter>Content\Rendering\SliceRenderer</Filter>
@@ -169,6 +157,18 @@
     </ClInclude>
     <ClInclude Include="Content\IGTLink\IGTLinkIF.h">
       <Filter>Content\IGTLink</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Rendering\GazeCursorRenderer.h">
+      <Filter>Content\Rendering\Gaze Cursor</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Rendering\InstancedEffectFactory.h">
+      <Filter>Content\Rendering\Gaze Cursor\DirectXTK</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Rendering\InstancedBasicEffect.h">
+      <Filter>Content\Rendering\Gaze Cursor\DirectXTK</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Rendering\InstancedEffectBase.h">
+      <Filter>Content\Rendering\Gaze Cursor\DirectXTK</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -259,6 +259,12 @@
     </Filter>
     <Filter Include="Content\IGTLink">
       <UniqueIdentifier>{5cbfa541-c5c4-47c9-a0d2-d754fbe0669f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Rendering\Gaze Cursor">
+      <UniqueIdentifier>{210b5bfc-d11d-4b28-a27c-1805392f5899}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Rendering\Gaze Cursor\DirectXTK">
+      <UniqueIdentifier>{ac74860e-d1dd-4505-a825-922102bf91af}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

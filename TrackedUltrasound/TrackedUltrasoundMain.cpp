@@ -57,6 +57,7 @@ namespace TrackedUltrasound
   TrackedUltrasoundMain::TrackedUltrasoundMain( const std::shared_ptr<DX::DeviceResources>& deviceResources )
     : m_deviceResources( deviceResources )
     , m_cursorSound( nullptr )
+    , m_latestFrame( ref new UWPOpenIGTLink::TrackedFrame() )
   {
     // Register to be notified if the device is lost or recreated.
     m_deviceResources->RegisterDeviceNotify( this );
@@ -86,15 +87,15 @@ namespace TrackedUltrasound
     m_voiceInputHandler = std::make_unique<Input::VoiceInputHandler>();
     m_spatialSurfaceApi = std::make_unique<Spatial::SpatialSurfaceAPI>( m_deviceResources );
     m_igtLinkIF = std::make_unique<IGTLink::IGTLinkIF>();
-    m_trackedFrameReceivedToken = m_igtLinkIF->RegisterTrackedFrameCallback(TrackedFrameCallback);
 
-    m_igtLinkIF->ConnectAsync().then([this](bool result)
+    m_igtLinkIF->ConnectAsync().then( [this]( bool result )
     {
-      if (result)
+      if ( result )
       {
-        m_notificationAPI->QueueMessage(L"Connected.");
+        m_sliceToken = m_sliceRenderer->AddSlice();
+        m_notificationAPI->QueueMessage( L"Connected." );
       }
-    });
+    } );
 
     InitializeAudioAssetsAsync();
     InitializeVoiceSystem();
@@ -211,6 +212,19 @@ namespace TrackedUltrasound
       m_sliceRenderer->Update( pose, m_timer );
       m_notificationAPI->Update( pose, m_timer );
 
+      if ( m_igtLinkIF->IsConnected() )
+      {
+        if ( m_igtLinkIF->GetLatestTrackedFrame( m_latestFrame ) )
+        {
+          m_sliceRenderer->UpdateSlice( m_sliceToken,
+                                        *( std::shared_ptr<byte*>* )m_latestFrame->ImageDataSharedPtr,
+                                        m_latestFrame->Width,
+                                        m_latestFrame->Height,
+                                        ( DXGI_FORMAT )m_latestFrame->PixelFormat,
+                                        m_latestFrame->EmbeddedImageTransform );
+        }
+      }
+
       // Update the gaze vector in the gaze renderer
       if ( m_gazeCursorRenderer->IsCursorEnabled() )
       {
@@ -237,7 +251,7 @@ namespace TrackedUltrasound
       if ( m_notificationAPI->IsShowingNotification() )
       {
         float3 const& focusPointPosition = m_notificationAPI->GetPosition();
-        float3        focusPointNormal = focusPointPosition == float3( 0.f ) ? float3( 0.f, 0.f, 1.f ) : -normalize( focusPointPosition );
+        float3        focusPointNormal = ( focusPointPosition == float3( 0.f ) ) ? float3( 0.f, 0.f, 1.f ) : -normalize( focusPointPosition );
         float3 const& focusPointVelocity = m_notificationAPI->GetVelocity();
 
         renderingParameters->SetFocusPoint(
@@ -265,10 +279,29 @@ namespace TrackedUltrasound
           m_notificationAPI->QueueMessage( ex->Message );
         }
       }
-      else
+      else if( m_sliceToken != 0 )
       {
-        // TODO : update to be the position of the slice renderer
-        // TODO : implement slice renderer
+        float4x4 mat;
+        if ( m_sliceRenderer->GetSlicePose( m_sliceToken, mat ) )
+        {
+          SimpleMath::Matrix matrix;
+          XMStoreFloat4x4( &matrix, XMMatrixTranspose( XMLoadFloat4x4( &mat ) ) );
+          SimpleMath::Vector3 translation;
+          SimpleMath::Vector3 scale;
+          SimpleMath::Quaternion rotation;
+          matrix.Decompose( scale, rotation, translation );
+
+          float3 focusPointPosition( translation.x, translation.y, translation.z );
+          float3 focusPointNormal = ( focusPointPosition == float3( 0.f ) ) ? float3( 0.f, 0.f, 1.f ) : -normalize( focusPointPosition );
+          // TODO : store velocity of slice for stabilization?
+          float3 focusPointVelocity = float3( 0.f );
+
+          renderingParameters->SetFocusPoint(
+            currentCoordinateSystem,
+            focusPointPosition,
+            focusPointNormal,
+            focusPointVelocity );
+        }
       }
     }
 
@@ -330,6 +363,11 @@ namespace TrackedUltrasound
         if ( m_notificationAPI->IsShowingNotification() )
         {
           m_notificationAPI->GetRenderer()->Render();
+        }
+
+        if ( m_sliceToken != 0 )
+        {
+          m_sliceRenderer->Render();
         }
         atLeastOneCameraRendered = true;
       }
@@ -488,9 +526,15 @@ namespace TrackedUltrasound
   }
 
   //----------------------------------------------------------------------------
-  void TrackedUltrasoundMain::TrackedFrameCallback(UWPOpenIGTLink::TrackedFrame^ frame)
+  void TrackedUltrasoundMain::TrackedFrameCallback( UWPOpenIGTLink::TrackedFrame^ frame )
   {
+    if ( m_sliceToken == 0 )
+    {
+      // For now, our slice renderer only draws one slice, in the future, it will have to draw more
+      m_sliceToken = m_sliceRenderer->AddSlice( *( std::shared_ptr<uint8*>* )frame->ImageDataSharedPtr, frame->FrameSize->GetAt( 0 ), frame->FrameSize->GetAt( 1 ), ( DXGI_FORMAT )frame->PixelFormat, frame->EmbeddedImageTransform );
+      return;
+    }
 
+    m_sliceRenderer->UpdateSlice( m_sliceToken, *( std::shared_ptr<uint8*>* )frame->ImageDataSharedPtr, frame->FrameSize->GetAt( 0 ), frame->FrameSize->GetAt( 1 ), ( DXGI_FORMAT )frame->PixelFormat, frame->EmbeddedImageTransform );
   }
-
 }

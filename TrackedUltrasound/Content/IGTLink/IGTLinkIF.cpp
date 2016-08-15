@@ -44,7 +44,7 @@ namespace TrackedUltrasound
 
     //----------------------------------------------------------------------------
     IGTLinkIF::IGTLinkIF()
-      : m_igtClient(ref new UWPOpenIGTLink::IGTLinkClient())
+      : m_igtClient( ref new UWPOpenIGTLink::IGTLinkClient() )
     {
       // TODO : remove temp code
       m_igtClient->ServerHost = L"172.16.80.1";
@@ -56,86 +56,84 @@ namespace TrackedUltrasound
     }
 
     //----------------------------------------------------------------------------
-    concurrency::task<bool> IGTLinkIF::ConnectAsync(double timeoutSec)
+    concurrency::task<bool> IGTLinkIF::ConnectAsync( double timeoutSec )
     {
-      return create_task(m_igtClient->ConnectAsync(timeoutSec));
+      auto connectTask = create_task( m_igtClient->ConnectAsync( timeoutSec ) );
+
+      connectTask.then( [this]( bool result )
+      {
+        this->m_cancellationTokenSource = cancellation_token_source();
+        auto token = this->m_cancellationTokenSource.get_token();
+
+        // We're connected, start checking for tracked frames
+        create_task( [this, token]( void )
+        {
+          this->DataProcessingPump( *this, token );
+        } );
+      } );
+
+      return connectTask;
     }
 
     //----------------------------------------------------------------------------
     void IGTLinkIF::Disconnect()
     {
+      m_cancellationTokenSource.cancel();
       m_igtClient->Disconnect();
     }
 
     //----------------------------------------------------------------------------
-    void IGTLinkIF::SetHostname(const std::wstring& hostname)
+    bool IGTLinkIF::IsConnected()
     {
-      m_igtClient->ServerHost = ref new Platform::String(hostname.c_str());
+      return m_igtClient->Connected;
     }
 
     //----------------------------------------------------------------------------
-    void IGTLinkIF::SetPort(int32 port)
+    void IGTLinkIF::SetHostname( const std::wstring& hostname )
+    {
+      m_igtClient->ServerHost = ref new Platform::String( hostname.c_str() );
+    }
+
+    //----------------------------------------------------------------------------
+    void IGTLinkIF::SetPort( int32 port )
     {
       m_igtClient->ServerPort = port;
     }
 
     //----------------------------------------------------------------------------
-    bool IGTLinkIF::GetOldestTrackedFrame(UWPOpenIGTLink::TrackedFrame^ frame)
+    bool IGTLinkIF::GetOldestTrackedFrame( UWPOpenIGTLink::TrackedFrame^ frame )
     {
-      return m_igtClient->GetOldestTrackedFrame(frame);
+      return m_igtClient->GetOldestTrackedFrame( frame );
     }
 
     //----------------------------------------------------------------------------
-    bool IGTLinkIF::GetLatestTrackedFrame(UWPOpenIGTLink::TrackedFrame^ frame)
+    bool IGTLinkIF::GetLatestTrackedFrame( UWPOpenIGTLink::TrackedFrame^ frame )
     {
-      return m_igtClient->GetLatestTrackedFrame(frame);
+      return m_igtClient->GetLatestTrackedFrame( frame );
     }
 
     //----------------------------------------------------------------------------
-    bool IGTLinkIF::GetOldestCommand(UWPOpenIGTLink::Command^ cmd)
+    bool IGTLinkIF::GetOldestCommand( UWPOpenIGTLink::Command^ cmd )
     {
-      return m_igtClient->GetOldestCommand(cmd);
+      return m_igtClient->GetOldestCommand( cmd );
     }
 
     //----------------------------------------------------------------------------
-    bool IGTLinkIF::GetLatestCommand(UWPOpenIGTLink::Command^ cmd)
+    bool IGTLinkIF::GetLatestCommand( UWPOpenIGTLink::Command^ cmd )
     {
-      return m_igtClient->GetLatestCommand(cmd);
+      return m_igtClient->GetLatestCommand( cmd );
     }
 
     //----------------------------------------------------------------------------
-    uint64 IGTLinkIF::RegisterTrackedFrameCallback(std::function<void(UWPOpenIGTLink::TrackedFrame^)>& function)
-    {
-      std::lock_guard<std::mutex> guard(m_callbackMutex);
-      m_trackedFrameCallbacks[m_lastUnusedCallbackToken] = function;
-
-      m_lastUnusedCallbackToken++;
-      return m_lastUnusedCallbackToken - 1;
-    }
-
-    //----------------------------------------------------------------------------
-    bool IGTLinkIF::UnregisterTrackedFrameCallback(uint64 token)
-    {
-      std::lock_guard<std::mutex> guard(m_callbackMutex);
-      if (m_trackedFrameCallbacks.find(token) != m_trackedFrameCallbacks.end())
-      {
-        m_trackedFrameCallbacks.erase(m_trackedFrameCallbacks.find(token));
-        return true;
-      }
-
-      return false;
-    }
-
-    //----------------------------------------------------------------------------
-    void IGTLinkIF::DataProcessingPump(IGTLinkIF& self, concurrency::cancellation_token token)
+    void IGTLinkIF::DataProcessingPump( IGTLinkIF& self, concurrency::cancellation_token token )
     {
       auto frame = ref new UWPOpenIGTLink::TrackedFrame();
-      while (!token.is_canceled())
+      while ( !token.is_canceled() )
       {
-        if (!self.m_igtClient->GetLatestTrackedFrame(frame))
+        if ( !self.m_igtClient->GetLatestTrackedFrame( frame ) )
         {
           // No new frames, wait a bit
-          std::this_thread::sleep_for(std::chrono::milliseconds(33));
+          std::this_thread::sleep_for( std::chrono::milliseconds( 10 ) );
           continue;
         }
       }
