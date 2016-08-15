@@ -39,6 +39,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Windows includes
 #include <windows.graphics.directx.direct3d11.interop.h>
 
+using namespace Concurrency;
 using namespace Platform;
 using namespace Windows::Foundation::Collections;
 using namespace Windows::Foundation::Numerics;
@@ -47,8 +48,8 @@ using namespace Windows::Graphics::DirectX;
 using namespace Windows::Graphics::Holographic;
 using namespace Windows::Perception::Spatial::Surfaces;
 using namespace Windows::Perception::Spatial;
+using namespace Windows::System::Threading;
 using namespace Windows::UI::Input::Spatial;
-using namespace Concurrency;
 
 namespace TrackedUltrasound
 {
@@ -87,15 +88,23 @@ namespace TrackedUltrasound
     m_voiceInputHandler = std::make_unique<Input::VoiceInputHandler>();
     m_spatialSurfaceApi = std::make_unique<Spatial::SpatialSurfaceAPI>( m_deviceResources );
     m_igtLinkIF = std::make_unique<IGTLink::IGTLinkIF>();
+    // TODO : remove temp code
+    m_igtLinkIF->SetHostname(L"172.16.80.1");
 
-    m_igtLinkIF->ConnectAsync().then( [this]( bool result )
+    TimeSpan ts;
+    ts.Duration = 10000000; // in 100-nanosecond units (1s)
+    TimerElapsedHandler^ handler = ref new TimerElapsedHandler( [this](ThreadPoolTimer^ timer) ->void
     {
-      if ( result )
+      m_igtLinkIF->ConnectAsync().then([this](bool result)
       {
-        m_sliceToken = m_sliceRenderer->AddSlice();
-        m_notificationAPI->QueueMessage( L"Connected." );
-      }
+        if (result)
+        {
+          m_sliceToken = m_sliceRenderer->AddSlice();
+          m_notificationAPI->QueueMessage(L"Connected.");
+        }
+      });
     } );
+    ThreadPoolTimer^ timer = ThreadPoolTimer::CreateTimer( handler, ts );
 
     InitializeAudioAssetsAsync();
     InitializeVoiceSystem();
@@ -502,7 +511,7 @@ namespace TrackedUltrasound
     {
       m_cursorSound->StartOnce();
       m_notificationAPI->QueueMessage( L"Connecting...\n" );
-      m_igtLinkIF->ConnectAsync().then( [this]( bool result )
+      m_igtLinkIF->ConnectAsync(4.0).then( [this]( bool result )
       {
         if ( result )
         {

@@ -46,8 +46,6 @@ namespace TrackedUltrasound
     IGTLinkIF::IGTLinkIF()
       : m_igtClient( ref new UWPOpenIGTLink::IGTLinkClient() )
     {
-      // TODO : remove temp code
-      m_igtClient->ServerHost = L"172.16.80.1";
     }
 
     //----------------------------------------------------------------------------
@@ -58,27 +56,12 @@ namespace TrackedUltrasound
     //----------------------------------------------------------------------------
     concurrency::task<bool> IGTLinkIF::ConnectAsync( double timeoutSec )
     {
-      auto connectTask = create_task( m_igtClient->ConnectAsync( timeoutSec ) );
-
-      connectTask.then( [this]( bool result )
-      {
-        this->m_cancellationTokenSource = cancellation_token_source();
-        auto token = this->m_cancellationTokenSource.get_token();
-
-        // We're connected, start checking for tracked frames
-        create_task( [this, token]( void )
-        {
-          this->DataProcessingPump( *this, token );
-        } );
-      } );
-
-      return connectTask;
+      return create_task( m_igtClient->ConnectAsync( timeoutSec ) );
     }
 
     //----------------------------------------------------------------------------
     void IGTLinkIF::Disconnect()
     {
-      m_cancellationTokenSource.cancel();
       m_igtClient->Disconnect();
     }
 
@@ -122,21 +105,6 @@ namespace TrackedUltrasound
     bool IGTLinkIF::GetLatestCommand( UWPOpenIGTLink::Command^ cmd )
     {
       return m_igtClient->GetLatestCommand( cmd );
-    }
-
-    //----------------------------------------------------------------------------
-    void IGTLinkIF::DataProcessingPump( IGTLinkIF& self, concurrency::cancellation_token token )
-    {
-      auto frame = ref new UWPOpenIGTLink::TrackedFrame();
-      while ( !token.is_canceled() )
-      {
-        if ( !self.m_igtClient->GetLatestTrackedFrame( frame ) )
-        {
-          // No new frames, wait a bit
-          std::this_thread::sleep_for( std::chrono::milliseconds( 10 ) );
-          continue;
-        }
-      }
     }
   }
 }

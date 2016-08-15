@@ -71,15 +71,8 @@ namespace TrackedUltrasound
       bool GetLatestCommand(UWPOpenIGTLink::Command^ cmd);
 
     protected:
-      /// Threaded function to pull data from the IGT client buffer and send it to the system
-      static void DataProcessingPump( IGTLinkIF& self, concurrency::cancellation_token token );
-
-    protected:
       // Link to an IGT server
       UWPOpenIGTLink::IGTLinkClient^    m_igtClient;
-
-      // Cancellation token source to stop the data processing pump
-      cancellation_token_source         m_cancellationTokenSource;
 
       // Constants relating to IGT behavior
       static const double               CONNECT_TIMEOUT_SEC;
