@@ -169,6 +169,17 @@ namespace TrackedUltrasound
     }
 
     //----------------------------------------------------------------------------
+    void SliceRenderer::SetSliceHeadlocked(uint32 sliceId, bool headlocked)
+    {
+      std::lock_guard<std::mutex> guard(m_sliceMapMutex);
+      std::shared_ptr<SliceEntry> slice;
+      if (FindSlice(sliceId, slice))
+      {
+        slice->m_headLocked = headlocked;
+      }
+    }
+
+    //----------------------------------------------------------------------------
     void SliceRenderer::SetSlicePose( uint32 sliceId, const float4x4& pose )
     {
       std::lock_guard<std::mutex> guard( m_sliceMapMutex );

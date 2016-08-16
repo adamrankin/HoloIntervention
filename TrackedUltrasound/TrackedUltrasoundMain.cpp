@@ -89,7 +89,7 @@ namespace TrackedUltrasound
     m_spatialSurfaceApi = std::make_unique<Spatial::SpatialSurfaceAPI>( m_deviceResources );
     m_igtLinkIF = std::make_unique<IGTLink::IGTLinkIF>();
     // TODO : remove temp code
-    m_igtLinkIF->SetHostname(L"172.16.80.1");
+    m_igtLinkIF->SetHostname(L"192.168.1.180");
 
     TimeSpan ts;
     ts.Duration = 10000000; // in 100-nanosecond units (1s)
@@ -101,6 +101,7 @@ namespace TrackedUltrasound
         {
           m_sliceToken = m_sliceRenderer->AddSlice();
           m_notificationAPI->QueueMessage(L"Connected.");
+          m_sliceRenderer->SetSliceVisible(m_sliceToken, true);
         }
       });
     } );
@@ -497,20 +498,20 @@ namespace TrackedUltrasound
     {
       m_cursorSound->StartOnce();
       m_gazeCursorRenderer->EnableCursor( true );
-      m_notificationAPI->QueueMessage( L"Cursor on.\n" );
+      m_notificationAPI->QueueMessage( L"Cursor on." );
     };
 
     callbacks[L"hide"] = [this]()
     {
       m_cursorSound->StartOnce();
       m_gazeCursorRenderer->EnableCursor( false );
-      m_notificationAPI->QueueMessage( L"Cursor off.\n" );
+      m_notificationAPI->QueueMessage( L"Cursor off." );
     };
 
     callbacks[L"connect"] = [this]()
     {
       m_cursorSound->StartOnce();
-      m_notificationAPI->QueueMessage( L"Connecting...\n" );
+      m_notificationAPI->QueueMessage( L"Connecting..." );
       m_igtLinkIF->ConnectAsync(4.0).then( [this]( bool result )
       {
         if ( result )
@@ -527,10 +528,23 @@ namespace TrackedUltrasound
     callbacks[L"disconnect"] = [this]()
     {
       m_cursorSound->StartOnce();
-      m_notificationAPI->QueueMessage( L"Disconnected.\n" );
+      m_notificationAPI->QueueMessage( L"Disconnected." );
       m_igtLinkIF->Disconnect();
     };
 
+    callbacks[L"zoom in"] = [this]()
+    {
+      m_cursorSound->StartOnce();
+      m_notificationAPI->QueueMessage(L"Zooming in.");
+      m_sliceRenderer->SetSliceHeadlocked(m_sliceToken, true);
+    };
+
+    callbacks[L"zoom out"] = [this]()
+    {
+      m_cursorSound->StartOnce();
+      m_notificationAPI->QueueMessage(L"Zooming out.");
+      m_sliceRenderer->SetSliceHeadlocked(m_sliceToken, false);
+    };
     m_voiceInputHandler->RegisterCallbacks( callbacks );
   }
 

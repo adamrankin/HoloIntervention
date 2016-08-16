@@ -37,8 +37,7 @@ namespace TrackedUltrasound
 {
   namespace Rendering
   {
-
-    const float3 SliceEntry::LOCKED_SLICE_SCREEN_OFFSET = { 0.1f, 0.1f, 0.f };
+    const float3 SliceEntry::LOCKED_SLICE_SCREEN_OFFSET = { 0.f, 0.f, 0.f };
     const float SliceEntry::LOCKED_SLICE_DISTANCE_OFFSET = 2.0f;
     const float SliceEntry::LERP_RATE = 2.0f;
 
@@ -127,7 +126,7 @@ namespace TrackedUltrasound
     //----------------------------------------------------------------------------
     void SliceEntry::Render( uint32 indexCount )
     {
-      if ( !m_showing )
+      if ( !m_showing || m_imageData == nullptr)
       {
         return;
       }
@@ -228,15 +227,15 @@ namespace TrackedUltrasound
       float right = m_width / 2 * scale.x;
       float top = m_height / 2 * scale.y;
 
-      static const std::array<VertexPositionTexture, 4> quadVertices =
-      {
-        {
-          { XMFLOAT3( left, top, 0.f ), XMFLOAT2( 0.f, 0.f ) },
-          { XMFLOAT3( right, top, 0.f ), XMFLOAT2( 1.f, 0.f ) },
-          { XMFLOAT3( right, bottom, 0.f ), XMFLOAT2( 1.f, 1.f ) },
-          { XMFLOAT3( left, bottom, 0.f ), XMFLOAT2( 0.f, 1.f ) },
-        }
-      };
+      std::array<VertexPositionTexture, 4> quadVertices;
+      quadVertices[0].pos = XMFLOAT3(left, top, 0.f);
+      quadVertices[0].texCoord = XMFLOAT2(0.f, 0.f);
+      quadVertices[1].pos = XMFLOAT3(right, top, 0.f);
+      quadVertices[1].texCoord = XMFLOAT2(1.f, 0.f);
+      quadVertices[2].pos = XMFLOAT3(right, bottom, 0.f);
+      quadVertices[2].texCoord = XMFLOAT2(1.f, 1.f);
+      quadVertices[3].pos = XMFLOAT3(left, bottom, 0.f);
+      quadVertices[3].texCoord = XMFLOAT2(0.f, 1.f);
 
       D3D11_SUBRESOURCE_DATA vertexBufferData = { 0 };
       vertexBufferData.pSysMem = quadVertices.data();

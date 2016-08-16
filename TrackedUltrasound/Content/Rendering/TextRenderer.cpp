@@ -84,6 +84,23 @@ namespace TrackedUltrasound
     }
 
     //----------------------------------------------------------------------------
+    void TextRenderer::SetFont(const std::wstring& fontName, DWRITE_FONT_WEIGHT fontWeight, DWRITE_FONT_STYLE fontStyle, DWRITE_FONT_STRETCH fontStretch, float fontSize, const std::wstring& locale /*= L""*/)
+    {
+      DX::ThrowIfFailed(
+        m_deviceResources->GetDWriteFactory()->CreateTextFormat(
+          fontName.c_str(),
+          NULL,
+          fontWeight,
+          fontStyle,
+          fontStretch,
+          fontSize,
+          locale.c_str(),
+          m_textFormat.ReleaseAndGetAddressOf()
+        )
+      );
+    }
+
+    //----------------------------------------------------------------------------
     void TextRenderer::ReleaseDeviceDependentResources()
     {
       m_texture.Reset();
@@ -134,18 +151,7 @@ namespace TrackedUltrasound
       DX::ThrowIfFailed( m_d2dRenderTarget->CreateSolidColorBrush( D2D1::ColorF( D2D1::ColorF::Cornsilk ), &m_whiteBrush ) );
 
       // This is where we format the text that will be written on the render target.
-      DX::ThrowIfFailed(
-        m_deviceResources->GetDWriteFactory()->CreateTextFormat(
-          m_font.c_str(),
-          NULL,
-          DWRITE_FONT_WEIGHT_NORMAL,
-          DWRITE_FONT_STYLE_NORMAL,
-          DWRITE_FONT_STRETCH_NORMAL,
-          400.0f,
-          L"",
-          m_textFormat.ReleaseAndGetAddressOf()
-        )
-      );
+      SetFont(m_font.c_str(), DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, 200.0f, L"");
       DX::ThrowIfFailed( m_textFormat->SetTextAlignment( DWRITE_TEXT_ALIGNMENT_CENTER ) );
       DX::ThrowIfFailed( m_textFormat->SetParagraphAlignment( DWRITE_PARAGRAPH_ALIGNMENT_CENTER ) );
     }

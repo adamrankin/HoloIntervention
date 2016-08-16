@@ -37,7 +37,7 @@ namespace TrackedUltrasound
     const DirectX::XMFLOAT4 NotificationsAPI::SHOWING_ALPHA_VALUE = XMFLOAT4(1.f, 1.f, 1.f, 1.f);
     const DirectX::XMFLOAT4 NotificationsAPI::HIDDEN_ALPHA_VALUE = XMFLOAT4(0.f, 0.f, 0.f, 0.f);
     const Windows::Foundation::Numerics::float3 NotificationsAPI::NOTIFICATION_SCREEN_OFFSET = float3(0.f, -0.13f, 0.f);
-    const float NotificationsAPI::NOTIFICATION_DISTANCE_OFFSET = 2.2f;
+    const float NotificationsAPI::NOTIFICATION_DISTANCE_OFFSET = 2.0f;
     const float NotificationsAPI::LERP_RATE = 4.0;
 
     //----------------------------------------------------------------------------
@@ -95,6 +95,11 @@ namespace TrackedUltrasound
       // The following code manages state transition
       if (m_animationState == HIDDEN && m_messages.size() > 0)
       {
+        // We had nothing showing, and a new message has come in
+
+        // Force the position to be in front of the user as the last pose is wherever the previous message stopped showing in world space
+        m_position = pointerPose->Head->Position + (float3(NOTIFICATION_DISTANCE_OFFSET) * (pointerPose->Head->ForwardDirection + NOTIFICATION_SCREEN_OFFSET));
+
         m_animationState = FADING_IN;
         m_fadeTime = c_maxFadeTime;
 

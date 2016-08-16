@@ -1,13 +1,25 @@
-//*********************************************************
-//
-// Copyright (c) Microsoft. All rights reserved.
-// This code is licensed under the MIT License (MIT).
-// THIS CODE IS PROVIDED *AS IS* WITHOUT WARRANTY OF
-// ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING ANY
-// IMPLIED WARRANTIES OF FITNESS FOR A PARTICULAR
-// PURPOSE, MERCHANTABILITY, OR NON-INFRINGEMENT.
-//
-//*********************************************************
+/*====================================================================
+Copyright(c) 2016 Adam Rankin
+
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files(the "Software"),
+to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and / or sell copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following conditions :
+
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL
+THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
+====================================================================*/
 
 // Per-pixel color data passed through to the pixel shader.
 struct PixelShaderInput
@@ -16,42 +28,14 @@ struct PixelShaderInput
     min16float2 texCoord    : TEXCOORD1;
 };
 
-Texture2D       tex         : t0;
-SamplerState    samp        : s0;
+Texture2D       tex             : t0;
+SamplerState    textureSampler  : s0;
 
-// A smooth step function is used to blend across a one-pixel region.
-#define DISTANCE_MAX 0.30f
-#define DISTANCE_MIN (DISTANCE_MAX - 0.01f)
-
-// The pixel shader renders a color value based on a bidirectional distance function 
-// that is read from a texture.
+// The pixel shader renders a color value sampled from a texture
 min16float4 main(PixelShaderInput input) : SV_TARGET
 {
     // Read both distance function values.
-    min16float2 textureValue = min16float2(tex.Sample(samp, input.texCoord).xy);
+    min16float4 textureValue = tex.Sample(textureSampler, input.texCoord);
 
-    return min16float4(textureValue, 0.f, 1.f);
-
-    // Clamp the alpha test value to a smooth step in the range [0, 1].
-    //float2 steppedValues = smoothstep(DISTANCE_MIN, DISTANCE_MAX, textureValue);
-
-    // Apply the result.
-    //return steppedValues;
-
-    // The lines of code above are approximately equivalent to the following.
-    /*min16float2 textureValue = min16float2(tex.Sample(samp, input.texCoord).xy);
-    if ((textureValue.x >= DISTANCE_MAX) && (textureValue.y >= DISTANCE_MAX))
-    {
-        return min16float4(input.color, 1.f);
-    }
-    else if ((textureValue.x >= DISTANCE_MIN) && (textureValue.y >= DISTANCE_MIN))
-    {
-        // smooth step function
-        float multiplier = (textureValue - DISTANCE_MIN) * (1.f / (DISTANCE_MAX - DISTANCE_MIN));
-        return min16float4(input.color * multiplier, 1.f);
-    }
-    else
-    {
-        return min16float4(0.f, 0.f, 0.f, 0.f);
-    }*/
+    return min16float4(textureValue.x, textureValue.x, textureValue.x, 1.f);
 }

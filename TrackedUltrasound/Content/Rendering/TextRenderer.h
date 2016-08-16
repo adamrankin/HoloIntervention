@@ -29,6 +29,8 @@ namespace TrackedUltrasound
 
       void RenderTextOffscreen( const std::wstring& str );
 
+      void SetFont(const std::wstring& fontName, DWRITE_FONT_WEIGHT fontWeight, DWRITE_FONT_STYLE fontStyle, DWRITE_FONT_STRETCH fontStretch, float fontSize, const std::wstring& locale = L"");
+
       void CreateDeviceDependentResources();
       void ReleaseDeviceDependentResources();
 

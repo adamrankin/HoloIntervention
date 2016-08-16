@@ -70,6 +70,7 @@ namespace TrackedUltrasound
       void ShowSlice( uint32 sliceId );
       void HideSlice( uint32 sliceId );
       void SetSliceVisible( uint32 sliceId, bool show );
+      void SetSliceHeadlocked( uint32 sliceId, bool headlocked );
 
       // Hard set of the slice pose, slice will jump to the given pose
       void SetSlicePose( uint32 sliceId, const float4x4& pose );
