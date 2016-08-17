@@ -56,7 +56,7 @@ namespace TrackedUltrasound
       struct VertexPositionColorTex
       {
         XMFLOAT3 pos;
-        XMFLOAT3 color;
+        XMFLOAT4 color;
         XMFLOAT2 texCoord;
       };
 

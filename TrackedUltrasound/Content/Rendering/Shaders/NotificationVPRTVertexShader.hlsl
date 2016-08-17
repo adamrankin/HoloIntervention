@@ -19,7 +19,7 @@ cbuffer ModelConstantBuffer : register(b0)
 // A constant buffer that stores each set of view and projection matrices in column-major format.
 cbuffer ViewProjectionConstantBuffer : register(b1)
 {
-	float4   eyePosition[2];
+	  float4   eyePosition[2];
     float4x4 viewProjection[2];
 };
 
@@ -27,7 +27,7 @@ cbuffer ViewProjectionConstantBuffer : register(b1)
 struct VertexShaderInput
 {
     min16float3 pos      : POSITION0;
-    min16float3 color    : COLOR0;
+    min16float4 color    : COLOR0;
     min16float2 texCoord : TEXCOORD1;
     uint        instId   : SV_InstanceID;
 };
@@ -37,7 +37,7 @@ struct VertexShaderInput
 struct VertexShaderOutput
 {
     min16float4 pos      : SV_POSITION;
-    min16float3 color    : COLOR0;
+    min16float4 color    : COLOR0;
     min16float2 texCoord : TEXCOORD1;
     uint        rtvId    : SV_RenderTargetArrayIndex; // SV_InstanceID % 2
 };
@@ -55,7 +55,7 @@ VertexShaderOutput main(VertexShaderInput input)
     output.pos = min16float4(pos);
 
     // Pass the color through with fade.
-    output.color = input.color * min16float3(fade.xyz);
+    output.color = min16float4(input.color.xyz * min16float3(fade.xyz), 1.f);
 
     // Pass through the texture coordinates without modification.
     output.texCoord = input.texCoord;

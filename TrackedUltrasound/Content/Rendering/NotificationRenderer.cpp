@@ -196,8 +196,8 @@ namespace TrackedUltrasound
         {
           {
             { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0,  0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-            { "COLOR",    0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-            { "TEXCOORD", 1, DXGI_FORMAT_R32G32_FLOAT,    0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+            { "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+            { "TEXCOORD", 1, DXGI_FORMAT_R32G32_FLOAT,    0, 28, D3D11_INPUT_PER_VERTEX_DATA, 0 },
           }
         };
 
@@ -262,10 +262,10 @@ namespace TrackedUltrasound
         static const std::array<VertexPositionColorTex, 4> quadVertices =
         {
           {
-            { XMFLOAT3( -0.2f,  0.2f, 0.f ), XMFLOAT3( 1.0f, 1.0f, 1.0f ), XMFLOAT2( 0.f, 0.f ) },
-            { XMFLOAT3( 0.2f,  0.2f, 0.f ), XMFLOAT3( 1.0f, 1.0f, 1.0f ), XMFLOAT2( 1.f, 0.f ) },
-            { XMFLOAT3( 0.2f, -0.2f, 0.f ), XMFLOAT3( 1.0f, 1.0f, 1.0f ), XMFLOAT2( 1.f, 1.f ) },
-            { XMFLOAT3( -0.2f, -0.2f, 0.f ), XMFLOAT3( 1.0f, 1.0f, 1.0f ), XMFLOAT2( 0.f, 1.f ) },
+            { XMFLOAT3( -0.2f,  0.2f, 0.f ), XMFLOAT4( 1.0f, 1.0f, 1.0f, 1.0f ), XMFLOAT2( 0.f, 0.f ) },
+            { XMFLOAT3( 0.2f,  0.2f, 0.f ), XMFLOAT4( 1.0f, 1.0f, 1.0f, 1.0f), XMFLOAT2( 1.f, 0.f ) },
+            { XMFLOAT3( 0.2f, -0.2f, 0.f ), XMFLOAT4( 1.0f, 1.0f, 1.0f, 1.0f), XMFLOAT2( 1.f, 1.f ) },
+            { XMFLOAT3( -0.2f, -0.2f, 0.f ), XMFLOAT4( 1.0f, 1.0f, 1.0f, 1.0f), XMFLOAT2( 0.f, 1.f ) },
           }
         };
 
