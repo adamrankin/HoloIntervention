@@ -27,14 +27,27 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "DirectXHelper.h"
 #include "TrackedUltrasoundMain.h"
 
-// Notification includes
-#include "NotificationsAPI.h"
+// System includes
+#include "NotificationSystem.h"
+#include "SpatialSystem.h"
 
-// STD includes
-#include <string>
+// Sound includes
+#include "OmnidirectionalSound.h"
 
-// Voice includes
+// Rendering includes
+#include "SliceRenderer.h"
+#include "ModelRenderer.h"
+#include "NotificationRenderer.h"
+
+// Network includes
+#include "IGTLinkIF.h"
+
+// Input includes
+#include "SpatialInputHandler.h"
 #include "VoiceInputHandler.h"
+
+// std includes
+#include <string>
 
 // Windows includes
 #include <windows.graphics.directx.direct3d11.interop.h>
@@ -84,11 +97,11 @@ namespace TrackedUltrasound
     // Initialize the system components
     m_modelRenderer = std::make_unique<Rendering::ModelRenderer>( m_deviceResources );
     m_sliceRenderer = std::make_unique<Rendering::SliceRenderer>( m_deviceResources );
-    m_notificationAPI = std::make_unique<Notifications::NotificationsAPI>( m_deviceResources );
+    m_notificationSystem = std::make_unique<Notifications::NotificationSystem>( m_deviceResources );
     m_spatialInputHandler = std::make_unique<Input::SpatialInputHandler>();
     m_voiceInputHandler = std::make_unique<Input::VoiceInputHandler>();
-    m_spatialSurfaceApi = std::make_unique<Spatial::SpatialSurfaceAPI>( m_deviceResources );
-    m_igtLinkIF = std::make_unique<IGTLink::IGTLinkIF>();
+    m_spatialSystem = std::make_unique<Spatial::SpatialSystem>( m_deviceResources );
+    m_igtLinkIF = std::make_unique<Network::IGTLinkIF>();
     // TODO : remove temp code
     m_igtLinkIF->SetHostname( L"172.16.80.1" );
 
@@ -101,7 +114,7 @@ namespace TrackedUltrasound
         if ( result )
         {
           m_sliceToken = m_sliceRenderer->AddSlice();
-          m_notificationAPI->QueueMessage( L"Connected." );
+          m_notificationSystem->QueueMessage( L"Connected." );
           m_sliceRenderer->SetSliceVisible( m_sliceToken, true );
         }
       } );
@@ -137,7 +150,7 @@ namespace TrackedUltrasound
     m_attachedReferenceFrame = m_locator->CreateAttachedFrameOfReferenceAtCurrentHeading();
     m_stationaryReferenceFrame = m_locator->CreateStationaryFrameOfReferenceAtCurrentLocation();
 
-    m_spatialSurfaceApi->InitializeSurfaceObserver( m_stationaryReferenceFrame->CoordinateSystem );
+    m_spatialSystem->InitializeSurfaceObserver( m_stationaryReferenceFrame->CoordinateSystem );
 
     // Create a bogus frame to grab sensor data
     HolographicFrame^ holographicFrame = m_holographicSpace->CreateNextFrame();
@@ -146,7 +159,7 @@ namespace TrackedUltrasound
     SpatialCoordinateSystem^ currentCoordinateSystem = m_attachedReferenceFrame->GetStationaryCoordinateSystemAtTimestamp( prediction->Timestamp );
 
     SpatialPointerPose^ pose = SpatialPointerPose::TryGetAtTimestamp( currentCoordinateSystem, prediction->Timestamp );
-    m_notificationAPI->Initialize( pose );
+    m_notificationSystem->Initialize( pose );
   }
 
   //----------------------------------------------------------------------------
@@ -165,11 +178,11 @@ namespace TrackedUltrasound
         }
         catch ( Platform::Exception^ e )
         {
-          m_notificationAPI->QueueMessage( e->Message );
+          m_notificationSystem->QueueMessage( e->Message );
         }
         catch ( const std::exception& e )
         {
-          m_notificationAPI->QueueMessage( e.what() );
+          m_notificationSystem->QueueMessage( e.what() );
           m_cursorSound.reset();
         }
 
@@ -221,9 +234,9 @@ namespace TrackedUltrasound
       SpatialPointerPose^ pose = SpatialPointerPose::TryGetAtTimestamp( currentCoordinateSystem, prediction->Timestamp );
 
       m_cursorSound->Update( m_timer );
-      m_spatialSurfaceApi->Update( m_timer, currentCoordinateSystem );
+      m_spatialSystem->Update( m_timer, currentCoordinateSystem );
       m_sliceRenderer->Update( pose, m_timer );
-      m_notificationAPI->Update( pose, m_timer );
+      m_notificationSystem->Update( pose, m_timer );
 
       if ( m_igtLinkIF->IsConnected() )
       {
@@ -246,7 +259,7 @@ namespace TrackedUltrasound
 
         float3 outHitPosition;
         float3 outHitNormal;
-        bool hit = m_spatialSurfaceApi->TestRayIntersection( position, direction, outHitPosition, outHitNormal );
+        bool hit = m_spatialSystem->TestRayIntersection( position, direction, outHitPosition, outHitNormal );
 
         if ( hit )
         {
@@ -262,11 +275,11 @@ namespace TrackedUltrasound
     {
       HolographicCameraRenderingParameters^ renderingParameters = holographicFrame->GetRenderingParameters( cameraPose );
 
-      if ( m_notificationAPI->IsShowingNotification() )
+      if ( m_notificationSystem->IsShowingNotification() )
       {
-        float3 const& focusPointPosition = m_notificationAPI->GetPosition();
+        float3 const& focusPointPosition = m_notificationSystem->GetPosition();
         float3        focusPointNormal = ( focusPointPosition == float3( 0.f ) ) ? float3( 0.f, 0.f, 1.f ) : -normalize( focusPointPosition );
-        float3 const& focusPointVelocity = m_notificationAPI->GetVelocity();
+        float3 const& focusPointVelocity = m_notificationSystem->GetVelocity();
 
         renderingParameters->SetFocusPoint(
           currentCoordinateSystem,
@@ -290,7 +303,7 @@ namespace TrackedUltrasound
         {
           // Turn the cursor off and output the message
           m_modelRenderer->GetModel( m_modelToken )->ToggleEnabled();
-          m_notificationAPI->QueueMessage( ex->Message );
+          m_notificationSystem->QueueMessage( ex->Message );
         }
       }
       else if( m_sliceToken != 0 )
@@ -371,9 +384,9 @@ namespace TrackedUltrasound
         // Draw all models
         m_modelRenderer->Render();
 
-        if ( m_notificationAPI->IsShowingNotification() )
+        if ( m_notificationSystem->IsShowingNotification() )
         {
-          m_notificationAPI->GetRenderer()->Render();
+          m_notificationSystem->GetRenderer()->Render();
         }
 
         if ( m_sliceToken != 0 )
@@ -390,28 +403,28 @@ namespace TrackedUltrasound
   //----------------------------------------------------------------------------
   void TrackedUltrasoundMain::SaveAppState()
   {
-    m_spatialSurfaceApi->SaveAppState();
+    m_spatialSystem->SaveAppState();
   }
 
   //----------------------------------------------------------------------------
   void TrackedUltrasoundMain::LoadAppState()
   {
-    m_spatialSurfaceApi->LoadAppState();
+    m_spatialSystem->LoadAppState();
   }
 
   //----------------------------------------------------------------------------
-  Notifications::NotificationsAPI& TrackedUltrasoundMain::GetNotificationsAPI()
+  Notifications::NotificationSystem& TrackedUltrasoundMain::GetNotificationsAPI()
   {
-    return *m_notificationAPI.get();
+    return *m_notificationSystem.get();
   }
 
   //----------------------------------------------------------------------------
   void TrackedUltrasoundMain::OnDeviceLost()
   {
-    m_spatialSurfaceApi->ReleaseDeviceDependentResources();
+    m_spatialSystem->ReleaseDeviceDependentResources();
     m_modelRenderer->ReleaseDeviceDependentResources();
     m_sliceRenderer->ReleaseDeviceDependentResources();
-    m_notificationAPI->ReleaseDeviceDependentResources();
+    m_notificationSystem->ReleaseDeviceDependentResources();
   }
 
   //----------------------------------------------------------------------------
@@ -419,8 +432,8 @@ namespace TrackedUltrasound
   {
     m_modelRenderer->CreateDeviceDependentResources();
     m_sliceRenderer->CreateDeviceDependentResources();
-    m_notificationAPI->CreateDeviceDependentResources();
-    m_spatialSurfaceApi->CreateDeviceDependentResourcesAsync();
+    m_notificationSystem->CreateDeviceDependentResources();
+    m_spatialSystem->CreateDeviceDependentResourcesAsync();
   }
 
   //----------------------------------------------------------------------------
@@ -435,7 +448,7 @@ namespace TrackedUltrasound
     {
       String^ message = L"Warning! Positional tracking is " +
                         sender->Locatability.ToString() + L".\n";
-      m_notificationAPI->QueueMessage( message );
+      m_notificationSystem->QueueMessage( message );
     }
     break;
 
@@ -499,29 +512,29 @@ namespace TrackedUltrasound
     {
       m_cursorSound->StartOnce();
       m_modelRenderer->GetModel( m_modelToken )->EnableModel( true );
-      m_notificationAPI->QueueMessage( L"Cursor on." );
+      m_notificationSystem->QueueMessage( L"Cursor on." );
     };
 
     callbacks[L"hide"] = [this]()
     {
       m_cursorSound->StartOnce();
       m_modelRenderer->GetModel( m_modelToken )->EnableModel( false );
-      m_notificationAPI->QueueMessage( L"Cursor off." );
+      m_notificationSystem->QueueMessage( L"Cursor off." );
     };
 
     callbacks[L"connect"] = [this]()
     {
       m_cursorSound->StartOnce();
-      m_notificationAPI->QueueMessage( L"Connecting..." );
+      m_notificationSystem->QueueMessage( L"Connecting..." );
       m_igtLinkIF->ConnectAsync( 4.0 ).then( [this]( bool result )
       {
         if ( result )
         {
-          m_notificationAPI->QueueMessage( L"Connection successful." );
+          m_notificationSystem->QueueMessage( L"Connection successful." );
         }
         else
         {
-          m_notificationAPI->QueueMessage( L"Connection failed." );
+          m_notificationSystem->QueueMessage( L"Connection failed." );
         }
       } );
     };
@@ -529,21 +542,21 @@ namespace TrackedUltrasound
     callbacks[L"disconnect"] = [this]()
     {
       m_cursorSound->StartOnce();
-      m_notificationAPI->QueueMessage( L"Disconnected." );
+      m_notificationSystem->QueueMessage( L"Disconnected." );
       m_igtLinkIF->Disconnect();
     };
 
     callbacks[L"zoom in"] = [this]()
     {
       m_cursorSound->StartOnce();
-      m_notificationAPI->QueueMessage( L"Zooming in." );
+      m_notificationSystem->QueueMessage( L"Zooming in." );
       m_sliceRenderer->SetSliceHeadlocked( m_sliceToken, true );
     };
 
     callbacks[L"zoom out"] = [this]()
     {
       m_cursorSound->StartOnce();
-      m_notificationAPI->QueueMessage( L"Zooming out." );
+      m_notificationSystem->QueueMessage( L"Zooming out." );
       m_sliceRenderer->SetSliceHeadlocked( m_sliceToken, false );
     };
     m_voiceInputHandler->RegisterCallbacks( callbacks );

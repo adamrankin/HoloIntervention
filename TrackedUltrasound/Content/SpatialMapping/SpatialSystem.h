@@ -33,11 +33,11 @@ namespace TrackedUltrasound
 {
   namespace Spatial
   {
-    class SpatialSurfaceAPI
+    class SpatialSystem
     {
     public:
-      SpatialSurfaceAPI( const std::shared_ptr<DX::DeviceResources>& deviceResources );
-      ~SpatialSurfaceAPI();
+      SpatialSystem( const std::shared_ptr<DX::DeviceResources>& deviceResources );
+      ~SpatialSystem();
 
       void Update( DX::StepTimer const& timer, SpatialCoordinateSystem^ coordinateSystem );
 
@@ -50,6 +50,7 @@ namespace TrackedUltrasound
       // Positions the Spatial Mapping surface observer at the origin of the given coordinate system.
       void UpdateSurfaceObserverPosition( SpatialCoordinateSystem^ coordinateSystem );
 
+      // Perform a ray cast to determine if the ray hits any stored mesh
       bool TestRayIntersection( const float3 rayOrigin,
                                 const float3 rayDirection,
                                 float3& outHitPosition,

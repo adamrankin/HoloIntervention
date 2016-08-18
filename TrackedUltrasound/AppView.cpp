@@ -137,7 +137,7 @@ namespace TrackedUltrasound
   }
 
   //----------------------------------------------------------------------------
-  Notifications::NotificationsAPI& AppView::GetNotificationAPI()
+  Notifications::NotificationSystem& AppView::GetNotificationAPI()
   {
     return m_main->GetNotificationsAPI();
   }

@@ -23,24 +23,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-// Common Includes
+// Local includes
 #include "DeviceResources.h"
-#include "SpatialSurfaceAPI.h"
 #include "StepTimer.h"
-
-// Sound includes
-#include "OmnidirectionalSound.h"
-
-// Input includes
-#include "SpatialInputHandler.h"
-#include "VoiceInputHandler.h"
-
-// Rendering includes
-#include "ModelRenderer.h"
-#include "SliceRenderer.h"
-
-// IGTLink includes
-#include "IGTLinkIF.h"
 
 // std includes
 #include <vector>
@@ -50,11 +35,40 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 using namespace Windows::Perception::Spatial;
 
+// Forward declarations
 namespace TrackedUltrasound
 {
   namespace Notifications
   {
-    class NotificationsAPI;
+    class NotificationSystem;
+  }
+
+  namespace Input
+  {
+    class SpatialInputHandler;
+    class VoiceInputHandler;
+  }
+
+  namespace Spatial
+  {
+    class SpatialSystem;
+  }
+
+  namespace Rendering
+  {
+    class ModelRenderer;
+    class NotificationRenderer;
+    class SliceRenderer;
+  }
+
+  namespace Network
+  {
+    class IGTLinkIF;
+  }
+
+  namespace Sound
+  {
+    class OmnidirectionalSound;
   }
 
   // Updates, renders, and presents holographic content using Direct3D.
@@ -79,7 +93,7 @@ namespace TrackedUltrasound
     void LoadAppState();
 
     // Provide access to the notifications API
-    Notifications::NotificationsAPI& GetNotificationsAPI();
+    Notifications::NotificationSystem& GetNotificationsAPI();
 
     // IDeviceNotify
     virtual void OnDeviceLost();
@@ -110,7 +124,7 @@ namespace TrackedUltrasound
     void InitializeVoiceSystem();
 
     // Callback when a frame is received by the system over IGTlink
-    void TrackedFrameCallback(UWPOpenIGTLink::TrackedFrame^ frame);
+    void TrackedFrameCallback( UWPOpenIGTLink::TrackedFrame^ frame );
 
   protected:
     // Renderers
@@ -127,11 +141,11 @@ namespace TrackedUltrasound
     std::unique_ptr<Input::VoiceInputHandler>             m_voiceInputHandler;
 
     // Interface that manages a network connection to an IGT link server
-    std::unique_ptr<IGTLink::IGTLinkIF>                   m_igtLinkIF;
+    std::unique_ptr<Network::IGTLinkIF>                   m_igtLinkIF;
     UWPOpenIGTLink::TrackedFrame^                         m_latestFrame;
 
     // Notification API
-    std::unique_ptr<Notifications::NotificationsAPI>      m_notificationAPI;
+    std::unique_ptr<Notifications::NotificationSystem>    m_notificationSystem;
 
     // Cached pointer to device resources.
     std::shared_ptr<DX::DeviceResources>                  m_deviceResources;
@@ -161,7 +175,7 @@ namespace TrackedUltrasound
     Windows::Perception::Spatial::SpatialLocatability     m_locatability;
 
     // Access to a spatial surface API
-    std::unique_ptr<Spatial::SpatialSurfaceAPI>           m_spatialSurfaceApi;
+    std::unique_ptr<Spatial::SpatialSystem>               m_spatialSystem;
 
     // Sound assets
     std::unique_ptr<Sound::OmnidirectionalSound>          m_cursorSound;

@@ -35,9 +35,6 @@
     <ClCompile Include="Content\SpatialMapping\SpatialSurfaceCollection.cpp">
       <Filter>Content\SpatialMapping</Filter>
     </ClCompile>
-    <ClCompile Include="Content\SpatialMapping\SpatialSurfaceAPI.cpp">
-      <Filter>Content\SpatialMapping</Filter>
-    </ClCompile>
     <ClCompile Include="Content\Input\VoiceInputHandler.cpp">
       <Filter>Content\Input</Filter>
     </ClCompile>
@@ -59,12 +56,6 @@
     <ClCompile Include="Content\Rendering\TextRenderer.cpp">
       <Filter>Content\Rendering\NotificationRenderer</Filter>
     </ClCompile>
-    <ClCompile Include="Content\Notifications\NotificationsAPI.cpp">
-      <Filter>Content\Notifications</Filter>
-    </ClCompile>
-    <ClCompile Include="Content\IGTLink\IGTLinkIF.cpp">
-      <Filter>Content\IGTLink</Filter>
-    </ClCompile>
     <ClCompile Include="Content\Rendering\InstancedBasicEffect.cpp">
       <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
     </ClCompile>
@@ -79,6 +70,15 @@
     </ClCompile>
     <ClCompile Include="Content\Rendering\ModelEntry.cpp">
       <Filter>Content\Rendering\ModelRenderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Notifications\NotificationSystem.cpp">
+      <Filter>Content\Systems\Notification</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Network\IGTLinkIF.cpp">
+      <Filter>Content\Network</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\SpatialMapping\SpatialSystem.cpp">
+      <Filter>Content\Systems\Spatial</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -125,9 +125,6 @@
     <ClInclude Include="Content\SpatialMapping\SpatialSurfaceCollection.h">
       <Filter>Content\SpatialMapping</Filter>
     </ClInclude>
-    <ClInclude Include="Content\SpatialMapping\SpatialSurfaceAPI.h">
-      <Filter>Content\SpatialMapping</Filter>
-    </ClInclude>
     <ClInclude Include="Content\SpatialMapping\GetDataFromIBuffer.h">
       <Filter>Content\SpatialMapping</Filter>
     </ClInclude>
@@ -155,12 +152,6 @@
     <ClInclude Include="Content\Rendering\TextRenderer.h">
       <Filter>Content\Rendering\NotificationRenderer</Filter>
     </ClInclude>
-    <ClInclude Include="Content\Notifications\NotificationsAPI.h">
-      <Filter>Content\Notifications</Filter>
-    </ClInclude>
-    <ClInclude Include="Content\IGTLink\IGTLinkIF.h">
-      <Filter>Content\IGTLink</Filter>
-    </ClInclude>
     <ClInclude Include="Content\Rendering\InstancedEffectFactory.h">
       <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
     </ClInclude>
@@ -175,6 +166,15 @@
     </ClInclude>
     <ClInclude Include="Content\Rendering\ModelEntry.h">
       <Filter>Content\Rendering\ModelRenderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Notifications\NotificationSystem.h">
+      <Filter>Content\Systems\Notification</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Network\IGTLinkIF.h">
+      <Filter>Content\Network</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\SpatialMapping\SpatialSystem.h">
+      <Filter>Content\Systems\Spatial</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -260,17 +260,26 @@
     <Filter Include="Content\Rendering\SliceRenderer\Shaders">
       <UniqueIdentifier>{ed7455e3-3b7a-43be-9d87-196368144a64}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Content\Notifications">
-      <UniqueIdentifier>{828d142c-791a-453d-9db1-729b679a943c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Content\IGTLink">
-      <UniqueIdentifier>{5cbfa541-c5c4-47c9-a0d2-d754fbe0669f}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Content\Rendering\ModelRenderer">
       <UniqueIdentifier>{210b5bfc-d11d-4b28-a27c-1805392f5899}</UniqueIdentifier>
     </Filter>
     <Filter Include="Content\Rendering\ModelRenderer\DirectXTK">
       <UniqueIdentifier>{ac74860e-d1dd-4505-a825-922102bf91af}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Network">
+      <UniqueIdentifier>{5cbfa541-c5c4-47c9-a0d2-d754fbe0669f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Systems">
+      <UniqueIdentifier>{7e576baa-03cd-4bc3-ba22-2a7062c2289f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Systems\Spatial">
+      <UniqueIdentifier>{519ea7d3-90f9-408f-ae20-9195036249a7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Systems\Notification">
+      <UniqueIdentifier>{828d142c-791a-453d-9db1-729b679a943c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Systems\Gaze">
+      <UniqueIdentifier>{df49c6cd-b9fe-4794-bb16-809c49a04ecc}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

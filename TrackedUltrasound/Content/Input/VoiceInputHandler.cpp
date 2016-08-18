@@ -24,7 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "pch.h"
 #include "VoiceInputHandler.h"
-#include "NotificationsAPI.h"
+#include "NotificationSystem.h"
 
 // STD includes
 #include <algorithm>

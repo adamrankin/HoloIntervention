@@ -119,7 +119,7 @@ namespace TrackedUltrasound
       m_effectFactory = std::make_unique<DirectX::InstancedEffectFactory>( m_deviceResources->GetD3DDevice() );
       try
       {
-        m_model = Model::CreateFromCMO( m_deviceResources->GetD3DDevice(), m_assetLocation.c_str(), *m_effectFactory );
+        m_model = std::shared_ptr<DirectX::Model>( std::move( Model::CreateFromCMO( m_deviceResources->GetD3DDevice(), m_assetLocation.c_str(), *m_effectFactory ) ) );
       }
       catch ( const std::exception& e )
       {

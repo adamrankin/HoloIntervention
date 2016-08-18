@@ -31,7 +31,7 @@ namespace TrackedUltrasound
 {
   namespace Notifications
   {
-    class NotificationsAPI;
+    class NotificationSystem;
   }
 
   // IFrameworkView class. Connects the app with the Windows shell and handles application lifecycle events.
@@ -49,7 +49,7 @@ namespace TrackedUltrasound
 
   internal:
     // Provide app wide access to the notifications
-    Notifications::NotificationsAPI& GetNotificationAPI();
+    Notifications::NotificationSystem& GetNotificationAPI();
 
   protected:
     // Application lifecycle event handlers.

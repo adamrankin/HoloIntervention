@@ -37,7 +37,7 @@ namespace TrackedUltrasound
 {
   namespace Notifications
   {
-    class NotificationsAPI
+    class NotificationSystem
     {
       enum AnimationState
       {
@@ -51,8 +51,8 @@ namespace TrackedUltrasound
       typedef std::deque<MessageDuration> MessageQueue;
 
     public:
-      NotificationsAPI(const std::shared_ptr<DX::DeviceResources>& deviceResources);
-      ~NotificationsAPI();
+      NotificationSystem(const std::shared_ptr<DX::DeviceResources>& deviceResources);
+      ~NotificationSystem();
 
       // Add a message to the queue to render
       void QueueMessage(const std::string& message, double duration = DEFAULT_NOTIFICATION_DURATION_SEC);

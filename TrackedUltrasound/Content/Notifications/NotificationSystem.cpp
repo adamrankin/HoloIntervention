@@ -24,7 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "pch.h"
 #include "Common.h"
-#include "NotificationsAPI.h"
+#include "NotificationSystem.h"
 
 using namespace Windows::Foundation::Numerics;
 
@@ -32,40 +32,40 @@ namespace TrackedUltrasound
 {
   namespace Notifications
   {
-    const double NotificationsAPI::MAXIMUM_REQUESTED_DURATION_SEC = 10.0;
-    const double NotificationsAPI::DEFAULT_NOTIFICATION_DURATION_SEC = 1.5;
-    const DirectX::XMFLOAT4 NotificationsAPI::SHOWING_ALPHA_VALUE = XMFLOAT4(1.f, 1.f, 1.f, 1.f);
-    const DirectX::XMFLOAT4 NotificationsAPI::HIDDEN_ALPHA_VALUE = XMFLOAT4(0.f, 0.f, 0.f, 0.f);
-    const Windows::Foundation::Numerics::float3 NotificationsAPI::NOTIFICATION_SCREEN_OFFSET = float3(0.f, -0.13f, 0.f);
-    const float NotificationsAPI::NOTIFICATION_DISTANCE_OFFSET = 2.0f;
-    const float NotificationsAPI::LERP_RATE = 4.0;
+    const double NotificationSystem::MAXIMUM_REQUESTED_DURATION_SEC = 10.0;
+    const double NotificationSystem::DEFAULT_NOTIFICATION_DURATION_SEC = 1.5;
+    const DirectX::XMFLOAT4 NotificationSystem::SHOWING_ALPHA_VALUE = XMFLOAT4(1.f, 1.f, 1.f, 1.f);
+    const DirectX::XMFLOAT4 NotificationSystem::HIDDEN_ALPHA_VALUE = XMFLOAT4(0.f, 0.f, 0.f, 0.f);
+    const Windows::Foundation::Numerics::float3 NotificationSystem::NOTIFICATION_SCREEN_OFFSET = float3(0.f, -0.13f, 0.f);
+    const float NotificationSystem::NOTIFICATION_DISTANCE_OFFSET = 2.0f;
+    const float NotificationSystem::LERP_RATE = 4.0;
 
     //----------------------------------------------------------------------------
-    NotificationsAPI::NotificationsAPI(const std::shared_ptr<DX::DeviceResources>& deviceResources)
+    NotificationSystem::NotificationSystem(const std::shared_ptr<DX::DeviceResources>& deviceResources)
       : m_deviceResources(deviceResources)
       , m_notificationRenderer(std::make_unique<Rendering::NotificationRenderer>(deviceResources))
     {
     }
 
     //----------------------------------------------------------------------------
-    NotificationsAPI::~NotificationsAPI()
+    NotificationSystem::~NotificationSystem()
     {
     }
 
     //----------------------------------------------------------------------------
-    void NotificationsAPI::QueueMessage(const std::string& message, double duration)
+    void NotificationSystem::QueueMessage(const std::string& message, double duration)
     {
       this->QueueMessage(std::wstring(message.begin(), message.end()), duration);
     }
 
     //----------------------------------------------------------------------------
-    void NotificationsAPI::QueueMessage(Platform::String^ message, double duration)
+    void NotificationSystem::QueueMessage(Platform::String^ message, double duration)
     {
       this->QueueMessage(std::wstring(message->Data()), duration);
     }
 
     //----------------------------------------------------------------------------
-    void NotificationsAPI::QueueMessage(const std::wstring& message, double duration)
+    void NotificationSystem::QueueMessage(const std::wstring& message, double duration)
     {
       duration = clamp<double>(duration, MAXIMUM_REQUESTED_DURATION_SEC, 0.1);
 
@@ -75,13 +75,13 @@ namespace TrackedUltrasound
     }
 
     //----------------------------------------------------------------------------
-    void NotificationsAPI::Initialize(SpatialPointerPose^ pointerPose)
+    void NotificationSystem::Initialize(SpatialPointerPose^ pointerPose)
     {
       SetPose(pointerPose);
     }
 
     //----------------------------------------------------------------------------
-    void NotificationsAPI::Update(SpatialPointerPose^ pointerPose, const DX::StepTimer& timer)
+    void NotificationSystem::Update(SpatialPointerPose^ pointerPose, const DX::StepTimer& timer)
     {
       // The following code updates any relevant timers depending on state
       auto elapsedTimeSec = timer.GetElapsedSeconds();
@@ -164,19 +164,19 @@ namespace TrackedUltrasound
     }
 
     //----------------------------------------------------------------------------
-    void NotificationsAPI::CreateDeviceDependentResources()
+    void NotificationSystem::CreateDeviceDependentResources()
     {
       m_notificationRenderer->CreateDeviceDependentResources();
     }
 
     //----------------------------------------------------------------------------
-    void NotificationsAPI::ReleaseDeviceDependentResources()
+    void NotificationSystem::ReleaseDeviceDependentResources()
     {
       m_notificationRenderer->ReleaseDeviceDependentResources();
     }
 
     //----------------------------------------------------------------------------
-    void NotificationsAPI::CalculateAlpha(const DX::StepTimer& timer)
+    void NotificationSystem::CalculateAlpha(const DX::StepTimer& timer)
     {
       const float deltaTime = static_cast<float>(timer.GetElapsedSeconds());
 
@@ -202,7 +202,7 @@ namespace TrackedUltrasound
     }
 
     //----------------------------------------------------------------------------
-    void NotificationsAPI::CalculateWorldMatrix()
+    void NotificationSystem::CalculateWorldMatrix()
     {
       XMVECTOR facingNormal = XMVector3Normalize(-XMLoadFloat3(&m_position));
       XMVECTOR xAxisRotation = XMVector3Normalize(XMVectorSet(XMVectorGetZ(facingNormal), 0.f, -XMVectorGetX(facingNormal), 0.f));
@@ -215,7 +215,7 @@ namespace TrackedUltrasound
     }
 
     //----------------------------------------------------------------------------
-    void NotificationsAPI::GrabNextMessage()
+    void NotificationSystem::GrabNextMessage()
     {
       if (m_messages.size() == 0)
       {
@@ -228,19 +228,19 @@ namespace TrackedUltrasound
     }
 
     //----------------------------------------------------------------------------
-    bool NotificationsAPI::IsFading() const
+    bool NotificationSystem::IsFading() const
     {
       return m_fadeTime > 0.f;
     }
 
     //----------------------------------------------------------------------------
-    bool NotificationsAPI::IsShowingNotification() const
+    bool NotificationSystem::IsShowingNotification() const
     {
       return m_animationState != HIDDEN;
     }
 
     //----------------------------------------------------------------------------
-    void NotificationsAPI::UpdateHologramPosition(SpatialPointerPose^ pointerPose, const DX::StepTimer& timer)
+    void NotificationSystem::UpdateHologramPosition(SpatialPointerPose^ pointerPose, const DX::StepTimer& timer)
     {
       const float& deltaTime = static_cast<float>(timer.GetElapsedSeconds());
 
@@ -263,7 +263,7 @@ namespace TrackedUltrasound
     }
 
     //----------------------------------------------------------------------------
-    void NotificationsAPI::SetPose(SpatialPointerPose^ pointerPose)
+    void NotificationSystem::SetPose(SpatialPointerPose^ pointerPose)
     {
       const float3 headPosition = pointerPose->Head->Position;
       const float3 headDirection = pointerPose->Head->ForwardDirection;
@@ -272,25 +272,25 @@ namespace TrackedUltrasound
     }
 
     //----------------------------------------------------------------------------
-    std::unique_ptr<Rendering::NotificationRenderer>& NotificationsAPI::GetRenderer()
+    std::unique_ptr<Rendering::NotificationRenderer>& NotificationSystem::GetRenderer()
     {
       return m_notificationRenderer;
     }
 
     //----------------------------------------------------------------------------
-    const float3& NotificationsAPI::GetPosition() const
+    const float3& NotificationSystem::GetPosition() const
     {
       return m_position;
     }
 
     //----------------------------------------------------------------------------
-    const float3& NotificationsAPI::GetVelocity() const
+    const float3& NotificationSystem::GetVelocity() const
     {
       return m_velocity;
     }
 
     //----------------------------------------------------------------------------
-    void NotificationsAPI::CalculateVelocity(float oneOverDeltaTime)
+    void NotificationSystem::CalculateVelocity(float oneOverDeltaTime)
     {
       const float3 deltaPosition = m_position - m_lastPosition; // meters
       m_velocity = deltaPosition * oneOverDeltaTime; // meters per second

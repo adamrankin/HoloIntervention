@@ -34,7 +34,7 @@ namespace igtl
 
 namespace TrackedUltrasound
 {
-  namespace IGTLink
+  namespace Network
   {
     class IGTLinkIF
     {

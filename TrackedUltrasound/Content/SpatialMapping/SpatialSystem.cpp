@@ -24,7 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "pch.h"
 
 // Local includes
-#include "SpatialSurfaceAPI.h"
+#include "SpatialSystem.h"
 #include "StepTimer.h"
 
 // WinRT includes
@@ -47,14 +47,14 @@ namespace TrackedUltrasound
   {
 
     //----------------------------------------------------------------------------
-    SpatialSurfaceAPI::SpatialSurfaceAPI( const std::shared_ptr<DX::DeviceResources>& deviceResources )
+    SpatialSystem::SpatialSystem( const std::shared_ptr<DX::DeviceResources>& deviceResources )
       : m_deviceResources( deviceResources )
     {
       m_surfaceCollection = std::make_unique<SpatialSurfaceCollection>( m_deviceResources );
     }
 
     //----------------------------------------------------------------------------
-    SpatialSurfaceAPI::~SpatialSurfaceAPI()
+    SpatialSystem::~SpatialSystem()
     {
       if ( m_surfaceObserver != nullptr )
       {
@@ -63,7 +63,7 @@ namespace TrackedUltrasound
     }
 
     //----------------------------------------------------------------------------
-    void SpatialSurfaceAPI::Update( DX::StepTimer const& timer, SpatialCoordinateSystem^ coordinateSystem )
+    void SpatialSystem::Update( DX::StepTimer const& timer, SpatialCoordinateSystem^ coordinateSystem )
     {
       // Cache the current frame number
       m_FrameNumber = timer.GetFrameCount();
@@ -75,19 +75,19 @@ namespace TrackedUltrasound
     }
 
     //----------------------------------------------------------------------------
-    Concurrency::task<void> SpatialSurfaceAPI::CreateDeviceDependentResourcesAsync()
+    Concurrency::task<void> SpatialSystem::CreateDeviceDependentResourcesAsync()
     {
       return m_surfaceCollection->CreateDeviceDependentResourcesAsync();
     }
 
     //----------------------------------------------------------------------------
-    void SpatialSurfaceAPI::ReleaseDeviceDependentResources()
+    void SpatialSystem::ReleaseDeviceDependentResources()
     {
       m_surfaceCollection->ReleaseDeviceDependentResources();
     }
 
     //----------------------------------------------------------------------------
-    void SpatialSurfaceAPI::OnSurfacesChanged( SpatialSurfaceObserver^ sender, Object^ args )
+    void SpatialSystem::OnSurfacesChanged( SpatialSurfaceObserver^ sender, Object^ args )
     {
       IMapView<Guid, SpatialSurfaceInfo^>^ const& surfaceCollection = sender->GetObservedSurfaces();
 
@@ -116,7 +116,7 @@ namespace TrackedUltrasound
     }
 
     //----------------------------------------------------------------------------
-    void SpatialSurfaceAPI::UpdateSurfaceObserverPosition( SpatialCoordinateSystem^ coordinateSystem )
+    void SpatialSystem::UpdateSurfaceObserverPosition( SpatialCoordinateSystem^ coordinateSystem )
     {
       // 20 meters wide, and 5 meters tall, centered at the origin of coordinateSystem.
       SpatialBoundingBox aabb =
@@ -133,13 +133,13 @@ namespace TrackedUltrasound
     }
 
     //----------------------------------------------------------------------------
-    bool SpatialSurfaceAPI::TestRayIntersection(const float3 rayOrigin, const float3 rayDirection, float3& outHitPosition, float3& outHitNormal)
+    bool SpatialSystem::TestRayIntersection(const float3 rayOrigin, const float3 rayDirection, float3& outHitPosition, float3& outHitNormal)
     {
       return m_surfaceCollection->TestRayIntersection(m_FrameNumber, rayOrigin, rayDirection, outHitPosition, outHitNormal);
     }
 
     //----------------------------------------------------------------------------
-    void SpatialSurfaceAPI::InitializeSurfaceObserver( SpatialCoordinateSystem^ coordinateSystem )
+    void SpatialSystem::InitializeSurfaceObserver( SpatialCoordinateSystem^ coordinateSystem )
     {
       // If a SpatialSurfaceObserver exists, we need to unregister from event notifications before releasing it.
       if ( m_surfaceObserver != nullptr )
@@ -241,14 +241,14 @@ namespace TrackedUltrasound
           m_surfaceObserverEventToken =
             m_surfaceObserver->ObservedSurfacesChanged +=
               ref new Windows::Foundation::TypedEventHandler<SpatialSurfaceObserver^, Platform::Object^>(
-                std::bind( &SpatialSurfaceAPI::OnSurfacesChanged, this, std::placeholders::_1, std::placeholders::_2 )
+                std::bind( &SpatialSystem::OnSurfacesChanged, this, std::placeholders::_1, std::placeholders::_2 )
               );
         }
       } );
     }
 
     //----------------------------------------------------------------------------
-    void SpatialSurfaceAPI::SaveAppState()
+    void SpatialSystem::SaveAppState()
     {
       task<SpatialAnchorStore^> requestTask( SpatialAnchorManager::RequestStoreAsync() );
       auto saveTask = requestTask.then( [&]( SpatialAnchorStore ^ store )
@@ -274,7 +274,7 @@ namespace TrackedUltrasound
     }
 
     //----------------------------------------------------------------------------
-    void SpatialSurfaceAPI::LoadAppState()
+    void SpatialSystem::LoadAppState()
     {
       m_spatialAnchors->Clear();
 

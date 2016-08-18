@@ -25,7 +25,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "pch.h"
 #include "AppView.h"
 #include "IGTLinkIF.h"
-#include "NotificationsAPI.h"
+#include "NotificationSystem.h"
 
 // Windows includes
 #include <ppltasks.h>
@@ -38,7 +38,7 @@ using namespace Concurrency;
 
 namespace TrackedUltrasound
 {
-  namespace IGTLink
+  namespace Network
   {
     const double IGTLinkIF::CONNECT_TIMEOUT_SEC = 3.0;
 
