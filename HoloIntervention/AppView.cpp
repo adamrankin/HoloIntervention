@@ -50,6 +50,13 @@ int main( Platform::Array<Platform::String^>^ )
 namespace HoloIntervention
 {
   //----------------------------------------------------------------------------
+  HoloIntervention::AppView^ instance()
+  {
+    static AppView^ ins = ref new AppView();
+    return ins;
+  }
+
+  //----------------------------------------------------------------------------
   IFrameworkView^ AppViewSource::CreateView()
   {
     return HoloIntervention::instance();

@@ -57,13 +57,13 @@ namespace HoloIntervention
 
   internal:
     // Provide app wide access to the logic systems
-    Notifications::NotificationSystem& GetNotificationSystem();
-    Spatial::SpatialSystem& GetSpatialSystem();
-    Gaze::GazeSystem& GetGazeSystem();
+    Notifications::NotificationSystem & GetNotificationSystem();
+    Spatial::SpatialSystem & GetSpatialSystem();
+    Gaze::GazeSystem & GetGazeSystem();
 
     // Provide app wide access to the renderers
-    Rendering::ModelRenderer& GetModelRenderer();
-    Rendering::SliceRenderer& GetSliceRenderer();
+    Rendering::ModelRenderer & GetModelRenderer();
+    Rendering::SliceRenderer & GetSliceRenderer();
 
   protected:
     // Application lifecycle event handlers.
@@ -89,11 +89,7 @@ namespace HoloIntervention
     Windows::Graphics::Holographic::HolographicSpace ^ m_holographicSpace = nullptr;
   };
 
-  static AppView^ instance()
-  {
-    static AppView^ ins = ref new AppView();
-    return ins;
-  }
+  AppView^ instance();
 
   // The entry point for the app.
   ref class AppViewSource sealed : Windows::ApplicationModel::Core::IFrameworkViewSource

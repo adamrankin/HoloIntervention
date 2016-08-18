@@ -23,6 +23,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // local includes
 #include "pch.h"
+#include "AppView.h"
 #include "Common.h"
 #include "DirectXHelper.h"
 #include "HoloInterventionMain.h"
