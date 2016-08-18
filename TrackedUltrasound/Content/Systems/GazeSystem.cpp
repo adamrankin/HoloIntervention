@@ -21,19 +21,30 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 ====================================================================*/
 
-#pragma once
-
-using namespace Windows::Data::Xml::Dom;
-using namespace Windows::UI::Notifications;
-
-#include <windows.h>
-#include <string>
+// Local includes
+#include "pch.h"
+#include "AppView.h"
+#include "Common.h"
+#include "GazeSystem.h"
 
 namespace TrackedUltrasound
 {
-  template<class T>
-  const T& clamp(const T& x, const T& upper, const T& lower)
+  namespace Gaze
   {
-    return min(upper, max(x, lower));
+    //----------------------------------------------------------------------------
+    GazeSystem::GazeSystem()
+    {
+    }
+
+    //----------------------------------------------------------------------------
+    GazeSystem::~GazeSystem()
+    {
+    }
+
+    //----------------------------------------------------------------------------
+    void GazeSystem::Update(const DX::StepTimer& timer)
+    {
+
+    }
   }
 }

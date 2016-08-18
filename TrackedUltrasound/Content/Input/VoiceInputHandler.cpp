@@ -23,6 +23,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "pch.h"
+#include "AppView.h"
 #include "VoiceInputHandler.h"
 #include "NotificationSystem.h"
 

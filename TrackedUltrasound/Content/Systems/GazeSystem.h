@@ -23,17 +23,20 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-using namespace Windows::Data::Xml::Dom;
-using namespace Windows::UI::Notifications;
-
-#include <windows.h>
-#include <string>
+// Common Includes
+#include "StepTimer.h"
 
 namespace TrackedUltrasound
 {
-  template<class T>
-  const T& clamp(const T& x, const T& upper, const T& lower)
+  namespace Gaze
   {
-    return min(upper, max(x, lower));
+    class GazeSystem
+    {
+    public:
+      GazeSystem();
+      ~GazeSystem();
+
+      void Update(const DX::StepTimer& timer);
+    };
   }
 }

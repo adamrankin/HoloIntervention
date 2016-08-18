@@ -1,4 +1,3 @@
-#pragma once
 /*====================================================================
 Copyright(c) 2016 Adam Rankin
 
@@ -22,8 +21,9 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 ====================================================================*/
 
+#pragma once
+
 // Common Includes
-#include "AppView.h"
 #include "DeviceResources.h"
 #include "StepTimer.h"
 

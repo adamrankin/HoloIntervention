@@ -61,7 +61,7 @@
     <ClCompile>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\OpenIGTLink-bin;$(SolutionDir)..\OpenIGTLink\Source\igtlutil;$(SolutionDir)..\OpenIGTLink\Source;$(ProjectDir);$(IntermediateOutputPath);$(SolutionDir)DirectXTK\Src;$(SolutionDir)DirectXTK\Inc;$(SolutionDir)$(Configuration)\$(ProjectName);$(ProjectDir)Content\Notifications;$(ProjectDir)Content\SpatialMapping;$(ProjectDir)Content\Network;$(ProjectDir)Content\Rendering;$(ProjectDir)Content\Input;$(ProjectDir)Content\Sound;$(ProjectDir)Content;$(ProjectDir)Common;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content\Data;$(SolutionDir)DirectXTex\DirectXTex</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\OpenIGTLink-bin;$(SolutionDir)..\OpenIGTLink\Source\igtlutil;$(SolutionDir)..\OpenIGTLink\Source;$(ProjectDir);$(IntermediateOutputPath);$(SolutionDir)DirectXTK\Src;$(SolutionDir)DirectXTK\Inc;$(SolutionDir)$(Configuration)\$(ProjectName);$(ProjectDir)Content\Systems;$(ProjectDir)Content\SpatialMapping;$(ProjectDir)Content\Network;$(ProjectDir)Content\Rendering;$(ProjectDir)Content\Input;$(ProjectDir)Content\Sound;$(ProjectDir)Content;$(ProjectDir)Common;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content\Data;$(SolutionDir)DirectXTex\DirectXTex</AdditionalIncludeDirectories>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
@@ -76,7 +76,7 @@
     <ClCompile>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\OpenIGTLink-bin;$(SolutionDir)..\OpenIGTLink\Source\igtlutil;$(SolutionDir)..\OpenIGTLink\Source;$(ProjectDir);$(IntermediateOutputPath);$(SolutionDir)DirectXTK\Src;$(SolutionDir)DirectXTK\Inc;$(SolutionDir)$(Configuration)\$(ProjectName);$(ProjectDir)Content\Notifications;$(ProjectDir)Content\SpatialMapping;$(ProjectDir)Content\Network;$(ProjectDir)Content\Rendering;$(ProjectDir)Content\Input;$(ProjectDir)Content\Sound;$(ProjectDir)Content;$(ProjectDir)Common;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content\Data;$(SolutionDir)DirectXTex\DirectXTex</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\OpenIGTLink-bin;$(SolutionDir)..\OpenIGTLink\Source\igtlutil;$(SolutionDir)..\OpenIGTLink\Source;$(ProjectDir);$(IntermediateOutputPath);$(SolutionDir)DirectXTK\Src;$(SolutionDir)DirectXTK\Inc;$(SolutionDir)$(Configuration)\$(ProjectName);$(ProjectDir)Content\Systems;$(ProjectDir)Content\SpatialMapping;$(ProjectDir)Content\Network;$(ProjectDir)Content\Rendering;$(ProjectDir)Content\Input;$(ProjectDir)Content\Sound;$(ProjectDir)Content;$(ProjectDir)Common;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content\Data;$(SolutionDir)DirectXTex\DirectXTex</AdditionalIncludeDirectories>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
@@ -99,7 +99,6 @@
     <ClInclude Include="Content\Input\SpatialInputHandler.h" />
     <ClInclude Include="Content\Input\VoiceInputHandler.h" />
     <ClInclude Include="Content\Network\IGTLinkIF.h" />
-    <ClInclude Include="Content\Notifications\NotificationSystem.h" />
     <ClInclude Include="Content\Rendering\DistanceFieldRenderer.h" />
     <ClInclude Include="Content\Rendering\InstancedBasicEffect.h" />
     <ClInclude Include="Content\Rendering\ModelEntry.h" />
@@ -117,9 +116,11 @@
     <ClInclude Include="Content\Sound\XAudio2Helpers.h" />
     <ClInclude Include="Content\SpatialMapping\GetDataFromIBuffer.h" />
     <ClInclude Include="Content\SpatialMapping\SpatialShaderStructures.h" />
-    <ClInclude Include="Content\SpatialMapping\SpatialSystem.h" />
     <ClInclude Include="Content\SpatialMapping\SpatialSurfaceCollection.h" />
     <ClInclude Include="Content\SpatialMapping\SurfaceMesh.h" />
+    <ClInclude Include="Content\Systems\GazeSystem.h" />
+    <ClInclude Include="Content\Systems\NotificationSystem.h" />
+    <ClInclude Include="Content\Systems\SpatialSystem.h" />
     <ClInclude Include="TrackedUltrasoundMain.h" />
     <ClInclude Include="Common\DeviceResources.h" />
     <ClInclude Include="Common\CameraResources.h" />
@@ -127,11 +128,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AppView.cpp" />
-    <ClCompile Include="Common\Common.cpp" />
     <ClCompile Include="Content\Input\SpatialInputHandler.cpp" />
     <ClCompile Include="Content\Input\VoiceInputHandler.cpp" />
     <ClCompile Include="Content\Network\IGTLinkIF.cpp" />
-    <ClCompile Include="Content\Notifications\NotificationSystem.cpp" />
     <ClCompile Include="Content\Rendering\DistanceFieldRenderer.cpp" />
     <ClCompile Include="Content\Rendering\InstancedBasicEffect.cpp" />
     <ClCompile Include="Content\Rendering\ModelEntry.cpp" />
@@ -146,9 +145,11 @@
     <ClCompile Include="Content\Sound\CardioidSound.cpp" />
     <ClCompile Include="Content\Sound\OmnidirectionalSound.cpp" />
     <ClCompile Include="Content\Sound\VoiceCallback.cpp" />
-    <ClCompile Include="Content\SpatialMapping\SpatialSystem.cpp" />
     <ClCompile Include="Content\SpatialMapping\SpatialSurfaceCollection.cpp" />
     <ClCompile Include="Content\SpatialMapping\SurfaceMesh.cpp" />
+    <ClCompile Include="Content\Systems\GazeSystem.cpp" />
+    <ClCompile Include="Content\Systems\NotificationSystem.cpp" />
+    <ClCompile Include="Content\Systems\SpatialSystem.cpp" />
     <ClCompile Include="TrackedUltrasoundMain.cpp" />
     <ClCompile Include="Common\DeviceResources.cpp" />
     <ClCompile Include="Common\CameraResources.cpp" />

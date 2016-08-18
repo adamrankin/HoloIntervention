@@ -38,9 +38,6 @@
     <ClCompile Include="Content\Input\VoiceInputHandler.cpp">
       <Filter>Content\Input</Filter>
     </ClCompile>
-    <ClCompile Include="Common\Common.cpp">
-      <Filter>Common</Filter>
-    </ClCompile>
     <ClCompile Include="Content\Rendering\SliceRenderer.cpp">
       <Filter>Content\Rendering\SliceRenderer</Filter>
     </ClCompile>
@@ -71,14 +68,17 @@
     <ClCompile Include="Content\Rendering\ModelEntry.cpp">
       <Filter>Content\Rendering\ModelRenderer</Filter>
     </ClCompile>
-    <ClCompile Include="Content\Notifications\NotificationSystem.cpp">
-      <Filter>Content\Systems\Notification</Filter>
-    </ClCompile>
     <ClCompile Include="Content\Network\IGTLinkIF.cpp">
       <Filter>Content\Network</Filter>
     </ClCompile>
-    <ClCompile Include="Content\SpatialMapping\SpatialSystem.cpp">
+    <ClCompile Include="Content\Systems\NotificationSystem.cpp">
+      <Filter>Content\Systems\Notification</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Systems\SpatialSystem.cpp">
       <Filter>Content\Systems\Spatial</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Systems\GazeSystem.cpp">
+      <Filter>Content\Systems\Gaze</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -167,14 +167,17 @@
     <ClInclude Include="Content\Rendering\ModelEntry.h">
       <Filter>Content\Rendering\ModelRenderer</Filter>
     </ClInclude>
-    <ClInclude Include="Content\Notifications\NotificationSystem.h">
-      <Filter>Content\Systems\Notification</Filter>
-    </ClInclude>
     <ClInclude Include="Content\Network\IGTLinkIF.h">
       <Filter>Content\Network</Filter>
     </ClInclude>
-    <ClInclude Include="Content\SpatialMapping\SpatialSystem.h">
+    <ClInclude Include="Content\Systems\NotificationSystem.h">
+      <Filter>Content\Systems\Notification</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Systems\SpatialSystem.h">
       <Filter>Content\Systems\Spatial</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Systems\GazeSystem.h">
+      <Filter>Content\Systems\Gaze</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
