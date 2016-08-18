@@ -13,7 +13,7 @@
 struct PixelShaderInput
 {
     min16float4 pos         : SV_POSITION;
-    min16float3 color       : COLOR0;
+    min16float4 color       : COLOR0;
     min16float2 texCoord    : TEXCOORD1;
 };
 
@@ -38,22 +38,5 @@ min16float4 main(PixelShaderInput input) : SV_TARGET
     float multiplier = min(steppedValues.x, steppedValues.y);
 
     // Apply the result.
-    return min16float4(input.color, 1.f) * multiplier;
-
-    // The lines of code above are approximately equivalent to the following.
-    /*min16float2 textureValue = min16float2(tex.Sample(samp, input.texCoord).xy);
-    if ((textureValue.x >= DISTANCE_MAX) && (textureValue.y >= DISTANCE_MAX))
-    {
-        return min16float4(input.color, 1.f);
-    }
-    else if ((textureValue.x >= DISTANCE_MIN) && (textureValue.y >= DISTANCE_MIN))
-    {
-        // smooth step function
-        float multiplier = (textureValue - DISTANCE_MIN) * (1.f / (DISTANCE_MAX - DISTANCE_MIN));
-        return min16float4(input.color * multiplier, 1.f);
-    }
-    else
-    {
-        return min16float4(0.f, 0.f, 0.f, 0.f);
-    }*/
+    return min16float4(input.color.xyz, 1.f) * multiplier;
 }

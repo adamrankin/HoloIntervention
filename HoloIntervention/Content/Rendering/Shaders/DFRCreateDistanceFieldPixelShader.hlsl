@@ -24,8 +24,7 @@ struct PixelShaderInput
   min16float4 screenSpacePos   : SV_POSITION;
 };
 
-Texture2D tex :
-t0;
+Texture2D tex : t0;
 
 // Writes the output of a signed distance function, centered at the pixel's position, searching
 // along the X and Y axes for the closest line boundary in each direction.

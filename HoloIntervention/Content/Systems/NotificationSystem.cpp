@@ -37,7 +37,7 @@ namespace HoloIntervention
     const double NotificationSystem::DEFAULT_NOTIFICATION_DURATION_SEC = 1.5;
     const DirectX::XMFLOAT4 NotificationSystem::SHOWING_ALPHA_VALUE = XMFLOAT4(1.f, 1.f, 1.f, 1.f);
     const DirectX::XMFLOAT4 NotificationSystem::HIDDEN_ALPHA_VALUE = XMFLOAT4(0.f, 0.f, 0.f, 0.f);
-    const Windows::Foundation::Numerics::float3 NotificationSystem::NOTIFICATION_SCREEN_OFFSET = float3(0.f, -0.13f, 0.f);
+    const Windows::Foundation::Numerics::float3 NotificationSystem::NOTIFICATION_SCREEN_OFFSET = float3(0.f, -0.11f, 0.f);
     const float NotificationSystem::NOTIFICATION_DISTANCE_OFFSET = 2.0f;
     const float NotificationSystem::LERP_RATE = 4.0;
 

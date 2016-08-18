@@ -31,6 +31,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Windows includes
 #include <ppltasks.h>
 
+// std includes
+#include <algorithm>
+
 using namespace Microsoft::WRL;
 using namespace Windows::Foundation::Numerics;
 using namespace Windows::UI::Input::Spatial;
@@ -48,18 +51,47 @@ namespace HoloIntervention
       // Validate asset location
       Platform::String^ mainFolderLocation = Windows::ApplicationModel::Package::Current->InstalledLocation->Path;
 
-      auto folderTask = Concurrency::create_task( StorageFolder::GetFolderFromPathAsync( mainFolderLocation ) );
-      StorageFolder^ mainFolder = folderTask.get();
+      auto folderTask = Concurrency::create_task( StorageFolder::GetFolderFromPathAsync( mainFolderLocation ) ).then( [this]( StorageFolder ^ folder )
+      {
+        std::string asset( m_assetLocation.begin(), m_assetLocation.end() );
 
-      std::string asset( m_assetLocation.begin(), m_assetLocation.end() );
+        char drive[32];
+        char dir[32767];
+        char name[2048];
+        char ext[32];
+        _splitpath_s( asset.c_str(), drive, dir, name, ext );
 
-      char drive[32];
-      char dir[32767];
-      char name[2048];
-      char ext[32];
-      _splitpath_s( asset.c_str(), drive, dir, name, ext );
+        std::string dirStr( dir );
+        std::replace(dirStr.begin(), dirStr.end(), '/', '\\');
+        std::wstring wdir( dirStr.begin(), dirStr.end() );
+        Concurrency::create_task( folder->GetFolderAsync( ref new Platform::String( wdir.c_str() ) ) ).then( [this, name = name, ext = ext]( concurrency::task<StorageFolder ^> previousTask )
+        {
+          StorageFolder^ folder;
+          try
+          {
+            folder = previousTask.get();
+          }
+          catch (Platform::InvalidArgumentException^ e)
+          {
+            return;
+          }
+          catch (const std::exception&)
+          {
+            return;
+          }
+          std::string filename( name );
+          filename.append( ext );
+          std::wstring wFilename( filename.begin(), filename.end() );
 
-      CreateDeviceDependentResources();
+          Concurrency::create_task( folder->GetFileAsync( ref new Platform::String( wFilename.c_str() ) ) ).then( [ this ]( StorageFile ^ file )
+          {
+            if ( file != nullptr )
+            {
+              CreateDeviceDependentResources();
+            }
+          } );
+        } );
+      } );
     }
 
     //----------------------------------------------------------------------------
@@ -214,7 +246,7 @@ namespace HoloIntervention
 
       m_deviceResources->GetD3DDeviceContext()->IASetPrimitiveTopology( part.primitiveType );
 
-      m_deviceResources->GetD3DDeviceContext()->DrawIndexedInstanced( part.indexCount, 2, part.startIndex, part.vertexOffset, 0 );
+      //m_deviceResources->GetD3DDeviceContext()->DrawIndexedInstanced( part.indexCount, 2, part.startIndex, part.vertexOffset, 0 );
     }
   }
 }

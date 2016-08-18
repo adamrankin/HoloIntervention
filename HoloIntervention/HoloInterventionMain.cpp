@@ -314,7 +314,7 @@ namespace HoloIntervention
             focusPointVelocity );
         }
       }
-      else if ( m_gazeSystem->IsCursorEnabled() )
+      else if ( m_gazeSystem->IsCursorEnabled() && m_gazeSystem->GetHitNormal() != float3::zero() )
       {
         // TODO : move this to higher priority once it's working
         // Set the focus to be the cursor
@@ -383,19 +383,15 @@ namespace HoloIntervention
         bool activeCamera = pCameraResources->AttachViewProjectionBuffer( m_deviceResources );
 
         // Only render world-locked content when positional tracking is active.
-
-        // Draw all models
-        m_modelRenderer->Render();
-
-        if ( m_notificationSystem->IsShowingNotification() )
+        if (m_notificationSystem->IsShowingNotification())
         {
           m_notificationSystem->GetRenderer()->Render();
         }
 
-        if ( m_sliceToken != 0 )
-        {
-          m_sliceRenderer->Render();
-        }
+        // at present, model renderer leaves a bunch of state leftover which destroys the rendering, investigate
+        //m_modelRenderer->Render();
+        m_sliceRenderer->Render();
+
         atLeastOneCameraRendered = true;
       }
 
