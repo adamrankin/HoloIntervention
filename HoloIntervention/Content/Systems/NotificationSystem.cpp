@@ -29,7 +29,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 using namespace Windows::Foundation::Numerics;
 
-namespace TrackedUltrasound
+namespace HoloIntervention
 {
   namespace Notifications
   {

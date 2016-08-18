@@ -3,7 +3,7 @@
   <Identity Name="e904b051-d187-4d6e-b682-3327d31e6571" Publisher="CN=arankin" Version="0.1.0.0" />
   <mp:PhoneIdentity PhoneProductId="e904b051-d187-4d6e-b682-3327d31e6571" PhonePublisherId="00000000-0000-0000-0000-000000000000" />
   <Properties>
-    <DisplayName>TrackedUltrasound</DisplayName>
+    <DisplayName>HoloIntervention</DisplayName>
     <PublisherDisplayName>arankin</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
@@ -14,8 +14,8 @@
     <Resource Language="x-generate" />
   </Resources>
   <Applications>
-    <Application Id="App" Executable="$targetnametoken$.exe" EntryPoint="TrackedUltrasound.AppView">
-      <uap:VisualElements DisplayName="TrackedUltrasound" Square150x150Logo="Assets\Square150x150Logo.png" Square44x44Logo="Assets\Square44x44Logo.png" Description="TrackedUltrasound" BackgroundColor="#464646">
+    <Application Id="App" Executable="$targetnametoken$.exe" EntryPoint="HoloIntervention.AppView">
+      <uap:VisualElements DisplayName="HoloIntervention" Square150x150Logo="Assets\Square150x150Logo.png" Square44x44Logo="Assets\Square44x44Logo.png" Description="HoloIntervention" BackgroundColor="#464646">
         <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png">
         </uap:DefaultTile>
         <uap:SplashScreen Image="Assets\SplashScreen.png" />

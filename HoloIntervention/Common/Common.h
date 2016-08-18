@@ -29,7 +29,7 @@ using namespace Windows::UI::Notifications;
 #include <windows.h>
 #include <string>
 
-namespace TrackedUltrasound
+namespace HoloIntervention
 {
   template<class T>
   const T& clamp(const T& x, const T& upper, const T& lower)

@@ -25,7 +25,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "pch.h"
 #include "Common.h"
 #include "DirectXHelper.h"
-#include "TrackedUltrasoundMain.h"
+#include "HoloInterventionMain.h"
 
 // System includes
 #include "NotificationSystem.h"
@@ -64,11 +64,11 @@ using namespace Windows::Perception::Spatial;
 using namespace Windows::System::Threading;
 using namespace Windows::UI::Input::Spatial;
 
-namespace TrackedUltrasound
+namespace HoloIntervention
 {
   //----------------------------------------------------------------------------
   // Loads and initializes application assets when the application is loaded.
-  TrackedUltrasoundMain::TrackedUltrasoundMain( const std::shared_ptr<DX::DeviceResources>& deviceResources )
+  HoloInterventionMain::HoloInterventionMain( const std::shared_ptr<DX::DeviceResources>& deviceResources )
     : m_deviceResources( deviceResources )
     , m_sliceToken( 0 )
     , m_cursorSound( nullptr )
@@ -79,7 +79,7 @@ namespace TrackedUltrasound
   }
 
   //----------------------------------------------------------------------------
-  TrackedUltrasoundMain::~TrackedUltrasoundMain()
+  HoloInterventionMain::~HoloInterventionMain()
   {
     // De-register device notification.
     m_deviceResources->RegisterDeviceNotify( nullptr );
@@ -88,7 +88,7 @@ namespace TrackedUltrasound
   }
 
   //----------------------------------------------------------------------------
-  void TrackedUltrasoundMain::SetHolographicSpace( HolographicSpace^ holographicSpace )
+  void HoloInterventionMain::SetHolographicSpace( HolographicSpace^ holographicSpace )
   {
     UnregisterHolographicEventHandlers();
 
@@ -132,19 +132,19 @@ namespace TrackedUltrasound
     m_locatabilityChangedToken =
       m_locator->LocatabilityChanged +=
         ref new Windows::Foundation::TypedEventHandler<SpatialLocator^, Object^>(
-          std::bind( &TrackedUltrasoundMain::OnLocatabilityChanged, this, std::placeholders::_1, std::placeholders::_2 )
+          std::bind( &HoloInterventionMain::OnLocatabilityChanged, this, std::placeholders::_1, std::placeholders::_2 )
         );
 
     m_cameraAddedToken =
       m_holographicSpace->CameraAdded +=
         ref new Windows::Foundation::TypedEventHandler<HolographicSpace^, HolographicSpaceCameraAddedEventArgs^>(
-          std::bind( &TrackedUltrasoundMain::OnCameraAdded, this, std::placeholders::_1, std::placeholders::_2 )
+          std::bind( &HoloInterventionMain::OnCameraAdded, this, std::placeholders::_1, std::placeholders::_2 )
         );
 
     m_cameraRemovedToken =
       m_holographicSpace->CameraRemoved +=
         ref new Windows::Foundation::TypedEventHandler<HolographicSpace^, HolographicSpaceCameraRemovedEventArgs^>(
-          std::bind( &TrackedUltrasoundMain::OnCameraRemoved, this, std::placeholders::_1, std::placeholders::_2 )
+          std::bind( &HoloInterventionMain::OnCameraRemoved, this, std::placeholders::_1, std::placeholders::_2 )
         );
 
     m_attachedReferenceFrame = m_locator->CreateAttachedFrameOfReferenceAtCurrentHeading();
@@ -163,11 +163,11 @@ namespace TrackedUltrasound
   }
 
   //----------------------------------------------------------------------------
-  Concurrency::task<void> TrackedUltrasoundMain::InitializeAudioAssetsAsync()
+  Concurrency::task<void> HoloInterventionMain::InitializeAudioAssetsAsync()
   {
     return create_task( [this]()
     {
-      m_cursorSound = std::make_unique<TrackedUltrasound::Sound::OmnidirectionalSound>();
+      m_cursorSound = std::make_unique<HoloIntervention::Sound::OmnidirectionalSound>();
 
       auto loadTask = m_cursorSound->InitializeAsync( L"Assets/Sounds/input_ok.mp3" );
       loadTask.then( [&]( task<HRESULT> previousTask )
@@ -192,7 +192,7 @@ namespace TrackedUltrasound
   }
 
   //----------------------------------------------------------------------------
-  void TrackedUltrasoundMain::UnregisterHolographicEventHandlers()
+  void HoloInterventionMain::UnregisterHolographicEventHandlers()
   {
     if ( m_holographicSpace != nullptr )
     {
@@ -219,7 +219,7 @@ namespace TrackedUltrasound
 
   //----------------------------------------------------------------------------
   // Updates the application state once per frame.
-  HolographicFrame^ TrackedUltrasoundMain::Update()
+  HolographicFrame^ HoloInterventionMain::Update()
   {
     HolographicFrame^ holographicFrame = m_holographicSpace->CreateNextFrame();
     HolographicFramePrediction^ prediction = holographicFrame->CurrentPrediction;
@@ -339,7 +339,7 @@ namespace TrackedUltrasound
   // Renders the current frame to each holographic camera, according to the
   // current application and spatial positioning state. Returns true if the
   // frame was rendered to at least one camera.
-  bool TrackedUltrasoundMain::Render( Windows::Graphics::Holographic::HolographicFrame^ holographicFrame )
+  bool HoloInterventionMain::Render( Windows::Graphics::Holographic::HolographicFrame^ holographicFrame )
   {
     if ( m_timer.GetFrameCount() == 0 )
     {
@@ -401,25 +401,25 @@ namespace TrackedUltrasound
   }
 
   //----------------------------------------------------------------------------
-  void TrackedUltrasoundMain::SaveAppState()
+  void HoloInterventionMain::SaveAppState()
   {
     m_spatialSystem->SaveAppState();
   }
 
   //----------------------------------------------------------------------------
-  void TrackedUltrasoundMain::LoadAppState()
+  void HoloInterventionMain::LoadAppState()
   {
     m_spatialSystem->LoadAppState();
   }
 
   //----------------------------------------------------------------------------
-  Notifications::NotificationSystem& TrackedUltrasoundMain::GetNotificationsAPI()
+  Notifications::NotificationSystem& HoloInterventionMain::GetNotificationsAPI()
   {
     return *m_notificationSystem.get();
   }
 
   //----------------------------------------------------------------------------
-  void TrackedUltrasoundMain::OnDeviceLost()
+  void HoloInterventionMain::OnDeviceLost()
   {
     m_spatialSystem->ReleaseDeviceDependentResources();
     m_modelRenderer->ReleaseDeviceDependentResources();
@@ -428,7 +428,7 @@ namespace TrackedUltrasound
   }
 
   //----------------------------------------------------------------------------
-  void TrackedUltrasoundMain::OnDeviceRestored()
+  void HoloInterventionMain::OnDeviceRestored()
   {
     m_modelRenderer->CreateDeviceDependentResources();
     m_sliceRenderer->CreateDeviceDependentResources();
@@ -437,7 +437,7 @@ namespace TrackedUltrasound
   }
 
   //----------------------------------------------------------------------------
-  void TrackedUltrasoundMain::OnLocatabilityChanged( SpatialLocator^ sender, Object^ args )
+  void HoloInterventionMain::OnLocatabilityChanged( SpatialLocator^ sender, Object^ args )
   {
     m_locatability = sender->Locatability;
 
@@ -472,7 +472,7 @@ namespace TrackedUltrasound
   }
 
   //----------------------------------------------------------------------------
-  void TrackedUltrasoundMain::OnCameraAdded(
+  void HoloInterventionMain::OnCameraAdded(
     HolographicSpace^ sender,
     HolographicSpaceCameraAddedEventArgs^ args
   )
@@ -489,7 +489,7 @@ namespace TrackedUltrasound
   }
 
   //----------------------------------------------------------------------------
-  void TrackedUltrasoundMain::OnCameraRemoved(
+  void HoloInterventionMain::OnCameraRemoved(
     HolographicSpace^ sender,
     HolographicSpaceCameraRemovedEventArgs^ args
   )
@@ -504,7 +504,7 @@ namespace TrackedUltrasound
   }
 
   //----------------------------------------------------------------------------
-  void TrackedUltrasoundMain::InitializeVoiceSystem()
+  void HoloInterventionMain::InitializeVoiceSystem()
   {
     Input::VoiceInputCallbackMap callbacks;
 
@@ -563,7 +563,7 @@ namespace TrackedUltrasound
   }
 
   //----------------------------------------------------------------------------
-  void TrackedUltrasoundMain::TrackedFrameCallback( UWPOpenIGTLink::TrackedFrame^ frame )
+  void HoloInterventionMain::TrackedFrameCallback( UWPOpenIGTLink::TrackedFrame^ frame )
   {
     if ( m_sliceToken == 0 )
     {

@@ -30,7 +30,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 using namespace Windows::Media::SpeechRecognition;
 
-namespace TrackedUltrasound
+namespace HoloIntervention
 {
   namespace Input
   {

@@ -32,7 +32,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 using namespace DirectX;
 
-namespace TrackedUltrasound
+namespace HoloIntervention
 {
   namespace Rendering
   {
@@ -92,7 +92,7 @@ namespace TrackedUltrasound
       DirectX::XMFLOAT4X4 mat;
       XMStoreFloat4x4( &mat, DirectX::XMLoadFloat4x4( &embeddedImageTransform ) );
       entry->m_constantBuffer.worldMatrix = entry->m_desiredPose = entry->m_currentPose = entry->m_lastPose = mat;
-      entry->SetImageData( std::make_shared<byte*>( TrackedUltrasound::GetDataFromIBuffer( imageData ) ), width, height, pixelFormat );
+      entry->SetImageData( std::make_shared<byte*>( HoloIntervention::GetDataFromIBuffer( imageData ) ), width, height, pixelFormat );
       entry->m_showing = true;
 
       std::lock_guard<std::mutex> guard( m_sliceMapMutex );

@@ -16,7 +16,7 @@
 using namespace Concurrency;
 using namespace DirectX;
 
-namespace TrackedUltrasound
+namespace HoloIntervention
 {
   namespace Rendering
   {

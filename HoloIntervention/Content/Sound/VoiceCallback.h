@@ -27,7 +27,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <xaudio2.h>
 #include <basetyps.h>
 
-namespace TrackedUltrasound
+namespace HoloIntervention
 {
   namespace Sound
   {

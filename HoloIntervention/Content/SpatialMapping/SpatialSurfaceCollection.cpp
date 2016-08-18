@@ -45,7 +45,7 @@ using namespace Windows::Graphics::DirectX;
 using namespace Windows::Perception::Spatial::Surfaces;
 using namespace Windows::Perception::Spatial;
 
-namespace TrackedUltrasound
+namespace HoloIntervention
 {
   namespace Spatial
   {

@@ -27,7 +27,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "Common.h"
 #include "GazeSystem.h"
 
-namespace TrackedUltrasound
+namespace HoloIntervention
 {
   namespace Gaze
   {

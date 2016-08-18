@@ -39,7 +39,7 @@ using namespace Microsoft::WRL;
 using namespace Windows::Foundation::Numerics;
 using namespace Windows::UI::Input::Spatial;
 
-namespace TrackedUltrasound
+namespace HoloIntervention
 {
   namespace Rendering
   {

@@ -29,7 +29,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 using namespace DirectX;
 
-namespace TrackedUltrasound
+namespace HoloIntervention
 {
   namespace Rendering
   {

@@ -43,7 +43,7 @@ using namespace Windows::Perception::Spatial;
 using namespace Windows::Perception::Spatial::Surfaces;
 using namespace Windows::Foundation::Numerics;
 
-namespace TrackedUltrasound
+namespace HoloIntervention
 {
   namespace Spatial
   {
@@ -311,7 +311,7 @@ namespace TrackedUltrasound
       desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
       desc.StructureByteStride = uStructureSize;
 
-      D3D11_SUBRESOURCE_DATA bufferBytes = { TrackedUltrasound::GetDataFromIBuffer( buffer->Data ), 0, 0 };
+      D3D11_SUBRESOURCE_DATA bufferBytes = { HoloIntervention::GetDataFromIBuffer( buffer->Data ), 0, 0 };
       return m_deviceResources->GetD3DDevice()->CreateBuffer( &desc, &bufferBytes, target );
     }
 

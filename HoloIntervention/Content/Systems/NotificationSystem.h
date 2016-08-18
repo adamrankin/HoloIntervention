@@ -33,7 +33,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 // STD includes
 #include <deque>
 
-namespace TrackedUltrasound
+namespace HoloIntervention
 {
   namespace Notifications
   {

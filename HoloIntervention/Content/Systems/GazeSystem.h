@@ -26,7 +26,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Common Includes
 #include "StepTimer.h"
 
-namespace TrackedUltrasound
+namespace HoloIntervention
 {
   namespace Gaze
   {

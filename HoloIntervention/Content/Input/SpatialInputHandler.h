@@ -23,7 +23,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-namespace TrackedUltrasound
+namespace HoloIntervention
 {
   namespace Input
   {

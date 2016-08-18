@@ -32,7 +32,7 @@ using namespace Windows::Foundation;
 using namespace Windows::UI::Input::Spatial;
 using namespace Windows::Foundation::Numerics;
 
-namespace TrackedUltrasound
+namespace HoloIntervention
 {
   namespace Rendering
   {

@@ -40,7 +40,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 using namespace Microsoft::WRL;
 using namespace Concurrency;
 
-namespace TrackedUltrasound
+namespace HoloIntervention
 {
   namespace Sound
   {

@@ -36,7 +36,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 using namespace Concurrency;
 
-namespace TrackedUltrasound
+namespace HoloIntervention
 {
   namespace Network
   {

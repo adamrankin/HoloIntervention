@@ -25,7 +25,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "VoiceCallback.h"
 #include "OmnidirectionalSound.h"
 
-namespace TrackedUltrasound
+namespace HoloIntervention
 {
   namespace Sound
   {
@@ -79,7 +79,7 @@ namespace TrackedUltrasound
     }
 
     //----------------------------------------------------------------------------
-    TrackedUltrasound::Sound::VoiceCallback::~VoiceCallback()
+    HoloIntervention::Sound::VoiceCallback::~VoiceCallback()
     {
 
     }

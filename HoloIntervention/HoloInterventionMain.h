@@ -36,7 +36,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 using namespace Windows::Perception::Spatial;
 
 // Forward declarations
-namespace TrackedUltrasound
+namespace HoloIntervention
 {
   namespace Notifications
   {
@@ -72,11 +72,11 @@ namespace TrackedUltrasound
   }
 
   // Updates, renders, and presents holographic content using Direct3D.
-  class TrackedUltrasoundMain : public DX::IDeviceNotify
+  class HoloInterventionMain : public DX::IDeviceNotify
   {
   public:
-    TrackedUltrasoundMain( const std::shared_ptr<DX::DeviceResources>& deviceResources );
-    ~TrackedUltrasoundMain();
+    HoloInterventionMain( const std::shared_ptr<DX::DeviceResources>& deviceResources );
+    ~HoloInterventionMain();
 
     // Sets the holographic space. This is our closest analogue to setting a new window
     // for the app.

@@ -29,7 +29,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #define HRTF_2PI 6.283185307f
 
-namespace TrackedUltrasound
+namespace HoloIntervention
 {
   namespace Sound
   {

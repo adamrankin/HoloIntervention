@@ -42,17 +42,17 @@ using namespace Windows::UI::Core;
 [Platform::MTAThread]
 int main( Platform::Array<Platform::String^>^ )
 {
-  TrackedUltrasound::AppViewSource^ appViewSource = ref new TrackedUltrasound::AppViewSource();
+  HoloIntervention::AppViewSource^ appViewSource = ref new HoloIntervention::AppViewSource();
   CoreApplication::Run( appViewSource );
   return 0;
 }
 
-namespace TrackedUltrasound
+namespace HoloIntervention
 {
   //----------------------------------------------------------------------------
   IFrameworkView^ AppViewSource::CreateView()
   {
-    return TrackedUltrasound::instance();
+    return HoloIntervention::instance();
   }
 
   //----------------------------------------------------------------------------
@@ -77,7 +77,7 @@ namespace TrackedUltrasound
     // resources.
     m_deviceResources = std::make_shared<DX::DeviceResources>();
 
-    m_main = std::make_unique<TrackedUltrasoundMain>(m_deviceResources);
+    m_main = std::make_unique<HoloInterventionMain>(m_deviceResources);
   }
 
   // Called when the CoreWindow object is created (or re-created).

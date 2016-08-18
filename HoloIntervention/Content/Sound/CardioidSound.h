@@ -19,7 +19,7 @@
 
 using namespace Concurrency;
 
-namespace TrackedUltrasound
+namespace HoloIntervention
 {
   namespace Sound
   {

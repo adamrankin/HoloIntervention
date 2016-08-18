@@ -15,7 +15,7 @@
 #include "DirectXHelper.h"
 #include "TextRenderer.h"
 
-namespace TrackedUltrasound
+namespace HoloIntervention
 {
   namespace Rendering
   {

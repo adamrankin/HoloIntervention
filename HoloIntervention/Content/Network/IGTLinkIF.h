@@ -32,7 +32,7 @@ namespace igtl
   class TrackedFrameMessage;
 }
 
-namespace TrackedUltrasound
+namespace HoloIntervention
 {
   namespace Network
   {

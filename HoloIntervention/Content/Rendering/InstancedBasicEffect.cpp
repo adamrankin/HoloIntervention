@@ -156,7 +156,7 @@ const int InstancedEffectBase<BasicEffectTraits>::PixelShaderIndices[] =
 // Global pool of per-device BasicEffect resources.
 SharedResourcePool<ID3D11Device*, InstancedEffectBase<BasicEffectTraits>::DeviceResources> InstancedEffectBase<BasicEffectTraits>::deviceResourcesPool;
 
-namespace TrackedUltrasound
+namespace HoloIntervention
 {
   namespace Rendering
   {

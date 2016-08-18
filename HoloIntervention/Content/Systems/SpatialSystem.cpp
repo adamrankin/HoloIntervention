@@ -41,7 +41,7 @@ using namespace Windows::Perception::Spatial::Surfaces;
 using namespace Windows::Perception::Spatial;
 using namespace Concurrency;
 
-namespace TrackedUltrasound
+namespace HoloIntervention
 {
   namespace Spatial
   {

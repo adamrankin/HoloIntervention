@@ -17,7 +17,7 @@
 
 using namespace Microsoft::WRL;
 
-namespace TrackedUltrasound
+namespace HoloIntervention
 {
   namespace Sound
   {

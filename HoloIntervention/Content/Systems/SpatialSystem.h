@@ -29,7 +29,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 using namespace Windows::Perception::Spatial::Surfaces;
 using namespace Windows::Perception::Spatial;
 
-namespace TrackedUltrasound
+namespace HoloIntervention
 {
   namespace Spatial
   {

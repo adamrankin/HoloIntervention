@@ -38,7 +38,7 @@ using namespace Concurrency;
 using namespace Windows::Foundation;
 using namespace Windows::Media::SpeechRecognition;
 
-namespace TrackedUltrasound
+namespace HoloIntervention
 {
   namespace Input
   {
@@ -87,7 +87,7 @@ namespace TrackedUltrasound
         else
         {
           // Handle errors here.
-          TrackedUltrasound::instance()->GetNotificationAPI().QueueMessage( L"Unable to compile speech patterns." );
+          HoloIntervention::instance()->GetNotificationAPI().QueueMessage( L"Unable to compile speech patterns." );
         }
       } ).then( [this, callbacks]()
       {
@@ -99,7 +99,7 @@ namespace TrackedUltrasound
         }
         else
         {
-          TrackedUltrasound::instance()->GetNotificationAPI().QueueMessage( L"Cannot start speech recognition." );
+          HoloIntervention::instance()->GetNotificationAPI().QueueMessage( L"Cannot start speech recognition." );
           return false;
         }
       } );

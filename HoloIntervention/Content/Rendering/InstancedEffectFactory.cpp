@@ -292,7 +292,7 @@ namespace DirectX
       }
     }
 
-    auto effect = std::make_shared<TrackedUltrasound::Rendering::InstancedBasicEffect>( device.Get() );
+    auto effect = std::make_shared<HoloIntervention::Rendering::InstancedBasicEffect>( device.Get() );
 
     effect->EnableDefaultLighting();
     effect->SetLightingEnabled( true );

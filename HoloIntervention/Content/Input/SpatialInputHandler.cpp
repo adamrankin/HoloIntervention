@@ -29,7 +29,7 @@ using namespace Windows::Foundation;
 using namespace Windows::UI::Input::Spatial;
 using namespace std::placeholders;
 
-namespace TrackedUltrasound
+namespace HoloIntervention
 {
   namespace Input
   {

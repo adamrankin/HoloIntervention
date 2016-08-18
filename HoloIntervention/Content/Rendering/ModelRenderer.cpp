@@ -36,7 +36,7 @@ using namespace Windows::Storage::Streams;
 using namespace Windows::Storage;
 using namespace Windows::UI::Input::Spatial;
 
-namespace TrackedUltrasound
+namespace HoloIntervention
 {
   namespace Rendering
   {

@@ -1,12 +1,12 @@
 /.vs
 /Debug
 /Release
-/TrackedUltrasound/*.user
-/TrackedUltrasound/Debug/*.cache
-/TrackedUltrasound/Release/*.cache
-/TrackedUltrasound/Release
-/TrackedUltrasound/Debug
-/TrackedUltrasound/Generated Files
+/HoloIntervention/*.user
+/HoloIntervention/Debug/*.cache
+/HoloIntervention/Release/*.cache
+/HoloIntervention/Release
+/HoloIntervention/Debug
+/HoloIntervention/Generated Files
 /*.db
 /HoloIntervention.VC.VC.opendb
 *.ipch

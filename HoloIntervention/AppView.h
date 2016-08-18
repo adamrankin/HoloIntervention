@@ -25,9 +25,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "DeviceResources.h"
-#include "TrackedUltrasoundMain.h"
+#include "HoloInterventionMain.h"
 
-namespace TrackedUltrasound
+namespace HoloIntervention
 {
   namespace Notifications
   {
@@ -65,7 +65,7 @@ namespace TrackedUltrasound
     void OnKeyPressed( Windows::UI::Core::CoreWindow ^ sender, Windows::UI::Core::KeyEventArgs ^ args );
 
   private:
-    std::unique_ptr<TrackedUltrasoundMain> m_main;
+    std::unique_ptr<HoloInterventionMain> m_main;
 
     std::shared_ptr<DX::DeviceResources> m_deviceResources;
     bool m_windowClosed  = false;

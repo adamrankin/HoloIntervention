@@ -3,7 +3,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{76ca5dbd-f0bf-4ac6-857a-1d4613d90d73}</ProjectGuid>
     <Keyword>HolographicApp</Keyword>
-    <RootNamespace>TrackedUltrasound</RootNamespace>
+    <RootNamespace>HoloIntervention</RootNamespace>
     <DefaultLanguage>en-US</DefaultLanguage>
     <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
     <AppContainerApplication>true</AppContainerApplication>
@@ -49,7 +49,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <PackageCertificateKeyFile>TrackedUltrasound_TemporaryKey.pfx</PackageCertificateKeyFile>
+    <PackageCertificateKeyFile>HoloIntervention_TemporaryKey.pfx</PackageCertificateKeyFile>
     <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -121,7 +121,7 @@
     <ClInclude Include="Content\Systems\GazeSystem.h" />
     <ClInclude Include="Content\Systems\NotificationSystem.h" />
     <ClInclude Include="Content\Systems\SpatialSystem.h" />
-    <ClInclude Include="TrackedUltrasoundMain.h" />
+    <ClInclude Include="HoloInterventionMain.h" />
     <ClInclude Include="Common\DeviceResources.h" />
     <ClInclude Include="Common\CameraResources.h" />
     <ClInclude Include="pch.h" />
@@ -150,7 +150,7 @@
     <ClCompile Include="Content\Systems\GazeSystem.cpp" />
     <ClCompile Include="Content\Systems\NotificationSystem.cpp" />
     <ClCompile Include="Content\Systems\SpatialSystem.cpp" />
-    <ClCompile Include="TrackedUltrasoundMain.cpp" />
+    <ClCompile Include="HoloInterventionMain.cpp" />
     <ClCompile Include="Common\DeviceResources.cpp" />
     <ClCompile Include="Common\CameraResources.cpp" />
     <ClCompile Include="pch.cpp">
@@ -165,7 +165,7 @@
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
     </None>
-    <None Include="TrackedUltrasound_TemporaryKey.pfx" />
+    <None Include="HoloIntervention_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Content\Rendering\Shaders\BasicLightingPixelShader.hlsl">

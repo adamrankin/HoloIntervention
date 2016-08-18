@@ -15,7 +15,7 @@
 
 #include "DeviceResources.h"
 
-namespace TrackedUltrasound
+namespace HoloIntervention
 {
   namespace Rendering
   {

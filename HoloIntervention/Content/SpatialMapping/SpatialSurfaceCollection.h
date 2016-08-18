@@ -38,7 +38,7 @@ using namespace Windows::Foundation::Numerics;
 using namespace Windows::Perception::Spatial::Surfaces;
 using namespace Windows::Perception::Spatial;
 
-namespace TrackedUltrasound
+namespace HoloIntervention
 {
   namespace Spatial
   {
