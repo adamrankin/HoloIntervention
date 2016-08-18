@@ -175,7 +175,7 @@ namespace TrackedUltrasound
       std::shared_ptr<SliceEntry> slice;
       if ( FindSlice( sliceId, slice ) )
       {
-        slice->m_headLocked = headlocked;
+        slice->SetHeadlocked(headlocked);
       }
     }
 

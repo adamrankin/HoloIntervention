@@ -37,8 +37,9 @@ namespace TrackedUltrasound
 {
   namespace Rendering
   {
-    const float3 SliceEntry::LOCKED_SLICE_SCREEN_OFFSET = { 0.f, 0.f, 0.f };
-    const float SliceEntry::LOCKED_SLICE_DISTANCE_OFFSET = 2.0f;
+    const float3 SliceEntry::LOCKED_SLICE_SCREEN_OFFSET = { 0.12f, 0.1f, 0.f };
+    const float SliceEntry::LOCKED_SLICE_DISTANCE_OFFSET = 2.f;
+    const float SliceEntry::LOCKED_SLICE_SCALE_FACTOR = 10.f;
     const float SliceEntry::LERP_RATE = 2.0f;
 
     //----------------------------------------------------------------------------
@@ -49,6 +50,7 @@ namespace TrackedUltrasound
       , m_imageData( nullptr )
       , m_showing( true )
       , m_headLocked( false )
+      , m_scalingFactor( 1.f )
       , m_currentPose( SimpleMath::Matrix::Identity )
       , m_lastPose( SimpleMath::Matrix::Identity )
       , m_desiredPose( SimpleMath::Matrix::Identity )
@@ -91,26 +93,29 @@ namespace TrackedUltrasound
       }
       else
       {
-        const float3 offsetFromGazeAtTwoMeters = pose->Head->Position + ( float3( LOCKED_SLICE_DISTANCE_OFFSET ) * ( pose->Head->ForwardDirection + LOCKED_SLICE_SCREEN_OFFSET ) );
+        // Get the gaze direction relative to the given coordinate system.
+        const float3 headPosition = pose->Head->Position;
+        const float3 headDirection = pose->Head->ForwardDirection;
+
+        // Offset the view to centered, lower quadrant
+        const float3 offsetFromGaze = headPosition + ( float3( LOCKED_SLICE_DISTANCE_OFFSET ) * ( headDirection + LOCKED_SLICE_SCREEN_OFFSET ) );
 
         // Use linear interpolation to smooth the position over time
         float3 f3_currentTranslation = { currentTranslation.x, currentTranslation.y, currentTranslation.z };
-        const float3 smoothedPosition = lerp( f3_currentTranslation, offsetFromGazeAtTwoMeters, deltaTime * LERP_RATE );
+        const float3 smoothedPosition = lerp( f3_currentTranslation, offsetFromGaze, deltaTime * LERP_RATE );
 
         XMVECTOR facingNormal = XMVector3Normalize( -XMLoadFloat3( &smoothedPosition ) );
         XMVECTOR xAxisRotation = XMVector3Normalize( XMVectorSet( XMVectorGetZ( facingNormal ), 0.f, -XMVectorGetX( facingNormal ), 0.f ) );
         XMVECTOR yAxisRotation = XMVector3Normalize( XMVector3Cross( facingNormal, xAxisRotation ) );
 
         // Construct the 4x4 pose matrix.
-        XMStoreFloat4x4( &m_currentPose,
-                         XMMatrixTranspose(
-                           XMMATRIX( xAxisRotation,
-                                     yAxisRotation,
-                                     facingNormal,
-                                     XMVectorSet( 0.f, 0.f, 0.f, 1.f ) ) * XMMatrixTranslationFromVector( XMLoadFloat3( &smoothedPosition ) ) ) );
+        SimpleMath::Matrix scaleMatrix = Matrix::CreateScale(m_scalingFactor, m_scalingFactor, 1.f);
+        XMMATRIX rotationMatrix = XMMATRIX( xAxisRotation, yAxisRotation, facingNormal, XMVectorSet( 0.f, 0.f, 0.f, 1.f ) );
+        const XMMATRIX modelTranslation = XMMatrixTranslationFromVector( XMLoadFloat3( &smoothedPosition ) );
+        XMStoreFloat4x4( &m_currentPose, scaleMatrix * rotationMatrix * modelTranslation );
       }
 
-      m_constantBuffer.worldMatrix = m_currentPose;
+      XMStoreFloat4x4( &m_constantBuffer.worldMatrix, XMMatrixTranspose( XMLoadFloat4x4( &m_currentPose ) ) ); // vertex shader wants row major matrix
 
       // Update the model transform buffer for the hologram.
       m_deviceResources->GetD3DDeviceContext()->UpdateSubresource(
@@ -126,7 +131,7 @@ namespace TrackedUltrasound
     //----------------------------------------------------------------------------
     void SliceEntry::Render( uint32 indexCount )
     {
-      if ( !m_showing || m_imageData == nullptr)
+      if ( !m_showing || m_imageData == nullptr )
       {
         return;
       }
@@ -198,6 +203,20 @@ namespace TrackedUltrasound
     }
 
     //----------------------------------------------------------------------------
+    void SliceEntry::SetHeadlocked( bool headLocked )
+    {
+      m_headLocked = headLocked;
+      if ( m_headLocked )
+      {
+        m_scalingFactor = LOCKED_SLICE_SCALE_FACTOR;
+      }
+      else
+      {
+        m_scalingFactor = 1.f;
+      }
+    }
+
+    //----------------------------------------------------------------------------
     void SliceEntry::CreateDeviceDependentResources()
     {
       const CD3D11_BUFFER_DESC constantBufferDesc( sizeof( SliceConstantBuffer ), D3D11_BIND_CONSTANT_BUFFER );
@@ -228,14 +247,14 @@ namespace TrackedUltrasound
       float top = m_height / 2 * scale.y;
 
       std::array<VertexPositionTexture, 4> quadVertices;
-      quadVertices[0].pos = XMFLOAT3(left, top, 0.f);
-      quadVertices[0].texCoord = XMFLOAT2(0.f, 0.f);
-      quadVertices[1].pos = XMFLOAT3(right, top, 0.f);
-      quadVertices[1].texCoord = XMFLOAT2(1.f, 0.f);
-      quadVertices[2].pos = XMFLOAT3(right, bottom, 0.f);
-      quadVertices[2].texCoord = XMFLOAT2(1.f, 1.f);
-      quadVertices[3].pos = XMFLOAT3(left, bottom, 0.f);
-      quadVertices[3].texCoord = XMFLOAT2(0.f, 1.f);
+      quadVertices[0].pos = XMFLOAT3( left, top, 0.f );
+      quadVertices[0].texCoord = XMFLOAT2( 0.f, 0.f );
+      quadVertices[1].pos = XMFLOAT3( right, top, 0.f );
+      quadVertices[1].texCoord = XMFLOAT2( 1.f, 0.f );
+      quadVertices[2].pos = XMFLOAT3( right, bottom, 0.f );
+      quadVertices[2].texCoord = XMFLOAT2( 1.f, 1.f );
+      quadVertices[3].pos = XMFLOAT3( left, bottom, 0.f );
+      quadVertices[3].texCoord = XMFLOAT2( 0.f, 1.f );
 
       D3D11_SUBRESOURCE_DATA vertexBufferData = { 0 };
       vertexBufferData.pSysMem = quadVertices.data();

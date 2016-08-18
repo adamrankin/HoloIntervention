@@ -19,7 +19,7 @@ cbuffer ModelConstantBuffer : register(b0)
 // A constant buffer that stores each set of view and projection matrices in column-major format.
 cbuffer ViewProjectionConstantBuffer : register(b1)
 {
-    float4   eyePosition[2];
+	  float4   eyePosition[2];
     float4x4 viewProjection[2];
 };
 
@@ -55,7 +55,7 @@ VertexShaderOutput main(VertexShaderInput input)
     output.pos = (min16float4)pos;
 
     // Pass the color through with fade.
-    output.color = min16float4(input.color * min16float3(fade.xyz), 1.0f);
+    output.color = min16float4(input.color.xyz * min16float3(fade.xyz), 1.f);
 
     // Pass through the texture coordinates without modification.
     output.texCoord = input.texCoord;

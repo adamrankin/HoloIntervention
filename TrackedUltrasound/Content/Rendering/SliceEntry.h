@@ -50,6 +50,8 @@ namespace TrackedUltrasound
       XMFLOAT4X4 worldMatrix;
     };
 
+    static_assert((sizeof(SliceConstantBuffer) % (sizeof(float) * 4)) == 0, "SliceConstantBuffer constant buffer size must be 16-byte aligned (16 bytes is the length of four floats).");
+
     class SliceEntry
     {
     public:
@@ -64,6 +66,8 @@ namespace TrackedUltrasound
 
       void SetDesiredPose( const DirectX::XMFLOAT4X4& matrix );
 
+      void SetHeadlocked(bool headLocked);
+
       // D3D device related controls
       void CreateDeviceDependentResources();
       void ReleaseDeviceDependentResources();
@@ -71,8 +75,7 @@ namespace TrackedUltrasound
       uint32                                m_id;
       SliceConstantBuffer                   m_constantBuffer;
       bool                                  m_showing;
-      bool                                  m_headLocked;
-      SimpleMath::Matrix                    m_desiredPose;
+      SimpleMath::Matrix                    m_desiredPose; // Poses in column-major format
       SimpleMath::Matrix                    m_currentPose;
       SimpleMath::Matrix                    m_lastPose;
       DXGI_FORMAT                           m_pixelFormat;
@@ -85,6 +88,10 @@ namespace TrackedUltrasound
       ComPtr<ID3D11ShaderResourceView>      m_shaderResourceView;
       ComPtr<ID3D11Buffer>                  m_vertexBuffer;
       ComPtr<ID3D11Buffer>                  m_sliceConstantBuffer;
+      
+      // Rendering behavior vars
+      bool                                  m_headLocked;
+      float                                 m_scalingFactor;
 
       // image data vars
       std::shared_ptr<byte*>                m_imageData;
@@ -95,7 +102,9 @@ namespace TrackedUltrasound
       // Constants relating to slice renderer behavior
       static const float3                   LOCKED_SLICE_SCREEN_OFFSET;
       static const float                    LOCKED_SLICE_DISTANCE_OFFSET;
+      static const float                    LOCKED_SLICE_SCALE_FACTOR;
       static const float                    LERP_RATE;
+
     };
   }
 }
