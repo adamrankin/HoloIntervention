@@ -30,6 +30,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 // System includes
 #include "NotificationSystem.h"
 #include "SpatialSystem.h"
+#include "GazeSystem.h"
 
 // Sound includes
 #include "OmnidirectionalSound.h"
@@ -102,26 +103,12 @@ namespace HoloIntervention
     m_voiceInputHandler = std::make_unique<Input::VoiceInputHandler>();
     m_spatialSystem = std::make_unique<Spatial::SpatialSystem>( m_deviceResources );
     m_igtLinkIF = std::make_unique<Network::IGTLinkIF>();
+
+    // Model renderer must come before Gaze system
+    m_gazeSystem = std::make_unique<Gaze::GazeSystem>();
+
     // TODO : remove temp code
     m_igtLinkIF->SetHostname( L"172.16.80.1" );
-
-    TimeSpan ts;
-    ts.Duration = 10000000; // in 100-nanosecond units (1s)
-    TimerElapsedHandler^ handler = ref new TimerElapsedHandler( [this]( ThreadPoolTimer ^ timer ) ->void
-    {
-      m_igtLinkIF->ConnectAsync().then( [this]( bool result )
-      {
-        if ( result )
-        {
-          m_sliceToken = m_sliceRenderer->AddSlice();
-          m_notificationSystem->QueueMessage( L"Connected." );
-          m_sliceRenderer->SetSliceVisible( m_sliceToken, true );
-        }
-      } );
-    } );
-    ThreadPoolTimer^ timer = ThreadPoolTimer::CreateTimer( handler, ts );
-
-    m_modelToken = m_modelRenderer->AddModel( L"Assets/Models/gaze_cursor.cmo" );
 
     InitializeAudioAssetsAsync();
     InitializeVoiceSystem();
@@ -152,14 +139,29 @@ namespace HoloIntervention
 
     m_spatialSystem->InitializeSurfaceObserver( m_stationaryReferenceFrame->CoordinateSystem );
 
-    // Create a bogus frame to grab sensor data
+    // Initialize the notification system with a bogus frame to grab sensor data
     HolographicFrame^ holographicFrame = m_holographicSpace->CreateNextFrame();
-    HolographicFramePrediction^ prediction = holographicFrame->CurrentPrediction;
-
-    SpatialCoordinateSystem^ currentCoordinateSystem = m_attachedReferenceFrame->GetStationaryCoordinateSystemAtTimestamp( prediction->Timestamp );
-
-    SpatialPointerPose^ pose = SpatialPointerPose::TryGetAtTimestamp( currentCoordinateSystem, prediction->Timestamp );
+    SpatialCoordinateSystem^ currentCoordinateSystem = m_attachedReferenceFrame->GetStationaryCoordinateSystemAtTimestamp( holographicFrame->CurrentPrediction->Timestamp );
+    SpatialPointerPose^ pose = SpatialPointerPose::TryGetAtTimestamp( currentCoordinateSystem, holographicFrame->CurrentPrediction->Timestamp );
     m_notificationSystem->Initialize( pose );
+
+    // TODO : remove temp code, no such thing as default server
+    // Give the system 1s to spin up and then attempt to connect to the default IGT server
+    TimeSpan ts;
+    ts.Duration = 10000000; // in 100-nanosecond units (1s)
+    TimerElapsedHandler^ handler = ref new TimerElapsedHandler( [this]( ThreadPoolTimer ^ timer ) ->void
+    {
+      m_igtLinkIF->ConnectAsync().then( [this]( bool result )
+      {
+        if ( result )
+        {
+          m_sliceToken = m_sliceRenderer->AddSlice();
+          m_notificationSystem->QueueMessage( L"Connected." );
+          m_sliceRenderer->SetSliceVisible( m_sliceToken, true );
+        }
+      } );
+    } );
+    ThreadPoolTimer^ timer = ThreadPoolTimer::CreateTimer( handler, ts );
   }
 
   //----------------------------------------------------------------------------
@@ -252,7 +254,7 @@ namespace HoloIntervention
       }
 
       // Update the gaze vector in the gaze renderer
-      if ( m_modelRenderer->GetModel( m_modelToken )->IsModelEnabled() )
+      if ( m_gazeSystem->IsCursorEnabled() )
       {
         const float3 position = pose->Head->Position;
         const float3 direction = pose->Head->ForwardDirection;
@@ -263,9 +265,8 @@ namespace HoloIntervention
 
         if ( hit )
         {
-          // Update the gaze cursor renderer with the pose to render
-          // TODO : update the world matrix of the model
-          m_modelRenderer->Update( m_timer );
+          // Update the gaze system with the pose to render
+          m_gazeSystem->Update( m_timer, outHitPosition, outHitNormal );
         }
       }
     } );
@@ -287,24 +288,6 @@ namespace HoloIntervention
           focusPointNormal,
           focusPointVelocity
         );
-      }
-      else if ( m_modelRenderer->GetModel( m_modelToken )->IsModelEnabled() )
-      {
-        // Set the focus to be the cursor
-        try
-        {
-          //renderingParameters->SetFocusPoint( currentCoordinateSystem, m_gazeCursorRenderer->GetPosition(), m_gazeCursorRenderer->GetNormal() );
-        }
-        catch ( Platform::InvalidArgumentException^ iex )
-        {
-          continue;
-        }
-        catch ( Platform::Exception^ ex )
-        {
-          // Turn the cursor off and output the message
-          m_modelRenderer->GetModel( m_modelToken )->ToggleEnabled();
-          m_notificationSystem->QueueMessage( ex->Message );
-        }
       }
       else if( m_sliceToken != 0 )
       {
@@ -328,6 +311,25 @@ namespace HoloIntervention
             focusPointPosition,
             focusPointNormal,
             focusPointVelocity );
+        }
+      }
+      else if ( m_gazeSystem->IsCursorEnabled() )
+      {
+        // TODO : move this to higher priority once it's working
+        // Set the focus to be the cursor
+        try
+        {
+          renderingParameters->SetFocusPoint( currentCoordinateSystem, m_gazeSystem->GetHitPosition(), m_gazeSystem->GetHitNormal() );
+        }
+        catch ( Platform::InvalidArgumentException^ iex )
+        {
+          continue;
+        }
+        catch ( Platform::Exception^ ex )
+        {
+          // Turn the cursor off and output the message
+          m_gazeSystem->EnableCursor( false );
+          m_notificationSystem->QueueMessage( ex->Message );
         }
       }
     }
@@ -413,9 +415,33 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
-  Notifications::NotificationSystem& HoloInterventionMain::GetNotificationsAPI()
+  Notifications::NotificationSystem& HoloInterventionMain::GetNotificationsSystem()
   {
     return *m_notificationSystem.get();
+  }
+
+  //----------------------------------------------------------------------------
+  HoloIntervention::Spatial::SpatialSystem& HoloInterventionMain::GetSpatialSystem()
+  {
+    return *m_spatialSystem.get();
+  }
+
+  //----------------------------------------------------------------------------
+  HoloIntervention::Gaze::GazeSystem& HoloInterventionMain::GetGazeSystem()
+  {
+    return *m_gazeSystem.get();
+  }
+
+  //----------------------------------------------------------------------------
+  HoloIntervention::Rendering::ModelRenderer& HoloInterventionMain::GetModelRenderer()
+  {
+    return *m_modelRenderer.get();
+  }
+
+  //----------------------------------------------------------------------------
+  HoloIntervention::Rendering::SliceRenderer& HoloInterventionMain::GetSliceRenderer()
+  {
+    return *m_sliceRenderer.get();
   }
 
   //----------------------------------------------------------------------------
@@ -511,14 +537,14 @@ namespace HoloIntervention
     callbacks[L"show"] = [this]()
     {
       m_cursorSound->StartOnce();
-      m_modelRenderer->GetModel( m_modelToken )->EnableModel( true );
+      m_gazeSystem->EnableCursor( true );
       m_notificationSystem->QueueMessage( L"Cursor on." );
     };
 
     callbacks[L"hide"] = [this]()
     {
       m_cursorSound->StartOnce();
-      m_modelRenderer->GetModel( m_modelToken )->EnableModel( false );
+      m_gazeSystem->EnableCursor( false );
       m_notificationSystem->QueueMessage( L"Cursor off." );
     };
 

@@ -71,6 +71,11 @@ namespace HoloIntervention
     class OmnidirectionalSound;
   }
 
+  namespace Gaze
+  {
+    class GazeSystem;
+  }
+
   // Updates, renders, and presents holographic content using Direct3D.
   class HoloInterventionMain : public DX::IDeviceNotify
   {
@@ -92,8 +97,14 @@ namespace HoloIntervention
     void SaveAppState();
     void LoadAppState();
 
-    // Provide access to the notifications API
-    Notifications::NotificationSystem& GetNotificationsAPI();
+    // Provide access to the logic systems
+    Notifications::NotificationSystem& GetNotificationsSystem();
+    Spatial::SpatialSystem& GetSpatialSystem();
+    Gaze::GazeSystem& GetGazeSystem();
+
+    // Provide access to the renderers
+    Rendering::ModelRenderer& GetModelRenderer();
+    Rendering::SliceRenderer& GetSliceRenderer();
 
     // IDeviceNotify
     virtual void OnDeviceLost();
@@ -133,7 +144,6 @@ namespace HoloIntervention
 
     // Tokens
     uint32                                                m_sliceToken;
-    uint32                                                m_modelToken;
 
     // Spatial input event handler
     std::unique_ptr<Input::SpatialInputHandler>           m_spatialInputHandler;
@@ -174,8 +184,11 @@ namespace HoloIntervention
     // Store the current state of locatability
     Windows::Perception::Spatial::SpatialLocatability     m_locatability;
 
-    // Access to a spatial surface API
+    // Access to a spatial system
     std::unique_ptr<Spatial::SpatialSystem>               m_spatialSystem;
+
+    // Access to a gaze system
+    std::unique_ptr<Gaze::GazeSystem>                     m_gazeSystem;
 
     // Sound assets
     std::unique_ptr<Sound::OmnidirectionalSound>          m_cursorSound;

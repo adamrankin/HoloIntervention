@@ -26,6 +26,11 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Common Includes
 #include "StepTimer.h"
 
+// Model includes
+#include "ModelEntry.h"
+
+using namespace Windows::Foundation::Numerics;
+
 namespace HoloIntervention
 {
   namespace Gaze
@@ -36,7 +41,22 @@ namespace HoloIntervention
       GazeSystem();
       ~GazeSystem();
 
-      void Update(const DX::StepTimer& timer);
+      void Update( const DX::StepTimer& timer, const float3& hitPosition, const float3& hitNormal );
+
+      void EnableCursor( bool enable );
+      bool IsCursorEnabled();
+
+      const float3& GetHitPosition() const;
+      const float3& GetHitNormal() const;
+
+    protected:
+      std::shared_ptr<Rendering::ModelEntry>    m_modelEntry;
+      uint32                                    m_modelToken;
+      bool                                      m_systemEnabled;
+      float3                                    m_lastHitPosition;
+      float3                                    m_lastHitNormal;
+
+      static const std::wstring GAZE_CURSOR_ASSET_LOCATION;
     };
   }
 }

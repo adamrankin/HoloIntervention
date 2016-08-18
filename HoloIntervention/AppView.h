@@ -33,6 +33,14 @@ namespace HoloIntervention
   {
     class NotificationSystem;
   }
+  namespace Spatial
+  {
+    class SpatialSystem;
+  }
+  namespace Gaze
+  {
+    class GazeSystem;
+  }
 
   // IFrameworkView class. Connects the app with the Windows shell and handles application lifecycle events.
   ref class AppView sealed : public Windows::ApplicationModel::Core::IFrameworkView
@@ -48,8 +56,14 @@ namespace HoloIntervention
     virtual void Uninitialize();
 
   internal:
-    // Provide app wide access to the notifications
-    Notifications::NotificationSystem& GetNotificationAPI();
+    // Provide app wide access to the logic systems
+    Notifications::NotificationSystem& GetNotificationSystem();
+    Spatial::SpatialSystem& GetSpatialSystem();
+    Gaze::GazeSystem& GetGazeSystem();
+
+    // Provide app wide access to the renderers
+    Rendering::ModelRenderer& GetModelRenderer();
+    Rendering::SliceRenderer& GetSliceRenderer();
 
   protected:
     // Application lifecycle event handlers.

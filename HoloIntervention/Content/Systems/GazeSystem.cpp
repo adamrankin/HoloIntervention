@@ -27,13 +27,23 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "Common.h"
 #include "GazeSystem.h"
 
+// Rendering includes
+#include "ModelRenderer.h"
+
+using namespace Windows::Foundation::Numerics;
+
 namespace HoloIntervention
 {
   namespace Gaze
   {
+    const std::wstring GazeSystem::GAZE_CURSOR_ASSET_LOCATION = L"Assets/Models/gaze_cursor.cmo";
+
     //----------------------------------------------------------------------------
     GazeSystem::GazeSystem()
+      : m_modelEntry( nullptr )
+      , m_modelToken( 0 )
     {
+      m_modelToken = HoloIntervention::instance()->GetModelRenderer().AddModel( GAZE_CURSOR_ASSET_LOCATION );
     }
 
     //----------------------------------------------------------------------------
@@ -42,9 +52,35 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void GazeSystem::Update(const DX::StepTimer& timer)
+    void GazeSystem::Update( const DX::StepTimer& timer, const float3& hitPosition, const float3& hitNormal )
     {
-
+      m_lastHitNormal = hitNormal;
+      m_lastHitPosition = hitPosition;
     }
+
+    //----------------------------------------------------------------------------
+    void GazeSystem::EnableCursor( bool enable )
+    {
+      m_systemEnabled = enable;
+    }
+
+    //----------------------------------------------------------------------------
+    bool GazeSystem::IsCursorEnabled()
+    {
+      return m_systemEnabled;
+    }
+
+    //----------------------------------------------------------------------------
+    const Windows::Foundation::Numerics::float3& GazeSystem::GetHitPosition() const
+    {
+      return m_lastHitPosition;
+    }
+
+    //----------------------------------------------------------------------------
+    const Windows::Foundation::Numerics::float3& GazeSystem::GetHitNormal() const
+    {
+      return m_lastHitNormal;
+    }
+
   }
 }

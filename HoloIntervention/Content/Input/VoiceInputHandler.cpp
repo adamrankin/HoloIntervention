@@ -87,7 +87,7 @@ namespace HoloIntervention
         else
         {
           // Handle errors here.
-          HoloIntervention::instance()->GetNotificationAPI().QueueMessage( L"Unable to compile speech patterns." );
+          HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Unable to compile speech patterns." );
         }
       } ).then( [this, callbacks]()
       {
@@ -99,7 +99,7 @@ namespace HoloIntervention
         }
         else
         {
-          HoloIntervention::instance()->GetNotificationAPI().QueueMessage( L"Cannot start speech recognition." );
+          HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Cannot start speech recognition." );
           return false;
         }
       } );

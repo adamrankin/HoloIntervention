@@ -137,9 +137,33 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
-  Notifications::NotificationSystem& AppView::GetNotificationAPI()
+  Notifications::NotificationSystem& AppView::GetNotificationSystem()
   {
-    return m_main->GetNotificationsAPI();
+    return m_main->GetNotificationsSystem();
+  }
+
+  //----------------------------------------------------------------------------
+  HoloIntervention::Spatial::SpatialSystem& AppView::GetSpatialSystem()
+  {
+    return m_main->GetSpatialSystem();
+  }
+
+  //----------------------------------------------------------------------------
+  HoloIntervention::Gaze::GazeSystem& AppView::GetGazeSystem()
+  {
+    return m_main->GetGazeSystem();
+  }
+
+  //----------------------------------------------------------------------------
+  HoloIntervention::Rendering::ModelRenderer& AppView::GetModelRenderer()
+  {
+    return m_main->GetModelRenderer();
+  }
+
+  //----------------------------------------------------------------------------
+  HoloIntervention::Rendering::SliceRenderer& AppView::GetSliceRenderer()
+  {
+    return m_main->GetSliceRenderer();
   }
 
   //----------------------------------------------------------------------------
