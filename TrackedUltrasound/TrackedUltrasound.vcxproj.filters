@@ -65,17 +65,20 @@
     <ClCompile Include="Content\IGTLink\IGTLinkIF.cpp">
       <Filter>Content\IGTLink</Filter>
     </ClCompile>
-    <ClCompile Include="Content\Rendering\GazeCursorRenderer.cpp">
-      <Filter>Content\Rendering\Gaze Cursor</Filter>
-    </ClCompile>
     <ClCompile Include="Content\Rendering\InstancedBasicEffect.cpp">
-      <Filter>Content\Rendering\Gaze Cursor\DirectXTK</Filter>
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
     </ClCompile>
     <ClCompile Include="Content\Rendering\InstancedEffectBase.cpp">
-      <Filter>Content\Rendering\Gaze Cursor\DirectXTK</Filter>
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
     </ClCompile>
     <ClCompile Include="Content\Rendering\InstancedEffectFactory.cpp">
-      <Filter>Content\Rendering\Gaze Cursor\DirectXTK</Filter>
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Rendering\ModelRenderer.cpp">
+      <Filter>Content\Rendering\ModelRenderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Rendering\ModelEntry.cpp">
+      <Filter>Content\Rendering\ModelRenderer</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -158,17 +161,20 @@
     <ClInclude Include="Content\IGTLink\IGTLinkIF.h">
       <Filter>Content\IGTLink</Filter>
     </ClInclude>
-    <ClInclude Include="Content\Rendering\GazeCursorRenderer.h">
-      <Filter>Content\Rendering\Gaze Cursor</Filter>
-    </ClInclude>
     <ClInclude Include="Content\Rendering\InstancedEffectFactory.h">
-      <Filter>Content\Rendering\Gaze Cursor\DirectXTK</Filter>
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
     </ClInclude>
     <ClInclude Include="Content\Rendering\InstancedBasicEffect.h">
-      <Filter>Content\Rendering\Gaze Cursor\DirectXTK</Filter>
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
     </ClInclude>
     <ClInclude Include="Content\Rendering\InstancedEffectBase.h">
-      <Filter>Content\Rendering\Gaze Cursor\DirectXTK</Filter>
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Rendering\ModelRenderer.h">
+      <Filter>Content\Rendering\ModelRenderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Rendering\ModelEntry.h">
+      <Filter>Content\Rendering\ModelRenderer</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -260,10 +266,10 @@
     <Filter Include="Content\IGTLink">
       <UniqueIdentifier>{5cbfa541-c5c4-47c9-a0d2-d754fbe0669f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Content\Rendering\Gaze Cursor">
+    <Filter Include="Content\Rendering\ModelRenderer">
       <UniqueIdentifier>{210b5bfc-d11d-4b28-a27c-1805392f5899}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Content\Rendering\Gaze Cursor\DirectXTK">
+    <Filter Include="Content\Rendering\ModelRenderer\DirectXTK">
       <UniqueIdentifier>{ac74860e-d1dd-4505-a825-922102bf91af}</UniqueIdentifier>
     </Filter>
   </ItemGroup>

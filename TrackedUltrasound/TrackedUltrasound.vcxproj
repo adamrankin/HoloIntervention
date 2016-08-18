@@ -102,7 +102,8 @@
     <ClInclude Include="Content\Notifications\NotificationsAPI.h" />
     <ClInclude Include="Content\Rendering\DistanceFieldRenderer.h" />
     <ClInclude Include="Content\Rendering\InstancedBasicEffect.h" />
-    <ClInclude Include="Content\Rendering\GazeCursorRenderer.h" />
+    <ClInclude Include="Content\Rendering\ModelEntry.h" />
+    <ClInclude Include="Content\Rendering\ModelRenderer.h" />
     <ClInclude Include="Content\Rendering\InstancedEffectBase.h" />
     <ClInclude Include="Content\Rendering\InstancedEffectFactory.h" />
     <ClInclude Include="Content\Rendering\NotificationRenderer.h" />
@@ -133,7 +134,8 @@
     <ClCompile Include="Content\Notifications\NotificationsAPI.cpp" />
     <ClCompile Include="Content\Rendering\DistanceFieldRenderer.cpp" />
     <ClCompile Include="Content\Rendering\InstancedBasicEffect.cpp" />
-    <ClCompile Include="Content\Rendering\GazeCursorRenderer.cpp" />
+    <ClCompile Include="Content\Rendering\ModelEntry.cpp" />
+    <ClCompile Include="Content\Rendering\ModelRenderer.cpp" />
     <ClCompile Include="Content\Rendering\InstancedEffectBase.cpp" />
     <ClCompile Include="Content\Rendering\InstancedEffectFactory.cpp" />
     <ClCompile Include="Content\Rendering\NotificationRenderer.cpp" />

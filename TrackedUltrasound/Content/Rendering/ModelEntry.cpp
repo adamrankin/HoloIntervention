@@ -23,73 +23,71 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "pch.h"
-#include "DirectXHelper.h"
-#include "GazeCursorRenderer.h"
+#include "ModelEntry.h"
+
+// DirectXTK includes
+#include <DirectXHelper.h>
 
 // Windows includes
-#include <comdef.h>
+#include <ppltasks.h>
 
-using namespace Concurrency;
-using namespace DirectX;
-using namespace Windows::Foundation;
-using namespace Windows::Storage::Streams;
-using namespace Windows::Storage;
+using namespace Microsoft::WRL;
+using namespace Windows::Foundation::Numerics;
 using namespace Windows::UI::Input::Spatial;
+using namespace Windows::Storage;
 
 namespace TrackedUltrasound
 {
   namespace Rendering
   {
     //----------------------------------------------------------------------------
-    // Loads vertex and pixel shaders from files and instantiates the cube geometry.
-    GazeCursorRenderer::GazeCursorRenderer( const std::shared_ptr<DX::DeviceResources>& deviceResources )
+    ModelEntry::ModelEntry( const std::shared_ptr<DX::DeviceResources>& deviceResources, const std::wstring& assetLocation )
       : m_deviceResources( deviceResources )
+      , m_assetLocation( assetLocation )
     {
+      // Validate asset location
+      Platform::String^ mainFolderLocation = Windows::ApplicationModel::Package::Current->InstalledLocation->Path;
+
+      auto folderTask = Concurrency::create_task( StorageFolder::GetFolderFromPathAsync( mainFolderLocation ) );
+      StorageFolder^ mainFolder = folderTask.get();
+
+      std::string asset( m_assetLocation.begin(), m_assetLocation.end() );
+
+      char drive[32];
+      char dir[32767];
+      char name[2048];
+      char ext[32];
+      _splitpath_s( asset.c_str(), drive, dir, name, ext );
+
       CreateDeviceDependentResources();
     }
 
     //----------------------------------------------------------------------------
-    void GazeCursorRenderer::Update( float3 gazeTargetPosition, float3 gazeTargetNormal )
+    ModelEntry::~ModelEntry()
     {
-      if ( !m_enableCursor )
+      ReleaseDeviceDependentResources();
+    }
+
+    //----------------------------------------------------------------------------
+    void ModelEntry::Update( const DX::StepTimer& timer )
+    {
+      if ( !m_enableModel )
       {
         // No need to update, cursor is not drawn
         return;
       }
-
-      // Get the gaze direction relative to the given coordinate system.
-      XMFLOAT3 pos( gazeTargetPosition.x, gazeTargetPosition.y, gazeTargetPosition.z );
-      XMFLOAT3 dir( gazeTargetNormal.x, gazeTargetNormal.y, gazeTargetNormal.z );
-      XMFLOAT3 up( 0, 1, 0 );
-      m_world = XMMatrixLookToLH( XMLoadFloat3( &pos ), XMLoadFloat3( &dir ), XMLoadFloat3( &up ) );
-
-      // These are stored to be available for focus point querying
-      m_gazeTargetPosition = gazeTargetPosition;
-      m_gazeTargetNormal = gazeTargetNormal;
     }
 
     //----------------------------------------------------------------------------
-    void GazeCursorRenderer::Render()
+    void ModelEntry::Render()
     {
       // Loading is asynchronous. Resources must be created before drawing can occur.
-      if ( !m_loadingComplete || !m_enableCursor )
+      if ( !m_loadingComplete || !m_enableModel )
       {
         return;
       }
 
       const auto context = m_deviceResources->GetD3DDeviceContext();
-
-      if ( !m_deviceResources->GetDeviceSupportsVprt() )
-      {
-        // On devices that do not support the D3D11_FEATURE_D3D11_OPTIONS3::
-        // VPAndRTArrayIndexFromAnyShaderFeedingRasterizer optional feature,
-        // a pass-through geometry shader sets the render target ID.
-        context->GSSetShader(
-          m_geometryShader.Get(),
-          nullptr,
-          0
-        );
-      }
 
       // Draw opaque parts
       for ( auto it = m_model->meshes.cbegin(); it != m_model->meshes.cend(); ++it )
@@ -115,37 +113,64 @@ namespace TrackedUltrasound
     }
 
     //----------------------------------------------------------------------------
-    void GazeCursorRenderer::EnableCursor( bool enable )
+    void ModelEntry::CreateDeviceDependentResources()
     {
-      m_enableCursor = enable;
+      m_states = std::make_unique<DirectX::CommonStates>( m_deviceResources->GetD3DDevice() );
+      m_effectFactory = std::make_unique<DirectX::InstancedEffectFactory>( m_deviceResources->GetD3DDevice() );
+      try
+      {
+        m_model = Model::CreateFromCMO( m_deviceResources->GetD3DDevice(), m_assetLocation.c_str(), *m_effectFactory );
+      }
+      catch ( const std::exception& e )
+      {
+        OutputDebugStringA( e.what() );
+        return;
+      }
+
+      m_loadingComplete = true;
     }
 
     //----------------------------------------------------------------------------
-    void GazeCursorRenderer::ToggleCursor()
+    void ModelEntry::ReleaseDeviceDependentResources()
     {
-      m_enableCursor = !m_enableCursor;
+      m_loadingComplete = false;
+      m_model = nullptr;
+      m_effectFactory = nullptr;
+      m_states = nullptr;
     }
 
     //----------------------------------------------------------------------------
-    bool GazeCursorRenderer::IsCursorEnabled() const
+    void ModelEntry::EnableModel( bool enable )
     {
-      return m_enableCursor;
+      m_enableModel = enable;
     }
 
     //----------------------------------------------------------------------------
-    Numerics::float3 GazeCursorRenderer::GetPosition() const
+    void ModelEntry::ToggleEnabled()
     {
-      return m_gazeTargetPosition;
+      m_enableModel = !m_enableModel;
     }
 
     //----------------------------------------------------------------------------
-    Numerics::float3 GazeCursorRenderer::GetNormal() const
+    bool ModelEntry::IsModelEnabled() const
     {
-      return m_gazeTargetNormal;
+      return m_enableModel;
     }
 
     //----------------------------------------------------------------------------
-    void GazeCursorRenderer::DrawMesh( const DirectX::ModelMesh& mesh, bool alpha )
+    uint32 ModelEntry::GetId() const
+    {
+      return m_id;
+    }
+
+    //----------------------------------------------------------------------------
+    void ModelEntry::SetId( uint32 id )
+    {
+      m_id = id;
+    }
+
+    //----------------------------------------------------------------------------
+    void ModelEntry::DrawMesh( const DirectX::ModelMesh& mesh, bool alpha )
     {
       assert( m_deviceResources->GetD3DDeviceContext() != 0 );
 
@@ -163,7 +188,8 @@ namespace TrackedUltrasound
         auto imatrices = dynamic_cast<IEffectMatrices*>( part->effect.get() );
         if ( imatrices )
         {
-          imatrices->SetMatrices( m_world, SimpleMath::Matrix::Identity, SimpleMath::Matrix::Identity );
+          // TODO : determine how to set world matrix
+          imatrices->SetMatrices( SimpleMath::Matrix::Identity, SimpleMath::Matrix::Identity, SimpleMath::Matrix::Identity );
         }
 
         DrawMeshPart( *part );
@@ -171,7 +197,7 @@ namespace TrackedUltrasound
     }
 
     //----------------------------------------------------------------------------
-    void GazeCursorRenderer::DrawMeshPart( const DirectX::ModelMeshPart& part )
+    void ModelEntry::DrawMeshPart( const DirectX::ModelMeshPart& part )
     {
       m_deviceResources->GetD3DDeviceContext()->IASetInputLayout( part.inputLayout.Get() );
 
@@ -189,65 +215,6 @@ namespace TrackedUltrasound
       m_deviceResources->GetD3DDeviceContext()->IASetPrimitiveTopology( part.primitiveType );
 
       m_deviceResources->GetD3DDeviceContext()->DrawIndexedInstanced( part.indexCount, 2, part.startIndex, part.vertexOffset, 0 );
-    }
-
-    //----------------------------------------------------------------------------
-    void GazeCursorRenderer::CreateDeviceDependentResources()
-    {
-      m_states = std::make_unique<CommonStates>( m_deviceResources->GetD3DDevice() );
-      m_effectFactory = std::make_unique<InstancedEffectFactory>( m_deviceResources->GetD3DDevice() );
-      try
-      {
-        m_model = Model::CreateFromCMO( m_deviceResources->GetD3DDevice(), L"Assets/Models/gaze_cursor.cmo", *m_effectFactory );
-      }
-      catch ( const std::exception& e )
-      {
-        OutputDebugStringA( e.what() );
-      }
-
-      if ( !m_deviceResources->GetDeviceSupportsVprt() )
-      {
-        // Load a geometry shader that can pass through the render target index
-        // PCCI = Position, color, color, instanceId
-        auto loadGSTask = DX::ReadDataAsync( L"ms-appx:///PCCIGeometryShader.cso" );
-        auto createGSTask = loadGSTask.then( [this]( const std::vector<byte>& fileData )
-        {
-          DX::ThrowIfFailed(
-            m_deviceResources->GetD3DDevice()->CreateGeometryShader(
-              fileData.data(),
-              fileData.size(),
-              nullptr,
-              &m_geometryShader
-            )
-          );
-        } ).then( [this]( Concurrency::task<void> previousTask )
-        {
-          try
-          {
-            previousTask.wait();
-          }
-          catch ( const std::exception& e )
-          {
-            OutputDebugStringA( e.what() );
-          }
-
-          m_loadingComplete = true;
-        } );
-
-      }
-      else
-      {
-        m_loadingComplete = true;
-      }
-    }
-
-    //----------------------------------------------------------------------------
-    void GazeCursorRenderer::ReleaseDeviceDependentResources()
-    {
-      m_loadingComplete = false;
-      m_model = nullptr;
-      m_effectFactory = nullptr;
-      m_states = nullptr;
     }
   }
 }

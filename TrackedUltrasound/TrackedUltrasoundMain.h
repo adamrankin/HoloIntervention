@@ -36,7 +36,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "VoiceInputHandler.h"
 
 // Rendering includes
-#include "GazeCursorRenderer.h"
+#include "ModelRenderer.h"
 #include "SliceRenderer.h"
 
 // IGTLink includes
@@ -114,11 +114,12 @@ namespace TrackedUltrasound
 
   protected:
     // Renderers
-    std::unique_ptr<Rendering::GazeCursorRenderer>        m_gazeCursorRenderer;
+    std::unique_ptr<Rendering::ModelRenderer>             m_modelRenderer;
     std::unique_ptr<Rendering::SliceRenderer>             m_sliceRenderer;
 
-    // Slice related behaviors
-    uint32                                                m_sliceToken = 0;
+    // Tokens
+    uint32                                                m_sliceToken;
+    uint32                                                m_modelToken;
 
     // Spatial input event handler
     std::unique_ptr<Input::SpatialInputHandler>           m_spatialInputHandler;

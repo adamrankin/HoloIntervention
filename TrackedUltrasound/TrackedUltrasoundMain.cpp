@@ -57,6 +57,7 @@ namespace TrackedUltrasound
   // Loads and initializes application assets when the application is loaded.
   TrackedUltrasoundMain::TrackedUltrasoundMain( const std::shared_ptr<DX::DeviceResources>& deviceResources )
     : m_deviceResources( deviceResources )
+    , m_sliceToken( 0 )
     , m_cursorSound( nullptr )
     , m_latestFrame( ref new UWPOpenIGTLink::TrackedFrame() )
   {
@@ -81,7 +82,7 @@ namespace TrackedUltrasound
     m_holographicSpace = holographicSpace;
 
     // Initialize the system components
-    m_gazeCursorRenderer = std::make_unique<Rendering::GazeCursorRenderer>( m_deviceResources );
+    m_modelRenderer = std::make_unique<Rendering::ModelRenderer>( m_deviceResources );
     m_sliceRenderer = std::make_unique<Rendering::SliceRenderer>( m_deviceResources );
     m_notificationAPI = std::make_unique<Notifications::NotificationsAPI>( m_deviceResources );
     m_spatialInputHandler = std::make_unique<Input::SpatialInputHandler>();
@@ -89,23 +90,25 @@ namespace TrackedUltrasound
     m_spatialSurfaceApi = std::make_unique<Spatial::SpatialSurfaceAPI>( m_deviceResources );
     m_igtLinkIF = std::make_unique<IGTLink::IGTLinkIF>();
     // TODO : remove temp code
-    m_igtLinkIF->SetHostname(L"192.168.1.180");
+    m_igtLinkIF->SetHostname( L"172.16.80.1" );
 
     TimeSpan ts;
     ts.Duration = 10000000; // in 100-nanosecond units (1s)
-    TimerElapsedHandler^ handler = ref new TimerElapsedHandler( [this](ThreadPoolTimer^ timer) ->void
+    TimerElapsedHandler^ handler = ref new TimerElapsedHandler( [this]( ThreadPoolTimer ^ timer ) ->void
     {
-      m_igtLinkIF->ConnectAsync().then([this](bool result)
+      m_igtLinkIF->ConnectAsync().then( [this]( bool result )
       {
-        if (result)
+        if ( result )
         {
           m_sliceToken = m_sliceRenderer->AddSlice();
-          m_notificationAPI->QueueMessage(L"Connected.");
-          m_sliceRenderer->SetSliceVisible(m_sliceToken, true);
+          m_notificationAPI->QueueMessage( L"Connected." );
+          m_sliceRenderer->SetSliceVisible( m_sliceToken, true );
         }
-      });
+      } );
     } );
     ThreadPoolTimer^ timer = ThreadPoolTimer::CreateTimer( handler, ts );
+
+    m_modelToken = m_modelRenderer->AddModel( L"Assets/Models/gaze_cursor.cmo" );
 
     InitializeAudioAssetsAsync();
     InitializeVoiceSystem();
@@ -236,7 +239,7 @@ namespace TrackedUltrasound
       }
 
       // Update the gaze vector in the gaze renderer
-      if ( m_gazeCursorRenderer->IsCursorEnabled() )
+      if ( m_modelRenderer->GetModel( m_modelToken )->IsModelEnabled() )
       {
         const float3 position = pose->Head->Position;
         const float3 direction = pose->Head->ForwardDirection;
@@ -248,7 +251,8 @@ namespace TrackedUltrasound
         if ( hit )
         {
           // Update the gaze cursor renderer with the pose to render
-          m_gazeCursorRenderer->Update( outHitPosition, outHitNormal );
+          // TODO : update the world matrix of the model
+          m_modelRenderer->Update( m_timer );
         }
       }
     } );
@@ -271,7 +275,7 @@ namespace TrackedUltrasound
           focusPointVelocity
         );
       }
-      else if ( m_gazeCursorRenderer->IsCursorEnabled() )
+      else if ( m_modelRenderer->GetModel( m_modelToken )->IsModelEnabled() )
       {
         // Set the focus to be the cursor
         try
@@ -285,7 +289,7 @@ namespace TrackedUltrasound
         catch ( Platform::Exception^ ex )
         {
           // Turn the cursor off and output the message
-          m_gazeCursorRenderer->ToggleCursor();
+          m_modelRenderer->GetModel( m_modelToken )->ToggleEnabled();
           m_notificationAPI->QueueMessage( ex->Message );
         }
       }
@@ -364,11 +368,8 @@ namespace TrackedUltrasound
 
         // Only render world-locked content when positional tracking is active.
 
-        // Draw the gaze cursor if it's active
-        if ( m_gazeCursorRenderer->IsCursorEnabled() && activeCamera && m_locatability == Windows::Perception::Spatial::SpatialLocatability::PositionalTrackingActive )
-        {
-          m_gazeCursorRenderer->Render();
-        }
+        // Draw all models
+        m_modelRenderer->Render();
 
         if ( m_notificationAPI->IsShowingNotification() )
         {
@@ -408,7 +409,7 @@ namespace TrackedUltrasound
   void TrackedUltrasoundMain::OnDeviceLost()
   {
     m_spatialSurfaceApi->ReleaseDeviceDependentResources();
-    m_gazeCursorRenderer->ReleaseDeviceDependentResources();
+    m_modelRenderer->ReleaseDeviceDependentResources();
     m_sliceRenderer->ReleaseDeviceDependentResources();
     m_notificationAPI->ReleaseDeviceDependentResources();
   }
@@ -416,7 +417,7 @@ namespace TrackedUltrasound
   //----------------------------------------------------------------------------
   void TrackedUltrasoundMain::OnDeviceRestored()
   {
-    m_gazeCursorRenderer->CreateDeviceDependentResources();
+    m_modelRenderer->CreateDeviceDependentResources();
     m_sliceRenderer->CreateDeviceDependentResources();
     m_notificationAPI->CreateDeviceDependentResources();
     m_spatialSurfaceApi->CreateDeviceDependentResourcesAsync();
@@ -497,14 +498,14 @@ namespace TrackedUltrasound
     callbacks[L"show"] = [this]()
     {
       m_cursorSound->StartOnce();
-      m_gazeCursorRenderer->EnableCursor( true );
+      m_modelRenderer->GetModel( m_modelToken )->EnableModel( true );
       m_notificationAPI->QueueMessage( L"Cursor on." );
     };
 
     callbacks[L"hide"] = [this]()
     {
       m_cursorSound->StartOnce();
-      m_gazeCursorRenderer->EnableCursor( false );
+      m_modelRenderer->GetModel( m_modelToken )->EnableModel( false );
       m_notificationAPI->QueueMessage( L"Cursor off." );
     };
 
@@ -512,7 +513,7 @@ namespace TrackedUltrasound
     {
       m_cursorSound->StartOnce();
       m_notificationAPI->QueueMessage( L"Connecting..." );
-      m_igtLinkIF->ConnectAsync(4.0).then( [this]( bool result )
+      m_igtLinkIF->ConnectAsync( 4.0 ).then( [this]( bool result )
       {
         if ( result )
         {
@@ -535,15 +536,15 @@ namespace TrackedUltrasound
     callbacks[L"zoom in"] = [this]()
     {
       m_cursorSound->StartOnce();
-      m_notificationAPI->QueueMessage(L"Zooming in.");
-      m_sliceRenderer->SetSliceHeadlocked(m_sliceToken, true);
+      m_notificationAPI->QueueMessage( L"Zooming in." );
+      m_sliceRenderer->SetSliceHeadlocked( m_sliceToken, true );
     };
 
     callbacks[L"zoom out"] = [this]()
     {
       m_cursorSound->StartOnce();
-      m_notificationAPI->QueueMessage(L"Zooming out.");
-      m_sliceRenderer->SetSliceHeadlocked(m_sliceToken, false);
+      m_notificationAPI->QueueMessage( L"Zooming out." );
+      m_sliceRenderer->SetSliceHeadlocked( m_sliceToken, false );
     };
     m_voiceInputHandler->RegisterCallbacks( callbacks );
   }

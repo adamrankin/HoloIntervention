@@ -169,11 +169,11 @@ namespace TrackedUltrasound
     }
 
     //----------------------------------------------------------------------------
-    void SliceRenderer::SetSliceHeadlocked(uint32 sliceId, bool headlocked)
+    void SliceRenderer::SetSliceHeadlocked( uint32 sliceId, bool headlocked )
     {
-      std::lock_guard<std::mutex> guard(m_sliceMapMutex);
+      std::lock_guard<std::mutex> guard( m_sliceMapMutex );
       std::shared_ptr<SliceEntry> slice;
-      if (FindSlice(sliceId, slice))
+      if ( FindSlice( sliceId, slice ) )
       {
         slice->m_headLocked = headlocked;
       }
@@ -401,11 +401,7 @@ namespace TrackedUltrasound
 
       std::lock_guard<std::mutex> guard( m_sliceMapMutex );
 
-      context->IASetIndexBuffer(
-        m_indexBuffer.Get(),
-        DXGI_FORMAT_R16_UINT, // Each index is one 16-bit unsigned integer (short).
-        0
-      );
+      context->IASetIndexBuffer( m_indexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0 );
       context->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
       context->IASetInputLayout( m_inputLayout.Get() );
 
@@ -418,24 +414,12 @@ namespace TrackedUltrasound
 
       if ( !m_usingVprtShaders )
       {
-        context->GSSetShader(
-          m_geometryShader.Get(),
-          nullptr,
-          0
-        );
+        context->GSSetShader( m_geometryShader.Get(), nullptr, 0 );
       }
 
       // Attach the pixel shader.
-      context->PSSetShader(
-        m_pixelShader.Get(),
-        nullptr,
-        0
-      );
-      context->PSSetSamplers(
-        0,
-        1,
-        m_quadTextureSamplerState.GetAddressOf()
-      );
+      context->PSSetShader( m_pixelShader.Get(), nullptr, 0 );
+      context->PSSetSamplers( 0, 1, m_quadTextureSamplerState.GetAddressOf() );
 
       for ( auto sliceEntry : m_slices )
       {

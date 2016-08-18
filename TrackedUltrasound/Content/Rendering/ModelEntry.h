@@ -24,15 +24,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
-#include "CameraResources.h"
+#include "StepTimer.h"
 #include "DeviceResources.h"
 #include "InstancedBasicEffect.h"
 #include "InstancedEffectFactory.h"
-#include "StepTimer.h"
-
-//  WinRT includes
-#include <ppltasks.h>
-#include <wrl.h>
 
 // DirectXTK includes
 #include <CommonStates.h>
@@ -40,54 +35,56 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <Model.h>
 #include <SimpleMath.h>
 
-using namespace Windows::Foundation;
-using namespace Windows::UI::Input::Spatial;
+using namespace Microsoft::WRL;
 using namespace Windows::Foundation::Numerics;
+using namespace Windows::UI::Input::Spatial;
 
 namespace TrackedUltrasound
 {
   namespace Rendering
   {
-    class GazeCursorRenderer
+    class ModelEntry
     {
     public:
-      GazeCursorRenderer( const std::shared_ptr<DX::DeviceResources>& deviceResources );
-      void CreateDeviceDependentResources();
-      void ReleaseDeviceDependentResources();
-      void Update( float3 gazeTargetPosition, float3 gazeTargetNormal );
+      ModelEntry( const std::shared_ptr<DX::DeviceResources>& deviceResources, const std::wstring& assetLocation );
+      ~ModelEntry();
+
+      void Update( const DX::StepTimer& timer );
       void Render();
 
-      void EnableCursor( bool enable );
-      void ToggleCursor();
-      bool IsCursorEnabled() const;
+      // D3D device related controls
+      void CreateDeviceDependentResources();
+      void ReleaseDeviceDependentResources();
 
-      Numerics::float3 GetPosition() const;
-      Numerics::float3 GetNormal() const;
+      // Model enable control
+      void EnableModel( bool enable );
+      void ToggleEnabled();
+      bool IsModelEnabled() const;
+
+      // Accessors
+      uint32 GetId() const;
+      void SetId( uint32 id );
 
     protected:
-      void DrawMesh(const DirectX::ModelMesh& mesh, bool alpha);
-      void DrawMeshPart(const DirectX::ModelMeshPart& part);
+      void DrawMesh( const DirectX::ModelMesh& mesh, bool alpha );
+      void DrawMeshPart( const DirectX::ModelMeshPart& part );
 
     protected:
       // Cached pointer to device resources.
-      std::shared_ptr<DX::DeviceResources>            m_deviceResources = nullptr;
-
-      // Gaze origin and direction
-      float3                                          m_gazeTargetPosition;
-      float3                                          m_gazeTargetNormal;
-      DirectX::SimpleMath::Matrix                     m_world;
-      
-      // DirectX resources for the renderer
-      Microsoft::WRL::ComPtr<ID3D11GeometryShader>    m_geometryShader = nullptr; // Geometry shader is only needed if VPRT is not supported
+      std::shared_ptr<DX::DeviceResources>                m_deviceResources = nullptr;
 
       // DirectXTK resources for the cursor model
-      std::unique_ptr<DirectX::CommonStates>          m_states;
-      std::unique_ptr<InstancedEffectFactory>         m_effectFactory = nullptr;
-      std::unique_ptr<DirectX::Model>                 m_model = nullptr;
+      std::unique_ptr<DirectX::CommonStates>              m_states;
+      std::unique_ptr<DirectX::InstancedEffectFactory>    m_effectFactory = nullptr;
+      std::shared_ptr<DirectX::Model>                     m_model = nullptr;
+      std::wstring                                        m_assetLocation;
+
+      // Model related behavior
+      bool                                                m_enableModel = false;
+      uint32                                              m_id;
 
       // Variables used with the rendering loop.
-      bool                                            m_loadingComplete = false;
-      bool                                            m_enableCursor = false;
+      bool                                                m_loadingComplete = false;
     };
   }
 }
