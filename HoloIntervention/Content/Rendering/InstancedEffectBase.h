@@ -24,8 +24,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // DirectXTK includes
-#include <EffectCommon.h>
 #include <ConstantBuffer.h>
+#include <DemandCreate.h>
+#include <EffectCommon.h>
 
 namespace DirectX
 {
@@ -107,9 +108,11 @@ namespace DirectX
 
     // Static arrays hold all the precompiled shader permutations.
     static const ShaderBytecode VertexShaderBytecode[Traits::VertexShaderCount];
+    static const ShaderBytecode GeometryShaderBytecode[Traits::GeometryShaderCount];
     static const ShaderBytecode PixelShaderBytecode[Traits::PixelShaderCount];
 
     static const int VertexShaderIndices[Traits::ShaderPermutationCount];
+    static const int GeometryShaderIndices[Traits::GeometryShaderCount];
     static const int PixelShaderIndices[Traits::ShaderPermutationCount];
 
   private:
@@ -124,15 +127,29 @@ namespace DirectX
     {
     public:
       DeviceResources( _In_ ID3D11Device* device )
-        : EffectDeviceResources(device)
+        : EffectDeviceResources( device )
       {
         // Check for device support for the optional feature that allows setting the render target array index from the vertex shader stage.
         D3D11_FEATURE_DATA_D3D11_OPTIONS3 options;
-        device->CheckFeatureSupport(D3D11_FEATURE_D3D11_OPTIONS3, &options, sizeof(options));
-        if (options.VPAndRTArrayIndexFromAnyShaderFeedingRasterizer)
+        device->CheckFeatureSupport( D3D11_FEATURE_D3D11_OPTIONS3, &options, sizeof( options ) );
+        if ( options.VPAndRTArrayIndexFromAnyShaderFeedingRasterizer )
         {
           m_supportsVPRT = true;
         }
+      }
+
+      // Gets or lazily creates the specified vertex shader permutation.
+      ID3D11GeometryShader* DeviceResources::DemandCreateGeometryShader( _Inout_ Microsoft::WRL::ComPtr<ID3D11GeometryShader>& geometryShader, ShaderBytecode const& bytecode )
+      {
+        return DemandCreate( geometryShader, mMutex, [&]( ID3D11GeometryShader** pResult ) -> HRESULT
+        {
+          HRESULT hr = mDevice->CreateGeometryShader( bytecode.code, bytecode.length, nullptr, pResult );
+
+          if ( SUCCEEDED( hr ) )
+            SetDebugObjectName( *pResult, "DirectXTK:GSEffect" );
+
+          return hr;
+        } );
       }
 
       // Gets or lazily creates the specified vertex shader permutation.
@@ -140,8 +157,16 @@ namespace DirectX
       {
         int shaderIndex = VertexShaderIndices[permutation];
 
-        return DemandCreateVertexShader(m_supportsVPRT ? mVPRTVertexShaders[shaderIndex] : mVertexShaders[shaderIndex],
-          m_supportsVPRT ? VPRTVertexShaderBytecode[shaderIndex] : VertexShaderBytecode[shaderIndex]);
+        return DemandCreateVertexShader( m_supportsVPRT ? mVPRTVertexShaders[shaderIndex] : mVertexShaders[shaderIndex],
+                                         m_supportsVPRT ? VPRTVertexShaderBytecode[shaderIndex] : VertexShaderBytecode[shaderIndex] );
+      }
+
+      // Gets or lazily creates the specified vertex shader permutation.
+      ID3D11GeometryShader* GetGeometryShader( int permutation )
+      {
+        int shaderIndex = GeometryShaderIndices[permutation];
+
+        return DemandCreateGeometryShader( mGeometryShaders[shaderIndex], GeometryShaderBytecode[shaderIndex] );
       }
 
       // Gets or lazily creates the specified pixel shader permutation.
@@ -149,7 +174,7 @@ namespace DirectX
       {
         int shaderIndex = PixelShaderIndices[permutation];
 
-        return DemandCreatePixelShader(mPixelShaders[shaderIndex], PixelShaderBytecode[shaderIndex]);
+        return DemandCreatePixelShader( mPixelShaders[shaderIndex], PixelShaderBytecode[shaderIndex] );
       }
 
       // Gets or lazily creates the default texture
@@ -162,6 +187,7 @@ namespace DirectX
       bool m_supportsVPRT = false;
       Microsoft::WRL::ComPtr<ID3D11VertexShader> mVPRTVertexShaders[Traits::VertexShaderCount];
       Microsoft::WRL::ComPtr<ID3D11VertexShader> mVertexShaders[Traits::VertexShaderCount];
+      Microsoft::WRL::ComPtr<ID3D11GeometryShader> mGeometryShaders[Traits::GeometryShaderCount];
       Microsoft::WRL::ComPtr<ID3D11PixelShader> mPixelShaders[Traits::PixelShaderCount];
     };
 
@@ -204,9 +230,11 @@ namespace DirectX
   {
     // Set shaders.
     auto vertexShader = mDeviceResources->GetVertexShader( permutation );
+    auto geometryShader = mDeviceResources->GetGeometryShader( permutation );
     auto pixelShader = mDeviceResources->GetPixelShader( permutation );
 
     deviceContext->VSSetShader( vertexShader, nullptr, 0 );
+    deviceContext->GSSetShader( geometryShader, nullptr, 0 );
     deviceContext->PSSetShader( pixelShader, nullptr, 0 );
 
     // Make sure the constant buffer is up to date.
@@ -221,6 +249,7 @@ namespace DirectX
     ID3D11Buffer* buffer = mConstantBuffer.GetBuffer();
 
     deviceContext->VSSetConstantBuffers( 0, 1, &buffer );
+    deviceContext->GSSetConstantBuffers( 0, 1, &buffer );
     deviceContext->PSSetConstantBuffers( 0, 1, &buffer );
   }
 }

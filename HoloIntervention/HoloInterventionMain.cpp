@@ -389,8 +389,6 @@ namespace HoloIntervention
         }
 
         m_modelRenderer->Render();
-        // This is sort of hack (not that bad, really), but we force a clear state here to clean up after the model renderer
-        m_deviceResources->GetD3DDeviceContext()->ClearState();
         m_sliceRenderer->Render();
 
         atLeastOneCameraRendered = true;

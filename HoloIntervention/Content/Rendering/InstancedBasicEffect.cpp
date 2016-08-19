@@ -54,11 +54,13 @@ struct BasicEffectTraits
   typedef InstancedBasicEffectConstants ConstantBufferType;
 
   static const int VertexShaderCount = 1;
+  static const int GeometryShaderCount = 1;
   static const int PixelShaderCount = 1;
   static const int ShaderPermutationCount = 1;
 };
 
-// Load pre-compiled vertex shaders
+//-------------------------------------------------------------------
+// Vertex shaders
 #include <VPRTBasicLightingVertexShader.inc>
 
 const ShaderBytecode InstancedEffectBase<BasicEffectTraits>::VPRTVertexShaderBytecode[] =
@@ -126,7 +128,22 @@ const int InstancedEffectBase<BasicEffectTraits>::VertexShaderIndices[] =
   0,      // basic, one light
 };
 
-// Load pre-compiled vertex shaders
+//-------------------------------------------------------------------
+// Geometry shaders
+#include <PCCIGeometryShader.inc>
+
+const ShaderBytecode InstancedEffectBase<BasicEffectTraits>::GeometryShaderBytecode[] =
+{
+  { PCCIGeometryShader,              sizeof(PCCIGeometryShader) },
+};
+
+const int InstancedEffectBase<BasicEffectTraits>::GeometryShaderIndices[] =
+{
+  0,      // position, color0, color1
+};
+
+//-------------------------------------------------------------------
+// Pixel shaders
 #include <BasicLightingPixelShader.inc>
 
 const ShaderBytecode InstancedEffectBase<BasicEffectTraits>::PixelShaderBytecode[] =

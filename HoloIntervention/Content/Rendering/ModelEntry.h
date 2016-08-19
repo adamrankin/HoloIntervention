@@ -79,6 +79,8 @@ namespace HoloIntervention
       std::shared_ptr<DirectX::Model>                     m_model = nullptr;
       std::wstring                                        m_assetLocation;
 
+      // TODO : add geometry shader support
+
       // Model related behavior
       bool                                                m_enableModel = false;
       uint32                                              m_id;
