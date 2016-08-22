@@ -26,7 +26,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "StepTimer.h"
 #include "DeviceResources.h"
-#include "InstancedBasicEffect.h"
+#include "InstancedEffects.h"
 #include "InstancedEffectFactory.h"
 
 // DirectXTK includes
@@ -49,7 +49,7 @@ namespace HoloIntervention
       ModelEntry( const std::shared_ptr<DX::DeviceResources>& deviceResources, const std::wstring& assetLocation );
       ~ModelEntry();
 
-      void Update( const DX::StepTimer& timer );
+      void Update( const DX::StepTimer& timer, const DX::ViewProjection& evp );
       void Render();
 
       // D3D device related controls
@@ -78,6 +78,9 @@ namespace HoloIntervention
       std::unique_ptr<DirectX::InstancedEffectFactory>    m_effectFactory = nullptr;
       std::shared_ptr<DirectX::Model>                     m_model = nullptr;
       std::wstring                                        m_assetLocation;
+
+      // Cached eye view projection to pass to IEffect system
+      DX::ViewProjection                               m_viewProjection;
 
       // TODO : add geometry shader support
 

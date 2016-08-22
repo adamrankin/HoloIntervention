@@ -26,7 +26,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "InstancedEffectFactory.h"
 
 // Effect type includes
-#include "InstancedBasicEffect.h"
+#include "InstancedEffects.h"
 
 // DirectXTK Includes
 #include <Effects.h>
@@ -88,7 +88,7 @@ namespace DirectX
   _Use_decl_annotations_
   std::shared_ptr<IEffect> InstancedEffectFactory::Impl::CreateEffect( IEffectFactory* factory, const IEffectFactory::EffectInfo& info, ID3D11DeviceContext* deviceContext )
   {
-    // For now, only the basic effect is implemented as an instanced renderer, and only one subset at that
+    // For now, only the basic effect is implemented as an instanced renderer
     /*
     if ( info.enableSkinning )
     {
@@ -292,7 +292,7 @@ namespace DirectX
       }
     }
 
-    auto effect = std::make_shared<HoloIntervention::Rendering::InstancedBasicEffect>( device.Get() );
+    auto effect = std::make_shared<DirectX::InstancedBasicEffect>( device.Get() );
 
     effect->EnableDefaultLighting();
     effect->SetLightingEnabled( true );

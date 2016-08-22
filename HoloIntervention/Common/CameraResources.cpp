@@ -159,10 +159,11 @@ namespace DX
   }
 
   // Updates the view/projection constant buffer for a holographic camera.
-  void CameraResources::UpdateViewProjectionBuffer(
+  bool CameraResources::UpdateViewProjectionBuffer(
     std::shared_ptr<DeviceResources> deviceResources,
     HolographicCameraPose^ cameraPose,
-    SpatialCoordinateSystem^ coordinateSystem
+    SpatialCoordinateSystem^ coordinateSystem,
+    ViewProjection& vp
   )
   {
     // The system changes the viewport on a per-frame basis for system optimizations.
@@ -186,19 +187,22 @@ namespace DX
     // This usually means that positional tracking is not active for the current frame, in
     // which case it is possible to use a SpatialLocatorAttachedFrameOfReference to render
     // content that is not world-locked instead.
-    ViewProjectionConstantBuffer viewProjectionConstantBufferData;
+    DX::ViewProjectionConstantBuffer buffer;
     bool viewTransformAcquired = viewTransformContainer != nullptr;
     if ( viewTransformAcquired )
     {
       // Otherwise, the set of view transforms can be retrieved.
       HolographicStereoTransform viewCoordinateSystemTransform = viewTransformContainer->Value;
 
-      viewProjectionConstantBufferData.eyePosition[0] = XMFLOAT4(viewCoordinateSystemTransform.Left.m14, viewCoordinateSystemTransform.Left.m24, viewCoordinateSystemTransform.Left.m34, 1.0f);
-      viewProjectionConstantBufferData.eyePosition[1] = XMFLOAT4(viewCoordinateSystemTransform.Right.m14, viewCoordinateSystemTransform.Right.m24, viewCoordinateSystemTransform.Right.m34, 1.0f);
+      XMStoreFloat4x4( &vp.view[0], XMLoadFloat4x4( &viewCoordinateSystemTransform.Left ) );
+      XMStoreFloat4x4( &vp.view[1], XMLoadFloat4x4( &viewCoordinateSystemTransform.Right ) );
 
-      // XMMatrixTranspose because CPU memory treats items in row-major order, but hlsl treats them in column-major order
-      XMStoreFloat4x4( &viewProjectionConstantBufferData.viewProjection[0], XMMatrixTranspose( XMLoadFloat4x4( &viewCoordinateSystemTransform.Left ) * XMLoadFloat4x4( &cameraProjectionTransform.Left ) ) );
-      XMStoreFloat4x4( &viewProjectionConstantBufferData.viewProjection[1], XMMatrixTranspose( XMLoadFloat4x4( &viewCoordinateSystemTransform.Right ) * XMLoadFloat4x4( &cameraProjectionTransform.Right ) ) );
+      XMStoreFloat4x4( &vp.projection[0], XMLoadFloat4x4( &cameraProjectionTransform.Left ) );
+      XMStoreFloat4x4( &vp.projection[1], XMLoadFloat4x4( &cameraProjectionTransform.Right ) );
+
+      // XMMatrixTranspose because CPU memory treats items in row-major order, but HLSL treats them in column-major order
+      XMStoreFloat4x4( &buffer.viewProjection[0], XMMatrixTranspose( XMLoadFloat4x4( &viewCoordinateSystemTransform.Left ) * XMLoadFloat4x4( &cameraProjectionTransform.Left ) ) );
+      XMStoreFloat4x4( &buffer.viewProjection[1], XMMatrixTranspose( XMLoadFloat4x4( &viewCoordinateSystemTransform.Right ) * XMLoadFloat4x4( &cameraProjectionTransform.Right ) ) );
     }
 
     // Use the D3D device context to update Direct3D device-based resources.
@@ -208,6 +212,7 @@ namespace DX
     if ( context == nullptr || m_viewProjectionConstantBuffer == nullptr || !viewTransformAcquired )
     {
       m_framePending = false;
+      return false;
     }
     else
     {
@@ -216,12 +221,13 @@ namespace DX
         m_viewProjectionConstantBuffer.Get(),
         0,
         nullptr,
-        &viewProjectionConstantBufferData,
+        &buffer,
         0,
         0
       );
 
       m_framePending = true;
+      return true;
     }
   }
 

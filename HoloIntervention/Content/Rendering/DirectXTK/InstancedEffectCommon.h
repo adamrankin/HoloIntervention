@@ -26,13 +26,40 @@ OTHER DEALINGS IN THE SOFTWARE.
 // DirectXTK includes
 #include <ConstantBuffer.h>
 #include <DemandCreate.h>
+#include <DirectXMath.h>
 #include <EffectCommon.h>
 
 namespace DirectX
 {
-  struct EffectStereoLights : public EffectColor
+  // Helper stores matrix parameter values, and computes derived matrices.
+  struct StereoEffectMatrices
   {
-    EffectStereoLights();
+    StereoEffectMatrices();
+
+    XMMATRIX world;
+    XMMATRIX view[2];
+    XMMATRIX projection[2];
+    XMMATRIX worldView[2];
+
+    void SetConstants( _Inout_ int& dirtyFlags, _Inout_ XMMATRIX& leftWorldViewProjConstant, _Inout_ XMMATRIX& rightWorldViewProjConstant );
+  };
+
+
+  // Helper stores the current fog settings, and computes derived shader parameters.
+  struct StereoEffectFog
+  {
+    StereoEffectFog();
+
+    bool enabled;
+    float start;
+    float end;
+
+    void XM_CALLCONV SetConstants( _Inout_ int& dirtyFlags, _In_ FXMMATRIX leftWorldView, _In_ FXMMATRIX rightWorldView, _Inout_ XMVECTOR& leftFogVectorConstant, _Inout_ XMVECTOR& rightFogVectorConstant );
+  };
+
+  struct StereoEffectLights : public EffectColor
+  {
+    StereoEffectLights();
 
     static const int MaxDirectionalLights = IEffectLights::MaxDirectionalLights;
 
@@ -51,9 +78,11 @@ namespace DirectX
                               _Out_writes_all_( MaxDirectionalLights ) XMVECTOR* lightDiffuseConstant,
                               _Out_writes_all_( MaxDirectionalLights ) XMVECTOR* lightSpecularConstant );
     void SetConstants( _Inout_ int& dirtyFlags,
-                       _In_ EffectMatrices const& matrices,
+                       _In_ StereoEffectMatrices const& matrices,
                        _Inout_ XMMATRIX& worldConstant,
                        _Inout_updates_( 3 ) XMVECTOR worldInverseTransposeConstant[3],
+                       _Inout_ XMVECTOR& leftEyePositionConstant,
+                       _Inout_ XMVECTOR& rightEyePositionConstant,
                        _Inout_ XMVECTOR& diffuseColorConstant,
                        _Inout_ XMVECTOR& emissiveColorConstant,
                        bool lightingEnabled );
@@ -82,8 +111,8 @@ namespace DirectX
     // Fields.
     typename Traits::ConstantBufferType constants;
 
-    EffectMatrices matrices;
-    EffectFog fog;
+    StereoEffectMatrices matrices;
+    StereoEffectFog fog;
 
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> texture;
 
@@ -112,7 +141,7 @@ namespace DirectX
     static const ShaderBytecode PixelShaderBytecode[Traits::PixelShaderCount];
 
     static const int VertexShaderIndices[Traits::ShaderPermutationCount];
-    static const int GeometryShaderIndices[Traits::GeometryShaderCount];
+    static const int GeometryShaderIndices[Traits::ShaderPermutationCount];
     static const int PixelShaderIndices[Traits::ShaderPermutationCount];
 
   private:
@@ -183,6 +212,8 @@ namespace DirectX
         return EffectDeviceResources::GetDefaultTexture();
       }
 
+      bool GetSupportsVPRT() const { return m_supportsVPRT; }
+
     private:
       bool m_supportsVPRT = false;
       Microsoft::WRL::ComPtr<ID3D11VertexShader> mVPRTVertexShaders[Traits::VertexShaderCount];
@@ -230,11 +261,15 @@ namespace DirectX
   {
     // Set shaders.
     auto vertexShader = mDeviceResources->GetVertexShader( permutation );
-    auto geometryShader = mDeviceResources->GetGeometryShader( permutation );
-    auto pixelShader = mDeviceResources->GetPixelShader( permutation );
-
     deviceContext->VSSetShader( vertexShader, nullptr, 0 );
-    deviceContext->GSSetShader( geometryShader, nullptr, 0 );
+
+    if( !mDeviceResources->GetSupportsVPRT() )
+    {
+      auto geometryShader = mDeviceResources->GetGeometryShader( permutation );
+      deviceContext->GSSetShader( geometryShader, nullptr, 0 );
+    }
+
+    auto pixelShader = mDeviceResources->GetPixelShader( permutation );
     deviceContext->PSSetShader( pixelShader, nullptr, 0 );
 
     // Make sure the constant buffer is up to date.
@@ -249,7 +284,10 @@ namespace DirectX
     ID3D11Buffer* buffer = mConstantBuffer.GetBuffer();
 
     deviceContext->VSSetConstantBuffers( 0, 1, &buffer );
-    deviceContext->GSSetConstantBuffers( 0, 1, &buffer );
+    if ( !mDeviceResources->GetSupportsVPRT() )
+    {
+      deviceContext->GSSetConstantBuffers( 0, 1, &buffer );
+    }
     deviceContext->PSSetConstantBuffers( 0, 1, &buffer );
   }
 }

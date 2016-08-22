@@ -61,7 +61,7 @@
     <ClCompile>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\OpenIGTLink-bin;$(SolutionDir)..\OpenIGTLink\Source\igtlutil;$(SolutionDir)..\OpenIGTLink\Source;$(ProjectDir);$(IntermediateOutputPath);$(SolutionDir)DirectXTK\Src;$(SolutionDir)DirectXTK\Inc;$(SolutionDir)$(Configuration)\$(ProjectName);$(ProjectDir)Content\Systems;$(ProjectDir)Content\SpatialMapping;$(ProjectDir)Content\Network;$(ProjectDir)Content\Rendering;$(ProjectDir)Content\Input;$(ProjectDir)Content\Sound;$(ProjectDir)Content;$(ProjectDir)Common;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content\Data;$(SolutionDir)DirectXTex\DirectXTex</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\OpenIGTLink-bin;$(SolutionDir)..\OpenIGTLink\Source\igtlutil;$(SolutionDir)..\OpenIGTLink\Source;$(ProjectDir);$(IntermediateOutputPath);$(SolutionDir)DirectXTK\Src;$(SolutionDir)DirectXTK\Inc;$(SolutionDir)$(Configuration)\$(ProjectName);$(ProjectDir)Content\Systems;$(ProjectDir)Content\SpatialMapping;$(ProjectDir)Content\Network;$(ProjectDir)Content\Rendering\Shaders;$(ProjectDir)Content\Rendering\Shaders\Compiled;$(ProjectDir)Content\Rendering\DirectXTK;$(ProjectDir)Content\Rendering;$(ProjectDir)Content\Input;$(ProjectDir)Content\Sound;$(ProjectDir)Content;$(ProjectDir)Common;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content\Data;$(SolutionDir)DirectXTex\DirectXTex</AdditionalIncludeDirectories>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
@@ -76,7 +76,7 @@
     <ClCompile>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\OpenIGTLink-bin;$(SolutionDir)..\OpenIGTLink\Source\igtlutil;$(SolutionDir)..\OpenIGTLink\Source;$(ProjectDir);$(IntermediateOutputPath);$(SolutionDir)DirectXTK\Src;$(SolutionDir)DirectXTK\Inc;$(SolutionDir)$(Configuration)\$(ProjectName);$(ProjectDir)Content\Systems;$(ProjectDir)Content\SpatialMapping;$(ProjectDir)Content\Network;$(ProjectDir)Content\Rendering;$(ProjectDir)Content\Input;$(ProjectDir)Content\Sound;$(ProjectDir)Content;$(ProjectDir)Common;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content\Data;$(SolutionDir)DirectXTex\DirectXTex</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\OpenIGTLink-bin;$(SolutionDir)..\OpenIGTLink\Source\igtlutil;$(SolutionDir)..\OpenIGTLink\Source;$(ProjectDir);$(IntermediateOutputPath);$(SolutionDir)DirectXTK\Src;$(SolutionDir)DirectXTK\Inc;$(SolutionDir)$(Configuration)\$(ProjectName);$(ProjectDir)Content\Systems;$(ProjectDir)Content\SpatialMapping;$(ProjectDir)Content\Network;$(ProjectDir)Content\Rendering\Shaders;$(ProjectDir)Content\Rendering\Shaders\Compiled;$(ProjectDir)Content\Rendering\DirectXTK;$(ProjectDir)Content\Rendering;$(ProjectDir)Content\Input;$(ProjectDir)Content\Sound;$(ProjectDir)Content;$(ProjectDir)Common;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content\Data;$(SolutionDir)DirectXTex\DirectXTex</AdditionalIncludeDirectories>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
@@ -99,12 +99,12 @@
     <ClInclude Include="Content\Input\SpatialInputHandler.h" />
     <ClInclude Include="Content\Input\VoiceInputHandler.h" />
     <ClInclude Include="Content\Network\IGTLinkIF.h" />
+    <ClInclude Include="Content\Rendering\DirectXTK\InstancedEffects.h" />
+    <ClInclude Include="Content\Rendering\DirectXTK\InstancedEffectCommon.h" />
+    <ClInclude Include="Content\Rendering\DirectXTK\InstancedEffectFactory.h" />
     <ClInclude Include="Content\Rendering\DistanceFieldRenderer.h" />
-    <ClInclude Include="Content\Rendering\InstancedBasicEffect.h" />
     <ClInclude Include="Content\Rendering\ModelEntry.h" />
     <ClInclude Include="Content\Rendering\ModelRenderer.h" />
-    <ClInclude Include="Content\Rendering\InstancedEffectBase.h" />
-    <ClInclude Include="Content\Rendering\InstancedEffectFactory.h" />
     <ClInclude Include="Content\Rendering\NotificationRenderer.h" />
     <ClInclude Include="Content\Rendering\SliceEntry.h" />
     <ClInclude Include="Content\Rendering\SliceRenderer.h" />
@@ -131,12 +131,12 @@
     <ClCompile Include="Content\Input\SpatialInputHandler.cpp" />
     <ClCompile Include="Content\Input\VoiceInputHandler.cpp" />
     <ClCompile Include="Content\Network\IGTLinkIF.cpp" />
+    <ClCompile Include="Content\Rendering\DirectXTK\InstancedBasicEffect.cpp" />
+    <ClCompile Include="Content\Rendering\DirectXTK\InstancedEffectCommon.cpp" />
+    <ClCompile Include="Content\Rendering\DirectXTK\InstancedEffectFactory.cpp" />
     <ClCompile Include="Content\Rendering\DistanceFieldRenderer.cpp" />
-    <ClCompile Include="Content\Rendering\InstancedBasicEffect.cpp" />
     <ClCompile Include="Content\Rendering\ModelEntry.cpp" />
     <ClCompile Include="Content\Rendering\ModelRenderer.cpp" />
-    <ClCompile Include="Content\Rendering\InstancedEffectBase.cpp" />
-    <ClCompile Include="Content\Rendering\InstancedEffectFactory.cpp" />
     <ClCompile Include="Content\Rendering\NotificationRenderer.cpp" />
     <ClCompile Include="Content\Rendering\SliceEntry.cpp" />
     <ClCompile Include="Content\Rendering\SliceRenderer.cpp" />
@@ -165,29 +165,16 @@
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
     </None>
+    <None Include="Content\Rendering\Shaders\InstancedCommon.fxh" />
+    <None Include="Content\Rendering\Shaders\InstancedLighting.fxh" />
+    <None Include="Content\Rendering\Shaders\InstancedStructures.fxh" />
     <None Include="HoloIntervention_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Content\Rendering\Shaders\BasicLightingPixelShader.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+    <None Include="Content\Rendering\Shaders\InstancedBasicEffect.fx">
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)%(Filename).inc</HeaderFileOutput>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)%(Filename).inc</HeaderFileOutput>
-      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">BasicLightingPixelShader</VariableName>
-      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">BasicLightingPixelShader</VariableName>
-    </FxCompile>
-    <FxCompile Include="Content\Rendering\Shaders\BasicLightingVertexShader.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
-      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">BasicLightingVertexShader</VariableName>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)%(Filename).inc</HeaderFileOutput>
-      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">BasicLightingVertexShader</VariableName>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)%(Filename).inc</HeaderFileOutput>
-    </FxCompile>
+      <FileType>Document</FileType>
+    </None>
     <FxCompile Include="Content\Rendering\Shaders\DFRCreateDistanceFieldPixelShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
@@ -228,17 +215,55 @@
       <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)%(Filename).inc</HeaderFileOutput>
       <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)%(Filename).inc</HeaderFileOutput>
     </FxCompile>
+    <FxCompile Include="Content\Rendering\Shaders\PCCTIGeometryShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Geometry</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Geometry</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">PCCTIGeometryShader</VariableName>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)%(Filename).inc</HeaderFileOutput>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">PCCTIGeometryShader</VariableName>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)%(Filename).inc</HeaderFileOutput>
+    </FxCompile>
+    <FxCompile Include="Content\Rendering\Shaders\PCT0T1T2IGeometryShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Geometry</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Geometry</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">PCT0T1T2IGeometryShader</VariableName>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)%(Filename).inc</HeaderFileOutput>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">PCT0T1T2IGeometryShader</VariableName>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)%(Filename).inc</HeaderFileOutput>
+    </FxCompile>
+    <FxCompile Include="Content\Rendering\Shaders\PCT0T4IGeometryShader.hlsl">
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Geometry</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Geometry</ShaderType>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">PCT0T4IGeometryShader</VariableName>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)%(Filename).inc</HeaderFileOutput>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">PCT0T4IGeometryShader</VariableName>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)%(Filename).inc</HeaderFileOutput>
+    </FxCompile>
     <FxCompile Include="Content\Rendering\Shaders\PCTIGeometryShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Geometry</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Geometry</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)%(Filename).inc</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)%(Filename).inc</HeaderFileOutput>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">PCTIGeometryShader</VariableName>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">PCTIGeometryShader</VariableName>
     </FxCompile>
     <FxCompile Include="Content\Rendering\Shaders\PTIGeometryShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Geometry</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Geometry</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)%(Filename).inc</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)%(Filename).inc</HeaderFileOutput>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">PTIGeometryShader</VariableName>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">PTIGeometryShader</VariableName>
     </FxCompile>
     <FxCompile Include="Content\Rendering\Shaders\SlicePixelShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
@@ -258,29 +283,15 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
     </FxCompile>
-    <FxCompile Include="Content\Rendering\Shaders\VPRTBasicLightingVertexShader.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)%(Filename).inc</HeaderFileOutput>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)%(Filename).inc</HeaderFileOutput>
-      <AssemblerOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </AssemblerOutput>
-      <AssemblerOutputFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </AssemblerOutputFile>
-      <AssemblerOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </AssemblerOutput>
-      <AssemblerOutputFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </AssemblerOutputFile>
-      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">VPRTBasicLightingVertexShader</VariableName>
-      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">VPRTBasicLightingVertexShader</VariableName>
-    </FxCompile>
     <FxCompile Include="Content\Rendering\Shaders\PCIGeometryShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Geometry</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Geometry</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">PCIGeometryShader</VariableName>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">PCIGeometryShader</VariableName>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)%(Filename).inc</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)%(Filename).inc</HeaderFileOutput>
     </FxCompile>
     <FxCompile Include="Content\SpatialMapping\Shaders\CSRayTriangleIntersection.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Compute</ShaderType>

@@ -18,7 +18,6 @@ cbuffer ModelConstantBuffer : register(b0)
 // A constant buffer that stores each set of view and projection matrices in column-major format.
 cbuffer ViewProjectionConstantBuffer : register(b1)
 {
-    float4        eyePosition[2];
     float4x4      viewProjection[2];
 };
 
@@ -34,8 +33,8 @@ struct VertexShaderInput
 // Note that the render target array index is set here in the vertex shader.
 struct VertexShaderOutput
 {
-    min16float4   pos      : SV_POSITION;
     min16float2   texCoord : TEXCOORD1;
+    min16float4   pos      : SV_POSITION;
     uint          rtvId    : SV_RenderTargetArrayIndex; // SV_InstanceID % 2
 };
 

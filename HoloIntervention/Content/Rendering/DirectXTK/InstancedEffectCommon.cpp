@@ -22,12 +22,119 @@ OTHER DEALINGS IN THE SOFTWARE.
 ====================================================================*/
 
 #include "pch.h"
-#include "InstancedEffectBase.h"
+#include "InstancedEffectCommon.h"
+#include "InstancedEffects.h"
+
+using Microsoft::WRL::ComPtr;
 
 namespace DirectX
 {
+  // IEffectMatrices default method
+  void XM_CALLCONV IStereoEffectMatrices::SetMatrices( FXMMATRIX world, FXMMATRIX view[2], FXMMATRIX projection[2] )
+  {
+    SetWorld( world );
+    SetView( view );
+    SetProjection( projection );
+  }
+
+  // Constructor initializes default matrix values.
+  StereoEffectMatrices::StereoEffectMatrices()
+  {
+    world = XMMatrixIdentity();
+    view[0] = XMMatrixIdentity();
+    view[1] = XMMatrixIdentity();
+    projection[0] = XMMatrixIdentity();
+    projection[1] = XMMatrixIdentity();
+    worldView[0] = XMMatrixIdentity();
+    worldView[1] = XMMatrixIdentity();
+  }
+
+  // Lazily recomputes the combined world+view+projection matrix.
+  _Use_decl_annotations_ void StereoEffectMatrices::SetConstants( int& dirtyFlags,
+      XMMATRIX& leftWorldViewProjConstant,
+      XMMATRIX& rightWorldViewProjConstant )
+  {
+    if ( dirtyFlags & EffectDirtyFlags::WorldViewProj )
+    {
+      worldView[0] = XMMatrixMultiply( world, view[0] );
+      leftWorldViewProjConstant = XMMatrixTranspose( XMMatrixMultiply( worldView[0], projection[0] ) );
+
+      worldView[1] = XMMatrixMultiply( world, view[1] );
+      rightWorldViewProjConstant = XMMatrixTranspose( XMMatrixMultiply( worldView[1], projection[1] ) );
+
+      dirtyFlags &= ~EffectDirtyFlags::WorldViewProj;
+      dirtyFlags |= EffectDirtyFlags::ConstantBuffer;
+    }
+  }
+
+  // Constructor initializes default fog settings.
+  StereoEffectFog::StereoEffectFog()
+  {
+    enabled = false;
+    start = 0;
+    end = 1;
+  }
+
+  // Lazily recomputes the derived vector used by shader fog calculations.
+  _Use_decl_annotations_
+  void XM_CALLCONV StereoEffectFog::SetConstants( int& dirtyFlags,
+      FXMMATRIX leftWorldView,
+      FXMMATRIX rightWorldView,
+      XMVECTOR& leftFogVectorConstant,
+      XMVECTOR& rightFogVectorConstant )
+  {
+    if ( enabled )
+    {
+      if ( dirtyFlags & ( EffectDirtyFlags::FogVector | EffectDirtyFlags::FogEnable ) )
+      {
+        if ( start == end )
+        {
+          // Degenerate case: force everything to 100% fogged if start and end are the same.
+          static const XMVECTORF32 fullyFogged = { 0, 0, 0, 1 };
+
+          leftFogVectorConstant = fullyFogged;
+          rightFogVectorConstant = fullyFogged;
+        }
+        else
+        {
+          // We want to transform vertex positions into view space, take the resulting
+          // Z value, then scale and offset according to the fog start/end distances.
+          // Because we only care about the Z component, the shader can do all this
+          // with a single dot product, using only the Z row of the world+view matrix.
+
+          // 0, 0, 0, fogStart
+          XMVECTOR wOffset = XMVectorSwizzle<1, 2, 3, 0>( XMLoadFloat( &start ) );
+
+          // _13, _23, _33, _43
+          XMVECTOR worldViewZ = XMVectorMergeXY( XMVectorMergeZW( leftWorldView.r[0], leftWorldView.r[2] ),
+                                                 XMVectorMergeZW( leftWorldView.r[1], leftWorldView.r[3] ) );
+          leftFogVectorConstant = ( worldViewZ + wOffset ) / ( start - end );
+
+          worldViewZ = XMVectorMergeXY( XMVectorMergeZW( rightWorldView.r[0], rightWorldView.r[2] ),
+                                        XMVectorMergeZW( rightWorldView.r[1], rightWorldView.r[3] ) );
+          rightFogVectorConstant = ( worldViewZ + wOffset ) / ( start - end );
+        }
+
+        dirtyFlags &= ~( EffectDirtyFlags::FogVector | EffectDirtyFlags::FogEnable );
+        dirtyFlags |= EffectDirtyFlags::ConstantBuffer;
+      }
+    }
+    else
+    {
+      // When fog is disabled, make sure the fog vector is reset to zero.
+      if ( dirtyFlags & EffectDirtyFlags::FogEnable )
+      {
+        leftFogVectorConstant = g_XMZero;
+        rightFogVectorConstant = g_XMZero;
+
+        dirtyFlags &= ~EffectDirtyFlags::FogEnable;
+        dirtyFlags |= EffectDirtyFlags::ConstantBuffer;
+      }
+    }
+  }
+
   // Constructor initializes default light settings.
-  EffectStereoLights::EffectStereoLights()
+  StereoEffectLights::StereoEffectLights()
   {
     emissiveColor = g_XMZero;
     ambientLightColor = g_XMZero;
@@ -45,7 +152,7 @@ namespace DirectX
 #pragma prefast(disable:22103, "PREFAST doesn't understand buffer is bounded by a static const value even with SAL" )
 
   // Initializes constant buffer fields to match the current lighting state.
-  _Use_decl_annotations_ void EffectStereoLights::InitializeConstants( XMVECTOR& specularColorAndPowerConstant,
+  _Use_decl_annotations_ void StereoEffectLights::InitializeConstants( XMVECTOR& specularColorAndPowerConstant,
       XMVECTOR* lightDirectionConstant,
       XMVECTOR* lightDiffuseConstant,
       XMVECTOR* lightSpecularConstant )
@@ -66,12 +173,13 @@ namespace DirectX
 
 #pragma prefast(pop)
 
-
   // Lazily recomputes derived parameter values used by shader lighting calculations.
-  _Use_decl_annotations_ void EffectStereoLights::SetConstants( int& dirtyFlags,
-    EffectMatrices const& matrices,
+  _Use_decl_annotations_ void StereoEffectLights::SetConstants( int& dirtyFlags,
+      StereoEffectMatrices const& matrices,
       XMMATRIX& worldConstant,
       XMVECTOR worldInverseTransposeConstant[3],
+      XMVECTOR& leftEyePositionConstant,
+      XMVECTOR& rightEyePositionConstant,
       XMVECTOR& diffuseColorConstant,
       XMVECTOR& emissiveColorConstant,
       bool lightingEnabled )
@@ -90,6 +198,19 @@ namespace DirectX
         worldInverseTransposeConstant[2] = worldInverse.r[2];
 
         dirtyFlags &= ~EffectDirtyFlags::WorldInverseTranspose;
+        dirtyFlags |= EffectDirtyFlags::ConstantBuffer;
+      }
+
+      // Eye position vector.
+      if ( dirtyFlags & EffectDirtyFlags::EyePosition )
+      {
+        XMMATRIX viewInverse = XMMatrixInverse( nullptr, matrices.view[0] );
+        leftEyePositionConstant = viewInverse.r[3];
+
+        viewInverse = XMMatrixInverse( nullptr, matrices.view[1] );
+        rightEyePositionConstant = viewInverse.r[3];
+
+        dirtyFlags &= ~EffectDirtyFlags::EyePosition;
         dirtyFlags |= EffectDirtyFlags::ConstantBuffer;
       }
     }
@@ -143,12 +264,14 @@ namespace DirectX
 #pragma prefast(disable:26015, "PREFAST doesn't understand that ValidateLightIndex bounds whichLight" )
 
   // Helper for turning one of the directional lights on or off.
-  _Use_decl_annotations_ int EffectStereoLights::SetLightEnabled( int whichLight, bool value, XMVECTOR* lightDiffuseConstant, XMVECTOR* lightSpecularConstant )
+  _Use_decl_annotations_ int StereoEffectLights::SetLightEnabled( int whichLight, bool value, XMVECTOR* lightDiffuseConstant, XMVECTOR* lightSpecularConstant )
   {
     ValidateLightIndex( whichLight );
 
     if ( lightEnabled[whichLight] == value )
-    { return 0; }
+    {
+      return 0;
+    }
 
     lightEnabled[whichLight] = value;
 
@@ -170,7 +293,7 @@ namespace DirectX
 
   // Helper for setting diffuse color of one of the directional lights.
   _Use_decl_annotations_
-  int XM_CALLCONV EffectStereoLights::SetLightDiffuseColor( int whichLight, FXMVECTOR value, XMVECTOR* lightDiffuseConstant )
+  int XM_CALLCONV StereoEffectLights::SetLightDiffuseColor( int whichLight, FXMVECTOR value, XMVECTOR* lightDiffuseConstant )
   {
     ValidateLightIndex( whichLight );
 
@@ -190,7 +313,7 @@ namespace DirectX
 
   // Helper for setting specular color of one of the directional lights.
   _Use_decl_annotations_
-  int XM_CALLCONV EffectStereoLights::SetLightSpecularColor( int whichLight, FXMVECTOR value, XMVECTOR* lightSpecularConstant )
+  int XM_CALLCONV StereoEffectLights::SetLightSpecularColor( int whichLight, FXMVECTOR value, XMVECTOR* lightSpecularConstant )
   {
     ValidateLightIndex( whichLight );
 
@@ -211,7 +334,7 @@ namespace DirectX
 #pragma prefast(pop)
 
   // Parameter validation helper.
-  void EffectStereoLights::ValidateLightIndex( int whichLight )
+  void StereoEffectLights::ValidateLightIndex( int whichLight )
   {
     if ( whichLight < 0 || whichLight >= MaxDirectionalLights )
     {
@@ -220,7 +343,7 @@ namespace DirectX
   }
 
   // Activates the default lighting rig (key, fill, and back lights).
-  void EffectStereoLights::EnableDefaultLighting( _In_ IEffectLights* effect )
+  void StereoEffectLights::EnableDefaultLighting( _In_ IEffectLights* effect )
   {
     static const XMVECTORF32 defaultDirections[MaxDirectionalLights] =
     {

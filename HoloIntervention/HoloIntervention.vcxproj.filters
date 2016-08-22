@@ -53,15 +53,6 @@
     <ClCompile Include="Content\Rendering\TextRenderer.cpp">
       <Filter>Content\Rendering\NotificationRenderer</Filter>
     </ClCompile>
-    <ClCompile Include="Content\Rendering\InstancedBasicEffect.cpp">
-      <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
-    </ClCompile>
-    <ClCompile Include="Content\Rendering\InstancedEffectBase.cpp">
-      <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
-    </ClCompile>
-    <ClCompile Include="Content\Rendering\InstancedEffectFactory.cpp">
-      <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
-    </ClCompile>
     <ClCompile Include="Content\Rendering\ModelRenderer.cpp">
       <Filter>Content\Rendering\ModelRenderer</Filter>
     </ClCompile>
@@ -79,6 +70,15 @@
     </ClCompile>
     <ClCompile Include="Content\Systems\GazeSystem.cpp">
       <Filter>Content\Systems\Gaze</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Rendering\DirectXTK\InstancedEffectCommon.cpp">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Rendering\DirectXTK\InstancedEffectFactory.cpp">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Rendering\DirectXTK\InstancedBasicEffect.cpp">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -152,15 +152,6 @@
     <ClInclude Include="Content\Rendering\TextRenderer.h">
       <Filter>Content\Rendering\NotificationRenderer</Filter>
     </ClInclude>
-    <ClInclude Include="Content\Rendering\InstancedEffectFactory.h">
-      <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
-    </ClInclude>
-    <ClInclude Include="Content\Rendering\InstancedBasicEffect.h">
-      <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
-    </ClInclude>
-    <ClInclude Include="Content\Rendering\InstancedEffectBase.h">
-      <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
-    </ClInclude>
     <ClInclude Include="Content\Rendering\ModelRenderer.h">
       <Filter>Content\Rendering\ModelRenderer</Filter>
     </ClInclude>
@@ -178,6 +169,15 @@
     </ClInclude>
     <ClInclude Include="Content\Systems\GazeSystem.h">
       <Filter>Content\Systems\Gaze</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Rendering\DirectXTK\InstancedEffectFactory.h">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Rendering\DirectXTK\InstancedEffectCommon.h">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Rendering\DirectXTK\InstancedEffects.h">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -210,6 +210,18 @@
     <None Include="Assets\Models\gaze_cursor.cmo">
       <Filter>Assets</Filter>
     </None>
+    <None Include="Content\Rendering\Shaders\InstancedCommon.fxh">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\InstancedLighting.fxh">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\InstancedStructures.fxh">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\InstancedBasicEffect.fx">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Content">
@@ -223,9 +235,6 @@
     </Filter>
     <Filter Include="Content\Rendering">
       <UniqueIdentifier>{f3c8fff4-d384-41c3-88f8-5e2d69cb3d4a}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Content\Rendering\Shaders">
-      <UniqueIdentifier>{a66cb79e-3bd1-49ab-bb5e-5f90ae7059ae}</UniqueIdentifier>
     </Filter>
     <Filter Include="Content\Input">
       <UniqueIdentifier>{9132ee02-53bc-432a-ac22-75dcf34aa9b5}</UniqueIdentifier>
@@ -241,9 +250,6 @@
     </Filter>
     <Filter Include="Content\SpatialMapping\Shaders">
       <UniqueIdentifier>{cf251a3f-b817-4279-80f7-9f2bc80047d7}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Content\Rendering\Shaders\Passthrough Geometry">
-      <UniqueIdentifier>{e3f2040d-dfd3-418f-8209-0f02e7887cc0}</UniqueIdentifier>
     </Filter>
     <Filter Include="Content\Rendering\SliceRenderer">
       <UniqueIdentifier>{f53e7e45-1f03-4161-8e8e-99913c61a68b}</UniqueIdentifier>
@@ -284,19 +290,16 @@
     <Filter Include="Content\Systems\Gaze">
       <UniqueIdentifier>{df49c6cd-b9fe-4794-bb16-809c49a04ecc}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Content\Rendering\Geometry Shaders">
+      <UniqueIdentifier>{e3f2040d-dfd3-418f-8209-0f02e7887cc0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Rendering\ModelRenderer\DirectXTK\Shaders">
+      <UniqueIdentifier>{a66cb79e-3bd1-49ab-bb5e-5f90ae7059ae}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Content\SpatialMapping\Shaders\CSRayTriangleIntersection.hlsl">
       <Filter>Content\SpatialMapping\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Content\Rendering\Shaders\BasicLightingPixelShader.hlsl">
-      <Filter>Content\Rendering\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Content\Rendering\Shaders\BasicLightingVertexShader.hlsl">
-      <Filter>Content\Rendering\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Content\Rendering\Shaders\VPRTBasicLightingVertexShader.hlsl">
-      <Filter>Content\Rendering\Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Content\Rendering\Shaders\NotificationVPRTVertexShader.hlsl">
       <Filter>Content\Rendering\NotificationRenderer\Shaders\NotificationRenderer</Filter>
@@ -314,16 +317,16 @@
       <Filter>Content\Rendering\NotificationRenderer\Shaders\DistanceFieldRenderer</Filter>
     </FxCompile>
     <FxCompile Include="Content\Rendering\Shaders\PCTIGeometryShader.hlsl">
-      <Filter>Content\Rendering\Shaders\Passthrough Geometry</Filter>
+      <Filter>Content\Rendering\Geometry Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Content\Rendering\Shaders\PCCIGeometryShader.hlsl">
-      <Filter>Content\Rendering\Shaders\Passthrough Geometry</Filter>
+      <Filter>Content\Rendering\Geometry Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Content\Rendering\Shaders\PCIGeometryShader.hlsl">
-      <Filter>Content\Rendering\Shaders\Passthrough Geometry</Filter>
+      <Filter>Content\Rendering\Geometry Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Content\Rendering\Shaders\PTIGeometryShader.hlsl">
-      <Filter>Content\Rendering\Shaders\Passthrough Geometry</Filter>
+      <Filter>Content\Rendering\Geometry Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Content\Rendering\Shaders\SlicePixelShader.hlsl">
       <Filter>Content\Rendering\SliceRenderer\Shaders</Filter>
@@ -333,6 +336,15 @@
     </FxCompile>
     <FxCompile Include="Content\Rendering\Shaders\SliceVPRTVertexShader.hlsl">
       <Filter>Content\Rendering\SliceRenderer\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Rendering\Shaders\PCCTIGeometryShader.hlsl">
+      <Filter>Content\Rendering\Geometry Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Rendering\Shaders\PCT0T4IGeometryShader.hlsl">
+      <Filter>Content\Rendering\Geometry Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Rendering\Shaders\PCT0T1T2IGeometryShader.hlsl">
+      <Filter>Content\Rendering\Geometry Shaders</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>

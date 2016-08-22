@@ -27,6 +27,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // DirectXTK includes
 #include <DirectXHelper.h>
+#include <InstancedEffects.h>
 
 // Windows includes
 #include <ppltasks.h>
@@ -62,20 +63,20 @@ namespace HoloIntervention
         _splitpath_s( asset.c_str(), drive, dir, name, ext );
 
         std::string dirStr( dir );
-        std::replace(dirStr.begin(), dirStr.end(), '/', '\\');
+        std::replace( dirStr.begin(), dirStr.end(), '/', '\\' );
         std::wstring wdir( dirStr.begin(), dirStr.end() );
-        Concurrency::create_task( folder->GetFolderAsync( ref new Platform::String( wdir.c_str() ) ) ).then( [this, name = name, ext = ext]( concurrency::task<StorageFolder ^> previousTask )
+        Concurrency::create_task( folder->GetFolderAsync( ref new Platform::String( wdir.c_str() ) ) ).then( [this, name = name, ext = ext]( concurrency::task<StorageFolder^> previousTask )
         {
           StorageFolder^ folder;
           try
           {
             folder = previousTask.get();
           }
-          catch (Platform::InvalidArgumentException^ e)
+          catch ( Platform::InvalidArgumentException^ e )
           {
             return;
           }
-          catch (const std::exception&)
+          catch ( const std::exception& )
           {
             return;
           }
@@ -101,13 +102,15 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ModelEntry::Update( const DX::StepTimer& timer )
+    void ModelEntry::Update( const DX::StepTimer& timer, const DX::ViewProjection& vp )
     {
       if ( !m_enableModel )
       {
         // No need to update, cursor is not drawn
         return;
       }
+
+      m_viewProjection = vp;
     }
 
     //----------------------------------------------------------------------------
@@ -144,9 +147,9 @@ namespace HoloIntervention
       }
 
       // Clean up after rendering
-      m_deviceResources->GetD3DDeviceContext()->OMSetBlendState(nullptr, nullptr, 0xffffffff);
-      m_deviceResources->GetD3DDeviceContext()->OMSetDepthStencilState(nullptr, 0);
-      m_deviceResources->GetD3DDeviceContext()->RSSetState(nullptr);
+      m_deviceResources->GetD3DDeviceContext()->OMSetBlendState( nullptr, nullptr, 0xffffffff );
+      m_deviceResources->GetD3DDeviceContext()->OMSetDepthStencilState( nullptr, 0 );
+      m_deviceResources->GetD3DDeviceContext()->RSSetState( nullptr );
     }
 
     //----------------------------------------------------------------------------
@@ -156,7 +159,7 @@ namespace HoloIntervention
       m_effectFactory = std::make_unique<DirectX::InstancedEffectFactory>( m_deviceResources->GetD3DDevice() );
       try
       {
-        m_model = std::shared_ptr<DirectX::Model>( std::move( Model::CreateFromCMO( m_deviceResources->GetD3DDevice(), m_assetLocation.c_str(), *m_effectFactory ) ) );
+        m_model = std::shared_ptr<DirectX::Model>( std::move( DirectX::Model::CreateFromCMO( m_deviceResources->GetD3DDevice(), m_assetLocation.c_str(), *m_effectFactory ) ) );
       }
       catch ( const std::exception& e )
       {
@@ -222,11 +225,15 @@ namespace HoloIntervention
           continue;
         }
 
-        auto imatrices = dynamic_cast<IEffectMatrices*>( part->effect.get() );
+        auto imatrices = dynamic_cast<DirectX::IStereoEffectMatrices*>( part->effect.get() );
         if ( imatrices )
         {
-          // TODO : determine how to set world matrix
-          imatrices->SetMatrices( SimpleMath::Matrix::Identity, SimpleMath::Matrix::Identity, SimpleMath::Matrix::Identity );
+          // TODO : store view/proj from system and pass to this function
+          DirectX::XMMATRIX view[2] = { DirectX::XMLoadFloat4x4( &m_viewProjection.view[0] ), DirectX::XMLoadFloat4x4( &m_viewProjection.view[1] ) };
+          DirectX::XMMATRIX proj[2] = { DirectX::XMLoadFloat4x4( &m_viewProjection.projection[0] ), DirectX::XMLoadFloat4x4( &m_viewProjection.projection[1] ) };
+
+          DirectX::XMMATRIX world = XMLoadFloat4x4( &DirectX::SimpleMath::Matrix::Identity );
+          imatrices->SetMatrices( world, view, proj );
         }
 
         DrawMeshPart( *part );

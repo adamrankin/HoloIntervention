@@ -231,6 +231,21 @@ namespace HoloIntervention
 
     SpatialCoordinateSystem^ currentCoordinateSystem = m_attachedReferenceFrame->GetStationaryCoordinateSystemAtTimestamp( prediction->Timestamp );
 
+    DX::ViewProjection vp;
+    m_deviceResources->UseHolographicCameraResources<bool>(
+      [this, holographicFrame, prediction, currentCoordinateSystem, &vp]( std::map<UINT32, std::unique_ptr<DX::CameraResources>>& cameraResourceMap )
+    {
+      for ( auto cameraPose : prediction->CameraPoses )
+      {
+        // This represents the device-based resources for a HolographicCamera.
+        DX::CameraResources* pCameraResources = cameraResourceMap[cameraPose->HolographicCamera->Id].get();
+
+        auto result = pCameraResources->UpdateViewProjectionBuffer( m_deviceResources, cameraPose, currentCoordinateSystem, vp );
+      }
+
+      return true;
+    } );
+
     // Time-based updates
     m_timer.Tick( [&]()
     {
@@ -240,6 +255,7 @@ namespace HoloIntervention
       m_spatialSystem->Update( m_timer, currentCoordinateSystem );
       m_sliceRenderer->Update( pose, m_timer );
       m_notificationSystem->Update( pose, m_timer );
+      m_modelRenderer->Update(m_timer, vp);
 
       if ( m_igtLinkIF->IsConnected() )
       {
@@ -351,7 +367,7 @@ namespace HoloIntervention
 
     // Lock the set of holographic camera resources, then draw to each camera in this frame.
     return m_deviceResources->UseHolographicCameraResources<bool>(
-             [this, holographicFrame]( std::map<UINT32, std::unique_ptr<DX::CameraResources>>& cameraResourceMap )
+             [this, holographicFrame]( std::map<UINT32, std::unique_ptr<DX::CameraResources>>& cameraResourceMap ) -> bool
     {
       // Up-to-date frame predictions enhance the effectiveness of image stabilization and
       // allow more accurate positioning of holograms.
@@ -359,7 +375,7 @@ namespace HoloIntervention
       HolographicFramePrediction^ prediction = holographicFrame->CurrentPrediction;
 
       SpatialCoordinateSystem^ currentCoordinateSystem =
-        m_attachedReferenceFrame->GetStationaryCoordinateSystemAtTimestamp( prediction->Timestamp );
+      m_attachedReferenceFrame->GetStationaryCoordinateSystemAtTimestamp( prediction->Timestamp );
 
       bool atLeastOneCameraRendered = false;
       for ( auto cameraPose : prediction->CameraPoses )
@@ -379,11 +395,12 @@ namespace HoloIntervention
         context->ClearRenderTargetView( targets[0], DirectX::Colors::Transparent );
         context->ClearDepthStencilView( depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0 );
 
-        pCameraResources->UpdateViewProjectionBuffer( m_deviceResources, cameraPose, currentCoordinateSystem );
+        DX::ViewProjection throwAway;
+        pCameraResources->UpdateViewProjectionBuffer( m_deviceResources, cameraPose, currentCoordinateSystem, throwAway );
         bool activeCamera = pCameraResources->AttachViewProjectionBuffer( m_deviceResources );
 
         // Only render world-locked content when positional tracking is active.
-        if (m_notificationSystem->IsShowingNotification())
+        if ( m_notificationSystem->IsShowingNotification() )
         {
           m_notificationSystem->GetRenderer()->Render();
         }

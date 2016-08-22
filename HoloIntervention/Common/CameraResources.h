@@ -7,8 +7,13 @@ namespace DX
   // Constant buffer used to send the view-projection matrices to the shader pipeline.
   struct ViewProjectionConstantBuffer
   {
-    DirectX::XMFLOAT4     eyePosition[2];
     DirectX::XMFLOAT4X4   viewProjection[2];
+  };
+
+  struct ViewProjection
+  {
+    DirectX::XMFLOAT4X4   view[2];
+    DirectX::XMFLOAT4X4   projection[2];
   };
 
   // Assert that the constant buffer remains 16-byte aligned (best practice).
@@ -26,9 +31,10 @@ namespace DX
 
     void ReleaseResourcesForBackBuffer( DX::DeviceResources* pDeviceResources );
 
-    void UpdateViewProjectionBuffer( std::shared_ptr<DX::DeviceResources> deviceResources,
+    bool UpdateViewProjectionBuffer( std::shared_ptr<DX::DeviceResources> deviceResources,
                                      Windows::Graphics::Holographic::HolographicCameraPose^ cameraPose,
-                                     Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem );
+                                     Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem,
+                                     ViewProjection& vp );
 
     bool AttachViewProjectionBuffer( std::shared_ptr<DX::DeviceResources> deviceResources );
 

@@ -47,12 +47,12 @@ namespace HoloIntervention
       void CreateDeviceDependentResources();
       void ReleaseDeviceDependentResources();
 
-      void Update( const DX::StepTimer& timer );
+      void Update( const DX::StepTimer& timer, const DX::ViewProjection& vp );
       void Render();
 
       uint32 AddModel( const std::wstring& assetLocation );
       void RemoveModel( uint32 modelId );
-      std::shared_ptr<ModelEntry> GetModel(uint32 modelId) const;
+      std::shared_ptr<ModelEntry> GetModel( uint32 modelId ) const;
 
     protected:
       bool FindModel( uint32 modelId, std::shared_ptr<ModelEntry>& modelEntry ) const;

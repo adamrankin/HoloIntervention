@@ -55,11 +55,11 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ModelRenderer::Update( const DX::StepTimer& timer )
+    void ModelRenderer::Update( const DX::StepTimer& timer, const DX::ViewProjection& vp )
     {
       for ( auto model : m_models )
       {
-        model->Update( timer );
+        model->Update( timer, vp );
       }
     }
 

@@ -18,7 +18,6 @@ cbuffer ModelConstantBuffer : register(b0)
 // A constant buffer that stores each set of view and projection matrices in column-major format.
 cbuffer ViewProjectionConstantBuffer : register(b1)
 {
-    float4        eyePosition[2];
     float4x4      viewProjection[2];
 };
 
@@ -34,9 +33,9 @@ struct VertexShaderInput
 // Note that the render target array index will be set by the geometry shader using the value of viewId.
 struct VertexShaderOutput
 {
-    min16float4   pos      : SV_POSITION;
     min16float2   texCoord : TEXCOORD1;
-    uint          viewId   : TEXCOORD0;  // SV_InstanceID % 2
+    min16float4   pos      : SV_POSITION;
+    uint          viewId   : TEXCOORD5;  // SV_InstanceID % 2
 };
 
 // Simple shader to do vertex processing on the GPU.
