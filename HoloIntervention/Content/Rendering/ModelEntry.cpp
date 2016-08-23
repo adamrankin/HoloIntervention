@@ -48,6 +48,7 @@ namespace HoloIntervention
     ModelEntry::ModelEntry( const std::shared_ptr<DX::DeviceResources>& deviceResources, const std::wstring& assetLocation )
       : m_deviceResources( deviceResources )
       , m_assetLocation( assetLocation )
+      , m_worldMatrix( 1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f )
     {
       // Validate asset location
       Platform::String^ mainFolderLocation = Windows::ApplicationModel::Package::Current->InstalledLocation->Path;
@@ -62,10 +63,12 @@ namespace HoloIntervention
         char ext[32];
         _splitpath_s( asset.c_str(), drive, dir, name, ext );
 
+		std::string nameStr(name);
+		std::string extStr(ext);
         std::string dirStr( dir );
         std::replace( dirStr.begin(), dirStr.end(), '/', '\\' );
         std::wstring wdir( dirStr.begin(), dirStr.end() );
-        Concurrency::create_task( folder->GetFolderAsync( ref new Platform::String( wdir.c_str() ) ) ).then( [this, name = name, ext = ext]( concurrency::task<StorageFolder^> previousTask )
+        Concurrency::create_task( folder->GetFolderAsync( ref new Platform::String( wdir.c_str() ) ) ).then( [this, nameStr, extStr]( concurrency::task<StorageFolder^> previousTask )
         {
           StorageFolder^ folder;
           try
@@ -80,8 +83,8 @@ namespace HoloIntervention
           {
             return;
           }
-          std::string filename( name );
-          filename.append( ext );
+          std::string filename( nameStr );
+          filename.append( extStr );
           std::wstring wFilename( filename.begin(), filename.end() );
 
           Concurrency::create_task( folder->GetFileAsync( ref new Platform::String( wFilename.c_str() ) ) ).then( [ this ]( StorageFile ^ file )
@@ -198,6 +201,12 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    void ModelEntry::SetWorld( const float4x4& world )
+    {
+      m_worldMatrix = world;
+    }
+
+    //----------------------------------------------------------------------------
     uint32 ModelEntry::GetId() const
     {
       return m_id;
@@ -228,12 +237,10 @@ namespace HoloIntervention
         auto imatrices = dynamic_cast<DirectX::IStereoEffectMatrices*>( part->effect.get() );
         if ( imatrices )
         {
-          // TODO : store view/proj from system and pass to this function
           DirectX::XMMATRIX view[2] = { DirectX::XMLoadFloat4x4( &m_viewProjection.view[0] ), DirectX::XMLoadFloat4x4( &m_viewProjection.view[1] ) };
           DirectX::XMMATRIX proj[2] = { DirectX::XMLoadFloat4x4( &m_viewProjection.projection[0] ), DirectX::XMLoadFloat4x4( &m_viewProjection.projection[1] ) };
 
-          DirectX::XMMATRIX world = XMLoadFloat4x4( &DirectX::SimpleMath::Matrix::Identity );
-          imatrices->SetMatrices( world, view, proj );
+          imatrices->SetMatrices( DirectX::XMLoadFloat4x4( &m_worldMatrix ), view, proj );
         }
 
         DrawMeshPart( *part );
@@ -253,8 +260,6 @@ namespace HoloIntervention
 
       assert( part.effect != nullptr );
       part.effect->Apply( m_deviceResources->GetD3DDeviceContext() );
-
-      // TODO : set any state before doing any rendering
 
       m_deviceResources->GetD3DDeviceContext()->IASetPrimitiveTopology( part.primitiveType );
 

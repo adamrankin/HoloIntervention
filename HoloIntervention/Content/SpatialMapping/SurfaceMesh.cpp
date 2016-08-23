@@ -132,53 +132,53 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void SurfaceMesh::CreateDeviceDependentResources()
     {
-        if ( m_surfaceMesh == nullptr )
+      if ( m_surfaceMesh == nullptr )
+      {
+        m_isActive = false;
+        return;
+      }
+
+      {
+        std::lock_guard<std::mutex> lock( m_meshResourcesMutex );
+        m_indexCount = m_surfaceMesh->TriangleIndices->ElementCount;
+
+        if ( m_indexCount < 3 )
         {
           m_isActive = false;
           return;
         }
+      }
 
-        {
-          std::lock_guard<std::mutex> lock( m_meshResourcesMutex );
-          m_indexCount = m_surfaceMesh->TriangleIndices->ElementCount;
+      std::lock_guard<std::mutex> lock( m_meshResourcesMutex );
 
-          if ( m_indexCount < 3 )
-          {
-            m_isActive = false;
-            return;
-          }
-        }
+      SpatialSurfaceMeshBuffer^ positions = m_surfaceMesh->VertexPositions;
+      SpatialSurfaceMeshBuffer^ indices = m_surfaceMesh->TriangleIndices;
 
-        std::lock_guard<std::mutex> lock( m_meshResourcesMutex );
-
-        SpatialSurfaceMeshBuffer^ positions = m_surfaceMesh->VertexPositions;
-        SpatialSurfaceMeshBuffer^ indices = m_surfaceMesh->TriangleIndices;
-
-        DX::ThrowIfFailed( CreateStructuredBuffer( sizeof( VertexBufferType ), positions, m_vertexPositionBuffer.GetAddressOf() ) );
-        DX::ThrowIfFailed( CreateStructuredBuffer( sizeof( IndexBufferType ), indices, m_indexBuffer.GetAddressOf() ) );
-        DX::ThrowIfFailed( CreateStructuredBuffer( sizeof( OutputBufferType ), 1, m_outputBuffer.GetAddressOf() ) );
-        DX::ThrowIfFailed( CreateReadbackBuffer( sizeof( OutputBufferType ), 1 ) );
+      DX::ThrowIfFailed( CreateStructuredBuffer( sizeof( VertexBufferType ), positions, m_vertexPositionBuffer.GetAddressOf() ) );
+      DX::ThrowIfFailed( CreateStructuredBuffer( sizeof( IndexBufferType ), indices, m_indexBuffer.GetAddressOf() ) );
+      DX::ThrowIfFailed( CreateStructuredBuffer( sizeof( OutputBufferType ), 1, m_outputBuffer.GetAddressOf() ) );
+      DX::ThrowIfFailed( CreateReadbackBuffer( sizeof( OutputBufferType ), 1 ) );
 
 #if defined(_DEBUG) || defined(PROFILE)
-        m_vertexPositionBuffer->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "MeshBuffer" ) - 1, "MeshBuffer" );
-        m_indexBuffer->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "IndexBuffer" ) - 1, "IndexBuffer" );
-        m_outputBuffer->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "OutputBuffer" ) - 1, "OutputBuffer" );
-        m_readBackBuffer->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "ReadbackBuffer" ) - 1, "ReadbackBuffer" );
+      m_vertexPositionBuffer->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "MeshBuffer" ) - 1, "MeshBuffer" );
+      m_indexBuffer->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "IndexBuffer" ) - 1, "IndexBuffer" );
+      m_outputBuffer->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "OutputBuffer" ) - 1, "OutputBuffer" );
+      m_readBackBuffer->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "ReadbackBuffer" ) - 1, "ReadbackBuffer" );
 #endif
 
-        DX::ThrowIfFailed( CreateBufferSRV( m_vertexPositionBuffer, positions, m_meshSRV.GetAddressOf() ) );
-        DX::ThrowIfFailed( CreateBufferSRV( m_indexBuffer, indices, m_indexSRV.GetAddressOf() ) );
-        DX::ThrowIfFailed( CreateBufferUAV( m_outputBuffer, m_outputUAV.GetAddressOf() ) );
+      DX::ThrowIfFailed( CreateBufferSRV( m_vertexPositionBuffer, positions, m_meshSRV.GetAddressOf() ) );
+      DX::ThrowIfFailed( CreateBufferSRV( m_indexBuffer, indices, m_indexSRV.GetAddressOf() ) );
+      DX::ThrowIfFailed( CreateBufferUAV( m_outputBuffer, m_outputUAV.GetAddressOf() ) );
 
 #if defined(_DEBUG) || defined(PROFILE)
-        m_meshSRV->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "Mesh SRV" ) - 1, "Mesh SRV" );
-        m_indexSRV->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "Index SRV" ) - 1, "Index SRV" );
-        m_outputUAV->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "Output UAV" ) - 1, "Output UAV" );
+      m_meshSRV->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "Mesh SRV" ) - 1, "Mesh SRV" );
+      m_indexSRV->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "Index SRV" ) - 1, "Index SRV" );
+      m_outputUAV->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "Output UAV" ) - 1, "Output UAV" );
 #endif
 
-        m_lastUpdateTime = m_surfaceMesh->SurfaceInfo->UpdateTime;
+      m_lastUpdateTime = m_surfaceMesh->SurfaceInfo->UpdateTime;
 
-        m_loadingComplete = true;
+      m_loadingComplete = true;
     }
 
     //----------------------------------------------------------------------------
@@ -200,6 +200,7 @@ namespace HoloIntervention
     bool SurfaceMesh::TestRayIntersection( ID3D11Device& device,
                                            ID3D11DeviceContext& context,
                                            ID3D11ComputeShader& computeShader,
+                                           SpatialCoordinateSystem^ desiredCoordinateSystem,
                                            uint64_t frameNumber,
                                            float3& outHitPosition,
                                            float3& outHitNormal )
@@ -217,8 +218,12 @@ namespace HoloIntervention
           return m_hasLastComputedHit;
         }
 
-        // TODO : implement pre-check using OBB
-        //m_surfaceMesh->SurfaceInfo->TryGetBounds()
+        // Pre-check using OBB
+        Platform::IBox<SpatialBoundingOrientedBox>^ bounds = m_surfaceMesh->SurfaceInfo->TryGetBounds( desiredCoordinateSystem );
+        if ( !TestRayOBBIntersection( frameNumber, bounds->Value.Center, bounds->Value.Extents, bounds->Value.Orientation ) )
+        {
+          return false;
+        }
 
         ID3D11ShaderResourceView* aRViews[2] = { m_meshSRV.Get(), m_indexSRV.Get() };
         // Send in the number of triangles as the number of thread groups to dispatch
@@ -281,16 +286,17 @@ namespace HoloIntervention
                                        const float3 rayOrigin,
                                        const float3 rayDirection )
     {
-      ConstantBuffer cb;
-      cb.rayOrigin[0] = rayOrigin.x;
-      cb.rayOrigin[1] = rayOrigin.y;
-      cb.rayOrigin[2] = rayOrigin.z;
-      cb.rayDirection[0] = rayDirection.x;
-      cb.rayDirection[1] = rayDirection.y;
-      cb.rayDirection[2] = rayDirection.z;
-      cb.meshToWorld = m_meshToWorldTransform;
+      m_constantBuffer.rayOrigin[0] = rayOrigin.x;
+      m_constantBuffer.rayOrigin[1] = rayOrigin.y;
+      m_constantBuffer.rayOrigin[2] = rayOrigin.z;
+      m_constantBuffer.rayOrigin[3] = 1.f;
+      m_constantBuffer.rayDirection[0] = rayDirection.x;
+      m_constantBuffer.rayDirection[1] = rayDirection.y;
+      m_constantBuffer.rayDirection[2] = rayDirection.z;
+      m_constantBuffer.rayDirection[3] = 1.f;
+      m_constantBuffer.meshToWorld = m_meshToWorldTransform;
 
-      context.UpdateSubresource( constantBuffer, 0, nullptr, &cb, 0, 0 );
+      context.UpdateSubresource( constantBuffer, 0, nullptr, &m_constantBuffer, 0, 0 );
       context.CSSetConstantBuffers( 0, 1, &constantBuffer );
     }
 
@@ -406,6 +412,55 @@ namespace HoloIntervention
 
       ID3D11Buffer* ppCBnullptr[1] = { nullptr };
       context.CSSetConstantBuffers( 0, 1, ppCBnullptr );
+    }
+
+    //----------------------------------------------------------------------------
+    bool SurfaceMesh::TestRayOBBIntersection( uint64_t frameNumber,
+        const float3& center,
+        const float3& extents,
+        const quaternion& orientation )
+    {
+      if ( m_lastFrameNumberComputed != 0 && frameNumber < m_lastFrameNumberComputed + NUMBER_OF_FRAMES_BEFORE_RECOMPUTE )
+      {
+        // Asked twice in the same frame, return the cached result
+        return m_hasLastComputedHit;
+      }
+
+      // rotate ray by inverse quaternion to work in AABB coordinate system
+      quaternion revOrientation = inverse( orientation );
+      float3 aabbPos = transform( float3( m_constantBuffer.rayOrigin[0], m_constantBuffer.rayOrigin[1], m_constantBuffer.rayOrigin[2] ), revOrientation );
+      float3 aabbDir = transform( float3( m_constantBuffer.rayDirection[0], m_constantBuffer.rayDirection[1], m_constantBuffer.rayDirection[2] ), revOrientation );
+      float3 invDir( 1.f / aabbDir.x, 1.f / aabbDir.y, 1.f / aabbDir.z );
+
+      // Algorithm implementation derived from
+      // https://tavianator.com/cgit/dimension.git/tree/libdimension/bvh/bvh.c
+      // thanks to Tavian Barnes <tavianator@tavianator.com>
+      float xMin = center.x - extents.x;
+      float xMax = center.x + extents.x;
+      float yMin = center.y - extents.y;
+      float yMax = center.y + extents.y;
+      float zMin = center.z - extents.z;
+      float zMax = center.z + extents.z;
+
+      float tx1 = ( xMin - aabbPos.x )*invDir.x;
+      float tx2 = ( xMax - aabbPos.x )*invDir.x;
+
+      float tmin = min( tx1, tx2 );
+      float tmax = max( tx1, tx2 );
+
+      float ty1 = ( yMin - aabbPos.y )*invDir.y;
+      float ty2 = ( yMax - aabbPos.y )*invDir.y;
+
+      tmin = max( tmin, min( ty1, ty2 ) );
+      tmax = min( tmax, max( ty1, ty2 ) );
+
+      float tz1 = ( zMin - aabbPos.z )*invDir.z;
+      float tz2 = ( zMax - aabbPos.z )*invDir.z;
+
+      tmin = max( tmin, min( tz1, tz2 ) );
+      tmax = min( tmax, max( tz1, tz2 ) );
+
+      return tmax >= tmin;
     }
   }
 }

@@ -4,7 +4,7 @@
   <mp:PhoneIdentity PhoneProductId="e904b051-d187-4d6e-b682-3327d31e6571" PhonePublisherId="00000000-0000-0000-0000-000000000000" />
   <Properties>
     <DisplayName>HoloIntervention</DisplayName>
-    <PublisherDisplayName>arankin</PublisherDisplayName>
+    <PublisherDisplayName>Adam Rankin</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
   <Dependencies>
@@ -24,6 +24,7 @@
   </Applications>
   <Capabilities>
     <Capability Name="internetClient" />
+    <Capability Name="privateNetworkClientServer" />
     <uap2:Capability Name="spatialPerception" />
     <DeviceCapability Name="microphone" />
   </Capabilities>

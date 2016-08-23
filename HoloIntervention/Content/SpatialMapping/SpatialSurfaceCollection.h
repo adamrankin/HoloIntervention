@@ -62,6 +62,7 @@ namespace HoloIntervention
       void ClearSurfaces();
 
       bool TestRayIntersection( uint64_t frameNumber,
+                                SpatialCoordinateSystem^ desiredCoordinateSystem,
                                 const float3 rayOrigin,
                                 const float3 rayDirection,
                                 float3& outHitPosition,

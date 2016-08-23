@@ -253,7 +253,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool SpatialSurfaceCollection::TestRayIntersection( uint64_t frameNumber, const float3 rayOrigin, const float3 rayDirection, float3& outHitPosition, float3& outHitNormal )
+    bool SpatialSurfaceCollection::TestRayIntersection( uint64_t frameNumber, SpatialCoordinateSystem^ desiredCoordinateSystem, const float3 rayOrigin, const float3 rayDirection, float3& outHitPosition, float3& outHitNormal )
     {
       if ( !m_resourcesLoaded )
       {
@@ -272,7 +272,7 @@ namespace HoloIntervention
       {
         pair.second->SetRayConstants( *m_deviceResources->GetD3DDeviceContext(), m_constantBuffer.Get(), rayOrigin, rayDirection );
 
-        if ( pair.second->TestRayIntersection( *m_deviceResources->GetD3DDevice(), *m_deviceResources->GetD3DDeviceContext(), *m_d3d11ComputeShader.Get(), frameNumber, outHitPosition, outHitNormal ) )
+        if ( pair.second->TestRayIntersection( *m_deviceResources->GetD3DDevice(), *m_deviceResources->GetD3DDeviceContext(), *m_d3d11ComputeShader.Get(), desiredCoordinateSystem, frameNumber, outHitPosition, outHitNormal ) )
         {
           result = true;
           break;

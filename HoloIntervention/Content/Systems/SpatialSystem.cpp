@@ -133,9 +133,9 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool SpatialSystem::TestRayIntersection(const float3 rayOrigin, const float3 rayDirection, float3& outHitPosition, float3& outHitNormal)
+    bool SpatialSystem::TestRayIntersection(SpatialCoordinateSystem^ desiredCoordinateSystem, const float3 rayOrigin, const float3 rayDirection, float3& outHitPosition, float3& outHitNormal)
     {
-      return m_surfaceCollection->TestRayIntersection(m_FrameNumber, rayOrigin, rayDirection, outHitPosition, outHitNormal);
+      return m_surfaceCollection->TestRayIntersection(m_FrameNumber, desiredCoordinateSystem, rayOrigin, rayDirection, outHitPosition, outHitNormal);
     }
 
     //----------------------------------------------------------------------------

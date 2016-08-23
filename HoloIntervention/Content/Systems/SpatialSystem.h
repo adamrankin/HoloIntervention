@@ -51,7 +51,8 @@ namespace HoloIntervention
       void UpdateSurfaceObserverPosition( SpatialCoordinateSystem^ coordinateSystem );
 
       // Perform a ray cast to determine if the ray hits any stored mesh
-      bool TestRayIntersection( const float3 rayOrigin,
+      bool TestRayIntersection( SpatialCoordinateSystem^ desiredCoordinateSystem,
+                                const float3 rayOrigin,
                                 const float3 rayDirection,
                                 float3& outHitPosition,
                                 float3& outHitNormal );

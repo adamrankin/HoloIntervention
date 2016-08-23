@@ -109,7 +109,7 @@ namespace HoloIntervention
     m_gazeSystem = std::make_unique<Gaze::GazeSystem>();
 
     // TODO : remove temp code
-    m_igtLinkIF->SetHostname( L"172.16.80.1" );
+    m_igtLinkIF->SetHostname( L"192.168.2.25" );
 
     InitializeAudioAssetsAsync();
     InitializeVoiceSystem();
@@ -255,7 +255,7 @@ namespace HoloIntervention
       m_spatialSystem->Update( m_timer, currentCoordinateSystem );
       m_sliceRenderer->Update( pose, m_timer );
       m_notificationSystem->Update( pose, m_timer );
-      m_modelRenderer->Update(m_timer, vp);
+      m_modelRenderer->Update( m_timer, vp );
 
       if ( m_igtLinkIF->IsConnected() )
       {
@@ -278,7 +278,7 @@ namespace HoloIntervention
 
         float3 outHitPosition;
         float3 outHitNormal;
-        bool hit = m_spatialSystem->TestRayIntersection( position, direction, outHitPosition, outHitNormal );
+        bool hit = m_spatialSystem->TestRayIntersection( currentCoordinateSystem, position, direction, outHitPosition, outHitNormal );
 
         if ( hit )
         {
@@ -547,14 +547,14 @@ namespace HoloIntervention
   {
     Input::VoiceInputCallbackMap callbacks;
 
-    callbacks[L"show"] = [this]()
+    callbacks[L"show cursor"] = [this]()
     {
       m_cursorSound->StartOnce();
       m_gazeSystem->EnableCursor( true );
       m_notificationSystem->QueueMessage( L"Cursor on." );
     };
 
-    callbacks[L"hide"] = [this]()
+    callbacks[L"hide cursor"] = [this]()
     {
       m_cursorSound->StartOnce();
       m_gazeSystem->EnableCursor( false );
@@ -585,17 +585,17 @@ namespace HoloIntervention
       m_igtLinkIF->Disconnect();
     };
 
-    callbacks[L"zoom in"] = [this]()
+    callbacks[L"lock slice"] = [this]()
     {
       m_cursorSound->StartOnce();
-      m_notificationSystem->QueueMessage( L"Zooming in." );
+      m_notificationSystem->QueueMessage( L"Slice is now head-locked." );
       m_sliceRenderer->SetSliceHeadlocked( m_sliceToken, true );
     };
 
-    callbacks[L"zoom out"] = [this]()
+    callbacks[L"unlock slice"] = [this]()
     {
       m_cursorSound->StartOnce();
-      m_notificationSystem->QueueMessage( L"Zooming out." );
+      m_notificationSystem->QueueMessage( L"Slice is now in world-space." );
       m_sliceRenderer->SetSliceHeadlocked( m_sliceToken, false );
     };
     m_voiceInputHandler->RegisterCallbacks( callbacks );

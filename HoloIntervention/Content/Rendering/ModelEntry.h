@@ -49,7 +49,7 @@ namespace HoloIntervention
       ModelEntry( const std::shared_ptr<DX::DeviceResources>& deviceResources, const std::wstring& assetLocation );
       ~ModelEntry();
 
-      void Update( const DX::StepTimer& timer, const DX::ViewProjection& evp );
+      void Update( const DX::StepTimer& timer, const DX::ViewProjection& vp );
       void Render();
 
       // D3D device related controls
@@ -60,6 +60,9 @@ namespace HoloIntervention
       void EnableModel( bool enable );
       void ToggleEnabled();
       bool IsModelEnabled() const;
+
+      // Model pose control
+      void SetWorld(const float4x4& world);
 
       // Accessors
       uint32 GetId() const;
@@ -80,9 +83,8 @@ namespace HoloIntervention
       std::wstring                                        m_assetLocation;
 
       // Cached eye view projection to pass to IEffect system
-      DX::ViewProjection                               m_viewProjection;
-
-      // TODO : add geometry shader support
+      DX::ViewProjection                                  m_viewProjection;
+      float4x4                                            m_worldMatrix;
 
       // Model related behavior
       bool                                                m_enableModel = false;

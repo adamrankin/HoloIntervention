@@ -44,6 +44,8 @@ namespace HoloIntervention
       , m_modelToken( 0 )
     {
       m_modelToken = HoloIntervention::instance()->GetModelRenderer().AddModel( GAZE_CURSOR_ASSET_LOCATION );
+      m_modelEntry = HoloIntervention::instance()->GetModelRenderer().GetModel( m_modelToken );
+	  //m_modelEntry->EnableModel(false);
     }
 
     //----------------------------------------------------------------------------
@@ -56,6 +58,15 @@ namespace HoloIntervention
     {
       m_lastHitNormal = hitNormal;
       m_lastHitPosition = hitPosition;
+
+      // Infinite number of vectors that cross to give the normal vector, so choose arbitrary y-up vector to create a coordinate system
+      float3 yUp( 0.f, 1.f, 0.f );
+      float3 jVec = normalize( hitNormal );
+
+      float3 iVec = cross( hitNormal, yUp );
+      iVec = normalize( iVec );
+
+      m_modelEntry->SetWorld( make_float4x4_world( hitPosition, jVec, iVec ) );
     }
 
     //----------------------------------------------------------------------------
