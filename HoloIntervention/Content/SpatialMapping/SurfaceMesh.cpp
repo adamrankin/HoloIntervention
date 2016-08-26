@@ -83,16 +83,10 @@ namespace HoloIntervention
       XMMATRIX transform;
       if ( m_isActive )
       {
-        // The transform is updated relative to a SpatialCoordinateSystem. In the SurfaceMesh class, we
-        // expect to be given the same SpatialCoordinateSystem that will be used to generate view
-        // matrices, because this class uses the surface mesh for rendering.
-        // Other applications could potentially involve using a SpatialCoordinateSystem from a stationary
-        // reference frame that is being used for physics simulation, etc.
         auto tryTransform = m_surfaceMesh->CoordinateSystem->TryGetTransformTo( baseCoordinateSystem );
         if ( tryTransform != nullptr )
         {
-          // If the transform can be acquired, this spatial mesh is valid right now and
-          // we have the information we need to draw it this frame.
+          // If the transform can be acquired, this spatial mesh is valid right now
           transform = XMLoadFloat4x4( &tryTransform->Value );
           m_lastActiveTime = static_cast<float>( timer.GetTotalSeconds() );
         }
@@ -106,9 +100,6 @@ namespace HoloIntervention
 
       if ( !m_isActive )
       {
-        // If for any reason the surface mesh is not active this frame - whether because
-        // it was not included in the observer's collection, or because its transform was
-        // not located - we don't have the information we need to update it.
         return;
       }
 
@@ -132,24 +123,20 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void SurfaceMesh::CreateDeviceDependentResources()
     {
+      std::lock_guard<std::mutex> lock( m_meshResourcesMutex );
       if ( m_surfaceMesh == nullptr )
       {
         m_isActive = false;
         return;
       }
 
+      m_indexCount = m_surfaceMesh->TriangleIndices->ElementCount;
+
+      if ( m_indexCount < 3 )
       {
-        std::lock_guard<std::mutex> lock( m_meshResourcesMutex );
-        m_indexCount = m_surfaceMesh->TriangleIndices->ElementCount;
-
-        if ( m_indexCount < 3 )
-        {
-          m_isActive = false;
-          return;
-        }
+        m_isActive = false;
+        return;
       }
-
-      std::lock_guard<std::mutex> lock( m_meshResourcesMutex );
 
       SpatialSurfaceMeshBuffer^ positions = m_surfaceMesh->VertexPositions;
       SpatialSurfaceMeshBuffer^ indices = m_surfaceMesh->TriangleIndices;
@@ -158,6 +145,7 @@ namespace HoloIntervention
       DX::ThrowIfFailed( CreateStructuredBuffer( sizeof( IndexBufferType ), indices, m_indexBuffer.GetAddressOf() ) );
       DX::ThrowIfFailed( CreateStructuredBuffer( sizeof( OutputBufferType ), 1, m_outputBuffer.GetAddressOf() ) );
       DX::ThrowIfFailed( CreateReadbackBuffer( sizeof( OutputBufferType ), 1 ) );
+      DX::ThrowIfFailed( CreateConstantBuffer() );
 
 #if defined(_DEBUG) || defined(PROFILE)
       m_vertexPositionBuffer->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "MeshBuffer" ) - 1, "MeshBuffer" );
@@ -184,6 +172,8 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void SurfaceMesh::ReleaseDeviceDependentResources()
     {
+      std::lock_guard<std::mutex> lock( m_meshResourcesMutex );
+
       // Clear out active resources.
       m_meshSRV.Reset();
       m_indexSRV.Reset();
@@ -192,46 +182,46 @@ namespace HoloIntervention
       m_indexBuffer.Reset();
       m_outputBuffer.Reset();
       m_readBackBuffer.Reset();
+      m_meshConstantBuffer.Reset();
 
       m_loadingComplete = false;
     }
 
     //----------------------------------------------------------------------------
-    bool SurfaceMesh::TestRayIntersection( ID3D11Device& device,
-                                           ID3D11DeviceContext& context,
-                                           ID3D11ComputeShader& computeShader,
-                                           SpatialCoordinateSystem^ desiredCoordinateSystem,
+    bool SurfaceMesh::TestRayIntersection( ID3D11DeviceContext& context,
                                            uint64_t frameNumber,
                                            float3& outHitPosition,
                                            float3& outHitNormal )
     {
+      std::lock_guard<std::mutex> lock( m_meshResourcesMutex );
+
+      if ( !m_loadingComplete )
       {
-        std::lock_guard<std::mutex> lock( m_meshResourcesMutex );
-        outHitPosition = float3::zero();
-        outHitNormal = float3::zero();
-
-        if ( m_lastFrameNumberComputed != 0 && frameNumber < m_lastFrameNumberComputed + NUMBER_OF_FRAMES_BEFORE_RECOMPUTE )
-        {
-          // Asked twice in the same frame, return the cached result
-          outHitPosition = m_rayIntersectionResultPosition;
-          outHitNormal = m_rayIntersectionResultNormal;
-          return m_hasLastComputedHit;
-        }
-
-        // Pre-check using OBB
-        Platform::IBox<SpatialBoundingOrientedBox>^ bounds = m_surfaceMesh->SurfaceInfo->TryGetBounds( desiredCoordinateSystem );
-        if ( !TestRayOBBIntersection( frameNumber, bounds->Value.Center, bounds->Value.Extents, bounds->Value.Orientation ) )
-        {
-          return false;
-        }
-
-        ID3D11ShaderResourceView* aRViews[2] = { m_meshSRV.Get(), m_indexSRV.Get() };
-        // Send in the number of triangles as the number of thread groups to dispatch
-        // triangleCount = m_indexCount/3
-        RunComputeShader( context, computeShader, 2, aRViews, m_outputUAV.Get(), m_indexCount / 3, 1, 1 );
-
-        context.CopyResource( m_readBackBuffer.Get(), m_outputBuffer.Get() );
+        return false;
       }
+
+      WorldConstantBuffer buffer;
+      XMStoreFloat4x4(&buffer.meshToWorld, XMMatrixTranspose(XMLoadFloat4x4(&m_meshToWorldTransform)));;
+      context.UpdateSubresource( m_meshConstantBuffer.Get(), 0, nullptr, &buffer, 0, 0 );
+      context.CSSetConstantBuffers( 0, 1, m_meshConstantBuffer.GetAddressOf() );
+
+      outHitPosition = float3::zero();
+      outHitNormal = float3::zero();
+
+      if ( m_lastFrameNumberComputed != 0 && frameNumber < m_lastFrameNumberComputed + NUMBER_OF_FRAMES_BEFORE_RECOMPUTE )
+      {
+        // Asked twice in the same frame, return the cached result
+        outHitPosition = m_rayIntersectionResultPosition;
+        outHitNormal = m_rayIntersectionResultNormal;
+        return m_hasLastComputedHit;
+      }
+
+      ID3D11ShaderResourceView* aRViews[2] = { m_meshSRV.Get(), m_indexSRV.Get() };
+      // Send in the number of triangles as the number of thread groups to dispatch
+      // triangleCount = m_indexCount/3
+      RunComputeShader( context, 2, aRViews, m_outputUAV.Get(), m_indexCount / 3, 1, 1 );
+
+      context.CopyResource( m_readBackBuffer.Get(), m_outputBuffer.Get() );
 
       D3D11_MAPPED_SUBRESOURCE MappedResource;
       OutputBufferType* result;
@@ -242,11 +232,11 @@ namespace HoloIntervention
       context.Unmap( m_readBackBuffer.Get(), 0 );
 
       m_lastFrameNumberComputed = frameNumber;
-      outHitPosition = m_rayIntersectionResultPosition = float3( result->intersectionPoint[0], result->intersectionPoint[1], result->intersectionPoint[2] );
-      outHitNormal = m_rayIntersectionResultNormal = float3( result->intersectionNormal[0], result->intersectionNormal[1], result->intersectionNormal[2] );
+      outHitPosition = m_rayIntersectionResultPosition = float3( result->intersectionPoint.x, result->intersectionPoint.y, result->intersectionPoint.z );
+      outHitNormal = m_rayIntersectionResultNormal = float3( result->intersectionNormal.x, result->intersectionNormal.y, result->intersectionNormal.z );
 
-      if ( result->intersectionPoint[0] != 0.0f || result->intersectionPoint[1] != 0.0f || result->intersectionPoint[2] != 0.0f ||
-           result->intersectionNormal[0] != 0.0f || result->intersectionNormal[1] != 0.0f || result->intersectionNormal[2] != 0.0f )
+      if ( result->intersectionPoint.x != 0.0f || result->intersectionPoint.y != 0.0f || result->intersectionPoint.z != 0.0f ||
+           result->intersectionNormal.x != 0.0f || result->intersectionNormal.y != 0.0f || result->intersectionNormal.z != 0.0f )
       {
         m_hasLastComputedHit = true;
         return true;
@@ -278,26 +268,6 @@ namespace HoloIntervention
     void SurfaceMesh::SetIsActive( const bool& isActive )
     {
       m_isActive = isActive;
-    }
-
-    //----------------------------------------------------------------------------
-    void SurfaceMesh::SetRayConstants( ID3D11DeviceContext& context,
-                                       ID3D11Buffer* constantBuffer,
-                                       const float3 rayOrigin,
-                                       const float3 rayDirection )
-    {
-      m_constantBuffer.rayOrigin[0] = rayOrigin.x;
-      m_constantBuffer.rayOrigin[1] = rayOrigin.y;
-      m_constantBuffer.rayOrigin[2] = rayOrigin.z;
-      m_constantBuffer.rayOrigin[3] = 1.f;
-      m_constantBuffer.rayDirection[0] = rayDirection.x;
-      m_constantBuffer.rayDirection[1] = rayDirection.y;
-      m_constantBuffer.rayDirection[2] = rayDirection.z;
-      m_constantBuffer.rayDirection[3] = 1.f;
-      m_constantBuffer.meshToWorld = m_meshToWorldTransform;
-
-      context.UpdateSubresource( constantBuffer, 0, nullptr, &m_constantBuffer, 0, 0 );
-      context.CSSetConstantBuffers( 0, 1, &constantBuffer );
     }
 
     //----------------------------------------------------------------------------
@@ -385,16 +355,45 @@ namespace HoloIntervention
       return m_deviceResources->GetD3DDevice()->CreateUnorderedAccessView( computeShaderBuffer.Get(), &desc, ppUAVOut );
     }
 
+    //----------------------------------------------------------------------------
+    HRESULT SurfaceMesh::CreateConstantBuffer()
+    {
+      // Create the Const Buffer
+      D3D11_BUFFER_DESC constant_buffer_desc;
+      ZeroMemory( &constant_buffer_desc, sizeof( constant_buffer_desc ) );
+      constant_buffer_desc.ByteWidth = sizeof( WorldConstantBuffer );
+      constant_buffer_desc.Usage = D3D11_USAGE_DEFAULT;
+      constant_buffer_desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+      constant_buffer_desc.CPUAccessFlags = 0;
+
+      auto hr = m_deviceResources->GetD3DDevice()->CreateBuffer( &constant_buffer_desc, nullptr, &m_meshConstantBuffer );
+      if ( FAILED( hr ) )
+      {
+        return hr;
+      }
+
+#if defined(_DEBUG) || defined(PROFILE)
+      m_meshConstantBuffer->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "RayConstantBuffer" ) - 1, "RayConstantBuffer" );
+#endif
+
+      return hr;
+    }
+
     //--------------------------------------------------------------------------------------
     void SurfaceMesh::RunComputeShader( ID3D11DeviceContext& context,
-                                        ID3D11ComputeShader& computeShader,
                                         uint32 nNumViews, ID3D11ShaderResourceView** pShaderResourceViews,
                                         ID3D11UnorderedAccessView* pUnorderedAccessView,
                                         uint32 xThreadGroups,
                                         uint32 yThreadGroups,
                                         uint32 zThreadGroups )
     {
+      if ( !m_loadingComplete )
+      {
+        return;
+      }
       OutputBufferType output;
+      output.intersectionPoint = XMFLOAT4( 0.f, 0.f, 0.f, 0.f );
+      output.intersectionNormal = XMFLOAT4( 0.f, 0.f, 0.f, 0.f );
       context.UpdateSubresource( m_outputBuffer.Get(), 0, nullptr, &output, 0, 0 );
 
       // Set the shaders resources
@@ -402,7 +401,7 @@ namespace HoloIntervention
       context.CSSetUnorderedAccessViews( 0, 1, &pUnorderedAccessView, nullptr );
 
       // The total number of thread groups creates is x*y*z, the number of threads in a thread group is determined by numthreads(i,j,k) in the shader code
-      //context.Dispatch( xThreadGroups, yThreadGroups, zThreadGroups );
+      context.Dispatch( xThreadGroups, yThreadGroups, zThreadGroups );
 
       ID3D11UnorderedAccessView* ppUAViewnullptr[1] = { nullptr };
       context.CSSetUnorderedAccessViews( 0, 1, ppUAViewnullptr, nullptr );
@@ -415,10 +414,10 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool SurfaceMesh::TestRayOBBIntersection( uint64_t frameNumber,
-        const float3& center,
-        const float3& extents,
-        const quaternion& orientation )
+    bool SurfaceMesh::TestRayOBBIntersection( SpatialCoordinateSystem^ desiredCoordinateSystem,
+        uint64_t frameNumber,
+        const float3& rayOrigin,
+        const float3& rayDirection )
     {
       if ( m_lastFrameNumberComputed != 0 && frameNumber < m_lastFrameNumberComputed + NUMBER_OF_FRAMES_BEFORE_RECOMPUTE )
       {
@@ -426,41 +425,57 @@ namespace HoloIntervention
         return m_hasLastComputedHit;
       }
 
-      // rotate ray by inverse quaternion to work in AABB coordinate system
-      quaternion revOrientation = inverse( orientation );
-      float3 aabbPos = transform( float3( m_constantBuffer.rayOrigin[0], m_constantBuffer.rayOrigin[1], m_constantBuffer.rayOrigin[2] ), revOrientation );
-      float3 aabbDir = transform( float3( m_constantBuffer.rayDirection[0], m_constantBuffer.rayDirection[1], m_constantBuffer.rayDirection[2] ), revOrientation );
-      float3 invDir( 1.f / aabbDir.x, 1.f / aabbDir.y, 1.f / aabbDir.z );
+      if ( m_surfaceMesh->SurfaceInfo == nullptr )
+      {
+        // Can't tell, so have to run the compute shader to verify
+        return true;
+      }
+      else
+      {
+        Platform::IBox<SpatialBoundingOrientedBox>^ bounds = m_surfaceMesh->SurfaceInfo->TryGetBounds( desiredCoordinateSystem );
 
-      // Algorithm implementation derived from
-      // https://tavianator.com/cgit/dimension.git/tree/libdimension/bvh/bvh.c
-      // thanks to Tavian Barnes <tavianator@tavianator.com>
-      float xMin = center.x - extents.x;
-      float xMax = center.x + extents.x;
-      float yMin = center.y - extents.y;
-      float yMax = center.y + extents.y;
-      float zMin = center.z - extents.z;
-      float zMax = center.z + extents.z;
+        if (bounds == nullptr)
+        {
+          // Can't tell, so have to run the compute shader to verify
+          return true;
+        }
 
-      float tx1 = ( xMin - aabbPos.x )*invDir.x;
-      float tx2 = ( xMax - aabbPos.x )*invDir.x;
+        // rotate ray by inverse quaternion to work in AABB coordinate system
+        quaternion revOrientation = inverse( bounds->Value.Orientation );
+        float3 aabbPos = transform( rayOrigin, revOrientation );
+        float3 aabbDir = transform( rayDirection, revOrientation );
+        float3 invDir( 1.f / aabbDir.x, 1.f / aabbDir.y, 1.f / aabbDir.z );
 
-      float tmin = min( tx1, tx2 );
-      float tmax = max( tx1, tx2 );
+        // Algorithm implementation derived from
+        // https://tavianator.com/cgit/dimension.git/tree/libdimension/bvh/bvh.c
+        // thanks to Tavian Barnes <tavianator@tavianator.com>
+        float xMin = bounds->Value.Center.x - bounds->Value.Extents.x;
+        float xMax = bounds->Value.Center.x + bounds->Value.Extents.x;
+        float yMin = bounds->Value.Center.y - bounds->Value.Extents.y;
+        float yMax = bounds->Value.Center.y + bounds->Value.Extents.y;
+        float zMin = bounds->Value.Center.z - bounds->Value.Extents.z;
+        float zMax = bounds->Value.Center.z + bounds->Value.Extents.z;
 
-      float ty1 = ( yMin - aabbPos.y )*invDir.y;
-      float ty2 = ( yMax - aabbPos.y )*invDir.y;
+        float tx1 = ( xMin - aabbPos.x )*invDir.x;
+        float tx2 = ( xMax - aabbPos.x )*invDir.x;
 
-      tmin = max( tmin, min( ty1, ty2 ) );
-      tmax = min( tmax, max( ty1, ty2 ) );
+        float tmin = min( tx1, tx2 );
+        float tmax = max( tx1, tx2 );
 
-      float tz1 = ( zMin - aabbPos.z )*invDir.z;
-      float tz2 = ( zMax - aabbPos.z )*invDir.z;
+        float ty1 = ( yMin - aabbPos.y )*invDir.y;
+        float ty2 = ( yMax - aabbPos.y )*invDir.y;
 
-      tmin = max( tmin, min( tz1, tz2 ) );
-      tmax = min( tmax, max( tz1, tz2 ) );
+        tmin = max( tmin, min( ty1, ty2 ) );
+        tmax = min( tmax, max( ty1, ty2 ) );
 
-      return tmax >= tmin;
+        float tz1 = ( zMin - aabbPos.z )*invDir.z;
+        float tz2 = ( zMax - aabbPos.z )*invDir.z;
+
+        tmin = max( tmin, min( tz1, tz2 ) );
+        tmax = min( tmax, max( tz1, tz2 ) );
+
+        return tmax >= tmin;
+      }
     }
   }
 }

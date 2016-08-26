@@ -80,6 +80,9 @@
     <ClCompile Include="Content\Rendering\DirectXTK\InstancedBasicEffect.cpp">
       <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
     </ClCompile>
+    <ClCompile Include="Content\Common.cpp">
+      <Filter>Content\Common</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="HoloInterventionMain.h" />
@@ -123,9 +126,6 @@
       <Filter>Content\SpatialMapping</Filter>
     </ClInclude>
     <ClInclude Include="Content\SpatialMapping\SpatialSurfaceCollection.h">
-      <Filter>Content\SpatialMapping</Filter>
-    </ClInclude>
-    <ClInclude Include="Content\SpatialMapping\GetDataFromIBuffer.h">
       <Filter>Content\SpatialMapping</Filter>
     </ClInclude>
     <ClInclude Include="Content\SpatialMapping\SpatialShaderStructures.h">
@@ -179,36 +179,39 @@
     <ClInclude Include="Content\Rendering\DirectXTK\InstancedEffects.h">
       <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
     </ClInclude>
+    <ClInclude Include="Content\GetDataFromIBuffer.h">
+      <Filter>Content\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Common.h">
+      <Filter>Content\Common</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\LockScreenLogo.scale-200.png">
-      <Filter>Assets</Filter>
+      <Filter>Assets\Images</Filter>
     </Image>
     <Image Include="Assets\SplashScreen.scale-200.png">
-      <Filter>Assets</Filter>
+      <Filter>Assets\Images</Filter>
     </Image>
     <Image Include="Assets\Square44x44Logo.scale-200.png">
-      <Filter>Assets</Filter>
+      <Filter>Assets\Images</Filter>
     </Image>
     <Image Include="Assets\Square44x44Logo.targetsize-24_altform-unplated.png">
-      <Filter>Assets</Filter>
+      <Filter>Assets\Images</Filter>
     </Image>
     <Image Include="Assets\Square150x150Logo.scale-200.png">
-      <Filter>Assets</Filter>
+      <Filter>Assets\Images</Filter>
     </Image>
     <Image Include="Assets\StoreLogo.png">
-      <Filter>Assets</Filter>
+      <Filter>Assets\Images</Filter>
     </Image>
     <Image Include="Assets\Wide310x150Logo.scale-200.png">
-      <Filter>Assets</Filter>
+      <Filter>Assets\Images</Filter>
     </Image>
   </ItemGroup>
   <ItemGroup>
     <None Include="HoloIntervention_TemporaryKey.pfx">
       <Filter>Infrastructure</Filter>
-    </None>
-    <None Include="Assets\Models\gaze_cursor.cmo">
-      <Filter>Assets</Filter>
     </None>
     <None Include="Content\Rendering\Shaders\InstancedCommon.fxh">
       <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders</Filter>
@@ -221,6 +224,9 @@
     </None>
     <None Include="Content\Rendering\Shaders\InstancedBasicEffect.fx">
       <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders</Filter>
+    </None>
+    <None Include="Assets\Models\gaze_cursor.cmo">
+      <Filter>Assets\Models</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -296,6 +302,18 @@
     <Filter Include="Content\Rendering\ModelRenderer\DirectXTK\Shaders">
       <UniqueIdentifier>{a66cb79e-3bd1-49ab-bb5e-5f90ae7059ae}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Content\Common">
+      <UniqueIdentifier>{c516e1ea-164e-4c5a-ba7a-9cce161ca5c4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Assets\Images">
+      <UniqueIdentifier>{2eb48ab8-d115-48b7-8958-d224d0c2ff93}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Assets\Models">
+      <UniqueIdentifier>{9efc69aa-5b05-4bf7-8741-15ca48e01774}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Assets\Sounds">
+      <UniqueIdentifier>{745c530a-8dbc-4c10-8d4e-7f19b1fd8759}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Content\SpatialMapping\Shaders\CSRayTriangleIntersection.hlsl">
@@ -353,14 +371,14 @@
     </AppxManifest>
   </ItemGroup>
   <ItemGroup>
-    <Media Include="Assets\Sounds\cursor_toggle.wav">
-      <Filter>Assets</Filter>
-    </Media>
     <Media Include="Assets\Sounds\input_ok.mp3">
-      <Filter>Assets</Filter>
+      <Filter>Assets\Sounds</Filter>
+    </Media>
+    <Media Include="Assets\Sounds\cursor_toggle.wav">
+      <Filter>Assets\Sounds</Filter>
     </Media>
     <Media Include="Assets\Sounds\input_fail.mp3">
-      <Filter>Assets</Filter>
+      <Filter>Assets\Sounds</Filter>
     </Media>
   </ItemGroup>
 </Project>

@@ -56,15 +56,12 @@ namespace HoloIntervention
       void CreateDeviceDependentResources();
       void ReleaseDeviceDependentResources();
 
-      bool TestRayOBBIntersection( uint64_t frameNumber,
-                                   const float3& center,
-                                   const float3& extents,
-                                   const quaternion& orientation );
+      bool TestRayOBBIntersection( SpatialCoordinateSystem^ desiredCoordinateSystem,
+                                   uint64_t frameNumber,
+                                   const float3& rayOrigin,
+                                   const float3& rayDirection );
 
-      bool TestRayIntersection( ID3D11Device& device,
-                                ID3D11DeviceContext& context,
-                                ID3D11ComputeShader& computeShader,
-                                SpatialCoordinateSystem^ desiredCoordinateSystem,
+      bool TestRayIntersection( ID3D11DeviceContext& context,
                                 uint64_t frameNumber,
                                 float3& outHitPosition,
                                 float3& outHitNormal );
@@ -74,11 +71,6 @@ namespace HoloIntervention
       const Windows::Foundation::DateTime& GetLastUpdateTime() const;
 
       void SetIsActive( const bool& isActive );
-
-      void SetRayConstants( ID3D11DeviceContext& context,
-                            ID3D11Buffer* constantBuffer,
-                            const float3 rayOrigin,
-                            const float3 rayDirection );
 
     protected:
       void UpdateDeviceBasedResources();
@@ -101,8 +93,9 @@ namespace HoloIntervention
       HRESULT CreateBufferUAV( ComPtr<ID3D11Buffer> computeShaderBuffer,
                                ID3D11UnorderedAccessView** ppUAVOut );
 
+      HRESULT CreateConstantBuffer();
+
       void RunComputeShader( ID3D11DeviceContext& context,
-                             ID3D11ComputeShader& computeShader,
                              uint32 nNumViews, ID3D11ShaderResourceView** pShaderResourceViews,
                              ID3D11UnorderedAccessView* pUnorderedAccessView,
                              uint32 Xthreads, uint32 Ythreads, uint32 Zthreads );
@@ -110,9 +103,6 @@ namespace HoloIntervention
     protected:
       // Cache a pointer to the d3d device resources
       std::shared_ptr<DX::DeviceResources>  m_deviceResources;
-
-      // Cached values of the last requested ray intersection
-      ConstantBuffer            m_constantBuffer;
 
       // The mesh owned by this object
       SpatialSurfaceMesh^                   m_surfaceMesh = nullptr;
@@ -122,6 +112,7 @@ namespace HoloIntervention
       ComPtr<ID3D11Buffer>                  m_indexBuffer = nullptr;
       ComPtr<ID3D11Buffer>                  m_outputBuffer = nullptr;
       ComPtr<ID3D11Buffer>                  m_readBackBuffer = nullptr;
+      ComPtr<ID3D11Buffer>                  m_meshConstantBuffer = nullptr;
 
       ComPtr<ID3D11ShaderResourceView>      m_meshSRV = nullptr;
       ComPtr<ID3D11ShaderResourceView>      m_indexSRV = nullptr;
@@ -135,7 +126,7 @@ namespace HoloIntervention
       bool                                  m_isActive = false;
       float                                 m_lastActiveTime = -1.f;
 
-      // Number of indicies in the mesh data
+      // Number of indices in the mesh data
       uint32                                m_indexCount = 0;
 
       // Ray-triangle intersection related behavior variables

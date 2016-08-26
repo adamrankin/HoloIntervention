@@ -33,14 +33,39 @@ using namespace SimpleMath;
 using namespace Windows::Foundation::Numerics;
 using namespace Windows::UI::Input::Spatial;
 
+namespace
+{
+  // Function taken from https://github.com/mrdooz/kumi/blob/master/animation_manager.cpp
+  SimpleMath::Matrix MatrixCompose( const XMFLOAT3& pos, const XMFLOAT4& rot, const XMFLOAT3& scale, bool transpose )
+  {
+    XMFLOAT3 zero = { 0,0,0 };
+    XMFLOAT4 id = { 0,0,0,1 };
+    XMVECTOR vZero = XMLoadFloat3( &zero );
+    XMVECTOR qId = XMLoadFloat4( &id );
+    XMVECTOR qRot = XMLoadFloat4( &rot );
+    XMVECTOR vPos = XMLoadFloat3( &pos );
+    XMVECTOR vScale = XMLoadFloat3( &scale );
+
+    XMMATRIX mtx = XMMatrixTransformation( vZero, qId, vScale, vZero, qRot, vPos );
+    if ( transpose )
+    {
+      mtx = XMMatrixTranspose( mtx );
+    }
+    SimpleMath::Matrix res;
+    XMStoreFloat4x4( &res, mtx );
+
+    return res;
+  }
+}
+
 namespace HoloIntervention
 {
   namespace Rendering
   {
-    const float3 SliceEntry::LOCKED_SLICE_SCREEN_OFFSET = { 0.12f, 0.1f, 0.f };
-    const float SliceEntry::LOCKED_SLICE_DISTANCE_OFFSET = 2.f;
+    const float3 SliceEntry::LOCKED_SLICE_SCREEN_OFFSET = { 0.12f, 0.f, 0.f };
+    const float SliceEntry::LOCKED_SLICE_DISTANCE_OFFSET = 2.1f;
     const float SliceEntry::LOCKED_SLICE_SCALE_FACTOR = 10.f;
-    const float SliceEntry::LERP_RATE = 2.0f;
+    const float SliceEntry::LERP_RATE = 2.5f;
 
     //----------------------------------------------------------------------------
     SliceEntry::SliceEntry( const std::shared_ptr<DX::DeviceResources>& deviceResources )
@@ -89,7 +114,7 @@ namespace HoloIntervention
         Quaternion smoothedRotation = Quaternion::Slerp( currentRotation, desiredRotation, deltaTime * LERP_RATE );
         Vector3 smoothedTranslation = Vector3::Lerp( currentTranslation, desiredTranslation, deltaTime * LERP_RATE );
 
-        m_currentPose = Matrix::CreateScale( smoothedScale ) * Matrix::CreateFromQuaternion( smoothedRotation ) * Matrix::CreateTranslation( smoothedTranslation );
+        m_currentPose = MatrixCompose( smoothedTranslation, smoothedRotation, smoothedScale, true );
       }
       else
       {
@@ -109,7 +134,7 @@ namespace HoloIntervention
         XMVECTOR yAxisRotation = XMVector3Normalize( XMVector3Cross( facingNormal, xAxisRotation ) );
 
         // Construct the 4x4 pose matrix.
-        SimpleMath::Matrix scaleMatrix = Matrix::CreateScale(m_scalingFactor, m_scalingFactor, 1.f);
+        SimpleMath::Matrix scaleMatrix = Matrix::CreateScale( m_scalingFactor, m_scalingFactor, 1.f );
         XMMATRIX rotationMatrix = XMMATRIX( xAxisRotation, yAxisRotation, facingNormal, XMVectorSet( 0.f, 0.f, 0.f, 1.f ) );
         const XMMATRIX modelTranslation = XMMatrixTranslationFromVector( XMLoadFloat3( &smoothedPosition ) );
         XMStoreFloat4x4( &m_currentPose, scaleMatrix * rotationMatrix * modelTranslation );

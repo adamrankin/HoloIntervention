@@ -52,12 +52,11 @@ namespace HoloIntervention
 
       void Update( DX::StepTimer const& timer, SpatialCoordinateSystem^ coordinateSystem );
 
-      Concurrency::task<void> CreateDeviceDependentResourcesAsync();
+      void CreateDeviceDependentResources();
       void ReleaseDeviceDependentResources();
 
       bool HasSurface( Platform::Guid id );
-      void AddSurface( Platform::Guid id, SpatialSurfaceInfo^ newSurface, SpatialSurfaceMeshOptions^ meshOptions );
-      void UpdateSurface( Platform::Guid id, SpatialSurfaceInfo^ newSurface, SpatialSurfaceMeshOptions^ meshOptions );
+      void AddOrUpdateSurface( Platform::Guid id, SpatialSurfaceInfo^ newSurface, SpatialSurfaceMeshOptions^ meshOptions );
       void RemoveSurface( Platform::Guid id );
       void ClearSurfaces();
 
@@ -73,10 +72,6 @@ namespace HoloIntervention
       void HideInactiveMeshes( Windows::Foundation::Collections::IMapView<Platform::Guid, SpatialSurfaceInfo^>^ const& surfaceCollection );
 
     protected:
-      Concurrency::task<HRESULT> CreateComputeShaderAsync( const std::wstring& srcFile );
-
-      HRESULT CreateConstantBuffer();
-
       Concurrency::task<void> AddOrUpdateSurfaceAsync( Platform::Guid id,
           SpatialSurfaceInfo^ newSurface,
           SpatialSurfaceMeshOptions^ meshOptions );
@@ -85,7 +80,6 @@ namespace HoloIntervention
       Microsoft::WRL::ComPtr<ID3D11Buffer>            m_constantBuffer = nullptr;
       Microsoft::WRL::ComPtr<ID3D11ComputeShader>     m_d3d11ComputeShader = nullptr;
       bool                                            m_resourcesLoaded = false;
-      std::unique_ptr<Concurrency::task<HRESULT>>     m_shaderLoadTask = nullptr;
 
       // A way to lock map access.
       std::mutex                                      m_meshCollectionLock;

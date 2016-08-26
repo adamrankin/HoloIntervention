@@ -109,7 +109,7 @@ namespace HoloIntervention
     m_gazeSystem = std::make_unique<Gaze::GazeSystem>();
 
     // TODO : remove temp code
-    m_igtLinkIF->SetHostname( L"192.168.2.25" );
+    m_igtLinkIF->SetHostname( L"192.168.2.2" );
 
     InitializeAudioAssetsAsync();
     InitializeVoiceSystem();
@@ -148,9 +148,7 @@ namespace HoloIntervention
 
     // TODO : remove temp code, no such thing as default server
     // Give the system 1s to spin up and then attempt to connect to the default IGT server
-    TimeSpan ts;
-    ts.Duration = 10000000; // in 100-nanosecond units (1s)
-    TimerElapsedHandler^ handler = ref new TimerElapsedHandler( [this]( ThreadPoolTimer ^ timer ) ->void
+    RunFunctionAfterDelay(1000, [this]( ThreadPoolTimer ^ timer ) -> void
     {
       m_igtLinkIF->ConnectAsync().then( [this]( bool result )
       {
@@ -162,7 +160,6 @@ namespace HoloIntervention
         }
       } );
     } );
-    ThreadPoolTimer^ timer = ThreadPoolTimer::CreateTimer( handler, ts );
   }
 
   //----------------------------------------------------------------------------
@@ -237,12 +234,9 @@ namespace HoloIntervention
     {
       for ( auto cameraPose : prediction->CameraPoses )
       {
-        // This represents the device-based resources for a HolographicCamera.
         DX::CameraResources* pCameraResources = cameraResourceMap[cameraPose->HolographicCamera->Id].get();
-
         auto result = pCameraResources->UpdateViewProjectionBuffer( m_deviceResources, cameraPose, currentCoordinateSystem, vp );
       }
-
       return true;
     } );
 
@@ -251,8 +245,24 @@ namespace HoloIntervention
     {
       SpatialPointerPose^ pose = SpatialPointerPose::TryGetAtTimestamp( currentCoordinateSystem, prediction->Timestamp );
 
-      m_cursorSound->Update( m_timer );
       m_spatialSystem->Update( m_timer, currentCoordinateSystem );
+
+      // Update the gaze vector in the gaze renderer
+      if ( m_gazeSystem->IsCursorEnabled() )
+      {
+        float3 outHitPosition;
+        float3 outHitNormal;
+        bool hit = m_spatialSystem->TestRayIntersection( currentCoordinateSystem, pose->Head->Position, pose->Head->ForwardDirection,
+                   outHitPosition, outHitNormal );
+
+        if ( hit )
+        {
+          // Update the gaze system with the pose to render
+          m_gazeSystem->Update( m_timer, outHitPosition, outHitNormal );
+        }
+      }
+
+      m_cursorSound->Update( m_timer );
       m_sliceRenderer->Update( pose, m_timer );
       m_notificationSystem->Update( pose, m_timer );
       m_modelRenderer->Update( m_timer, vp );
@@ -270,22 +280,7 @@ namespace HoloIntervention
         }
       }
 
-      // Update the gaze vector in the gaze renderer
-      if ( m_gazeSystem->IsCursorEnabled() )
-      {
-        const float3 position = pose->Head->Position;
-        const float3 direction = pose->Head->ForwardDirection;
 
-        float3 outHitPosition;
-        float3 outHitNormal;
-        bool hit = m_spatialSystem->TestRayIntersection( currentCoordinateSystem, position, direction, outHitPosition, outHitNormal );
-
-        if ( hit )
-        {
-          // Update the gaze system with the pose to render
-          m_gazeSystem->Update( m_timer, outHitPosition, outHitNormal );
-        }
-      }
     } );
 
     // We complete the frame update by using information about our content positioning to set the focus point.
@@ -399,14 +394,14 @@ namespace HoloIntervention
         pCameraResources->UpdateViewProjectionBuffer( m_deviceResources, cameraPose, currentCoordinateSystem, throwAway );
         bool activeCamera = pCameraResources->AttachViewProjectionBuffer( m_deviceResources );
 
+        m_modelRenderer->Render();
+        m_sliceRenderer->Render();
+
         // Only render world-locked content when positional tracking is active.
         if ( m_notificationSystem->IsShowingNotification() )
         {
           m_notificationSystem->GetRenderer()->Render();
         }
-
-        m_modelRenderer->Render();
-        m_sliceRenderer->Render();
 
         atLeastOneCameraRendered = true;
       }
@@ -472,7 +467,7 @@ namespace HoloIntervention
     m_modelRenderer->CreateDeviceDependentResources();
     m_sliceRenderer->CreateDeviceDependentResources();
     m_notificationSystem->CreateDeviceDependentResources();
-    m_spatialSystem->CreateDeviceDependentResourcesAsync();
+    m_spatialSystem->CreateDeviceDependentResources();
   }
 
   //----------------------------------------------------------------------------
@@ -485,9 +480,7 @@ namespace HoloIntervention
     case SpatialLocatability::Unavailable:
       // Holograms cannot be rendered.
     {
-      String^ message = L"Warning! Positional tracking is " +
-                        sender->Locatability.ToString() + L".\n";
-      m_notificationSystem->QueueMessage( message );
+      m_notificationSystem->QueueMessage( L"Warning! Positional tracking is unavailable." );
     }
     break;
 
@@ -505,7 +498,7 @@ namespace HoloIntervention
       break;
 
     case SpatialLocatability::PositionalTrackingActive:
-      // Positional tracking is active. World-locked content can be rendered.
+      m_notificationSystem->QueueMessage( L"Positional tracking is active." );
       break;
     }
   }
@@ -598,6 +591,7 @@ namespace HoloIntervention
       m_notificationSystem->QueueMessage( L"Slice is now in world-space." );
       m_sliceRenderer->SetSliceHeadlocked( m_sliceToken, false );
     };
+
     m_voiceInputHandler->RegisterCallbacks( callbacks );
   }
 

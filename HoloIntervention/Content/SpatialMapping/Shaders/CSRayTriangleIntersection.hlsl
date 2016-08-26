@@ -21,9 +21,13 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 ====================================================================*/
 
-cbuffer ConstantBuffer : register( b0 )
+cbuffer WorldConstantBuffer : register( b0 )
 {
   float4x4 meshToWorld;
+};
+
+cbuffer RayConstantBuffer : register( b1 )
+{
   float4 rayOrigin;
   float4 rayDirection;
 };
@@ -118,15 +122,14 @@ void main( uint3 DTid : SV_DispatchThreadID )
     // Calculate the normal of this triangle
     float3 normal = cross(e1, e2);
 
+    normal = normalize(normal);
+
     //ray intersection
     resultBuffer[0].intersectionPoint.x = rayOrigin.x + t*rayDirection.x;
     resultBuffer[0].intersectionPoint.y = rayOrigin.y + t*rayDirection.y;
     resultBuffer[0].intersectionPoint.z = rayOrigin.z + t*rayDirection.z;
-    resultBuffer[0].intersectionNormal.x = normal.x;
-    resultBuffer[0].intersectionNormal.y = normal.y;
-    resultBuffer[0].intersectionNormal.z = normal.z;
+    resultBuffer[0].intersectionNormal = float4(normal, 1.f);
   }
 
-  // No hit, no win
   return;
 }

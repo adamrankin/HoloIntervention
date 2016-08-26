@@ -24,13 +24,18 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "pch.h"
 
 // Local includes
+#include "AppView.h"
 #include "DirectXHelper.h"
 #include "SpatialShaderStructures.h"
 #include "SpatialSurfaceCollection.h"
 #include "StepTimer.h"
 
+// System includes
+#include "NotificationSystem.h"
+
 // Windows includes
 #include <comdef.h>
+#include <ppl.h>
 
 // STL includes
 #include <sstream>
@@ -53,9 +58,7 @@ namespace HoloIntervention
     SpatialSurfaceCollection::SpatialSurfaceCollection( const std::shared_ptr<DX::DeviceResources>& deviceResources ) :
       m_deviceResources( deviceResources )
     {
-      m_meshCollection.clear();
-
-      CreateDeviceDependentResourcesAsync();
+      CreateDeviceDependentResources();
     };
 
     //----------------------------------------------------------------------------
@@ -97,118 +100,80 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    Concurrency::task<void> SpatialSurfaceCollection::CreateDeviceDependentResourcesAsync()
+    void SpatialSurfaceCollection::CreateDeviceDependentResources()
     {
-      auto meshTask = create_task([&]()
+      std::lock_guard<std::mutex> guard( m_meshCollectionLock );
+
+      for ( auto pair : m_meshCollection )
       {
-        std::lock_guard<std::mutex> guard(m_meshCollectionLock);
+        pair.second->CreateDeviceDependentResources();
+      }
 
-        for (auto iter = m_meshCollection.begin(); iter != m_meshCollection.end(); )
-        {
-          auto& pair = *iter;
-          auto& surfaceMesh = pair.second;
+      D3D11_BUFFER_DESC constant_buffer_desc;
+      ZeroMemory(&constant_buffer_desc, sizeof(constant_buffer_desc));
+      constant_buffer_desc.ByteWidth = sizeof(RayConstantBuffer);
+      constant_buffer_desc.Usage = D3D11_USAGE_DEFAULT;
+      constant_buffer_desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+      constant_buffer_desc.CPUAccessFlags = 0;
 
-          surfaceMesh->CreateDeviceDependentResources();
-        }
-      });
+      auto hr = m_deviceResources->GetD3DDevice()->CreateBuffer(&constant_buffer_desc, nullptr, &m_constantBuffer);
 
-      auto createTask = CreateComputeShaderAsync( L"ms-appx:///CSRayTriangleIntersection.cso" );
-      m_shaderLoadTask = std::make_unique< Concurrency::task<HRESULT> >( createTask );
-      auto finalTask = m_shaderLoadTask->then( [&]( HRESULT hr )
+      if ( FAILED( hr ) )
       {
+        OutputDebugStringA( "Unable to create constant buffer in SpatialSurfaceCollection." );
+        ReleaseDeviceDependentResources();
+        return;
+      }
+
+      DX::ReadDataAsync( L"ms-appx:///CSRayTriangleIntersection.cso" ).then( [=]( std::vector<byte> data )
+      {
+        auto hr = m_deviceResources->GetD3DDevice()->CreateComputeShader( &data.front(), data.size(), nullptr, &m_d3d11ComputeShader );
+
         if ( FAILED( hr ) )
         {
-          _com_error err( hr, NULL );
-          LPCTSTR errMsg = err.ErrorMessage();
-          std::stringstream ss;
-          ss << "Unable to load shader: " << errMsg << ".\n";
-          OutputDebugStringA( ss.str().c_str() );
-        }
-
-        hr = CreateConstantBuffer();
-        if ( FAILED( hr ) )
-        {
-          OutputDebugStringA( "Unable to load constant buffer in SpatialSurfaceCollection." );
+          OutputDebugStringA( "Unable to create compute shader." );
           ReleaseDeviceDependentResources();
+          return;
         }
 
+#if defined(_DEBUG) || defined(PROFILE)
+        m_d3d11ComputeShader->SetPrivateData( WKPDID_D3DDebugObjectName, strlen( "main" ) - 1, "main" );
+#endif
         m_resourcesLoaded = true;
       } );
-
-      return meshTask && finalTask;
     }
 
     //----------------------------------------------------------------------------
     void SpatialSurfaceCollection::ReleaseDeviceDependentResources()
     {
       m_resourcesLoaded = false;
-      m_shaderLoadTask = nullptr;
       m_d3d11ComputeShader = nullptr;
       m_constantBuffer = nullptr;
-    }
 
-    //----------------------------------------------------------------------------
-    void SpatialSurfaceCollection::AddSurface( Guid id, SpatialSurfaceInfo^ newSurface, SpatialSurfaceMeshOptions^ meshOptions )
-    {
-      AddOrUpdateSurfaceAsync( id, newSurface, meshOptions ).then( [&]( Concurrency::task<void> previousTask )
+      for ( auto pair : m_meshCollection )
       {
-        try
-        {
-          previousTask.wait();
-        }
-        catch ( Platform::Exception^ e )
-        {
-          OutputDebugStringW( e->Message->Data() );
-        }
-        catch ( const std::exception& e )
-        {
-          OutputDebugStringA( e.what() );
-        }
-      } );
-    }
-
-    //----------------------------------------------------------------------------
-    void SpatialSurfaceCollection::UpdateSurface( Guid id, SpatialSurfaceInfo^ newSurface, SpatialSurfaceMeshOptions^ meshOptions )
-    {
-      AddOrUpdateSurfaceAsync( id, newSurface, meshOptions ).then( [&]( Concurrency::task<void> previousTask )
-      {
-        try
-        {
-          previousTask.wait();
-        }
-        catch ( Platform::Exception^ e )
-        {
-          OutputDebugStringW( e->Message->Data() );
-        }
-        catch ( const std::exception& e )
-        {
-          OutputDebugStringA( e.what() );
-        }
-      } );
-    }
-
-    //----------------------------------------------------------------------------
-    HRESULT SpatialSurfaceCollection::CreateConstantBuffer()
-    {
-      // Create the Const Buffer
-      D3D11_BUFFER_DESC constant_buffer_desc;
-      ZeroMemory( &constant_buffer_desc, sizeof( constant_buffer_desc ) );
-      constant_buffer_desc.ByteWidth = sizeof( ConstantBuffer );
-      constant_buffer_desc.Usage = D3D11_USAGE_DEFAULT;
-      constant_buffer_desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-      constant_buffer_desc.CPUAccessFlags = 0;
-
-      auto hr = m_deviceResources->GetD3DDevice()->CreateBuffer( &constant_buffer_desc, nullptr, &m_constantBuffer );
-      if ( FAILED( hr ) )
-      {
-        return hr;
+        pair.second->ReleaseDeviceDependentResources();
       }
+    }
 
-#if defined(_DEBUG) || defined(PROFILE)
-      m_constantBuffer->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "ConstantBuffer" ) - 1, "ConstantBuffer" );
-#endif
-
-      return hr;
+    //----------------------------------------------------------------------------
+    void SpatialSurfaceCollection::AddOrUpdateSurface( Guid id, SpatialSurfaceInfo^ newSurface, SpatialSurfaceMeshOptions^ meshOptions )
+    {
+      AddOrUpdateSurfaceAsync( id, newSurface, meshOptions ).then( [&]( Concurrency::task<void> previousTask )
+      {
+        try
+        {
+          previousTask.wait();
+        }
+        catch ( Platform::Exception^ e )
+        {
+          OutputDebugStringW( e->Message->Data() );
+        }
+        catch ( const std::exception& e )
+        {
+          OutputDebugStringA( e.what() );
+        }
+      } );
     }
 
     //----------------------------------------------------------------------------
@@ -224,10 +189,10 @@ namespace HoloIntervention
         {
           std::lock_guard<std::mutex> guard( m_meshCollectionLock );
 
-          if (m_meshCollection.find(id) == m_meshCollection.end())
+          if ( m_meshCollection.find( id ) == m_meshCollection.end() )
           {
             // Create a new surface and insert it
-            m_meshCollection[id] = std::make_shared<SurfaceMesh>(m_deviceResources);
+            m_meshCollection[id] = std::make_shared<SurfaceMesh>( m_deviceResources );
           }
           auto surfaceMesh = m_meshCollection[id];
           surfaceMesh->UpdateSurface( mesh );
@@ -257,29 +222,45 @@ namespace HoloIntervention
     {
       if ( !m_resourcesLoaded )
       {
-        auto result = m_shaderLoadTask->get();
-        if ( FAILED( result ) )
-        {
-          OutputDebugStringA( "Unable to load shader. Aborting.\n" );
-          return false;
-        }
+        return false;
       }
 
-      m_deviceResources->GetD3DDeviceContext()->CSSetShader( m_d3d11ComputeShader.Get(), nullptr, 0 );
+      // Perform CPU based pre-check using OBB
+      GuidMeshMap potentialHits;
+      int size = m_meshCollection.size();
+      for( auto pair : m_meshCollection )
+      {
+        auto mesh = pair.second;
+        if ( mesh->TestRayOBBIntersection( desiredCoordinateSystem, frameNumber, rayOrigin, rayDirection ) )
+        {
+          potentialHits[pair.first] = pair.second;
+        }
+      }
 
       bool result( false );
-      for ( auto& pair : m_meshCollection )
+      if ( potentialHits.size() > 0 )
       {
-        pair.second->SetRayConstants( *m_deviceResources->GetD3DDeviceContext(), m_constantBuffer.Get(), rayOrigin, rayDirection );
+        m_deviceResources->GetD3DDeviceContext()->CSSetShader( m_d3d11ComputeShader.Get(), nullptr, 0 );
 
-        if ( pair.second->TestRayIntersection( *m_deviceResources->GetD3DDevice(), *m_deviceResources->GetD3DDeviceContext(), *m_d3d11ComputeShader.Get(), desiredCoordinateSystem, frameNumber, outHitPosition, outHitNormal ) )
+        RayConstantBuffer buffer;
+        buffer.rayOrigin = XMFLOAT4( rayOrigin.x, rayOrigin.y, rayOrigin.z, 1.f );
+        buffer.rayDirection = XMFLOAT4( rayDirection.x, rayDirection.y, rayDirection.z, 1.f );
+        m_deviceResources->GetD3DDeviceContext()->UpdateSubresource( m_constantBuffer.Get(), 0, nullptr, &buffer, 0, 0 );
+        m_deviceResources->GetD3DDeviceContext()->CSSetConstantBuffers( 1, 1, m_constantBuffer.GetAddressOf());
+
+        for ( auto& pair : potentialHits)
         {
-          result = true;
-          break;
+          if ( pair.second->TestRayIntersection( *m_deviceResources->GetD3DDeviceContext(), frameNumber, outHitPosition, outHitNormal ) )
+          {
+            result = true;
+            break;
+          }
         }
-      }
 
-      m_deviceResources->GetD3DDeviceContext()->CSSetShader( nullptr, nullptr, 0 );
+        ID3D11Buffer* ppCBnullptr[1] = { nullptr };
+        m_deviceResources->GetD3DDeviceContext()->CSSetConstantBuffers(1, 1, ppCBnullptr);
+        m_deviceResources->GetD3DDeviceContext()->CSSetShader( nullptr, nullptr, 0 );
+      }
 
       return result;
     }
@@ -297,30 +278,6 @@ namespace HoloIntervention
 
         surfaceMesh->SetIsActive( surfaceCollection->HasKey( id ) ? true : false );
       };
-    }
-
-    //--------------------------------------------------------------------------------------
-    Concurrency::task<HRESULT> SpatialSurfaceCollection::CreateComputeShaderAsync( const std::wstring& srcFile )
-    {
-      Concurrency::task<std::vector<byte>> loadVSTask = DX::ReadDataAsync( srcFile );
-      return loadVSTask.then( [ = ]( std::vector<byte> data )
-      {
-        auto hr = m_deviceResources->GetD3DDevice()->CreateComputeShader( &data.front(), data.size(), nullptr, &m_d3d11ComputeShader );
-
-        if ( FAILED( hr ) )
-        {
-          return hr;
-        }
-
-#if defined(_DEBUG) || defined(PROFILE)
-        if ( SUCCEEDED( hr ) )
-        {
-          m_d3d11ComputeShader->SetPrivateData( WKPDID_D3DDebugObjectName, strlen( "main" ) - 1, "main" );
-        }
-#endif
-
-        return hr;
-      } );
     }
 
     //----------------------------------------------------------------------------

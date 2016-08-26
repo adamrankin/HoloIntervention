@@ -96,6 +96,8 @@
     <ClInclude Include="Common\Common.h" />
     <ClInclude Include="Common\DirectXHelper.h" />
     <ClInclude Include="Common\StepTimer.h" />
+    <ClInclude Include="Content\Common.h" />
+    <ClInclude Include="Content\GetDataFromIBuffer.h" />
     <ClInclude Include="Content\Input\SpatialInputHandler.h" />
     <ClInclude Include="Content\Input\VoiceInputHandler.h" />
     <ClInclude Include="Content\Network\IGTLinkIF.h" />
@@ -114,7 +116,6 @@
     <ClInclude Include="Content\Sound\OmnidirectionalSound.h" />
     <ClInclude Include="Content\Sound\VoiceCallback.h" />
     <ClInclude Include="Content\Sound\XAudio2Helpers.h" />
-    <ClInclude Include="Content\SpatialMapping\GetDataFromIBuffer.h" />
     <ClInclude Include="Content\SpatialMapping\SpatialShaderStructures.h" />
     <ClInclude Include="Content\SpatialMapping\SpatialSurfaceCollection.h" />
     <ClInclude Include="Content\SpatialMapping\SurfaceMesh.h" />
@@ -128,6 +129,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AppView.cpp" />
+    <ClCompile Include="Content\Common.cpp" />
     <ClCompile Include="Content\Input\SpatialInputHandler.cpp" />
     <ClCompile Include="Content\Input\VoiceInputHandler.cpp" />
     <ClCompile Include="Content\Network\IGTLinkIF.cpp" />

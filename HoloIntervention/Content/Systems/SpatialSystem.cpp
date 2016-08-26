@@ -49,6 +49,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     SpatialSystem::SpatialSystem( const std::shared_ptr<DX::DeviceResources>& deviceResources )
       : m_deviceResources( deviceResources )
+      , m_spatialAnchors( ref new Platform::Collections::Map<Platform::String^, SpatialAnchor^>() )
     {
       m_surfaceCollection = std::make_unique<SpatialSurfaceCollection>( m_deviceResources );
     }
@@ -75,9 +76,9 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    Concurrency::task<void> SpatialSystem::CreateDeviceDependentResourcesAsync()
+    void SpatialSystem::CreateDeviceDependentResources()
     {
-      return m_surfaceCollection->CreateDeviceDependentResourcesAsync();
+      m_surfaceCollection->CreateDeviceDependentResources();
     }
 
     //----------------------------------------------------------------------------
@@ -102,13 +103,13 @@ namespace HoloIntervention
           if ( m_surfaceCollection->GetLastUpdateTime( id ).UniversalTime < surfaceInfo->UpdateTime.UniversalTime )
           {
             // Update existing surface.
-            m_surfaceCollection->UpdateSurface( id, surfaceInfo, m_surfaceMeshOptions );
+            m_surfaceCollection->AddOrUpdateSurface( id, surfaceInfo, m_surfaceMeshOptions );
           }
         }
         else
         {
           // New surface.
-          m_surfaceCollection->AddSurface( id, surfaceInfo, m_surfaceMeshOptions );
+          m_surfaceCollection->AddOrUpdateSurface( id, surfaceInfo, m_surfaceMeshOptions );
         }
       }
 
@@ -133,9 +134,9 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool SpatialSystem::TestRayIntersection(SpatialCoordinateSystem^ desiredCoordinateSystem, const float3 rayOrigin, const float3 rayDirection, float3& outHitPosition, float3& outHitNormal)
+    bool SpatialSystem::TestRayIntersection( SpatialCoordinateSystem^ desiredCoordinateSystem, const float3 rayOrigin, const float3 rayDirection, float3& outHitPosition, float3& outHitNormal )
     {
-      return m_surfaceCollection->TestRayIntersection(m_FrameNumber, desiredCoordinateSystem, rayOrigin, rayDirection, outHitPosition, outHitNormal);
+      return m_surfaceCollection->TestRayIntersection( m_FrameNumber, desiredCoordinateSystem, rayOrigin, rayDirection, outHitPosition, outHitNormal );
     }
 
     //----------------------------------------------------------------------------
@@ -176,9 +177,9 @@ namespace HoloIntervention
 
             // Our shader pipeline can handle a variety of triangle index formats
             IVectorView<DirectXPixelFormat>^ supportedTriangleIndexFormats = m_surfaceMeshOptions->SupportedTriangleIndexFormats;
-            if (supportedTriangleIndexFormats->IndexOf(DirectXPixelFormat::R32UInt, &formatIndex))
+            if ( supportedTriangleIndexFormats->IndexOf( DirectXPixelFormat::R32UInt, &formatIndex ) )
             {
-                m_surfaceMeshOptions->TriangleIndexFormat = DirectXPixelFormat::R32UInt;
+              m_surfaceMeshOptions->TriangleIndexFormat = DirectXPixelFormat::R32UInt;
             }
 
             // Create the observer.
@@ -214,18 +215,18 @@ namespace HoloIntervention
           // If the surface observer was successfully created, we can initialize our
           // collection by pulling the current data set.
           auto mapContainingSurfaceCollection = m_surfaceObserver->GetObservedSurfaces();
-          if (mapContainingSurfaceCollection->Size == 0)
+          if ( mapContainingSurfaceCollection->Size == 0 )
           {
-            OutputDebugStringA("Mesh collection size is 0. Trying again after a delay.\n");
-            auto fire_once = new Concurrency::timer<int>(INIT_SURFACE_RETRY_DELAY_MS, 0, nullptr, false);
+            OutputDebugStringA( "Mesh collection size is 0. Trying again after a delay.\n" );
+            auto fire_once = new Concurrency::timer<int>( INIT_SURFACE_RETRY_DELAY_MS, 0, nullptr, false );
             // Create a call object that sets the completion event after the timer fires.
-            auto callback = new Concurrency::call<int>([=](int)
+            auto callback = new Concurrency::call<int>( [=]( int )
             {
-              this->InitializeSurfaceObserver(coordinateSystem);
-            });
+              this->InitializeSurfaceObserver( coordinateSystem );
+            } );
 
             // Connect the timer to the callback and start the timer.
-            fire_once->link_target(callback);
+            fire_once->link_target( callback );
             fire_once->start();
             return;
           }
@@ -234,7 +235,7 @@ namespace HoloIntervention
             // Store the ID and metadata for each surface.
             auto const& id = pair->Key;
             auto const& surfaceInfo = pair->Value;
-            m_surfaceCollection->AddSurface( id, surfaceInfo, m_surfaceMeshOptions);
+            m_surfaceCollection->AddOrUpdateSurface( id, surfaceInfo, m_surfaceMeshOptions );
           }
 
           // We can also subscribe to an event to receive up-to-date data.

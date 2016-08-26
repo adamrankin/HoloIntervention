@@ -23,41 +23,17 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-using namespace DirectX;
-
 namespace HoloIntervention
 {
-  namespace Spatial
+  template<typename Functor>
+  void RunFunctionAfterDelay(uint32 delayMs, Functor function)
   {
-    struct VertexBufferType
-    {
-      XMFLOAT4 vertex;
-    };
+    // Convert ms to 100-nanosecond
+    int64 delay100ns = delayMs * 10000;
 
-    struct IndexBufferType
-    {
-      uint32 index;
-    };
-
-    struct OutputBufferType
-    {
-      XMFLOAT4 intersectionPoint;
-      XMFLOAT4 intersectionNormal;
-    };
-
-    struct WorldConstantBuffer
-    {
-      // Constant buffers must have a a ByteWidth multiple of 16
-      DirectX::XMFLOAT4X4 meshToWorld;
-    };
-
-    struct RayConstantBuffer
-    {
-      XMFLOAT4 rayOrigin;
-      XMFLOAT4 rayDirection;
-    };
-
-    static_assert((sizeof(WorldConstantBuffer) % (sizeof(float) * 4)) == 0, "World constant buffer size must be 16-byte aligned (16 bytes is the length of four floats).");
-    static_assert((sizeof(RayConstantBuffer) % (sizeof(float) * 4)) == 0, "Ray constant buffer size must be 16-byte aligned (16 bytes is the length of four floats).");
+    TimeSpan ts;
+    ts.Duration = 10000000;
+    TimerElapsedHandler^ handler = ref new TimerElapsedHandler(function);
+    ThreadPoolTimer^ timer = ThreadPoolTimer::CreateTimer(handler, ts);
   }
 }

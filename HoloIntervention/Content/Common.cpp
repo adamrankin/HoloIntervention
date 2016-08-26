@@ -21,43 +21,10 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 ====================================================================*/
 
-#pragma once
-
-using namespace DirectX;
+// Local includes
+#include "pch.h"
 
 namespace HoloIntervention
 {
-  namespace Spatial
-  {
-    struct VertexBufferType
-    {
-      XMFLOAT4 vertex;
-    };
 
-    struct IndexBufferType
-    {
-      uint32 index;
-    };
-
-    struct OutputBufferType
-    {
-      XMFLOAT4 intersectionPoint;
-      XMFLOAT4 intersectionNormal;
-    };
-
-    struct WorldConstantBuffer
-    {
-      // Constant buffers must have a a ByteWidth multiple of 16
-      DirectX::XMFLOAT4X4 meshToWorld;
-    };
-
-    struct RayConstantBuffer
-    {
-      XMFLOAT4 rayOrigin;
-      XMFLOAT4 rayDirection;
-    };
-
-    static_assert((sizeof(WorldConstantBuffer) % (sizeof(float) * 4)) == 0, "World constant buffer size must be 16-byte aligned (16 bytes is the length of four floats).");
-    static_assert((sizeof(RayConstantBuffer) % (sizeof(float) * 4)) == 0, "Ray constant buffer size must be 16-byte aligned (16 bytes is the length of four floats).");
-  }
 }

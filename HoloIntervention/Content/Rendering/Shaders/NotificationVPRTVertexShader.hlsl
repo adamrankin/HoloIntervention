@@ -37,8 +37,8 @@ struct VertexShaderOutput
 {
     min16float4 color    : COLOR0;
     min16float2 texCoord : TEXCOORD1;
-    min16float4 pos      : SV_POSITION;
     uint        rtvId    : SV_RenderTargetArrayIndex; // SV_InstanceID % 2
+    min16float4 pos      : SV_POSITION;
 };
 
 // Simple shader to do vertex processing on the GPU.

@@ -41,7 +41,7 @@ namespace HoloIntervention
 
       void Update( DX::StepTimer const& timer, SpatialCoordinateSystem^ coordinateSystem );
 
-      Concurrency::task<void> CreateDeviceDependentResourcesAsync();
+      void CreateDeviceDependentResources();
       void ReleaseDeviceDependentResources();
 
       // Handle surface change events.

@@ -45,7 +45,7 @@ namespace HoloIntervention
     {
       m_modelToken = HoloIntervention::instance()->GetModelRenderer().AddModel( GAZE_CURSOR_ASSET_LOCATION );
       m_modelEntry = HoloIntervention::instance()->GetModelRenderer().GetModel( m_modelToken );
-	  //m_modelEntry->EnableModel(false);
+	    m_modelEntry->EnableModel(false);
     }
 
     //----------------------------------------------------------------------------
