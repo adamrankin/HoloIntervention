@@ -109,7 +109,7 @@ namespace HoloIntervention
     m_gazeSystem = std::make_unique<Gaze::GazeSystem>();
 
     // TODO : remove temp code
-    m_igtLinkIF->SetHostname( L"192.168.2.2" );
+    m_igtLinkIF->SetHostname( L"172.16.80.1" );
 
     InitializeAudioAssetsAsync();
     InitializeVoiceSystem();

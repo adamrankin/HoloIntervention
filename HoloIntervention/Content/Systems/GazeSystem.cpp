@@ -45,7 +45,7 @@ namespace HoloIntervention
     {
       m_modelToken = HoloIntervention::instance()->GetModelRenderer().AddModel( GAZE_CURSOR_ASSET_LOCATION );
       m_modelEntry = HoloIntervention::instance()->GetModelRenderer().GetModel( m_modelToken );
-	    m_modelEntry->EnableModel(false);
+      m_modelEntry->EnableModel( false );
     }
 
     //----------------------------------------------------------------------------
@@ -61,7 +61,7 @@ namespace HoloIntervention
 
       // Infinite number of vectors that cross to give the normal vector, so choose arbitrary y-up vector to create a coordinate system
       float3 yUp( 0.f, 1.f, 0.f );
-      float3 jVec = normalize( hitNormal );
+      float3 jVec = hitNormal;
 
       float3 iVec = cross( hitNormal, yUp );
       iVec = normalize( iVec );
@@ -73,6 +73,8 @@ namespace HoloIntervention
     void GazeSystem::EnableCursor( bool enable )
     {
       m_systemEnabled = enable;
+
+	  m_modelEntry->EnableModel(enable);
     }
 
     //----------------------------------------------------------------------------
