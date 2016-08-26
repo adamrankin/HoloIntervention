@@ -7,3 +7,6 @@
 [submodule "DirectXTex"]
 	path = DirectXTex
 	url = https://github.com/Microsoft/DirectXTex.git
+[submodule "DirectXMesh"]
+	path = DirectXMesh
+	url = https://github.com/Microsoft/DirectXMesh.git
