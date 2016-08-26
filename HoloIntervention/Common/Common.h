@@ -23,11 +23,15 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
+// std includes
+#include <string>
+
+// Windows includes
+#include <robuffer.h>
+#include <windows.h>
+
 using namespace Windows::Data::Xml::Dom;
 using namespace Windows::UI::Notifications;
-
-#include <windows.h>
-#include <string>
 
 namespace HoloIntervention
 {
@@ -35,5 +39,52 @@ namespace HoloIntervention
   const T& clamp(const T& x, const T& upper, const T& lower)
   {
     return min(upper, max(x, lower));
+  }
+
+  template <typename t = byte>
+  t * GetDataFromIBuffer(Windows::Storage::Streams::IBuffer ^ container)
+  {
+	  if (container == nullptr)
+	  {
+		  return nullptr;
+	  }
+
+	  unsigned int bufferLength = container->Length;
+
+	  if (!(bufferLength > 0))
+	  {
+		  return nullptr;
+	  }
+
+	  HRESULT hr = S_OK;
+
+	  ComPtr<IUnknown> pUnknown = reinterpret_cast<IUnknown*>(container);
+	  ComPtr<IBufferByteAccess> spByteAccess;
+	  hr = pUnknown.As(&spByteAccess);
+	  if (FAILED(hr))
+	  {
+		  return nullptr;
+	  }
+
+	  byte* pRawData = nullptr;
+	  hr = spByteAccess->Buffer(&pRawData);
+	  if (FAILED(hr))
+	  {
+		  return nullptr;
+	  }
+
+	  return reinterpret_cast<t*>(pRawData);
+  }
+
+  template<typename Functor>
+  void RunFunctionAfterDelay(uint32 delayMs, Functor function)
+  {
+	  // Convert ms to 100-nanosecond
+	  int64 delay100ns = delayMs * 10000;
+
+	  TimeSpan ts;
+	  ts.Duration = 10000000;
+	  TimerElapsedHandler^ handler = ref new TimerElapsedHandler(function);
+	  ThreadPoolTimer^ timer = ThreadPoolTimer::CreateTimer(handler, ts);
   }
 }

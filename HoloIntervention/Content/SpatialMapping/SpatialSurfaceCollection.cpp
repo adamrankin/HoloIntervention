@@ -110,13 +110,13 @@ namespace HoloIntervention
       }
 
       D3D11_BUFFER_DESC constant_buffer_desc;
-      ZeroMemory(&constant_buffer_desc, sizeof(constant_buffer_desc));
-      constant_buffer_desc.ByteWidth = sizeof(RayConstantBuffer);
+      ZeroMemory( &constant_buffer_desc, sizeof( constant_buffer_desc ) );
+      constant_buffer_desc.ByteWidth = sizeof( RayConstantBuffer );
       constant_buffer_desc.Usage = D3D11_USAGE_DEFAULT;
       constant_buffer_desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
       constant_buffer_desc.CPUAccessFlags = 0;
 
-      auto hr = m_deviceResources->GetD3DDevice()->CreateBuffer(&constant_buffer_desc, nullptr, &m_constantBuffer);
+      auto hr = m_deviceResources->GetD3DDevice()->CreateBuffer( &constant_buffer_desc, nullptr, &m_constantBuffer );
 
       if ( FAILED( hr ) )
       {
@@ -125,7 +125,7 @@ namespace HoloIntervention
         return;
       }
 
-      DX::ReadDataAsync( L"ms-appx:///CSRayTriangleIntersection.cso" ).then( [=]( std::vector<byte> data )
+      DX::ReadDataAsync( L"ms-appx:///CSRayTriangleIntersection.cso" ).then( [ = ]( std::vector<byte> data )
       {
         auto hr = m_deviceResources->GetD3DDevice()->CreateComputeShader( &data.front(), data.size(), nullptr, &m_d3d11ComputeShader );
 
@@ -226,16 +226,18 @@ namespace HoloIntervention
       }
 
       // Perform CPU based pre-check using OBB
+      std::mutex potentialHitsMutex;
       GuidMeshMap potentialHits;
       int size = m_meshCollection.size();
-      for( auto pair : m_meshCollection )
+      Concurrency::parallel_for_each( m_meshCollection.begin(), m_meshCollection.end(), [ =, &potentialHits, &potentialHitsMutex ]( auto pair )
       {
         auto mesh = pair.second;
         if ( mesh->TestRayOBBIntersection( desiredCoordinateSystem, frameNumber, rayOrigin, rayDirection ) )
         {
+          std::lock_guard<std::mutex> lock( potentialHitsMutex );
           potentialHits[pair.first] = pair.second;
         }
-      }
+      } );
 
       bool result( false );
       if ( potentialHits.size() > 0 )
@@ -246,9 +248,9 @@ namespace HoloIntervention
         buffer.rayOrigin = XMFLOAT4( rayOrigin.x, rayOrigin.y, rayOrigin.z, 1.f );
         buffer.rayDirection = XMFLOAT4( rayDirection.x, rayDirection.y, rayDirection.z, 1.f );
         m_deviceResources->GetD3DDeviceContext()->UpdateSubresource( m_constantBuffer.Get(), 0, nullptr, &buffer, 0, 0 );
-        m_deviceResources->GetD3DDeviceContext()->CSSetConstantBuffers( 1, 1, m_constantBuffer.GetAddressOf());
+        m_deviceResources->GetD3DDeviceContext()->CSSetConstantBuffers( 1, 1, m_constantBuffer.GetAddressOf() );
 
-        for ( auto& pair : potentialHits)
+        for ( auto& pair : potentialHits )
         {
           if ( pair.second->TestRayIntersection( *m_deviceResources->GetD3DDeviceContext(), frameNumber, outHitPosition, outHitNormal ) )
           {
@@ -258,7 +260,7 @@ namespace HoloIntervention
         }
 
         ID3D11Buffer* ppCBnullptr[1] = { nullptr };
-        m_deviceResources->GetD3DDeviceContext()->CSSetConstantBuffers(1, 1, ppCBnullptr);
+        m_deviceResources->GetD3DDeviceContext()->CSSetConstantBuffers( 1, 1, ppCBnullptr );
         m_deviceResources->GetD3DDeviceContext()->CSSetShader( nullptr, nullptr, 0 );
       }
 

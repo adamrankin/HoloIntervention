@@ -21,11 +21,12 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 ====================================================================*/
 
-// Local includes
 #include "pch.h"
+
+// Local includes
+#include "Common.h"
 #include "DirectXHelper.h"
 #include "SliceRenderer.h"
-#include "GetDataFromIBuffer.h"
 
 // STD includes
 #include <sstream>

@@ -80,8 +80,8 @@
     <ClCompile Include="Content\Rendering\DirectXTK\InstancedBasicEffect.cpp">
       <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
     </ClCompile>
-    <ClCompile Include="Content\Common.cpp">
-      <Filter>Content\Common</Filter>
+    <ClCompile Include="Common\Common.cpp">
+      <Filter>Common</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -178,12 +178,6 @@
     </ClInclude>
     <ClInclude Include="Content\Rendering\DirectXTK\InstancedEffects.h">
       <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
-    </ClInclude>
-    <ClInclude Include="Content\GetDataFromIBuffer.h">
-      <Filter>Content\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="Content\Common.h">
-      <Filter>Content\Common</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -301,9 +295,6 @@
     </Filter>
     <Filter Include="Content\Rendering\ModelRenderer\DirectXTK\Shaders">
       <UniqueIdentifier>{a66cb79e-3bd1-49ab-bb5e-5f90ae7059ae}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Content\Common">
-      <UniqueIdentifier>{c516e1ea-164e-4c5a-ba7a-9cce161ca5c4}</UniqueIdentifier>
     </Filter>
     <Filter Include="Assets\Images">
       <UniqueIdentifier>{2eb48ab8-d115-48b7-8958-d224d0c2ff93}</UniqueIdentifier>

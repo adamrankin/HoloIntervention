@@ -24,8 +24,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "pch.h"
 
 // Local includes
+#include "Common.h"
 #include "DirectXHelper.h"
-#include "GetDataFromIBuffer.h"
 #include "SpatialShaderStructures.h"
 #include "SpatialSurfaceCollection.h"
 #include "StepTimer.h"
