@@ -41,7 +41,7 @@ namespace HoloIntervention
       GazeSystem();
       ~GazeSystem();
 
-      void Update( const DX::StepTimer& timer, const float3& hitPosition, const float3& hitNormal );
+      void Update( const DX::StepTimer& timer, SpatialCoordinateSystem^ currentCoordinateSystem, SpatialPointerPose^ headPose);
 
       void EnableCursor( bool enable );
       bool IsCursorEnabled();

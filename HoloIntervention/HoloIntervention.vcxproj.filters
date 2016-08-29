@@ -222,6 +222,156 @@
     <None Include="Assets\Models\gaze_cursor.cmo">
       <Filter>Assets\Models</Filter>
     </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicVertexLightingVc_VPRT.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_PSBasic.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_PSBasicNoFog.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_PSBasicPixelLighting.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_PSBasicPixelLightingTx.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_PSBasicTx.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_PSBasicTxNoFog.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_PSBasicVertexLighting.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_PSBasicVertexLightingNoFog.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_PSBasicVertexLightingTx.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_PSBasicVertexLightingTxNoFog.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasic.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasic_VPRT.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicNoFog.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicNoFog_VPRT.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicOneLight.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicOneLight_VPRT.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicOneLightTx.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicOneLightTx_VPRT.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicOneLightTxVc.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicOneLightTxVc_VPRT.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicOneLightVc.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicOneLightVc_VPRT.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicPixelLighting.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicPixelLighting_VPRT.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicPixelLightingTx.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicPixelLightingTx_VPRT.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicPixelLightingTxVc.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicPixelLightingTxVc_VPRT.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicPixelLightingVc.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicPixelLightingVc_VPRT.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicTx.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicTx_VPRT.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicTxNoFog.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicTxNoFog_VPRT.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicTxVc.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicTxVc_VPRT.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicTxVcNoFog.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicTxVcNoFog_VPRT.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicVc.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicVc_VPRT.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicVcNoFog.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicVcNoFog_VPRT.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicVertexLighting.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicVertexLighting_VPRT.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicVertexLightingTx.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicVertexLightingTx_VPRT.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicVertexLightingTxVc.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicVertexLightingTxVc_VPRT.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicVertexLightingVc.inc">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Content">
@@ -305,6 +455,9 @@
     <Filter Include="Assets\Sounds">
       <UniqueIdentifier>{745c530a-8dbc-4c10-8d4e-7f19b1fd8759}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled">
+      <UniqueIdentifier>{a9df8600-d7b1-4152-9eb6-9ffc512e3f70}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Content\SpatialMapping\Shaders\CSRayTriangleIntersection.hlsl">
@@ -314,9 +467,6 @@
       <Filter>Content\Rendering\NotificationRenderer\Shaders\NotificationRenderer</Filter>
     </FxCompile>
     <FxCompile Include="Content\Rendering\Shaders\NotificationVertexShader.hlsl">
-      <Filter>Content\Rendering\NotificationRenderer\Shaders\NotificationRenderer</Filter>
-    </FxCompile>
-    <FxCompile Include="Content\Rendering\Shaders\NotificationUseDistanceFieldPixelShader.hlsl">
       <Filter>Content\Rendering\NotificationRenderer\Shaders\NotificationRenderer</Filter>
     </FxCompile>
     <FxCompile Include="Content\Rendering\Shaders\DFRFullscreenQuadVertexShader.hlsl">
@@ -354,6 +504,9 @@
     </FxCompile>
     <FxCompile Include="Content\Rendering\Shaders\PCT0T1T2IGeometryShader.hlsl">
       <Filter>Content\Rendering\Geometry Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Rendering\Shaders\NotificationPixelShader.hlsl">
+      <Filter>Content\Rendering\NotificationRenderer\Shaders\NotificationRenderer</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>

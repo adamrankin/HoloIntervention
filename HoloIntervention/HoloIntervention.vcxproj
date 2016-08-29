@@ -165,6 +165,56 @@
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
     </None>
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_PSBasic.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_PSBasicNoFog.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_PSBasicPixelLighting.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_PSBasicPixelLightingTx.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_PSBasicTx.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_PSBasicTxNoFog.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_PSBasicVertexLighting.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_PSBasicVertexLightingNoFog.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_PSBasicVertexLightingTx.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_PSBasicVertexLightingTxNoFog.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasic.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicNoFog.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicNoFog_VPRT.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicOneLight.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicOneLightTx.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicOneLightTxVc.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicOneLightTxVc_VPRT.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicOneLightTx_VPRT.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicOneLightVc.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicOneLightVc_VPRT.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicOneLight_VPRT.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicPixelLighting.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicPixelLightingTx.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicPixelLightingTxVc.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicPixelLightingTxVc_VPRT.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicPixelLightingTx_VPRT.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicPixelLightingVc.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicPixelLightingVc_VPRT.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicPixelLighting_VPRT.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicTx.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicTxNoFog.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicTxNoFog_VPRT.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicTxVc.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicTxVcNoFog.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicTxVcNoFog_VPRT.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicTxVc_VPRT.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicTx_VPRT.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicVc.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicVcNoFog.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicVcNoFog_VPRT.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicVc_VPRT.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicVertexLighting.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicVertexLightingTx.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicVertexLightingTxVc.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicVertexLightingTxVc_VPRT.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicVertexLightingTx_VPRT.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicVertexLightingVc.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicVertexLightingVc_VPRT.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicVertexLighting_VPRT.inc" />
+    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasic_VPRT.inc" />
     <None Include="Content\Rendering\Shaders\InstancedCommon.fxh" />
     <None Include="Content\Rendering\Shaders\InstancedLighting.fxh" />
     <None Include="Content\Rendering\Shaders\InstancedStructures.fxh" />
@@ -187,7 +237,7 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
     </FxCompile>
-    <FxCompile Include="Content\Rendering\Shaders\NotificationUseDistanceFieldPixelShader.hlsl">
+    <FxCompile Include="Content\Rendering\Shaders\NotificationPixelShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>

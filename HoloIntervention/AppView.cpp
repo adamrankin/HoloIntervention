@@ -174,6 +174,12 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
+  uint64 AppView::GetCurrentFrameNumber() const
+  {
+    return m_main->GetCurrentFrameNumber();
+  }
+
+  //----------------------------------------------------------------------------
   void AppView::OnViewActivated(CoreApplicationView^ sender, IActivatedEventArgs^ args)
   {
     // Run() won't start until the CoreWindow is activated.

@@ -125,6 +125,8 @@ namespace HoloIntervention
         return;
       }
 
+      // TODO : check to see if the model is in front of the camera...
+
       const auto context = m_deviceResources->GetD3DDeviceContext();
 
       // Draw opaque parts

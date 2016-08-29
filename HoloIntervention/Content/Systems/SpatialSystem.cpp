@@ -66,9 +66,6 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void SpatialSystem::Update( DX::StepTimer const& timer, SpatialCoordinateSystem^ coordinateSystem )
     {
-      // Cache the current frame number
-      m_FrameNumber = timer.GetFrameCount();
-
       // Keep the surface observer positioned at the device's location.
       UpdateSurfaceObserverPosition( coordinateSystem );
 
@@ -136,7 +133,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     bool SpatialSystem::TestRayIntersection( SpatialCoordinateSystem^ desiredCoordinateSystem, const float3 rayOrigin, const float3 rayDirection, float3& outHitPosition, float3& outHitNormal )
     {
-      return m_surfaceCollection->TestRayIntersection( m_FrameNumber, desiredCoordinateSystem, rayOrigin, rayDirection, outHitPosition, outHitNormal );
+      return m_surfaceCollection->TestRayIntersection( desiredCoordinateSystem, rayOrigin, rayDirection, outHitPosition, outHitNormal );
     }
 
     //----------------------------------------------------------------------------
@@ -163,6 +160,7 @@ namespace HoloIntervention
             // First, we'll set up the surface observer to use our preferred data formats.
             // In this example, a "preferred" format is chosen that is compatible with our pre-compiled shader pipeline.
             m_surfaceMeshOptions = ref new SpatialSurfaceMeshOptions();
+            m_surfaceMeshOptions->IncludeVertexNormals = true;
             IVectorView<DirectXPixelFormat>^ supportedVertexPositionFormats = m_surfaceMeshOptions->SupportedVertexPositionFormats;
             unsigned int formatIndex = 0;
             if ( supportedVertexPositionFormats->IndexOf( DirectXPixelFormat::R32G32B32A32Float, &formatIndex ) )

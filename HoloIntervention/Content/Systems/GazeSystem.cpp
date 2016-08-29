@@ -30,6 +30,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Rendering includes
 #include "ModelRenderer.h"
 
+// System includes
+#include "SpatialSystem.h"
+
 using namespace Windows::Foundation::Numerics;
 
 namespace HoloIntervention
@@ -54,19 +57,35 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void GazeSystem::Update( const DX::StepTimer& timer, const float3& hitPosition, const float3& hitNormal )
+    void GazeSystem::Update( const DX::StepTimer& timer, SpatialCoordinateSystem^ currentCoordinateSystem, SpatialPointerPose^ headPose )
     {
-      m_lastHitNormal = hitNormal;
-      m_lastHitPosition = hitPosition;
+      if ( IsCursorEnabled() )
+      {
+        float3 outHitPosition;
+        float3 outHitNormal;
+        bool hit = HoloIntervention::instance()->GetSpatialSystem().TestRayIntersection( currentCoordinateSystem,
+                   headPose->Head->Position,
+                   headPose->Head->ForwardDirection,
+                   outHitPosition,
+                   outHitNormal );
 
-      // Infinite number of vectors that cross to give the normal vector, so choose arbitrary y-up vector to create a coordinate system
-      float3 yUp( 0.f, 1.f, 0.f );
-      float3 jVec = hitNormal;
+        if ( hit )
+        {
+          // Update the gaze system with the pose to render
+          m_lastHitNormal = outHitNormal;
+          m_lastHitPosition = outHitPosition;
 
-      float3 iVec = cross( hitNormal, yUp );
-      iVec = normalize( iVec );
+          // Infinite number of vectors that cross to give the normal vector, so choose arbitrary y-up vector to create a coordinate system
+          float3 yUp( 0.f, 1.f, 0.f );
+          float3 jVec = outHitNormal;
 
-      m_modelEntry->SetWorld( make_float4x4_world( hitPosition, jVec, iVec ) );
+          float3 iVec = cross( jVec, yUp );
+          iVec = normalize( iVec );
+          // TODO : what scale is right? where is the upscale coming from? is the model in millimeters even though I specified meters?
+          float4x4 matrix = make_float4x4_scale( 0.001f ) * make_float4x4_world( outHitPosition, jVec, iVec );
+          m_modelEntry->SetWorld( matrix );
+        }
+      }
     }
 
     //----------------------------------------------------------------------------
@@ -74,7 +93,7 @@ namespace HoloIntervention
     {
       m_systemEnabled = enable;
 
-	  m_modelEntry->EnableModel(enable);
+      m_modelEntry->EnableModel( enable );
     }
 
     //----------------------------------------------------------------------------
@@ -94,6 +113,5 @@ namespace HoloIntervention
     {
       return m_lastHitNormal;
     }
-
   }
 }

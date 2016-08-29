@@ -65,9 +65,6 @@ namespace HoloIntervention
       void LoadAppState();
 
     private:
-      // Cached value of the current frame number
-      uint64 m_FrameNumber;
-
       // Event registration tokens.
       Windows::Foundation::EventRegistrationToken                       m_surfaceObserverEventToken;
 

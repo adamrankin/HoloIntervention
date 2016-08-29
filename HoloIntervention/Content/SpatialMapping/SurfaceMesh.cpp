@@ -48,10 +48,14 @@ namespace HoloIntervention
   namespace Spatial
   {
     //----------------------------------------------------------------------------
-    SurfaceMesh::SurfaceMesh( const std::shared_ptr<DX::DeviceResources>& deviceResources )
+    SurfaceMesh::SurfaceMesh( const std::shared_ptr<DX::DeviceResources>& deviceResources, SpatialSurfaceInfo^ surfaceInfo, SpatialSurfaceMeshOptions^ meshOptions )
       : m_deviceResources( deviceResources )
+      , m_surfaceInfo( surfaceInfo )
+      , m_meshOptions( meshOptions )
     {
       m_lastUpdateTime.UniversalTime = 0;
+
+      UpdateSurface( surfaceInfo, meshOptions );
     }
 
     //----------------------------------------------------------------------------
@@ -61,10 +65,20 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SurfaceMesh::UpdateSurface( SpatialSurfaceMesh^ surfaceMesh )
+    void SurfaceMesh::UpdateSurface( SpatialSurfaceInfo^ surfaceInfo, SpatialSurfaceMeshOptions^ meshOptions )
     {
-      m_surfaceMesh = surfaceMesh;
-      UpdateDeviceBasedResources();
+      auto createMeshTask = create_task( surfaceInfo->TryComputeLatestMeshAsync( m_maxTrianglesPerCubicMeter, m_meshOptions ) ).then( [this]( SpatialSurfaceMesh ^ mesh )
+      {
+        {
+          std::lock_guard<std::mutex> lock(m_meshResourcesMutex);
+          if (mesh != nullptr)
+          {
+            m_surfaceMesh = mesh;
+            SetIsActive(true);
+          }
+        }
+        UpdateDeviceBasedResources();
+      } );
     }
 
     //----------------------------------------------------------------------------
@@ -201,16 +215,13 @@ namespace HoloIntervention
       }
 
       WorldConstantBuffer buffer;
-      XMStoreFloat4x4(&buffer.meshToWorld, XMMatrixTranspose(XMLoadFloat4x4(&m_meshToWorldTransform)));;
+      XMStoreFloat4x4( &buffer.meshToWorld, XMMatrixTranspose( XMLoadFloat4x4( &m_meshToWorldTransform ) ) );;
       context.UpdateSubresource( m_meshConstantBuffer.Get(), 0, nullptr, &buffer, 0, 0 );
       context.CSSetConstantBuffers( 0, 1, m_meshConstantBuffer.GetAddressOf() );
 
-      outHitPosition = float3::zero();
-      outHitNormal = float3::zero();
-
       if ( m_lastFrameNumberComputed != 0 && frameNumber < m_lastFrameNumberComputed + NUMBER_OF_FRAMES_BEFORE_RECOMPUTE )
       {
-        // Asked twice in the same frame, return the cached result
+        // Asked twice in the frame period, return the cached result
         outHitPosition = m_rayIntersectionResultPosition;
         outHitNormal = m_rayIntersectionResultNormal;
         return m_hasLastComputedHit;
@@ -232,12 +243,12 @@ namespace HoloIntervention
       context.Unmap( m_readBackBuffer.Get(), 0 );
 
       m_lastFrameNumberComputed = frameNumber;
-      outHitPosition = m_rayIntersectionResultPosition = float3( result->intersectionPoint.x, result->intersectionPoint.y, result->intersectionPoint.z );
-      outHitNormal = m_rayIntersectionResultNormal = float3( result->intersectionNormal.x, result->intersectionNormal.y, result->intersectionNormal.z );
 
       if ( result->intersectionPoint.x != 0.0f || result->intersectionPoint.y != 0.0f || result->intersectionPoint.z != 0.0f ||
            result->intersectionNormal.x != 0.0f || result->intersectionNormal.y != 0.0f || result->intersectionNormal.z != 0.0f )
       {
+        outHitPosition = m_rayIntersectionResultPosition = float3( result->intersectionPoint.x, result->intersectionPoint.y, result->intersectionPoint.z );
+        outHitNormal = m_rayIntersectionResultNormal = float3( result->intersectionNormal.x, result->intersectionNormal.y, result->intersectionNormal.z );
         m_hasLastComputedHit = true;
         return true;
       }
@@ -434,7 +445,7 @@ namespace HoloIntervention
       {
         Platform::IBox<SpatialBoundingOrientedBox>^ bounds = m_surfaceMesh->SurfaceInfo->TryGetBounds( desiredCoordinateSystem );
 
-        if (bounds == nullptr)
+        if ( bounds == nullptr )
         {
           // Can't tell, so have to run the compute shader to verify
           return true;
@@ -456,20 +467,20 @@ namespace HoloIntervention
         float zMin = bounds->Value.Center.z - bounds->Value.Extents.z;
         float zMax = bounds->Value.Center.z + bounds->Value.Extents.z;
 
-        float tx1 = ( xMin - aabbPos.x )*invDir.x;
-        float tx2 = ( xMax - aabbPos.x )*invDir.x;
+        float tx1 = ( xMin - aabbPos.x ) * invDir.x;
+        float tx2 = ( xMax - aabbPos.x ) * invDir.x;
 
         float tmin = min( tx1, tx2 );
         float tmax = max( tx1, tx2 );
 
-        float ty1 = ( yMin - aabbPos.y )*invDir.y;
-        float ty2 = ( yMax - aabbPos.y )*invDir.y;
+        float ty1 = ( yMin - aabbPos.y ) * invDir.y;
+        float ty2 = ( yMax - aabbPos.y ) * invDir.y;
 
         tmin = max( tmin, min( ty1, ty2 ) );
         tmax = min( tmax, max( ty1, ty2 ) );
 
-        float tz1 = ( zMin - aabbPos.z )*invDir.z;
-        float tz2 = ( zMax - aabbPos.z )*invDir.z;
+        float tz1 = ( zMin - aabbPos.z ) * invDir.z;
+        float tz2 = ( zMax - aabbPos.z ) * invDir.z;
 
         tmin = max( tmin, min( tz1, tz2 ) );
         tmax = min( tmax, max( tz1, tz2 ) );

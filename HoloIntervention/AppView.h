@@ -65,6 +65,9 @@ namespace HoloIntervention
     Rendering::ModelRenderer & GetModelRenderer();
     Rendering::SliceRenderer & GetSliceRenderer();
 
+    // Global access to the current frame number
+    uint64 GetCurrentFrameNumber() const;
+
   protected:
     // Application lifecycle event handlers.
     void OnViewActivated( Windows::ApplicationModel::Core::CoreApplicationView ^ sender, Windows::ApplicationModel::Activation::IActivatedEventArgs ^ args );

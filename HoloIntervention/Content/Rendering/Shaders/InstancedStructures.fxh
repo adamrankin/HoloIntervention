@@ -123,9 +123,9 @@ struct VSInputNmTxWeights
 
 struct VSOutput
 {
+  min16float4 PositionPS : SV_Position;
   min16float4 Diffuse : COLOR0;
   min16float4 Specular : COLOR1;
-  min16float4 PositionPS : SV_Position;
 #if defined(USE_VPRT)
   uint rvtId : SV_RenderTargetArrayIndex;
 #else
@@ -135,8 +135,8 @@ struct VSOutput
 
 struct VSOutputNoFog
 {
-  min16float4 Diffuse : COLOR0;
   min16float4 PositionPS : SV_Position;
+  min16float4 Diffuse : COLOR0;
 #if defined(USE_VPRT)
   uint rvtId : SV_RenderTargetArrayIndex;
 #else
@@ -146,10 +146,10 @@ struct VSOutputNoFog
 
 struct VSOutputTx
 {
+  min16float4 PositionPS : SV_Position;
   min16float4 Diffuse : COLOR0;
   min16float4 Specular : COLOR1;
   min16float2 TexCoord : TEXCOORD0;
-  min16float4 PositionPS : SV_Position;
 #if defined(USE_VPRT)
   uint rvtId : SV_RenderTargetArrayIndex;
 #else
@@ -159,9 +159,9 @@ struct VSOutputTx
 
 struct VSOutputTxNoFog
 {
+  min16float4 PositionPS : SV_Position;
   min16float4 Diffuse : COLOR0;
   min16float2 TexCoord : TEXCOORD1;
-  min16float4 PositionPS : SV_Position;
 #if defined(USE_VPRT)
   uint rvtId : SV_RenderTargetArrayIndex;
 #else
@@ -171,10 +171,10 @@ struct VSOutputTxNoFog
 
 struct VSOutputPixelLighting
 {
+  min16float4 PositionPS : SV_Position;
   min16float4 PositionWS : TEXCOORD0;
   min16float3 NormalWS : TEXCOORD4;
   min16float4 Diffuse : COLOR0;
-  min16float4 PositionPS : SV_Position;
 #if defined(USE_VPRT)
   uint rvtId : SV_RenderTargetArrayIndex;
 #else
@@ -184,11 +184,11 @@ struct VSOutputPixelLighting
 
 struct VSOutputPixelLightingTx
 {
+  min16float4 PositionPS : SV_Position;
   min16float2 TexCoord : TEXCOORD0;
   min16float4 PositionWS : TEXCOORD1;
   min16float3 NormalWS : TEXCOORD2;
   min16float4 Diffuse : COLOR0;
-  min16float4 PositionPS : SV_Position;
 #if defined(USE_VPRT)
   uint rvtId : SV_RenderTargetArrayIndex;
 #else
@@ -198,12 +198,12 @@ struct VSOutputPixelLightingTx
 
 struct VSOutputPixelLightingTxTangent
 {
+  min16float4 PositionPS : SV_Position;
   min16float2 TexCoord : TEXCOORD0;
   min16float4 PositionWS : TEXCOORD1;
   min16float3 NormalWS : TEXCOORD2;
   min16float3 TangentWS : TEXCOORD3;
   min16float4 Diffuse : COLOR0;
-  min16float4 PositionPS : SV_Position;
 #if defined(USE_VPRT)
   uint rvtId : SV_RenderTargetArrayIndex;
 #else
@@ -213,11 +213,11 @@ struct VSOutputPixelLightingTxTangent
 
 struct VSOutputTx2
 {
+  min16float4 PositionPS : SV_Position;
   min16float4 Diffuse : COLOR0;
   min16float4 Specular : COLOR1;
   min16float2 TexCoord : TEXCOORD0;
   min16float2 TexCoord2 : TEXCOORD1;
-  min16float4 PositionPS : SV_Position;
 #if defined(USE_VPRT)
   uint rvtId : SV_RenderTargetArrayIndex;
 #else
@@ -227,10 +227,10 @@ struct VSOutputTx2
 
 struct VSOutputTx2NoFog
 {
+  min16float4 PositionPS : SV_Position;
   min16float4 Diffuse : COLOR0;
   min16float2 TexCoord : TEXCOORD0;
   min16float2 TexCoord2 : TEXCOORD1;
-  min16float4 PositionPS : SV_Position;
 #if defined(USE_VPRT)
   uint rvtId : SV_RenderTargetArrayIndex;
 #else
@@ -240,11 +240,11 @@ struct VSOutputTx2NoFog
 
 struct VSOutputTxEnvMap
 {
+  min16float4 PositionPS : SV_Position;
   min16float4 Diffuse : COLOR0;
   min16float4 Specular : COLOR1;
   min16float2 TexCoord : TEXCOORD0;
   min16float3 EnvCoord : TEXCOORD1;
-  min16float4 PositionPS : SV_Position;
 #if defined(USE_VPRT)
   uint rvtId : SV_RenderTargetArrayIndex;
 #else
@@ -258,6 +258,7 @@ struct VSOutputTxEnvMap
 
 struct PSInput
 {
+  min16float4 PositionPS : SV_Position;
   min16float4 Diffuse : COLOR0;
   min16float4 Specular : COLOR1;
   uint rvt : SV_RenderTargetArrayIndex;
@@ -265,12 +266,14 @@ struct PSInput
 
 struct PSInputNoFog
 {
+  min16float4 PositionPS : SV_Position;
   min16float4 Diffuse : COLOR0;
   uint rvt : SV_RenderTargetArrayIndex;
 };
 
 struct PSInputTx
 {
+  min16float4 PositionPS : SV_Position;
   min16float4 Diffuse : COLOR0;
   min16float4 Specular : COLOR1;
   min16float2 TexCoord : TEXCOORD0;
@@ -279,6 +282,7 @@ struct PSInputTx
 
 struct PSInputTxNoFog
 {
+  min16float4 PositionPS : SV_Position;
   min16float4 Diffuse : COLOR0;
   min16float2 TexCoord : TEXCOORD0;
   uint rvt : SV_RenderTargetArrayIndex;
@@ -286,6 +290,7 @@ struct PSInputTxNoFog
 
 struct PSInputPixelLighting
 {
+  min16float4 PositionPS : SV_Position;
   min16float4 PositionWS : TEXCOORD0;
   min16float3 NormalWS : TEXCOORD1;
   min16float4 Diffuse : COLOR0;
@@ -294,6 +299,7 @@ struct PSInputPixelLighting
 
 struct PSInputPixelLightingTx
 {
+  min16float4 PositionPS : SV_Position;
   min16float2 TexCoord : TEXCOORD0;
   min16float4 PositionWS : TEXCOORD1;
   min16float3 NormalWS : TEXCOORD2;
@@ -303,6 +309,7 @@ struct PSInputPixelLightingTx
 
 struct PSInputPixelLightingTxTangent
 {
+  min16float4 PositionPS : SV_Position;
   min16float2 TexCoord : TEXCOORD0;
   min16float4 PositionWS : TEXCOORD1;
   min16float3 NormalWS : TEXCOORD2;
@@ -313,6 +320,7 @@ struct PSInputPixelLightingTxTangent
 
 struct PSInputTx2
 {
+  min16float4 PositionPS : SV_Position;
   min16float4 Diffuse : COLOR0;
   min16float4 Specular : COLOR1;
   min16float2 TexCoord : TEXCOORD0;
@@ -322,6 +330,7 @@ struct PSInputTx2
 
 struct PSInputTx2NoFog
 {
+  min16float4 PositionPS : SV_Position;
   min16float4 Diffuse : COLOR0;
   min16float2 TexCoord : TEXCOORD0;
   min16float2 TexCoord2 : TEXCOORD1;
@@ -330,6 +339,7 @@ struct PSInputTx2NoFog
 
 struct PSInputTxEnvMap
 {
+  min16float4 PositionPS : SV_Position;
   min16float4 Diffuse : COLOR0;
   min16float4 Specular : COLOR1;
   min16float2 TexCoord : TEXCOORD0;

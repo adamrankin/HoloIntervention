@@ -170,7 +170,7 @@ namespace HoloIntervention
 
       // Load shaders asynchronously.
       task<std::vector<byte>> loadVSTask = DX::ReadDataAsync( vertexShaderFileName );
-      task<std::vector<byte>> loadPSTask = DX::ReadDataAsync( L"ms-appx:///NotificationUseDistanceFieldPixelShader.cso" );
+      task<std::vector<byte>> loadPSTask = DX::ReadDataAsync( L"ms-appx:///NotificationPixelShader.cso" );
 
       task<std::vector<byte>> loadGSTask;
       if ( !m_usingVprtShaders )

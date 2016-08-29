@@ -161,6 +161,8 @@ namespace HoloIntervention
         return;
       }
 
+      // TODO : check to see if the slice is in front of the camera...
+
       const auto context = m_deviceResources->GetD3DDeviceContext();
 
       // Apply the model constant buffer to the vertex shader.

@@ -159,48 +159,20 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void SpatialSurfaceCollection::AddOrUpdateSurface( Guid id, SpatialSurfaceInfo^ newSurface, SpatialSurfaceMeshOptions^ meshOptions )
     {
-      AddOrUpdateSurfaceAsync( id, newSurface, meshOptions ).then( [&]( Concurrency::task<void> previousTask )
-      {
-        try
-        {
-          previousTask.wait();
-        }
-        catch ( Platform::Exception^ e )
-        {
-          OutputDebugStringW( e->Message->Data() );
-        }
-        catch ( const std::exception& e )
-        {
-          OutputDebugStringA( e.what() );
-        }
-      } );
-    }
-
-    //----------------------------------------------------------------------------
-    Concurrency::task<void> SpatialSurfaceCollection::AddOrUpdateSurfaceAsync( Guid id, SpatialSurfaceInfo^ newSurface, SpatialSurfaceMeshOptions^ meshOptions )
-    {
       // The level of detail setting is used to limit mesh complexity, by limiting the number
       // of triangles per cubic meter.
-      auto createMeshTask = create_task( newSurface->TryComputeLatestMeshAsync( m_maxTrianglesPerCubicMeter, meshOptions ) );
-      auto processMeshTask = createMeshTask.then( [this, id]( Concurrency::task<SpatialSurfaceMesh^> meshTask )
+      std::lock_guard<std::mutex> guard( m_meshCollectionLock );
+
+      auto entry = m_meshCollection.find( id );
+      if ( entry == m_meshCollection.end() )
       {
-        auto mesh = meshTask.get();
-        if ( mesh != nullptr )
-        {
-          std::lock_guard<std::mutex> guard( m_meshCollectionLock );
-
-          if ( m_meshCollection.find( id ) == m_meshCollection.end() )
-          {
-            // Create a new surface and insert it
-            m_meshCollection[id] = std::make_shared<SurfaceMesh>( m_deviceResources );
-          }
-          auto surfaceMesh = m_meshCollection[id];
-          surfaceMesh->UpdateSurface( mesh );
-          surfaceMesh->SetIsActive( true );
-        }
-      } );
-
-      return processMeshTask;
+        // Create a new surface and insert it
+        m_meshCollection[id] = std::make_shared<SurfaceMesh>( m_deviceResources, newSurface, meshOptions );
+      }
+      else
+      {
+        entry->second->UpdateSurface( newSurface, meshOptions );
+      }
     }
 
     //----------------------------------------------------------------------------
@@ -218,12 +190,14 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool SpatialSurfaceCollection::TestRayIntersection( uint64_t frameNumber, SpatialCoordinateSystem^ desiredCoordinateSystem, const float3 rayOrigin, const float3 rayDirection, float3& outHitPosition, float3& outHitNormal )
+    bool SpatialSurfaceCollection::TestRayIntersection( SpatialCoordinateSystem^ desiredCoordinateSystem, const float3 rayOrigin, const float3 rayDirection, float3& outHitPosition, float3& outHitNormal )
     {
       if ( !m_resourcesLoaded )
       {
         return false;
       }
+
+      uint64 currentFrame = HoloIntervention::instance()->GetCurrentFrameNumber();
 
       // Perform CPU based pre-check using OBB
       std::mutex potentialHitsMutex;
@@ -232,7 +206,7 @@ namespace HoloIntervention
       Concurrency::parallel_for_each( m_meshCollection.begin(), m_meshCollection.end(), [ =, &potentialHits, &potentialHitsMutex ]( auto pair )
       {
         auto mesh = pair.second;
-        if ( mesh->TestRayOBBIntersection( desiredCoordinateSystem, frameNumber, rayOrigin, rayDirection ) )
+        if ( mesh->TestRayOBBIntersection( desiredCoordinateSystem, currentFrame, rayOrigin, rayDirection ) )
         {
           std::lock_guard<std::mutex> lock( potentialHitsMutex );
           potentialHits[pair.first] = pair.second;
@@ -250,12 +224,27 @@ namespace HoloIntervention
         m_deviceResources->GetD3DDeviceContext()->UpdateSubresource( m_constantBuffer.Get(), 0, nullptr, &buffer, 0, 0 );
         m_deviceResources->GetD3DDeviceContext()->CSSetConstantBuffers( 1, 1, m_constantBuffer.GetAddressOf() );
 
-        for ( auto& pair : potentialHits )
+        if ( m_lastHitMesh != nullptr && potentialHits.find( m_lastHitMeshGuid ) != potentialHits.end() )
         {
-          if ( pair.second->TestRayIntersection( *m_deviceResources->GetD3DDeviceContext(), frameNumber, outHitPosition, outHitNormal ) )
+          result = m_lastHitMesh->TestRayIntersection( *m_deviceResources->GetD3DDeviceContext(), currentFrame, outHitPosition, outHitNormal );
+        }
+
+        if ( !result )
+        {
+          if ( potentialHits.find( m_lastHitMeshGuid ) != potentialHits.end() )
           {
-            result = true;
-            break;
+            potentialHits.erase( potentialHits.find( m_lastHitMeshGuid ) );
+          }
+
+          for ( auto& pair : potentialHits )
+          {
+            if ( pair.second->TestRayIntersection( *m_deviceResources->GetD3DDeviceContext(), currentFrame, outHitPosition, outHitNormal ) )
+            {
+              m_lastHitMesh = pair.second;
+              m_lastHitMeshGuid = pair.first;
+              result = true;
+              break;
+            }
           }
         }
 

@@ -148,7 +148,7 @@ namespace HoloIntervention
 
     // TODO : remove temp code, no such thing as default server
     // Give the system 1s to spin up and then attempt to connect to the default IGT server
-    RunFunctionAfterDelay(1000, [this]( ThreadPoolTimer ^ timer ) -> void
+    RunFunctionAfterDelay( 1000, [this]( ThreadPoolTimer ^ timer ) -> void
     {
       m_igtLinkIF->ConnectAsync().then( [this]( bool result )
       {
@@ -245,23 +245,13 @@ namespace HoloIntervention
     {
       SpatialPointerPose^ pose = SpatialPointerPose::TryGetAtTimestamp( currentCoordinateSystem, prediction->Timestamp );
 
-      m_spatialSystem->Update( m_timer, currentCoordinateSystem );
-
-      // Update the gaze vector in the gaze renderer
-      if ( m_gazeSystem->IsCursorEnabled() )
+      if (pose == nullptr)
       {
-        float3 outHitPosition;
-        float3 outHitNormal;
-        bool hit = m_spatialSystem->TestRayIntersection( currentCoordinateSystem, pose->Head->Position, pose->Head->ForwardDirection,
-                   outHitPosition, outHitNormal );
-
-        if ( hit )
-        {
-          // Update the gaze system with the pose to render
-          m_gazeSystem->Update( m_timer, outHitPosition, outHitNormal );
-        }
+        // TODO : how to handle invalid pose?
       }
 
+      m_spatialSystem->Update( m_timer, currentCoordinateSystem );
+      m_gazeSystem->Update( m_timer, currentCoordinateSystem, pose);
       m_cursorSound->Update( m_timer );
       m_sliceRenderer->Update( pose, m_timer );
       m_notificationSystem->Update( pose, m_timer );
@@ -420,6 +410,12 @@ namespace HoloIntervention
   void HoloInterventionMain::LoadAppState()
   {
     m_spatialSystem->LoadAppState();
+  }
+
+  //----------------------------------------------------------------------------
+  uint64 HoloInterventionMain::GetCurrentFrameNumber() const
+  {
+    return m_timer.GetFrameCount();
   }
 
   //----------------------------------------------------------------------------

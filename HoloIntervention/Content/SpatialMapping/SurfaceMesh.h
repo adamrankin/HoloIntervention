@@ -45,10 +45,10 @@ namespace HoloIntervention
     class SurfaceMesh
     {
     public:
-      SurfaceMesh( const std::shared_ptr<DX::DeviceResources>& deviceResources );
+      SurfaceMesh( const std::shared_ptr<DX::DeviceResources>& deviceResources, SpatialSurfaceInfo^ newSurface, SpatialSurfaceMeshOptions^ meshOptions );
       ~SurfaceMesh();
 
-      void UpdateSurface( SpatialSurfaceMesh^ surface );
+      void UpdateSurface( SpatialSurfaceInfo^ newSurface, SpatialSurfaceMeshOptions^ meshOptions );
 
       void UpdateTransform( DX::StepTimer const& timer,
                             SpatialCoordinateSystem^ baseCoordinateSystem );
@@ -105,6 +105,8 @@ namespace HoloIntervention
       std::shared_ptr<DX::DeviceResources>  m_deviceResources;
 
       // The mesh owned by this object
+      SpatialSurfaceMeshOptions^            m_meshOptions = nullptr;
+      SpatialSurfaceInfo^                   m_surfaceInfo = nullptr;
       SpatialSurfaceMesh^                   m_surfaceMesh = nullptr;
 
       // D3D resources for this mesh
@@ -125,6 +127,7 @@ namespace HoloIntervention
       bool                                  m_loadingComplete = false;
       bool                                  m_isActive = false;
       float                                 m_lastActiveTime = -1.f;
+      double                                m_maxTrianglesPerCubicMeter = 1000.0;
 
       // Number of indices in the mesh data
       uint32                                m_indexCount = 0;

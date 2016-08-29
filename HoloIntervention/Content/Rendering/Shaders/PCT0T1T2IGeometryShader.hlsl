@@ -12,22 +12,22 @@
 //Per-vertex data from the vertex shader.
 struct GeometryShaderInput
 {
+  min16float4 PositionPS  : SV_Position;
   min16float4 Color0      : COLOR0;
   min16float2 TexCoord0   : TEXCOORD0;
   min16float2 TexCoord1   : TEXCOORD1;
   min16float2 TexCoord2   : TEXCOORD2;
-  min16float4 PositionPS  : SV_Position;
   uint instId             : TEXCOORD5;  // SV_InstanceID % 2
 };
 
 struct GeometryShaderOutput
 {
+  min16float4 pos         : SV_POSITION;
   min16float4 Color0      : COLOR0;
   min16float2 TexCoord0   : TEXCOORD0;
   min16float2 TexCoord1   : TEXCOORD1;
   min16float2 TexCoord2   : TEXCOORD2;
   uint rtvId              : SV_RenderTargetArrayIndex;
-  min16float4 pos         : SV_POSITION;
 };
 
 // This geometry shader is a pass-through that leaves the geometry unmodified 

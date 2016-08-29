@@ -97,6 +97,9 @@ namespace HoloIntervention
     void SaveAppState();
     void LoadAppState();
 
+    // Global access to the current frame number
+    uint64 GetCurrentFrameNumber() const;
+
     // Provide access to the logic systems
     Notifications::NotificationSystem& GetNotificationsSystem();
     Spatial::SpatialSystem& GetSpatialSystem();

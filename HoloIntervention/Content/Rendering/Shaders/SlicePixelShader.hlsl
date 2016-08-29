@@ -24,9 +24,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Per-pixel color data passed through to the pixel shader.
 struct PixelShaderInput
 {
+    min16float4 pos         : SV_POSITION;
     min16float2 texCoord    : TEXCOORD1;
     uint        rtvId       : SV_RenderTargetArrayIndex;
-    min16float4 pos         : SV_POSITION;
 };
 
 Texture2D       tex             : t0;

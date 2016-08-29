@@ -60,8 +60,7 @@ namespace HoloIntervention
       void RemoveSurface( Platform::Guid id );
       void ClearSurfaces();
 
-      bool TestRayIntersection( uint64_t frameNumber,
-                                SpatialCoordinateSystem^ desiredCoordinateSystem,
+      bool TestRayIntersection( SpatialCoordinateSystem^ desiredCoordinateSystem,
                                 const float3 rayOrigin,
                                 const float3 rayDirection,
                                 float3& outHitPosition,
@@ -72,11 +71,6 @@ namespace HoloIntervention
       void HideInactiveMeshes( Windows::Foundation::Collections::IMapView<Platform::Guid, SpatialSurfaceInfo^>^ const& surfaceCollection );
 
     protected:
-      Concurrency::task<void> AddOrUpdateSurfaceAsync( Platform::Guid id,
-          SpatialSurfaceInfo^ newSurface,
-          SpatialSurfaceMeshOptions^ meshOptions );
-
-    protected:
       Microsoft::WRL::ComPtr<ID3D11Buffer>            m_constantBuffer = nullptr;
       Microsoft::WRL::ComPtr<ID3D11ComputeShader>     m_d3d11ComputeShader = nullptr;
       bool                                            m_resourcesLoaded = false;
@@ -85,13 +79,14 @@ namespace HoloIntervention
       std::mutex                                      m_meshCollectionLock;
 
       // Total number of surface meshes.
-      unsigned int                                    m_surfaceMeshCount;
+      unsigned int                                    m_surfaceMeshCount = 0;
 
-      // Level of detail setting. The number of triangles that the system is allowed to provide per cubic meter.
-      double                                          m_maxTrianglesPerCubicMeter = 1000.0;
+      // Cache the latest known mesh to be hit (optimization)
+      Platform::Guid                                  m_lastHitMeshGuid;
+      std::shared_ptr<SurfaceMesh>                    m_lastHitMesh;
 
       // Keep a reference to the device resources
-      std::shared_ptr<DX::DeviceResources>            m_deviceResources;
+      std::shared_ptr<DX::DeviceResources>            m_deviceResources = nullptr;
 
       // The duration of time, in seconds, a mesh is allowed to remain inactive before deletion.
       const float                                     MAX_INACTIVE_MESH_TIME_SEC = 120.f;
