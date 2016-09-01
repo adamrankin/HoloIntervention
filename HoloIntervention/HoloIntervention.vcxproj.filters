@@ -83,6 +83,9 @@
     <ClCompile Include="Common\Common.cpp">
       <Filter>Common</Filter>
     </ClCompile>
+    <ClCompile Include="Content\Systems\ToolSystem.cpp">
+      <Filter>Content\Systems\Tools</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="HoloInterventionMain.h" />
@@ -178,6 +181,9 @@
     </ClInclude>
     <ClInclude Include="Content\Rendering\DirectXTK\InstancedEffects.h">
       <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Systems\ToolSystem.h">
+      <Filter>Content\Systems\Tools</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -372,6 +378,9 @@
     <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicVertexLightingVc.inc">
       <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
     </None>
+    <None Include="Assets\Models\needle.cmo">
+      <Filter>Assets\Models</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Content">
@@ -457,6 +466,9 @@
     </Filter>
     <Filter Include="Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled">
       <UniqueIdentifier>{a9df8600-d7b1-4152-9eb6-9ffc512e3f70}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Systems\Tools">
+      <UniqueIdentifier>{04e0a418-9a42-43fb-9348-836d4a22974c}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

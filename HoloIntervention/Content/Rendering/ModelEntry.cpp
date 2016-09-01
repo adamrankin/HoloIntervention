@@ -63,8 +63,8 @@ namespace HoloIntervention
         char ext[32];
         _splitpath_s( asset.c_str(), drive, dir, name, ext );
 
-		std::string nameStr(name);
-		std::string extStr(ext);
+        std::string nameStr( name );
+        std::string extStr( ext );
         std::string dirStr( dir );
         std::replace( dirStr.begin(), dirStr.end(), '/', '\\' );
         std::wstring wdir( dirStr.begin(), dirStr.end() );
@@ -209,13 +209,13 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    uint32 ModelEntry::GetId() const
+    uint64 ModelEntry::GetId() const
     {
       return m_id;
     }
 
     //----------------------------------------------------------------------------
-    void ModelEntry::SetId( uint32 id )
+    void ModelEntry::SetId( uint64 id )
     {
       m_id = id;
     }

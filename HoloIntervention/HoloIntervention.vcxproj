@@ -120,6 +120,7 @@
     <ClInclude Include="Content\Systems\GazeSystem.h" />
     <ClInclude Include="Content\Systems\NotificationSystem.h" />
     <ClInclude Include="Content\Systems\SpatialSystem.h" />
+    <ClInclude Include="Content\Systems\ToolSystem.h" />
     <ClInclude Include="HoloInterventionMain.h" />
     <ClInclude Include="Common\DeviceResources.h" />
     <ClInclude Include="Common\CameraResources.h" />
@@ -150,6 +151,7 @@
     <ClCompile Include="Content\Systems\GazeSystem.cpp" />
     <ClCompile Include="Content\Systems\NotificationSystem.cpp" />
     <ClCompile Include="Content\Systems\SpatialSystem.cpp" />
+    <ClCompile Include="Content\Systems\ToolSystem.cpp" />
     <ClCompile Include="HoloInterventionMain.cpp" />
     <ClCompile Include="Common\DeviceResources.cpp" />
     <ClCompile Include="Common\CameraResources.cpp" />
@@ -165,6 +167,7 @@
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
     </None>
+    <None Include="Assets\Models\needle.cmo" />
     <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_PSBasic.inc" />
     <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_PSBasicNoFog.inc" />
     <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_PSBasicPixelLighting.inc" />

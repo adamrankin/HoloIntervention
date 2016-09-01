@@ -24,47 +24,31 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
-#include "DeviceResources.h"
 #include "ModelEntry.h"
-#include "StepTimer.h"
 
-using namespace Windows::Foundation;
-using namespace Windows::UI::Input::Spatial;
+// STL includes
+
+// WinRT includes
+
 using namespace Windows::Foundation::Numerics;
 
 namespace HoloIntervention
 {
-  namespace Rendering
+  namespace Tools
   {
-    class ModelRenderer
+    class ToolSystem
     {
-      typedef std::list<std::shared_ptr<ModelEntry>> ModelList;
     public:
-      ModelRenderer( const std::shared_ptr<DX::DeviceResources>& deviceResources );
-      ~ModelRenderer();
+      ToolSystem();
+      ~ToolSystem();
 
-      // D3D resources
-      void CreateDeviceDependentResources();
-      void ReleaseDeviceDependentResources();
-
-      void Update( const DX::StepTimer& timer, const DX::ViewProjection& vp );
-      void Render();
-
-      uint64 AddModel( const std::wstring& assetLocation );
-      void RemoveModel( uint64 modelId );
-      std::shared_ptr<ModelEntry> GetModel( uint64 modelId ) const;
+      uint64 RegisterTool( const std::wstring& modelName, const std::wstring& coordinateFrame );
+      void UnregisterTool( uint64 toolToken );
+      void ClearTools();
 
     protected:
-      bool FindModel( uint64 modelId, std::shared_ptr<ModelEntry>& modelEntry ) const;
-
-    protected:
-      // Cached pointer to device resources.
-      std::shared_ptr<DX::DeviceResources>            m_deviceResources = nullptr;
-
-      // Lock protection when accessing image list
-      std::mutex                                      m_modelListMutex;
-      ModelList                                       m_models;
-      uint64                                          m_nextUnusedModelId = 1; // start at 1, 0 is considered invalid
+      std::vector<uint64>                                   m_modelTokens;
+      std::vector<std::shared_ptr<Rendering::ModelEntry>>   m_modelEntries;
     };
   }
 }

@@ -76,7 +76,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    uint32 ModelRenderer::AddModel( const std::wstring& assetLocation )
+    uint64 ModelRenderer::AddModel( const std::wstring& assetLocation )
     {
       std::shared_ptr<ModelEntry> entry = std::make_shared<ModelEntry>( m_deviceResources, assetLocation );
       entry->SetId( m_nextUnusedModelId );
@@ -90,7 +90,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ModelRenderer::RemoveModel( uint32 modelId )
+    void ModelRenderer::RemoveModel( uint64 modelId )
     {
       std::lock_guard<std::mutex> guard( m_modelListMutex );
       std::shared_ptr<ModelEntry> model;
@@ -106,7 +106,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    std::shared_ptr<ModelEntry> ModelRenderer::GetModel( uint32 modelId ) const
+    std::shared_ptr<ModelEntry> ModelRenderer::GetModel( uint64 modelId ) const
     {
       std::shared_ptr<ModelEntry> entry;
       if ( this->FindModel( modelId, entry ) )
@@ -117,7 +117,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool ModelRenderer::FindModel( uint32 modelId, std::shared_ptr<ModelEntry>& modelEntry ) const
+    bool ModelRenderer::FindModel( uint64 modelId, std::shared_ptr<ModelEntry>& modelEntry ) const
     {
       for ( auto model : m_models )
       {

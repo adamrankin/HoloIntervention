@@ -62,11 +62,11 @@ namespace HoloIntervention
       bool IsModelEnabled() const;
 
       // Model pose control
-      void SetWorld(const float4x4& world);
+      void SetWorld( const float4x4& world );
 
       // Accessors
-      uint32 GetId() const;
-      void SetId( uint32 id );
+      uint64 GetId() const;
+      void SetId( uint64 id );
 
     protected:
       void DrawMesh( const DirectX::ModelMesh& mesh, bool alpha );
@@ -88,7 +88,7 @@ namespace HoloIntervention
 
       // Model related behavior
       bool                                                m_enableModel = false;
-      uint32                                              m_id;
+      uint64                                              m_id;
 
       // Variables used with the rendering loop.
       bool                                                m_loadingComplete = false;
