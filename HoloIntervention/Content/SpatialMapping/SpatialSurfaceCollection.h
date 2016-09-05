@@ -42,6 +42,13 @@ namespace HoloIntervention
 {
   namespace Spatial
   {
+    struct RayConstantBuffer
+    {
+      XMFLOAT4 rayOrigin;
+      XMFLOAT4 rayDirection;
+    };
+    static_assert( ( sizeof( RayConstantBuffer ) % ( sizeof( float ) * 4 ) ) == 0, "Ray constant buffer size must be 16-byte aligned (16 bytes is the length of four floats)." );
+
     class SpatialSurfaceCollection
     {
       typedef std::map<Platform::Guid, std::shared_ptr<SurfaceMesh> > GuidMeshMap;

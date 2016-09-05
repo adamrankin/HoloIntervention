@@ -59,10 +59,10 @@ namespace HoloIntervention
       void SetPort( int32 port );
 
       /// Retrieve the oldest tracked frame
-      bool GetOldestTrackedFrame(UWPOpenIGTLink::TrackedFrame^ frame);
+      bool GetOldestTrackedFrame(UWPOpenIGTLink::TrackedFrame^ frame, double& oldestTimestamp);
 
       /// Retrieve the latest tracked frame
-      bool GetLatestTrackedFrame(UWPOpenIGTLink::TrackedFrame^ frame);
+      bool GetLatestTrackedFrame(UWPOpenIGTLink::TrackedFrame^ frame, double& latestTimestamp);
 
       /// Retrieve the oldest command
       bool GetOldestCommand(UWPOpenIGTLink::Command^ cmd);

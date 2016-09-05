@@ -49,7 +49,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     SpatialSystem::SpatialSystem( const std::shared_ptr<DX::DeviceResources>& deviceResources )
       : m_deviceResources( deviceResources )
-      , m_spatialAnchors( ref new Platform::Collections::Map<Platform::String^, SpatialAnchor^>() )
+      , m_spatialAnchors( ref new Platform::Collections::Map<Platform::String ^, SpatialAnchor ^ >() )
     {
       m_surfaceCollection = std::make_unique<SpatialSurfaceCollection>( m_deviceResources );
     }
@@ -155,34 +155,33 @@ namespace HoloIntervention
         {
         case SpatialPerceptionAccessStatus::Allowed:
         {
-          // If status is Allowed, we can create the surface observer.
+          // Set up the surface observer to use our preferred data formats.
+          m_surfaceMeshOptions = ref new SpatialSurfaceMeshOptions();
+
+          IVectorView<DirectXPixelFormat>^ supportedVertexPositionFormats = m_surfaceMeshOptions->SupportedVertexPositionFormats;
+          unsigned int formatIndex = 0;
+          if ( supportedVertexPositionFormats->IndexOf( DirectXPixelFormat::R32G32B32A32Float, &formatIndex ) )
           {
-            // First, we'll set up the surface observer to use our preferred data formats.
-            // In this example, a "preferred" format is chosen that is compatible with our pre-compiled shader pipeline.
-            m_surfaceMeshOptions = ref new SpatialSurfaceMeshOptions();
-            m_surfaceMeshOptions->IncludeVertexNormals = true;
-            IVectorView<DirectXPixelFormat>^ supportedVertexPositionFormats = m_surfaceMeshOptions->SupportedVertexPositionFormats;
-            unsigned int formatIndex = 0;
-            if ( supportedVertexPositionFormats->IndexOf( DirectXPixelFormat::R32G32B32A32Float, &formatIndex ) )
-            {
-              m_surfaceMeshOptions->VertexPositionFormat = DirectXPixelFormat::R32G32B32A32Float;
-            }
-            IVectorView<DirectXPixelFormat>^ supportedVertexNormalFormats = m_surfaceMeshOptions->SupportedVertexNormalFormats;
-            if ( supportedVertexNormalFormats->IndexOf( DirectXPixelFormat::R32G32B32A32Float, &formatIndex ) )
-            {
-              m_surfaceMeshOptions->VertexNormalFormat = DirectXPixelFormat::R32G32B32A32Float;
-            }
-
-            // Our shader pipeline can handle a variety of triangle index formats
-            IVectorView<DirectXPixelFormat>^ supportedTriangleIndexFormats = m_surfaceMeshOptions->SupportedTriangleIndexFormats;
-            if ( supportedTriangleIndexFormats->IndexOf( DirectXPixelFormat::R32UInt, &formatIndex ) )
-            {
-              m_surfaceMeshOptions->TriangleIndexFormat = DirectXPixelFormat::R32UInt;
-            }
-
-            // Create the observer.
-            m_surfaceObserver = ref new SpatialSurfaceObserver();
+            m_surfaceMeshOptions->VertexPositionFormat = DirectXPixelFormat::R32G32B32A32Float;
           }
+          else
+          {
+            OutputDebugStringA( "WARNING - Cannot load desired vertex position format." );
+          }
+
+          // Our shader pipeline can handle a variety of triangle index formats
+          IVectorView<DirectXPixelFormat>^ supportedTriangleIndexFormats = m_surfaceMeshOptions->SupportedTriangleIndexFormats;
+          if ( supportedTriangleIndexFormats->IndexOf( DirectXPixelFormat::R32UInt, &formatIndex ) )
+          {
+            m_surfaceMeshOptions->TriangleIndexFormat = DirectXPixelFormat::R32UInt;
+          }
+          else
+          {
+            OutputDebugStringA( "WARNING - Cannot load desired index format." );
+          }
+
+          // Create the observer.
+          m_surfaceObserver = ref new SpatialSurfaceObserver();
 
           // The surface observer can now be configured as needed.
           UpdateSurfaceObserverPosition( coordinateSystem );
@@ -218,7 +217,7 @@ namespace HoloIntervention
             OutputDebugStringA( "Mesh collection size is 0. Trying again after a delay.\n" );
             auto fire_once = new Concurrency::timer<int>( INIT_SURFACE_RETRY_DELAY_MS, 0, nullptr, false );
             // Create a call object that sets the completion event after the timer fires.
-            auto callback = new Concurrency::call<int>( [=]( int )
+            auto callback = new Concurrency::call<int>( [ = ]( int )
             {
               this->InitializeSurfaceObserver( coordinateSystem );
             } );

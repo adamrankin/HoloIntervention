@@ -24,16 +24,16 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
-#include "ModelEntry.h"
+#include "ToolEntry.h"
 
-// STL includes
+// std includes
 
 // WinRT includes
 
-using namespace Windows::Foundation::Numerics;
-
 namespace HoloIntervention
 {
+  class TransformName;
+
   namespace Tools
   {
     class ToolSystem
@@ -42,13 +42,14 @@ namespace HoloIntervention
       ToolSystem();
       ~ToolSystem();
 
-      uint64 RegisterTool( const std::wstring& modelName, const std::wstring& coordinateFrame );
+      uint64 RegisterTool( const std::wstring& modelName, const TransformName& coordinateFrame );
       void UnregisterTool( uint64 toolToken );
       void ClearTools();
 
+      void Update(const DX::StepTimer& timer, UWPOpenIGTLink::TrackedFrame^ frame);
+
     protected:
-      std::vector<uint64>                                   m_modelTokens;
-      std::vector<std::shared_ptr<Rendering::ModelEntry>>   m_modelEntries;
+      std::vector<ToolEntry>            m_toolEntries;
     };
   }
 }

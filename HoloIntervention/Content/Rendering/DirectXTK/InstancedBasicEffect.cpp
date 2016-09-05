@@ -60,7 +60,7 @@ struct BasicEffectTraits
   typedef InstancedBasicEffectConstants ConstantBufferType;
 
   static const int VertexShaderCount = 20;
-  static const int GeometryShaderCount = 7;
+  static const int GeometryShaderCount = 8;
   static const int PixelShaderCount = 10;
   static const int ShaderPermutationCount = 32;
 };
@@ -209,6 +209,7 @@ const int InstancedEffectBase<BasicEffectTraits>::VertexShaderIndices[] =
 #include <PCIGeometryShader.inc>
 #include <PCTIGeometryShader.inc>
 #include <PTIGeometryShader.inc>
+#include <PPNCIGeometryShader.inc>
 
 // Pixel lighting passthrough shaders
 #include <PCT0T4IGeometryShader.inc>
@@ -221,6 +222,7 @@ const ShaderBytecode InstancedEffectBase<BasicEffectTraits>::GeometryShaderBytec
   { PCIGeometryShader,                sizeof(PCIGeometryShader) },
   { PCTIGeometryShader,               sizeof(PCTIGeometryShader) },
   { PTIGeometryShader,                sizeof(PTIGeometryShader) },
+  { PPNCIGeometryShader,              sizeof(PPNCIGeometryShader) },
 
   { PCT0T4IGeometryShader,            sizeof(PCT0T4IGeometryShader) },
   { PCT0T1T2IGeometryShader,          sizeof(PCT0T1T2IGeometryShader) },

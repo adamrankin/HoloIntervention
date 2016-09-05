@@ -36,6 +36,8 @@ namespace HoloIntervention
 {
   namespace Rendering
   {
+    static const uint64 INVALID_MODEL_ENTRY = 0;
+
     class ModelRenderer
     {
       typedef std::list<std::shared_ptr<ModelEntry>> ModelList;
@@ -64,7 +66,7 @@ namespace HoloIntervention
       // Lock protection when accessing image list
       std::mutex                                      m_modelListMutex;
       ModelList                                       m_models;
-      uint64                                          m_nextUnusedModelId = 1; // start at 1, 0 is considered invalid
+      uint64                                          m_nextUnusedModelId = 1; // start at 1, 0 (INVALID_MODEL_ENTRY) is considered invalid
     };
   }
 }

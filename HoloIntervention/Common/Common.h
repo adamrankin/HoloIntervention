@@ -30,6 +30,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <robuffer.h>
 #include <windows.h>
 
+using namespace Microsoft::WRL;
 using namespace Windows::Data::Xml::Dom;
 using namespace Windows::UI::Notifications;
 

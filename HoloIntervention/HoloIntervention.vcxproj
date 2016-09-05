@@ -108,19 +108,22 @@
     <ClInclude Include="Content\Rendering\NotificationRenderer.h" />
     <ClInclude Include="Content\Rendering\SliceEntry.h" />
     <ClInclude Include="Content\Rendering\SliceRenderer.h" />
+    <ClInclude Include="Content\Rendering\SpatialMeshRenderer.h" />
+    <ClInclude Include="Content\Rendering\SpatialMesh.h" />
     <ClInclude Include="Content\Rendering\TextRenderer.h" />
     <ClInclude Include="Content\Sound\AudioFileReader.h" />
     <ClInclude Include="Content\Sound\CardioidSound.h" />
     <ClInclude Include="Content\Sound\OmnidirectionalSound.h" />
     <ClInclude Include="Content\Sound\VoiceCallback.h" />
     <ClInclude Include="Content\Sound\XAudio2Helpers.h" />
-    <ClInclude Include="Content\SpatialMapping\SpatialShaderStructures.h" />
     <ClInclude Include="Content\SpatialMapping\SpatialSurfaceCollection.h" />
     <ClInclude Include="Content\SpatialMapping\SurfaceMesh.h" />
     <ClInclude Include="Content\Systems\GazeSystem.h" />
     <ClInclude Include="Content\Systems\NotificationSystem.h" />
     <ClInclude Include="Content\Systems\SpatialSystem.h" />
+    <ClInclude Include="Content\Systems\ToolEntry.h" />
     <ClInclude Include="Content\Systems\ToolSystem.h" />
+    <ClInclude Include="Content\Systems\TransformName.h" />
     <ClInclude Include="HoloInterventionMain.h" />
     <ClInclude Include="Common\DeviceResources.h" />
     <ClInclude Include="Common\CameraResources.h" />
@@ -141,6 +144,8 @@
     <ClCompile Include="Content\Rendering\NotificationRenderer.cpp" />
     <ClCompile Include="Content\Rendering\SliceEntry.cpp" />
     <ClCompile Include="Content\Rendering\SliceRenderer.cpp" />
+    <ClCompile Include="Content\Rendering\SpatialMeshRenderer.cpp" />
+    <ClCompile Include="Content\Rendering\SpatialMesh.cpp" />
     <ClCompile Include="Content\Rendering\TextRenderer.cpp" />
     <ClCompile Include="Content\Sound\AudioFileReader.cpp" />
     <ClCompile Include="Content\Sound\CardioidSound.cpp" />
@@ -151,7 +156,9 @@
     <ClCompile Include="Content\Systems\GazeSystem.cpp" />
     <ClCompile Include="Content\Systems\NotificationSystem.cpp" />
     <ClCompile Include="Content\Systems\SpatialSystem.cpp" />
+    <ClCompile Include="Content\Systems\ToolEntry.cpp" />
     <ClCompile Include="Content\Systems\ToolSystem.cpp" />
+    <ClCompile Include="Content\Systems\TransformName.cpp" />
     <ClCompile Include="HoloInterventionMain.cpp" />
     <ClCompile Include="Common\DeviceResources.cpp" />
     <ClCompile Include="Common\CameraResources.cpp" />
@@ -167,7 +174,7 @@
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
     </None>
-    <None Include="Assets\Models\needle.cmo" />
+    <None Include="Assets\Models\Tools\needle.cmo" />
     <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_PSBasic.inc" />
     <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_PSBasicNoFog.inc" />
     <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_PSBasicPixelLighting.inc" />
@@ -318,6 +325,12 @@
       <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">PTIGeometryShader</VariableName>
       <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">PTIGeometryShader</VariableName>
     </FxCompile>
+    <FxCompile Include="Content\Rendering\Shaders\SMRLightingPixelShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
+    </FxCompile>
     <FxCompile Include="Content\Rendering\Shaders\SlicePixelShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
@@ -345,6 +358,34 @@
       <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">PCIGeometryShader</VariableName>
       <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)%(Filename).inc</HeaderFileOutput>
       <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)%(Filename).inc</HeaderFileOutput>
+    </FxCompile>
+    <FxCompile Include="Content\Rendering\Shaders\SMRSolidColorPixelShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Content\Rendering\Shaders\PPNCIGeometryShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Geometry</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Geometry</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)%(Filename).inc</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)%(Filename).inc</HeaderFileOutput>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">PPNCIGeometryShader</VariableName>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">PPNCIGeometryShader</VariableName>
+    </FxCompile>
+    <FxCompile Include="Content\Rendering\Shaders\SMRSurfaceVertexShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Content\Rendering\Shaders\SMRSurfaceVPRTVertexShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
     </FxCompile>
     <FxCompile Include="Content\SpatialMapping\Shaders\CSRayTriangleIntersection.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Compute</ShaderType>

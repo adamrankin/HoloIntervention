@@ -26,7 +26,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "AppView.h"
 #include "DirectXHelper.h"
-#include "SpatialShaderStructures.h"
 #include "SpatialSurfaceCollection.h"
 #include "StepTimer.h"
 

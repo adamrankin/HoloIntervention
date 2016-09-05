@@ -25,12 +25,15 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "DeviceResources.h"
-#include "SpatialShaderStructures.h"
 #include "StepTimer.h"
 
 // STD includes
 #include <vector>
 
+// DirectX includes
+#include <DirectXMath.h>
+
+using namespace DirectX;
 using namespace Concurrency;
 using namespace Microsoft::WRL;
 using namespace Windows::Foundation::Numerics;
@@ -42,6 +45,29 @@ namespace HoloIntervention
 {
   namespace Spatial
   {
+    struct VertexBufferType
+    {
+      XMFLOAT4 vertex;
+    };
+
+    struct IndexBufferType
+    {
+      uint32 index;
+    };
+
+    struct OutputBufferType
+    {
+      XMFLOAT4 intersectionPoint;
+      XMFLOAT4 intersectionNormal;
+    };
+
+    struct WorldConstantBuffer
+    {
+      // Constant buffers must have a a ByteWidth multiple of 16
+      DirectX::XMFLOAT4X4 meshToWorld;
+    };
+    static_assert( ( sizeof( WorldConstantBuffer ) % ( sizeof( float ) * 4 ) ) == 0, "World constant buffer size must be 16-byte aligned (16 bytes is the length of four floats)." );
+
     class SurfaceMesh
     {
     public:

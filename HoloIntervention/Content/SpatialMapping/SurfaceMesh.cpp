@@ -26,7 +26,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "Common.h"
 #include "DirectXHelper.h"
-#include "SpatialShaderStructures.h"
 #include "SpatialSurfaceCollection.h"
 #include "StepTimer.h"
 #include "SurfaceMesh.h"
@@ -70,11 +69,11 @@ namespace HoloIntervention
       auto createMeshTask = create_task( surfaceInfo->TryComputeLatestMeshAsync( m_maxTrianglesPerCubicMeter, m_meshOptions ) ).then( [this]( SpatialSurfaceMesh ^ mesh )
       {
         {
-          std::lock_guard<std::mutex> lock(m_meshResourcesMutex);
-          if (mesh != nullptr)
+          std::lock_guard<std::mutex> lock( m_meshResourcesMutex );
+          if ( mesh != nullptr )
           {
             m_surfaceMesh = mesh;
-            SetIsActive(true);
+            SetIsActive( true );
           }
         }
         UpdateDeviceBasedResources();

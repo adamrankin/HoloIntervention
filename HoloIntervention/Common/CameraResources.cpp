@@ -1,35 +1,44 @@
-#include "pch.h"
+//*********************************************************
+//
+// Copyright (c) Microsoft. All rights reserved.
+// This code is licensed under the MIT License (MIT).
+// THIS CODE IS PROVIDED *AS IS* WITHOUT WARRANTY OF
+// ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING ANY
+// IMPLIED WARRANTIES OF FITNESS FOR A PARTICULAR
+// PURPOSE, MERCHANTABILITY, OR NON-INFRINGEMENT.
+//
+//*********************************************************
 
+// Local includes
+#include "pch.h"
 #include "CameraResources.h"
-#include "Common\DirectXHelper.h"
 #include "DeviceResources.h"
+#include "DirectXHelper.h"
+
+// WinRT includes
 #include <windows.graphics.directx.direct3d11.interop.h>
 
 using namespace DirectX;
 using namespace Microsoft::WRL;
+using namespace Windows::Foundation::Numerics;
 using namespace Windows::Graphics::DirectX::Direct3D11;
 using namespace Windows::Graphics::Holographic;
 using namespace Windows::Perception::Spatial;
 
 namespace DX
 {
-  CameraResources::CameraResources( HolographicCamera^ camera ) :
-    m_holographicCamera( camera ),
-    m_isStereo( camera->IsStereo ),
-    m_d3dRenderTargetSize( camera->RenderTargetSize )
+  //----------------------------------------------------------------------------
+  CameraResources::CameraResources( HolographicCamera^ camera )
+    : m_holographicCamera( camera )
+    , m_isStereo( camera->IsStereo )
+    , m_d3dRenderTargetSize( camera->RenderTargetSize )
   {
-    m_d3dViewport = CD3D11_VIEWPORT(
-                      0.f, 0.f,
-                      m_d3dRenderTargetSize.Width,
-                      m_d3dRenderTargetSize.Height
-                    );
+    m_d3dViewport = CD3D11_VIEWPORT( 0.f, 0.f, m_d3dRenderTargetSize.Width, m_d3dRenderTargetSize.Height );
   };
 
-  // Updates resources associated with a holographic camera's swap chain.
-  // The app does not access the swap chain directly, but it does create
-  // resource views for the back buffer.
+  //----------------------------------------------------------------------------
   void CameraResources::CreateResourcesForBackBuffer(
-    DeviceResources* pDeviceResources,
+    DX::DeviceResources* pDeviceResources,
     HolographicCameraRenderingParameters^ cameraParameters
   )
   {
@@ -65,12 +74,8 @@ namespace DX
       // Create a render target view of the back buffer.
       // Creating this resource is inexpensive, and is better than keeping track of
       // the back buffers in order to pre-allocate render target views for each one.
-      ThrowIfFailed(
-        device->CreateRenderTargetView(
-          m_d3dBackBuffer.Get(),
-          nullptr,
-          &m_d3dRenderTargetView
-        )
+      DX::ThrowIfFailed(
+        device->CreateRenderTargetView( m_d3dBackBuffer.Get(), nullptr, &m_d3dRenderTargetView )
       );
 
       // Get the DXGI format for the back buffer.
@@ -105,23 +110,15 @@ namespace DX
       );
 
       ComPtr<ID3D11Texture2D> depthStencil;
-      ThrowIfFailed(
-        device->CreateTexture2D(
-          &depthStencilDesc,
-          nullptr,
-          &depthStencil
-        )
+      DX::ThrowIfFailed(
+        device->CreateTexture2D( &depthStencilDesc, nullptr, &depthStencil )
       );
 
       CD3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc(
         m_isStereo ? D3D11_DSV_DIMENSION_TEXTURE2DARRAY : D3D11_DSV_DIMENSION_TEXTURE2D
       );
-      ThrowIfFailed(
-        device->CreateDepthStencilView(
-          depthStencil.Get(),
-          &depthStencilViewDesc,
-          &m_d3dDepthStencilView
-        )
+      DX::ThrowIfFailed(
+        device->CreateDepthStencilView( depthStencil.Get(), &depthStencilViewDesc, &m_d3dDepthStencilView )
       );
     }
 
@@ -130,18 +127,14 @@ namespace DX
     {
       // Create a constant buffer to store view and projection matrices for the camera.
       CD3D11_BUFFER_DESC constantBufferDesc( sizeof( ViewProjectionConstantBuffer ), D3D11_BIND_CONSTANT_BUFFER );
-      ThrowIfFailed(
-        device->CreateBuffer(
-          &constantBufferDesc,
-          nullptr,
-          &m_viewProjectionConstantBuffer
-        )
+      DX::ThrowIfFailed(
+        device->CreateBuffer( &constantBufferDesc, nullptr, &m_viewProjectionConstantBuffer )
       );
     }
   }
 
-  // Releases resources associated with a back buffer.
-  void CameraResources::ReleaseResourcesForBackBuffer( DeviceResources* pDeviceResources )
+  //----------------------------------------------------------------------------
+  void CameraResources::ReleaseResourcesForBackBuffer( DX::DeviceResources* pDeviceResources )
   {
     const auto context = pDeviceResources->GetD3DDeviceContext();
 
@@ -158,21 +151,16 @@ namespace DX
     context->Flush();
   }
 
-  // Updates the view/projection constant buffer for a holographic camera.
+  //----------------------------------------------------------------------------
   bool CameraResources::UpdateViewProjectionBuffer(
-    std::shared_ptr<DeviceResources> deviceResources,
+    std::shared_ptr<DX::DeviceResources> deviceResources,
     HolographicCameraPose^ cameraPose,
     SpatialCoordinateSystem^ coordinateSystem,
-    ViewProjection& vp
+    DX::ViewProjection& vp
   )
   {
     // The system changes the viewport on a per-frame basis for system optimizations.
-    m_d3dViewport = CD3D11_VIEWPORT(
-                      cameraPose->Viewport.Left,
-                      cameraPose->Viewport.Top,
-                      cameraPose->Viewport.Width,
-                      cameraPose->Viewport.Height
-                    );
+    m_d3dViewport = CD3D11_VIEWPORT( cameraPose->Viewport.Left, cameraPose->Viewport.Top, cameraPose->Viewport.Width, cameraPose->Viewport.Height );
 
     // The projection transform for each frame is provided by the HolographicCameraPose.
     HolographicStereoTransform cameraProjectionTransform = cameraPose->ProjectionTransform;
@@ -187,7 +175,7 @@ namespace DX
     // This usually means that positional tracking is not active for the current frame, in
     // which case it is possible to use a SpatialLocatorAttachedFrameOfReference to render
     // content that is not world-locked instead.
-    DX::ViewProjectionConstantBuffer buffer;
+    ViewProjectionConstantBuffer viewProjectionConstantBufferData;
     bool viewTransformAcquired = viewTransformContainer != nullptr;
     if ( viewTransformAcquired )
     {
@@ -200,9 +188,29 @@ namespace DX
       XMStoreFloat4x4( &vp.projection[0], XMLoadFloat4x4( &cameraProjectionTransform.Left ) );
       XMStoreFloat4x4( &vp.projection[1], XMLoadFloat4x4( &cameraProjectionTransform.Right ) );
 
-      // XMMatrixTranspose because CPU memory treats items in row-major order, but HLSL treats them in column-major order
-      XMStoreFloat4x4( &buffer.viewProjection[0], XMMatrixTranspose( XMLoadFloat4x4( &viewCoordinateSystemTransform.Left ) * XMLoadFloat4x4( &cameraProjectionTransform.Left ) ) );
-      XMStoreFloat4x4( &buffer.viewProjection[1], XMMatrixTranspose( XMLoadFloat4x4( &viewCoordinateSystemTransform.Right ) * XMLoadFloat4x4( &cameraProjectionTransform.Right ) ) );
+      // Update the view matrices. Holographic cameras (such as Microsoft HoloLens) are
+      // constantly moving relative to the world. The view matrices need to be updated
+      // every frame.
+      XMStoreFloat4x4(
+        &viewProjectionConstantBufferData.viewProjection[0],
+        XMMatrixTranspose( XMLoadFloat4x4( &viewCoordinateSystemTransform.Left ) * XMLoadFloat4x4( &cameraProjectionTransform.Left ) )
+      );
+      XMStoreFloat4x4(
+        &viewProjectionConstantBufferData.viewProjection[1],
+        XMMatrixTranspose( XMLoadFloat4x4( &viewCoordinateSystemTransform.Right ) * XMLoadFloat4x4( &cameraProjectionTransform.Right ) )
+      );
+
+      float4x4 viewInverse;
+      bool invertible = Windows::Foundation::Numerics::invert( viewCoordinateSystemTransform.Left, &viewInverse );
+      if ( invertible )
+      {
+        // For the purposes of this app, use the camera position as a light source.
+        float4 cameraPosition = float4( viewInverse.m41, viewInverse.m42, viewInverse.m43, 0.f );
+        float4 lightPosition = cameraPosition + float4( 0.f, 0.25f, 0.f, 0.f );
+
+        XMStoreFloat4( &viewProjectionConstantBufferData.cameraPosition, DirectX::XMLoadFloat4( &cameraPosition ) );
+        XMStoreFloat4( &viewProjectionConstantBufferData.lightPosition, DirectX::XMLoadFloat4( &lightPosition ) );
+      }
     }
 
     // Use the D3D device context to update Direct3D device-based resources.
@@ -221,7 +229,7 @@ namespace DX
         m_viewProjectionConstantBuffer.Get(),
         0,
         nullptr,
-        &buffer,
+        &viewProjectionConstantBufferData,
         0,
         0
       );
@@ -231,10 +239,9 @@ namespace DX
     }
   }
 
-  // Gets the view-projection constant buffer for the HolographicCamera and attaches it
-  // to the shader pipeline.
+  //----------------------------------------------------------------------------
   bool CameraResources::AttachViewProjectionBuffer(
-    std::shared_ptr<DeviceResources> deviceResources
+    std::shared_ptr<DX::DeviceResources> deviceResources
   )
   {
     // This method uses Direct3D device-based resources.
@@ -258,18 +265,12 @@ namespace DX
       m_viewProjectionConstantBuffer.GetAddressOf()
     );
 
-    // The template includes a pass-through geometry shader that is used by
-    // default on systems that don't support the D3D11_FEATURE_D3D11_OPTIONS3::
-    // VPAndRTArrayIndexFromAnyShaderFeedingRasterizer extension. The shader
-    // will be enabled at run-time on systems that require it.
-    // If your app will also use the geometry shader for other tasks and those
-    // tasks require the view/projection matrix, uncomment the following line
-    // of code to send the constant buffer to the geometry shader as well.
-    /*context->GSSetConstantBuffers(
-        1,
-        1,
-        m_viewProjectionConstantBuffer.GetAddressOf()
-        );*/
+    // Send the constant buffer to the pixel shader.
+    context->PSSetConstantBuffers(
+      1,
+      1,
+      m_viewProjectionConstantBuffer.GetAddressOf()
+    );
 
     m_framePending = false;
 
@@ -323,5 +324,4 @@ namespace DX
   {
     return m_holographicCamera;
   }
-
 }

@@ -84,15 +84,15 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool IGTLinkIF::GetOldestTrackedFrame( UWPOpenIGTLink::TrackedFrame^ frame )
+    bool IGTLinkIF::GetOldestTrackedFrame( UWPOpenIGTLink::TrackedFrame^ frame, double& oldestTimestamp )
     {
-      return m_igtClient->GetOldestTrackedFrame( frame );
+      return m_igtClient->GetOldestTrackedFrame( frame, &oldestTimestamp );
     }
 
     //----------------------------------------------------------------------------
-    bool IGTLinkIF::GetLatestTrackedFrame( UWPOpenIGTLink::TrackedFrame^ frame )
+    bool IGTLinkIF::GetLatestTrackedFrame( UWPOpenIGTLink::TrackedFrame^ frame, double& latestTimestamp )
     {
-      return m_igtClient->GetLatestTrackedFrame( frame );
+      return m_igtClient->GetLatestTrackedFrame( frame, &latestTimestamp );
     }
 
     //----------------------------------------------------------------------------

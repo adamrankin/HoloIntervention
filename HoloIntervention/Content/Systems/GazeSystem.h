@@ -51,7 +51,7 @@ namespace HoloIntervention
 
     protected:
       std::shared_ptr<Rendering::ModelEntry>    m_modelEntry;
-      uint32                                    m_modelToken;
+      uint64                                    m_modelToken;
       bool                                      m_systemEnabled;
       float3                                    m_lastHitPosition;
       float3                                    m_lastHitNormal;

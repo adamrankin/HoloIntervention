@@ -59,6 +59,12 @@ namespace HoloIntervention
     class ModelRenderer;
     class NotificationRenderer;
     class SliceRenderer;
+    class SpatialMeshRenderer;
+  }
+
+  namespace Tools
+  {
+    class ToolSystem;
   }
 
   namespace Network
@@ -144,6 +150,10 @@ namespace HoloIntervention
     // Renderers
     std::unique_ptr<Rendering::ModelRenderer>             m_modelRenderer;
     std::unique_ptr<Rendering::SliceRenderer>             m_sliceRenderer;
+    std::unique_ptr<Rendering::SpatialMeshRenderer>       m_meshRenderer;
+
+    // Mesh rendering control
+    bool                                                  m_meshRendererEnabled = false;
 
     // Tokens
     uint32                                                m_sliceToken;
@@ -156,6 +166,7 @@ namespace HoloIntervention
     // Interface that manages a network connection to an IGT link server
     std::unique_ptr<Network::IGTLinkIF>                   m_igtLinkIF;
     UWPOpenIGTLink::TrackedFrame^                         m_latestFrame;
+    double                                                m_latestTimestamp;
 
     // Notification API
     std::unique_ptr<Notifications::NotificationSystem>    m_notificationSystem;
@@ -192,6 +203,9 @@ namespace HoloIntervention
 
     // Access to a gaze system
     std::unique_ptr<Gaze::GazeSystem>                     m_gazeSystem;
+
+    // Access to a tool system
+    std::unique_ptr<Tools::ToolSystem>                    m_toolSystem;
 
     // Sound assets
     std::unique_ptr<Sound::OmnidirectionalSound>          m_cursorSound;

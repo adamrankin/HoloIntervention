@@ -1,8 +1,20 @@
-﻿
+﻿//*********************************************************
+//
+// Copyright (c) Microsoft. All rights reserved.
+// This code is licensed under the MIT License (MIT).
+// THIS CODE IS PROVIDED *AS IS* WITHOUT WARRANTY OF
+// ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING ANY
+// IMPLIED WARRANTIES OF FITNESS FOR A PARTICULAR
+// PURPOSE, MERCHANTABILITY, OR NON-INFRINGEMENT.
+//
+//*********************************************************
+
+// Local includes
 #include "pch.h"
 #include "DeviceResources.h"
 #include "DirectXHelper.h"
 
+// WinRT includes
 #include <Collection.h>
 #include <windows.graphics.directx.direct3d11.interop.h>
 
@@ -15,24 +27,12 @@ using namespace Windows::Graphics::Holographic;
 namespace DX
 {
   //----------------------------------------------------------------------------
-  // Method:    DeviceResources
-  // FullName:  DX::DeviceResources::DeviceResources
-  // Access:    public
-  // Returns:
-  // Qualifier:
   DeviceResources::DeviceResources()
   {
     CreateDeviceIndependentResources();
   }
 
   //----------------------------------------------------------------------------
-  // Method:    CreateDeviceIndependentResources
-  // FullName:  DX::DeviceResources::CreateDeviceIndependentResources
-  // Access:    private
-  // Returns:   void
-  // Qualifier:
-  //
-  // Configures resources that don't depend on the Direct3D device.
   void DeviceResources::CreateDeviceIndependentResources()
   {
     // Initialize Direct2D resources.
@@ -74,12 +74,6 @@ namespace DX
   }
 
   //----------------------------------------------------------------------------
-  // Method:    SetHolographicSpace
-  // FullName:  DX::DeviceResources::SetHolographicSpace
-  // Access:    public
-  // Returns:   void
-  // Qualifier:
-  // Parameter: HolographicSpace ^ holographicSpace
   void DeviceResources::SetHolographicSpace( HolographicSpace^ holographicSpace )
   {
     // Cache the holographic space. Used to re-initialize during device-lost scenarios.
@@ -89,11 +83,6 @@ namespace DX
   }
 
   //----------------------------------------------------------------------------
-  // Method:    InitializeUsingHolographicSpace
-  // FullName:  DX::DeviceResources::InitializeUsingHolographicSpace
-  // Access:    private
-  // Returns:   void
-  // Qualifier:
   void DeviceResources::InitializeUsingHolographicSpace()
   {
     // The holographic space might need to determine which adapter supports
@@ -111,7 +100,7 @@ namespace DX
     if ( ( id.HighPart != 0 ) && ( id.LowPart != 0 ) )
     {
       UINT createFlags = 0;
-#ifdef _DEBUG
+#ifdef DEBUG
       if ( SdkLayersAvailable() )
       {
         createFlags |= DXGI_CREATE_FACTORY_DEBUG;
@@ -145,9 +134,9 @@ namespace DX
     {
       CreateDeviceResources();
     }
-    catch (const std::exception& e)
+    catch ( const std::exception& e )
     {
-      OutputDebugStringA(e.what());
+      OutputDebugStringA( e.what() );
       return;
     }
 
@@ -155,13 +144,6 @@ namespace DX
   }
 
   //----------------------------------------------------------------------------
-  // Method:    CreateDeviceResources
-  // FullName:  DX::DeviceResources::CreateDeviceResources
-  // Access:    private
-  // Returns:   void
-  // Qualifier:
-  //
-  // Configures the Direct3D device, and stores handles to it and the device context.
   void DeviceResources::CreateDeviceResources()
   {
     // This flag adds support for surfaces with a different color channel ordering
@@ -264,23 +246,19 @@ namespace DX
       m_supportsVprt = true;
     }
     D3D11_FEATURE_DATA_DOUBLES hwopts;
-    m_d3dDevice->CheckFeatureSupport(D3D11_FEATURE_DOUBLES, &hwopts, sizeof(hwopts));
-    if (!hwopts.DoublePrecisionFloatShaderOps)
+    m_d3dDevice->CheckFeatureSupport( D3D11_FEATURE_DOUBLES, &hwopts, sizeof( hwopts ) );
+    if ( !hwopts.DoublePrecisionFloatShaderOps )
     {
-      throw std::exception("No hardware double-precision capable device found. Cannot create D3D device!");
+      throw std::exception( "No hardware double-precision capable device found. Cannot create D3D device!" );
     }
   }
 
-  // Validates the back buffer for each HolographicCamera and recreates
-  // resources for back buffers that have changed.
-  // Locks the set of holographic camera resources until the function exits.
-  void DeviceResources::EnsureCameraResources(
-    HolographicFrame^ frame,
-    HolographicFramePrediction^ prediction )
+  //----------------------------------------------------------------------------
+  void DeviceResources::EnsureCameraResources( HolographicFrame^ frame, HolographicFramePrediction^ prediction )
   {
     UseHolographicCameraResources<void>( [this, frame, prediction]( std::map<UINT32, std::unique_ptr<CameraResources>>& cameraResourceMap )
     {
-      for ( HolographicCameraPose^ pose : prediction->CameraPoses )
+      for ( const auto& pose : prediction->CameraPoses )
       {
         HolographicCameraRenderingParameters^ renderingParameters = frame->GetRenderingParameters( pose );
         CameraResources* pCameraResources = cameraResourceMap[pose->HolographicCamera->Id].get();
@@ -290,8 +268,7 @@ namespace DX
     } );
   }
 
-  // Prepares to allocate resources and adds resource views for a camera.
-  // Locks the set of holographic camera resources until the function exits.
+  //----------------------------------------------------------------------------
   void DeviceResources::AddHolographicCamera( HolographicCamera^ camera )
   {
     UseHolographicCameraResources<void>( [this, camera]( std::map<UINT32, std::unique_ptr<CameraResources>>& cameraResourceMap )
@@ -300,8 +277,7 @@ namespace DX
     } );
   }
 
-  // Deallocates resources for a camera and removes the camera from the set.
-  // Locks the set of holographic camera resources until the function exits.
+  //----------------------------------------------------------------------------
   void DeviceResources::RemoveHolographicCamera( HolographicCamera^ camera )
   {
     UseHolographicCameraResources<void>( [this, camera]( std::map<UINT32, std::unique_ptr<CameraResources>>& cameraResourceMap )
@@ -314,88 +290,6 @@ namespace DX
         cameraResourceMap.erase( camera->Id );
       }
     } );
-  }
-
-  // Recreate all device resources and set them back to the current state.
-  // Locks the set of holographic camera resources until the function exits.
-  void DeviceResources::HandleDeviceLost()
-  {
-    if ( m_deviceNotify != nullptr )
-    {
-      m_deviceNotify->OnDeviceLost();
-    }
-
-    UseHolographicCameraResources<void>( [this]( std::map<UINT32, std::unique_ptr<CameraResources>>& cameraResourceMap )
-    {
-      for ( auto& pair : cameraResourceMap )
-      {
-        CameraResources* pCameraResources = pair.second.get();
-        pCameraResources->ReleaseResourcesForBackBuffer( this );
-      }
-    } );
-
-    InitializeUsingHolographicSpace();
-
-    if ( m_deviceNotify != nullptr )
-    {
-      m_deviceNotify->OnDeviceRestored();
-    }
-  }
-
-  // Register our DeviceNotify to be informed on device lost and creation.
-  void DeviceResources::RegisterDeviceNotify( IDeviceNotify* deviceNotify )
-  {
-    m_deviceNotify = deviceNotify;
-  }
-
-  // Call this method when the app suspends. It provides a hint to the driver that the app
-  // is entering an idle state and that temporary buffers can be reclaimed for use by other apps.
-  void DeviceResources::Trim()
-  {
-    m_d3dContext->ClearState();
-
-    ComPtr<IDXGIDevice3> dxgiDevice;
-    ThrowIfFailed( m_d3dDevice.As( &dxgiDevice ) );
-    dxgiDevice->Trim();
-  }
-
-  // Present the contents of the swap chain to the screen.
-  // Locks the set of holographic camera resources until the function exits.
-  void DeviceResources::Present( HolographicFrame^ frame )
-  {
-    // By default, this API waits for the frame to finish before it returns.
-    // Holographic apps should wait for the previous frame to finish before
-    // starting work on a new frame. This allows for better results from
-    // holographic frame predictions.
-    HolographicFramePresentResult presentResult = frame->PresentUsingCurrentPrediction();
-
-    HolographicFramePrediction^ prediction = frame->CurrentPrediction;
-    UseHolographicCameraResources<void>( [this, prediction]( std::map<UINT32, std::unique_ptr<CameraResources>>& cameraResourceMap )
-    {
-      for ( auto cameraPose : prediction->CameraPoses )
-      {
-        // This represents the device-based resources for a HolographicCamera.
-        CameraResources* pCameraResources = cameraResourceMap[cameraPose->HolographicCamera->Id].get();
-
-        // Discard the contents of the render target.
-        // This is a valid operation only when the existing contents will be
-        // entirely overwritten. If dirty or scroll rects are used, this call
-        // should be removed.
-        m_d3dContext->DiscardView( pCameraResources->GetBackBufferRenderTargetView() );
-
-        // Discard the contents of the depth stencil.
-        m_d3dContext->DiscardView( pCameraResources->GetDepthStencilView() );
-      }
-    } );
-
-    // The PresentUsingCurrentPrediction API will detect when the graphics device
-    // changes or becomes invalid. When this happens, it is considered a Direct3D
-    // device lost scenario.
-    if ( presentResult == HolographicFramePresentResult::DeviceRemoved )
-    {
-      // The Direct3D device, context, and resources should be recreated.
-      HandleDeviceLost();
-    }
   }
 
   //----------------------------------------------------------------------------
@@ -452,4 +346,82 @@ namespace DX
     return m_wicFactory.Get();
   }
 
+  //----------------------------------------------------------------------------
+  void DeviceResources::HandleDeviceLost()
+  {
+    if ( m_deviceNotify != nullptr )
+    {
+      m_deviceNotify->OnDeviceLost();
+    }
+
+    UseHolographicCameraResources<void>( [this]( std::map<UINT32, std::unique_ptr<CameraResources>>& cameraResourceMap )
+    {
+      for ( auto& pair : cameraResourceMap )
+      {
+        CameraResources* pCameraResources = pair.second.get();
+        pCameraResources->ReleaseResourcesForBackBuffer( this );
+      }
+    } );
+
+    InitializeUsingHolographicSpace();
+
+    if ( m_deviceNotify != nullptr )
+    {
+      m_deviceNotify->OnDeviceRestored();
+    }
+  }
+
+  //----------------------------------------------------------------------------
+  void DeviceResources::RegisterDeviceNotify( DX::IDeviceNotify* deviceNotify )
+  {
+    m_deviceNotify = deviceNotify;
+  }
+
+  //----------------------------------------------------------------------------
+  void DeviceResources::Trim()
+  {
+    m_d3dContext->ClearState();
+
+    ComPtr<IDXGIDevice3> dxgiDevice;
+    ThrowIfFailed( m_d3dDevice.As( &dxgiDevice ) );
+    dxgiDevice->Trim();
+  }
+
+  //----------------------------------------------------------------------------
+  void DeviceResources::Present( HolographicFrame^ frame )
+  {
+    // By default, this API waits for the frame to finish before it returns.
+    // Holographic apps should wait for the previous frame to finish before
+    // starting work on a new frame. This allows for better results from
+    // holographic frame predictions.
+    HolographicFramePresentResult presentResult = frame->PresentUsingCurrentPrediction();
+
+    HolographicFramePrediction^ prediction = frame->CurrentPrediction;
+    UseHolographicCameraResources<void>( [this, prediction]( std::map<UINT32, std::unique_ptr<CameraResources>>& cameraResourceMap )
+    {
+      for ( auto cameraPose : prediction->CameraPoses )
+      {
+        // This represents the device-based resources for a HolographicCamera.
+        CameraResources* pCameraResources = cameraResourceMap[cameraPose->HolographicCamera->Id].get();
+
+        // Discard the contents of the render target.
+        // This is a valid operation only when the existing contents will be
+        // entirely overwritten. If dirty or scroll rects are used, this call
+        // should be removed.
+        m_d3dContext->DiscardView( pCameraResources->GetBackBufferRenderTargetView() );
+
+        // Discard the contents of the depth stencil.
+        m_d3dContext->DiscardView( pCameraResources->GetDepthStencilView() );
+      }
+    } );
+
+    // The PresentUsingCurrentPrediction API will detect when the graphics device
+    // changes or becomes invalid. When this happens, it is considered a Direct3D
+    // device lost scenario.
+    if ( presentResult == HolographicFramePresentResult::DeviceRemoved )
+    {
+      // The Direct3D device, context, and resources should be recreated.
+      HandleDeviceLost();
+    }
+  }
 }

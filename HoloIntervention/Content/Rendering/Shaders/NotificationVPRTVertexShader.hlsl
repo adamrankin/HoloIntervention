@@ -19,7 +19,9 @@ cbuffer ModelConstantBuffer : register(b0)
 // A constant buffer that stores each set of view and projection matrices in column-major format.
 cbuffer ViewProjectionConstantBuffer : register(b1)
 {
-  float4x4 viewProjection[2];
+  float4        cameraPosition;
+  float4        lightPosition;
+  float4x4      viewProjection[2];
 };
 
 // Per-vertex data used as input to the vertex shader.

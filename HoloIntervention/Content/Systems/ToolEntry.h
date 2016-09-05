@@ -23,41 +23,41 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-using namespace DirectX;
+// Local includes
+#include "TransformName.h"
+
+namespace DX
+{
+  class StepTimer;
+}
 
 namespace HoloIntervention
 {
-  namespace Spatial
+  // Forward declarations
+  namespace Rendering
   {
-    struct VertexBufferType
-    {
-      XMFLOAT4 vertex;
-    };
+    class ModelEntry;
+  }
 
-    struct IndexBufferType
+  namespace Tools
+  {
+    class ToolEntry
     {
-      uint32 index;
-    };
+    public:
+      ToolEntry( const TransformName& coordinateFrame, const std::wstring& modelName );
+      ToolEntry( const std::wstring& coordinateFrame, const std::wstring& modelName );
+      ~ToolEntry();
 
-    struct OutputBufferType
-    {
-      XMFLOAT4 intersectionPoint;
-      XMFLOAT4 intersectionNormal;
-    };
+      void Update(const DX::StepTimer& timer, UWPOpenIGTLink::TrackedFrame^ frame);
 
-    struct WorldConstantBuffer
-    {
-      // Constant buffers must have a a ByteWidth multiple of 16
-      DirectX::XMFLOAT4X4 meshToWorld;
-    };
+      uint64 GetId() const;
 
-    struct RayConstantBuffer
-    {
-      XMFLOAT4 rayOrigin;
-      XMFLOAT4 rayDirection;
-    };
+    protected:
+      void CreateModel(const std::wstring& modelName);
 
-    static_assert((sizeof(WorldConstantBuffer) % (sizeof(float) * 4)) == 0, "World constant buffer size must be 16-byte aligned (16 bytes is the length of four floats).");
-    static_assert((sizeof(RayConstantBuffer) % (sizeof(float) * 4)) == 0, "Ray constant buffer size must be 16-byte aligned (16 bytes is the length of four floats).");
+    protected:
+      TransformName                           m_coordinateFrame;
+      std::shared_ptr<Rendering::ModelEntry>  m_modelEntry;
+    };
   }
 }

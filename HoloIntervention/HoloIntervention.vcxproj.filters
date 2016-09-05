@@ -86,6 +86,18 @@
     <ClCompile Include="Content\Systems\ToolSystem.cpp">
       <Filter>Content\Systems\Tools</Filter>
     </ClCompile>
+    <ClCompile Include="Content\Systems\ToolEntry.cpp">
+      <Filter>Content\Systems\Tools</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Systems\TransformName.cpp">
+      <Filter>Content\Systems\Tools</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Rendering\SpatialMeshRenderer.cpp">
+      <Filter>Content\Rendering\SpatialMeshRenderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Rendering\SpatialMesh.cpp">
+      <Filter>Content\Rendering\SpatialMeshRenderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="HoloInterventionMain.h" />
@@ -129,9 +141,6 @@
       <Filter>Content\SpatialMapping</Filter>
     </ClInclude>
     <ClInclude Include="Content\SpatialMapping\SpatialSurfaceCollection.h">
-      <Filter>Content\SpatialMapping</Filter>
-    </ClInclude>
-    <ClInclude Include="Content\SpatialMapping\SpatialShaderStructures.h">
       <Filter>Content\SpatialMapping</Filter>
     </ClInclude>
     <ClInclude Include="Content\Input\VoiceInputHandler.h">
@@ -184,6 +193,18 @@
     </ClInclude>
     <ClInclude Include="Content\Systems\ToolSystem.h">
       <Filter>Content\Systems\Tools</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Systems\ToolEntry.h">
+      <Filter>Content\Systems\Tools</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Systems\TransformName.h">
+      <Filter>Content\Systems\Tools</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Rendering\SpatialMeshRenderer.h">
+      <Filter>Content\Rendering\SpatialMeshRenderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Rendering\SpatialMesh.h">
+      <Filter>Content\Rendering\SpatialMeshRenderer</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -378,8 +399,8 @@
     <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicVertexLightingVc.inc">
       <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
     </None>
-    <None Include="Assets\Models\needle.cmo">
-      <Filter>Assets\Models</Filter>
+    <None Include="Assets\Models\Tools\needle.cmo">
+      <Filter>Assets\Models\Tools</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -470,6 +491,15 @@
     <Filter Include="Content\Systems\Tools">
       <UniqueIdentifier>{04e0a418-9a42-43fb-9348-836d4a22974c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Assets\Models\Tools">
+      <UniqueIdentifier>{bb0e2372-170b-4d40-a51f-55abb6f7d94a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Rendering\SpatialMeshRenderer">
+      <UniqueIdentifier>{2384fb19-462f-4317-b3e0-b20ab0a79b47}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Rendering\SpatialMeshRenderer\Shaders">
+      <UniqueIdentifier>{d194b49e-a3a5-46c4-aa82-0ac812d4d39d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Content\SpatialMapping\Shaders\CSRayTriangleIntersection.hlsl">
@@ -519,6 +549,21 @@
     </FxCompile>
     <FxCompile Include="Content\Rendering\Shaders\NotificationPixelShader.hlsl">
       <Filter>Content\Rendering\NotificationRenderer\Shaders\NotificationRenderer</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Rendering\Shaders\SMRLightingPixelShader.hlsl">
+      <Filter>Content\Rendering\SpatialMeshRenderer\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Rendering\Shaders\SMRSolidColorPixelShader.hlsl">
+      <Filter>Content\Rendering\SpatialMeshRenderer\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Rendering\Shaders\SMRSurfaceVertexShader.hlsl">
+      <Filter>Content\Rendering\SpatialMeshRenderer\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Rendering\Shaders\SMRSurfaceVPRTVertexShader.hlsl">
+      <Filter>Content\Rendering\SpatialMeshRenderer\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Rendering\Shaders\PPNCIGeometryShader.hlsl">
+      <Filter>Content\Rendering\Geometry Shaders</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>

@@ -21,69 +21,71 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 ====================================================================*/
 
-#pragma once
-
 // Local includes
 #include "pch.h"
+#include "ToolEntry.h"
 #include "AppView.h"
-#include "ToolSystem.h"
-#include "TransformName.h"
 
 // Rendering includes
+#include "ModelEntry.h"
 #include "ModelRenderer.h"
 
-// STL includes
-
-// WinRT includes
+// std includes
+#include <string>
 
 namespace HoloIntervention
 {
   namespace Tools
   {
     //----------------------------------------------------------------------------
-    ToolSystem::ToolSystem()
+    ToolEntry::ToolEntry( const TransformName& coordinateFrame, const std::wstring& modelName )
+    {
+      m_coordinateFrame = coordinateFrame;
+
+      CreateModel(modelName);
+    }
+
+    //----------------------------------------------------------------------------
+    ToolEntry::ToolEntry( const std::wstring& coordinateFrame, const std::wstring& modelName )
+    {
+      m_coordinateFrame = coordinateFrame;
+
+      CreateModel(modelName);
+    }
+
+    //----------------------------------------------------------------------------
+    ToolEntry::~ToolEntry()
     {
     }
 
     //----------------------------------------------------------------------------
-    ToolSystem::~ToolSystem()
+    void ToolEntry::Update(const DX::StepTimer& timer, UWPOpenIGTLink::TrackedFrame^ frame)
     {
+
     }
 
     //----------------------------------------------------------------------------
-    uint64 ToolSystem::RegisterTool( const std::wstring& modelName, const TransformName& coordinateFrame )
+    uint64 ToolEntry::GetId() const
     {
-      ToolEntry entry( coordinateFrame, modelName );
-      m_toolEntries.push_back( entry );
-      return entry.GetId();
-    }
-
-    //----------------------------------------------------------------------------
-    void ToolSystem::UnregisterTool( uint64 toolToken )
-    {
-      for ( auto iter = m_toolEntries.begin(); iter != m_toolEntries.end(); ++iter )
+      if ( m_modelEntry == nullptr )
       {
-        if ( toolToken == iter->GetId() )
-        {
-          m_toolEntries.erase( iter );
-          return;
-        }
+        return Rendering::INVALID_MODEL_ENTRY;
       }
+      return m_modelEntry->GetId();
     }
 
     //----------------------------------------------------------------------------
-    void ToolSystem::ClearTools()
+    void ToolEntry::CreateModel(const std::wstring& modelName)
     {
-      m_toolEntries.clear();
-    }
-
-    //----------------------------------------------------------------------------
-    void ToolSystem::Update(const DX::StepTimer& timer, UWPOpenIGTLink::TrackedFrame^ frame)
-    {
-      for (auto entry : m_toolEntries)
+      uint64 modelToken = HoloIntervention::instance()->GetModelRenderer().AddModel(L"Assets\\Models\\Tools\\" + modelName + L".cmo");
+      if (modelToken == Rendering::INVALID_MODEL_ENTRY)
       {
-        entry.Update(timer, frame);
+        std::wstring error(L"Unable to create model with name: ");
+        error += modelName;
+        OutputDebugStringW(error.c_str());
+        return;
       }
+      m_modelEntry = HoloIntervention::instance()->GetModelRenderer().GetModel(modelToken);
     }
   }
 }

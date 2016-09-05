@@ -29,17 +29,19 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "HoloInterventionMain.h"
 
 // System includes
+#include "GazeSystem.h"
 #include "NotificationSystem.h"
 #include "SpatialSystem.h"
-#include "GazeSystem.h"
+#include "ToolSystem.h"
 
 // Sound includes
 #include "OmnidirectionalSound.h"
 
 // Rendering includes
-#include "SliceRenderer.h"
 #include "ModelRenderer.h"
 #include "NotificationRenderer.h"
+#include "SliceRenderer.h"
+#include "SpatialMeshRenderer.h"
 
 // Network includes
 #include "IGTLinkIF.h"
@@ -99,6 +101,8 @@ namespace HoloIntervention
     // Initialize the system components
     m_modelRenderer = std::make_unique<Rendering::ModelRenderer>( m_deviceResources );
     m_sliceRenderer = std::make_unique<Rendering::SliceRenderer>( m_deviceResources );
+    m_meshRenderer = std::make_unique<Rendering::SpatialMeshRenderer>( m_deviceResources );
+
     m_notificationSystem = std::make_unique<Notifications::NotificationSystem>( m_deviceResources );
     m_spatialInputHandler = std::make_unique<Input::SpatialInputHandler>();
     m_voiceInputHandler = std::make_unique<Input::VoiceInputHandler>();
@@ -107,6 +111,7 @@ namespace HoloIntervention
 
     // Model renderer must come before Gaze system
     m_gazeSystem = std::make_unique<Gaze::GazeSystem>();
+    m_toolSystem = std::make_unique<Tools::ToolSystem>();
 
     // TODO : remove temp code
     m_igtLinkIF->SetHostname( L"172.16.80.1" );
@@ -245,21 +250,27 @@ namespace HoloIntervention
     {
       SpatialPointerPose^ pose = SpatialPointerPose::TryGetAtTimestamp( currentCoordinateSystem, prediction->Timestamp );
 
-      if (pose == nullptr)
+      if ( pose == nullptr )
       {
         // TODO : how to handle invalid pose?
       }
 
       m_spatialSystem->Update( m_timer, currentCoordinateSystem );
-      m_gazeSystem->Update( m_timer, currentCoordinateSystem, pose);
+      m_gazeSystem->Update( m_timer, currentCoordinateSystem, pose );
       m_cursorSound->Update( m_timer );
       m_sliceRenderer->Update( pose, m_timer );
+
+      if ( m_meshRendererEnabled )
+      {
+        m_meshRenderer->Update( m_timer, currentCoordinateSystem );
+      }
+
       m_notificationSystem->Update( pose, m_timer );
       m_modelRenderer->Update( m_timer, vp );
 
       if ( m_igtLinkIF->IsConnected() )
       {
-        if ( m_igtLinkIF->GetLatestTrackedFrame( m_latestFrame ) )
+        if ( m_igtLinkIF->GetLatestTrackedFrame( m_latestFrame, m_latestTimestamp ) )
         {
           m_sliceRenderer->UpdateSlice( m_sliceToken,
                                         *( std::shared_ptr<byte*>* )m_latestFrame->ImageDataSharedPtr,
@@ -267,10 +278,9 @@ namespace HoloIntervention
                                         m_latestFrame->Height,
                                         ( DXGI_FORMAT )m_latestFrame->PixelFormat,
                                         m_latestFrame->EmbeddedImageTransform );
+          m_toolSystem->Update( m_timer, m_latestFrame );
         }
       }
-
-
     } );
 
     // We complete the frame update by using information about our content positioning to set the focus point.
@@ -384,8 +394,15 @@ namespace HoloIntervention
         pCameraResources->UpdateViewProjectionBuffer( m_deviceResources, cameraPose, currentCoordinateSystem, throwAway );
         bool activeCamera = pCameraResources->AttachViewProjectionBuffer( m_deviceResources );
 
-        m_modelRenderer->Render();
-        m_sliceRenderer->Render();
+        if ( activeCamera )
+        {
+          m_modelRenderer->Render();
+          m_sliceRenderer->Render();
+          if ( m_meshRendererEnabled )
+          {
+            m_meshRenderer->Render();
+          }
+        }
 
         // Only render world-locked content when positional tracking is active.
         if ( m_notificationSystem->IsShowingNotification() )
@@ -586,6 +603,20 @@ namespace HoloIntervention
       m_cursorSound->StartOnce();
       m_notificationSystem->QueueMessage( L"Slice is now in world-space." );
       m_sliceRenderer->SetSliceHeadlocked( m_sliceToken, false );
+    };
+
+    callbacks[L"debug mesh on"] = [this]()
+    {
+      m_cursorSound->StartOnce();
+      m_notificationSystem->QueueMessage(L"Debug mesh showing.");
+      m_meshRendererEnabled = true;
+    };
+
+    callbacks[L"debug mesh off"] = [this]()
+    {
+      m_cursorSound->StartOnce();
+      m_notificationSystem->QueueMessage(L"Debug mesh disabled.");
+      m_meshRendererEnabled = false;
     };
 
     m_voiceInputHandler->RegisterCallbacks( callbacks );
