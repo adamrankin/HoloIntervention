@@ -81,10 +81,10 @@ namespace HoloIntervention
   void RunFunctionAfterDelay(uint32 delayMs, Functor function)
   {
 	  // Convert ms to 100-nanosecond
-	  int64 delay100ns = delayMs * 10000;
+	  int64 delay100ns = delayMs * 10'000;
 
 	  TimeSpan ts;
-	  ts.Duration = 10000000;
+	  ts.Duration = 10'000'000;
 	  TimerElapsedHandler^ handler = ref new TimerElapsedHandler(function);
 	  ThreadPoolTimer^ timer = ThreadPoolTimer::CreateTimer(handler, ts);
   }

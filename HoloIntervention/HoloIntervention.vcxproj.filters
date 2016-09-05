@@ -80,9 +80,6 @@
     <ClCompile Include="Content\Rendering\DirectXTK\InstancedBasicEffect.cpp">
       <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
     </ClCompile>
-    <ClCompile Include="Common\Common.cpp">
-      <Filter>Common</Filter>
-    </ClCompile>
     <ClCompile Include="Content\Systems\ToolSystem.cpp">
       <Filter>Content\Systems\Tools</Filter>
     </ClCompile>
