@@ -86,13 +86,13 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     bool IGTLinkIF::GetOldestTrackedFrame( UWPOpenIGTLink::TrackedFrame^ frame, double& oldestTimestamp )
     {
-      return m_igtClient->GetOldestTrackedFrame( frame, &oldestTimestamp );
+      return m_igtClient->GetOldestTrackedFrame( frame ); // , &oldestTimestamp );
     }
 
     //----------------------------------------------------------------------------
     bool IGTLinkIF::GetLatestTrackedFrame( UWPOpenIGTLink::TrackedFrame^ frame, double& latestTimestamp )
     {
-      return m_igtClient->GetLatestTrackedFrame( frame, &latestTimestamp );
+      return m_igtClient->GetLatestTrackedFrame( frame ); // , &latestTimestamp );
     }
 
     //----------------------------------------------------------------------------
@@ -106,5 +106,12 @@ namespace HoloIntervention
     {
       return m_igtClient->GetLatestCommand( cmd );
     }
+
+    //----------------------------------------------------------------------------
+    std::shared_ptr<byte> IGTLinkIF::GetSharedImagePtr(UWPOpenIGTLink::TrackedFrame^ frame)
+    {
+      return *(std::shared_ptr<byte>*)frame->ImageDataSharedPtr;
+    }
+
   }
 }

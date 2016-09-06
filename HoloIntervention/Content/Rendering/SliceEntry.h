@@ -61,8 +61,8 @@ namespace HoloIntervention
       void Update( SpatialPointerPose^ pose, const DX::StepTimer& timer );
       void Render( uint32 indexCount );
 
-      void SetImageData( std::shared_ptr<byte*> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat );
-      std::shared_ptr<byte*> GetImageData() const;
+      void SetImageData( std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat );
+      std::shared_ptr<byte> GetImageData() const;
 
       void SetDesiredPose( const DirectX::XMFLOAT4X4& matrix );
 
@@ -94,7 +94,7 @@ namespace HoloIntervention
       float                                 m_scalingFactor;
 
       // image data vars
-      std::shared_ptr<byte*>                m_imageData;
+      std::shared_ptr<byte>                 m_imageData;
       uint16                                m_width;
       uint16                                m_height;
       std::mutex                            m_imageAccessMutex;

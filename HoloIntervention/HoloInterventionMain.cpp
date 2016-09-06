@@ -273,7 +273,7 @@ namespace HoloIntervention
         if ( m_igtLinkIF->GetLatestTrackedFrame( m_latestFrame, m_latestTimestamp ) )
         {
           m_sliceRenderer->UpdateSlice( m_sliceToken,
-                                        *( std::shared_ptr<byte*>* )m_latestFrame->ImageDataSharedPtr,
+                                        Network::IGTLinkIF::GetSharedImagePtr( m_latestFrame ),
                                         m_latestFrame->Width,
                                         m_latestFrame->Height,
                                         ( DXGI_FORMAT )m_latestFrame->PixelFormat,
@@ -608,14 +608,14 @@ namespace HoloIntervention
     callbacks[L"debug mesh on"] = [this]()
     {
       m_cursorSound->StartOnce();
-      m_notificationSystem->QueueMessage(L"Debug mesh showing.");
+      m_notificationSystem->QueueMessage( L"Debug mesh showing." );
       m_meshRendererEnabled = true;
     };
 
     callbacks[L"debug mesh off"] = [this]()
     {
       m_cursorSound->StartOnce();
-      m_notificationSystem->QueueMessage(L"Debug mesh disabled.");
+      m_notificationSystem->QueueMessage( L"Debug mesh disabled." );
       m_meshRendererEnabled = false;
     };
 
@@ -628,10 +628,10 @@ namespace HoloIntervention
     if ( m_sliceToken == 0 )
     {
       // For now, our slice renderer only draws one slice, in the future, it will have to draw more
-      m_sliceToken = m_sliceRenderer->AddSlice( *( std::shared_ptr<uint8*>* )frame->ImageDataSharedPtr, frame->FrameSize->GetAt( 0 ), frame->FrameSize->GetAt( 1 ), ( DXGI_FORMAT )frame->PixelFormat, frame->EmbeddedImageTransform );
+      m_sliceToken = m_sliceRenderer->AddSlice( Network::IGTLinkIF::GetSharedImagePtr( frame ), frame->FrameSize->GetAt( 0 ), frame->FrameSize->GetAt( 1 ), ( DXGI_FORMAT )frame->PixelFormat, frame->EmbeddedImageTransform );
       return;
     }
 
-    m_sliceRenderer->UpdateSlice( m_sliceToken, *( std::shared_ptr<uint8*>* )frame->ImageDataSharedPtr, frame->FrameSize->GetAt( 0 ), frame->FrameSize->GetAt( 1 ), ( DXGI_FORMAT )frame->PixelFormat, frame->EmbeddedImageTransform );
+    m_sliceRenderer->UpdateSlice( m_sliceToken, Network::IGTLinkIF::GetSharedImagePtr( frame ), frame->FrameSize->GetAt( 0 ), frame->FrameSize->GetAt( 1 ), ( DXGI_FORMAT )frame->PixelFormat, frame->EmbeddedImageTransform );
   }
 }

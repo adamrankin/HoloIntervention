@@ -70,6 +70,10 @@ namespace HoloIntervention
       /// Retrieve the latest command
       bool GetLatestCommand(UWPOpenIGTLink::Command^ cmd);
 
+    public:
+      // Static helper functions
+      static std::shared_ptr<byte> GetSharedImagePtr(UWPOpenIGTLink::TrackedFrame^ frame);
+
     protected:
       // Link to an IGT server
       UWPOpenIGTLink::IGTLinkClient^    m_igtClient;

@@ -68,7 +68,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    uint32 SliceRenderer::AddSlice( std::shared_ptr<byte*> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, float4x4 embeddedImageTransform )
+    uint32 SliceRenderer::AddSlice( std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, float4x4 embeddedImageTransform )
     {
       std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>( m_deviceResources );
       entry->m_id = m_nextUnusedSliceId;
@@ -93,7 +93,9 @@ namespace HoloIntervention
       DirectX::XMFLOAT4X4 mat;
       XMStoreFloat4x4( &mat, DirectX::XMLoadFloat4x4( &embeddedImageTransform ) );
       entry->m_constantBuffer.worldMatrix = entry->m_desiredPose = entry->m_currentPose = entry->m_lastPose = mat;
-      entry->SetImageData( std::make_shared<byte*>( HoloIntervention::GetDataFromIBuffer( imageData ) ), width, height, pixelFormat );
+      std::shared_ptr<byte> imDataPtr( new byte[imageData->Length], std::default_delete<byte[]>() );
+      memcpy( imDataPtr.get(), HoloIntervention::GetDataFromIBuffer( imageData ), imageData->Length * sizeof( byte ) );
+      entry->SetImageData( imDataPtr, width, height, pixelFormat );
       entry->m_showing = true;
 
       std::lock_guard<std::mutex> guard( m_sliceMapMutex );
@@ -123,7 +125,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SliceRenderer::UpdateSlice( uint32 sliceId, std::shared_ptr<byte*> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, float4x4 embeddedImageTransform )
+    void SliceRenderer::UpdateSlice( uint32 sliceId, std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, float4x4 embeddedImageTransform )
     {
       std::lock_guard<std::mutex> guard( m_sliceMapMutex );
       std::shared_ptr<SliceEntry> slice;
@@ -176,7 +178,7 @@ namespace HoloIntervention
       std::shared_ptr<SliceEntry> slice;
       if ( FindSlice( sliceId, slice ) )
       {
-        slice->SetHeadlocked(headlocked);
+        slice->SetHeadlocked( headlocked );
       }
     }
 

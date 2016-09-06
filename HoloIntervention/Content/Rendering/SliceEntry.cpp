@@ -194,7 +194,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SliceEntry::SetImageData( std::shared_ptr<byte*> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat )
+    void SliceEntry::SetImageData( std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat )
     {
       if ( width != m_width || height != m_height || pixelFormat != m_pixelFormat )
       {
@@ -211,14 +211,14 @@ namespace HoloIntervention
         m_texture.Get(),
         0,
         nullptr,
-        *m_imageData,
+        m_imageData.get(),
         m_width * DirectX::BitsPerPixel( pixelFormat ) / 8,
         m_width * m_height * DirectX::BitsPerPixel( pixelFormat ) / 8
       );
     }
 
     //----------------------------------------------------------------------------
-    std::shared_ptr<byte*> SliceEntry::GetImageData() const
+    std::shared_ptr<byte> SliceEntry::GetImageData() const
     {
       return m_imageData;
     }

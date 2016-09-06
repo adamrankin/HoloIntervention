@@ -61,11 +61,11 @@ namespace HoloIntervention
       ~SliceRenderer();
 
       uint32 AddSlice();
-      uint32 AddSlice( std::shared_ptr<byte*> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, float4x4 embeddedImageTransform );
+      uint32 AddSlice( std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, float4x4 embeddedImageTransform );
       uint32 AddSlice( IBuffer^ imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, float4x4 embeddedImageTransform );
       void RemoveSlice( uint32 sliceId );
 
-      void UpdateSlice( uint32 sliceId, std::shared_ptr<byte*> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, float4x4 embeddedImageTransform );
+      void UpdateSlice( uint32 sliceId, std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, float4x4 embeddedImageTransform );
 
       void ShowSlice( uint32 sliceId );
       void HideSlice( uint32 sliceId );
