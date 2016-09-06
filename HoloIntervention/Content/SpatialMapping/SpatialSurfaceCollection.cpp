@@ -223,6 +223,7 @@ namespace HoloIntervention
         m_deviceResources->GetD3DDeviceContext()->UpdateSubresource( m_constantBuffer.Get(), 0, nullptr, &buffer, 0, 0 );
         m_deviceResources->GetD3DDeviceContext()->CSSetConstantBuffers( 1, 1, m_constantBuffer.GetAddressOf() );
 
+        /*
         if ( m_lastHitMesh != nullptr && potentialHits.find( m_lastHitMeshGuid ) != potentialHits.end() )
         {
           result = m_lastHitMesh->TestRayIntersection( *m_deviceResources->GetD3DDeviceContext(), currentFrame, outHitPosition, outHitNormal );
@@ -244,6 +245,17 @@ namespace HoloIntervention
               result = true;
               break;
             }
+          }
+        }
+        */
+        for ( auto& pair : m_meshCollection )
+        {
+          if ( pair.second->TestRayIntersection( *m_deviceResources->GetD3DDeviceContext(), currentFrame, outHitPosition, outHitNormal ) )
+          {
+            m_lastHitMesh = pair.second;
+            m_lastHitMeshGuid = pair.first;
+            result = true;
+            break;
           }
         }
 

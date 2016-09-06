@@ -90,8 +90,6 @@ namespace HoloIntervention
         m_isActive = false;
       }
 
-      std::lock_guard<std::mutex> lock( m_meshResourcesMutex );
-
       // If the surface is active this frame, we need to update its transform.
       XMMATRIX transform;
       if ( m_isActive )
@@ -214,7 +212,7 @@ namespace HoloIntervention
       }
 
       WorldConstantBuffer buffer;
-      XMStoreFloat4x4( &buffer.meshToWorld, XMMatrixTranspose( XMLoadFloat4x4( &m_meshToWorldTransform ) ) );;
+      XMStoreFloat4x4( &buffer.meshToWorld, XMLoadFloat4x4( &m_meshToWorldTransform ) );
       context.UpdateSubresource( m_meshConstantBuffer.Get(), 0, nullptr, &buffer, 0, 0 );
       context.CSSetConstantBuffers( 0, 1, m_meshConstantBuffer.GetAddressOf() );
 

@@ -40,7 +40,7 @@ namespace HoloIntervention
     // Called once per frame, maintains and updates the mesh collection.
     void SpatialMeshRenderer::Update( DX::StepTimer const& timer, SpatialCoordinateSystem^ coordinateSystem )
     {
-      std::lock_guard<std::mutex> guard(m_meshCollectionLock);
+      std::lock_guard<std::mutex> guard( m_meshCollectionLock );
 
       // Only create a surface observer when you need to - do not create a new one each frame.
       if ( m_surfaceObserver == nullptr )
@@ -63,12 +63,7 @@ namespace HoloIntervention
         auto& surfaceMesh = pair.second;
 
         // Update the surface mesh.
-        surfaceMesh.UpdateTransform(
-          m_deviceResources->GetD3DDevice(),
-          m_deviceResources->GetD3DDeviceContext(),
-          timer,
-          coordinateSystem
-        );
+        surfaceMesh.UpdateTransform( m_deviceResources->GetD3DDevice(), m_deviceResources->GetD3DDeviceContext(), timer, coordinateSystem );
 
         // Check to see if the mesh has expired.
         float lastActiveTime = surfaceMesh.GetLastActiveTime();
@@ -331,6 +326,8 @@ namespace HoloIntervention
           surfaceMesh.Draw( device, context, m_usingVprtShaders );
         }
       }
+
+      m_deviceResources->GetD3DDeviceContext()->RSSetState(nullptr);
     }
 
     //----------------------------------------------------------------------------
@@ -457,7 +454,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void SpatialMeshRenderer::Reset()
     {
-      std::lock_guard<std::mutex> guard(m_meshCollectionLock);
+      std::lock_guard<std::mutex> guard( m_meshCollectionLock );
       ReleaseDeviceDependentResources();
 
       ClearSurfaces();

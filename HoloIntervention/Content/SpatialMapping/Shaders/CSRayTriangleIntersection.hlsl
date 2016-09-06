@@ -70,15 +70,12 @@ void main( uint3 DTid : SV_DispatchThreadID )
   v1 = mul(v1, meshToWorld);
   v2 = mul(v2, meshToWorld);
 
-  float3 rayOrigin3 = { rayOrigin[0], rayOrigin[1], rayOrigin[2] };
-  float3 rayDirection3 = { rayDirection[0], rayDirection[1], rayDirection[2] };
-
   //Find vectors for two edges sharing v0
   float3 e1 = v1.xyz - v0.xyz;
   float3 e2 = v2.xyz - v0.xyz;
 
   //Begin calculating determinant - also used to calculate u parameter
-  float3 P = cross( rayDirection3, e2 );
+  float3 P = cross( rayDirection.xyz, e2 );
 
   //if determinant is near zero, ray lies in plane of triangle or ray is parallel to plane of triangle
   float det = dot( e1, P );
@@ -92,7 +89,7 @@ void main( uint3 DTid : SV_DispatchThreadID )
   float inv_det = 1.f / det;
 
   //calculate distance from V1 to ray origin
-  float3 T = rayOrigin3.xyz - v0.xyz;
+  float3 T = rayOrigin.xyz - v0.xyz;
 
   //Calculate u parameter and test bound
   float u = dot( T, P ) * inv_det;
@@ -107,7 +104,7 @@ void main( uint3 DTid : SV_DispatchThreadID )
   float3 Q = cross( T, e1 );
 
   //Calculate V parameter and test bound
-  float v = dot( rayDirection3, Q ) * inv_det;
+  float v = dot( rayDirection.xyz, Q ) * inv_det;
 
   //The intersection lies outside of the triangle
   if ( v < 0.f || u + v  > 1.f )
