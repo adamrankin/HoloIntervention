@@ -23,8 +23,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "pch.h"
-#include "ToolEntry.h"
 #include "AppView.h"
+#include "ToolEntry.h"
 
 // Rendering includes
 #include "ModelEntry.h"
@@ -38,19 +38,19 @@ namespace HoloIntervention
   namespace Tools
   {
     //----------------------------------------------------------------------------
-    ToolEntry::ToolEntry( const TransformName& coordinateFrame, const std::wstring& modelName )
+    ToolEntry::ToolEntry( UWPOpenIGTLink::TransformName^ coordinateFrame, const std::wstring& modelName )
     {
       m_coordinateFrame = coordinateFrame;
 
-      CreateModel(modelName);
+      CreateModel( modelName );
     }
 
     //----------------------------------------------------------------------------
     ToolEntry::ToolEntry( const std::wstring& coordinateFrame, const std::wstring& modelName )
     {
-      m_coordinateFrame = coordinateFrame;
+      m_coordinateFrame = ref new UWPOpenIGTLink::TransformName( ref new Platform::String( coordinateFrame.c_str() ) );
 
-      CreateModel(modelName);
+      CreateModel( modelName );
     }
 
     //----------------------------------------------------------------------------
@@ -59,7 +59,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ToolEntry::Update(const DX::StepTimer& timer, UWPOpenIGTLink::TrackedFrame^ frame)
+    void ToolEntry::Update( const DX::StepTimer& timer, UWPOpenIGTLink::TrackedFrame^ frame )
     {
 
     }
@@ -75,17 +75,17 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ToolEntry::CreateModel(const std::wstring& modelName)
+    void ToolEntry::CreateModel( const std::wstring& modelName )
     {
-      uint64 modelToken = HoloIntervention::instance()->GetModelRenderer().AddModel(L"Assets\\Models\\Tools\\" + modelName + L".cmo");
-      if (modelToken == Rendering::INVALID_MODEL_ENTRY)
+      uint64 modelToken = HoloIntervention::instance()->GetModelRenderer().AddModel( L"Assets\\Models\\Tools\\" + modelName + L".cmo" );
+      if ( modelToken == Rendering::INVALID_MODEL_ENTRY )
       {
-        std::wstring error(L"Unable to create model with name: ");
+        std::wstring error( L"Unable to create model with name: " );
         error += modelName;
-        OutputDebugStringW(error.c_str());
+        OutputDebugStringW( error.c_str() );
         return;
       }
-      m_modelEntry = HoloIntervention::instance()->GetModelRenderer().GetModel(modelToken);
+      m_modelEntry = HoloIntervention::instance()->GetModelRenderer().GetModel( modelToken );
     }
   }
 }

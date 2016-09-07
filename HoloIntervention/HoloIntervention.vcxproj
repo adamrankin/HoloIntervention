@@ -9,7 +9,7 @@
     <AppContainerApplication>true</AppContainerApplication>
     <ApplicationType>Windows Store</ApplicationType>
     <WindowsTargetPlatformVersion>10.0.14393.0</WindowsTargetPlatformVersion>
-    <WindowsTargetPlatformMinVersion>10.0.10586.0</WindowsTargetPlatformMinVersion>
+    <WindowsTargetPlatformMinVersion>10.0.10240.0</WindowsTargetPlatformMinVersion>
     <ApplicationTypeRevision>10.0</ApplicationTypeRevision>
     <EnableDotNetNativeCompatibleProfile>true</EnableDotNetNativeCompatibleProfile>
   </PropertyGroup>
@@ -61,7 +61,7 @@
     <ClCompile>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\OpenIGTLink-bin;$(SolutionDir)..\OpenIGTLink\Source\igtlutil;$(SolutionDir)..\OpenIGTLink\Source;$(ProjectDir);$(IntermediateOutputPath);$(SolutionDir)DirectXTK\Src;$(SolutionDir)DirectXTK\Inc;$(SolutionDir)$(Configuration)\$(ProjectName);$(ProjectDir)Content\Systems;$(ProjectDir)Content\SpatialMapping;$(ProjectDir)Content\Network;$(ProjectDir)Content\Rendering\Shaders;$(ProjectDir)Content\Rendering\Shaders\Compiled;$(ProjectDir)Content\Rendering\DirectXTK;$(ProjectDir)Content\Rendering;$(ProjectDir)Content\Input;$(ProjectDir)Content\Sound;$(ProjectDir)Content;$(ProjectDir)Common;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content\Data;$(SolutionDir)DirectXTex\DirectXTex</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\OpenIGTLink-bin;$(SolutionDir)..\OpenIGTLink\Source\igtlutil;$(SolutionDir)..\OpenIGTLink\Source;$(IntermediateOutputPath);$(SolutionDir)DirectXTK\Src;$(SolutionDir)DirectXTK\Inc;$(SolutionDir)$(Configuration)\$(ProjectName);$(ProjectDir)Content\Systems;$(ProjectDir)Content\SpatialMapping;$(ProjectDir)Content\Network;$(ProjectDir)Content\Rendering\Shaders;$(ProjectDir)Content\Rendering\Shaders\Compiled;$(ProjectDir)Content\Rendering\DirectXTK;$(ProjectDir)Content\Rendering;$(ProjectDir)Content\Input;$(ProjectDir)Content\Sound;$(ProjectDir)Content;$(ProjectDir)Common;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content\Data;$(SolutionDir)DirectXTex\DirectXTex;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
@@ -76,7 +76,7 @@
     <ClCompile>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\OpenIGTLink-bin;$(SolutionDir)..\OpenIGTLink\Source\igtlutil;$(SolutionDir)..\OpenIGTLink\Source;$(ProjectDir);$(IntermediateOutputPath);$(SolutionDir)DirectXTK\Src;$(SolutionDir)DirectXTK\Inc;$(SolutionDir)$(Configuration)\$(ProjectName);$(ProjectDir)Content\Systems;$(ProjectDir)Content\SpatialMapping;$(ProjectDir)Content\Network;$(ProjectDir)Content\Rendering\Shaders;$(ProjectDir)Content\Rendering\Shaders\Compiled;$(ProjectDir)Content\Rendering\DirectXTK;$(ProjectDir)Content\Rendering;$(ProjectDir)Content\Input;$(ProjectDir)Content\Sound;$(ProjectDir)Content;$(ProjectDir)Common;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content\Data;$(SolutionDir)DirectXTex\DirectXTex</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\OpenIGTLink-bin;$(SolutionDir)..\OpenIGTLink\Source\igtlutil;$(SolutionDir)..\OpenIGTLink\Source;$(IntermediateOutputPath);$(SolutionDir)DirectXTK\Src;$(SolutionDir)DirectXTK\Inc;$(SolutionDir)$(Configuration)\$(ProjectName);$(ProjectDir)Content\Systems;$(ProjectDir)Content\SpatialMapping;$(ProjectDir)Content\Network;$(ProjectDir)Content\Rendering\Shaders;$(ProjectDir)Content\Rendering\Shaders\Compiled;$(ProjectDir)Content\Rendering\DirectXTK;$(ProjectDir)Content\Rendering;$(ProjectDir)Content\Input;$(ProjectDir)Content\Sound;$(ProjectDir)Content;$(ProjectDir)Common;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content\Data;$(SolutionDir)DirectXTex\DirectXTex;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
@@ -123,7 +123,6 @@
     <ClInclude Include="Content\Systems\SpatialSystem.h" />
     <ClInclude Include="Content\Systems\ToolEntry.h" />
     <ClInclude Include="Content\Systems\ToolSystem.h" />
-    <ClInclude Include="Content\Systems\TransformName.h" />
     <ClInclude Include="HoloInterventionMain.h" />
     <ClInclude Include="Common\DeviceResources.h" />
     <ClInclude Include="Common\CameraResources.h" />
@@ -157,7 +156,6 @@
     <ClCompile Include="Content\Systems\SpatialSystem.cpp" />
     <ClCompile Include="Content\Systems\ToolEntry.cpp" />
     <ClCompile Include="Content\Systems\ToolSystem.cpp" />
-    <ClCompile Include="Content\Systems\TransformName.cpp" />
     <ClCompile Include="HoloInterventionMain.cpp" />
     <ClCompile Include="Common\DeviceResources.cpp" />
     <ClCompile Include="Common\CameraResources.cpp" />
@@ -411,6 +409,9 @@
     <ProjectReference Include="..\UWPOpenIGTLink\UWPOpenIGTLink\UWPOpenIGTLink.vcxproj">
       <Project>{341616a4-cfc4-47cf-87e3-58d619b8475a}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="Assets\Data\tool_configuration.xml" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

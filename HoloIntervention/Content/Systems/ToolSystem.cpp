@@ -27,7 +27,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "pch.h"
 #include "AppView.h"
 #include "ToolSystem.h"
-#include "TransformName.h"
 
 // Rendering includes
 #include "ModelRenderer.h"
@@ -51,7 +50,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    uint64 ToolSystem::RegisterTool( const std::wstring& modelName, const TransformName& coordinateFrame )
+    uint64 ToolSystem::RegisterTool( const std::wstring& modelName, UWPOpenIGTLink::TransformName^ coordinateFrame )
     {
       ToolEntry entry( coordinateFrame, modelName );
       m_toolEntries.push_back( entry );

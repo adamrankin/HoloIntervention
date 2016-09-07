@@ -450,9 +450,9 @@ namespace HoloIntervention
 
         // rotate ray by inverse quaternion to work in AABB coordinate system
         quaternion revOrientation = inverse( bounds->Value.Orientation );
-        float3 aabbPos = transform( rayOrigin, revOrientation );
-        float3 aabbDir = transform( rayDirection, revOrientation );
-        float3 invDir( 1.f / aabbDir.x, 1.f / aabbDir.y, 1.f / aabbDir.z );
+        float3 aabbRayPos = transform( rayOrigin, revOrientation );
+        float3 aabbRayDir = transform( rayDirection, revOrientation );
+        float3 invDir( 1.f / aabbRayDir.x, 1.f / aabbRayDir.y, 1.f / aabbRayDir.z );
 
         // Algorithm implementation derived from
         // https://tavianator.com/cgit/dimension.git/tree/libdimension/bvh/bvh.c
@@ -464,25 +464,25 @@ namespace HoloIntervention
         float zMin = bounds->Value.Center.z - bounds->Value.Extents.z;
         float zMax = bounds->Value.Center.z + bounds->Value.Extents.z;
 
-        float tx1 = ( xMin - aabbPos.x ) * invDir.x;
-        float tx2 = ( xMax - aabbPos.x ) * invDir.x;
+        float tx1 = ( xMin - aabbRayPos.x ) * invDir.x;
+        float tx2 = ( xMax - aabbRayPos.x ) * invDir.x;
 
         float tmin = min( tx1, tx2 );
         float tmax = max( tx1, tx2 );
 
-        float ty1 = ( yMin - aabbPos.y ) * invDir.y;
-        float ty2 = ( yMax - aabbPos.y ) * invDir.y;
+        float ty1 = ( yMin - aabbRayPos.y ) * invDir.y;
+        float ty2 = ( yMax - aabbRayPos.y ) * invDir.y;
 
         tmin = max( tmin, min( ty1, ty2 ) );
         tmax = min( tmax, max( ty1, ty2 ) );
 
-        float tz1 = ( zMin - aabbPos.z ) * invDir.z;
-        float tz2 = ( zMax - aabbPos.z ) * invDir.z;
+        float tz1 = ( zMin - aabbRayPos.z ) * invDir.z;
+        float tz2 = ( zMax - aabbRayPos.z ) * invDir.z;
 
         tmin = max( tmin, min( tz1, tz2 ) );
         tmax = min( tmax, max( tz1, tz2 ) );
 
-        return tmax >= tmin;
+        return tmax >= max(0.0, tmin);
       }
     }
   }

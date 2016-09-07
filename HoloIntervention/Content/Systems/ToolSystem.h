@@ -42,7 +42,7 @@ namespace HoloIntervention
       ToolSystem();
       ~ToolSystem();
 
-      uint64 RegisterTool( const std::wstring& modelName, const TransformName& coordinateFrame );
+      uint64 RegisterTool( const std::wstring& modelName, UWPOpenIGTLink::TransformName^ coordinateFrame );
       void UnregisterTool( uint64 toolToken );
       void ClearTools();
 
