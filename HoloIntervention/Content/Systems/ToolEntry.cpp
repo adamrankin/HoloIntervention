@@ -30,8 +30,14 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "ModelEntry.h"
 #include "ModelRenderer.h"
 
+// IGT includes
+#include <IGTCommon.h>
+
 // std includes
 #include <string>
+#include <sstream>
+
+using namespace Windows::Foundation::Numerics;
 
 namespace HoloIntervention
 {
@@ -75,6 +81,9 @@ namespace HoloIntervention
         // Fail gracefully, it's possible that this transform wasn't available this frame
         return;
       }
+
+      // transform is in units mm, model is in units mm (WHHHYYYYY), world is in units m
+      transform = make_float4x4_scale( 1.f / 1000.f ) * transform; //mm to m
 
       m_modelEntry->SetVisible( true );
       m_modelEntry->SetWorld( transform );
