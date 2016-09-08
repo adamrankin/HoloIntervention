@@ -30,9 +30,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "ModelEntry.h"
 #include "ModelRenderer.h"
 
-// IGT includes
-#include <IGTCommon.h>
-
 // std includes
 #include <string>
 #include <sstream>
@@ -79,11 +76,12 @@ namespace HoloIntervention
       catch ( Platform::Exception^ e )
       {
         // Fail gracefully, it's possible that this transform wasn't available this frame
+        // TODO : render model in a different manner to indicate invalid transform?
         return;
       }
 
-      // transform is in units mm, model is in units mm (WHHHYYYYY), world is in units m
-      transform = make_float4x4_scale( 1.f / 1000.f ) * transform; //mm to m
+      // transform is in units mm, world is in units m
+      transform = make_float4x4_scale( 1.f / 1000.f ) * transform;
 
       m_modelEntry->SetVisible( true );
       m_modelEntry->SetWorld( transform );
