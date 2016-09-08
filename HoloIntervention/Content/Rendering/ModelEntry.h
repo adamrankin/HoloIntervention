@@ -57,9 +57,9 @@ namespace HoloIntervention
       void ReleaseDeviceDependentResources();
 
       // Model enable control
-      void EnableModel( bool enable );
-      void ToggleEnabled();
-      bool IsModelEnabled() const;
+      void SetVisible( bool enable );
+      void ToggleVisible();
+      bool IsVisible() const;
 
       // Model pose control
       void SetWorld( const float4x4& world );
@@ -87,7 +87,7 @@ namespace HoloIntervention
       float4x4                                            m_worldMatrix;
 
       // Model related behavior
-      bool                                                m_enableModel = false;
+      bool                                                m_visible = false;
       uint64                                              m_id;
 
       // Variables used with the rendering loop.

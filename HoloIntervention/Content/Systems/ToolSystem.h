@@ -45,8 +45,11 @@ namespace HoloIntervention
       void Update( const DX::StepTimer& timer, UWPOpenIGTLink::TrackedFrame^ frame );
 
     protected:
-      std::vector<ToolEntry>                m_toolEntries;
-      UWPOpenIGTLink::TransformRepository^  m_transformRepository;
+      concurrency::task<void> InitAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
+
+    protected:
+      std::vector<std::shared_ptr<ToolEntry>>   m_toolEntries;
+      UWPOpenIGTLink::TransformRepository^      m_transformRepository;
     };
   }
 }

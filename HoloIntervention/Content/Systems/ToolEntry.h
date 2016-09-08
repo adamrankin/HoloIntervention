@@ -45,7 +45,7 @@ namespace HoloIntervention
       ToolEntry( const std::wstring& coordinateFrame, const std::wstring& modelName, UWPOpenIGTLink::TransformRepository^ transformRepository);
       ~ToolEntry();
 
-      void Update( const DX::StepTimer& timer, UWPOpenIGTLink::TrackedFrame^ frame );
+      void Update( const DX::StepTimer& timer );
 
       uint64 GetId() const;
 

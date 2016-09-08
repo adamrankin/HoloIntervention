@@ -1,44 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <HoloIntervention>
+  <!-- World coordinate frame is the spatial mesh frame -->
   <Tools>
-    <Tool name="needle" model="needle.cmo" transform="StylusTipToReference"/>
+    <Tool Model="needle" Transform="StylusTipToWorld"/>
   </Tools>
   <CoordinateDefinitions>
-    <Transform From="Image" 
-               To="TransducerOriginPixel"
+    <Transform From="Reference" 
+               To="World"
                Matrix="
-               1 0 0 -410
-               0 1 0 5
+               1 0 0 0
+               0 1 0 0
                0 0 1 0
                0 0 0 1"
-               Date="2011.12.06 17:57:00" />
-    <Transform From="Phantom"
-               To="Reference"
-               Matrix="
-                 1 0 0 0  
-                 0 1 0 0  
-                 0 0 1 0 
-                 0 0 0 1"
-               Error="0.0" />
-    <!-- Image was cropped with a rectangle origin (335, 285), size (200, 150). 
-    The original non-cropped image is renamed to ImageFull. 
-    Therefore, transform between the cropped image (Image) and the original image (ImageFull) is the following: -->
-    <Transform From="Image"
-               To="ImageFull"
-               Matrix="
-                 1 0 0 335
-                 0 1 0 285
-                 0 0 1 0
-                 0 0 0 1" />
-    <Transform From="ImageFull"
-               To="Probe"
-               Matrix="
-                 -0.0094 -0.0739 -0.0028 -103.5322
-                 0.0774 -0.0076 -0.0049 -43.1227
-                 0.0046 -0.0032 0.0760 -93.3
-                 0 0 0 1"
-               Error="0.508027"
-               Date="2011.08.19 14:11:53" />
+               Date="2011.12.06 17:57:00" 
+               Error="0.0"
+               Persistent="true"/>
     <Transform From="StylusTip" 
                To="Stylus"
                Matrix="
@@ -47,6 +23,6 @@
                  0 0 1 1.17469
                  0 0 0 1"
                Error="0.582721" 
-               Date="012712_152030" />
+               Date="2012.01.27 15:20:30" />
   </CoordinateDefinitions>
 </HoloIntervention>

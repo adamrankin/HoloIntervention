@@ -68,7 +68,7 @@ namespace HoloIntervention
     {
       for ( auto model : m_models )
       {
-        if ( model->IsModelEnabled() )
+        if ( model->IsVisible() )
         {
           model->Render();
         }
@@ -80,7 +80,7 @@ namespace HoloIntervention
     {
       std::shared_ptr<ModelEntry> entry = std::make_shared<ModelEntry>( m_deviceResources, assetLocation );
       entry->SetId( m_nextUnusedModelId );
-      entry->EnableModel( true );
+      entry->SetVisible( true );
 
       std::lock_guard<std::mutex> guard( m_modelListMutex );
       m_models.push_back( entry );

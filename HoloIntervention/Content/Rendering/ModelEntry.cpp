@@ -107,12 +107,6 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ModelEntry::Update( const DX::StepTimer& timer, const DX::ViewProjection& vp )
     {
-      if ( !m_enableModel )
-      {
-        // No need to update, cursor is not drawn
-        return;
-      }
-
       m_viewProjection = vp;
     }
 
@@ -120,7 +114,7 @@ namespace HoloIntervention
     void ModelEntry::Render()
     {
       // Loading is asynchronous. Resources must be created before drawing can occur.
-      if ( !m_loadingComplete || !m_enableModel )
+      if ( !m_loadingComplete || !m_visible )
       {
         return;
       }
@@ -185,21 +179,21 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ModelEntry::EnableModel( bool enable )
+    void ModelEntry::SetVisible( bool enable )
     {
-      m_enableModel = enable;
+      m_visible = enable;
     }
 
     //----------------------------------------------------------------------------
-    void ModelEntry::ToggleEnabled()
+    void ModelEntry::ToggleVisible()
     {
-      m_enableModel = !m_enableModel;
+      m_visible = !m_visible;
     }
 
     //----------------------------------------------------------------------------
-    bool ModelEntry::IsModelEnabled() const
+    bool ModelEntry::IsVisible() const
     {
-      return m_enableModel;
+      return m_visible;
     }
 
     //----------------------------------------------------------------------------

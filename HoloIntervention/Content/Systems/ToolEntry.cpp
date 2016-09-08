@@ -60,9 +60,24 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ToolEntry::Update( const DX::StepTimer& timer, UWPOpenIGTLink::TrackedFrame^ frame )
+    void ToolEntry::Update( const DX::StepTimer& timer )
     {
+      // Transform repository has already been initialized with the transforms for this update
 
+      bool isValid;
+      float4x4 transform;
+      try
+      {
+        transform = m_transformRepository->GetTransform( m_coordinateFrame, &isValid );
+      }
+      catch ( Platform::Exception^ e )
+      {
+        // Fail gracefully, it's possible that this transform wasn't available this frame
+        return;
+      }
+
+      m_modelEntry->SetVisible( true );
+      m_modelEntry->SetWorld( transform );
     }
 
     //----------------------------------------------------------------------------
@@ -87,6 +102,7 @@ namespace HoloIntervention
         return;
       }
       m_modelEntry = HoloIntervention::instance()->GetModelRenderer().GetModel( modelToken );
+      m_modelEntry->SetVisible( false );
     }
   }
 }
