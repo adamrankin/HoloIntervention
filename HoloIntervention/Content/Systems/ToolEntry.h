@@ -41,8 +41,8 @@ namespace HoloIntervention
     class ToolEntry
     {
     public:
-      ToolEntry( UWPOpenIGTLink::TransformName^ coordinateFrame, const std::wstring& modelName );
-      ToolEntry( const std::wstring& coordinateFrame, const std::wstring& modelName );
+      ToolEntry( UWPOpenIGTLink::TransformName^ coordinateFrame, const std::wstring& modelName, UWPOpenIGTLink::TransformRepository^ transformRepository);
+      ToolEntry( const std::wstring& coordinateFrame, const std::wstring& modelName, UWPOpenIGTLink::TransformRepository^ transformRepository);
       ~ToolEntry();
 
       void Update( const DX::StepTimer& timer, UWPOpenIGTLink::TrackedFrame^ frame );
@@ -53,6 +53,9 @@ namespace HoloIntervention
       void CreateModel( const std::wstring& modelName );
 
     protected:
+      // Cache the transform repository
+      UWPOpenIGTLink::TransformRepository^    m_transformRepository;
+
       UWPOpenIGTLink::TransformName^          m_coordinateFrame;
       std::shared_ptr<Rendering::ModelEntry>  m_modelEntry;
     };

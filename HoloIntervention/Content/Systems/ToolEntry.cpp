@@ -38,15 +38,16 @@ namespace HoloIntervention
   namespace Tools
   {
     //----------------------------------------------------------------------------
-    ToolEntry::ToolEntry( UWPOpenIGTLink::TransformName^ coordinateFrame, const std::wstring& modelName )
+    ToolEntry::ToolEntry( UWPOpenIGTLink::TransformName^ coordinateFrame, const std::wstring& modelName, UWPOpenIGTLink::TransformRepository^ transformRepository )
+      : m_transformRepository( transformRepository )
+      , m_coordinateFrame( coordinateFrame )
     {
-      m_coordinateFrame = coordinateFrame;
-
       CreateModel( modelName );
     }
 
     //----------------------------------------------------------------------------
-    ToolEntry::ToolEntry( const std::wstring& coordinateFrame, const std::wstring& modelName )
+    ToolEntry::ToolEntry( const std::wstring& coordinateFrame, const std::wstring& modelName, UWPOpenIGTLink::TransformRepository^ transformRepository )
+      : m_transformRepository( transformRepository )
     {
       m_coordinateFrame = ref new UWPOpenIGTLink::TransformName( ref new Platform::String( coordinateFrame.c_str() ) );
 

@@ -31,9 +31,11 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Rendering includes
 #include "ModelRenderer.h"
 
-// STL includes
+// System includes
+#include "NotificationSystem.h"
 
-// WinRT includes
+using namespace Windows::Storage;
+using namespace Windows::Data::Xml::Dom;
 
 namespace HoloIntervention
 {
@@ -41,7 +43,44 @@ namespace HoloIntervention
   {
     //----------------------------------------------------------------------------
     ToolSystem::ToolSystem()
+      : m_transformRepository( ref new UWPOpenIGTLink::TransformRepository() )
     {
+      ;
+      concurrency::create_task( Windows::ApplicationModel::Package::Current->InstalledLocation->GetFileAsync( L"Assets\\Data\\tool_configuration.xml" ) ).then( [this]( concurrency::task<StorageFile^> previousTask )
+      {
+        StorageFile^ file = nullptr;
+        try
+        {
+          file = previousTask.get();
+        }
+        catch ( Platform::Exception^ e )
+        {
+          HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Unable to locate tool configuration file." );
+        }
+
+        XmlDocument^ doc = ref new XmlDocument();
+        concurrency::create_task( doc->LoadFromFileAsync( file ) ).then( [this]( concurrency::task<XmlDocument^> previousTask )
+        {
+          XmlDocument^ doc = nullptr;
+          try
+          {
+            doc = previousTask.get();
+          }
+          catch ( Platform::Exception^ e )
+          {
+            HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Tool configuration file did not contain valid XML." );
+          }
+
+          try
+          {
+            m_transformRepository->ReadConfiguration( doc );
+          }
+          catch ( Platform::Exception^ e )
+          {
+            HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Invalid layout in tool configuration area." );
+          }
+        } );
+      } );
     }
 
     //----------------------------------------------------------------------------
@@ -52,7 +91,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     uint64 ToolSystem::RegisterTool( const std::wstring& modelName, UWPOpenIGTLink::TransformName^ coordinateFrame )
     {
-      ToolEntry entry( coordinateFrame, modelName );
+      ToolEntry entry( coordinateFrame, modelName, m_transformRepository );
       m_toolEntries.push_back( entry );
       return entry.GetId();
     }
@@ -77,11 +116,13 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ToolSystem::Update(const DX::StepTimer& timer, UWPOpenIGTLink::TrackedFrame^ frame)
+    void ToolSystem::Update( const DX::StepTimer& timer, UWPOpenIGTLink::TrackedFrame^ frame )
     {
-      for (auto entry : m_toolEntries)
+      m_transformRepository->SetTransforms( frame );
+
+      for ( auto entry : m_toolEntries )
       {
-        entry.Update(timer, frame);
+        entry.Update( timer, frame );
       }
     }
   }
