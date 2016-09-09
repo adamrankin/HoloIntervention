@@ -10,3 +10,4 @@
 /*.db
 /HoloIntervention.VC.VC.opendb
 *.ipch
+/HoloIntervention/Content/Rendering/Shaders/Compiled
