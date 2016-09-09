@@ -107,12 +107,6 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ModelEntry::Update( const DX::StepTimer& timer, const DX::ViewProjection& vp )
     {
-      if ( !m_enableModel )
-      {
-        // No need to update, cursor is not drawn
-        return;
-      }
-
       m_viewProjection = vp;
     }
 
@@ -120,7 +114,7 @@ namespace HoloIntervention
     void ModelEntry::Render()
     {
       // Loading is asynchronous. Resources must be created before drawing can occur.
-      if ( !m_loadingComplete || !m_enableModel )
+      if ( !m_loadingComplete || !m_visible )
       {
         return;
       }
@@ -185,21 +179,21 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ModelEntry::EnableModel( bool enable )
+    void ModelEntry::SetVisible( bool enable )
     {
-      m_enableModel = enable;
+      m_visible = enable;
     }
 
     //----------------------------------------------------------------------------
-    void ModelEntry::ToggleEnabled()
+    void ModelEntry::ToggleVisible()
     {
-      m_enableModel = !m_enableModel;
+      m_visible = !m_visible;
     }
 
     //----------------------------------------------------------------------------
-    bool ModelEntry::IsModelEnabled() const
+    bool ModelEntry::IsVisible() const
     {
-      return m_enableModel;
+      return m_visible;
     }
 
     //----------------------------------------------------------------------------
@@ -218,6 +212,24 @@ namespace HoloIntervention
     void ModelEntry::SetId( uint64 id )
     {
       m_id = id;
+    }
+
+    //----------------------------------------------------------------------------
+    void ModelEntry::RenderGreyscale()
+    {
+      UpdateEffects( [ = ]( DirectX::IEffect * effect ) -> void
+      {
+      } );
+      m_renderingState = RENDERING_GREYSCALE;
+    }
+
+    //----------------------------------------------------------------------------
+    void ModelEntry::RenderDefault()
+    {
+      UpdateEffects( [ = ]( DirectX::IEffect * effect ) -> void
+      {
+      } );
+      m_renderingState = RENDERING_DEFAULT;
     }
 
     //----------------------------------------------------------------------------
@@ -250,7 +262,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ModelEntry::DrawMeshPart( const DirectX::ModelMeshPart& part )
+    void ModelEntry::DrawMeshPart( const DirectX::ModelMeshPart& part, std::function<void __cdecl()> setCustomState )
     {
       m_deviceResources->GetD3DDeviceContext()->IASetInputLayout( part.inputLayout.Get() );
 
@@ -263,9 +275,21 @@ namespace HoloIntervention
       assert( part.effect != nullptr );
       part.effect->Apply( m_deviceResources->GetD3DDeviceContext() );
 
+      // Hook lets the caller replace our shaders or state settings with whatever else they see fit.
+      if ( setCustomState )
+      {
+        setCustomState();
+      }
+
       m_deviceResources->GetD3DDeviceContext()->IASetPrimitiveTopology( part.primitiveType );
 
       m_deviceResources->GetD3DDeviceContext()->DrawIndexedInstanced( part.indexCount, 2, part.startIndex, part.vertexOffset, 0 );
+    }
+
+    //----------------------------------------------------------------------------
+    void ModelEntry::UpdateEffects( _In_ std::function<void __cdecl( DirectX::IEffect* )> setEffect )
+    {
+      m_model->UpdateEffects( setEffect );
     }
   }
 }

@@ -24,10 +24,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
-#include "StepTimer.h"
 #include "DeviceResources.h"
-#include "InstancedEffects.h"
 #include "InstancedEffectFactory.h"
+#include "InstancedEffects.h"
+#include "StepTimer.h"
 
 // DirectXTK includes
 #include <CommonStates.h>
@@ -43,6 +43,13 @@ namespace HoloIntervention
 {
   namespace Rendering
   {
+    static const uint64 INVALID_MODEL_ENTRY = 0;
+
+    enum ModelRenderingState
+    {
+      RENDERING_DEFAULT,
+      RENDERING_GREYSCALE,
+    };
     class ModelEntry
     {
     public:
@@ -57,9 +64,9 @@ namespace HoloIntervention
       void ReleaseDeviceDependentResources();
 
       // Model enable control
-      void EnableModel( bool enable );
-      void ToggleEnabled();
-      bool IsModelEnabled() const;
+      void SetVisible( bool enable );
+      void ToggleVisible();
+      bool IsVisible() const;
 
       // Model pose control
       void SetWorld( const float4x4& world );
@@ -68,27 +75,35 @@ namespace HoloIntervention
       uint64 GetId() const;
       void SetId( uint64 id );
 
+      // Alternate rendering options
+      void RenderGreyscale();
+      void RenderDefault();
+
     protected:
-      void DrawMesh( const DirectX::ModelMesh& mesh, bool alpha );
-      void DrawMeshPart( const DirectX::ModelMeshPart& part );
+      void DrawMesh( _In_ const DirectX::ModelMesh& mesh, _In_ bool alpha );
+      void DrawMeshPart( _In_ const DirectX::ModelMeshPart& part, _In_opt_ std::function<void __cdecl()> setCustomState = nullptr );
+
+      // Update all effects used by the model
+      void __cdecl UpdateEffects(_In_ std::function<void __cdecl(DirectX::IEffect*)> setEffect);
 
     protected:
       // Cached pointer to device resources.
       std::shared_ptr<DX::DeviceResources>                m_deviceResources = nullptr;
 
       // DirectXTK resources for the cursor model
-      std::unique_ptr<DirectX::CommonStates>              m_states;
+      std::unique_ptr<DirectX::CommonStates>              m_states = nullptr;
       std::unique_ptr<DirectX::InstancedEffectFactory>    m_effectFactory = nullptr;
       std::shared_ptr<DirectX::Model>                     m_model = nullptr;
       std::wstring                                        m_assetLocation;
 
       // Cached eye view projection to pass to IEffect system
       DX::ViewProjection                                  m_viewProjection;
-      float4x4                                            m_worldMatrix;
+      float4x4                                            m_worldMatrix = float4x4::identity();
 
       // Model related behavior
-      bool                                                m_enableModel = false;
-      uint64                                              m_id;
+      bool                                                m_visible = false;
+      uint64                                              m_id = INVALID_MODEL_ENTRY;
+      ModelRenderingState                                 m_renderingState = RENDERING_DEFAULT;
 
       // Variables used with the rendering loop.
       bool                                                m_loadingComplete = false;

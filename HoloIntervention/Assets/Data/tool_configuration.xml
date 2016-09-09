@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<HoloIntervention>
+  <!-- World coordinate frame is the spatial mesh frame -->
+  <Tools>
+    <Tool Model="needle" Transform="StylusTipToWorld"/>
+  </Tools>
+  <CoordinateDefinitions>
+    <Transform From="Reference" 
+               To="World"
+               Matrix="
+               1 0 0 0
+               0 1 0 0
+               0 0 1 0
+               0 0 0 1"
+               Date="2011.12.06 17:57:00" 
+               Error="0.0"
+               Persistent="true"/>
+    <Transform From="StylusTip" 
+               To="Stylus"
+               Matrix="
+                 1 0 0 203.772
+                 0 1 0 -12.283
+                 0 0 1 1.17469
+                 0 0 0 1"
+               Error="0.582721" 
+               Date="2012.01.27 15:20:30" />
+  </CoordinateDefinitions>
+</HoloIntervention>

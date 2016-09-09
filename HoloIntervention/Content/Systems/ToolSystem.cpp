@@ -27,14 +27,15 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "pch.h"
 #include "AppView.h"
 #include "ToolSystem.h"
-#include "TransformName.h"
 
 // Rendering includes
 #include "ModelRenderer.h"
 
-// STL includes
+// System includes
+#include "NotificationSystem.h"
 
-// WinRT includes
+using namespace Windows::Storage;
+using namespace Windows::Data::Xml::Dom;
 
 namespace HoloIntervention
 {
@@ -42,7 +43,60 @@ namespace HoloIntervention
   {
     //----------------------------------------------------------------------------
     ToolSystem::ToolSystem()
+      : m_transformRepository( ref new UWPOpenIGTLink::TransformRepository() )
     {
+      ;
+      concurrency::create_task( Windows::ApplicationModel::Package::Current->InstalledLocation->GetFileAsync( L"Assets\\Data\\tool_configuration.xml" ) ).then( [this]( concurrency::task<StorageFile^> previousTask )
+      {
+        StorageFile^ file = nullptr;
+        try
+        {
+          file = previousTask.get();
+        }
+        catch ( Platform::Exception^ e )
+        {
+          HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Unable to locate tool system configuration file." );
+        }
+
+        XmlDocument^ doc = ref new XmlDocument();
+        concurrency::create_task( doc->LoadFromFileAsync( file ) ).then( [this]( concurrency::task<XmlDocument^> previousTask )
+        {
+          XmlDocument^ doc = nullptr;
+          try
+          {
+            doc = previousTask.get();
+          }
+          catch ( Platform::Exception^ e )
+          {
+            HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Tool system configuration file did not contain valid XML." );
+          }
+
+          try
+          {
+            m_transformRepository->ReadConfiguration( doc );
+          }
+          catch ( Platform::Exception^ e )
+          {
+            HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Invalid layout in coordinate definitions configuration area." );
+          }
+
+          InitAsync( doc ).then( [ = ]()
+          {
+            // Ensure that ReferenceToWorld exists
+            bool isValid;
+            float4x4 transform;
+            UWPOpenIGTLink::TransformName^ trName = ref new UWPOpenIGTLink::TransformName( L"Reference", L"World" );
+            try
+            {
+              transform = m_transformRepository->GetTransform( trName, &isValid );
+            }
+            catch ( Platform::Exception^ e )
+            {
+              m_transformRepository->SetTransform( trName, &float4x4::identity(), true );
+            }
+          } );
+        } );
+      } );
     }
 
     //----------------------------------------------------------------------------
@@ -51,11 +105,11 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    uint64 ToolSystem::RegisterTool( const std::wstring& modelName, const TransformName& coordinateFrame )
+    uint64 ToolSystem::RegisterTool( const std::wstring& modelName, UWPOpenIGTLink::TransformName^ coordinateFrame )
     {
-      ToolEntry entry( coordinateFrame, modelName );
+      std::shared_ptr<ToolEntry> entry = std::make_shared<ToolEntry>( coordinateFrame, modelName, m_transformRepository );
       m_toolEntries.push_back( entry );
-      return entry.GetId();
+      return entry->GetId();
     }
 
     //----------------------------------------------------------------------------
@@ -63,7 +117,7 @@ namespace HoloIntervention
     {
       for ( auto iter = m_toolEntries.begin(); iter != m_toolEntries.end(); ++iter )
       {
-        if ( toolToken == iter->GetId() )
+        if ( toolToken == ( *iter )->GetId() )
         {
           m_toolEntries.erase( iter );
           return;
@@ -78,12 +132,55 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ToolSystem::Update(const DX::StepTimer& timer, UWPOpenIGTLink::TrackedFrame^ frame)
+    void ToolSystem::Update( const DX::StepTimer& timer, UWPOpenIGTLink::TrackedFrame^ frame )
     {
-      for (auto entry : m_toolEntries)
+      m_transformRepository->SetTransforms( frame );
+
+      for ( auto entry : m_toolEntries )
       {
-        entry.Update(timer, frame);
+        entry->Update( timer );
       }
     }
+
+    //----------------------------------------------------------------------------
+    concurrency::task<void> ToolSystem::InitAsync( XmlDocument^ doc )
+    {
+      return create_task( [ = ]()
+      {
+        auto xpath = ref new Platform::String( L"/HoloIntervention/Tools/Tool" );
+        if ( doc->SelectNodes( xpath )->Length == 0 )
+        {
+          throw ref new Platform::Exception( E_INVALIDARG, L"No tools defined in the configuration file. Check for the existence of Tools/Tool" );
+        }
+
+        for ( auto toolNode : doc->SelectNodes( xpath ) )
+        {
+          // model, transform
+          if ( toolNode->Attributes->GetNamedItem( L"Model" ) == nullptr )
+          {
+            throw ref new Platform::Exception( E_FAIL, L"Tool entry does not contain model attribute." );
+          }
+          if ( toolNode->Attributes->GetNamedItem( L"Transform" ) == nullptr )
+          {
+            throw ref new Platform::Exception( E_FAIL, L"Tool entry does not contain transform attribute." );
+          }
+          Platform::String^ modelString = dynamic_cast<Platform::String^>( toolNode->Attributes->GetNamedItem( L"Model" )->NodeValue );
+          Platform::String^ transformString = dynamic_cast<Platform::String^>( toolNode->Attributes->GetNamedItem( L"Transform" )->NodeValue );
+          if ( modelString->IsEmpty() || transformString->IsEmpty() )
+          {
+            throw ref new Platform::Exception( E_FAIL, L"Tool entry contains an empty attribute." );
+          }
+
+          UWPOpenIGTLink::TransformName^ trName = ref new UWPOpenIGTLink::TransformName( transformString );
+          if ( !trName->IsValid() )
+          {
+            throw ref new Platform::Exception( E_FAIL, L"Tool entry contains invalid transform name." );
+          }
+
+          RegisterTool( std::wstring( modelString->Data() ), trName );
+        }
+      } );
+    }
+
   }
 }

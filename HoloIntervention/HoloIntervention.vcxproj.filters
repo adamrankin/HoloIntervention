@@ -86,9 +86,6 @@
     <ClCompile Include="Content\Systems\ToolEntry.cpp">
       <Filter>Content\Systems\Tools</Filter>
     </ClCompile>
-    <ClCompile Include="Content\Systems\TransformName.cpp">
-      <Filter>Content\Systems\Tools</Filter>
-    </ClCompile>
     <ClCompile Include="Content\Rendering\SpatialMeshRenderer.cpp">
       <Filter>Content\Rendering\SpatialMeshRenderer</Filter>
     </ClCompile>
@@ -192,9 +189,6 @@
       <Filter>Content\Systems\Tools</Filter>
     </ClInclude>
     <ClInclude Include="Content\Systems\ToolEntry.h">
-      <Filter>Content\Systems\Tools</Filter>
-    </ClInclude>
-    <ClInclude Include="Content\Systems\TransformName.h">
       <Filter>Content\Systems\Tools</Filter>
     </ClInclude>
     <ClInclude Include="Content\Rendering\SpatialMeshRenderer.h">
@@ -497,6 +491,9 @@
     <Filter Include="Content\Rendering\SpatialMeshRenderer\Shaders">
       <UniqueIdentifier>{d194b49e-a3a5-46c4-aa82-0ac812d4d39d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Assets\Data">
+      <UniqueIdentifier>{d8ff3f6a-1caf-4488-b74c-77ebe2d90ea5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Content\SpatialMapping\Shaders\CSRayTriangleIntersection.hlsl">
@@ -578,5 +575,10 @@
     <Media Include="Assets\Sounds\input_fail.mp3">
       <Filter>Assets\Sounds</Filter>
     </Media>
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="Assets\Data\tool_configuration.xml">
+      <Filter>Assets\Data</Filter>
+    </Xml>
   </ItemGroup>
 </Project>

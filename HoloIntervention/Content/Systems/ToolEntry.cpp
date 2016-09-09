@@ -23,8 +23,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "pch.h"
-#include "ToolEntry.h"
 #include "AppView.h"
+#include "ToolEntry.h"
 
 // Rendering includes
 #include "ModelEntry.h"
@@ -32,25 +32,29 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // std includes
 #include <string>
+#include <sstream>
+
+using namespace Windows::Foundation::Numerics;
 
 namespace HoloIntervention
 {
   namespace Tools
   {
     //----------------------------------------------------------------------------
-    ToolEntry::ToolEntry( const TransformName& coordinateFrame, const std::wstring& modelName )
+    ToolEntry::ToolEntry( UWPOpenIGTLink::TransformName^ coordinateFrame, const std::wstring& modelName, UWPOpenIGTLink::TransformRepository^ transformRepository )
+      : m_transformRepository( transformRepository )
+      , m_coordinateFrame( coordinateFrame )
     {
-      m_coordinateFrame = coordinateFrame;
-
-      CreateModel(modelName);
+      CreateModel( modelName );
     }
 
     //----------------------------------------------------------------------------
-    ToolEntry::ToolEntry( const std::wstring& coordinateFrame, const std::wstring& modelName )
+    ToolEntry::ToolEntry( const std::wstring& coordinateFrame, const std::wstring& modelName, UWPOpenIGTLink::TransformRepository^ transformRepository )
+      : m_transformRepository( transformRepository )
     {
-      m_coordinateFrame = coordinateFrame;
+      m_coordinateFrame = ref new UWPOpenIGTLink::TransformName( ref new Platform::String( coordinateFrame.c_str() ) );
 
-      CreateModel(modelName);
+      CreateModel( modelName );
     }
 
     //----------------------------------------------------------------------------
@@ -59,9 +63,27 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ToolEntry::Update(const DX::StepTimer& timer, UWPOpenIGTLink::TrackedFrame^ frame)
+    void ToolEntry::Update( const DX::StepTimer& timer )
     {
+      // Transform repository has already been initialized with the transforms for this update
 
+      bool isValid;
+      float4x4 transform;
+      try
+      {
+        transform = m_transformRepository->GetTransform( m_coordinateFrame, &isValid );
+        m_modelEntry->RenderDefault();
+      }
+      catch ( Platform::Exception^ e )
+      {
+        // Fail gracefully, it's possible that this transform wasn't available this frame
+        m_modelEntry->RenderGreyscale();
+        return;
+      }
+
+      // transform is in units mm, world is in units m
+      transform = make_float4x4_scale( 1.f / 1000.f ) * transform;
+      m_modelEntry->SetWorld( transform );
     }
 
     //----------------------------------------------------------------------------
@@ -75,17 +97,18 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ToolEntry::CreateModel(const std::wstring& modelName)
+    void ToolEntry::CreateModel( const std::wstring& modelName )
     {
-      uint64 modelToken = HoloIntervention::instance()->GetModelRenderer().AddModel(L"Assets\\Models\\Tools\\" + modelName + L".cmo");
-      if (modelToken == Rendering::INVALID_MODEL_ENTRY)
+      uint64 modelToken = HoloIntervention::instance()->GetModelRenderer().AddModel( L"Assets\\Models\\Tools\\" + modelName + L".cmo" );
+      if ( modelToken == Rendering::INVALID_MODEL_ENTRY )
       {
-        std::wstring error(L"Unable to create model with name: ");
+        std::wstring error( L"Unable to create model with name: " );
         error += modelName;
-        OutputDebugStringW(error.c_str());
+        OutputDebugStringW( error.c_str() );
         return;
       }
-      m_modelEntry = HoloIntervention::instance()->GetModelRenderer().GetModel(modelToken);
+      m_modelEntry = HoloIntervention::instance()->GetModelRenderer().GetModel( modelToken );
+      m_modelEntry->SetVisible( false );
     }
   }
 }
