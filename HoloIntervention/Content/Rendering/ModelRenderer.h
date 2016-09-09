@@ -36,8 +36,6 @@ namespace HoloIntervention
 {
   namespace Rendering
   {
-    static const uint64 INVALID_MODEL_ENTRY = 0;
-
     class ModelRenderer
     {
       typedef std::list<std::shared_ptr<ModelEntry>> ModelList;

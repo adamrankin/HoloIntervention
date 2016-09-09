@@ -215,6 +215,24 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    void ModelEntry::RenderGreyscale()
+    {
+      UpdateEffects( [ = ]( DirectX::IEffect * effect ) -> void
+      {
+      } );
+      m_renderingState = RENDERING_GREYSCALE;
+    }
+
+    //----------------------------------------------------------------------------
+    void ModelEntry::RenderDefault()
+    {
+      UpdateEffects( [ = ]( DirectX::IEffect * effect ) -> void
+      {
+      } );
+      m_renderingState = RENDERING_DEFAULT;
+    }
+
+    //----------------------------------------------------------------------------
     void ModelEntry::DrawMesh( const DirectX::ModelMesh& mesh, bool alpha )
     {
       assert( m_deviceResources->GetD3DDeviceContext() != 0 );
@@ -244,7 +262,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ModelEntry::DrawMeshPart( const DirectX::ModelMeshPart& part )
+    void ModelEntry::DrawMeshPart( const DirectX::ModelMeshPart& part, std::function<void __cdecl()> setCustomState )
     {
       m_deviceResources->GetD3DDeviceContext()->IASetInputLayout( part.inputLayout.Get() );
 
@@ -257,9 +275,21 @@ namespace HoloIntervention
       assert( part.effect != nullptr );
       part.effect->Apply( m_deviceResources->GetD3DDeviceContext() );
 
+      // Hook lets the caller replace our shaders or state settings with whatever else they see fit.
+      if ( setCustomState )
+      {
+        setCustomState();
+      }
+
       m_deviceResources->GetD3DDeviceContext()->IASetPrimitiveTopology( part.primitiveType );
 
       m_deviceResources->GetD3DDeviceContext()->DrawIndexedInstanced( part.indexCount, 2, part.startIndex, part.vertexOffset, 0 );
+    }
+
+    //----------------------------------------------------------------------------
+    void ModelEntry::UpdateEffects( _In_ std::function<void __cdecl( DirectX::IEffect* )> setEffect )
+    {
+      m_model->UpdateEffects( setEffect );
     }
   }
 }
