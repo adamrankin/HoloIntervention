@@ -104,15 +104,15 @@ namespace HoloIntervention
     m_sliceRenderer = std::make_unique<Rendering::SliceRenderer>( m_deviceResources );
     m_meshRenderer = std::make_unique<Rendering::SpatialMeshRenderer>( m_deviceResources );
 
-    m_notificationSystem = std::make_unique<Notifications::NotificationSystem>( m_deviceResources );
+    m_notificationSystem = std::make_unique<System::NotificationSystem>( m_deviceResources );
     m_spatialInputHandler = std::make_unique<Input::SpatialInputHandler>();
     m_voiceInputHandler = std::make_unique<Input::VoiceInputHandler>();
-    m_spatialSystem = std::make_unique<Spatial::SpatialSystem>( m_deviceResources );
+    m_spatialSystem = std::make_unique<System::SpatialSystem>( m_deviceResources, m_timer );
     m_igtLinkIF = std::make_unique<Network::IGTLinkIF>();
 
-    // Model renderer must come before Gaze system
-    m_gazeSystem = std::make_unique<Gaze::GazeSystem>();
-    m_toolSystem = std::make_unique<Tools::ToolSystem>();
+    // Model renderer must come before the following systems
+    m_gazeSystem = std::make_unique<System::GazeSystem>();
+    m_toolSystem = std::make_unique<System::ToolSystem>();
 
     // TODO : remove temp code
     m_igtLinkIF->SetHostname( L"172.16.80.1" );
@@ -256,7 +256,7 @@ namespace HoloIntervention
         // TODO : how to handle invalid pose?
       }
 
-      m_spatialSystem->Update( m_timer, currentCoordinateSystem );
+      m_spatialSystem->Update( currentCoordinateSystem );
       m_gazeSystem->Update( m_timer, currentCoordinateSystem, pose );
       m_cursorSound->Update( m_timer );
       m_sliceRenderer->Update( pose, m_timer );
@@ -280,6 +280,16 @@ namespace HoloIntervention
                                         ( DXGI_FORMAT )m_latestFrame->PixelFormat,
                                         m_latestFrame->EmbeddedImageTransform );
           m_toolSystem->Update( m_timer, m_latestFrame );
+        }
+      }
+
+      if ( m_anchorRequested )
+      {
+        std::lock_guard<std::mutex> anchorLock( m_anchorMutex );
+        if ( m_spatialSystem->DropAnchorAtIntersectionHit( "Registration", currentCoordinateSystem ) )
+        {
+          m_anchorRequested = false;
+          m_notificationSystem->QueueMessage( L"Anchor created." );
         }
       }
     } );
@@ -437,31 +447,31 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
-  Notifications::NotificationSystem& HoloInterventionMain::GetNotificationsSystem()
+  System::NotificationSystem& HoloInterventionMain::GetNotificationsSystem()
   {
     return *m_notificationSystem.get();
   }
 
   //----------------------------------------------------------------------------
-  HoloIntervention::Spatial::SpatialSystem& HoloInterventionMain::GetSpatialSystem()
+  System::SpatialSystem& HoloInterventionMain::GetSpatialSystem()
   {
     return *m_spatialSystem.get();
   }
 
   //----------------------------------------------------------------------------
-  HoloIntervention::Gaze::GazeSystem& HoloInterventionMain::GetGazeSystem()
+  System::GazeSystem& HoloInterventionMain::GetGazeSystem()
   {
     return *m_gazeSystem.get();
   }
 
   //----------------------------------------------------------------------------
-  HoloIntervention::Rendering::ModelRenderer& HoloInterventionMain::GetModelRenderer()
+  Rendering::ModelRenderer& HoloInterventionMain::GetModelRenderer()
   {
     return *m_modelRenderer.get();
   }
 
   //----------------------------------------------------------------------------
-  HoloIntervention::Rendering::SliceRenderer& HoloInterventionMain::GetSliceRenderer()
+  Rendering::SliceRenderer& HoloInterventionMain::GetSliceRenderer()
   {
     return *m_sliceRenderer.get();
   }
@@ -554,21 +564,21 @@ namespace HoloIntervention
   {
     Input::VoiceInputCallbackMap callbacks;
 
-    callbacks[L"show cursor"] = [this](SpeechRecognitionResult^ result)
+    callbacks[L"show cursor"] = [this]( SpeechRecognitionResult ^ result )
     {
       m_cursorSound->StartOnce();
       m_gazeSystem->EnableCursor( true );
       m_notificationSystem->QueueMessage( L"Cursor on." );
     };
 
-    callbacks[L"hide cursor"] = [this](SpeechRecognitionResult^ result)
+    callbacks[L"hide cursor"] = [this]( SpeechRecognitionResult ^ result )
     {
       m_cursorSound->StartOnce();
       m_gazeSystem->EnableCursor( false );
       m_notificationSystem->QueueMessage( L"Cursor off." );
     };
 
-    callbacks[L"connect"] = [this](SpeechRecognitionResult^ result)
+    callbacks[L"connect"] = [this]( SpeechRecognitionResult ^ result )
     {
       m_cursorSound->StartOnce();
       m_notificationSystem->QueueMessage( L"Connecting..." );
@@ -585,27 +595,46 @@ namespace HoloIntervention
       } );
     };
 
-    callbacks[L"disconnect"] = [this](SpeechRecognitionResult^ result)
+    callbacks[L"disconnect"] = [this]( SpeechRecognitionResult ^ result )
     {
       m_cursorSound->StartOnce();
       m_notificationSystem->QueueMessage( L"Disconnected." );
       m_igtLinkIF->Disconnect();
     };
 
-    callbacks[L"lock slice"] = [this](SpeechRecognitionResult^ result)
+    callbacks[L"lock slice"] = [this]( SpeechRecognitionResult ^ result )
     {
       m_cursorSound->StartOnce();
       m_notificationSystem->QueueMessage( L"Slice is now head-locked." );
       m_sliceRenderer->SetSliceHeadlocked( m_sliceToken, true );
     };
 
-    callbacks[L"unlock slice"] = [this](SpeechRecognitionResult^ result)
+    callbacks[L"unlock slice"] = [this]( SpeechRecognitionResult ^ result )
     {
       m_cursorSound->StartOnce();
       m_notificationSystem->QueueMessage( L"Slice is now in world-space." );
       m_sliceRenderer->SetSliceHeadlocked( m_sliceToken, false );
     };
 
+    callbacks[L"drop registration anchor"] = [this]( SpeechRecognitionResult ^ result )
+    {
+      m_cursorSound->StartOnce();
+      std::lock_guard<std::mutex> anchorLock( m_anchorMutex );
+      m_anchorRequested = true;
+    };
+
+    callbacks[L"remove registration anchor"] = [this]( SpeechRecognitionResult ^ result )
+    {
+      m_cursorSound->StartOnce();
+      std::lock_guard<std::mutex> anchorLock( m_anchorMutex );
+      if ( m_spatialSystem->RemoveAnchor( L"Registration" ) == 1 )
+      {
+        m_notificationSystem->QueueMessage( L"Anchor removed." );
+      }
+    };
+
+    /*
+    // Disable debug mesh commands until needed again
     callbacks[L"mesh on"] = [this](SpeechRecognitionResult^ result)
     {
       m_cursorSound->StartOnce();
@@ -652,6 +681,7 @@ namespace HoloIntervention
       m_meshRendererEnabled = true;
       m_meshRenderer->DebugDrawBoundingBox(10);
     };
+    */
 
     m_voiceInputHandler->RegisterCallbacks( callbacks );
   }

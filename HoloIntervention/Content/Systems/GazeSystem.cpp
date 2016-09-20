@@ -37,7 +37,7 @@ using namespace Windows::Foundation::Numerics;
 
 namespace HoloIntervention
 {
-  namespace Gaze
+  namespace System
   {
     const std::wstring GazeSystem::GAZE_CURSOR_ASSET_LOCATION = L"Assets/Models/gaze_cursor.cmo";
 
@@ -76,6 +76,8 @@ namespace HoloIntervention
           m_lastHitPosition = outHitPosition;
 
           // Infinite number of vectors that cross to give the normal vector, so choose arbitrary y-up vector to create a coordinate system
+          // TODO : this is not correct, normal is not really normal... is it the intersection result, or this world matrix?
+
           float3 yUp( 0.f, 1.f, 0.f );
           float3 jVec = outHitNormal;
 

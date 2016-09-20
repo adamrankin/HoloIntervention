@@ -35,7 +35,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 namespace HoloIntervention
 {
-  namespace Notifications
+  namespace System
   {
     class NotificationSystem
     {

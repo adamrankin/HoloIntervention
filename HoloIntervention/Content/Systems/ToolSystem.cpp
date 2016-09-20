@@ -39,7 +39,7 @@ using namespace Windows::Data::Xml::Dom;
 
 namespace HoloIntervention
 {
-  namespace Tools
+  namespace System
   {
     //----------------------------------------------------------------------------
     ToolSystem::ToolSystem()
@@ -107,7 +107,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     uint64 ToolSystem::RegisterTool( const std::wstring& modelName, UWPOpenIGTLink::TransformName^ coordinateFrame )
     {
-      std::shared_ptr<ToolEntry> entry = std::make_shared<ToolEntry>( coordinateFrame, modelName, m_transformRepository );
+      std::shared_ptr<Tools::ToolEntry> entry = std::make_shared<Tools::ToolEntry>( coordinateFrame, modelName, m_transformRepository );
       m_toolEntries.push_back( entry );
       return entry->GetId();
     }

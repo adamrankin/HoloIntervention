@@ -24,8 +24,12 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "pch.h"
 
 // Local includes
+#include "AppView.h"
 #include "SpatialSystem.h"
 #include "StepTimer.h"
+
+// System includes
+#include "NotificationSystem.h"
 
 // WinRT includes
 #include <agents.h>
@@ -43,15 +47,14 @@ using namespace Concurrency;
 
 namespace HoloIntervention
 {
-  namespace Spatial
+  namespace System
   {
-
     //----------------------------------------------------------------------------
-    SpatialSystem::SpatialSystem( const std::shared_ptr<DX::DeviceResources>& deviceResources )
+    SpatialSystem::SpatialSystem( const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer )
       : m_deviceResources( deviceResources )
-      , m_spatialAnchors( ref new Platform::Collections::Map<Platform::String ^, SpatialAnchor ^ >() )
+      , m_stepTimer( stepTimer )
     {
-      m_surfaceCollection = std::make_unique<SpatialSurfaceCollection>( m_deviceResources );
+      m_surfaceCollection = std::make_unique<Spatial::SpatialSurfaceCollection>( m_deviceResources, stepTimer );
     }
 
     //----------------------------------------------------------------------------
@@ -64,12 +67,12 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SpatialSystem::Update( DX::StepTimer const& timer, SpatialCoordinateSystem^ coordinateSystem )
+    void SpatialSystem::Update( SpatialCoordinateSystem^ coordinateSystem )
     {
       // Keep the surface observer positioned at the device's location.
       UpdateSurfaceObserverPosition( coordinateSystem );
 
-      m_surfaceCollection->Update( timer, coordinateSystem );
+      m_surfaceCollection->Update( coordinateSystem );
     }
 
     //----------------------------------------------------------------------------
@@ -189,17 +192,17 @@ namespace HoloIntervention
         break;
         case SpatialPerceptionAccessStatus::DeniedBySystem:
         {
-          OutputDebugString( L"Error: Cannot initialize surface observer because the system denied access to the spatialPerception capability.\n" );
+          HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Error: Cannot initialize surface observer because the system denied access to the spatialPerception capability." );
         }
         break;
         case SpatialPerceptionAccessStatus::DeniedByUser:
         {
-          OutputDebugString( L"Error: Cannot initialize surface observer because the user denied access to the spatialPerception capability.\n" );
+          HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Error: Cannot initialize surface observer because the user denied access to the spatialPerception capability." );
         }
         break;
         case SpatialPerceptionAccessStatus::Unspecified:
         {
-          OutputDebugString( L"Error: Cannot initialize surface observer. Access was denied for an unspecified reason.\n" );
+          HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Error: Cannot initialize surface observer. Access was denied for an unspecified reason." );
         }
         break;
         default:
@@ -256,25 +259,20 @@ namespace HoloIntervention
           return;
         }
 
-        int i( 0 );
         for ( auto pair : m_spatialAnchors )
         {
-          if ( !store->TrySave( pair->Key + i.ToString(), pair->Value ) )
+          if ( !store->TrySave( pair.first, pair.second ) )
           {
-            std::wstringstream wss;
-            wss << L"Unable to save spatial anchor " << pair->Key->Data() << i.ToString()->Data();
-            OutputDebugStringW( wss.str().c_str() );
+            HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Unable to save spatial anchor " + pair.first );
           }
         }
-
-        return;
       } );
     }
 
     //----------------------------------------------------------------------------
     void SpatialSystem::LoadAppState()
     {
-      m_spatialAnchors->Clear();
+      m_spatialAnchors.clear();
 
       task<SpatialAnchorStore^> requestTask( SpatialAnchorManager::RequestStoreAsync() );
       auto loadTask = requestTask.then( [&]( SpatialAnchorStore ^ store )
@@ -288,9 +286,44 @@ namespace HoloIntervention
         Windows::Foundation::Collections::IMapView<Platform::String^, SpatialAnchor^>^ output = store->GetAllSavedAnchors();
         for ( auto pair : output )
         {
-          m_spatialAnchors->Insert( pair->Key, pair->Value );
+          m_spatialAnchors[pair->Key] = pair->Value;
         }
       } );
+    }
+
+    //----------------------------------------------------------------------------
+    bool SpatialSystem::DropAnchorAtIntersectionHit( Platform::String^ anchorName, SpatialCoordinateSystem^ coordinateSystem )
+    {
+      if ( anchorName == nullptr )
+      {
+        HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Unable to create anchor. No name specified." );
+        return false;
+      }
+
+      float3 position;
+      if ( !m_surfaceCollection->GetLastHitPosition( position, false ) )
+      {
+        HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Unable to access last hit location." );
+        return false;
+      }
+
+      SpatialAnchor^ anchor = SpatialAnchor::TryCreateRelativeTo( coordinateSystem, position );
+
+      if ( anchor == nullptr )
+      {
+        HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Unable to create anchor." );
+        return false;
+      }
+
+      m_spatialAnchors[anchorName] = anchor;
+
+      return true;
+    }
+
+    //----------------------------------------------------------------------------
+    size_t SpatialSystem::RemoveAnchor( Platform::String^ name )
+    {
+      return m_spatialAnchors.erase( name );
     }
   }
 }

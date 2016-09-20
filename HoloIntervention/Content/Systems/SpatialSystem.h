@@ -31,15 +31,15 @@ using namespace Windows::Perception::Spatial;
 
 namespace HoloIntervention
 {
-  namespace Spatial
+  namespace System
   {
     class SpatialSystem
     {
     public:
-      SpatialSystem( const std::shared_ptr<DX::DeviceResources>& deviceResources );
+      SpatialSystem( const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer );
       ~SpatialSystem();
 
-      void Update( DX::StepTimer const& timer, SpatialCoordinateSystem^ coordinateSystem );
+      void Update( SpatialCoordinateSystem^ coordinateSystem );
 
       void CreateDeviceDependentResources();
       void ReleaseDeviceDependentResources();
@@ -64,22 +64,26 @@ namespace HoloIntervention
       void SaveAppState();
       void LoadAppState();
 
-    private:
+      bool DropAnchorAtIntersectionHit( Platform::String^ anchorName, SpatialCoordinateSystem^ coordinateSystem );
+      size_t RemoveAnchor( Platform::String^ anchorName );
+
+    protected:
       // Event registration tokens.
       Windows::Foundation::EventRegistrationToken                       m_surfaceObserverEventToken;
 
       // Keep a reference to the device resources
       std::shared_ptr<DX::DeviceResources>                              m_deviceResources;
+      DX::StepTimer&                                                    m_stepTimer;
 
       // Obtains spatial mapping data from the device in real time.
       SpatialSurfaceObserver^                                           m_surfaceObserver;
       SpatialSurfaceMeshOptions^                                        m_surfaceMeshOptions;
 
       // A data handler for surface meshes.
-      std::unique_ptr<SpatialSurfaceCollection>                         m_surfaceCollection;
+      std::unique_ptr<Spatial::SpatialSurfaceCollection>                m_surfaceCollection;
 
       // List of spatial anchors
-      Platform::Collections::Map<Platform::String^, SpatialAnchor^>^    m_spatialAnchors;
+      std::map<Platform::String^, SpatialAnchor^>                       m_spatialAnchors;
 
       const uint32                                                      INIT_SURFACE_RETRY_DELAY_MS = 100;
     };

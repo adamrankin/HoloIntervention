@@ -282,6 +282,23 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    const Windows::Foundation::Numerics::float3& SurfaceMesh::GetLastHitPosition() const
+    {
+      if (m_hasLastComputedHit)
+      {
+        return m_rayIntersectionResultPosition;
+      }
+
+      throw new std::exception("No hit ever recorded.");
+    }
+
+    //----------------------------------------------------------------------------
+    uint64_t SurfaceMesh::GetLastHitFrameNumber() const
+    {
+      return m_lastFrameNumberComputed;
+    }
+
+    //----------------------------------------------------------------------------
     void SurfaceMesh::SetIsActive( const bool& isActive )
     {
       m_isActive = isActive;

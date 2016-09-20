@@ -38,20 +38,19 @@ using namespace Windows::Perception::Spatial;
 // Forward declarations
 namespace HoloIntervention
 {
-  namespace Notifications
+  namespace System
   {
     class NotificationSystem;
+    class SpatialSystem;
+    class ToolSystem;
+    class GazeSystem;
+    class AnchorSystem;
   }
 
   namespace Input
   {
     class SpatialInputHandler;
     class VoiceInputHandler;
-  }
-
-  namespace Spatial
-  {
-    class SpatialSystem;
   }
 
   namespace Rendering
@@ -62,11 +61,6 @@ namespace HoloIntervention
     class SpatialMeshRenderer;
   }
 
-  namespace Tools
-  {
-    class ToolSystem;
-  }
-
   namespace Network
   {
     class IGTLinkIF;
@@ -75,11 +69,6 @@ namespace HoloIntervention
   namespace Sound
   {
     class OmnidirectionalSound;
-  }
-
-  namespace Gaze
-  {
-    class GazeSystem;
   }
 
   // Updates, renders, and presents holographic content using Direct3D.
@@ -107,9 +96,9 @@ namespace HoloIntervention
     uint64 GetCurrentFrameNumber() const;
 
     // Provide access to the logic systems
-    Notifications::NotificationSystem& GetNotificationsSystem();
-    Spatial::SpatialSystem& GetSpatialSystem();
-    Gaze::GazeSystem& GetGazeSystem();
+    System::NotificationSystem& GetNotificationsSystem();
+    System::SpatialSystem& GetSpatialSystem();
+    System::GazeSystem& GetGazeSystem();
 
     // Provide access to the renderers
     Rendering::ModelRenderer& GetModelRenderer();
@@ -155,6 +144,10 @@ namespace HoloIntervention
     // Mesh rendering control
     bool                                                  m_meshRendererEnabled = false;
 
+    // Anchor interaction variables
+    std::mutex                                            m_anchorMutex;
+    bool                                                  m_anchorRequested = false;
+
     // Tokens
     uint32                                                m_sliceToken;
 
@@ -167,9 +160,6 @@ namespace HoloIntervention
     std::unique_ptr<Network::IGTLinkIF>                   m_igtLinkIF;
     UWPOpenIGTLink::TrackedFrame^                         m_latestFrame;
     double                                                m_latestTimestamp;
-
-    // Notification API
-    std::unique_ptr<Notifications::NotificationSystem>    m_notificationSystem;
 
     // Cached pointer to device resources.
     std::shared_ptr<DX::DeviceResources>                  m_deviceResources;
@@ -198,14 +188,11 @@ namespace HoloIntervention
     // Store the current state of locatability
     Windows::Perception::Spatial::SpatialLocatability     m_locatability;
 
-    // Access to a spatial system
-    std::unique_ptr<Spatial::SpatialSystem>               m_spatialSystem;
-
-    // Access to a gaze system
-    std::unique_ptr<Gaze::GazeSystem>                     m_gazeSystem;
-
-    // Access to a tool system
-    std::unique_ptr<Tools::ToolSystem>                    m_toolSystem;
+    // System pointers
+    std::unique_ptr<System::SpatialSystem>                m_spatialSystem;
+    std::unique_ptr<System::GazeSystem>                   m_gazeSystem;
+    std::unique_ptr<System::ToolSystem>                   m_toolSystem;
+    std::unique_ptr<System::NotificationSystem>           m_notificationSystem;
 
     // Sound assets
     std::unique_ptr<Sound::OmnidirectionalSound>          m_cursorSound;

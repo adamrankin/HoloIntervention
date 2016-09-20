@@ -54,10 +54,10 @@ namespace HoloIntervention
       typedef std::map<Platform::Guid, std::shared_ptr<SurfaceMesh> > GuidMeshMap;
 
     public:
-      SpatialSurfaceCollection( const std::shared_ptr<DX::DeviceResources>& deviceResources );
+      SpatialSurfaceCollection( const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer);
       ~SpatialSurfaceCollection();
 
-      void Update( DX::StepTimer const& timer, SpatialCoordinateSystem^ coordinateSystem );
+      void Update( SpatialCoordinateSystem^ coordinateSystem );
 
       void CreateDeviceDependentResources();
       void ReleaseDeviceDependentResources();
@@ -77,7 +77,12 @@ namespace HoloIntervention
 
       void HideInactiveMeshes( Windows::Foundation::Collections::IMapView<Platform::Guid, SpatialSurfaceInfo^>^ const& surfaceCollection );
 
+      bool GetLastHitPosition( float3& outPosition, bool considerOldHits = false );
+
     protected:
+      // Cache the step timer for out of date queries
+      DX::StepTimer&                                  m_stepTimer;
+
       Microsoft::WRL::ComPtr<ID3D11Buffer>            m_constantBuffer = nullptr;
       Microsoft::WRL::ComPtr<ID3D11ComputeShader>     m_d3d11ComputeShader = nullptr;
       bool                                            m_resourcesLoaded = false;
@@ -95,11 +100,13 @@ namespace HoloIntervention
       // Keep a reference to the device resources
       std::shared_ptr<DX::DeviceResources>            m_deviceResources = nullptr;
 
-      // The duration of time, in seconds, a mesh is allowed to remain inactive before deletion.
-      const float                                     MAX_INACTIVE_MESH_TIME_SEC = 120.f;
-
       // The set of surfaces in the collection.
       GuidMeshMap                                     m_meshCollection;
+
+    protected:
+      // The duration of time, in seconds, a mesh is allowed to remain inactive before deletion.
+      static const float                              MAX_INACTIVE_MESH_TIME_SEC;
+      static const uint64_t                           FRAMES_BEFORE_EXPIRED;
     };
   }
 }

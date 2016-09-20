@@ -95,6 +95,8 @@ namespace HoloIntervention
       const bool& GetIsActive() const;
       const float& GetLastActiveTime() const;
       const Windows::Foundation::DateTime& GetLastUpdateTime() const;
+      const float3& GetLastHitPosition() const;
+      uint64_t GetLastHitFrameNumber() const;
 
       void SetIsActive( const bool& isActive );
 

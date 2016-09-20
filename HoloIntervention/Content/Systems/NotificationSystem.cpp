@@ -31,7 +31,7 @@ using namespace Windows::Foundation::Numerics;
 
 namespace HoloIntervention
 {
-  namespace Notifications
+  namespace System
   {
     const double NotificationSystem::MAXIMUM_REQUESTED_DURATION_SEC = 10.0;
     const double NotificationSystem::DEFAULT_NOTIFICATION_DURATION_SEC = 1.5;

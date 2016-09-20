@@ -57,9 +57,9 @@ namespace HoloIntervention
 
   internal:
     // Provide app wide access to the logic systems
-    Notifications::NotificationSystem & GetNotificationSystem();
-    Spatial::SpatialSystem & GetSpatialSystem();
-    Gaze::GazeSystem & GetGazeSystem();
+    System::NotificationSystem & GetNotificationSystem();
+    System::SpatialSystem & GetSpatialSystem();
+    System::GazeSystem & GetGazeSystem();
 
     // Provide app wide access to the renderers
     Rendering::ModelRenderer & GetModelRenderer();

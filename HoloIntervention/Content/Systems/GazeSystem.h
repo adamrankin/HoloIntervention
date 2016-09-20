@@ -33,7 +33,7 @@ using namespace Windows::Foundation::Numerics;
 
 namespace HoloIntervention
 {
-  namespace Gaze
+  namespace System
   {
     class GazeSystem
     {
@@ -57,6 +57,7 @@ namespace HoloIntervention
       float3                                    m_lastHitNormal;
 
       static const std::wstring GAZE_CURSOR_ASSET_LOCATION;
+      static const uint32 FRAMES_UNTIL_HIT_EXPIRES;
     };
   }
 }

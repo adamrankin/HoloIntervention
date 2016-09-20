@@ -53,9 +53,13 @@ namespace HoloIntervention
 {
   namespace Spatial
   {
+    const float SpatialSurfaceCollection::MAX_INACTIVE_MESH_TIME_SEC = 120.f;
+    const uint64_t SpatialSurfaceCollection::FRAMES_BEFORE_EXPIRED = 2;
+
     //----------------------------------------------------------------------------
-    SpatialSurfaceCollection::SpatialSurfaceCollection( const std::shared_ptr<DX::DeviceResources>& deviceResources ) :
-      m_deviceResources( deviceResources )
+    SpatialSurfaceCollection::SpatialSurfaceCollection( const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer )
+      : m_deviceResources( deviceResources )
+      , m_stepTimer( stepTimer )
     {
       CreateDeviceDependentResources();
     };
@@ -68,11 +72,11 @@ namespace HoloIntervention
 
     //----------------------------------------------------------------------------
     // Called once per frame, maintains and updates the mesh collection.
-    void SpatialSurfaceCollection::Update( DX::StepTimer const& timer, SpatialCoordinateSystem^ coordinateSystem )
+    void SpatialSurfaceCollection::Update( SpatialCoordinateSystem^ coordinateSystem )
     {
       std::lock_guard<std::mutex> guard( m_meshCollectionLock );
 
-      const float timeElapsed = static_cast<float>( timer.GetTotalSeconds() );
+      const float timeElapsed = static_cast<float>( m_stepTimer.GetTotalSeconds() );
 
       // Update meshes as needed, based on the current coordinate system.
       // Also remove meshes that are inactive for too long.
@@ -92,7 +96,7 @@ namespace HoloIntervention
         }
 
         // Update the surface mesh.
-        surfaceMesh->Update( timer, coordinateSystem );
+        surfaceMesh->Update( m_stepTimer, coordinateSystem );
 
         ++iter;
       };
@@ -269,6 +273,36 @@ namespace HoloIntervention
 
         surfaceMesh->SetIsActive( surfaceCollection->HasKey( id ) ? true : false );
       };
+    }
+
+    //----------------------------------------------------------------------------
+    bool SpatialSurfaceCollection::GetLastHitPosition( Windows::Foundation::Numerics::float3& outPosition, bool considerOldHits /* = false */ )
+    {
+      if ( m_lastHitMesh != nullptr )
+      {
+        if ( !considerOldHits )
+        {
+          uint64_t frames = m_stepTimer.GetFrameCount() - m_lastHitMesh->GetLastHitFrameNumber();
+          if ( frames > FRAMES_BEFORE_EXPIRED )
+          {
+            return false;
+          }
+        }
+
+        try
+        {
+          outPosition = m_lastHitMesh->GetLastHitPosition();
+        }
+        catch ( const std::exception& e )
+        {
+          HoloIntervention::instance()->GetNotificationSystem().QueueMessage( e.what() );
+          return false;
+        }
+
+        return true;
+      }
+
+      return false;
     }
 
     //----------------------------------------------------------------------------

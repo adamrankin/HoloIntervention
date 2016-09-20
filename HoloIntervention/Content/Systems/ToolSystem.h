@@ -30,7 +30,7 @@ namespace HoloIntervention
 {
   class TransformName;
 
-  namespace Tools
+  namespace System
   {
     class ToolSystem
     {
@@ -48,7 +48,7 @@ namespace HoloIntervention
       concurrency::task<void> InitAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
 
     protected:
-      std::vector<std::shared_ptr<ToolEntry>>   m_toolEntries;
+      std::vector<std::shared_ptr<Tools::ToolEntry>>   m_toolEntries;
       UWPOpenIGTLink::TransformRepository^      m_transformRepository;
     };
   }
