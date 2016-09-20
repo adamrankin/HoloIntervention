@@ -146,9 +146,9 @@ namespace HoloIntervention
       }
 
       // Clean up after rendering
-      m_deviceResources->GetD3DDeviceContext()->OMSetBlendState( nullptr, nullptr, 0xffffffff );
-      m_deviceResources->GetD3DDeviceContext()->OMSetDepthStencilState( nullptr, 0 );
-      m_deviceResources->GetD3DDeviceContext()->RSSetState( nullptr );
+      context->OMSetBlendState( nullptr, nullptr, 0xffffffff );
+      context->OMSetDepthStencilState( nullptr, 0 );
+      context->RSSetState( nullptr );
     }
 
     //----------------------------------------------------------------------------

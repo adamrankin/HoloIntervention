@@ -35,7 +35,7 @@ namespace HoloIntervention
   namespace Input
   {
     // command, function
-    typedef std::map<std::wstring, std::function<void()>> VoiceInputCallbackMap;
+    typedef std::map<std::wstring, std::function<void(SpeechRecognitionResult^ result)>> VoiceInputCallbackMap;
 
     class VoiceInputHandler
     {

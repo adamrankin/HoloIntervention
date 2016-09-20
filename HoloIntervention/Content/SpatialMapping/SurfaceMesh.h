@@ -76,7 +76,7 @@ namespace HoloIntervention
 
       void UpdateSurface( SpatialSurfaceInfo^ newSurface, SpatialSurfaceMeshOptions^ meshOptions );
 
-      void UpdateTransform( DX::StepTimer const& timer,
+      void Update( DX::StepTimer const& timer,
                             SpatialCoordinateSystem^ baseCoordinateSystem );
 
       void CreateDeviceDependentResources();
@@ -100,6 +100,8 @@ namespace HoloIntervention
 
     protected:
       void UpdateDeviceBasedResources();
+
+      void ComputeOBBInverseWorld(SpatialCoordinateSystem^ baseCoordinateSystem);
 
       HRESULT CreateStructuredBuffer( uint32 uStructureSize,
                                       SpatialSurfaceMeshBuffer^ buffer,
@@ -154,6 +156,10 @@ namespace HoloIntervention
       bool                                  m_isActive = false;
       float                                 m_lastActiveTime = -1.f;
       double                                m_maxTrianglesPerCubicMeter = 1000.0;
+
+      // Bounding box inverse world matrix
+      XMMATRIX                              m_worldToBoxTransform;
+      bool                                  m_worldToBoxTransformComputed = false;
 
       // Number of indices in the mesh data
       uint32                                m_indexCount = 0;

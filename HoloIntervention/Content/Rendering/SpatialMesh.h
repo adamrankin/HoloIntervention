@@ -13,6 +13,7 @@
 
 // Local includes
 #include "DeviceResources.h"
+#include "InstancedGeometricPrimitive.h"
 
 // DirectX includes
 #include <dxgiformat.h>
@@ -25,6 +26,8 @@
 #include <mutex>
 
 using namespace DirectX;
+using namespace Windows::Foundation::Numerics;
+using namespace Windows::Perception::Spatial;
 
 namespace DX
 {
@@ -44,9 +47,6 @@ namespace HoloIntervention
       DirectX::XMFLOAT4   colorFadeFactor;
     };
 
-    // Assert that the constant buffer remains 16-byte aligned (best practice).
-    // If shader structure members are not aligned to a 4-float boundary, data may
-    // not show up where it is expected by the time it is read by the shader.
     static_assert( ( sizeof( ModelNormalConstantBuffer ) % ( sizeof( float ) * 4 ) ) == 0, "Model/normal constant buffer size must be 16-byte aligned (16 bytes is the length of four floats)." );
 
     struct SurfaceMeshProperties
@@ -61,21 +61,19 @@ namespace HoloIntervention
     {
     public:
       SpatialMesh();
+      SpatialMesh( std::shared_ptr<DX::DeviceResources> deviceResources );
       ~SpatialMesh();
 
-      void UpdateSurface( Windows::Perception::Spatial::Surfaces::SpatialSurfaceMesh^ surface );
-      void UpdateDeviceBasedResources( ID3D11Device* device );
-      void UpdateTransform(
-        ID3D11Device* device,
-        ID3D11DeviceContext* context,
-        DX::StepTimer const& timer,
-        Windows::Perception::Spatial::SpatialCoordinateSystem^ baseCoordinateSystem
-      );
+      void SetDeviceResources( std::shared_ptr<DX::DeviceResources> deviceResources );
 
-      void Draw( ID3D11Device* device, ID3D11DeviceContext* context, bool usingVprtShaders );
+      void UpdateSurface( Surfaces::SpatialSurfaceMesh^ surface );
+      void UpdateDeviceBasedResources();
+      void Update( DX::ViewProjection& vp, DX::StepTimer const& timer, SpatialCoordinateSystem^ baseCoordinateSystem );
 
-      void CreateVertexResources( ID3D11Device* device );
-      void CreateDeviceDependentResources( ID3D11Device* device );
+      void Render( bool usingVprtShaders );
+
+      void CreateVertexResources();
+      void CreateDeviceDependentResources();
       void ReleaseVertexResources();
       void ReleaseDeviceDependentResources();
 
@@ -86,42 +84,51 @@ namespace HoloIntervention
       void SetIsActive( const bool& isActive );
       void SetColorFadeTimer( const float& duration );
 
+      void SetDrawBoundingBox( bool drawBoudingBox );
+
+    protected:
+      Surfaces::SpatialSurfaceMesh^                   m_surfaceMesh = nullptr;
+
+      // Cached device resources
+      std::shared_ptr<DX::DeviceResources>            m_deviceResources;
+      // Cached view/projection
+      DX::ViewProjection                              m_viewProjection;
+
+      Microsoft::WRL::ComPtr<ID3D11Buffer>            m_vertexPositions;
+      Microsoft::WRL::ComPtr<ID3D11Buffer>            m_vertexNormals;
+      Microsoft::WRL::ComPtr<ID3D11Buffer>            m_triangleIndices;
+      Microsoft::WRL::ComPtr<ID3D11Buffer>            m_updatedVertexPositions;
+      Microsoft::WRL::ComPtr<ID3D11Buffer>            m_updatedVertexNormals;
+      Microsoft::WRL::ComPtr<ID3D11Buffer>            m_updatedTriangleIndices;
+      Microsoft::WRL::ComPtr<ID3D11Buffer>            m_modelTransformBuffer;
+
+      // Bounding box resources
+      std::unique_ptr<InstancedGeometricPrimitive>    m_boundingBox;
+      float4x4                                        m_boundingBoxWorldTransform;
+
+      Windows::Foundation::DateTime                   m_lastUpdateTime;
+
+      SurfaceMeshProperties                           m_meshProperties;
+      SurfaceMeshProperties                           m_updatedMeshProperties;
+
+      ModelNormalConstantBuffer                       m_constantBufferData;
+
+      bool                                            m_constantBufferCreated = false;
+      bool                                            m_loadingComplete = false;
+      bool                                            m_updateNeeded = false;
+      bool                                            m_updateReady = false;
+      bool                                            m_isActive = false;
+      float                                           m_lastActiveTime = -1.f;
+      float                                           m_colorFadeTimer = -1.f;
+      float                                           m_colorFadeTimeout = -1.f;
+      bool                                            m_drawBoundingBox = false;
+
+      std::mutex                                      m_meshResourcesMutex;
+
     private:
       void SwapVertexBuffers();
-      void CreateDirectXBuffer(
-        ID3D11Device* device,
-        D3D11_BIND_FLAG binding,
-        Windows::Storage::Streams::IBuffer^ buffer,
-        ID3D11Buffer** target
-      );
-
-      Windows::Perception::Spatial::Surfaces::SpatialSurfaceMesh^ m_surfaceMesh = nullptr;
-
-      Microsoft::WRL::ComPtr<ID3D11Buffer> m_vertexPositions;
-      Microsoft::WRL::ComPtr<ID3D11Buffer> m_vertexNormals;
-      Microsoft::WRL::ComPtr<ID3D11Buffer> m_triangleIndices;
-      Microsoft::WRL::ComPtr<ID3D11Buffer> m_updatedVertexPositions;
-      Microsoft::WRL::ComPtr<ID3D11Buffer> m_updatedVertexNormals;
-      Microsoft::WRL::ComPtr<ID3D11Buffer> m_updatedTriangleIndices;
-      Microsoft::WRL::ComPtr<ID3D11Buffer> m_modelTransformBuffer;
-
-      Windows::Foundation::DateTime m_lastUpdateTime;
-
-      SurfaceMeshProperties m_meshProperties;
-      SurfaceMeshProperties m_updatedMeshProperties;
-
-      ModelNormalConstantBuffer m_constantBufferData;
-
-      bool   m_constantBufferCreated = false;
-      bool   m_loadingComplete = false;
-      bool   m_updateNeeded = false;
-      bool   m_updateReady = false;
-      bool   m_isActive = false;
-      float  m_lastActiveTime = -1.f;
-      float  m_colorFadeTimer = -1.f;
-      float  m_colorFadeTimeout = -1.f;
-
-      std::mutex m_meshResourcesMutex;
+      void DrawBoundingBox( bool usingVrptShaders );
+      void CreateDirectXBuffer( ID3D11Device& device, D3D11_BIND_FLAG binding, Windows::Storage::Streams::IBuffer^ buffer, ID3D11Buffer** target );
     };
   }
 }

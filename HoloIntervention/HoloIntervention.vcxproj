@@ -65,6 +65,7 @@
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -102,6 +103,7 @@
     <ClInclude Include="Content\Rendering\DirectXTK\InstancedEffects.h" />
     <ClInclude Include="Content\Rendering\DirectXTK\InstancedEffectCommon.h" />
     <ClInclude Include="Content\Rendering\DirectXTK\InstancedEffectFactory.h" />
+    <ClInclude Include="Content\Rendering\DirectXTK\InstancedGeometricPrimitive.h" />
     <ClInclude Include="Content\Rendering\DistanceFieldRenderer.h" />
     <ClInclude Include="Content\Rendering\ModelEntry.h" />
     <ClInclude Include="Content\Rendering\ModelRenderer.h" />
@@ -136,6 +138,7 @@
     <ClCompile Include="Content\Rendering\DirectXTK\InstancedBasicEffect.cpp" />
     <ClCompile Include="Content\Rendering\DirectXTK\InstancedEffectCommon.cpp" />
     <ClCompile Include="Content\Rendering\DirectXTK\InstancedEffectFactory.cpp" />
+    <ClCompile Include="Content\Rendering\DirectXTK\InstancedGeometricPrimitive.cpp" />
     <ClCompile Include="Content\Rendering\DistanceFieldRenderer.cpp" />
     <ClCompile Include="Content\Rendering\ModelEntry.cpp" />
     <ClCompile Include="Content\Rendering\ModelRenderer.cpp" />

@@ -32,10 +32,12 @@ namespace HoloIntervention
   {
     class SpatialMeshRenderer
     {
+      typedef std::map<Platform::Guid, SpatialMesh> MeshMap;
+
     public:
       SpatialMeshRenderer( const std::shared_ptr<DX::DeviceResources>& deviceResources );
 
-      void Update( DX::StepTimer const& timer, SpatialCoordinateSystem^ coordinateSystem );
+      void Update( DX::ViewProjection& vp, DX::StepTimer const& timer, SpatialCoordinateSystem^ coordinateSystem );
       void Render();
 
       bool HasSurface( Platform::Guid id );
@@ -50,6 +52,10 @@ namespace HoloIntervention
 
       void CreateDeviceDependentResources();
       void ReleaseDeviceDependentResources();
+
+      void DebugDrawBoundingBox(int32_t index);
+      void DebugDrawBoundingBoxes(bool draw);
+      void DebugLoopThroughMeshes();
 
       void Reset();
 
@@ -70,8 +76,17 @@ namespace HoloIntervention
       Microsoft::WRL::ComPtr<ID3D11PixelShader>       m_lightingPixelShader;
       Microsoft::WRL::ComPtr<ID3D11PixelShader>       m_colorPixelShader;
 
+      // Looping related variables
+      bool                                            m_isLooping;
+      size_t                                          m_currentLoopIndex;
+      float                                           m_loopTimer;
+
+      // Bounding box debug related variables
+      bool                                            m_debugBoundingBox;
+      int32_t                                         m_overrideDrawIndex = -1;
+
       // The set of surfaces in the collection.
-      std::map<Platform::Guid, SpatialMesh>           m_meshCollection;
+      MeshMap                                         m_meshCollection;
 
       // A way to lock map access.
       std::mutex                                      m_meshCollectionLock;

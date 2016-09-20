@@ -59,6 +59,9 @@ namespace HoloIntervention
       void QueueMessage(const std::wstring& message, double duration = DEFAULT_NOTIFICATION_DURATION_SEC);
       void QueueMessage(Platform::String^ message, double duration = DEFAULT_NOTIFICATION_DURATION_SEC);
 
+      void DebugSetMessage(const std::wstring& message, double duration = DEFAULT_NOTIFICATION_DURATION_SEC);
+      void DebugSetMessage(Platform::String^ message, double duration = DEFAULT_NOTIFICATION_DURATION_SEC);
+
       void Initialize(SpatialPointerPose^ pointerPose);
       void Update(SpatialPointerPose^ pointerPose, const DX::StepTimer& timer);
 

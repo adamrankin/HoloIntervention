@@ -63,6 +63,7 @@ using namespace Windows::Foundation::Numerics;
 using namespace Windows::Foundation;
 using namespace Windows::Graphics::DirectX;
 using namespace Windows::Graphics::Holographic;
+using namespace Windows::Media::SpeechRecognition;
 using namespace Windows::Perception::Spatial::Surfaces;
 using namespace Windows::Perception::Spatial;
 using namespace Windows::System::Threading;
@@ -262,7 +263,7 @@ namespace HoloIntervention
 
       if ( m_meshRendererEnabled )
       {
-        m_meshRenderer->Update( m_timer, currentCoordinateSystem );
+        m_meshRenderer->Update( vp, m_timer, currentCoordinateSystem );
       }
 
       m_notificationSystem->Update( pose, m_timer );
@@ -553,21 +554,21 @@ namespace HoloIntervention
   {
     Input::VoiceInputCallbackMap callbacks;
 
-    callbacks[L"show cursor"] = [this]()
+    callbacks[L"show cursor"] = [this](SpeechRecognitionResult^ result)
     {
       m_cursorSound->StartOnce();
       m_gazeSystem->EnableCursor( true );
       m_notificationSystem->QueueMessage( L"Cursor on." );
     };
 
-    callbacks[L"hide cursor"] = [this]()
+    callbacks[L"hide cursor"] = [this](SpeechRecognitionResult^ result)
     {
       m_cursorSound->StartOnce();
       m_gazeSystem->EnableCursor( false );
       m_notificationSystem->QueueMessage( L"Cursor off." );
     };
 
-    callbacks[L"connect"] = [this]()
+    callbacks[L"connect"] = [this](SpeechRecognitionResult^ result)
     {
       m_cursorSound->StartOnce();
       m_notificationSystem->QueueMessage( L"Connecting..." );
@@ -584,39 +585,72 @@ namespace HoloIntervention
       } );
     };
 
-    callbacks[L"disconnect"] = [this]()
+    callbacks[L"disconnect"] = [this](SpeechRecognitionResult^ result)
     {
       m_cursorSound->StartOnce();
       m_notificationSystem->QueueMessage( L"Disconnected." );
       m_igtLinkIF->Disconnect();
     };
 
-    callbacks[L"lock slice"] = [this]()
+    callbacks[L"lock slice"] = [this](SpeechRecognitionResult^ result)
     {
       m_cursorSound->StartOnce();
       m_notificationSystem->QueueMessage( L"Slice is now head-locked." );
       m_sliceRenderer->SetSliceHeadlocked( m_sliceToken, true );
     };
 
-    callbacks[L"unlock slice"] = [this]()
+    callbacks[L"unlock slice"] = [this](SpeechRecognitionResult^ result)
     {
       m_cursorSound->StartOnce();
       m_notificationSystem->QueueMessage( L"Slice is now in world-space." );
       m_sliceRenderer->SetSliceHeadlocked( m_sliceToken, false );
     };
 
-    callbacks[L"debug mesh on"] = [this]()
+    callbacks[L"mesh on"] = [this](SpeechRecognitionResult^ result)
     {
       m_cursorSound->StartOnce();
-      m_notificationSystem->QueueMessage( L"Debug mesh showing." );
+      m_notificationSystem->QueueMessage( L"Mesh showing." );
       m_meshRendererEnabled = true;
+      m_meshRenderer->DebugDrawBoundingBox(-1); // turn off
     };
 
-    callbacks[L"debug mesh off"] = [this]()
+    callbacks[L"mesh off"] = [this](SpeechRecognitionResult^ result)
     {
       m_cursorSound->StartOnce();
-      m_notificationSystem->QueueMessage( L"Debug mesh disabled." );
+      m_notificationSystem->QueueMessage( L"Mesh disabled." );
       m_meshRendererEnabled = false;
+    };
+
+    callbacks[L"mesh loop"] = [this](SpeechRecognitionResult^ result)
+    {
+      m_cursorSound->StartOnce();
+      HoloIntervention::instance()->GetNotificationSystem().DebugSetMessage( L"Mesh: mesh number 0" );
+      m_meshRendererEnabled = true;
+      m_meshRenderer->DebugLoopThroughMeshes();
+    };
+
+    callbacks[L"mesh bounding boxes on"] = [this](SpeechRecognitionResult^ result)
+    {
+      m_cursorSound->StartOnce();
+      HoloIntervention::instance()->GetNotificationSystem().DebugSetMessage( L"Mesh: bounding boxes on" );
+      m_meshRendererEnabled = true;
+      m_meshRenderer->DebugDrawBoundingBoxes( true );
+    };
+
+    callbacks[L"mesh bounding boxes on"] = [this](SpeechRecognitionResult^ result)
+    {
+      m_cursorSound->StartOnce();
+      HoloIntervention::instance()->GetNotificationSystem().DebugSetMessage( L"Mesh: bounding boxes off" );
+      m_meshRendererEnabled = true;
+      m_meshRenderer->DebugDrawBoundingBoxes( false );
+    };
+
+    callbacks[L"mesh bounding box"] = [this](SpeechRecognitionResult^ result)
+    {
+      m_cursorSound->StartOnce();
+      HoloIntervention::instance()->GetNotificationSystem().DebugSetMessage(L"Mesh: bounding box on");
+      m_meshRendererEnabled = true;
+      m_meshRenderer->DebugDrawBoundingBox(10);
     };
 
     m_voiceInputHandler->RegisterCallbacks( callbacks );

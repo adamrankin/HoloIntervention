@@ -76,6 +76,25 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    void NotificationSystem::DebugSetMessage(const std::wstring& message, double duration /*= DEFAULT_NOTIFICATION_DURATION_SEC*/)
+    {
+      // set this message as the active one
+      m_animationState = HIDDEN;
+      m_messageTimeElapsedSec = 0.0;
+
+      std::lock_guard<std::mutex> guard(m_messageQueueMutex);
+      MessageDuration mt(message, duration);
+      m_messages.push_front(mt);
+    }
+
+    //----------------------------------------------------------------------------
+    void NotificationSystem::DebugSetMessage(Platform::String^ message, double duration /*= DEFAULT_NOTIFICATION_DURATION_SEC*/)
+    {
+      std::wstring string(message->Data());
+      DebugSetMessage(string, duration);
+    }
+
+    //----------------------------------------------------------------------------
     void NotificationSystem::Initialize(SpatialPointerPose^ pointerPose)
     {
       SetPose(pointerPose);

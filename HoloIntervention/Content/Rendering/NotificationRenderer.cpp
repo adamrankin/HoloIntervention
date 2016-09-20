@@ -139,8 +139,12 @@ namespace HoloIntervention
         m_quadTextureSamplerState.GetAddressOf()
       );
 
+      context->OMSetBlendState(m_blendState.Get(), nullptr, 0xffffffff);
+
       // Draw the objects.
       context->DrawIndexedInstanced( m_indexCount, 2, 0, 0, 0 );
+
+      context->OMSetBlendState(nullptr, nullptr, 0xffffffff);
     }
 
     //----------------------------------------------------------------------------
@@ -325,11 +329,30 @@ namespace HoloIntervention
         desc.BorderColor[2] = 0.f;
         desc.BorderColor[3] = 0.f;
         desc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-
         DX::ThrowIfFailed(
           m_deviceResources->GetD3DDevice()->CreateSamplerState(
             &desc,
             &m_quadTextureSamplerState
+          )
+        );
+
+        D3D11_BLEND_DESC blendDesc;
+        ZeroMemory(&blendDesc, sizeof(D3D11_BLEND_DESC));
+        blendDesc.AlphaToCoverageEnable = FALSE;
+        blendDesc.IndependentBlendEnable = FALSE;
+        blendDesc.RenderTarget[0].BlendEnable = TRUE;
+        blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
+        blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
+        blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_MAX;
+        blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_SRC_ALPHA;
+        blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_DEST_ALPHA;
+        blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+        blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
+        DX::ThrowIfFailed(
+          m_deviceResources->GetD3DDevice()->CreateBlendState(
+            &blendDesc,
+            &m_blendState
           )
         );
 

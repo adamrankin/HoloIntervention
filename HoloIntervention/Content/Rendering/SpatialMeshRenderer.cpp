@@ -11,8 +11,12 @@
 
 // Local includes
 #include "pch.h"
+#include "AppView.h"
 #include "DirectXHelper.h"
 #include "SpatialMeshRenderer.h"
+
+// System includes
+#include "NotificationSystem.h"
 
 using namespace Concurrency;
 using namespace DX;
@@ -23,6 +27,11 @@ using namespace Windows::Foundation::Numerics;
 using namespace Windows::Graphics::DirectX;
 using namespace Windows::Perception::Spatial::Surfaces;
 using namespace Windows::Perception::Spatial;
+
+namespace
+{
+  static const float LOOP_DURATION_MSEC = 2000.0f;
+}
 
 namespace HoloIntervention
 {
@@ -38,7 +47,7 @@ namespace HoloIntervention
 
     //----------------------------------------------------------------------------
     // Called once per frame, maintains and updates the mesh collection.
-    void SpatialMeshRenderer::Update( DX::StepTimer const& timer, SpatialCoordinateSystem^ coordinateSystem )
+    void SpatialMeshRenderer::Update( DX::ViewProjection& vp, DX::StepTimer const& timer, SpatialCoordinateSystem^ coordinateSystem )
     {
       std::lock_guard<std::mutex> guard( m_meshCollectionLock );
 
@@ -63,7 +72,7 @@ namespace HoloIntervention
         auto& surfaceMesh = pair.second;
 
         // Update the surface mesh.
-        surfaceMesh.UpdateTransform( m_deviceResources->GetD3DDevice(), m_deviceResources->GetD3DDeviceContext(), timer, coordinateSystem );
+        surfaceMesh.Update( vp, timer, coordinateSystem );
 
         // Check to see if the mesh has expired.
         float lastActiveTime = surfaceMesh.GetLastActiveTime();
@@ -72,12 +81,36 @@ namespace HoloIntervention
         {
           // Surface mesh is expired.
           m_meshCollection.erase( iter++ );
+          if ( m_isLooping )
+          {
+            HoloIntervention::instance()->GetNotificationSystem().DebugSetMessage( L"Meshes invalidated: mesh number " + m_currentLoopIndex.ToString(), LOOP_DURATION_MSEC );
+            m_currentLoopIndex = 0;
+            m_loopTimer = 0.f;
+          }
         }
         else
         {
           ++iter;
         }
-      };
+      }
+
+      if ( m_isLooping && m_loopTimer > LOOP_DURATION_MSEC )
+      {
+        m_currentLoopIndex += 1;
+        HoloIntervention::instance()->GetNotificationSystem().DebugSetMessage( L"Mesh: mesh number " + m_currentLoopIndex.ToString(), LOOP_DURATION_MSEC / 1000.f );
+        m_loopTimer = 0.f;
+      }
+      else if ( m_isLooping )
+      {
+        m_loopTimer += timeElapsed;
+      }
+
+      if ( m_isLooping && m_currentLoopIndex >= m_meshCollection.size() )
+      {
+        m_isLooping = false;
+        m_currentLoopIndex = 0;
+        m_loopTimer = 0.f;
+      }
     }
 
     //----------------------------------------------------------------------------
@@ -236,6 +269,7 @@ namespace HoloIntervention
           std::lock_guard<std::mutex> guard( m_meshCollectionLock );
 
           auto& surfaceMesh = m_meshCollection[id];
+          surfaceMesh.SetDeviceResources( m_deviceResources );
           surfaceMesh.UpdateSurface( mesh );
           surfaceMesh.SetIsActive( true );
         }
@@ -299,7 +333,7 @@ namespace HoloIntervention
       if ( m_drawWireframe )
       {
         // Use a wireframe rasterizer state.
-        m_deviceResources->GetD3DDeviceContext()->RSSetState( m_wireframeRasterizerState.Get() );
+        context->RSSetState( m_wireframeRasterizerState.Get() );
 
         // Attach a pixel shader to render a solid color wireframe.
         context->PSSetShader( m_colorPixelShader.Get(), nullptr, 0 );
@@ -307,7 +341,7 @@ namespace HoloIntervention
       else
       {
         // Use the default rasterizer state.
-        m_deviceResources->GetD3DDeviceContext()->RSSetState( m_defaultRasterizerState.Get() );
+        context->RSSetState( m_defaultRasterizerState.Get() );
 
         // Attach a pixel shader that can do lighting.
         context->PSSetShader( m_lightingPixelShader.Get(), nullptr, 0 );
@@ -316,18 +350,30 @@ namespace HoloIntervention
       {
         std::lock_guard<std::mutex> guard( m_meshCollectionLock );
 
-        // Draw the meshes.
-        auto device = m_deviceResources->GetD3DDevice();
-        for ( auto& pair : m_meshCollection )
+        if (m_overrideDrawIndex > 0)
         {
-          auto& id = pair.first;
-          auto& surfaceMesh = pair.second;
-
-          surfaceMesh.Draw( device, context, m_usingVprtShaders );
+          MeshMap::iterator iter = m_meshCollection.begin();
+          for (int32_t i = 0; i < m_overrideDrawIndex; ++i, ++iter) {}
+          iter->second.SetDrawBoundingBox(true);
+          iter->second.Render(m_usingVprtShaders);
+        }
+        else if ( m_isLooping )
+        {
+          MeshMap::iterator iter = m_meshCollection.begin();
+          for ( size_t i = 0; i < m_currentLoopIndex; ++i, ++iter ) {}
+          iter->second.Render( m_usingVprtShaders );
+        }
+        else
+        {
+          // Draw the meshes.
+          for ( auto& pair : m_meshCollection )
+          {
+            pair.second.Render( m_usingVprtShaders );
+          }
         }
       }
 
-      m_deviceResources->GetD3DDeviceContext()->RSSetState(nullptr);
+      context->RSSetState( nullptr );
     }
 
     //----------------------------------------------------------------------------
@@ -409,7 +455,7 @@ namespace HoloIntervention
         for ( auto& iter : m_meshCollection )
         {
           iter.second.ReleaseDeviceDependentResources();
-          iter.second.CreateDeviceDependentResources( m_deviceResources->GetD3DDevice() );
+          iter.second.CreateDeviceDependentResources();
         }
 
         // Create a default rasterizer state descriptor.
@@ -449,6 +495,34 @@ namespace HoloIntervention
       {
         iter.second.ReleaseDeviceDependentResources();
       }
+    }
+
+    //----------------------------------------------------------------------------
+    void SpatialMeshRenderer::DebugDrawBoundingBox(int32_t index)
+    {
+      if (index >= m_meshCollection.size())
+      {
+        return;
+      }
+
+      m_overrideDrawIndex = index;
+    }
+
+    //----------------------------------------------------------------------------
+    void SpatialMeshRenderer::DebugDrawBoundingBoxes( bool draw )
+    {
+      std::lock_guard<std::mutex> guard( m_meshCollectionLock );
+      for ( auto& pair : m_meshCollection )
+      {
+        pair.second.SetDrawBoundingBox( draw );
+      }
+    }
+
+    //----------------------------------------------------------------------------
+    void SpatialMeshRenderer::DebugLoopThroughMeshes()
+    {
+      m_isLooping = true;
+      m_currentLoopIndex = 0;
     }
 
     //----------------------------------------------------------------------------

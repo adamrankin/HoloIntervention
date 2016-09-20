@@ -12,3 +12,4 @@
 *.ipch
 /HoloIntervention/Content/Rendering/Shaders/Compiled
 /packages
+/debug.log

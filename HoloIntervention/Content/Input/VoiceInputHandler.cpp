@@ -114,7 +114,7 @@ namespace HoloIntervention
         auto iterator = m_callbacks.find( args->Result->Text->Data() );
         if ( iterator != m_callbacks.end() )
         {
-          iterator->second();
+          iterator->second(args->Result);
         }
       }
     }

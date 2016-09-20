@@ -92,7 +92,7 @@ namespace HoloIntervention
         }
 
         // Update the surface mesh.
-        surfaceMesh->UpdateTransform( timer, coordinateSystem );
+        surfaceMesh->Update( timer, coordinateSystem );
 
         ++iter;
       };

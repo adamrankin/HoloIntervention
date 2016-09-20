@@ -13,11 +13,13 @@
 #include "pch.h"
 #include "Common.h"
 #include "DirectXHelper.h"
+#include "InstancedGeometricPrimitive.h"
 #include "SpatialMesh.h"
 #include "StepTimer.h"
 
 // WinRT includes
 #include <ppltasks.h>
+#include <WindowsNumerics.h>
 
 using namespace DirectX;
 using namespace Windows::Foundation::Numerics;
@@ -29,6 +31,16 @@ namespace HoloIntervention
 {
   namespace Rendering
   {
+    //----------------------------------------------------------------------------
+    SpatialMesh::SpatialMesh( std::shared_ptr<DX::DeviceResources> deviceResources )
+      : m_deviceResources( deviceResources )
+    {
+      std::lock_guard<std::mutex> lock( m_meshResourcesMutex );
+
+      ReleaseDeviceDependentResources();
+      m_lastUpdateTime.UniversalTime = 0;
+    }
+
     //----------------------------------------------------------------------------
     SpatialMesh::SpatialMesh()
     {
@@ -54,21 +66,17 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SpatialMesh::UpdateDeviceBasedResources( ID3D11Device* device )
+    void SpatialMesh::UpdateDeviceBasedResources()
     {
       std::lock_guard<std::mutex> lock( m_meshResourcesMutex );
 
       ReleaseDeviceDependentResources();
-      CreateDeviceDependentResources( device );
+      CreateDeviceDependentResources();
     }
 
     //----------------------------------------------------------------------------
     // Spatial Mapping surface meshes each have a transform. This transform is updated every frame.
-    void SpatialMesh::UpdateTransform(
-      ID3D11Device* device,
-      ID3D11DeviceContext* context,
-      DX::StepTimer const& timer,
-      SpatialCoordinateSystem^ baseCoordinateSystem )
+    void SpatialMesh::Update( DX::ViewProjection& vp, DX::StepTimer const& timer, SpatialCoordinateSystem^ baseCoordinateSystem )
     {
       if ( m_surfaceMesh == nullptr )
       {
@@ -78,7 +86,7 @@ namespace HoloIntervention
 
       if ( m_updateNeeded )
       {
-        CreateVertexResources( device );
+        CreateVertexResources();
         m_updateNeeded = false;
       }
       else
@@ -91,6 +99,8 @@ namespace HoloIntervention
           m_updateReady = false;
         }
       }
+
+      m_viewProjection = vp;
 
       // If the surface is active this frame, we need to update its transform.
       XMMATRIX transform;
@@ -146,11 +156,11 @@ namespace HoloIntervention
 
       if ( !m_constantBufferCreated )
       {
-        CreateDeviceDependentResources( device );
+        CreateDeviceDependentResources();
         return;
       }
 
-      context->UpdateSubresource(
+      m_deviceResources->GetD3DDeviceContext()->UpdateSubresource(
         m_modelTransformBuffer.Get(),
         0,
         NULL,
@@ -158,10 +168,27 @@ namespace HoloIntervention
         0,
         0
       );
+
+      if ( m_drawBoundingBox )
+      {
+        Platform::IBox<SpatialBoundingOrientedBox>^ bounds = m_surfaceMesh->SurfaceInfo->TryGetBounds( baseCoordinateSystem );
+
+        if ( bounds != nullptr )
+        {
+          // Create world matrix from values, set to bounding box
+          XMMATRIX rotation = XMMatrixTranspose( XMLoadFloat4x4( &make_float4x4_from_quaternion( bounds->Value.Orientation ) ) );
+          XMMATRIX scale = XMLoadFloat4x4( &make_float4x4_scale( 2 * bounds->Value.Extents ) );
+          XMMATRIX translation = XMMatrixTranspose( XMLoadFloat4x4( &make_float4x4_translation( bounds->Value.Center ) ) );
+          XMMATRIX res = rotation * scale;
+          res = translation * res;
+
+          XMStoreFloat4x4( &m_boundingBoxWorldTransform, XMMatrixTranspose( res ) );
+        }
+      }
     }
 
     //----------------------------------------------------------------------------
-    void SpatialMesh::Draw( ID3D11Device* device, ID3D11DeviceContext* context, bool usingVprtShaders )
+    void SpatialMesh::Render( bool usingVprtShaders )
     {
       if ( !m_constantBufferCreated || !m_loadingComplete )
       {
@@ -175,8 +202,9 @@ namespace HoloIntervention
         return;
       }
 
-      // The vertices are provided in {vertex, normal} format
+      auto context = m_deviceResources->GetD3DDeviceContext();
 
+      // The vertices are provided in {vertex, normal} format
       UINT strides[] = { m_meshProperties.vertexStride, m_meshProperties.normalStride };
       UINT offsets[] = { 0, 0 };
       ID3D11Buffer* buffers[] = { m_vertexPositions.Get(), m_vertexNormals.Get() };
@@ -195,24 +223,27 @@ namespace HoloIntervention
       context->PSSetConstantBuffers( 0, 1, m_modelTransformBuffer.GetAddressOf() );
 
       context->DrawIndexedInstanced( m_meshProperties.indexCount, 2, 0, 0, 0 );
+
+      if ( m_drawBoundingBox )
+      {
+        FXMMATRIX view[2] = { XMLoadFloat4x4( &m_viewProjection.view[0] ), XMLoadFloat4x4( &m_viewProjection.view[1] ) };
+        FXMMATRIX projection[2] = { XMLoadFloat4x4( &m_viewProjection.projection[0] ), XMLoadFloat4x4( &m_viewProjection.projection[1] ) };
+        m_boundingBox->Draw( XMLoadFloat4x4( &m_boundingBoxWorldTransform ), view, projection, DirectX::Colors::White, nullptr, true );
+      }
     }
 
     //----------------------------------------------------------------------------
-    void SpatialMesh::CreateDirectXBuffer(
-      ID3D11Device* device,
-      D3D11_BIND_FLAG binding,
-      IBuffer^ buffer,
-      ID3D11Buffer** target )
+    void SpatialMesh::CreateDirectXBuffer( ID3D11Device& device, D3D11_BIND_FLAG binding, IBuffer^ buffer, ID3D11Buffer** target )
     {
       auto length = buffer->Length;
 
       CD3D11_BUFFER_DESC bufferDescription( buffer->Length, binding );
       D3D11_SUBRESOURCE_DATA bufferBytes = { GetDataFromIBuffer( buffer ), 0, 0 };
-      device->CreateBuffer( &bufferDescription, &bufferBytes, target );
+      device.CreateBuffer( &bufferDescription, &bufferBytes, target );
     }
 
     //----------------------------------------------------------------------------
-    void SpatialMesh::CreateVertexResources( ID3D11Device* device )
+    void SpatialMesh::CreateVertexResources()
     {
       if ( m_surfaceMesh == nullptr )
       {
@@ -227,6 +258,8 @@ namespace HoloIntervention
         m_isActive = false;
         return;
       }
+
+      auto device = m_deviceResources->GetD3DDevice();
 
       // Surface mesh resources are created off-thread, so that they don't affect rendering latency.'
       auto taskOptions = Concurrency::task_options();
@@ -244,9 +277,11 @@ namespace HoloIntervention
         Microsoft::WRL::ComPtr<ID3D11Buffer> updatedVertexPositions;
         Microsoft::WRL::ComPtr<ID3D11Buffer> updatedVertexNormals;
         Microsoft::WRL::ComPtr<ID3D11Buffer> updatedTriangleIndices;
-        CreateDirectXBuffer( device, D3D11_BIND_VERTEX_BUFFER, positions, updatedVertexPositions.GetAddressOf() );
-        CreateDirectXBuffer( device, D3D11_BIND_VERTEX_BUFFER, normals, updatedVertexNormals.GetAddressOf() );
-        CreateDirectXBuffer( device, D3D11_BIND_INDEX_BUFFER, indices, updatedTriangleIndices.GetAddressOf() );
+        CreateDirectXBuffer( *device, D3D11_BIND_VERTEX_BUFFER, positions, updatedVertexPositions.GetAddressOf() );
+        CreateDirectXBuffer( *device, D3D11_BIND_VERTEX_BUFFER, normals, updatedVertexNormals.GetAddressOf() );
+        CreateDirectXBuffer( *device, D3D11_BIND_INDEX_BUFFER, indices, updatedTriangleIndices.GetAddressOf() );
+
+        m_boundingBox = DirectX::InstancedGeometricPrimitive::CreateCube( m_deviceResources->GetD3DDeviceContext(), 1.f );
 
         // Before updating the meshes, check to ensure that there wasn't a more recent update.
         {
@@ -255,7 +290,6 @@ namespace HoloIntervention
           auto meshUpdateTime = m_surfaceMesh->SurfaceInfo->UpdateTime;
           if ( meshUpdateTime.UniversalTime > m_lastUpdateTime.UniversalTime )
           {
-
             // Prepare to swap in the new meshes.
             // Here, we use ComPtr.Swap() to avoid unnecessary overhead from ref counting.
             m_updatedVertexPositions.Swap( updatedVertexPositions );
@@ -278,14 +312,14 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SpatialMesh::CreateDeviceDependentResources( ID3D11Device* device )
+    void SpatialMesh::CreateDeviceDependentResources()
     {
-      CreateVertexResources( device );
+      CreateVertexResources();
 
       // Create a constant buffer to control mesh position.
       CD3D11_BUFFER_DESC constantBufferDesc( sizeof( ModelNormalConstantBuffer ), D3D11_BIND_CONSTANT_BUFFER );
       DX::ThrowIfFailed(
-        device->CreateBuffer(
+        m_deviceResources->GetD3DDevice()->CreateBuffer(
           &constantBufferDesc,
           nullptr,
           &m_modelTransformBuffer
@@ -298,9 +332,16 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void SpatialMesh::ReleaseVertexResources()
     {
+      m_loadingComplete = false;
+
       m_vertexPositions.Reset();
       m_vertexNormals.Reset();
       m_triangleIndices.Reset();
+
+      m_modelTransformBuffer.Reset();
+      m_constantBufferCreated = false;
+
+      m_boundingBox.release();
     }
 
     //----------------------------------------------------------------------------
@@ -367,5 +408,16 @@ namespace HoloIntervention
       m_colorFadeTimer = 0.f;
     }
 
+    //----------------------------------------------------------------------------
+    void SpatialMesh::SetDrawBoundingBox( bool drawBoudingBox )
+    {
+      m_drawBoundingBox = drawBoudingBox;
+    }
+
+    //----------------------------------------------------------------------------
+    void SpatialMesh::SetDeviceResources( std::shared_ptr<DX::DeviceResources> deviceResources )
+    {
+      m_deviceResources = deviceResources;
+    }
   }
 }

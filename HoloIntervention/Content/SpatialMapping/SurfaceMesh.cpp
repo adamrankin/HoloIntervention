@@ -30,8 +30,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "StepTimer.h"
 #include "SurfaceMesh.h"
 
-// winrt includes
+// WinRT includes
 #include <ppltasks.h>
+#include <WindowsNumerics.h>
 
 // DirectX includes
 #include <d3dcompiler.h>
@@ -75,6 +76,9 @@ namespace HoloIntervention
             m_surfaceMesh = mesh;
             SetIsActive( true );
           }
+
+          // Force a recomputation of the bounding box once a coordinate system is provided
+          m_worldToBoxTransformComputed = false;
         }
         UpdateDeviceBasedResources();
       } );
@@ -82,7 +86,7 @@ namespace HoloIntervention
 
     //----------------------------------------------------------------------------
     // Spatial Mapping surface meshes each have a transform. This transform is updated every frame.
-    void SurfaceMesh::UpdateTransform( DX::StepTimer const& timer, SpatialCoordinateSystem^ baseCoordinateSystem )
+    void SurfaceMesh::Update( DX::StepTimer const& timer, SpatialCoordinateSystem^ baseCoordinateSystem )
     {
       if ( m_surfaceMesh == nullptr )
       {
@@ -107,6 +111,11 @@ namespace HoloIntervention
           // because its location cannot be correlated to the current space.
           m_isActive = false;
         }
+      }
+
+      if ( !m_worldToBoxTransformComputed )
+      {
+        ComputeOBBInverseWorld( baseCoordinateSystem );
       }
 
       if ( !m_isActive )
@@ -285,6 +294,26 @@ namespace HoloIntervention
       CreateDeviceDependentResources();
     }
 
+    //----------------------------------------------------------------------------
+    void SurfaceMesh::ComputeOBBInverseWorld( SpatialCoordinateSystem^ baseCoordinateSystem )
+    {
+      m_worldToBoxTransformComputed = false;
+
+      Platform::IBox<SpatialBoundingOrientedBox>^ bounds = m_surfaceMesh->SurfaceInfo->TryGetBounds( baseCoordinateSystem );
+
+      if ( bounds != nullptr )
+      {
+        XMMATRIX rotation = XMMatrixTranspose( XMLoadFloat4x4( &make_float4x4_from_quaternion( bounds->Value.Orientation ) ) );
+        XMMATRIX scale = XMLoadFloat4x4( &make_float4x4_scale( 2 * bounds->Value.Extents ) );
+        XMMATRIX translation = XMMatrixTranspose( XMLoadFloat4x4( &make_float4x4_translation( bounds->Value.Center ) ) );
+        XMMATRIX worldTransform = translation * ( rotation * scale );
+        XMVECTOR determinant = XMMatrixDeterminant( worldTransform );
+        m_worldToBoxTransform = XMMatrixInverse( &determinant, worldTransform );
+
+        m_worldToBoxTransformComputed = true;
+      }
+    }
+
     //--------------------------------------------------------------------------------------
     HRESULT SurfaceMesh::CreateStructuredBuffer( uint32 uStructureSize, SpatialSurfaceMeshBuffer^ buffer, ID3D11Buffer** target )
     {
@@ -442,47 +471,51 @@ namespace HoloIntervention
       {
         Platform::IBox<SpatialBoundingOrientedBox>^ bounds = m_surfaceMesh->SurfaceInfo->TryGetBounds( desiredCoordinateSystem );
 
-        if ( bounds == nullptr )
+        if ( bounds == nullptr || !m_worldToBoxTransformComputed )
         {
           // Can't tell, so have to run the compute shader to verify
           return true;
         }
 
-        // rotate ray by inverse quaternion to work in AABB coordinate system
-        quaternion revOrientation = inverse( bounds->Value.Orientation );
-        float3 aabbRayPos = transform( rayOrigin, revOrientation );
-        float3 aabbRayDir = transform( rayDirection, revOrientation );
-        float3 invDir( 1.f / aabbRayDir.x, 1.f / aabbRayDir.y, 1.f / aabbRayDir.z );
+        // Use inverse world to transform ray, then compare against unit AABB (cent 0,0,0 ext 1,1,1)
+        XMVECTOR rayBox = XMVector3Transform( XMLoadFloat3( &rayOrigin ), m_worldToBoxTransform );
+        XMVECTOR rayDirBox = XMVector3Transform( XMLoadFloat3( &rayDirection ), m_worldToBoxTransform );
+
+        XMVECTOR rayInvDirBox;
+        rayInvDirBox.m128_f32[0] = 1.f / rayDirBox.m128_f32[0];
+        rayInvDirBox.m128_f32[1] = 1.f / rayDirBox.m128_f32[1];
+        rayInvDirBox.m128_f32[2] = 1.f / rayDirBox.m128_f32[2];
+        rayInvDirBox.m128_f32[3] = 1.f;
 
         // Algorithm implementation derived from
         // https://tavianator.com/cgit/dimension.git/tree/libdimension/bvh/bvh.c
         // thanks to Tavian Barnes <tavianator@tavianator.com>
-        float xMin = bounds->Value.Center.x - bounds->Value.Extents.x;
-        float xMax = bounds->Value.Center.x + bounds->Value.Extents.x;
-        float yMin = bounds->Value.Center.y - bounds->Value.Extents.y;
-        float yMax = bounds->Value.Center.y + bounds->Value.Extents.y;
-        float zMin = bounds->Value.Center.z - bounds->Value.Extents.z;
-        float zMax = bounds->Value.Center.z + bounds->Value.Extents.z;
+        float xMin = -0.5f;
+        float xMax = 0.5;
+        float yMin = -0.5f;
+        float yMax = 0.5f;
+        float zMin = -0.5f;
+        float zMax = 0.5;
 
-        float tx1 = ( xMin - aabbRayPos.x ) * invDir.x;
-        float tx2 = ( xMax - aabbRayPos.x ) * invDir.x;
+        float tx1 = ( xMin - rayBox.m128_f32[0] ) * rayInvDirBox.m128_f32[0];
+        float tx2 = ( xMax - rayBox.m128_f32[0] ) * rayInvDirBox.m128_f32[0];
 
         float tmin = min( tx1, tx2 );
         float tmax = max( tx1, tx2 );
 
-        float ty1 = ( yMin - aabbRayPos.y ) * invDir.y;
-        float ty2 = ( yMax - aabbRayPos.y ) * invDir.y;
+        float ty1 = ( yMin - rayBox.m128_f32[1] ) * rayInvDirBox.m128_f32[1];
+        float ty2 = ( yMax - rayBox.m128_f32[1] ) * rayInvDirBox.m128_f32[1];
 
         tmin = max( tmin, min( ty1, ty2 ) );
         tmax = min( tmax, max( ty1, ty2 ) );
 
-        float tz1 = ( zMin - aabbRayPos.z ) * invDir.z;
-        float tz2 = ( zMax - aabbRayPos.z ) * invDir.z;
+        float tz1 = ( zMin - rayBox.m128_f32[2] ) * rayInvDirBox.m128_f32[2];
+        float tz2 = ( zMax - rayBox.m128_f32[2] ) * rayInvDirBox.m128_f32[2];
 
         tmin = max( tmin, min( tz1, tz2 ) );
         tmax = min( tmax, max( tz1, tz2 ) );
 
-        return tmax >= max(0.0, tmin);
+        return tmax >= max( 0.0, tmin );
       }
     }
   }

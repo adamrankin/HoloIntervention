@@ -92,6 +92,7 @@
     <ClCompile Include="Content\Rendering\SpatialMesh.cpp">
       <Filter>Content\Rendering\SpatialMeshRenderer</Filter>
     </ClCompile>
+    <ClCompile Include="Content\Rendering\DirectXTK\InstancedGeometricPrimitive.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="HoloInterventionMain.h" />
@@ -197,6 +198,7 @@
     <ClInclude Include="Content\Rendering\SpatialMesh.h">
       <Filter>Content\Rendering\SpatialMeshRenderer</Filter>
     </ClInclude>
+    <ClInclude Include="Content\Rendering\DirectXTK\InstancedGeometricPrimitive.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\LockScreenLogo.scale-200.png">

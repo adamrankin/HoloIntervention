@@ -85,6 +85,7 @@ namespace HoloIntervention
       ComPtr<ID3D11GeometryShader>                        m_geometryShader;
       ComPtr<ID3D11PixelShader>                           m_pixelShader;
       ComPtr<ID3D11Buffer>                                m_modelConstantBuffer;
+      ComPtr<ID3D11BlendState>                            m_blendState;
 
       // Direct3D resources for the texture.
       ComPtr<ID3D11SamplerState>                          m_quadTextureSamplerState;
