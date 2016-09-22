@@ -11,13 +11,20 @@
 
 #pragma once
 
+// Local includes
 #include "AudioFileReader.h"
-#include "XAudio2Helpers.h"
-#include <hrtfapoapi.h>
+#include "VoiceCallback.h"
+
+// WinRT includes
 #include <wrl.h>
 #include <ppltasks.h>
 
+// XAudio2 includes
+#include <hrtfapoapi.h>
+#include <xaudio2.h>
+
 using namespace Concurrency;
+using namespace Microsoft::WRL;
 
 namespace HoloIntervention
 {
@@ -28,24 +35,25 @@ namespace HoloIntervention
     {
     public:
       virtual ~CardioidSound();
-      task<HRESULT> InitializeAsync( _In_ LPCWSTR filename );
-      HRESULT ConfigureApo( _In_ float scaling, _In_ float order );
+      task<HRESULT> InitializeAsync( _In_ ComPtr<IXAudio2> xaudio2, IXAudio2SubmixVoice* parentVoice, _In_ const std::wstring& filename );
+      HRESULT ConfigureApo( _In_ ComPtr<IXAudio2> xaudio2, IXAudio2SubmixVoice* parentVoice, _In_ float scaling, _In_ float order );
 
       HRESULT Start();
       HRESULT Stop();
       HRESULT OnUpdate( _In_ float x, _In_ float, _In_ float z, _In_ float pitch, _In_ float yaw, _In_ float roll );
       HRESULT SetEnvironment( _In_ HrtfEnvironment environment );
-      HrtfEnvironment GetEnvironment() { return _environment; }
+      HrtfEnvironment GetEnvironment();
 
-    private:
+    protected:
       HrtfOrientation OrientationFromAngles( float pitch, float yaw, float roll );
 
-    private:
-      AudioFileReader                 _audioFile;
-      ComPtr<IXAudio2>                _xaudio2;
-      IXAudio2SourceVoice*            _sourceVoice = nullptr;
-      ComPtr<IXAPOHrtfParameters>     _hrtfParams;
-      HrtfEnvironment                 _environment = HrtfEnvironment::Outdoors;
+    protected:
+      std::shared_ptr<VoiceCallback<CardioidSound>>   m_callBack = nullptr;
+      AudioFileReader                                 m_audioFile;
+      IXAudio2SourceVoice*                            m_sourceVoice = nullptr;
+      IXAudio2SubmixVoice*                            m_submixVoice = nullptr;
+      ComPtr<IXAPOHrtfParameters>                     m_hrtfParams;
+      HrtfEnvironment                                 m_environment = HrtfEnvironment::Medium;
     };
   }
 }

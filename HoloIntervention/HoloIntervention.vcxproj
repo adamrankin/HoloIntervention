@@ -116,11 +116,12 @@
     <ClInclude Include="Content\Sound\AudioFileReader.h" />
     <ClInclude Include="Content\Sound\CardioidSound.h" />
     <ClInclude Include="Content\Sound\OmnidirectionalSound.h" />
+    <ClInclude Include="Content\Sound\SoundManager.h" />
     <ClInclude Include="Content\Sound\VoiceCallback.h" />
-    <ClInclude Include="Content\Sound\XAudio2Helpers.h" />
     <ClInclude Include="Content\SpatialMapping\SpatialSurfaceCollection.h" />
     <ClInclude Include="Content\SpatialMapping\SurfaceMesh.h" />
     <ClInclude Include="Content\Systems\GazeSystem.h" />
+    <ClInclude Include="Content\Systems\ISystem.h" />
     <ClInclude Include="Content\Systems\NotificationSystem.h" />
     <ClInclude Include="Content\Systems\SpatialSystem.h" />
     <ClInclude Include="Content\Systems\ToolEntry.h" />
@@ -151,7 +152,7 @@
     <ClCompile Include="Content\Sound\AudioFileReader.cpp" />
     <ClCompile Include="Content\Sound\CardioidSound.cpp" />
     <ClCompile Include="Content\Sound\OmnidirectionalSound.cpp" />
-    <ClCompile Include="Content\Sound\VoiceCallback.cpp" />
+    <ClCompile Include="Content\Sound\SoundManager.cpp" />
     <ClCompile Include="Content\SpatialMapping\SpatialSurfaceCollection.cpp" />
     <ClCompile Include="Content\SpatialMapping\SurfaceMesh.cpp" />
     <ClCompile Include="Content\Systems\GazeSystem.cpp" />

@@ -35,7 +35,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "ToolSystem.h"
 
 // Sound includes
-#include "OmnidirectionalSound.h"
+#include "SoundManager.h"
 
 // Rendering includes
 #include "ModelRenderer.h"
@@ -76,7 +76,6 @@ namespace HoloIntervention
   HoloInterventionMain::HoloInterventionMain( const std::shared_ptr<DX::DeviceResources>& deviceResources )
     : m_deviceResources( deviceResources )
     , m_sliceToken( 0 )
-    , m_cursorSound( nullptr )
     , m_latestFrame( ref new UWPOpenIGTLink::TrackedFrame() )
   {
     // Register to be notified if the device is lost or recreated.
@@ -103,6 +102,7 @@ namespace HoloIntervention
     m_modelRenderer = std::make_unique<Rendering::ModelRenderer>( m_deviceResources );
     m_sliceRenderer = std::make_unique<Rendering::SliceRenderer>( m_deviceResources );
     m_meshRenderer = std::make_unique<Rendering::SpatialMeshRenderer>( m_deviceResources );
+    m_soundManager = std::make_unique<Sound::SoundManager>();
 
     m_notificationSystem = std::make_unique<System::NotificationSystem>( m_deviceResources );
     m_spatialInputHandler = std::make_unique<Input::SpatialInputHandler>();
@@ -117,7 +117,6 @@ namespace HoloIntervention
     // TODO : remove temp code
     m_igtLinkIF->SetHostname( L"172.16.80.1" );
 
-    InitializeAudioAssetsAsync();
     InitializeVoiceSystem();
 
     // Use the default SpatialLocator to track the motion of the device.
@@ -164,35 +163,6 @@ namespace HoloIntervention
           m_notificationSystem->QueueMessage( L"Connected." );
           m_sliceRenderer->SetSliceVisible( m_sliceToken, true );
         }
-      } );
-    } );
-  }
-
-  //----------------------------------------------------------------------------
-  Concurrency::task<void> HoloInterventionMain::InitializeAudioAssetsAsync()
-  {
-    return create_task( [this]()
-    {
-      m_cursorSound = std::make_unique<HoloIntervention::Sound::OmnidirectionalSound>();
-
-      auto loadTask = m_cursorSound->InitializeAsync( L"Assets/Sounds/input_ok.mp3" );
-      loadTask.then( [&]( task<HRESULT> previousTask )
-      {
-        try
-        {
-          previousTask.wait();
-        }
-        catch ( Platform::Exception^ e )
-        {
-          m_notificationSystem->QueueMessage( e->Message );
-        }
-        catch ( const std::exception& e )
-        {
-          m_notificationSystem->QueueMessage( e.what() );
-          m_cursorSound.reset();
-        }
-
-        m_cursorSound->SetEnvironment( HrtfEnvironment::Small );
       } );
     } );
   }
@@ -251,22 +221,24 @@ namespace HoloIntervention
     {
       SpatialPointerPose^ pose = SpatialPointerPose::TryGetAtTimestamp( currentCoordinateSystem, prediction->Timestamp );
 
-      if ( pose == nullptr )
-      {
-        // TODO : how to handle invalid pose?
-      }
-
       m_spatialSystem->Update( currentCoordinateSystem );
-      m_gazeSystem->Update( m_timer, currentCoordinateSystem, pose );
-      m_cursorSound->Update( m_timer );
-      m_sliceRenderer->Update( pose, m_timer );
+
+      if ( pose != nullptr )
+      {
+        m_gazeSystem->Update( m_timer, currentCoordinateSystem, pose );
+        m_soundManager->Update( m_timer, 1.f, pose->Head->Position.z, 1.f ); // TODO : what are other items?
+        m_sliceRenderer->Update( pose, m_timer );
+      }
 
       if ( m_meshRendererEnabled )
       {
         m_meshRenderer->Update( vp, m_timer, currentCoordinateSystem );
       }
 
-      m_notificationSystem->Update( pose, m_timer );
+      if ( pose != nullptr )
+      {
+        m_notificationSystem->Update( pose, m_timer );
+      }
       m_modelRenderer->Update( m_timer, vp );
 
       if ( m_igtLinkIF->IsConnected() )
@@ -280,16 +252,6 @@ namespace HoloIntervention
                                         ( DXGI_FORMAT )m_latestFrame->PixelFormat,
                                         m_latestFrame->EmbeddedImageTransform );
           m_toolSystem->Update( m_timer, m_latestFrame );
-        }
-      }
-
-      if ( m_anchorRequested )
-      {
-        std::lock_guard<std::mutex> anchorLock( m_anchorMutex );
-        if ( m_spatialSystem->DropAnchorAtIntersectionHit( "Registration", currentCoordinateSystem ) )
-        {
-          m_anchorRequested = false;
-          m_notificationSystem->QueueMessage( L"Anchor created." );
         }
       }
     } );
@@ -465,6 +427,12 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
+  HoloIntervention::Sound::SoundManager& HoloInterventionMain::GetSoundManager()
+  {
+    return *m_soundManager.get();
+  }
+
+  //----------------------------------------------------------------------------
   Rendering::ModelRenderer& HoloInterventionMain::GetModelRenderer()
   {
     return *m_modelRenderer.get();
@@ -479,6 +447,7 @@ namespace HoloIntervention
   //----------------------------------------------------------------------------
   void HoloInterventionMain::OnDeviceLost()
   {
+    m_meshRenderer->ReleaseDeviceDependentResources();
     m_spatialSystem->ReleaseDeviceDependentResources();
     m_modelRenderer->ReleaseDeviceDependentResources();
     m_sliceRenderer->ReleaseDeviceDependentResources();
@@ -488,6 +457,7 @@ namespace HoloIntervention
   //----------------------------------------------------------------------------
   void HoloInterventionMain::OnDeviceRestored()
   {
+    m_meshRenderer->CreateDeviceDependentResources();
     m_modelRenderer->CreateDeviceDependentResources();
     m_sliceRenderer->CreateDeviceDependentResources();
     m_notificationSystem->CreateDeviceDependentResources();
@@ -502,23 +472,15 @@ namespace HoloIntervention
     switch ( sender->Locatability )
     {
     case SpatialLocatability::Unavailable:
-      // Holograms cannot be rendered.
     {
       m_notificationSystem->QueueMessage( L"Warning! Positional tracking is unavailable." );
     }
     break;
 
-    // In the following three cases, it is still possible to place holograms using a
-    // SpatialLocatorAttachedFrameOfReference.
     case SpatialLocatability::PositionalTrackingActivating:
-    // The system is preparing to use positional tracking.
-
     case SpatialLocatability::OrientationOnly:
-    // Positional tracking has not been activated.
-
     case SpatialLocatability::PositionalTrackingInhibited:
-      // Positional tracking is temporarily inhibited. User action may be required
-      // in order to restore positional tracking.
+      // Gaze-locked content still valid
       break;
 
     case SpatialLocatability::PositionalTrackingActive:
@@ -564,43 +526,10 @@ namespace HoloIntervention
   {
     Input::VoiceInputCallbackMap callbacks;
 
-    callbacks[L"show cursor"] = [this]( SpeechRecognitionResult ^ result )
-    {
-      m_cursorSound->StartOnce();
-      m_gazeSystem->EnableCursor( true );
-      m_notificationSystem->QueueMessage( L"Cursor on." );
-    };
-
-    callbacks[L"hide cursor"] = [this]( SpeechRecognitionResult ^ result )
-    {
-      m_cursorSound->StartOnce();
-      m_gazeSystem->EnableCursor( false );
-      m_notificationSystem->QueueMessage( L"Cursor off." );
-    };
-
-    callbacks[L"connect"] = [this]( SpeechRecognitionResult ^ result )
-    {
-      m_cursorSound->StartOnce();
-      m_notificationSystem->QueueMessage( L"Connecting..." );
-      m_igtLinkIF->ConnectAsync( 4.0 ).then( [this]( bool result )
-      {
-        if ( result )
-        {
-          m_notificationSystem->QueueMessage( L"Connection successful." );
-        }
-        else
-        {
-          m_notificationSystem->QueueMessage( L"Connection failed." );
-        }
-      } );
-    };
-
-    callbacks[L"disconnect"] = [this]( SpeechRecognitionResult ^ result )
-    {
-      m_cursorSound->StartOnce();
-      m_notificationSystem->QueueMessage( L"Disconnected." );
-      m_igtLinkIF->Disconnect();
-    };
+    m_gazeSystem->RegisterVoiceCallbacks( callbacks );
+    m_igtLinkIF->RegisterVoiceCallbacks( callbacks );
+    m_spatialSystem->RegisterVoiceCallbacks( callbacks );
+    m_toolSystem->RegisterVoiceCallbacks( callbacks );
 
     callbacks[L"lock slice"] = [this]( SpeechRecognitionResult ^ result )
     {
@@ -614,23 +543,6 @@ namespace HoloIntervention
       m_cursorSound->StartOnce();
       m_notificationSystem->QueueMessage( L"Slice is now in world-space." );
       m_sliceRenderer->SetSliceHeadlocked( m_sliceToken, false );
-    };
-
-    callbacks[L"drop registration anchor"] = [this]( SpeechRecognitionResult ^ result )
-    {
-      m_cursorSound->StartOnce();
-      std::lock_guard<std::mutex> anchorLock( m_anchorMutex );
-      m_anchorRequested = true;
-    };
-
-    callbacks[L"remove registration anchor"] = [this]( SpeechRecognitionResult ^ result )
-    {
-      m_cursorSound->StartOnce();
-      std::lock_guard<std::mutex> anchorLock( m_anchorMutex );
-      if ( m_spatialSystem->RemoveAnchor( L"Registration" ) == 1 )
-      {
-        m_notificationSystem->QueueMessage( L"Anchor removed." );
-      }
     };
 
     /*

@@ -73,6 +73,16 @@ namespace HoloIntervention
       UpdateSurfaceObserverPosition( coordinateSystem );
 
       m_surfaceCollection->Update( coordinateSystem );
+
+      if ( m_anchorRequested )
+      {
+        std::lock_guard<std::mutex> anchorLock( m_anchorMutex );
+        if ( DropAnchorAtIntersectionHit( "Registration", coordinateSystem ) )
+        {
+          m_anchorRequested = false;
+          HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Anchor created." );
+        }
+      }
     }
 
     //----------------------------------------------------------------------------
@@ -324,6 +334,27 @@ namespace HoloIntervention
     size_t SpatialSystem::RemoveAnchor( Platform::String^ name )
     {
       return m_spatialAnchors.erase( name );
+    }
+
+    //----------------------------------------------------------------------------
+    void SpatialSystem::RegisterVoiceCallbacks( HoloIntervention::Input::VoiceInputCallbackMap& callbackMap )
+    {
+      callbackMap[L"drop registration anchor"] = [this]( SpeechRecognitionResult ^ result )
+      {
+        m_cursorSound->StartOnce();
+        std::lock_guard<std::mutex> anchorLock( m_anchorMutex );
+        m_anchorRequested = true;
+      };
+
+      callbackMap[L"remove registration anchor"] = [this]( SpeechRecognitionResult ^ result )
+      {
+        m_cursorSound->StartOnce();
+        std::lock_guard<std::mutex> anchorLock( m_anchorMutex );
+        if ( RemoveAnchor( L"Registration" ) == 1 )
+        {
+          HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Anchor removed." );
+        }
+      };
     }
   }
 }

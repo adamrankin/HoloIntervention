@@ -61,6 +61,9 @@ namespace HoloIntervention
     System::SpatialSystem & GetSpatialSystem();
     System::GazeSystem & GetGazeSystem();
 
+    // Provide app wide access to the sound manager
+    Sound::SoundManager & GetSoundManager();
+
     // Provide app wide access to the renderers
     Rendering::ModelRenderer & GetModelRenderer();
     Rendering::SliceRenderer & GetSliceRenderer();
@@ -92,7 +95,7 @@ namespace HoloIntervention
     Windows::Graphics::Holographic::HolographicSpace ^ m_holographicSpace = nullptr;
   };
 
-  AppView^ instance();
+  AppView ^ instance();
 
   // The entry point for the app.
   ref class AppViewSource sealed : Windows::ApplicationModel::Core::IFrameworkViewSource

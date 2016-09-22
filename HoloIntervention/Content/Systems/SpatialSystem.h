@@ -23,6 +23,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
+#include "ISystem.h"
 #include "SpatialSurfaceCollection.h"
 #include "StepTimer.h"
 
@@ -33,7 +34,7 @@ namespace HoloIntervention
 {
   namespace System
   {
-    class SpatialSystem
+    class SpatialSystem : public ISystem
     {
     public:
       SpatialSystem( const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer );
@@ -67,6 +68,9 @@ namespace HoloIntervention
       bool DropAnchorAtIntersectionHit( Platform::String^ anchorName, SpatialCoordinateSystem^ coordinateSystem );
       size_t RemoveAnchor( Platform::String^ anchorName );
 
+      // ISystem functions
+      virtual void RegisterVoiceCallbacks(HoloIntervention::Input::VoiceInputCallbackMap& callbackMap);
+
     protected:
       // Event registration tokens.
       Windows::Foundation::EventRegistrationToken                       m_surfaceObserverEventToken;
@@ -74,6 +78,10 @@ namespace HoloIntervention
       // Keep a reference to the device resources
       std::shared_ptr<DX::DeviceResources>                              m_deviceResources;
       DX::StepTimer&                                                    m_stepTimer;
+
+      // Anchor interaction variables
+      std::mutex                                                        m_anchorMutex;
+      bool                                                              m_anchorRequested = false;
 
       // Obtains spatial mapping data from the device in real time.
       SpatialSurfaceObserver^                                           m_surfaceObserver;

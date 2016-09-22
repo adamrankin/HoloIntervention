@@ -162,6 +162,12 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
+  HoloIntervention::Sound::SoundManager & AppView::GetSoundManager()
+  {
+    return m_main->GetSoundManager();
+  }
+
+  //----------------------------------------------------------------------------
   Rendering::ModelRenderer& AppView::GetModelRenderer()
   {
     return m_main->GetModelRenderer();

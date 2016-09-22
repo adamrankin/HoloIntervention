@@ -23,19 +23,24 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-// Common Includes
-#include "StepTimer.h"
+// Local includes
+#include "ISystem.h"
 
 // Model includes
 #include "ModelEntry.h"
 
 using namespace Windows::Foundation::Numerics;
 
+namespace DX
+{
+  class StepTimer;
+}
+
 namespace HoloIntervention
 {
   namespace System
   {
-    class GazeSystem
+    class GazeSystem : public ISystem
     {
     public:
       GazeSystem();
@@ -48,6 +53,9 @@ namespace HoloIntervention
 
       const float3& GetHitPosition() const;
       const float3& GetHitNormal() const;
+
+      // ISystem functions
+      virtual void RegisterVoiceCallbacks(HoloIntervention::Input::VoiceInputCallbackMap& callbackMap);
 
     protected:
       std::shared_ptr<Rendering::ModelEntry>    m_modelEntry;

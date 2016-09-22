@@ -316,6 +316,11 @@ namespace HoloIntervention
     {
       m_worldToBoxTransformComputed = false;
 
+      if (m_surfaceMesh == nullptr)
+      {
+        return;
+      }
+
       Platform::IBox<SpatialBoundingOrientedBox>^ bounds = m_surfaceMesh->SurfaceInfo->TryGetBounds( baseCoordinateSystem );
 
       if ( bounds != nullptr )

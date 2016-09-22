@@ -27,11 +27,15 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "Common.h"
 #include "GazeSystem.h"
 
+// Common includes
+#include "StepTimer.h"
+
 // Rendering includes
 #include "ModelRenderer.h"
 
 // System includes
 #include "SpatialSystem.h"
+#include "NotificationSystem.h"
 
 using namespace Windows::Foundation::Numerics;
 
@@ -114,6 +118,24 @@ namespace HoloIntervention
     const Windows::Foundation::Numerics::float3& GazeSystem::GetHitNormal() const
     {
       return m_lastHitNormal;
+    }
+
+    //----------------------------------------------------------------------------
+    void GazeSystem::RegisterVoiceCallbacks(HoloIntervention::Input::VoiceInputCallbackMap& callbackMap)
+    {
+      callbackMap[L"show cursor"] = [this](SpeechRecognitionResult ^ result)
+      {
+        m_cursorSound->StartOnce();
+        this->EnableCursor(true);
+        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Cursor on.");
+      };
+
+      callbackMap[L"hide cursor"] = [this](SpeechRecognitionResult ^ result)
+      {
+        m_cursorSound->StartOnce();
+        this->EnableCursor(false);
+        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Cursor off.");
+      };
     }
   }
 }

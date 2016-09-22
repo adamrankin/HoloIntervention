@@ -11,6 +11,11 @@
 
 #include "pch.h"
 #include "CardioidSound.h"
+
+// XAudio2 includes
+#include <xapo.h>
+
+// WinRT includes
 #include <wrl.h>
 
 using namespace Microsoft::WRL;
@@ -19,17 +24,18 @@ namespace HoloIntervention
 {
   namespace Sound
   {
+    //----------------------------------------------------------------------------
     _Use_decl_annotations_
-    task<HRESULT> CardioidSound::InitializeAsync( LPCWSTR filename )
+    task<HRESULT> CardioidSound::InitializeAsync( ComPtr<IXAudio2> xaudio2, IXAudio2SubmixVoice* parentVoice, const std::wstring& filename )
     {
-      return create_task( [=]()->HRESULT
+      return create_task( [ = ]()->HRESULT
       {
-        auto initTask = _audioFile.InitializeAsync( filename );
+        auto initTask = m_audioFile.InitializeAsync( filename );
         auto hr = initTask.get();
 
-        if (FAILED(hr))
+        if ( FAILED( hr ) )
         {
-          throw Platform::Exception::CreateException(hr);
+          throw Platform::Exception::CreateException( hr );
         }
 
         if ( SUCCEEDED( hr ) )
@@ -39,35 +45,31 @@ namespace HoloIntervention
           // Any direct path signal outside of the directivity region will be attenuated based on the scaling factor.
           // For example, if scaling is set to 1 (fully directional) the direct path signal outside of the directivity
           // region will be fully attenuated and only the reflections from the environment will be audible.
-          hr = ConfigureApo( 1.0f, 4.0f );
+          hr = ConfigureApo( xaudio2, parentVoice, 1.0f, 4.0f );
         }
         return hr;
       } );
     }
 
+    //----------------------------------------------------------------------------
     CardioidSound::~CardioidSound()
     {
-      if ( _sourceVoice )
-      {
-        _sourceVoice->DestroyVoice();
-      }
+      m_sourceVoice->DestroyVoice();
+      m_submixVoice->DestroyVoice();
+      m_callBack = nullptr;
+      m_hrtfParams = nullptr;
     }
 
+    //----------------------------------------------------------------------------
     _Use_decl_annotations_
-    HRESULT CardioidSound::ConfigureApo( float scaling, float order )
+    HRESULT CardioidSound::ConfigureApo( ComPtr<IXAudio2> xaudio2, IXAudio2SubmixVoice* parentVoice, float scaling, float order )
     {
-      // Directivity is specified at xAPO instance initialization and cannot be changed per frame.
-      // To change directivity, we'll need to stop audio processing and reinitialize another APO instance with the new directivity.
-      if ( _xaudio2 )
+      if ( m_hrtfParams )
       {
-        _xaudio2->StopEngine();
-        _xaudio2.Reset();
+        m_hrtfParams = nullptr;
       }
 
-      if ( _hrtfParams )
-      {
-        _hrtfParams.Reset();
-      }
+      m_callBack = std::make_shared<VoiceCallback<CardioidSound>>( *this );
 
       // Cardioid directivity configuration
       HrtfDirectivityCardioid cardioid;
@@ -75,7 +77,7 @@ namespace HoloIntervention
       cardioid.directivity.scaling = scaling;
       cardioid.order = order;
 
-      // APO intialization
+      // APO initialization
       HrtfApoInit apoInit;
       apoInit.directivity = &cardioid.directivity;
       apoInit.distanceDecay = nullptr;                // This specifies natural distance decay behavior (simulates real world)
@@ -84,79 +86,121 @@ namespace HoloIntervention
       ComPtr<IXAPO> xapo;
       auto hr = CreateHrtfApo( &apoInit, &xapo );
 
-      if ( SUCCEEDED( hr ) )
+      if ( FAILED( hr ) )
       {
-        hr = xapo.As( &_hrtfParams );
+        throw Platform::Exception::CreateException( hr );
       }
 
+      hr = xapo.As( &m_hrtfParams );
+
+      if ( FAILED( hr ) )
+      {
+        throw Platform::Exception::CreateException( hr );
+      }
       // Set the initial environment.
       // Environment settings configure the "distance cues" used to compute the early and late reverberations.
-      if ( SUCCEEDED( hr ) )
+      hr = m_hrtfParams->SetEnvironment( m_environment );
+
+      if ( FAILED( hr ) )
       {
-        hr = _hrtfParams->SetEnvironment( _environment );
+        throw Platform::Exception::CreateException( hr );
       }
 
-      // Initialize an XAudio2 graph that hosts the HRTF xAPO.
-      // The source voice is used to submit audio data and control playback.
-      if ( SUCCEEDED( hr ) )
+      // Create a source voice to accept audio data in the specified format.
+      hr = xaudio2->CreateSourceVoice( &m_sourceVoice, m_audioFile.GetFormat(), 0, XAUDIO2_DEFAULT_FREQ_RATIO, m_callBack.get() );
+
+      if ( FAILED( hr ) )
       {
-        hr = SetupXAudio2( _audioFile.GetFormat(), xapo.Get(), &_xaudio2, &_sourceVoice );
+        throw Platform::Exception::CreateException( hr );
       }
 
-      // Submit audio data to the source voice
-      if ( SUCCEEDED( hr ) )
+      // Create a submix voice that will host the xAPO.
+      XAUDIO2_EFFECT_DESCRIPTOR fxDesc{};
+      fxDesc.InitialState = TRUE;
+      fxDesc.OutputChannels = 2;          // Stereo output
+      fxDesc.pEffect = xapo.Get();              // HRTF xAPO set as the effect.
+
+      XAUDIO2_EFFECT_CHAIN fxChain{};
+      fxChain.EffectCount = 1;
+      fxChain.pEffectDescriptors = &fxDesc;
+
+      XAUDIO2_VOICE_SENDS sends = {};
+      XAUDIO2_SEND_DESCRIPTOR sendDesc = {};
+      sendDesc.pOutputVoice = parentVoice;
+      sends.SendCount = 1;
+      sends.pSends = &sendDesc;
+
+      // HRTF APO expects mono 48kHz input, so we configure the submix voice for that format.
+      hr = xaudio2->CreateSubmixVoice( &m_submixVoice, 1, 48000, 0, 0, &sends, nullptr );
+
+      if ( FAILED( hr ) )
       {
-        XAUDIO2_BUFFER buffer{};
-        buffer.AudioBytes = static_cast<UINT32>( _audioFile.GetSize() );
-        buffer.pAudioData = _audioFile.GetData();
-        buffer.LoopCount = XAUDIO2_LOOP_INFINITE;
-        hr = _sourceVoice->SubmitSourceBuffer( &buffer );
+        throw Platform::Exception::CreateException( hr );
+      }
+
+      // Route the source voice to the submix voice.
+      // The complete graph pipeline looks like this -
+      // Source Voice -> Submix Voice (HRTF xAPO) -> Mastering Voice
+      sends = {};
+      sendDesc = {};
+      sendDesc.pOutputVoice = m_submixVoice;
+      sends.SendCount = 1;
+      sends.pSends = &sendDesc;
+      hr = m_sourceVoice->SetOutputVoices( &sends );
+
+      if ( FAILED( hr ) )
+      {
+        throw Platform::Exception::CreateException( hr );
       }
 
       return hr;
     }
 
+    //----------------------------------------------------------------------------
     HRESULT CardioidSound::Start()
     {
-      return _sourceVoice->Start();
+      return m_sourceVoice->Start();
     }
 
+    //----------------------------------------------------------------------------
     HRESULT CardioidSound::Stop()
     {
-      return _sourceVoice->Stop();
+      return m_sourceVoice->Stop();
     }
 
+    //----------------------------------------------------------------------------
     _Use_decl_annotations_
     HRESULT CardioidSound::SetEnvironment( HrtfEnvironment environment )
     {
       // Environment can be changed at any time.
-      return _hrtfParams->SetEnvironment( environment );
+      return m_hrtfParams->SetEnvironment( environment );
     }
 
-    //
-    // This method is called on every dispatcher timer tick.
-    // Source position is provided in right-handed coordinate system and
-    // source orientation as Yaw, Pitch, Roll in radians. This information
-    // is relative to the listener's head (listener is always at {0, 0, 0}).
-    //
+    //----------------------------------------------------------------------------
+    HrtfEnvironment CardioidSound::GetEnvironment()
+    {
+      return m_environment;
+    }
+
+    //----------------------------------------------------------------------------
     _Use_decl_annotations_
     HRESULT CardioidSound::OnUpdate( float x, float y, float z, float pitch, float yaw, float roll )
     {
       auto hr = S_OK;
-      if ( _hrtfParams )
+      if ( m_hrtfParams )
       {
         auto position = HrtfPosition{ x, y, z };
-        hr = _hrtfParams->SetSourcePosition( &position );
+        hr = m_hrtfParams->SetSourcePosition( &position );
         if ( SUCCEEDED( hr ) )
         {
           auto sourceOrientation = OrientationFromAngles( pitch, yaw, roll );
-          hr = _hrtfParams->SetSourceOrientation( &sourceOrientation );
+          hr = m_hrtfParams->SetSourceOrientation( &sourceOrientation );
         }
       }
       return hr;
     }
 
-    // Helper to translate from pitch, yaw, roll to the rotation matrix.
+    //----------------------------------------------------------------------------
     _Use_decl_annotations_
     HrtfOrientation CardioidSound::OrientationFromAngles( float pitch, float yaw, float roll )
     {

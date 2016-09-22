@@ -27,6 +27,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "Common.h"
 #include "NotificationSystem.h"
 
+// Common includes
+#include "DeviceResources.h"
+#include "StepTimer.h"
+
 using namespace Windows::Foundation::Numerics;
 
 namespace HoloIntervention
@@ -295,6 +299,12 @@ namespace HoloIntervention
     std::unique_ptr<Rendering::NotificationRenderer>& NotificationSystem::GetRenderer()
     {
       return m_notificationRenderer;
+    }
+
+    //----------------------------------------------------------------------------
+    void NotificationSystem::RegisterVoiceCallbacks(HoloIntervention::Input::VoiceInputCallbackMap& callbackMap)
+    {
+
     }
 
     //----------------------------------------------------------------------------

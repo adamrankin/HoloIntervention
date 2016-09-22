@@ -22,7 +22,7 @@ namespace HoloIntervention
   namespace Sound
   {
     _Use_decl_annotations_
-    task<HRESULT> AudioFileReader::InitializeAsync( LPCWSTR filename )
+    task<HRESULT> AudioFileReader::InitializeAsync( const std::wstring& filename )
     {
       return create_task( [=]() -> HRESULT
       {
@@ -33,7 +33,7 @@ namespace HoloIntervention
         ComPtr<IMFSourceReader> reader;
         if ( SUCCEEDED( hr ) )
         {
-          hr = MFCreateSourceReaderFromURL( filename, nullptr, &reader );
+          hr = MFCreateSourceReaderFromURL( filename.c_str(), nullptr, &reader );
         }
 
         // Select the first audio stream, and deselect all other streams.

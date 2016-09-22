@@ -27,7 +27,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "AudioFileReader.h"
 #include "StepTimer.h"
 #include "VoiceCallback.h"
-#include "XAudio2Helpers.h"
 
 // WinRT includes
 #include <hrtfapoapi.h>
@@ -48,25 +47,33 @@ namespace HoloIntervention
     class OmnidirectionalSound
     {
     public:
+      OmnidirectionalSound( AudioFileReader& audioFile );
       virtual ~OmnidirectionalSound();
-      task<HRESULT> InitializeAsync( _In_ LPCWSTR filename );
+      task<HRESULT> InitializeAsync( _In_ ComPtr<IXAudio2> xaudio2, IXAudio2SubmixVoice* parentVoice, _In_ const std::wstring& assetName );
 
       HRESULT Start();
       HRESULT StartOnce();
       HRESULT Stop();
-      void Update( const DX::StepTimer& timer );
+      void Update( const DX::StepTimer& timer, float angularVelocity, float height, float radius );
       HRESULT SetEnvironment( _In_ HrtfEnvironment environment );
       HrtfEnvironment GetEnvironment();
 
+      bool IsFinished() const;
+
     protected:
-      std::shared_ptr<VoiceCallback>          m_callBack = nullptr;
-      AudioFileReader                         m_audioFile;
-      ComPtr<IXAudio2>                        m_xaudio2;
-      std::map<IXAudio2SourceVoice*, bool>    m_sourceVoices;
-      ComPtr<IXAPOHrtfParameters>             m_hrtfParams;
-      HrtfEnvironment                         m_environment = HrtfEnvironment::Outdoors;
-      std::mutex                              m_voiceMutex;
-      bool                                    m_resourcesLoaded = false;
+      HrtfPosition ComputePositionInOrbit( _In_ float height, _In_ float radius, _In_ float angle );
+
+    protected:
+      std::shared_ptr<VoiceCallback<OmnidirectionalSound>>    m_callBack = nullptr;
+      AudioFileReader&                                        m_audioFile;
+      IXAudio2SourceVoice*                                    m_sourceVoice;
+      ComPtr<IXAPOHrtfParameters>                             m_hrtfParams;
+      HrtfEnvironment                                         m_environment = HrtfEnvironment::Medium;
+
+      ULONGLONG                                               m_lastTick = 0;
+      float                                                   m_angle = 0;
+      bool                                                    m_isFinished = false;
+      bool                                                    m_resourcesLoaded = false;
     };
   }
 }

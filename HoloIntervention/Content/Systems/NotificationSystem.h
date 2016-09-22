@@ -23,9 +23,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-// Common Includes
-#include "DeviceResources.h"
-#include "StepTimer.h"
+// Local includes
+#include "ISystem.h"
 
 // Rendering includes
 #include "NotificationRenderer.h"
@@ -33,11 +32,17 @@ OTHER DEALINGS IN THE SOFTWARE.
 // STD includes
 #include <deque>
 
+namespace DX
+{
+  class DeviceResources;
+  class StepTimer;
+}
+
 namespace HoloIntervention
 {
   namespace System
   {
-    class NotificationSystem
+    class NotificationSystem : public ISystem
     {
       enum AnimationState
       {
@@ -78,6 +83,9 @@ namespace HoloIntervention
       void SetPose(SpatialPointerPose^ pointerPose);
 
       std::unique_ptr<Rendering::NotificationRenderer>& GetRenderer();
+
+      // ISystem functions
+      virtual void RegisterVoiceCallbacks(HoloIntervention::Input::VoiceInputCallbackMap& callbackMap);
 
     protected:
       void UpdateHologramPosition(SpatialPointerPose^ pointerPose, const DX::StepTimer& timer);

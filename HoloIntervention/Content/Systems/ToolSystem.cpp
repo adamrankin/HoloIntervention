@@ -143,6 +143,12 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    void ToolSystem::RegisterVoiceCallbacks(HoloIntervention::Input::VoiceInputCallbackMap& callbackMap)
+    {
+
+    }
+
+    //----------------------------------------------------------------------------
     concurrency::task<void> ToolSystem::InitAsync( XmlDocument^ doc )
     {
       return create_task( [ = ]()

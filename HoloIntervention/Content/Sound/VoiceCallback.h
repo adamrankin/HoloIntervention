@@ -31,12 +31,11 @@ namespace HoloIntervention
 {
   namespace Sound
   {
-    class OmnidirectionalSound;
-
+    template<class T>
     class VoiceCallback : public IXAudio2VoiceCallback
     {
     public:
-      VoiceCallback( OmnidirectionalSound& sound );
+      VoiceCallback( T& sound );
       ~VoiceCallback();
 
       virtual void STDMETHODCALLTYPE OnStreamEnd();
@@ -48,7 +47,72 @@ namespace HoloIntervention
       virtual void STDMETHODCALLTYPE OnVoiceError( void* pBufferContext, HRESULT Error );
 
     private:
-      OmnidirectionalSound* m_sound;
+      T& m_sound;
     };
+
+    //----------------------------------------------------------------------------
+    template<class T>
+    void STDMETHODCALLTYPE HoloIntervention::Sound::VoiceCallback<T>::OnVoiceError(void* pBufferContext, HRESULT Error)
+    {
+
+    }
+
+    //----------------------------------------------------------------------------
+    template<class T>
+    void STDMETHODCALLTYPE HoloIntervention::Sound::VoiceCallback<T>::OnLoopEnd(void* pBufferContext)
+    {
+
+    }
+
+    //----------------------------------------------------------------------------
+    template<class T>
+    void STDMETHODCALLTYPE HoloIntervention::Sound::VoiceCallback<T>::OnBufferStart(void* pBufferContext)
+    {
+
+    }
+
+    //----------------------------------------------------------------------------
+    template<class T>
+    void STDMETHODCALLTYPE HoloIntervention::Sound::VoiceCallback<T>::OnBufferEnd(void* pBufferContext)
+    {
+
+    }
+
+    //----------------------------------------------------------------------------
+    template<class T>
+    void STDMETHODCALLTYPE HoloIntervention::Sound::VoiceCallback<T>::OnVoiceProcessingPassStart(UINT32 SamplesRequired)
+    {
+
+    }
+
+    //----------------------------------------------------------------------------
+    template<class T>
+    void STDMETHODCALLTYPE HoloIntervention::Sound::VoiceCallback<T>::OnVoiceProcessingPassEnd()
+    {
+
+    }
+
+    //----------------------------------------------------------------------------
+    template<class T>
+    void STDMETHODCALLTYPE HoloIntervention::Sound::VoiceCallback<T>::OnStreamEnd()
+    {
+
+    }
+
+    //----------------------------------------------------------------------------
+    template<class T>
+    HoloIntervention::Sound::VoiceCallback<T>::~VoiceCallback()
+    {
+
+    }
+
+    //----------------------------------------------------------------------------
+    template<class T>
+    HoloIntervention::Sound::VoiceCallback<T>::VoiceCallback( T& sound )
+      : m_sound( sound )
+    {
+
+    }
+
   }
 }

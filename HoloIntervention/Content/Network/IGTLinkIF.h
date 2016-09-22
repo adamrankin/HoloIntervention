@@ -23,6 +23,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
+// Local includes
+#include "ISystem.h"
+
 // Windows includes
 #include <ppltasks.h>
 
@@ -36,7 +39,7 @@ namespace HoloIntervention
 {
   namespace Network
   {
-    class IGTLinkIF
+    class IGTLinkIF : public System::ISystem
     {
     public:
       IGTLinkIF();
@@ -69,6 +72,9 @@ namespace HoloIntervention
 
       /// Retrieve the latest command
       bool GetLatestCommand(UWPOpenIGTLink::Command^ cmd);
+
+      /// ISystem functions
+      void RegisterVoiceCallbacks(HoloIntervention::Input::VoiceInputCallbackMap& callbackMap);
 
     public:
       // Static helper functions

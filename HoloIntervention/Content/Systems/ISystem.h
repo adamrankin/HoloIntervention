@@ -23,37 +23,17 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-// Local includes
-#include "ISystem.h"
-#include "ToolEntry.h"
+#include "VoiceInputHandler.h"
 
 namespace HoloIntervention
 {
-  class TransformName;
-
   namespace System
   {
-    class ToolSystem : public ISystem
+    class ISystem
     {
     public:
-      ToolSystem();
-      ~ToolSystem();
-
-      uint64 RegisterTool( const std::wstring& modelName, UWPOpenIGTLink::TransformName^ coordinateFrame );
-      void UnregisterTool( uint64 toolToken );
-      void ClearTools();
-
-      void Update( const DX::StepTimer& timer, UWPOpenIGTLink::TrackedFrame^ frame );
-
-      // ISystem functions
-      virtual void RegisterVoiceCallbacks(HoloIntervention::Input::VoiceInputCallbackMap& callbackMap);
-
-    protected:
-      concurrency::task<void> InitAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
-
-    protected:
-      std::vector<std::shared_ptr<Tools::ToolEntry>>   m_toolEntries;
-      UWPOpenIGTLink::TransformRepository^      m_transformRepository;
+      virtual void RegisterVoiceCallbacks( HoloIntervention::Input::VoiceInputCallbackMap& callbackMap ) = 0;
+      virtual ~ISystem() {};
     };
   }
 }

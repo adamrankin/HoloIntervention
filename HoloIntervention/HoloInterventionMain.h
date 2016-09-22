@@ -68,7 +68,7 @@ namespace HoloIntervention
 
   namespace Sound
   {
-    class OmnidirectionalSound;
+    class SoundManager;
   }
 
   // Updates, renders, and presents holographic content using Direct3D.
@@ -100,6 +100,9 @@ namespace HoloIntervention
     System::SpatialSystem& GetSpatialSystem();
     System::GazeSystem& GetGazeSystem();
 
+    // Provide access to the sound manager
+    Sound::SoundManager& GetSoundManager();
+
     // Provide access to the renderers
     Rendering::ModelRenderer& GetModelRenderer();
     Rendering::SliceRenderer& GetSliceRenderer();
@@ -126,9 +129,6 @@ namespace HoloIntervention
     // and when tearing down AppMain.
     void UnregisterHolographicEventHandlers();
 
-    // Initialize audio assets
-    Concurrency::task<void> InitializeAudioAssetsAsync();
-
     // Check for any voice input commands
     void InitializeVoiceSystem();
 
@@ -143,10 +143,6 @@ namespace HoloIntervention
 
     // Mesh rendering control
     bool                                                  m_meshRendererEnabled = false;
-
-    // Anchor interaction variables
-    std::mutex                                            m_anchorMutex;
-    bool                                                  m_anchorRequested = false;
 
     // Tokens
     uint32                                                m_sliceToken;
@@ -195,6 +191,6 @@ namespace HoloIntervention
     std::unique_ptr<System::NotificationSystem>           m_notificationSystem;
 
     // Sound assets
-    std::unique_ptr<Sound::OmnidirectionalSound>          m_cursorSound;
+    std::unique_ptr<Sound::SoundManager>                  m_soundManager;
   };
 }

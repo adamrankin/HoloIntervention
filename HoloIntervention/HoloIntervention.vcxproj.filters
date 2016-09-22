@@ -26,9 +26,6 @@
     <ClCompile Include="pch.cpp">
       <Filter>Infrastructure</Filter>
     </ClCompile>
-    <ClCompile Include="Content\Sound\VoiceCallback.cpp">
-      <Filter>Content\Sound</Filter>
-    </ClCompile>
     <ClCompile Include="Content\SpatialMapping\SurfaceMesh.cpp">
       <Filter>Content\SpatialMapping</Filter>
     </ClCompile>
@@ -92,7 +89,12 @@
     <ClCompile Include="Content\Rendering\SpatialMesh.cpp">
       <Filter>Content\Rendering\SpatialMeshRenderer</Filter>
     </ClCompile>
-    <ClCompile Include="Content\Rendering\DirectXTK\InstancedGeometricPrimitive.cpp" />
+    <ClCompile Include="Content\Sound\SoundManager.cpp">
+      <Filter>Content\Sound</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Rendering\DirectXTK\InstancedGeometricPrimitive.cpp">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="HoloInterventionMain.h" />
@@ -118,9 +120,6 @@
       <Filter>Content\Sound</Filter>
     </ClInclude>
     <ClInclude Include="Content\Sound\AudioFileReader.h">
-      <Filter>Content\Sound</Filter>
-    </ClInclude>
-    <ClInclude Include="Content\Sound\XAudio2Helpers.h">
       <Filter>Content\Sound</Filter>
     </ClInclude>
     <ClInclude Include="AppView.h">
@@ -198,7 +197,15 @@
     <ClInclude Include="Content\Rendering\SpatialMesh.h">
       <Filter>Content\Rendering\SpatialMeshRenderer</Filter>
     </ClInclude>
-    <ClInclude Include="Content\Rendering\DirectXTK\InstancedGeometricPrimitive.h" />
+    <ClInclude Include="Content\Systems\ISystem.h">
+      <Filter>Content\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Sound\SoundManager.h">
+      <Filter>Content\Sound</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Rendering\DirectXTK\InstancedGeometricPrimitive.h">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\LockScreenLogo.scale-200.png">

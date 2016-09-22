@@ -27,7 +27,7 @@ namespace HoloIntervention
     {
     public:
       virtual ~AudioFileReader() {}
-      task<HRESULT> InitializeAsync( _In_ LPCWSTR filename );
+      task<HRESULT> InitializeAsync( _In_ const std::wstring& filename );
 
       const WAVEFORMATEX* GetFormat() const
       {
