@@ -197,14 +197,14 @@
     <ClInclude Include="Content\Rendering\SpatialMesh.h">
       <Filter>Content\Rendering\SpatialMeshRenderer</Filter>
     </ClInclude>
-    <ClInclude Include="Content\Systems\ISystem.h">
-      <Filter>Content\Systems</Filter>
-    </ClInclude>
     <ClInclude Include="Content\Sound\SoundManager.h">
       <Filter>Content\Sound</Filter>
     </ClInclude>
     <ClInclude Include="Content\Rendering\DirectXTK\InstancedGeometricPrimitive.h">
       <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Sound\ISystem.h">
+      <Filter>Content\Sound</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

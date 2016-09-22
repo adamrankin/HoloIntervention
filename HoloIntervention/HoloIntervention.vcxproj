@@ -115,13 +115,13 @@
     <ClInclude Include="Content\Rendering\TextRenderer.h" />
     <ClInclude Include="Content\Sound\AudioFileReader.h" />
     <ClInclude Include="Content\Sound\CardioidSound.h" />
+    <ClInclude Include="Content\Sound\ISystem.h" />
     <ClInclude Include="Content\Sound\OmnidirectionalSound.h" />
     <ClInclude Include="Content\Sound\SoundManager.h" />
     <ClInclude Include="Content\Sound\VoiceCallback.h" />
     <ClInclude Include="Content\SpatialMapping\SpatialSurfaceCollection.h" />
     <ClInclude Include="Content\SpatialMapping\SurfaceMesh.h" />
     <ClInclude Include="Content\Systems\GazeSystem.h" />
-    <ClInclude Include="Content\Systems\ISystem.h" />
     <ClInclude Include="Content\Systems\NotificationSystem.h" />
     <ClInclude Include="Content\Systems\SpatialSystem.h" />
     <ClInclude Include="Content\Systems\ToolEntry.h" />
