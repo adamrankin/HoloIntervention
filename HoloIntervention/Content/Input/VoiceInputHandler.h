@@ -28,22 +28,23 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <map>
 #include <string>
 
+// Sound includes
+#include "IVoiceInput.h"
+
+using namespace Concurrency;
 using namespace Windows::Media::SpeechRecognition;
 
 namespace HoloIntervention
 {
   namespace Input
   {
-    // command, function
-    typedef std::map<std::wstring, std::function<void(SpeechRecognitionResult^ result)>> VoiceInputCallbackMap;
-
     class VoiceInputHandler
     {
     public:
       VoiceInputHandler();
       ~VoiceInputHandler();
 
-      void RegisterCallbacks( VoiceInputCallbackMap& callbacks );
+      task<bool> CompileCallbacks( HoloIntervention::Sound::VoiceInputCallbackMap& callbacks );
 
     protected:
       void OnResultGenerated( SpeechContinuousRecognitionSession^ sender, SpeechContinuousRecognitionResultGeneratedEventArgs^ args );
@@ -56,7 +57,7 @@ namespace HoloIntervention
       SpeechRecognizer^                                     m_speechRecognizer;
 
       // Store the command related details
-      VoiceInputCallbackMap                                 m_callbacks;
+      HoloIntervention::Sound::VoiceInputCallbackMap        m_callbacks;
 
       // Event registration token.
       Windows::Foundation::EventRegistrationToken           m_speechDetectedEventToken;

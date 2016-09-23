@@ -40,6 +40,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 // DirectX includes
 #include <d3d11.h>
 
+// Sound includes
+#include "IVoiceInput.h"
+
 using namespace Concurrency;
 using namespace DirectX;
 using namespace Microsoft::WRL;
@@ -51,7 +54,7 @@ namespace HoloIntervention
 {
   namespace Rendering
   {
-    class SliceRenderer
+    class SliceRenderer : public Sound::IVoiceInput
     {
       // list instead of vector so that erase does not require copy constructor
       typedef std::list<std::shared_ptr<SliceEntry>> SliceList;
@@ -87,6 +90,9 @@ namespace HoloIntervention
 
       void Update( SpatialPointerPose^ pose, const DX::StepTimer& timer );
       void Render();
+
+      // IVoiceInput
+      virtual void RegisterVoiceCallbacks( HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap, void* userArg );
 
     protected:
       bool FindSlice( uint32 sliceId, std::shared_ptr<SliceEntry>& sliceEntry );

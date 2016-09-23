@@ -141,9 +141,6 @@ namespace HoloIntervention
     std::unique_ptr<Rendering::SliceRenderer>             m_sliceRenderer;
     std::unique_ptr<Rendering::SpatialMeshRenderer>       m_meshRenderer;
 
-    // Mesh rendering control
-    bool                                                  m_meshRendererEnabled = false;
-
     // Tokens
     uint32                                                m_sliceToken;
 

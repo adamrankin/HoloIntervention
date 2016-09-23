@@ -23,6 +23,9 @@
 // WinRT includes
 #include <ppltasks.h>
 
+// Sound includes
+#include "IVoiceInput.h"
+
 using namespace Windows::Foundation::Collections;
 using namespace Windows::Perception::Spatial;
 
@@ -30,7 +33,7 @@ namespace HoloIntervention
 {
   namespace Rendering
   {
-    class SpatialMeshRenderer
+    class SpatialMeshRenderer : public Sound::IVoiceInput
     {
       typedef std::map<Platform::Guid, SpatialMesh> MeshMap;
 
@@ -39,6 +42,9 @@ namespace HoloIntervention
 
       void Update( DX::ViewProjection& vp, DX::StepTimer const& timer, SpatialCoordinateSystem^ coordinateSystem );
       void Render();
+
+      void SetEnabled(bool arg);
+      bool GetEnabled() const;
 
       bool HasSurface( Platform::Guid id );
       void AddSurface( Platform::Guid id, Surfaces::SpatialSurfaceInfo^ newSurface );
@@ -53,17 +59,20 @@ namespace HoloIntervention
       void CreateDeviceDependentResources();
       void ReleaseDeviceDependentResources();
 
-      void DebugDrawBoundingBox(int32_t index);
-      void DebugDrawBoundingBoxes(bool draw);
+      void DebugDrawBoundingBox( int32_t index );
+      void DebugDrawBoundingBoxes( bool draw );
       void DebugLoopThroughMeshes();
 
       void Reset();
+
+      // IVoiceInput functions
+      virtual void RegisterVoiceCallbacks( HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap, void* userArg );
 
     protected:
       void InitObserver( SpatialCoordinateSystem^ coordinateSystem );
       void RequestAccessAsync( SpatialCoordinateSystem^ coordinateSystem );
       Concurrency::task<void> AddOrUpdateSurfaceAsync( Platform::Guid id, Surfaces::SpatialSurfaceInfo^ newSurface );
-      void OnSurfacesChanged(Windows::Perception::Spatial::Surfaces::SpatialSurfaceObserver^ sender, Platform::Object^ args);
+      void OnSurfacesChanged( Windows::Perception::Spatial::Surfaces::SpatialSurfaceObserver^ sender, Platform::Object^ args );
 
     protected:
       // Cached pointer to device resources.
@@ -75,6 +84,9 @@ namespace HoloIntervention
       Microsoft::WRL::ComPtr<ID3D11GeometryShader>    m_geometryShader;
       Microsoft::WRL::ComPtr<ID3D11PixelShader>       m_lightingPixelShader;
       Microsoft::WRL::ComPtr<ID3D11PixelShader>       m_colorPixelShader;
+
+      // Control variables
+      bool                                            m_renderEnabled = true;
 
       // Looping related variables
       bool                                            m_isLooping;
@@ -106,20 +118,20 @@ namespace HoloIntervention
       Microsoft::WRL::ComPtr<ID3D11RasterizerState>   m_wireframeRasterizerState;
 
       // Event tokens
-      Windows::Foundation::EventRegistrationToken                         m_surfacesChangedToken;
+      Windows::Foundation::EventRegistrationToken     m_surfacesChangedToken;
 
       // Indicates whether access to spatial mapping data has been granted.
-      bool                                                                m_surfaceAccessAllowed = false;
+      bool                                            m_surfaceAccessAllowed = false;
 
       // Indicates whether the surface observer initialization process was started.
-      bool                                                                m_spatialPerceptionAccessRequested = false;
+      bool                                            m_spatialPerceptionAccessRequested = false;
 
       // Obtains spatial mapping data from the device in real time.
-      Surfaces::SpatialSurfaceObserver^                                   m_surfaceObserver;
-      Surfaces::SpatialSurfaceMeshOptions^                                m_surfaceMeshOptions;
+      Surfaces::SpatialSurfaceObserver^               m_surfaceObserver;
+      Surfaces::SpatialSurfaceMeshOptions^            m_surfaceMeshOptions;
 
       // Determines the rendering mode.
-      bool                                                                m_drawWireframe = true;
+      bool                                            m_drawWireframe = true;
 
       // The duration of time, in seconds, a mesh is allowed to remain inactive before deletion.
       const float                                     c_maxInactiveMeshTime = 120.f;

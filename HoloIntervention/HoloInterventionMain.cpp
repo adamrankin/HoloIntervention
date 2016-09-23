@@ -226,14 +226,11 @@ namespace HoloIntervention
       if ( pose != nullptr )
       {
         m_gazeSystem->Update( m_timer, currentCoordinateSystem, pose );
-        m_soundManager->Update( m_timer, 1.f, pose->Head->Position.z, 1.f ); // TODO : what are other items?
+        m_soundManager->Update( m_timer, currentCoordinateSystem );
         m_sliceRenderer->Update( pose, m_timer );
       }
 
-      if ( m_meshRendererEnabled )
-      {
-        m_meshRenderer->Update( vp, m_timer, currentCoordinateSystem );
-      }
+      m_meshRenderer->Update( vp, m_timer, currentCoordinateSystem );
 
       if ( pose != nullptr )
       {
@@ -371,10 +368,7 @@ namespace HoloIntervention
         {
           m_modelRenderer->Render();
           m_sliceRenderer->Render();
-          if ( m_meshRendererEnabled )
-          {
-            m_meshRenderer->Render();
-          }
+          m_meshRenderer->Render();
         }
 
         // Only render world-locked content when positional tracking is active.
@@ -524,78 +518,16 @@ namespace HoloIntervention
   //----------------------------------------------------------------------------
   void HoloInterventionMain::InitializeVoiceSystem()
   {
-    Input::VoiceInputCallbackMap callbacks;
+    Sound::VoiceInputCallbackMap callbacks;
 
-    m_gazeSystem->RegisterVoiceCallbacks( callbacks );
-    m_igtLinkIF->RegisterVoiceCallbacks( callbacks );
-    m_spatialSystem->RegisterVoiceCallbacks( callbacks );
-    m_toolSystem->RegisterVoiceCallbacks( callbacks );
+    m_gazeSystem->RegisterVoiceCallbacks( callbacks, nullptr );
+    m_igtLinkIF->RegisterVoiceCallbacks( callbacks, nullptr );
+    m_spatialSystem->RegisterVoiceCallbacks( callbacks, nullptr );
+    m_toolSystem->RegisterVoiceCallbacks( callbacks, nullptr );
+    m_sliceRenderer->RegisterVoiceCallbacks( callbacks, &m_sliceToken );
+    m_meshRenderer->RegisterVoiceCallbacks( callbacks, nullptr );
 
-    callbacks[L"lock slice"] = [this]( SpeechRecognitionResult ^ result )
-    {
-      m_cursorSound->StartOnce();
-      m_notificationSystem->QueueMessage( L"Slice is now head-locked." );
-      m_sliceRenderer->SetSliceHeadlocked( m_sliceToken, true );
-    };
-
-    callbacks[L"unlock slice"] = [this]( SpeechRecognitionResult ^ result )
-    {
-      m_cursorSound->StartOnce();
-      m_notificationSystem->QueueMessage( L"Slice is now in world-space." );
-      m_sliceRenderer->SetSliceHeadlocked( m_sliceToken, false );
-    };
-
-    /*
-    // Disable debug mesh commands until needed again
-    callbacks[L"mesh on"] = [this](SpeechRecognitionResult^ result)
-    {
-      m_cursorSound->StartOnce();
-      m_notificationSystem->QueueMessage( L"Mesh showing." );
-      m_meshRendererEnabled = true;
-      m_meshRenderer->DebugDrawBoundingBox(-1); // turn off
-    };
-
-    callbacks[L"mesh off"] = [this](SpeechRecognitionResult^ result)
-    {
-      m_cursorSound->StartOnce();
-      m_notificationSystem->QueueMessage( L"Mesh disabled." );
-      m_meshRendererEnabled = false;
-    };
-
-    callbacks[L"mesh loop"] = [this](SpeechRecognitionResult^ result)
-    {
-      m_cursorSound->StartOnce();
-      HoloIntervention::instance()->GetNotificationSystem().DebugSetMessage( L"Mesh: mesh number 0" );
-      m_meshRendererEnabled = true;
-      m_meshRenderer->DebugLoopThroughMeshes();
-    };
-
-    callbacks[L"mesh bounding boxes on"] = [this](SpeechRecognitionResult^ result)
-    {
-      m_cursorSound->StartOnce();
-      HoloIntervention::instance()->GetNotificationSystem().DebugSetMessage( L"Mesh: bounding boxes on" );
-      m_meshRendererEnabled = true;
-      m_meshRenderer->DebugDrawBoundingBoxes( true );
-    };
-
-    callbacks[L"mesh bounding boxes on"] = [this](SpeechRecognitionResult^ result)
-    {
-      m_cursorSound->StartOnce();
-      HoloIntervention::instance()->GetNotificationSystem().DebugSetMessage( L"Mesh: bounding boxes off" );
-      m_meshRendererEnabled = true;
-      m_meshRenderer->DebugDrawBoundingBoxes( false );
-    };
-
-    callbacks[L"mesh bounding box"] = [this](SpeechRecognitionResult^ result)
-    {
-      m_cursorSound->StartOnce();
-      HoloIntervention::instance()->GetNotificationSystem().DebugSetMessage(L"Mesh: bounding box on");
-      m_meshRendererEnabled = true;
-      m_meshRenderer->DebugDrawBoundingBox(10);
-    };
-    */
-
-    m_voiceInputHandler->RegisterCallbacks( callbacks );
+    auto task = m_voiceInputHandler->CompileCallbacks( callbacks );
   }
 
   //----------------------------------------------------------------------------

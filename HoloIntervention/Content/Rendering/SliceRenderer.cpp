@@ -21,15 +21,18 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 ====================================================================*/
 
-#include "pch.h"
-
 // Local includes
+#include "pch.h"
+#include "AppView.h"
 #include "Common.h"
 #include "DirectXHelper.h"
 #include "SliceRenderer.h"
 
 // STD includes
 #include <sstream>
+
+// System includes
+#include "NotificationSystem.h"
 
 using namespace DirectX;
 
@@ -428,6 +431,23 @@ namespace HoloIntervention
       {
         sliceEntry->Render( m_indexCount );
       }
+    }
+
+    //----------------------------------------------------------------------------
+    void SliceRenderer::RegisterVoiceCallbacks( HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap, void* userArg )
+    {
+      uint32_t sliceToken = *( uint32_t* )userArg;
+      callbackMap[L"lock slice"] = [this, sliceToken]( SpeechRecognitionResult ^ result )
+      {
+        HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Slice is now head-locked." );
+        SetSliceHeadlocked( sliceToken, true );
+      };
+
+      callbackMap[L"unlock slice"] = [this, sliceToken]( SpeechRecognitionResult ^ result )
+      {
+        HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Slice is now in world-space." );
+        SetSliceHeadlocked( sliceToken, false );
+      };
     }
 
     //----------------------------------------------------------------------------

@@ -24,7 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
-#include "ISystem.h"
+#include "IVoiceInput.h"
 
 // Model includes
 #include "ModelEntry.h"
@@ -40,13 +40,13 @@ namespace HoloIntervention
 {
   namespace System
   {
-    class GazeSystem : public ISystem
+    class GazeSystem : public Sound::IVoiceInput
     {
     public:
       GazeSystem();
       ~GazeSystem();
 
-      void Update( const DX::StepTimer& timer, SpatialCoordinateSystem^ currentCoordinateSystem, SpatialPointerPose^ headPose);
+      void Update( const DX::StepTimer& timer, SpatialCoordinateSystem^ currentCoordinateSystem, SpatialPointerPose^ headPose );
 
       void EnableCursor( bool enable );
       bool IsCursorEnabled();
@@ -54,8 +54,8 @@ namespace HoloIntervention
       const float3& GetHitPosition() const;
       const float3& GetHitNormal() const;
 
-      // ISystem functions
-      virtual void RegisterVoiceCallbacks(HoloIntervention::Input::VoiceInputCallbackMap& callbackMap);
+      // IVoiceInput functions
+      virtual void RegisterVoiceCallbacks( HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap, void* userArg );
 
     protected:
       std::shared_ptr<Rendering::ModelEntry>    m_modelEntry;

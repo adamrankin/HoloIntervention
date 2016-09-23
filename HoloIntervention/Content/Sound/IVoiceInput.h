@@ -23,17 +23,19 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-#include "VoiceInputHandler.h"
+using namespace Windows::Media::SpeechRecognition;
 
 namespace HoloIntervention
 {
-  namespace System
+  namespace Sound
   {
-    class ISystem
+    typedef std::map<std::wstring, std::function<void(SpeechRecognitionResult^ result)>> VoiceInputCallbackMap;
+
+    class IVoiceInput
     {
     public:
-      virtual void RegisterVoiceCallbacks( HoloIntervention::Input::VoiceInputCallbackMap& callbackMap ) = 0;
-      virtual ~ISystem() {};
+      virtual void RegisterVoiceCallbacks( HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap, void* userArg ) = 0;
+      virtual ~IVoiceInput() {};
     };
   }
 }

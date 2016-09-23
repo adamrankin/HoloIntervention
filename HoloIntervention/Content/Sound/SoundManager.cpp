@@ -38,6 +38,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <xapo.h>
 #include <xaudio2.h>
 
+// stl includes
+#include <sstream>
+
 using namespace Concurrency;
 
 namespace HoloIntervention
@@ -58,8 +61,9 @@ namespace HoloIntervention
       m_cardioidSounds.clear();
       m_omniDirectionalSounds.clear();
       m_audioAssets.clear();
-      m_cardioidSubmixParentVoice = nullptr;
-      m_omniSubmixParentVoice = nullptr;
+      m_cardioidSubmixParentVoice->DestroyVoice();
+      m_omniSubmixParentVoice->DestroyVoice();
+      m_masterVoice->DestroyVoice();
       m_xaudio2 = nullptr;
       m_resourcesLoaded = false;
     }
@@ -82,16 +86,16 @@ namespace HoloIntervention
         // Mastering voice will be automatically destroyed when XAudio2 instance is destroyed.
         hr = m_xaudio2->CreateMasteringVoice( &m_masterVoice, 2, 48000 );
 
-        if (FAILED(hr))
+        if ( FAILED( hr ) )
         {
-          throw Platform::Exception::CreateException(hr);
+          throw Platform::Exception::CreateException( hr );
         }
 
         hr = CreateSubmixParentVoices();
 
-        if (FAILED(hr))
+        if ( FAILED( hr ) )
         {
-          throw Platform::Exception::CreateException(hr);
+          throw Platform::Exception::CreateException( hr );
         }
 
         // Initialize ALL sound assets into memory
@@ -106,88 +110,165 @@ namespace HoloIntervention
 
           if ( FAILED( hr ) )
           {
-            throw Platform::Exception::CreateException(hr);
+            throw Platform::Exception::CreateException( hr );
           }
 
           m_audioAssets[name] = fileReader;
         }
 
         m_resourcesLoaded = true;
+
+        return S_OK;
       } );
     }
 
     //----------------------------------------------------------------------------
-    void SoundManager::PlayOmniSoundOnce( const std::wstring& assetName, HrtfEnvironment env /* = HrtfEnvironment::Small */ )
+    void SoundManager::PlayOmniSoundOnce( const std::wstring& assetName, SpatialCoordinateSystem^ coordinateSystem, const float3& position, HrtfEnvironment env /* = HrtfEnvironment::Small */ )
     {
-      auto cursorSound = std::make_shared<HoloIntervention::Sound::OmnidirectionalSound>();
-
-      cursorSound->InitializeAsync( m_xaudio2, m_omniSubmixParentVoice.Get(), assetName ).then( [this, &cursorSound, env, assetName]( task<HRESULT> previousTask )
+      if ( m_audioAssets.find( assetName ) == m_audioAssets.end() )
       {
-        HRESULT result;
-        try
-        {
-          result = previousTask.get();
-        }
-        catch ( Platform::Exception^ e )
-        {
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage( e->Message );
-        }
-        catch ( const std::exception& e )
-        {
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage( e.what() );
-          cursorSound = nullptr;
-        }
+        return;
+      }
 
-        if ( FAILED( result ) )
-        {
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Unable to initialize sound: " + assetName );
-          cursorSound = nullptr;
-        }
-        else
-        {
-          cursorSound->SetEnvironment( env );
-        }
-      } );
-    }
+      auto omniSound = std::make_shared<HoloIntervention::Sound::OmnidirectionalSound>( *m_audioAssets[assetName].get() );
 
-    //----------------------------------------------------------------------------
-    void SoundManager::PlayCarioidSoundOnce( const std::wstring& assetName, HrtfEnvironment env /*= HrtfEnvironment::Small */ )
-    {
-      auto cursorSound = std::make_shared<HoloIntervention::Sound::CardioidSound>();
-
-      cursorSound->InitializeAsync( m_xaudio2, m_cardioidSubmixParentVoice.Get(), assetName ).then( [this, &cursorSound, env, assetName]( task<HRESULT> previousTask )
+      float3 positionCopy = position;
+      if ( coordinateSystem != nullptr )
       {
-        HRESULT result;
-        try
+        auto transform = coordinateSystem->TryGetTransformTo( m_coordinateSystem );
+        if ( transform != nullptr )
         {
-          result = previousTask.get();
+          XMMATRIX mat = XMLoadFloat4x4( &transform->Value );
+          XMVECTOR pos = XMLoadFloat3( &position );
+          XMVECTOR transformedPos = XMVector3Transform( pos, mat );
+          positionCopy.x = transformedPos.m128_f32[0];
+          positionCopy.y = transformedPos.m128_f32[1];
+          positionCopy.z = transformedPos.m128_f32[2];
         }
-        catch ( Platform::Exception^ e )
-        {
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage( e->Message );
-        }
-        catch ( const std::exception& e )
-        {
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage( e.what() );
-          cursorSound = nullptr;
-        }
+      }
 
-        if ( FAILED( result ) )
-        {
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Unable to initialize sound: " + assetName );
-          cursorSound = nullptr;
-        }
-        else
-        {
-          cursorSound->SetEnvironment( env );
-        }
-      } );
+      HRESULT hr;
+      try
+      {
+        hr = omniSound->Initialize( m_xaudio2, m_omniSubmixParentVoice, m_coordinateSystem, positionCopy );
+      }
+      catch ( Platform::Exception^ e )
+      {
+        HoloIntervention::instance()->GetNotificationSystem().QueueMessage( e->Message );
+        omniSound = nullptr;
+      }
+
+      if ( FAILED( hr ) )
+      {
+        std::wstringstream wss;
+        wss << L"Unable to initialize sound: " << assetName << std::endl;
+        OutputDebugStringW( wss.str().c_str() );
+        omniSound = nullptr;
+        return;
+      }
+
+      hr = omniSound->SetEnvironment( env );
+
+      if ( FAILED( hr ) )
+      {
+        std::wstringstream wss;
+        wss << L"Unable to set sound environment: " << assetName << std::endl;
+        OutputDebugStringW( wss.str().c_str() );
+        omniSound = nullptr;
+        return;
+      }
+
+      m_omniDirectionalSounds[assetName].push_back( omniSound );
+
+      omniSound->StartOnce();
     }
 
     //----------------------------------------------------------------------------
-    void SoundManager::Update( DX::StepTimer& stepTimer, float angularVelocity, float height, float radius )
+    void SoundManager::PlayCarioidSoundOnce( const std::wstring& assetName, SpatialCoordinateSystem^ coordinateSystem, const float3& position, const float3& pitchYawRoll, HrtfEnvironment env /*= HrtfEnvironment::Small */ )
     {
+      if ( m_coordinateSystem == nullptr )
+      {
+        return;
+      }
 
+      if ( m_audioAssets.find( assetName ) == m_audioAssets.end() )
+      {
+        return;
+      }
+
+      auto cardioidSound = std::make_shared<HoloIntervention::Sound::CardioidSound>( *m_audioAssets[assetName].get() );
+
+      float3 positionCopy = position;
+      if ( coordinateSystem != nullptr )
+      {
+        auto transform = coordinateSystem->TryGetTransformTo( m_coordinateSystem );
+        if ( transform != nullptr )
+        {
+          XMMATRIX mat = XMLoadFloat4x4( &transform->Value );
+          XMVECTOR pos = XMLoadFloat3( &position );
+          XMVECTOR transformedPos = XMVector3Transform( pos, mat );
+          positionCopy.x = transformedPos.m128_f32[0];
+          positionCopy.y = transformedPos.m128_f32[1];
+          positionCopy.z = transformedPos.m128_f32[2];
+        }
+      }
+
+      HRESULT hr;
+      try
+      {
+        hr = cardioidSound->Initialize( m_xaudio2, m_cardioidSubmixParentVoice, m_coordinateSystem, positionCopy, pitchYawRoll );
+      }
+      catch ( Platform::Exception^ e )
+      {
+        HoloIntervention::instance()->GetNotificationSystem().QueueMessage( e->Message );
+        cardioidSound = nullptr;
+      }
+
+      if ( FAILED( hr ) )
+      {
+        std::wstringstream wss;
+        wss << L"Unable to initialize sound: " << assetName << std::endl;
+        OutputDebugStringW( wss.str().c_str() );
+        cardioidSound = nullptr;
+        return;
+      }
+
+      hr = cardioidSound->SetEnvironment( env );
+
+      if ( FAILED( hr ) )
+      {
+        std::wstringstream wss;
+        wss << L"Unable to set sound environment: " << assetName << std::endl;
+        OutputDebugStringW( wss.str().c_str() );
+        cardioidSound = nullptr;
+        return;
+      }
+
+      m_cardioidSounds[assetName].push_back( cardioidSound );
+
+      cardioidSound->StartOnce();
+    }
+
+    //----------------------------------------------------------------------------
+    void SoundManager::Update( DX::StepTimer& stepTimer, SpatialCoordinateSystem^ coordinateSystem )
+    {
+      m_coordinateSystem = coordinateSystem;
+
+      for ( auto& pair : m_cardioidSounds )
+      {
+        for ( auto& sound : pair.second )
+        {
+          sound->Update( stepTimer );
+        }
+      }
+
+      for ( auto& pair : m_omniDirectionalSounds )
+      {
+        for ( auto& sound : pair.second )
+        {
+          sound->Update( stepTimer );
+        }
+      }
     }
 
     //----------------------------------------------------------------------------
@@ -196,7 +277,7 @@ namespace HoloIntervention
       // Omni
       XAUDIO2_VOICE_SENDS sends = {};
       XAUDIO2_SEND_DESCRIPTOR sendDesc = {};
-      sendDesc.pOutputVoice = m_masterVoice.Get();
+      sendDesc.pOutputVoice = m_masterVoice;
       sends.SendCount = 1;
       sends.pSends = &sendDesc;
       auto hr = m_xaudio2->CreateSubmixVoice( &m_omniSubmixParentVoice, 1, 48000, 0, 0, &sends, nullptr );
@@ -208,7 +289,7 @@ namespace HoloIntervention
       // Cardioid
       sends = {};
       sendDesc = {};
-      sendDesc.pOutputVoice = m_masterVoice.Get();
+      sendDesc.pOutputVoice = m_masterVoice;
       sends.SendCount = 1;
       sends.pSends = &sendDesc;
       return hr = m_xaudio2->CreateSubmixVoice( &m_omniSubmixParentVoice, 1, 48000, 0, 0, &sends, nullptr );

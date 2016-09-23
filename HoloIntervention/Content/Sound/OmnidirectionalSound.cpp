@@ -36,64 +36,6 @@ namespace HoloIntervention
   namespace Sound
   {
     //----------------------------------------------------------------------------
-    _Use_decl_annotations_
-    task<HRESULT> OmnidirectionalSound::InitializeAsync( ComPtr<IXAudio2> xaudio2, IXAudio2SubmixVoice* parentVoice, const std::wstring& assetName )
-    {
-      return create_task( [ = ]() -> HRESULT
-      {
-        m_callBack = std::make_shared<VoiceCallback<OmnidirectionalSound>>( *this );
-
-        ComPtr<IXAPO> xapo;
-        // Passing in nullptr as the first arg for HrtfApoInit initializes the APO with defaults of
-        // omnidirectional sound with natural distance decay behavior.
-        auto hr = CreateHrtfApo( nullptr, &xapo );
-
-        if ( FAILED( hr ) )
-        {
-          throw Platform::Exception::CreateException( hr );
-        }
-
-        hr = xapo.As( &m_hrtfParams );
-
-        // Set the default environment.
-        if ( FAILED( hr ) )
-        {
-          throw Platform::Exception::CreateException( hr );
-        }
-
-        hr = m_hrtfParams->SetEnvironment( m_environment );
-
-        // Initialize an XAudio2 graph that hosts the HRTF xAPO.
-        // The source voice is used to submit audio data and control playback.
-        if ( FAILED( hr ) )
-        {
-          throw Platform::Exception::CreateException( hr );
-        }
-
-        hr = xaudio2->CreateSourceVoice( &m_sourceVoice, m_audioFile.GetFormat(), 0, XAUDIO2_DEFAULT_FREQ_RATIO, m_callBack.get() );
-        if ( FAILED( hr ) )
-        {
-          throw Platform::Exception::CreateException( hr );
-        }
-
-        XAUDIO2_VOICE_SENDS sends = {};
-        XAUDIO2_SEND_DESCRIPTOR sendDesc = {};
-        sendDesc.pOutputVoice = parentVoice;
-        sends.SendCount = 1;
-        sends.pSends = &sendDesc;
-        hr = m_sourceVoice->SetOutputVoices( &sends );
-        if ( FAILED( hr ) )
-        {
-          throw Platform::Exception::CreateException( hr );
-        }
-
-        m_resourcesLoaded = true;
-
-        return hr;
-      } );
-    }
-
-    //----------------------------------------------------------------------------
     OmnidirectionalSound::OmnidirectionalSound( AudioFileReader& audioFile )
       : m_audioFile( audioFile )
     {
@@ -111,6 +53,64 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    _Use_decl_annotations_
+    HRESULT OmnidirectionalSound::Initialize( ComPtr<IXAudio2> xaudio2, IXAudio2SubmixVoice* parentVoice, SpatialCoordinateSystem^ coordinateSystem, const float3& position )
+    {
+      m_callBack = std::make_shared<VoiceCallback<OmnidirectionalSound>>( *this );
+
+      ComPtr<IXAPO> xapo;
+      // Passing in nullptr as the first arg for HrtfApoInit initializes the APO with defaults of
+      // omnidirectional sound with natural distance decay behavior.
+      auto hr = CreateHrtfApo( nullptr, &xapo );
+
+      if ( FAILED( hr ) )
+      {
+        throw Platform::Exception::CreateException( hr );
+      }
+
+      hr = xapo.As( &m_hrtfParams );
+
+      // Set the default environment.
+      if ( FAILED( hr ) )
+      {
+        throw Platform::Exception::CreateException( hr );
+      }
+
+      hr = m_hrtfParams->SetEnvironment( m_environment );
+
+      // Initialize an XAudio2 graph that hosts the HRTF xAPO.
+      // The source voice is used to submit audio data and control playback.
+      if ( FAILED( hr ) )
+      {
+        throw Platform::Exception::CreateException( hr );
+      }
+
+      hr = xaudio2->CreateSourceVoice( &m_sourceVoice, m_audioFile.GetFormat(), 0, XAUDIO2_DEFAULT_FREQ_RATIO, m_callBack.get() );
+      if ( FAILED( hr ) )
+      {
+        throw Platform::Exception::CreateException( hr );
+      }
+
+      XAUDIO2_VOICE_SENDS sends = {};
+      XAUDIO2_SEND_DESCRIPTOR sendDesc = {};
+      sendDesc.pOutputVoice = parentVoice;
+      sends.SendCount = 1;
+      sends.pSends = &sendDesc;
+      hr = m_sourceVoice->SetOutputVoices( &sends );
+      if ( FAILED( hr ) )
+      {
+        throw Platform::Exception::CreateException( hr );
+      }
+
+      SetSourcePosition( coordinateSystem, position );
+
+      m_resourcesLoaded = true;
+
+      return hr;
+    }
+
+    //----------------------------------------------------------------------------
+    _Use_decl_annotations_
     HRESULT OmnidirectionalSound::Start()
     {
       XAUDIO2_BUFFER buffer{};
@@ -129,6 +129,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    _Use_decl_annotations_
     HRESULT OmnidirectionalSound::StartOnce()
     {
       XAUDIO2_BUFFER buffer{};
@@ -149,6 +150,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    _Use_decl_annotations_
     HRESULT OmnidirectionalSound::Stop()
     {
       if ( m_sourceVoice != nullptr )
@@ -174,12 +176,14 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    _Use_decl_annotations_
     HrtfEnvironment OmnidirectionalSound::GetEnvironment()
     {
       return m_environment;
     }
 
     //----------------------------------------------------------------------------
+    _Use_decl_annotations_
     bool OmnidirectionalSound::IsFinished() const
     {
       return m_isFinished;
@@ -187,7 +191,25 @@ namespace HoloIntervention
 
     //----------------------------------------------------------------------------
     _Use_decl_annotations_
-    void OmnidirectionalSound::Update( const DX::StepTimer& timer, float angularVelocity, float height, float radius )
+    void OmnidirectionalSound::SetSourcePosition( _In_ SpatialCoordinateSystem^ coordinateSystem, _In_ const float3& position )
+    {
+      m_coordinateSystem = coordinateSystem;
+      m_sourcePosition = position;
+
+      HrtfPosition hrtf_position = { position.x, position.y, position.z };
+      m_hrtfParams->SetSourcePosition( &hrtf_position );
+    }
+
+    //----------------------------------------------------------------------------
+    _Use_decl_annotations_
+    float3& OmnidirectionalSound::GetSourcePosition()
+    {
+      return m_sourcePosition;
+    }
+
+    //----------------------------------------------------------------------------
+    _Use_decl_annotations_
+    void OmnidirectionalSound::Update( const DX::StepTimer& timer )
     {
       if( !m_resourcesLoaded  || m_isFinished )
       {
@@ -202,24 +224,6 @@ namespace HoloIntervention
       {
         m_isFinished = true;
       }
-      else
-      {
-        m_angle += timeElapsed * angularVelocity;
-        m_angle = m_angle > HRTF_2PI ? ( m_angle - HRTF_2PI ) : m_angle;
-        m_hrtfParams->SetSourcePosition( &ComputePositionInOrbit( height, radius, m_angle ) );
-      }
-    }
-
-    //----------------------------------------------------------------------------
-    _Use_decl_annotations_
-    HrtfPosition OmnidirectionalSound::ComputePositionInOrbit( float height, float radius, float angle )
-    {
-      // Calculate the position of the source based on height relative to listener's head, radius of orbit and angle relative to the listener.
-      // APO uses right-handed coordinate system where -ve z-axis is forward and +ve z-axis is backward.
-      // All coordinates use real-world units (meters).
-      float x = radius * sin( angle );
-      float z = -radius * cos( angle );
-      return HrtfPosition{ x, height , z };
     }
   }
 }

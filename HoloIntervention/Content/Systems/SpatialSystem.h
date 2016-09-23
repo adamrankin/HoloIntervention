@@ -23,7 +23,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-#include "ISystem.h"
+#include "IVoiceInput.h"
 #include "SpatialSurfaceCollection.h"
 #include "StepTimer.h"
 
@@ -34,7 +34,7 @@ namespace HoloIntervention
 {
   namespace System
   {
-    class SpatialSystem : public ISystem
+    class SpatialSystem : public Sound::IVoiceInput
     {
     public:
       SpatialSystem( const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer );
@@ -68,8 +68,8 @@ namespace HoloIntervention
       bool DropAnchorAtIntersectionHit( Platform::String^ anchorName, SpatialCoordinateSystem^ coordinateSystem );
       size_t RemoveAnchor( Platform::String^ anchorName );
 
-      // ISystem functions
-      virtual void RegisterVoiceCallbacks(HoloIntervention::Input::VoiceInputCallbackMap& callbackMap);
+      // IVoiceInput functions
+      virtual void RegisterVoiceCallbacks( HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap, void* userArg );
 
     protected:
       // Event registration tokens.

@@ -34,6 +34,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <ppltasks.h>
 #include <vccorlib.h>
 
+// Sound includes
+#include "SoundManager.h"
+
 using namespace Concurrency;
 using namespace Windows::Foundation;
 using namespace Windows::Media::SpeechRecognition;
@@ -61,7 +64,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void VoiceInputHandler::RegisterCallbacks( VoiceInputCallbackMap& callbacks )
+    task<bool> VoiceInputHandler::CompileCallbacks( HoloIntervention::Sound::VoiceInputCallbackMap& callbacks )
     {
       Platform::Collections::Vector<Platform::String^ >^ speechCommandList = ref new Platform::Collections::Vector<Platform::String^ >();
       for ( auto entry : callbacks )
@@ -73,7 +76,7 @@ namespace HoloIntervention
       m_speechRecognizer->Constraints->Clear();
       m_speechRecognizer->Constraints->Append( spConstraint );
 
-      create_task( m_speechRecognizer->CompileConstraintsAsync() ).then( [this]( SpeechRecognitionCompilationResult ^ compilationResult )
+      return create_task( m_speechRecognizer->CompileConstraintsAsync() ).then( [this]( SpeechRecognitionCompilationResult ^ compilationResult )
       {
         if ( compilationResult->Status == SpeechRecognitionResultStatus::Success )
         {
@@ -110,11 +113,13 @@ namespace HoloIntervention
     {
       if ( args->Result->RawConfidence > MINIMUM_CONFIDENCE_FOR_DETECTION )
       {
+        HoloIntervention::instance()->GetSoundManager().PlayOmniSoundOnce( L"input_ok" );
+
         // Search the map for the detected command, if matched, call the function
         auto iterator = m_callbacks.find( args->Result->Text->Data() );
         if ( iterator != m_callbacks.end() )
         {
-          iterator->second(args->Result);
+          iterator->second( args->Result );
         }
       }
     }

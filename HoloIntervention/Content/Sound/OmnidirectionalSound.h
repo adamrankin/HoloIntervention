@@ -36,8 +36,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 // STL includes
 #include <map>
 
-using namespace Microsoft::WRL;
 using namespace Concurrency;
+using namespace Microsoft::WRL;
+using namespace Windows::Foundation::Numerics;
+using namespace Windows::Perception::Spatial;
 
 namespace HoloIntervention
 {
@@ -49,19 +51,20 @@ namespace HoloIntervention
     public:
       OmnidirectionalSound( AudioFileReader& audioFile );
       virtual ~OmnidirectionalSound();
-      task<HRESULT> InitializeAsync( _In_ ComPtr<IXAudio2> xaudio2, IXAudio2SubmixVoice* parentVoice, _In_ const std::wstring& assetName );
+      HRESULT Initialize( _In_ ComPtr<IXAudio2> xaudio2, _In_ IXAudio2SubmixVoice* parentVoice, _In_ SpatialCoordinateSystem^ coordinateSystem, _In_ const float3& position );
 
       HRESULT Start();
       HRESULT StartOnce();
       HRESULT Stop();
-      void Update( const DX::StepTimer& timer, float angularVelocity, float height, float radius );
+
+      void Update( const DX::StepTimer& timer );
       HRESULT SetEnvironment( _In_ HrtfEnvironment environment );
       HrtfEnvironment GetEnvironment();
 
       bool IsFinished() const;
 
-    protected:
-      HrtfPosition ComputePositionInOrbit( _In_ float height, _In_ float radius, _In_ float angle );
+      void SetSourcePosition( _In_ SpatialCoordinateSystem^ coordinateSystem, _In_ const float3& position );
+      float3& GetSourcePosition();
 
     protected:
       std::shared_ptr<VoiceCallback<OmnidirectionalSound>>    m_callBack = nullptr;
@@ -69,9 +72,9 @@ namespace HoloIntervention
       IXAudio2SourceVoice*                                    m_sourceVoice;
       ComPtr<IXAPOHrtfParameters>                             m_hrtfParams;
       HrtfEnvironment                                         m_environment = HrtfEnvironment::Medium;
+      SpatialCoordinateSystem^                                m_coordinateSystem;
+      float3                                                  m_sourcePosition;
 
-      ULONGLONG                                               m_lastTick = 0;
-      float                                                   m_angle = 0;
       bool                                                    m_isFinished = false;
       bool                                                    m_resourcesLoaded = false;
     };

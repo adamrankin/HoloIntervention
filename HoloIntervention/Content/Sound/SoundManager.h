@@ -33,6 +33,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <ppltasks.h>
 
 // XAudio2 includes
+#include <hrtfapoapi.h>
 #include <xaudio2.h>
 
 namespace DX
@@ -42,6 +43,8 @@ namespace DX
 
 using namespace Concurrency;
 using namespace Microsoft::WRL;
+using namespace Windows::Foundation::Numerics;
+using namespace Windows::Perception::Spatial;
 
 namespace HoloIntervention
 {
@@ -60,10 +63,10 @@ namespace HoloIntervention
 
       task<HRESULT> InitializeAsync();
 
-      void PlayOmniSoundOnce( const std::wstring& assetName, HrtfEnvironment env = HrtfEnvironment::Small );
-      void PlayCarioidSoundOnce( const std::wstring& assetName, HrtfEnvironment env = HrtfEnvironment::Small );
+      void PlayOmniSoundOnce( const std::wstring& assetName, SpatialCoordinateSystem^ coordinateSystem = nullptr, const float3& position = { 0.f, 0.f, 0.f }, HrtfEnvironment env = HrtfEnvironment::Medium );
+      void PlayCarioidSoundOnce( const std::wstring& assetName, SpatialCoordinateSystem^ coordinateSystem = nullptr, const float3& position = { 0.f, 0.f, 0.f }, const float3& pitchYawRoll = { 0.f, 0.f, 0.f }, HrtfEnvironment env = HrtfEnvironment::Medium );
 
-      void Update( DX::StepTimer& stepTimer, float angularVelocity, float height, float radius );
+      void Update( DX::StepTimer& stepTimer, SpatialCoordinateSystem^ coordinateSystem );
 
     protected:
       HRESULT CreateSubmixParentVoices();
@@ -71,14 +74,16 @@ namespace HoloIntervention
     protected:
       // XAudio2 assets
       ComPtr<IXAudio2>                                              m_xaudio2 = nullptr;
-      ComPtr<IXAudio2MasteringVoice>                                m_masterVoice = nullptr;
+      IXAudio2MasteringVoice*                                       m_masterVoice = nullptr;
 
-      ComPtr<IXAudio2SubmixVoice>                                   m_omniSubmixParentVoice = nullptr;
-      ComPtr<IXAudio2SubmixVoice>                                   m_cardioidSubmixParentVoice = nullptr;
+      IXAudio2SubmixVoice*                                          m_omniSubmixParentVoice = nullptr;
+      IXAudio2SubmixVoice*                                          m_cardioidSubmixParentVoice = nullptr;
 
       SoundList<std::shared_ptr<Sound::CardioidSound>>              m_cardioidSounds;
       SoundList<std::shared_ptr<Sound::OmnidirectionalSound>>       m_omniDirectionalSounds;
       SoundDataList                                                 m_audioAssets;
+
+      SpatialCoordinateSystem^                                      m_coordinateSystem = nullptr;
 
       bool                                                          m_resourcesLoaded = false;
     };

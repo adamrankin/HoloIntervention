@@ -121,20 +121,18 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void GazeSystem::RegisterVoiceCallbacks(HoloIntervention::Input::VoiceInputCallbackMap& callbackMap)
+    void GazeSystem::RegisterVoiceCallbacks( HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap, void* userArg )
     {
-      callbackMap[L"show cursor"] = [this](SpeechRecognitionResult ^ result)
+      callbackMap[L"show cursor"] = [this]( SpeechRecognitionResult ^ result )
       {
-        m_cursorSound->StartOnce();
-        this->EnableCursor(true);
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Cursor on.");
+        EnableCursor( true );
+        HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Cursor on." );
       };
 
-      callbackMap[L"hide cursor"] = [this](SpeechRecognitionResult ^ result)
+      callbackMap[L"hide cursor"] = [this]( SpeechRecognitionResult ^ result )
       {
-        m_cursorSound->StartOnce();
-        this->EnableCursor(false);
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Cursor off.");
+        EnableCursor( false );
+        HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Cursor off." );
       };
     }
   }

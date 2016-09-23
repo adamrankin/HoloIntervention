@@ -337,18 +337,16 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SpatialSystem::RegisterVoiceCallbacks( HoloIntervention::Input::VoiceInputCallbackMap& callbackMap )
+    void SpatialSystem::RegisterVoiceCallbacks( HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap, void* userArg )
     {
       callbackMap[L"drop registration anchor"] = [this]( SpeechRecognitionResult ^ result )
       {
-        m_cursorSound->StartOnce();
         std::lock_guard<std::mutex> anchorLock( m_anchorMutex );
         m_anchorRequested = true;
       };
 
       callbackMap[L"remove registration anchor"] = [this]( SpeechRecognitionResult ^ result )
       {
-        m_cursorSound->StartOnce();
         std::lock_guard<std::mutex> anchorLock( m_anchorMutex );
         if ( RemoveAnchor( L"Registration" ) == 1 )
         {

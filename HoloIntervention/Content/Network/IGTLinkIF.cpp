@@ -108,11 +108,10 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void IGTLinkIF::RegisterVoiceCallbacks(HoloIntervention::Input::VoiceInputCallbackMap& callbackMap)
+    void IGTLinkIF::RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap, void* userArg)
     {
       callbackMap[L"connect"] = [this](SpeechRecognitionResult ^ result)
       {
-        m_cursorSound->StartOnce();
         HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Connecting...");
         this->ConnectAsync(4.0).then([this](bool result)
         {
@@ -129,7 +128,6 @@ namespace HoloIntervention
 
       callbackMap[L"disconnect"] = [this](SpeechRecognitionResult ^ result)
       {
-        m_cursorSound->StartOnce();
         HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Disconnected.");
         this->Disconnect();
       };

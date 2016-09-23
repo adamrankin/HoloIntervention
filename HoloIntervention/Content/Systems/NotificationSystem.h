@@ -24,7 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
-#include "ISystem.h"
+#include "IVoiceInput.h"
 
 // Rendering includes
 #include "NotificationRenderer.h"
@@ -42,7 +42,7 @@ namespace HoloIntervention
 {
   namespace System
   {
-    class NotificationSystem : public ISystem
+    class NotificationSystem : public Sound::IVoiceInput
     {
       enum AnimationState
       {
@@ -56,19 +56,19 @@ namespace HoloIntervention
       typedef std::deque<MessageDuration> MessageQueue;
 
     public:
-      NotificationSystem(const std::shared_ptr<DX::DeviceResources>& deviceResources);
+      NotificationSystem( const std::shared_ptr<DX::DeviceResources>& deviceResources );
       ~NotificationSystem();
 
       // Add a message to the queue to render
-      void QueueMessage(const std::string& message, double duration = DEFAULT_NOTIFICATION_DURATION_SEC);
-      void QueueMessage(const std::wstring& message, double duration = DEFAULT_NOTIFICATION_DURATION_SEC);
-      void QueueMessage(Platform::String^ message, double duration = DEFAULT_NOTIFICATION_DURATION_SEC);
+      void QueueMessage( const std::string& message, double duration = DEFAULT_NOTIFICATION_DURATION_SEC );
+      void QueueMessage( const std::wstring& message, double duration = DEFAULT_NOTIFICATION_DURATION_SEC );
+      void QueueMessage( Platform::String^ message, double duration = DEFAULT_NOTIFICATION_DURATION_SEC );
 
-      void DebugSetMessage(const std::wstring& message, double duration = DEFAULT_NOTIFICATION_DURATION_SEC);
-      void DebugSetMessage(Platform::String^ message, double duration = DEFAULT_NOTIFICATION_DURATION_SEC);
+      void DebugSetMessage( const std::wstring& message, double duration = DEFAULT_NOTIFICATION_DURATION_SEC );
+      void DebugSetMessage( Platform::String^ message, double duration = DEFAULT_NOTIFICATION_DURATION_SEC );
 
-      void Initialize(SpatialPointerPose^ pointerPose);
-      void Update(SpatialPointerPose^ pointerPose, const DX::StepTimer& timer);
+      void Initialize( SpatialPointerPose^ pointerPose );
+      void Update( SpatialPointerPose^ pointerPose, const DX::StepTimer& timer );
 
       // D3D device related controls
       void CreateDeviceDependentResources();
@@ -80,19 +80,19 @@ namespace HoloIntervention
       const float3& GetVelocity() const;
 
       // Override the current lerp and force the position
-      void SetPose(SpatialPointerPose^ pointerPose);
+      void SetPose( SpatialPointerPose^ pointerPose );
 
       std::unique_ptr<Rendering::NotificationRenderer>& GetRenderer();
 
       // ISystem functions
-      virtual void RegisterVoiceCallbacks(HoloIntervention::Input::VoiceInputCallbackMap& callbackMap);
+      virtual void RegisterVoiceCallbacks( HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap, void* userArg );
 
     protected:
-      void UpdateHologramPosition(SpatialPointerPose^ pointerPose, const DX::StepTimer& timer);
+      void UpdateHologramPosition( SpatialPointerPose^ pointerPose, const DX::StepTimer& timer );
 
       void CalculateWorldMatrix();
-      void CalculateAlpha(const DX::StepTimer& timer);
-      void CalculateVelocity(float oneOverDeltaTime);
+      void CalculateAlpha( const DX::StepTimer& timer );
+      void CalculateVelocity( float oneOverDeltaTime );
       void GrabNextMessage();
       bool IsFading() const;
 

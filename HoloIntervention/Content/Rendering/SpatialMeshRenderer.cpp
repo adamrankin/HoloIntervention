@@ -49,6 +49,11 @@ namespace HoloIntervention
     // Called once per frame, maintains and updates the mesh collection.
     void SpatialMeshRenderer::Update( DX::ViewProjection& vp, DX::StepTimer const& timer, SpatialCoordinateSystem^ coordinateSystem )
     {
+      if ( !m_renderEnabled )
+      {
+        return;
+      }
+
       std::lock_guard<std::mutex> guard( m_meshCollectionLock );
 
       // Only create a surface observer when you need to - do not create a new one each frame.
@@ -312,7 +317,7 @@ namespace HoloIntervention
     void SpatialMeshRenderer::Render()
     {
       // Loading is asynchronous. Only draw geometry after it's loaded.
-      if ( !m_loadingComplete )
+      if ( !m_loadingComplete || !m_renderEnabled )
       {
         return;
       }
@@ -350,12 +355,12 @@ namespace HoloIntervention
       {
         std::lock_guard<std::mutex> guard( m_meshCollectionLock );
 
-        if (m_overrideDrawIndex > 0)
+        if ( m_overrideDrawIndex > 0 )
         {
           MeshMap::iterator iter = m_meshCollection.begin();
-          for (int32_t i = 0; i < m_overrideDrawIndex; ++i, ++iter) {}
-          iter->second.SetDrawBoundingBox(true);
-          iter->second.Render(m_usingVprtShaders);
+          for ( int32_t i = 0; i < m_overrideDrawIndex; ++i, ++iter ) {}
+          iter->second.SetDrawBoundingBox( true );
+          iter->second.Render( m_usingVprtShaders );
         }
         else if ( m_isLooping )
         {
@@ -374,6 +379,18 @@ namespace HoloIntervention
       }
 
       context->RSSetState( nullptr );
+    }
+
+    //----------------------------------------------------------------------------
+    void SpatialMeshRenderer::SetEnabled( bool arg )
+    {
+      m_renderEnabled = arg;
+    }
+
+    //----------------------------------------------------------------------------
+    bool SpatialMeshRenderer::GetEnabled() const
+    {
+      return m_renderEnabled;
     }
 
     //----------------------------------------------------------------------------
@@ -449,7 +466,6 @@ namespace HoloIntervention
       // Once the cube is loaded, the object is ready to be rendered.
       auto finishLoadingTask = shaderTaskGroup.then( [this]()
       {
-
         // Recreate device-based surface mesh resources.
         std::lock_guard<std::mutex> guard( m_meshCollectionLock );
         for ( auto& iter : m_meshCollection )
@@ -498,9 +514,9 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SpatialMeshRenderer::DebugDrawBoundingBox(int32_t index)
+    void SpatialMeshRenderer::DebugDrawBoundingBox( int32_t index )
     {
-      if (index >= m_meshCollection.size())
+      if ( index >= m_meshCollection.size() )
       {
         return;
       }
@@ -537,6 +553,51 @@ namespace HoloIntervention
       m_surfaceMeshOptions = nullptr;
       m_surfaceObserver = nullptr;
       m_drawWireframe = true;
+    }
+
+    //----------------------------------------------------------------------------
+    void SpatialMeshRenderer::RegisterVoiceCallbacks( HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap, void* userArg )
+    {
+      // Disable debug mesh commands until needed again
+      callbackMap[L"mesh on"] = [this]( SpeechRecognitionResult ^ result )
+      {
+        HoloIntervention::instance()->GetNotificationSystem().DebugSetMessage( L"Mesh showing." );
+        DebugDrawBoundingBox( -1 ); // turn off
+        SetEnabled( true );
+      };
+
+      callbackMap[L"mesh off"] = [this]( SpeechRecognitionResult ^ result )
+      {
+        HoloIntervention::instance()->GetNotificationSystem().DebugSetMessage( L"Mesh disabled." );
+        SetEnabled( false );
+      };
+
+      callbackMap[L"mesh loop"] = [this]( SpeechRecognitionResult ^ result )
+      {
+        HoloIntervention::instance()->GetNotificationSystem().DebugSetMessage( L"Mesh: mesh number 0" );
+        SetEnabled( true );
+        DebugLoopThroughMeshes();
+      };
+
+      callbackMap[L"mesh bounding boxes on"] = [this]( SpeechRecognitionResult ^ result )
+      {
+        HoloIntervention::instance()->GetNotificationSystem().DebugSetMessage( L"Mesh: bounding boxes on" );
+        SetEnabled( true );
+        DebugDrawBoundingBoxes( true );
+      };
+
+      callbackMap[L"mesh bounding boxes off"] = [this]( SpeechRecognitionResult ^ result )
+      {
+        HoloIntervention::instance()->GetNotificationSystem().DebugSetMessage( L"Mesh: bounding boxes off" );
+        DebugDrawBoundingBoxes( false );
+      };
+
+      callbackMap[L"mesh bounding box"] = [this]( SpeechRecognitionResult ^ result )
+      {
+        HoloIntervention::instance()->GetNotificationSystem().DebugSetMessage( L"Mesh: bounding box on" );
+        SetEnabled( true );
+        DebugDrawBoundingBox( 10 );
+      };
     }
 
     //----------------------------------------------------------------------------

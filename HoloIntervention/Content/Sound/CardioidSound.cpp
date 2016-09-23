@@ -12,6 +12,9 @@
 #include "pch.h"
 #include "CardioidSound.h"
 
+// Common includes
+#include "StepTimer.h"
+
 // XAudio2 includes
 #include <xapo.h>
 
@@ -25,30 +28,10 @@ namespace HoloIntervention
   namespace Sound
   {
     //----------------------------------------------------------------------------
-    _Use_decl_annotations_
-    task<HRESULT> CardioidSound::InitializeAsync( ComPtr<IXAudio2> xaudio2, IXAudio2SubmixVoice* parentVoice, const std::wstring& filename )
+    CardioidSound::CardioidSound( AudioFileReader& audioFile )
+      : m_audioFile( audioFile )
     {
-      return create_task( [ = ]()->HRESULT
-      {
-        auto initTask = m_audioFile.InitializeAsync( filename );
-        auto hr = initTask.get();
 
-        if ( FAILED( hr ) )
-        {
-          throw Platform::Exception::CreateException( hr );
-        }
-
-        if ( SUCCEEDED( hr ) )
-        {
-          // Initialize with "Scaling" fully directional and "Order" with broad radiation pattern.
-          // As the order goes higher, the cardioid directivity region becomes narrower.
-          // Any direct path signal outside of the directivity region will be attenuated based on the scaling factor.
-          // For example, if scaling is set to 1 (fully directional) the direct path signal outside of the directivity
-          // region will be fully attenuated and only the reflections from the environment will be audible.
-          hr = ConfigureApo( xaudio2, parentVoice, 1.0f, 4.0f );
-        }
-        return hr;
-      } );
     }
 
     //----------------------------------------------------------------------------
@@ -62,7 +45,7 @@ namespace HoloIntervention
 
     //----------------------------------------------------------------------------
     _Use_decl_annotations_
-    HRESULT CardioidSound::ConfigureApo( ComPtr<IXAudio2> xaudio2, IXAudio2SubmixVoice* parentVoice, float scaling, float order )
+    HRESULT CardioidSound::Initialize( ComPtr<IXAudio2> xaudio2, IXAudio2SubmixVoice* parentVoice, SpatialCoordinateSystem^ coordinateSystem, const float3& position, const float3& pitchYawRoll )
     {
       if ( m_hrtfParams )
       {
@@ -74,13 +57,13 @@ namespace HoloIntervention
       // Cardioid directivity configuration
       HrtfDirectivityCardioid cardioid;
       cardioid.directivity.type = HrtfDirectivityType::Cardioid;
-      cardioid.directivity.scaling = scaling;
-      cardioid.order = order;
+      cardioid.directivity.scaling = 1.f;
+      cardioid.order = 4.f;
 
       // APO initialization
       HrtfApoInit apoInit;
       apoInit.directivity = &cardioid.directivity;
-      apoInit.distanceDecay = nullptr;                // This specifies natural distance decay behavior (simulates real world)
+      apoInit.distanceDecay = nullptr;  // This specifies natural distance decay behavior (simulates real world)
 
       // CreateHrtfApo will fail with E_NOTIMPL on unsupported platforms.
       ComPtr<IXAPO> xapo;
@@ -148,21 +131,62 @@ namespace HoloIntervention
       sends.pSends = &sendDesc;
       hr = m_sourceVoice->SetOutputVoices( &sends );
 
+      SetSourcePose( coordinateSystem, position, pitchYawRoll );
+
       if ( FAILED( hr ) )
       {
         throw Platform::Exception::CreateException( hr );
+      }
+      else
+      {
+        m_resourcesLoaded = true;
       }
 
       return hr;
     }
 
     //----------------------------------------------------------------------------
+    _Use_decl_annotations_
     HRESULT CardioidSound::Start()
     {
-      return m_sourceVoice->Start();
+      XAUDIO2_BUFFER buffer{};
+      buffer.AudioBytes = static_cast<UINT32>( m_audioFile.GetSize() );
+      buffer.pAudioData = m_audioFile.GetData();
+      buffer.LoopCount = XAUDIO2_LOOP_INFINITE;
+      auto hr = m_sourceVoice->SubmitSourceBuffer( &buffer );
+
+      if ( SUCCEEDED( hr ) )
+      {
+        m_isFinished = false;
+        return m_sourceVoice->Start();
+      }
+
+      return hr;
     }
 
     //----------------------------------------------------------------------------
+    _Use_decl_annotations_
+    HRESULT CardioidSound::StartOnce()
+    {
+      XAUDIO2_BUFFER buffer{};
+      buffer.AudioBytes = static_cast<UINT32>( m_audioFile.GetSize() );
+      buffer.pAudioData = m_audioFile.GetData();
+      buffer.LoopBegin = XAUDIO2_NO_LOOP_REGION;
+      buffer.LoopLength = 0;
+      buffer.LoopCount = 0;
+      auto hr = m_sourceVoice->SubmitSourceBuffer( &buffer );
+
+      if ( SUCCEEDED( hr ) )
+      {
+        m_isFinished = false;
+        return m_sourceVoice->Start();
+      }
+
+      return hr;
+    }
+
+    //----------------------------------------------------------------------------
+    _Use_decl_annotations_
     HRESULT CardioidSound::Stop()
     {
       return m_sourceVoice->Stop();
@@ -177,6 +201,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    _Use_decl_annotations_
     HrtfEnvironment CardioidSound::GetEnvironment()
     {
       return m_environment;
@@ -184,20 +209,48 @@ namespace HoloIntervention
 
     //----------------------------------------------------------------------------
     _Use_decl_annotations_
-    HRESULT CardioidSound::OnUpdate( float x, float y, float z, float pitch, float yaw, float roll )
+    void CardioidSound::SetSourcePose( SpatialCoordinateSystem^ coordinateSystem, const float3& position, const float3& pitchYawRoll )
     {
-      auto hr = S_OK;
-      if ( m_hrtfParams )
+      m_coordinateSystem = coordinateSystem;
+      m_sourcePosition = position;
+      auto hrtf_position = HrtfPosition{ position.x, position.y, position.z };
+      m_hrtfParams->SetSourcePosition( &hrtf_position );
+
+      auto sourceOrientation = OrientationFromAngles( pitchYawRoll.x, pitchYawRoll.y, pitchYawRoll.z );
+      m_hrtfParams->SetSourceOrientation( &sourceOrientation );
+    }
+
+    //----------------------------------------------------------------------------
+    _Use_decl_annotations_
+    float3& CardioidSound::GetSourcePosition()
+    {
+      return m_sourcePosition;
+    }
+
+    //----------------------------------------------------------------------------
+    _Use_decl_annotations_
+    float3& CardioidSound::GetPitchYawRoll()
+    {
+      return m_pitchYawRoll;
+    }
+
+    //----------------------------------------------------------------------------
+    _Use_decl_annotations_
+    void CardioidSound::Update( DX::StepTimer& timer )
+    {
+      if ( !m_resourcesLoaded || m_isFinished )
       {
-        auto position = HrtfPosition{ x, y, z };
-        hr = m_hrtfParams->SetSourcePosition( &position );
-        if ( SUCCEEDED( hr ) )
-        {
-          auto sourceOrientation = OrientationFromAngles( pitch, yaw, roll );
-          hr = m_hrtfParams->SetSourceOrientation( &sourceOrientation );
-        }
+        return;
       }
-      return hr;
+
+      const float timeElapsed = static_cast<float>( timer.GetTotalSeconds() );
+
+      XAUDIO2_VOICE_STATE state;
+      m_sourceVoice->GetState( &state );
+      if ( state.BuffersQueued == 0 )
+      {
+        m_isFinished = true;
+      }
     }
 
     //----------------------------------------------------------------------------
