@@ -181,7 +181,7 @@ namespace HoloIntervention
           }
 
           auto& surfaceMesh = m_meshCollection[id];
-          surfaceMesh->UpdateSurface( newSurface, meshOptions );
+          surfaceMesh->UpdateSurface( mesh );
           surfaceMesh->SetIsActive( true );
         }
       }, task_continuation_context::use_current() );

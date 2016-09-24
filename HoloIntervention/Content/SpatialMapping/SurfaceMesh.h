@@ -71,7 +71,6 @@ namespace HoloIntervention
     struct SurfaceMeshProperties
     {
       unsigned int vertexStride = 0;
-      unsigned int normalStride = 0;
       unsigned int indexCount = 0;
       DXGI_FORMAT  indexFormat = DXGI_FORMAT_UNKNOWN;
     };

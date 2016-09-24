@@ -66,7 +66,7 @@ namespace HoloIntervention
     void SurfaceMesh::UpdateSurface( SpatialSurfaceMesh^ newMesh )
     {
       std::lock_guard<std::mutex> lock( m_meshResourcesMutex );
-      m_worldToBoxTransformComputed = true;
+      m_worldToBoxTransformComputed = false;
       m_surfaceMesh = newMesh;
       m_updateNeeded = true;
     }
@@ -187,8 +187,8 @@ namespace HoloIntervention
 
       Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> updatedVertexPositionsSRV;
       Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> updatedTriangleIndicesSRV;
-      DX::ThrowIfFailed( CreateBufferSRV( m_vertexPositions, positions, updatedVertexPositionsSRV.GetAddressOf() ) );
-      DX::ThrowIfFailed( CreateBufferSRV( m_triangleIndices, indices, updatedTriangleIndicesSRV.GetAddressOf() ) );
+      DX::ThrowIfFailed( CreateBufferSRV(updatedVertexPositions, positions, updatedVertexPositionsSRV.GetAddressOf() ) );
+      DX::ThrowIfFailed( CreateBufferSRV(updatedTriangleIndices, indices, updatedTriangleIndicesSRV.GetAddressOf() ) );
 
       // Before updating the meshes, check to ensure that there wasn't a more recent update.
       {
@@ -207,7 +207,6 @@ namespace HoloIntervention
 
           // Cache properties for the buffers we will now use.
           m_updatedMeshProperties.vertexStride = m_surfaceMesh->VertexPositions->Stride;
-          m_updatedMeshProperties.normalStride = m_surfaceMesh->VertexNormals->Stride;
           m_updatedMeshProperties.indexCount = m_surfaceMesh->TriangleIndices->ElementCount;
           m_updatedMeshProperties.indexFormat = static_cast<DXGI_FORMAT>( m_surfaceMesh->TriangleIndices->Format );
 
