@@ -47,8 +47,8 @@ namespace HoloIntervention
   {
     //----------------------------------------------------------------------------
     VoiceInputHandler::VoiceInputHandler()
-      : m_speechRecognizer( ref new SpeechRecognizer() )
     {
+      m_speechRecognizer = ref new SpeechRecognizer();
       m_speechRecognizer->Constraints->Clear();
     }
 

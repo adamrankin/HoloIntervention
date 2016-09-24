@@ -85,20 +85,21 @@ namespace HoloIntervention
         auto& pair = *iter;
         auto& surfaceMesh = pair.second;
 
+        // Update the surface mesh.
+        surfaceMesh->Update( m_stepTimer, coordinateSystem );
+
         // Check to see if the mesh has expired.
         float lastActiveTime = surfaceMesh->GetLastActiveTime();
         float inactiveDuration = timeElapsed - lastActiveTime;
         if ( inactiveDuration > MAX_INACTIVE_MESH_TIME_SEC )
         {
           // Surface mesh is expired.
-          m_meshCollection.erase( iter++ );
-          continue;
+          iter = m_meshCollection.erase( iter );
         }
-
-        // Update the surface mesh.
-        surfaceMesh->Update( m_stepTimer, coordinateSystem );
-
-        ++iter;
+        else
+        {
+          ++iter;
+        }
       };
     }
 
@@ -160,22 +161,32 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SpatialSurfaceCollection::AddOrUpdateSurface( Guid id, SpatialSurfaceInfo^ newSurface, SpatialSurfaceMeshOptions^ meshOptions )
+    task<void> SpatialSurfaceCollection::AddOrUpdateSurfaceAsync( Guid id, SpatialSurfaceInfo^ newSurface, SpatialSurfaceMeshOptions^ meshOptions )
     {
       // The level of detail setting is used to limit mesh complexity, by limiting the number
       // of triangles per cubic meter.
       std::lock_guard<std::mutex> guard( m_meshCollectionLock );
 
-      auto entry = m_meshCollection.find( id );
-      if ( entry == m_meshCollection.end() )
+      auto createMeshTask = create_task( newSurface->TryComputeLatestMeshAsync( m_maxTrianglesPerCubicMeter, meshOptions ) );
+      auto processMeshTask = createMeshTask.then( [this, id, newSurface, meshOptions]( SpatialSurfaceMesh ^ mesh )
       {
-        // Create a new surface and insert it
-        m_meshCollection[id] = std::make_shared<SurfaceMesh>( m_deviceResources, newSurface, meshOptions );
-      }
-      else
-      {
-        entry->second->UpdateSurface( newSurface, meshOptions );
-      }
+        if ( mesh != nullptr )
+        {
+          std::lock_guard<std::mutex> guard( m_meshCollectionLock );
+
+          auto entry = m_meshCollection.find( id );
+          if ( entry == m_meshCollection.end() )
+          {
+            m_meshCollection[id] = std::make_shared<SurfaceMesh>( m_deviceResources );
+          }
+
+          auto& surfaceMesh = m_meshCollection[id];
+          surfaceMesh->UpdateSurface( newSurface, meshOptions );
+          surfaceMesh->SetIsActive( true );
+        }
+      }, task_continuation_context::use_current() );
+
+      return processMeshTask;
     }
 
     //----------------------------------------------------------------------------

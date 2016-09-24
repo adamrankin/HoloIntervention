@@ -86,7 +86,7 @@ namespace HoloIntervention
       Microsoft::WRL::ComPtr<ID3D11PixelShader>       m_colorPixelShader;
 
       // Control variables
-      bool                                            m_renderEnabled = true;
+      bool                                            m_renderEnabled = false;
 
       // Looping related variables
       bool                                            m_isLooping;

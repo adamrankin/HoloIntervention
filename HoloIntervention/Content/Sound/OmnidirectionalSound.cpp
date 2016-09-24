@@ -47,14 +47,13 @@ namespace HoloIntervention
     {
       m_sourceVoice->DestroyVoice();
       m_sourceVoice = nullptr;
-      m_callBack = nullptr;
       m_hrtfParams = nullptr;
       m_resourcesLoaded = false;
     }
 
     //----------------------------------------------------------------------------
     _Use_decl_annotations_
-    HRESULT OmnidirectionalSound::Initialize( ComPtr<IXAudio2> xaudio2, IXAudio2SubmixVoice* parentVoice, SpatialCoordinateSystem^ coordinateSystem, const float3& position )
+    HRESULT OmnidirectionalSound::Initialize( ComPtr<IXAudio2> xaudio2, IXAudio2SubmixVoice* parentVoice, const float3& position )
     {
       m_callBack = std::make_shared<VoiceCallback<OmnidirectionalSound>>( *this );
 
@@ -102,7 +101,7 @@ namespace HoloIntervention
         throw Platform::Exception::CreateException( hr );
       }
 
-      SetSourcePosition( coordinateSystem, position );
+      m_sourcePosition = position;
 
       m_resourcesLoaded = true;
 
@@ -191,9 +190,8 @@ namespace HoloIntervention
 
     //----------------------------------------------------------------------------
     _Use_decl_annotations_
-    void OmnidirectionalSound::SetSourcePosition( _In_ SpatialCoordinateSystem^ coordinateSystem, _In_ const float3& position )
+    void OmnidirectionalSound::SetSourcePosition( const float3& position )
     {
-      m_coordinateSystem = coordinateSystem;
       m_sourcePosition = position;
 
       HrtfPosition hrtf_position = { position.x, position.y, position.z };

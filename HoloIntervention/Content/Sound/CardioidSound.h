@@ -43,7 +43,7 @@ namespace HoloIntervention
     public:
       CardioidSound( AudioFileReader& audioFile );
       virtual ~CardioidSound();
-      HRESULT Initialize( _In_ ComPtr<IXAudio2> xaudio2, _In_ IXAudio2SubmixVoice* parentVoice, SpatialCoordinateSystem^ coordinateSystem, const float3& position, const float3& pitchYawRoll );
+      HRESULT Initialize( _In_ ComPtr<IXAudio2> xaudio2, _In_ IXAudio2SubmixVoice* parentVoice, const float3& position, const float3& pitchYawRoll );
 
       HRESULT Start();
       HRESULT StartOnce();
@@ -53,9 +53,11 @@ namespace HoloIntervention
       HRESULT SetEnvironment( _In_ HrtfEnvironment environment );
       HrtfEnvironment GetEnvironment();
 
-      void SetSourcePose( _In_ SpatialCoordinateSystem^ coordinateSystem, _In_ const float3& position, _In_ const float3& pitchYawRoll );
+      void SetSourcePose( _In_ const float3& position, _In_ const float3& pitchYawRoll );
       float3& GetSourcePosition();
       float3& GetPitchYawRoll();
+
+      bool IsFinished() const;
 
     protected:
       HrtfOrientation OrientationFromAngles( float pitch, float yaw, float roll );

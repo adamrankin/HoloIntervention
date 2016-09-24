@@ -68,18 +68,28 @@ namespace HoloIntervention
     };
     static_assert( ( sizeof( WorldConstantBuffer ) % ( sizeof( float ) * 4 ) ) == 0, "World constant buffer size must be 16-byte aligned (16 bytes is the length of four floats)." );
 
+    struct SurfaceMeshProperties
+    {
+      unsigned int vertexStride = 0;
+      unsigned int normalStride = 0;
+      unsigned int indexCount = 0;
+      DXGI_FORMAT  indexFormat = DXGI_FORMAT_UNKNOWN;
+    };
+
     class SurfaceMesh
     {
     public:
-      SurfaceMesh( const std::shared_ptr<DX::DeviceResources>& deviceResources, SpatialSurfaceInfo^ newSurface, SpatialSurfaceMeshOptions^ meshOptions );
+      SurfaceMesh( const std::shared_ptr<DX::DeviceResources>& deviceResources );
       ~SurfaceMesh();
 
-      void UpdateSurface( SpatialSurfaceInfo^ newSurface, SpatialSurfaceMeshOptions^ meshOptions );
+      void UpdateSurface( SpatialSurfaceMesh^ newMesh );
 
       void Update( DX::StepTimer const& timer,
-                            SpatialCoordinateSystem^ baseCoordinateSystem );
+                   SpatialCoordinateSystem^ baseCoordinateSystem );
 
+      void CreateVertexResources();
       void CreateDeviceDependentResources();
+      void ReleaseVertexResources();
       void ReleaseDeviceDependentResources();
 
       bool TestRayOBBIntersection( SpatialCoordinateSystem^ desiredCoordinateSystem,
@@ -101,9 +111,9 @@ namespace HoloIntervention
       void SetIsActive( const bool& isActive );
 
     protected:
-      void UpdateDeviceBasedResources();
+      void SwapVertexBuffers();
 
-      void ComputeOBBInverseWorld(SpatialCoordinateSystem^ baseCoordinateSystem);
+      void ComputeOBBInverseWorld( SpatialCoordinateSystem^ baseCoordinateSystem );
 
       HRESULT CreateStructuredBuffer( uint32 uStructureSize,
                                       SpatialSurfaceMeshBuffer^ buffer,
@@ -135,29 +145,38 @@ namespace HoloIntervention
       std::shared_ptr<DX::DeviceResources>  m_deviceResources;
 
       // The mesh owned by this object
-      SpatialSurfaceMeshOptions^            m_meshOptions = nullptr;
-      SpatialSurfaceInfo^                   m_surfaceInfo = nullptr;
       SpatialSurfaceMesh^                   m_surfaceMesh = nullptr;
 
       // D3D resources for this mesh
-      ComPtr<ID3D11Buffer>                  m_vertexPositionBuffer = nullptr;
-      ComPtr<ID3D11Buffer>                  m_indexBuffer = nullptr;
+      ComPtr<ID3D11Buffer>                  m_vertexPositions = nullptr;
+      ComPtr<ID3D11Buffer>                  m_triangleIndices = nullptr;
+      ComPtr<ID3D11Buffer>                  m_updatedVertexPositions = nullptr;
+      ComPtr<ID3D11Buffer>                  m_updatedTriangleIndices = nullptr;
+
       ComPtr<ID3D11Buffer>                  m_outputBuffer = nullptr;
       ComPtr<ID3D11Buffer>                  m_readBackBuffer = nullptr;
       ComPtr<ID3D11Buffer>                  m_meshConstantBuffer = nullptr;
 
-      ComPtr<ID3D11ShaderResourceView>      m_meshSRV = nullptr;
+      ComPtr<ID3D11ShaderResourceView>      m_vertexSRV = nullptr;
       ComPtr<ID3D11ShaderResourceView>      m_indexSRV = nullptr;
+      ComPtr<ID3D11ShaderResourceView>      m_updatedVertexSRV = nullptr;
+      ComPtr<ID3D11ShaderResourceView>      m_updatedIndicesSRV = nullptr;
+
       ComPtr<ID3D11UnorderedAccessView>     m_outputUAV = nullptr;
+
+      SurfaceMeshProperties m_meshProperties;
+      SurfaceMeshProperties m_updatedMeshProperties;
 
       // DateTime to allow returning cached ray hits
       Windows::Foundation::DateTime         m_lastUpdateTime;
 
       // Behavior variables
+      bool                                  m_vertexLoadingComplete = false;
       bool                                  m_loadingComplete = false;
       bool                                  m_isActive = false;
+      bool                                  m_updateNeeded = false;
+      bool                                  m_updateReady = false;
       float                                 m_lastActiveTime = -1.f;
-      double                                m_maxTrianglesPerCubicMeter = 1000.0;
 
       // Bounding box inverse world matrix
       XMMATRIX                              m_worldToBoxTransform;

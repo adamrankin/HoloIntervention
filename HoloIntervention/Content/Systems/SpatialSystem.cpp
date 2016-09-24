@@ -113,13 +113,13 @@ namespace HoloIntervention
           if ( m_surfaceCollection->GetLastUpdateTime( id ).UniversalTime < surfaceInfo->UpdateTime.UniversalTime )
           {
             // Update existing surface.
-            m_surfaceCollection->AddOrUpdateSurface( id, surfaceInfo, m_surfaceMeshOptions );
+            m_surfaceCollection->AddOrUpdateSurfaceAsync( id, surfaceInfo, m_surfaceMeshOptions );
           }
         }
         else
         {
           // New surface.
-          m_surfaceCollection->AddOrUpdateSurface( id, surfaceInfo, m_surfaceMeshOptions );
+          m_surfaceCollection->AddOrUpdateSurfaceAsync( id, surfaceInfo, m_surfaceMeshOptions );
         }
       }
 
@@ -245,7 +245,7 @@ namespace HoloIntervention
             // Store the ID and metadata for each surface.
             auto const& id = pair->Key;
             auto const& surfaceInfo = pair->Value;
-            m_surfaceCollection->AddOrUpdateSurface( id, surfaceInfo, m_surfaceMeshOptions );
+            m_surfaceCollection->AddOrUpdateSurfaceAsync( id, surfaceInfo, m_surfaceMeshOptions );
           }
 
           // We can also subscribe to an event to receive up-to-date data.

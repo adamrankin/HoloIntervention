@@ -48,55 +48,66 @@ namespace HoloIntervention
   namespace Spatial
   {
     //----------------------------------------------------------------------------
-    SurfaceMesh::SurfaceMesh( const std::shared_ptr<DX::DeviceResources>& deviceResources, SpatialSurfaceInfo^ surfaceInfo, SpatialSurfaceMeshOptions^ meshOptions )
+    SurfaceMesh::SurfaceMesh( const std::shared_ptr<DX::DeviceResources>& deviceResources )
       : m_deviceResources( deviceResources )
-      , m_surfaceInfo( surfaceInfo )
-      , m_meshOptions( meshOptions )
     {
+      ReleaseDeviceDependentResources();
       m_lastUpdateTime.UniversalTime = 0;
-
-      UpdateSurface( surfaceInfo, meshOptions );
     }
 
     //----------------------------------------------------------------------------
     SurfaceMesh::~SurfaceMesh()
     {
+      std::lock_guard<std::mutex> lock( m_meshResourcesMutex );
       ReleaseDeviceDependentResources();
     }
 
     //----------------------------------------------------------------------------
-    void SurfaceMesh::UpdateSurface( SpatialSurfaceInfo^ surfaceInfo, SpatialSurfaceMeshOptions^ meshOptions )
+    void SurfaceMesh::UpdateSurface( SpatialSurfaceMesh^ newMesh )
     {
-      auto createMeshTask = create_task( surfaceInfo->TryComputeLatestMeshAsync( m_maxTrianglesPerCubicMeter, m_meshOptions ) ).then( [this]( SpatialSurfaceMesh ^ mesh )
-      {
-        {
-          std::lock_guard<std::mutex> lock( m_meshResourcesMutex );
-          if ( mesh != nullptr )
-          {
-            m_surfaceMesh = mesh;
-            SetIsActive( true );
-          }
-
-          // Force a recomputation of the bounding box once a coordinate system is provided
-          m_worldToBoxTransformComputed = false;
-        }
-        UpdateDeviceBasedResources();
-      } );
+      std::lock_guard<std::mutex> lock( m_meshResourcesMutex );
+      m_worldToBoxTransformComputed = true;
+      m_surfaceMesh = newMesh;
+      m_updateNeeded = true;
     }
 
     //----------------------------------------------------------------------------
     // Spatial Mapping surface meshes each have a transform. This transform is updated every frame.
     void SurfaceMesh::Update( DX::StepTimer const& timer, SpatialCoordinateSystem^ baseCoordinateSystem )
     {
+      if ( baseCoordinateSystem == nullptr )
+      {
+        return;
+      }
+
       if ( m_surfaceMesh == nullptr )
       {
         // Not yet ready.
         m_isActive = false;
       }
 
+      if ( m_updateNeeded )
+      {
+        CreateVertexResources();
+        m_updateNeeded = false;
+      }
+      else
+      {
+        std::lock_guard<std::mutex> lock( m_meshResourcesMutex );
+
+        if ( m_updateReady )
+        {
+          // Surface mesh resources are created off-thread so that they don't affect rendering latency.
+          // When a new update is ready, we should begin using the updated vertex position, normal, and
+          // index buffers.
+          SwapVertexBuffers();
+          m_updateReady = false;
+        }
+      }
+
       // If the surface is active this frame, we need to update its transform.
       XMMATRIX transform;
-      if ( m_isActive )
+      if ( m_isActive && m_surfaceMesh->CoordinateSystem != nullptr )
       {
         auto tryTransform = m_surfaceMesh->CoordinateSystem->TryGetTransformTo( baseCoordinateSystem );
         if ( tryTransform != nullptr )
@@ -138,12 +149,20 @@ namespace HoloIntervention
         &m_normalToWorldTransform,
         XMMatrixTranspose( normalTransform )
       );
+
+      if ( !m_loadingComplete )
+      {
+        // If loading is not yet complete, we cannot actually update the graphics resources.
+        // This return is intentionally placed after the surface mesh updates so that this
+        // code may be copied and re-used for CPU-based processing of surface data.
+        CreateDeviceDependentResources();
+        return;
+      }
     }
 
     //----------------------------------------------------------------------------
-    void SurfaceMesh::CreateDeviceDependentResources()
+    void SurfaceMesh::CreateVertexResources()
     {
-      std::lock_guard<std::mutex> lock( m_meshResourcesMutex );
       if ( m_surfaceMesh == nullptr )
       {
         m_isActive = false;
@@ -161,50 +180,105 @@ namespace HoloIntervention
       SpatialSurfaceMeshBuffer^ positions = m_surfaceMesh->VertexPositions;
       SpatialSurfaceMeshBuffer^ indices = m_surfaceMesh->TriangleIndices;
 
-      DX::ThrowIfFailed( CreateStructuredBuffer( sizeof( VertexBufferType ), positions, m_vertexPositionBuffer.GetAddressOf() ) );
-      DX::ThrowIfFailed( CreateStructuredBuffer( sizeof( IndexBufferType ), indices, m_indexBuffer.GetAddressOf() ) );
+      Microsoft::WRL::ComPtr<ID3D11Buffer> updatedVertexPositions;
+      Microsoft::WRL::ComPtr<ID3D11Buffer> updatedTriangleIndices;
+      DX::ThrowIfFailed( CreateStructuredBuffer( sizeof( VertexBufferType ), positions, updatedVertexPositions.GetAddressOf() ) );
+      DX::ThrowIfFailed( CreateStructuredBuffer( sizeof( IndexBufferType ), indices, updatedTriangleIndices.GetAddressOf() ) );
+
+      Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> updatedVertexPositionsSRV;
+      Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> updatedTriangleIndicesSRV;
+      DX::ThrowIfFailed( CreateBufferSRV( m_vertexPositions, positions, updatedVertexPositionsSRV.GetAddressOf() ) );
+      DX::ThrowIfFailed( CreateBufferSRV( m_triangleIndices, indices, updatedTriangleIndicesSRV.GetAddressOf() ) );
+
+      // Before updating the meshes, check to ensure that there wasn't a more recent update.
+      {
+        std::lock_guard<std::mutex> lock( m_meshResourcesMutex );
+
+        auto meshUpdateTime = m_surfaceMesh->SurfaceInfo->UpdateTime;
+        if ( meshUpdateTime.UniversalTime > m_lastUpdateTime.UniversalTime )
+        {
+          // Prepare to swap in the new meshes.
+          // Here, we use ComPtr.Swap() to avoid unnecessary overhead from ref counting.
+          m_updatedVertexPositions.Swap( updatedVertexPositions );
+          m_updatedTriangleIndices.Swap( updatedTriangleIndices );
+
+          m_updatedVertexSRV.Swap( updatedVertexPositionsSRV );
+          m_updatedIndicesSRV.Swap( updatedTriangleIndicesSRV );
+
+          // Cache properties for the buffers we will now use.
+          m_updatedMeshProperties.vertexStride = m_surfaceMesh->VertexPositions->Stride;
+          m_updatedMeshProperties.normalStride = m_surfaceMesh->VertexNormals->Stride;
+          m_updatedMeshProperties.indexCount = m_surfaceMesh->TriangleIndices->ElementCount;
+          m_updatedMeshProperties.indexFormat = static_cast<DXGI_FORMAT>( m_surfaceMesh->TriangleIndices->Format );
+
+          // Send a signal to the render loop indicating that new resources are available to use.
+          m_updateReady = true;
+          m_lastUpdateTime = meshUpdateTime;
+          m_vertexLoadingComplete = true;
+        }
+      }
+    }
+
+    //----------------------------------------------------------------------------
+    void SurfaceMesh::CreateDeviceDependentResources()
+    {
+      CreateVertexResources();
+
       DX::ThrowIfFailed( CreateStructuredBuffer( sizeof( OutputBufferType ), 1, m_outputBuffer.GetAddressOf() ) );
       DX::ThrowIfFailed( CreateReadbackBuffer( sizeof( OutputBufferType ), 1 ) );
       DX::ThrowIfFailed( CreateConstantBuffer() );
-
-#if defined(_DEBUG) || defined(PROFILE)
-      m_vertexPositionBuffer->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "MeshBuffer" ) - 1, "MeshBuffer" );
-      m_indexBuffer->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "IndexBuffer" ) - 1, "IndexBuffer" );
-      m_outputBuffer->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "OutputBuffer" ) - 1, "OutputBuffer" );
-      m_readBackBuffer->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "ReadbackBuffer" ) - 1, "ReadbackBuffer" );
-#endif
-
-      DX::ThrowIfFailed( CreateBufferSRV( m_vertexPositionBuffer, positions, m_meshSRV.GetAddressOf() ) );
-      DX::ThrowIfFailed( CreateBufferSRV( m_indexBuffer, indices, m_indexSRV.GetAddressOf() ) );
       DX::ThrowIfFailed( CreateBufferUAV( m_outputBuffer, m_outputUAV.GetAddressOf() ) );
-
-#if defined(_DEBUG) || defined(PROFILE)
-      m_meshSRV->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "Mesh SRV" ) - 1, "Mesh SRV" );
-      m_indexSRV->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "Index SRV" ) - 1, "Index SRV" );
-      m_outputUAV->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( "Output UAV" ) - 1, "Output UAV" );
-#endif
-
-      m_lastUpdateTime = m_surfaceMesh->SurfaceInfo->UpdateTime;
 
       m_loadingComplete = true;
     }
 
     //----------------------------------------------------------------------------
+    void SurfaceMesh::ReleaseVertexResources()
+    {
+      m_vertexPositions.Reset();
+      m_triangleIndices.Reset();
+      m_vertexSRV.Reset();
+      m_indexSRV.Reset();
+
+      m_vertexLoadingComplete = false;
+    }
+
+    //----------------------------------------------------------------------------
     void SurfaceMesh::ReleaseDeviceDependentResources()
     {
-      std::lock_guard<std::mutex> lock( m_meshResourcesMutex );
+      // Clear out any pending resources.
+      SwapVertexBuffers();
 
       // Clear out active resources.
-      m_meshSRV.Reset();
-      m_indexSRV.Reset();
+      ReleaseVertexResources();
+
+      // Clear out active resources.
       m_outputUAV.Reset();
-      m_vertexPositionBuffer.Reset();
-      m_indexBuffer.Reset();
       m_outputBuffer.Reset();
       m_readBackBuffer.Reset();
       m_meshConstantBuffer.Reset();
 
       m_loadingComplete = false;
+    }
+
+    //----------------------------------------------------------------------------
+    void SurfaceMesh::SwapVertexBuffers()
+    {
+      // Swap out the previous vertex position, normal, and index buffers, and replace
+      // them with up-to-date buffers.
+      m_vertexPositions = m_updatedVertexPositions;
+      m_triangleIndices = m_updatedTriangleIndices;
+      m_vertexSRV = m_updatedVertexSRV;
+      m_indexSRV = m_updatedIndicesSRV;
+
+      // Swap out the metadata: index count, index format, .
+      m_meshProperties = m_updatedMeshProperties;
+
+      ZeroMemory( &m_updatedMeshProperties, sizeof( SurfaceMeshProperties ) );
+      m_updatedVertexPositions.Reset();
+      m_updatedTriangleIndices.Reset();
+      m_updatedVertexSRV.Reset();
+      m_updatedIndicesSRV.Reset();
     }
 
     //----------------------------------------------------------------------------
@@ -215,7 +289,7 @@ namespace HoloIntervention
     {
       std::lock_guard<std::mutex> lock( m_meshResourcesMutex );
 
-      if ( !m_loadingComplete )
+      if ( !m_vertexLoadingComplete )
       {
         return false;
       }
@@ -233,7 +307,7 @@ namespace HoloIntervention
         return m_hasLastComputedHit;
       }
 
-      ID3D11ShaderResourceView* aRViews[2] = { m_meshSRV.Get(), m_indexSRV.Get() };
+      ID3D11ShaderResourceView* aRViews[2] = { m_vertexSRV.Get(), m_indexSRV.Get() };
       // Send in the number of triangles as the number of thread groups to dispatch
       // triangleCount = m_indexCount/3
       RunComputeShader( context, 2, aRViews, m_outputUAV.Get(), m_indexCount / 3, 1, 1 );
@@ -284,12 +358,12 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     const Windows::Foundation::Numerics::float3& SurfaceMesh::GetLastHitPosition() const
     {
-      if (m_hasLastComputedHit)
+      if ( m_hasLastComputedHit )
       {
         return m_rayIntersectionResultPosition;
       }
 
-      throw new std::exception("No hit ever recorded.");
+      throw new std::exception( "No hit ever recorded." );
     }
 
     //----------------------------------------------------------------------------
@@ -305,18 +379,11 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SurfaceMesh::UpdateDeviceBasedResources()
-    {
-      ReleaseDeviceDependentResources();
-      CreateDeviceDependentResources();
-    }
-
-    //----------------------------------------------------------------------------
     void SurfaceMesh::ComputeOBBInverseWorld( SpatialCoordinateSystem^ baseCoordinateSystem )
     {
       m_worldToBoxTransformComputed = false;
 
-      if (m_surfaceMesh == nullptr)
+      if ( m_surfaceMesh == nullptr )
       {
         return;
       }
@@ -446,7 +513,7 @@ namespace HoloIntervention
                                         uint32 yThreadGroups,
                                         uint32 zThreadGroups )
     {
-      if ( !m_loadingComplete )
+      if ( !m_vertexLoadingComplete )
       {
         return;
       }

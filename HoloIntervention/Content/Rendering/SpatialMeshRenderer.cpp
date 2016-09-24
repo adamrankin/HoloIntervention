@@ -516,7 +516,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void SpatialMeshRenderer::DebugDrawBoundingBox( int32_t index )
     {
-      if ( index >= m_meshCollection.size() )
+      if( index > 0 && ( uint32_t )index >= m_meshCollection.size() )
       {
         return;
       }

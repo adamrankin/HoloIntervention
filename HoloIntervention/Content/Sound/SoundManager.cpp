@@ -51,8 +51,8 @@ namespace HoloIntervention
     static std::wstring SOUND_ASSET_FILENAMES[SOUND_ASSET_COUNT][2] =
     {
       { L"cursor_toggle", L"Assets/Sounds/cursor_toggle.wav" },
-      { L"input_fail", L"Assets/Sounds/input_fail.wav" },
-      { L"input_ok", L"Assets/Sounds/input_ok.wav" }
+      { L"input_fail", L"Assets/Sounds/input_fail.mp3" },
+      { L"input_ok", L"Assets/Sounds/input_ok.mp3" }
     };
 
     //----------------------------------------------------------------------------
@@ -125,7 +125,8 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void SoundManager::PlayOmniSoundOnce( const std::wstring& assetName, SpatialCoordinateSystem^ coordinateSystem, const float3& position, HrtfEnvironment env /* = HrtfEnvironment::Small */ )
     {
-      if ( m_audioAssets.find( assetName ) == m_audioAssets.end() )
+      if ( m_audioAssets.find( assetName ) == m_audioAssets.end() 
+        || m_coordinateSystem == nullptr )
       {
         return;
       }
@@ -150,7 +151,7 @@ namespace HoloIntervention
       HRESULT hr;
       try
       {
-        hr = omniSound->Initialize( m_xaudio2, m_omniSubmixParentVoice, m_coordinateSystem, positionCopy );
+        hr = omniSound->Initialize( m_xaudio2, m_omniSubmixParentVoice, positionCopy );
       }
       catch ( Platform::Exception^ e )
       {
@@ -186,12 +187,8 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void SoundManager::PlayCarioidSoundOnce( const std::wstring& assetName, SpatialCoordinateSystem^ coordinateSystem, const float3& position, const float3& pitchYawRoll, HrtfEnvironment env /*= HrtfEnvironment::Small */ )
     {
-      if ( m_coordinateSystem == nullptr )
-      {
-        return;
-      }
-
-      if ( m_audioAssets.find( assetName ) == m_audioAssets.end() )
+      if ( m_audioAssets.find( assetName ) == m_audioAssets.end() 
+        || m_coordinateSystem == nullptr)
       {
         return;
       }
@@ -216,7 +213,7 @@ namespace HoloIntervention
       HRESULT hr;
       try
       {
-        hr = cardioidSound->Initialize( m_xaudio2, m_cardioidSubmixParentVoice, m_coordinateSystem, positionCopy, pitchYawRoll );
+        hr = cardioidSound->Initialize( m_xaudio2, m_cardioidSubmixParentVoice, positionCopy, pitchYawRoll );
       }
       catch ( Platform::Exception^ e )
       {
@@ -256,17 +253,35 @@ namespace HoloIntervention
 
       for ( auto& pair : m_cardioidSounds )
       {
-        for ( auto& sound : pair.second )
+        for ( auto iter = pair.second.begin(); iter != pair.second.end();  )
         {
+          auto& sound = *iter;
           sound->Update( stepTimer );
+          if ( sound->IsFinished() )
+          {
+            iter = pair.second.erase( iter );
+          }
+          else
+          {
+            iter++;
+          }
         }
       }
 
       for ( auto& pair : m_omniDirectionalSounds )
       {
-        for ( auto& sound : pair.second )
+        for ( auto iter = pair.second.begin(); iter != pair.second.end(); )
         {
+          auto& sound = *iter;
           sound->Update( stepTimer );
+          if ( sound->IsFinished() )
+          {
+            iter = pair.second.erase( iter );
+          }
+          else
+          {
+            iter++;
+          }
         }
       }
     }

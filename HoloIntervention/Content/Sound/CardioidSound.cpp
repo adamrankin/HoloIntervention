@@ -45,7 +45,7 @@ namespace HoloIntervention
 
     //----------------------------------------------------------------------------
     _Use_decl_annotations_
-    HRESULT CardioidSound::Initialize( ComPtr<IXAudio2> xaudio2, IXAudio2SubmixVoice* parentVoice, SpatialCoordinateSystem^ coordinateSystem, const float3& position, const float3& pitchYawRoll )
+    HRESULT CardioidSound::Initialize( ComPtr<IXAudio2> xaudio2, IXAudio2SubmixVoice* parentVoice, const float3& position, const float3& pitchYawRoll )
     {
       if ( m_hrtfParams )
       {
@@ -131,7 +131,7 @@ namespace HoloIntervention
       sends.pSends = &sendDesc;
       hr = m_sourceVoice->SetOutputVoices( &sends );
 
-      SetSourcePose( coordinateSystem, position, pitchYawRoll );
+      SetSourcePose( position, pitchYawRoll );
 
       if ( FAILED( hr ) )
       {
@@ -209,9 +209,8 @@ namespace HoloIntervention
 
     //----------------------------------------------------------------------------
     _Use_decl_annotations_
-    void CardioidSound::SetSourcePose( SpatialCoordinateSystem^ coordinateSystem, const float3& position, const float3& pitchYawRoll )
+    void CardioidSound::SetSourcePose( const float3& position, const float3& pitchYawRoll )
     {
-      m_coordinateSystem = coordinateSystem;
       m_sourcePosition = position;
       auto hrtf_position = HrtfPosition{ position.x, position.y, position.z };
       m_hrtfParams->SetSourcePosition( &hrtf_position );
@@ -232,6 +231,12 @@ namespace HoloIntervention
     float3& CardioidSound::GetPitchYawRoll()
     {
       return m_pitchYawRoll;
+    }
+
+    //----------------------------------------------------------------------------
+    bool CardioidSound::IsFinished() const
+    {
+      return m_isFinished;
     }
 
     //----------------------------------------------------------------------------

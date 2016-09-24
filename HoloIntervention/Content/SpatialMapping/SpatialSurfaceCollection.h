@@ -63,7 +63,7 @@ namespace HoloIntervention
       void ReleaseDeviceDependentResources();
 
       bool HasSurface( Platform::Guid id );
-      void AddOrUpdateSurface( Platform::Guid id, SpatialSurfaceInfo^ newSurface, SpatialSurfaceMeshOptions^ meshOptions );
+      task<void> AddOrUpdateSurfaceAsync( Platform::Guid id, SpatialSurfaceInfo^ newSurface, SpatialSurfaceMeshOptions^ meshOptions );
       void RemoveSurface( Platform::Guid id );
       void ClearSurfaces();
 
@@ -102,6 +102,8 @@ namespace HoloIntervention
 
       // The set of surfaces in the collection.
       GuidMeshMap                                     m_meshCollection;
+
+      double                                          m_maxTrianglesPerCubicMeter = 1000.0;
 
     protected:
       // The duration of time, in seconds, a mesh is allowed to remain inactive before deletion.

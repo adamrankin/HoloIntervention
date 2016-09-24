@@ -117,6 +117,15 @@ namespace HoloIntervention
     // TODO : remove temp code
     m_igtLinkIF->SetHostname( L"172.16.80.1" );
 
+    try
+    {
+      m_soundManager->InitializeAsync();
+    }
+    catch (Platform::Exception^ e)
+    {
+      OutputDebugStringW(e->Message->Data());
+    }
+
     InitializeVoiceSystem();
 
     // Use the default SpatialLocator to track the motion of the device.

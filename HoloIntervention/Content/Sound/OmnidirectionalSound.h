@@ -51,7 +51,7 @@ namespace HoloIntervention
     public:
       OmnidirectionalSound( AudioFileReader& audioFile );
       virtual ~OmnidirectionalSound();
-      HRESULT Initialize( _In_ ComPtr<IXAudio2> xaudio2, _In_ IXAudio2SubmixVoice* parentVoice, _In_ SpatialCoordinateSystem^ coordinateSystem, _In_ const float3& position );
+      HRESULT Initialize( _In_ ComPtr<IXAudio2> xaudio2, _In_ IXAudio2SubmixVoice* parentVoice, _In_ const float3& position );
 
       HRESULT Start();
       HRESULT StartOnce();
@@ -63,7 +63,7 @@ namespace HoloIntervention
 
       bool IsFinished() const;
 
-      void SetSourcePosition( _In_ SpatialCoordinateSystem^ coordinateSystem, _In_ const float3& position );
+      void SetSourcePosition( _In_ const float3& position );
       float3& GetSourcePosition();
 
     protected:
@@ -72,7 +72,6 @@ namespace HoloIntervention
       IXAudio2SourceVoice*                                    m_sourceVoice;
       ComPtr<IXAPOHrtfParameters>                             m_hrtfParams;
       HrtfEnvironment                                         m_environment = HrtfEnvironment::Medium;
-      SpatialCoordinateSystem^                                m_coordinateSystem;
       float3                                                  m_sourcePosition;
 
       bool                                                    m_isFinished = false;
