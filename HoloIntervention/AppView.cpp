@@ -28,6 +28,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Windows includes
 #include <ppltasks.h>
 
+// System includes
+#include "NotificationSystem.h"
+
 using namespace Concurrency;
 using namespace Windows::ApplicationModel;
 using namespace Windows::ApplicationModel::Activation;
@@ -207,7 +210,14 @@ namespace HoloIntervention
 
       if (m_main != nullptr)
       {
-        m_main->SaveAppState();
+        try
+        {
+          m_main->SaveAppStateAsync();
+        }
+        catch (const std::exception& e)
+        {
+          OutputDebugStringA(e.what());
+        }
       }
 
       deferral->Complete();
@@ -219,7 +229,14 @@ namespace HoloIntervention
   {
     if (m_main != nullptr)
     {
-      m_main->LoadAppState();
+      try
+      {
+        m_main->LoadAppStateAsync();
+      }
+      catch (const std::exception&)
+      {
+        m_main->GetNotificationsSystem().QueueMessage(L"Unable to load spatial anchor store. Please re-place anchors.");
+      }
     }
   }
 

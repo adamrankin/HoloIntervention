@@ -35,6 +35,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 // std includes
 #include <algorithm>
 
+using namespace Concurrency;
 using namespace Microsoft::WRL;
 using namespace Windows::Foundation::Numerics;
 using namespace Windows::UI::Input::Spatial;
@@ -53,7 +54,7 @@ namespace HoloIntervention
       // Validate asset location
       Platform::String^ mainFolderLocation = Windows::ApplicationModel::Package::Current->InstalledLocation->Path;
 
-      auto folderTask = Concurrency::create_task( StorageFolder::GetFolderFromPathAsync( mainFolderLocation ) ).then( [this]( StorageFolder ^ folder )
+      auto folderTask = create_task( StorageFolder::GetFolderFromPathAsync( mainFolderLocation ) ).then( [this]( StorageFolder ^ folder )
       {
         std::string asset( m_assetLocation.begin(), m_assetLocation.end() );
 
@@ -68,7 +69,7 @@ namespace HoloIntervention
         std::string dirStr( dir );
         std::replace( dirStr.begin(), dirStr.end(), '/', '\\' );
         std::wstring wdir( dirStr.begin(), dirStr.end() );
-        Concurrency::create_task( folder->GetFolderAsync( ref new Platform::String( wdir.c_str() ) ) ).then( [this, nameStr, extStr]( concurrency::task<StorageFolder^> previousTask )
+        create_task( folder->GetFolderAsync( ref new Platform::String( wdir.c_str() ) ) ).then( [this, nameStr, extStr]( concurrency::task<StorageFolder^> previousTask )
         {
           StorageFolder^ folder;
           try

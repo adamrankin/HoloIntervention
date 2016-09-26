@@ -54,7 +54,7 @@ namespace HoloIntervention
       typedef std::map<Platform::Guid, std::shared_ptr<SurfaceMesh> > GuidMeshMap;
 
     public:
-      SpatialSurfaceCollection( const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer);
+      SpatialSurfaceCollection( const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer );
       ~SpatialSurfaceCollection();
 
       void Update( SpatialCoordinateSystem^ coordinateSystem );
@@ -71,13 +71,15 @@ namespace HoloIntervention
                                 const float3 rayOrigin,
                                 const float3 rayDirection,
                                 float3& outHitPosition,
-                                float3& outHitNormal );
+                                float3& outHitNormal,
+                                float3& outHitEdge );
 
       Windows::Foundation::DateTime GetLastUpdateTime( Platform::Guid id );
 
       void HideInactiveMeshes( Windows::Foundation::Collections::IMapView<Platform::Guid, SpatialSurfaceInfo^>^ const& surfaceCollection );
 
-      bool GetLastHitPosition( float3& outPosition, bool considerOldHits = false );
+      bool GetLastHitPosition( _Out_ float3& position, _In_ bool considerOldHits = false );
+      bool GetLastHitNormal( _Out_ float3& normal, _In_ bool considerOldHits = false );
 
     protected:
       // Cache the step timer for out of date queries

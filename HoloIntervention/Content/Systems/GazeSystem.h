@@ -63,6 +63,7 @@ namespace HoloIntervention
       bool                                      m_systemEnabled;
       float3                                    m_lastHitPosition;
       float3                                    m_lastHitNormal;
+      float3                                    m_lastHitEdge;
 
       static const std::wstring GAZE_CURSOR_ASSET_LOCATION;
       static const uint32 FRAMES_UNTIL_HIT_EXPIRES;

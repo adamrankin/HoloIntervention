@@ -27,10 +27,10 @@
       <Filter>Infrastructure</Filter>
     </ClCompile>
     <ClCompile Include="Content\SpatialMapping\SurfaceMesh.cpp">
-      <Filter>Content\SpatialMapping</Filter>
+      <Filter>Content\Spatial</Filter>
     </ClCompile>
     <ClCompile Include="Content\SpatialMapping\SpatialSurfaceCollection.cpp">
-      <Filter>Content\SpatialMapping</Filter>
+      <Filter>Content\Spatial</Filter>
     </ClCompile>
     <ClCompile Include="Content\Input\VoiceInputHandler.cpp">
       <Filter>Content\Input</Filter>
@@ -132,10 +132,10 @@
       <Filter>Content\Sound</Filter>
     </ClInclude>
     <ClInclude Include="Content\SpatialMapping\SurfaceMesh.h">
-      <Filter>Content\SpatialMapping</Filter>
+      <Filter>Content\Spatial</Filter>
     </ClInclude>
     <ClInclude Include="Content\SpatialMapping\SpatialSurfaceCollection.h">
-      <Filter>Content\SpatialMapping</Filter>
+      <Filter>Content\Spatial</Filter>
     </ClInclude>
     <ClInclude Include="Content\Input\VoiceInputHandler.h">
       <Filter>Content\Input</Filter>
@@ -402,6 +402,9 @@
     <None Include="Assets\Models\Tools\needle.cmo">
       <Filter>Assets\Models\Tools</Filter>
     </None>
+    <None Include="Assets\Models\anchor.cmo">
+      <Filter>Assets\Models</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Content">
@@ -424,12 +427,6 @@
     </Filter>
     <Filter Include="Infrastructure">
       <UniqueIdentifier>{88e029e1-6999-4f08-8aa0-7ef8f99bc1b0}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Content\SpatialMapping">
-      <UniqueIdentifier>{8bb4f3fd-9ef8-4ef9-8452-9539e6344ece}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Content\SpatialMapping\Shaders">
-      <UniqueIdentifier>{cf251a3f-b817-4279-80f7-9f2bc80047d7}</UniqueIdentifier>
     </Filter>
     <Filter Include="Content\Rendering\SliceRenderer">
       <UniqueIdentifier>{f53e7e45-1f03-4161-8e8e-99913c61a68b}</UniqueIdentifier>
@@ -503,10 +500,16 @@
     <Filter Include="Assets\Data">
       <UniqueIdentifier>{d8ff3f6a-1caf-4488-b74c-77ebe2d90ea5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Content\Spatial">
+      <UniqueIdentifier>{8bb4f3fd-9ef8-4ef9-8452-9539e6344ece}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Spatial\Shaders">
+      <UniqueIdentifier>{cf251a3f-b817-4279-80f7-9f2bc80047d7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Content\SpatialMapping\Shaders\CSRayTriangleIntersection.hlsl">
-      <Filter>Content\SpatialMapping\Shaders</Filter>
+      <Filter>Content\Spatial\Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Content\Rendering\Shaders\NotificationVPRTVertexShader.hlsl">
       <Filter>Content\Rendering\NotificationRenderer\Shaders\NotificationRenderer</Filter>

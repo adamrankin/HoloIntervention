@@ -230,7 +230,7 @@ namespace HoloIntervention
     {
       SpatialPointerPose^ pose = SpatialPointerPose::TryGetAtTimestamp( currentCoordinateSystem, prediction->Timestamp );
 
-      m_spatialSystem->Update( currentCoordinateSystem );
+      m_spatialSystem->Update( currentCoordinateSystem, pose );
 
       if ( pose != nullptr )
       {
@@ -394,15 +394,15 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
-  void HoloInterventionMain::SaveAppState()
+  task<void> HoloInterventionMain::SaveAppStateAsync()
   {
-    m_spatialSystem->SaveAppState();
+    return m_spatialSystem->SaveAppStateAsync();
   }
 
   //----------------------------------------------------------------------------
-  void HoloInterventionMain::LoadAppState()
+  task<void> HoloInterventionMain::LoadAppStateAsync()
   {
-    m_spatialSystem->LoadAppState();
+    return m_spatialSystem->LoadAppStateAsync();
   }
 
   //----------------------------------------------------------------------------

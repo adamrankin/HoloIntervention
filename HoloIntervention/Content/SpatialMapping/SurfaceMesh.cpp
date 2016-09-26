@@ -187,8 +187,8 @@ namespace HoloIntervention
 
       Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> updatedVertexPositionsSRV;
       Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> updatedTriangleIndicesSRV;
-      DX::ThrowIfFailed( CreateBufferSRV(updatedVertexPositions, positions, updatedVertexPositionsSRV.GetAddressOf() ) );
-      DX::ThrowIfFailed( CreateBufferSRV(updatedTriangleIndices, indices, updatedTriangleIndicesSRV.GetAddressOf() ) );
+      DX::ThrowIfFailed( CreateBufferSRV( updatedVertexPositions, positions, updatedVertexPositionsSRV.GetAddressOf() ) );
+      DX::ThrowIfFailed( CreateBufferSRV( updatedTriangleIndices, indices, updatedTriangleIndicesSRV.GetAddressOf() ) );
 
       // Before updating the meshes, check to ensure that there wasn't a more recent update.
       {
@@ -284,7 +284,8 @@ namespace HoloIntervention
     bool SurfaceMesh::TestRayIntersection( ID3D11DeviceContext& context,
                                            uint64_t frameNumber,
                                            float3& outHitPosition,
-                                           float3& outHitNormal )
+                                           float3& outHitNormal,
+                                           float3& outHitEdge )
     {
       std::lock_guard<std::mutex> lock( m_meshResourcesMutex );
 
@@ -301,8 +302,9 @@ namespace HoloIntervention
       if ( m_lastFrameNumberComputed != 0 && frameNumber < m_lastFrameNumberComputed + NUMBER_OF_FRAMES_BEFORE_RECOMPUTE )
       {
         // Asked twice in the frame period, return the cached result
-        outHitPosition = m_rayIntersectionResultPosition;
-        outHitNormal = m_rayIntersectionResultNormal;
+        outHitPosition = m_lastHitPosition;
+        outHitNormal = m_lastHitNormal;
+        outHitEdge = m_lastHitEdge;
         return m_hasLastComputedHit;
       }
 
@@ -323,11 +325,11 @@ namespace HoloIntervention
 
       m_lastFrameNumberComputed = frameNumber;
 
-      if ( result->intersectionPoint.x != 0.0f || result->intersectionPoint.y != 0.0f || result->intersectionPoint.z != 0.0f ||
-           result->intersectionNormal.x != 0.0f || result->intersectionNormal.y != 0.0f || result->intersectionNormal.z != 0.0f )
+      if ( result->intersection )
       {
-        outHitPosition = m_rayIntersectionResultPosition = float3( result->intersectionPoint.x, result->intersectionPoint.y, result->intersectionPoint.z );
-        outHitNormal = m_rayIntersectionResultNormal = float3( result->intersectionNormal.x, result->intersectionNormal.y, result->intersectionNormal.z );
+        outHitPosition = m_lastHitPosition = float3( result->intersectionPoint.x, result->intersectionPoint.y, result->intersectionPoint.z );
+        outHitNormal = m_lastHitNormal = float3( result->intersectionNormal.x, result->intersectionNormal.y, result->intersectionNormal.z );
+        outHitEdge = m_lastHitEdge = float3( result->intersectionEdge.x, result->intersectionEdge.y, result->intersectionEdge.z );
         m_hasLastComputedHit = true;
         return true;
       }
@@ -359,10 +361,22 @@ namespace HoloIntervention
     {
       if ( m_hasLastComputedHit )
       {
-        return m_rayIntersectionResultPosition;
+        return m_lastHitPosition;
       }
 
       throw new std::exception( "No hit ever recorded." );
+    }
+
+    //----------------------------------------------------------------------------
+    const float3& SurfaceMesh::GetLastHitNormal() const
+    {
+      return m_lastHitNormal;
+    }
+
+    //----------------------------------------------------------------------------
+    const Windows::Foundation::Numerics::float3& SurfaceMesh::GetLastHitEdge() const
+    {
+      return m_lastHitEdge;
     }
 
     //----------------------------------------------------------------------------
@@ -517,8 +531,7 @@ namespace HoloIntervention
         return;
       }
       OutputBufferType output;
-      output.intersectionPoint = XMFLOAT4( 0.f, 0.f, 0.f, 0.f );
-      output.intersectionNormal = XMFLOAT4( 0.f, 0.f, 0.f, 0.f );
+      output.intersection = false;
       context.UpdateSubresource( m_outputBuffer.Get(), 0, nullptr, &output, 0, 0 );
 
       // Set the shaders resources
@@ -546,7 +559,7 @@ namespace HoloIntervention
     {
       if ( m_lastFrameNumberComputed != 0 && frameNumber < m_lastFrameNumberComputed + NUMBER_OF_FRAMES_BEFORE_RECOMPUTE )
       {
-        // Asked twice in the same frame, return the cached result
+        // Asked before the threshold for recompute has happened, returned cached value
         return m_hasLastComputedHit;
       }
 

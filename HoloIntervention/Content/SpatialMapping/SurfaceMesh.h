@@ -57,8 +57,10 @@ namespace HoloIntervention
 
     struct OutputBufferType
     {
-      XMFLOAT4 intersectionPoint;
-      XMFLOAT4 intersectionNormal;
+      XMFLOAT4  intersectionPoint;
+      XMFLOAT4  intersectionNormal;
+      XMFLOAT4  intersectionEdge;
+      bool      intersection;
     };
 
     struct WorldConstantBuffer
@@ -99,12 +101,16 @@ namespace HoloIntervention
       bool TestRayIntersection( ID3D11DeviceContext& context,
                                 uint64_t frameNumber,
                                 float3& outHitPosition,
-                                float3& outHitNormal );
+                                float3& outHitNormal,
+                                float3& outHitEdge );
 
       const bool& GetIsActive() const;
       const float& GetLastActiveTime() const;
       const Windows::Foundation::DateTime& GetLastUpdateTime() const;
+
       const float3& GetLastHitPosition() const;
+      const float3& GetLastHitNormal() const;
+      const float3& GetLastHitEdge() const; // this and normal define a coordinate system
       uint64_t GetLastHitFrameNumber() const;
 
       void SetIsActive( const bool& isActive );
@@ -186,8 +192,9 @@ namespace HoloIntervention
 
       // Ray-triangle intersection related behavior variables
       bool                                  m_hasLastComputedHit = false;
-      float3                                m_rayIntersectionResultPosition;
-      float3                                m_rayIntersectionResultNormal;
+      float3                                m_lastHitPosition;
+      float3                                m_lastHitNormal;
+      float3                                m_lastHitEdge;
       uint64                                m_lastFrameNumberComputed = 0;
       static const uint32                   NUMBER_OF_FRAMES_BEFORE_RECOMPUTE = 2; // This translates into FPS/NUMBER_OF_FRAMES_BEFORE_RECOMPUTE recomputations per sec
 

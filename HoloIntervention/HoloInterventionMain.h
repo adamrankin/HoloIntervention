@@ -33,6 +33,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 // winrt includes
 #include <collection.h>
 
+using namespace Concurrency;
+using namespace Windows::Graphics::Holographic;
 using namespace Windows::Perception::Spatial;
 
 // Forward declarations
@@ -80,17 +82,17 @@ namespace HoloIntervention
 
     // Sets the holographic space. This is our closest analogue to setting a new window
     // for the app.
-    void SetHolographicSpace( Windows::Graphics::Holographic::HolographicSpace^ holographicSpace );
+    void SetHolographicSpace( HolographicSpace^ holographicSpace );
 
     // Starts the holographic frame and updates the content.
-    Windows::Graphics::Holographic::HolographicFrame^ Update();
+    HolographicFrame^ Update();
 
     // Renders holograms, including world-locked content.
-    bool Render( Windows::Graphics::Holographic::HolographicFrame^ holographicFrame );
+    bool Render( HolographicFrame^ holographicFrame );
 
     // Handle saving and loading of app state owned by AppMain.
-    void SaveAppState();
-    void LoadAppState();
+    task<void> SaveAppStateAsync();
+    task<void> LoadAppStateAsync();
 
     // Global access to the current frame number
     uint64 GetCurrentFrameNumber() const;
@@ -113,17 +115,14 @@ namespace HoloIntervention
 
   protected:
     // Asynchronously creates resources for new holographic cameras.
-    void OnCameraAdded( Windows::Graphics::Holographic::HolographicSpace^ sender,
-                        Windows::Graphics::Holographic::HolographicSpaceCameraAddedEventArgs^ args );
+    void OnCameraAdded( HolographicSpace^ sender, HolographicSpaceCameraAddedEventArgs^ args );
 
     // Synchronously releases resources for holographic cameras that are no longer
     // attached to the system.
-    void OnCameraRemoved( Windows::Graphics::Holographic::HolographicSpace^ sender,
-                          Windows::Graphics::Holographic::HolographicSpaceCameraRemovedEventArgs^ args );
+    void OnCameraRemoved( HolographicSpace^ sender, HolographicSpaceCameraRemovedEventArgs^ args );
 
     // Used to notify the app when the positional tracking state changes.
-    void OnLocatabilityChanged( Windows::Perception::Spatial::SpatialLocator^ sender,
-                                Platform::Object^ args );
+    void OnLocatabilityChanged( SpatialLocator^ sender, Platform::Object^ args );
 
     // Clears event registration state. Used when changing to a new HolographicSpace
     // and when tearing down AppMain.
@@ -161,16 +160,16 @@ namespace HoloIntervention
     DX::StepTimer                                         m_timer;
 
     // Represents the holographic space around the user.
-    Windows::Graphics::Holographic::HolographicSpace^     m_holographicSpace;
+    HolographicSpace^                                     m_holographicSpace;
 
     // SpatialLocator that is attached to the primary camera.
-    Windows::Perception::Spatial::SpatialLocator^         m_locator;
+    SpatialLocator^                                       m_locator;
 
     // A reference frame attached to the holographic camera.
-    Windows::Perception::Spatial::SpatialLocatorAttachedFrameOfReference^   m_attachedReferenceFrame;
+    SpatialLocatorAttachedFrameOfReference^               m_attachedReferenceFrame;
 
     // A reference frame placed in the environment.
-    Windows::Perception::Spatial::SpatialStationaryFrameOfReference^        m_stationaryReferenceFrame;
+    SpatialStationaryFrameOfReference^                    m_stationaryReferenceFrame;
 
     // Event registration tokens.
     Windows::Foundation::EventRegistrationToken           m_cameraAddedToken;
@@ -179,7 +178,7 @@ namespace HoloIntervention
     uint64                                                m_trackedFrameReceivedToken;
 
     // Store the current state of locatability
-    Windows::Perception::Spatial::SpatialLocatability     m_locatability;
+    SpatialLocatability                                   m_locatability;
 
     // System pointers
     std::unique_ptr<System::SpatialSystem>                m_spatialSystem;

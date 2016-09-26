@@ -26,6 +26,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "AppView.h"
 #include "SpatialSystem.h"
+
+// Common includes
 #include "StepTimer.h"
 
 // System includes
@@ -36,6 +38,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <functional>
 #include <ppltasks.h>
 #include <sstream>
+
+// Rendering includes
+#include "ModelRenderer.h"
+#include "ModelEntry.h"
 
 using namespace Platform;
 using namespace Windows::Foundation::Collections;
@@ -49,12 +55,29 @@ namespace HoloIntervention
 {
   namespace System
   {
+    const std::wstring SpatialSystem::ANCHOR_MODEL_FILENAME = L"Assets/Models/anchor.cmo";
+    const uint32 SpatialSystem::INIT_SURFACE_RETRY_DELAY_MS = 100;
+
     //----------------------------------------------------------------------------
     SpatialSystem::SpatialSystem( const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer )
       : m_deviceResources( deviceResources )
       , m_stepTimer( stepTimer )
     {
+
       m_surfaceCollection = std::make_unique<Spatial::SpatialSurfaceCollection>( m_deviceResources, stepTimer );
+
+      std::lock_guard<std::mutex> guard( m_anchorMutex );
+      m_regAnchorModelId = HoloIntervention::instance()->GetModelRenderer().AddModel( ANCHOR_MODEL_FILENAME );
+      if ( m_regAnchorModelId != Rendering::INVALID_MODEL_ENTRY )
+      {
+        m_regAnchorModel = HoloIntervention::instance()->GetModelRenderer().GetModel( m_regAnchorModelId );
+      }
+      if ( m_regAnchorModel == nullptr )
+      {
+        HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Unable to retrieve anchor model." );
+        return;
+      }
+      m_regAnchorModel->SetVisible( false );
     }
 
     //----------------------------------------------------------------------------
@@ -64,23 +87,46 @@ namespace HoloIntervention
       {
         m_surfaceObserver->ObservedSurfacesChanged -= m_surfaceObserverEventToken;
       }
+
+      m_surfaceCollection = nullptr;
+
+      std::lock_guard<std::mutex> guard( m_anchorMutex );
+      m_regAnchorModel = nullptr;
+      m_regAnchorModelId = 0;
     }
 
     //----------------------------------------------------------------------------
-    void SpatialSystem::Update( SpatialCoordinateSystem^ coordinateSystem )
+    void SpatialSystem::Update( SpatialCoordinateSystem^ coordinateSystem, SpatialPointerPose^ headPose )
     {
       // Keep the surface observer positioned at the device's location.
       UpdateSurfaceObserverPosition( coordinateSystem );
 
       m_surfaceCollection->Update( coordinateSystem );
 
-      if ( m_anchorRequested )
+      if ( m_regAnchorRequested )
       {
         std::lock_guard<std::mutex> anchorLock( m_anchorMutex );
-        if ( DropAnchorAtIntersectionHit( "Registration", coordinateSystem ) )
+        if ( DropAnchorAtIntersectionHit( "Registration", coordinateSystem, headPose ) )
         {
-          m_anchorRequested = false;
+          m_regAnchorRequested = false;
+          if ( m_regAnchorModel != nullptr )
+          {
+            m_regAnchorModel->SetVisible( true );
+          }
           HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Anchor created." );
+        }
+      }
+
+      if ( m_spatialAnchors.find( L"Registration" ) != m_spatialAnchors.end() )
+      {
+        std::lock_guard<std::mutex> guard( m_anchorMutex );
+        auto transformContainer = m_spatialAnchors[L"Registration"]->CoordinateSystem->TryGetTransformTo( coordinateSystem );
+        if ( transformContainer != nullptr )
+        {
+          float4x4 anchorToWorld  = transformContainer->Value;
+
+          // coordinate system has orientation and position
+          m_regAnchorModel->SetWorld( anchorToWorld );
         }
       }
     }
@@ -144,9 +190,9 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool SpatialSystem::TestRayIntersection( SpatialCoordinateSystem^ desiredCoordinateSystem, const float3 rayOrigin, const float3 rayDirection, float3& outHitPosition, float3& outHitNormal )
+    bool SpatialSystem::TestRayIntersection( SpatialCoordinateSystem^ desiredCoordinateSystem, const float3 rayOrigin, const float3 rayDirection, float3& outHitPosition, float3& outHitNormal, float3& outHitEdge )
     {
-      return m_surfaceCollection->TestRayIntersection( desiredCoordinateSystem, rayOrigin, rayDirection, outHitPosition, outHitNormal );
+      return m_surfaceCollection->TestRayIntersection( desiredCoordinateSystem, rayOrigin, rayDirection, outHitPosition, outHitNormal, outHitEdge );
     }
 
     //----------------------------------------------------------------------------
@@ -259,11 +305,11 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SpatialSystem::SaveAppState()
+    task<void> SpatialSystem::SaveAppStateAsync()
     {
-      task<SpatialAnchorStore^> requestTask( SpatialAnchorManager::RequestStoreAsync() );
-      auto saveTask = requestTask.then( [&]( SpatialAnchorStore ^ store )
+      return task<SpatialAnchorStore^>( SpatialAnchorManager::RequestStoreAsync() ).then( [ = ]( SpatialAnchorStore ^ store )
       {
+        std::lock_guard<std::mutex> guard( m_anchorMutex );
         if ( store == nullptr )
         {
           return;
@@ -280,13 +326,13 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SpatialSystem::LoadAppState()
+    task<void> SpatialSystem::LoadAppStateAsync()
     {
       m_spatialAnchors.clear();
 
-      task<SpatialAnchorStore^> requestTask( SpatialAnchorManager::RequestStoreAsync() );
-      auto loadTask = requestTask.then( [&]( SpatialAnchorStore ^ store )
+      return task<SpatialAnchorStore^>( SpatialAnchorManager::RequestStoreAsync() ).then( [ = ]( SpatialAnchorStore ^ store )
       {
+        std::lock_guard<std::mutex> guard( m_anchorMutex );
         if ( store == nullptr )
         {
           return;
@@ -298,11 +344,16 @@ namespace HoloIntervention
         {
           m_spatialAnchors[pair->Key] = pair->Value;
         }
+
+        if ( m_spatialAnchors.find( L"Registration" ) != m_spatialAnchors.end() )
+        {
+          m_regAnchorModel->SetVisible( true );
+        }
       } );
     }
 
     //----------------------------------------------------------------------------
-    bool SpatialSystem::DropAnchorAtIntersectionHit( Platform::String^ anchorName, SpatialCoordinateSystem^ coordinateSystem )
+    bool SpatialSystem::DropAnchorAtIntersectionHit( Platform::String^ anchorName, SpatialCoordinateSystem^ coordinateSystem, SpatialPointerPose^ headPose )
     {
       if ( anchorName == nullptr )
       {
@@ -310,14 +361,34 @@ namespace HoloIntervention
         return false;
       }
 
-      float3 position;
-      if ( !m_surfaceCollection->GetLastHitPosition( position, false ) )
+      float3 outHitPosition;
+      float3 outHitNormal;
+      float3 outHitEdge;
+      bool hit = HoloIntervention::instance()->GetSpatialSystem().TestRayIntersection( coordinateSystem,
+                 headPose->Head->Position,
+                 headPose->Head->ForwardDirection,
+                 outHitPosition,
+                 outHitNormal,
+                 outHitEdge );
+
+      if ( !hit )
       {
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Unable to access last hit location." );
+        HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Unable to compute mesh intersection hit." );
         return false;
       }
 
-      SpatialAnchor^ anchor = SpatialAnchor::TryCreateRelativeTo( coordinateSystem, position );
+      XMVECTOR iVec = XMLoadFloat3( &outHitEdge );
+      XMVECTOR jVec = XMLoadFloat3(&outHitNormal);
+      XMVECTOR kVec = XMVector3Cross( iVec, jVec );
+      float4x4 mat( iVec.m128_f32[0], jVec.m128_f32[0], kVec.m128_f32[0], 0.f,
+                    iVec.m128_f32[1], jVec.m128_f32[1], kVec.m128_f32[1], 0.f,
+                    iVec.m128_f32[2], jVec.m128_f32[2], kVec.m128_f32[2], 0.f,
+                    0.f, 0.f, 0.f, 1.f );
+      XMVECTOR quat = XMQuaternionRotationMatrix( XMLoadFloat4x4( &mat ) );
+      quaternion orientation;
+      XMStoreQuaternion( &orientation, quat );
+
+      SpatialAnchor^ anchor = SpatialAnchor::TryCreateRelativeTo( coordinateSystem, outHitPosition, orientation );
 
       if ( anchor == nullptr )
       {
@@ -327,25 +398,36 @@ namespace HoloIntervention
 
       m_spatialAnchors[anchorName] = anchor;
 
+      anchor->RawCoordinateSystemAdjusted +=
+        ref new Windows::Foundation::TypedEventHandler<SpatialAnchor^, SpatialAnchorRawCoordinateSystemAdjustedEventArgs^>(
+          std::bind( &SpatialSystem::OnRawCoordinateSystemAdjusted, this, std::placeholders::_1, std::placeholders::_2 )
+        );
+
+      HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Anchor created." );
+
       return true;
     }
 
     //----------------------------------------------------------------------------
     size_t SpatialSystem::RemoveAnchor( Platform::String^ name )
     {
+      if ( m_regAnchorModel )
+      {
+        m_regAnchorModel->SetVisible( false );
+      }
       return m_spatialAnchors.erase( name );
     }
 
     //----------------------------------------------------------------------------
     void SpatialSystem::RegisterVoiceCallbacks( HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap, void* userArg )
     {
-      callbackMap[L"drop registration anchor"] = [this]( SpeechRecognitionResult ^ result )
+      callbackMap[L"drop anchor"] = [this]( SpeechRecognitionResult ^ result )
       {
         std::lock_guard<std::mutex> anchorLock( m_anchorMutex );
-        m_anchorRequested = true;
+        m_regAnchorRequested = true;
       };
 
-      callbackMap[L"remove registration anchor"] = [this]( SpeechRecognitionResult ^ result )
+      callbackMap[L"remove anchor"] = [this]( SpeechRecognitionResult ^ result )
       {
         std::lock_guard<std::mutex> anchorLock( m_anchorMutex );
         if ( RemoveAnchor( L"Registration" ) == 1 )
@@ -353,6 +435,15 @@ namespace HoloIntervention
           HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Anchor removed." );
         }
       };
+    }
+
+    //----------------------------------------------------------------------------
+    void SpatialSystem::OnRawCoordinateSystemAdjusted( SpatialAnchor^ sender, SpatialAnchorRawCoordinateSystemAdjustedEventArgs^ args )
+    {
+      if ( m_spatialAnchors.find( L"Registration" ) != m_spatialAnchors.end() && m_spatialAnchors[L"Registration"] == sender )
+      {
+        // TODO : tag the registration as no longer valid?
+      }
     }
   }
 }

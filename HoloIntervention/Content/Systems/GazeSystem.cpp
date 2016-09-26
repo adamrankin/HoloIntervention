@@ -67,28 +67,28 @@ namespace HoloIntervention
       {
         float3 outHitPosition;
         float3 outHitNormal;
+        float3 outHitEdge;
         bool hit = HoloIntervention::instance()->GetSpatialSystem().TestRayIntersection( currentCoordinateSystem,
                    headPose->Head->Position,
                    headPose->Head->ForwardDirection,
                    outHitPosition,
-                   outHitNormal );
+                   outHitNormal,
+                   outHitEdge );
 
         if ( hit )
         {
           // Update the gaze system with the pose to render
           m_lastHitNormal = outHitNormal;
           m_lastHitPosition = outHitPosition;
+          m_lastHitEdge = outHitEdge;
 
-          // Infinite number of vectors that cross to give the normal vector, so choose arbitrary y-up vector to create a coordinate system
-          // TODO : this is not correct, normal is not really normal... is it the intersection result, or this world matrix?
+          float3 iVec( outHitEdge );
+          float3 kVec( outHitNormal );
 
-          float3 yUp( 0.f, 1.f, 0.f );
-          float3 jVec = outHitNormal;
-
-          float3 iVec = cross( jVec, yUp );
+          float3 jVec = -cross( iVec, kVec );
           iVec = normalize( iVec );
           // TODO : what scale is right? where is the upscale coming from? is the model in millimeters even though I specified meters?
-          float4x4 matrix = make_float4x4_scale( 0.001f ) * make_float4x4_world( outHitPosition, jVec, iVec );
+          float4x4 matrix = make_float4x4_scale( 0.001f ) * make_float4x4_world( outHitPosition, kVec, jVec );
           m_modelEntry->SetWorld( matrix );
         }
       }

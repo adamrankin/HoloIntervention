@@ -23,29 +23,31 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 cbuffer WorldConstantBuffer : register( b0 )
 {
-  float4x4 meshToWorld;
+  float4x4  meshToWorld;
 };
 
 cbuffer RayConstantBuffer : register( b1 )
 {
-  float4 rayOrigin;
-  float4 rayDirection;
+  float4    rayOrigin;
+  float4    rayDirection;
 };
 
 struct VertexBufferType
 {
-  float4 vertex;
+  float4    vertex;
 };
 
 struct IndexBufferType
 {
-  uint index;
+  uint      index;
 };
 
 struct OutputBufferType
 {
-  float4 intersectionPoint;
-  float4 intersectionNormal;
+  float4    intersectionPoint;
+  float4    intersectionNormal;
+  float4    intersectionEdge;
+  bool      intersection;
 };
 
 StructuredBuffer<VertexBufferType> meshBuffer : register( t0 );
@@ -116,16 +118,21 @@ void main( uint3 DTid : SV_DispatchThreadID )
 
   if ( t > EPSILON )
   {
+    resultBuffer[0].intersection = true;
+
     // Calculate the normal of this triangle
     float3 normal = cross(e1, e2);
 
+    // Normalize vectors to ensure valid coordinate system basis axis
     normal = normalize(normal);
+    e1 = normalize(e1);
 
     //ray intersection
-    resultBuffer[0].intersectionPoint.x = rayOrigin.x + t*rayDirection.x;
-    resultBuffer[0].intersectionPoint.y = rayOrigin.y + t*rayDirection.y;
-    resultBuffer[0].intersectionPoint.z = rayOrigin.z + t*rayDirection.z;
+    resultBuffer[0].intersectionPoint.x = rayOrigin.x + t * rayDirection.x;
+    resultBuffer[0].intersectionPoint.y = rayOrigin.y + t * rayDirection.y;
+    resultBuffer[0].intersectionPoint.z = rayOrigin.z + t * rayDirection.z;
     resultBuffer[0].intersectionNormal = float4(normal, 1.f);
+    resultBuffer[0].intersectionEdge = float4(e1, 1.f);
   }
 
   return;

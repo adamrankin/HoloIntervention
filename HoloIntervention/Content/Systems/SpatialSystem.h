@@ -25,13 +25,23 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #include "IVoiceInput.h"
 #include "SpatialSurfaceCollection.h"
-#include "StepTimer.h"
 
 using namespace Windows::Perception::Spatial::Surfaces;
 using namespace Windows::Perception::Spatial;
+using namespace Windows::UI::Input::Spatial;
+
+namespace DX
+{
+  class StepTimer;
+}
 
 namespace HoloIntervention
 {
+  namespace Rendering
+  {
+    class ModelEntry;
+  }
+
   namespace System
   {
     class SpatialSystem : public Sound::IVoiceInput
@@ -40,7 +50,7 @@ namespace HoloIntervention
       SpatialSystem( const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer );
       ~SpatialSystem();
 
-      void Update( SpatialCoordinateSystem^ coordinateSystem );
+      void Update( SpatialCoordinateSystem^ coordinateSystem, SpatialPointerPose^ headPose );
 
       void CreateDeviceDependentResources();
       void ReleaseDeviceDependentResources();
@@ -56,20 +66,24 @@ namespace HoloIntervention
                                 const float3 rayOrigin,
                                 const float3 rayDirection,
                                 float3& outHitPosition,
-                                float3& outHitNormal );
+                                float3& outHitNormal,
+                                float3& outHitEdge );
 
       // Initializes the Spatial Mapping surface observer.
       void InitializeSurfaceObserver( SpatialCoordinateSystem^ coordinateSystem );
 
       // Handle saving and loading of app state owned by AppMain.
-      void SaveAppState();
-      void LoadAppState();
+      task<void> SaveAppStateAsync();
+      task<void> LoadAppStateAsync();
 
-      bool DropAnchorAtIntersectionHit( Platform::String^ anchorName, SpatialCoordinateSystem^ coordinateSystem );
+      bool DropAnchorAtIntersectionHit( Platform::String^ anchorName, SpatialCoordinateSystem^ coordinateSystem, SpatialPointerPose^ headPose );
       size_t RemoveAnchor( Platform::String^ anchorName );
 
       // IVoiceInput functions
       virtual void RegisterVoiceCallbacks( HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap, void* userArg );
+
+    protected:
+      void OnRawCoordinateSystemAdjusted(SpatialAnchor ^sender, SpatialAnchorRawCoordinateSystemAdjustedEventArgs ^args);
 
     protected:
       // Event registration tokens.
@@ -81,7 +95,9 @@ namespace HoloIntervention
 
       // Anchor interaction variables
       std::mutex                                                        m_anchorMutex;
-      bool                                                              m_anchorRequested = false;
+      bool                                                              m_regAnchorRequested = false;
+      uint64_t                                                          m_regAnchorModelId = 0;
+      std::shared_ptr<Rendering::ModelEntry>                            m_regAnchorModel = nullptr;
 
       // Obtains spatial mapping data from the device in real time.
       SpatialSurfaceObserver^                                           m_surfaceObserver;
@@ -93,7 +109,8 @@ namespace HoloIntervention
       // List of spatial anchors
       std::map<Platform::String^, SpatialAnchor^>                       m_spatialAnchors;
 
-      const uint32                                                      INIT_SURFACE_RETRY_DELAY_MS = 100;
+      static const uint32                                               INIT_SURFACE_RETRY_DELAY_MS;
+      static const std::wstring                                         ANCHOR_MODEL_FILENAME;
     };
   }
 }

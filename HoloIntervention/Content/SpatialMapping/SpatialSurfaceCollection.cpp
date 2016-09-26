@@ -204,7 +204,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool SpatialSurfaceCollection::TestRayIntersection( SpatialCoordinateSystem^ desiredCoordinateSystem, const float3 rayOrigin, const float3 rayDirection, float3& outHitPosition, float3& outHitNormal )
+    bool SpatialSurfaceCollection::TestRayIntersection( SpatialCoordinateSystem^ desiredCoordinateSystem, const float3 rayOrigin, const float3 rayDirection, float3& outHitPosition, float3& outHitNormal, float3& outHitEdge )
     {
       if ( !m_resourcesLoaded )
       {
@@ -234,13 +234,13 @@ namespace HoloIntervention
 
         RayConstantBuffer buffer;
         buffer.rayOrigin = XMFLOAT4( rayOrigin.x, rayOrigin.y, rayOrigin.z, 1.f );
-        buffer.rayDirection = XMFLOAT4( rayDirection.x, rayDirection.y, rayDirection.z, 1.f );
+        XMStoreFloat4( &buffer.rayDirection, XMVector4Normalize( XMLoadFloat4( &XMFLOAT4( rayDirection.x, rayDirection.y, rayDirection.z, 1.f ) ) ) );
         m_deviceResources->GetD3DDeviceContext()->UpdateSubresource( m_constantBuffer.Get(), 0, nullptr, &buffer, 0, 0 );
         m_deviceResources->GetD3DDeviceContext()->CSSetConstantBuffers( 1, 1, m_constantBuffer.GetAddressOf() );
 
         if ( m_lastHitMesh != nullptr && potentialHits.find( m_lastHitMeshGuid ) != potentialHits.end() )
         {
-          result = m_lastHitMesh->TestRayIntersection( *m_deviceResources->GetD3DDeviceContext(), currentFrame, outHitPosition, outHitNormal );
+          result = m_lastHitMesh->TestRayIntersection( *m_deviceResources->GetD3DDeviceContext(), currentFrame, outHitPosition, outHitNormal, outHitEdge );
         }
 
         if ( !result )
@@ -253,7 +253,7 @@ namespace HoloIntervention
 
           for ( auto& pair : potentialHits )
           {
-            if ( pair.second->TestRayIntersection( *m_deviceResources->GetD3DDeviceContext(), currentFrame, outHitPosition, outHitNormal ) )
+            if ( pair.second->TestRayIntersection( *m_deviceResources->GetD3DDeviceContext(), currentFrame, outHitPosition, outHitNormal, outHitEdge ) )
             {
               m_lastHitMesh = pair.second;
               m_lastHitMeshGuid = pair.first;
@@ -287,7 +287,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool SpatialSurfaceCollection::GetLastHitPosition( Windows::Foundation::Numerics::float3& outPosition, bool considerOldHits /* = false */ )
+    bool SpatialSurfaceCollection::GetLastHitPosition( float3& position, bool considerOldHits /* = false */ )
     {
       if ( m_lastHitMesh != nullptr )
       {
@@ -302,7 +302,37 @@ namespace HoloIntervention
 
         try
         {
-          outPosition = m_lastHitMesh->GetLastHitPosition();
+          position = m_lastHitMesh->GetLastHitPosition();
+        }
+        catch ( const std::exception& e )
+        {
+          HoloIntervention::instance()->GetNotificationSystem().QueueMessage( e.what() );
+          return false;
+        }
+
+        return true;
+      }
+
+      return false;
+    }
+
+    //----------------------------------------------------------------------------
+    bool SpatialSurfaceCollection::GetLastHitNormal( float3& normal, bool considerOldHits /*= false*/ )
+    {
+      if ( m_lastHitMesh != nullptr )
+      {
+        if ( !considerOldHits )
+        {
+          uint64_t frames = m_stepTimer.GetFrameCount() - m_lastHitMesh->GetLastHitFrameNumber();
+          if ( frames > FRAMES_BEFORE_EXPIRED )
+          {
+            return false;
+          }
+        }
+
+        try
+        {
+          normal = m_lastHitMesh->GetLastHitNormal();
         }
         catch ( const std::exception& e )
         {
