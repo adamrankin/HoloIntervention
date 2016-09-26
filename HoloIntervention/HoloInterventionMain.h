@@ -24,7 +24,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
-#include "DeviceResources.h"
 #include "StepTimer.h"
 
 // std includes
@@ -38,15 +37,20 @@ using namespace Windows::Graphics::Holographic;
 using namespace Windows::Perception::Spatial;
 
 // Forward declarations
+namespace DX
+{
+  class DeviceResources;
+}
+
 namespace HoloIntervention
 {
   namespace System
   {
+    class GazeSystem;
     class NotificationSystem;
+    class RegistrationSystem;
     class SpatialSystem;
     class ToolSystem;
-    class GazeSystem;
-    class AnchorSystem;
   }
 
   namespace Input
@@ -101,6 +105,7 @@ namespace HoloIntervention
     System::NotificationSystem& GetNotificationsSystem();
     System::SpatialSystem& GetSpatialSystem();
     System::GazeSystem& GetGazeSystem();
+    System::RegistrationSystem& GetRegistrationSystem();
 
     // Provide access to the sound manager
     Sound::SoundManager& GetSoundManager();
@@ -185,6 +190,7 @@ namespace HoloIntervention
     std::unique_ptr<System::GazeSystem>                   m_gazeSystem;
     std::unique_ptr<System::ToolSystem>                   m_toolSystem;
     std::unique_ptr<System::NotificationSystem>           m_notificationSystem;
+    std::unique_ptr<System::RegistrationSystem>           m_registrationSystem;
 
     // Sound assets
     std::unique_ptr<Sound::SoundManager>                  m_soundManager;

@@ -55,7 +55,6 @@ namespace HoloIntervention
 {
   namespace System
   {
-    const std::wstring SpatialSystem::ANCHOR_MODEL_FILENAME = L"Assets/Models/anchor.cmo";
     const uint32 SpatialSystem::INIT_SURFACE_RETRY_DELAY_MS = 100;
 
     //----------------------------------------------------------------------------
@@ -65,19 +64,6 @@ namespace HoloIntervention
     {
 
       m_surfaceCollection = std::make_unique<Spatial::SpatialSurfaceCollection>( m_deviceResources, stepTimer );
-
-      std::lock_guard<std::mutex> guard( m_anchorMutex );
-      m_regAnchorModelId = HoloIntervention::instance()->GetModelRenderer().AddModel( ANCHOR_MODEL_FILENAME );
-      if ( m_regAnchorModelId != Rendering::INVALID_MODEL_ENTRY )
-      {
-        m_regAnchorModel = HoloIntervention::instance()->GetModelRenderer().GetModel( m_regAnchorModelId );
-      }
-      if ( m_regAnchorModel == nullptr )
-      {
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Unable to retrieve anchor model." );
-        return;
-      }
-      m_regAnchorModel->SetVisible( false );
     }
 
     //----------------------------------------------------------------------------
@@ -89,46 +75,15 @@ namespace HoloIntervention
       }
 
       m_surfaceCollection = nullptr;
-
-      std::lock_guard<std::mutex> guard( m_anchorMutex );
-      m_regAnchorModel = nullptr;
-      m_regAnchorModelId = 0;
     }
 
     //----------------------------------------------------------------------------
-    void SpatialSystem::Update( SpatialCoordinateSystem^ coordinateSystem, SpatialPointerPose^ headPose )
+    void SpatialSystem::Update( SpatialCoordinateSystem^ coordinateSystem )
     {
       // Keep the surface observer positioned at the device's location.
       UpdateSurfaceObserverPosition( coordinateSystem );
 
       m_surfaceCollection->Update( coordinateSystem );
-
-      if ( m_regAnchorRequested )
-      {
-        std::lock_guard<std::mutex> anchorLock( m_anchorMutex );
-        if ( DropAnchorAtIntersectionHit( "Registration", coordinateSystem, headPose ) )
-        {
-          m_regAnchorRequested = false;
-          if ( m_regAnchorModel != nullptr )
-          {
-            m_regAnchorModel->SetVisible( true );
-          }
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Anchor created." );
-        }
-      }
-
-      if ( m_spatialAnchors.find( L"Registration" ) != m_spatialAnchors.end() )
-      {
-        std::lock_guard<std::mutex> guard( m_anchorMutex );
-        auto transformContainer = m_spatialAnchors[L"Registration"]->CoordinateSystem->TryGetTransformTo( coordinateSystem );
-        if ( transformContainer != nullptr )
-        {
-          float4x4 anchorToWorld  = transformContainer->Value;
-
-          // coordinate system has orientation and position
-          m_regAnchorModel->SetWorld( anchorToWorld );
-        }
-      }
     }
 
     //----------------------------------------------------------------------------
@@ -344,11 +299,6 @@ namespace HoloIntervention
         {
           m_spatialAnchors[pair->Key] = pair->Value;
         }
-
-        if ( m_spatialAnchors.find( L"Registration" ) != m_spatialAnchors.end() )
-        {
-          m_regAnchorModel->SetVisible( true );
-        }
       } );
     }
 
@@ -378,7 +328,7 @@ namespace HoloIntervention
       }
 
       XMVECTOR iVec = XMLoadFloat3( &outHitEdge );
-      XMVECTOR jVec = XMLoadFloat3(&outHitNormal);
+      XMVECTOR jVec = XMLoadFloat3( &outHitNormal );
       XMVECTOR kVec = XMVector3Cross( iVec, jVec );
       float4x4 mat( iVec.m128_f32[0], jVec.m128_f32[0], kVec.m128_f32[0], 0.f,
                     iVec.m128_f32[1], jVec.m128_f32[1], kVec.m128_f32[1], 0.f,
@@ -396,6 +346,7 @@ namespace HoloIntervention
         return false;
       }
 
+      std::lock_guard<std::mutex> lock( m_anchorMutex );
       m_spatialAnchors[anchorName] = anchor;
 
       anchor->RawCoordinateSystemAdjusted +=
@@ -403,7 +354,7 @@ namespace HoloIntervention
           std::bind( &SpatialSystem::OnRawCoordinateSystemAdjusted, this, std::placeholders::_1, std::placeholders::_2 )
         );
 
-      HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Anchor created." );
+      HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Anchor " + anchorName + L" created." );
 
       return true;
     }
@@ -411,30 +362,31 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     size_t SpatialSystem::RemoveAnchor( Platform::String^ name )
     {
-      if ( m_regAnchorModel )
-      {
-        m_regAnchorModel->SetVisible( false );
-      }
+      std::lock_guard<std::mutex> lock( m_anchorMutex );
       return m_spatialAnchors.erase( name );
+    }
+
+    //----------------------------------------------------------------------------
+    SpatialAnchor^ SpatialSystem::GetAnchor( Platform::String^ anchorName )
+    {
+      if ( HasAnchor( anchorName ) )
+      {
+        return m_spatialAnchors[anchorName];
+      }
+
+      return nullptr;
+    }
+
+    //----------------------------------------------------------------------------
+    bool SpatialSystem::HasAnchor( Platform::String^ anchorName )
+    {
+      return m_spatialAnchors.find( anchorName ) != m_spatialAnchors.end();
     }
 
     //----------------------------------------------------------------------------
     void SpatialSystem::RegisterVoiceCallbacks( HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap, void* userArg )
     {
-      callbackMap[L"drop anchor"] = [this]( SpeechRecognitionResult ^ result )
-      {
-        std::lock_guard<std::mutex> anchorLock( m_anchorMutex );
-        m_regAnchorRequested = true;
-      };
 
-      callbackMap[L"remove anchor"] = [this]( SpeechRecognitionResult ^ result )
-      {
-        std::lock_guard<std::mutex> anchorLock( m_anchorMutex );
-        if ( RemoveAnchor( L"Registration" ) == 1 )
-        {
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Anchor removed." );
-        }
-      };
     }
 
     //----------------------------------------------------------------------------

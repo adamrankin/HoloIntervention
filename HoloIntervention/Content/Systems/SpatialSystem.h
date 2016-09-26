@@ -26,6 +26,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "IVoiceInput.h"
 #include "SpatialSurfaceCollection.h"
 
+// WinRT includes
+#include <ppltasks.h>
+
+using namespace Concurrency;
 using namespace Windows::Perception::Spatial::Surfaces;
 using namespace Windows::Perception::Spatial;
 using namespace Windows::UI::Input::Spatial;
@@ -50,7 +54,7 @@ namespace HoloIntervention
       SpatialSystem( const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer );
       ~SpatialSystem();
 
-      void Update( SpatialCoordinateSystem^ coordinateSystem, SpatialPointerPose^ headPose );
+      void Update( SpatialCoordinateSystem^ coordinateSystem );
 
       void CreateDeviceDependentResources();
       void ReleaseDeviceDependentResources();
@@ -78,12 +82,14 @@ namespace HoloIntervention
 
       bool DropAnchorAtIntersectionHit( Platform::String^ anchorName, SpatialCoordinateSystem^ coordinateSystem, SpatialPointerPose^ headPose );
       size_t RemoveAnchor( Platform::String^ anchorName );
+      SpatialAnchor^ GetAnchor( Platform::String^ anchorName );
+      bool HasAnchor( Platform::String^ anchorName );
 
       // IVoiceInput functions
       virtual void RegisterVoiceCallbacks( HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap, void* userArg );
 
     protected:
-      void OnRawCoordinateSystemAdjusted(SpatialAnchor ^sender, SpatialAnchorRawCoordinateSystemAdjustedEventArgs ^args);
+      void OnRawCoordinateSystemAdjusted( SpatialAnchor^ sender, SpatialAnchorRawCoordinateSystemAdjustedEventArgs^ args );
 
     protected:
       // Event registration tokens.
@@ -95,9 +101,6 @@ namespace HoloIntervention
 
       // Anchor interaction variables
       std::mutex                                                        m_anchorMutex;
-      bool                                                              m_regAnchorRequested = false;
-      uint64_t                                                          m_regAnchorModelId = 0;
-      std::shared_ptr<Rendering::ModelEntry>                            m_regAnchorModel = nullptr;
 
       // Obtains spatial mapping data from the device in real time.
       SpatialSurfaceObserver^                                           m_surfaceObserver;
@@ -110,7 +113,6 @@ namespace HoloIntervention
       std::map<Platform::String^, SpatialAnchor^>                       m_spatialAnchors;
 
       static const uint32                                               INIT_SURFACE_RETRY_DELAY_MS;
-      static const std::wstring                                         ANCHOR_MODEL_FILENAME;
     };
   }
 }

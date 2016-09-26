@@ -31,6 +31,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 // System includes
 #include "GazeSystem.h"
 #include "NotificationSystem.h"
+#include "RegistrationSystem.h"
 #include "SpatialSystem.h"
 #include "ToolSystem.h"
 
@@ -113,6 +114,7 @@ namespace HoloIntervention
     // Model renderer must come before the following systems
     m_gazeSystem = std::make_unique<System::GazeSystem>();
     m_toolSystem = std::make_unique<System::ToolSystem>();
+    m_registrationSystem = std::make_unique<System::RegistrationSystem>( m_deviceResources, m_timer );
 
     // TODO : remove temp code
     m_igtLinkIF->SetHostname( L"172.16.80.1" );
@@ -121,9 +123,9 @@ namespace HoloIntervention
     {
       m_soundManager->InitializeAsync();
     }
-    catch (Platform::Exception^ e)
+    catch ( Platform::Exception^ e )
     {
-      OutputDebugStringW(e->Message->Data());
+      OutputDebugStringW( e->Message->Data() );
     }
 
     InitializeVoiceSystem();
@@ -251,6 +253,7 @@ namespace HoloIntervention
       {
         if ( m_igtLinkIF->GetLatestTrackedFrame( m_latestFrame, m_latestTimestamp ) )
         {
+          // TODO : move this to a slice system, remove it from main
           m_sliceRenderer->UpdateSlice( m_sliceToken,
                                         Network::IGTLinkIF::GetSharedImagePtr( m_latestFrame ),
                                         m_latestFrame->Width,
@@ -282,6 +285,7 @@ namespace HoloIntervention
       }
       else if( m_sliceToken != 0 )
       {
+        // TODO : add slice system and control visibility
         float4x4 mat;
         if ( m_sliceRenderer->GetSlicePose( m_sliceToken, mat ) )
         {
@@ -375,9 +379,9 @@ namespace HoloIntervention
 
         if ( activeCamera )
         {
+          m_meshRenderer->Render();
           m_modelRenderer->Render();
           m_sliceRenderer->Render();
-          m_meshRenderer->Render();
         }
 
         // Only render world-locked content when positional tracking is active.
@@ -402,7 +406,11 @@ namespace HoloIntervention
   //----------------------------------------------------------------------------
   task<void> HoloInterventionMain::LoadAppStateAsync()
   {
-    return m_spatialSystem->LoadAppStateAsync();
+    return m_spatialSystem->LoadAppStateAsync().then( [ = ]()
+    {
+      // Registration must follow spatial due to anchor store
+      m_registrationSystem->LoadAppStateAsync();
+    } );
   }
 
   //----------------------------------------------------------------------------
@@ -427,6 +435,12 @@ namespace HoloIntervention
   System::GazeSystem& HoloInterventionMain::GetGazeSystem()
   {
     return *m_gazeSystem.get();
+  }
+
+  //----------------------------------------------------------------------------
+  HoloIntervention::System::RegistrationSystem& HoloInterventionMain::GetRegistrationSystem()
+  {
+    return *m_registrationSystem.get();
   }
 
   //----------------------------------------------------------------------------

@@ -347,6 +347,12 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    std::shared_ptr<HoloIntervention::Spatial::SurfaceMesh> SpatialSurfaceCollection::GetLastHitMesh()
+    {
+      return m_lastHitMesh;
+    }
+
+    //----------------------------------------------------------------------------
     bool SpatialSurfaceCollection::HasSurface( Platform::Guid id )
     {
       std::lock_guard<std::mutex> guard( m_meshCollectionLock );

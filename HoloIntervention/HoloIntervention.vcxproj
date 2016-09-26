@@ -122,6 +122,7 @@
     <ClInclude Include="Content\SpatialMapping\SurfaceMesh.h" />
     <ClInclude Include="Content\Systems\GazeSystem.h" />
     <ClInclude Include="Content\Systems\NotificationSystem.h" />
+    <ClInclude Include="Content\Systems\RegistrationSystem.h" />
     <ClInclude Include="Content\Systems\SpatialSystem.h" />
     <ClInclude Include="Content\Systems\ToolEntry.h" />
     <ClInclude Include="Content\Systems\ToolSystem.h" />
@@ -156,6 +157,7 @@
     <ClCompile Include="Content\SpatialMapping\SurfaceMesh.cpp" />
     <ClCompile Include="Content\Systems\GazeSystem.cpp" />
     <ClCompile Include="Content\Systems\NotificationSystem.cpp" />
+    <ClCompile Include="Content\Systems\RegistrationSystem.cpp" />
     <ClCompile Include="Content\Systems\SpatialSystem.cpp" />
     <ClCompile Include="Content\Systems\ToolEntry.cpp" />
     <ClCompile Include="Content\Systems\ToolSystem.cpp" />
