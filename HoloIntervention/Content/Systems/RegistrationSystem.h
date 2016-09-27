@@ -33,11 +33,17 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <ppltasks.h>
 
 using namespace Concurrency;
+using namespace Windows::Foundation::Numerics;
 using namespace Windows::Perception::Spatial;
 using namespace Windows::UI::Input::Spatial;
 
 namespace HoloIntervention
 {
+  namespace Spatial
+  {
+    class SurfaceMesh;
+  }
+
   namespace Rendering
   {
     class ModelEntry;
@@ -62,10 +68,21 @@ namespace HoloIntervention
       std::shared_ptr<DX::DeviceResources>      m_deviceResources;
       DX::StepTimer&                            m_stepTimer;
 
+      // Anchor behavior variables
       bool                                      m_regAnchorRequested = false;
       uint64_t                                  m_regAnchorModelId = 0;
       std::shared_ptr<Rendering::ModelEntry>    m_regAnchorModel = nullptr;
 
+      // Point collection behavior variables
+      bool                                      m_collectingPoints = false;
+      UWPOpenIGTLink::TrackedFrame^             m_trackedFrame = ref new UWPOpenIGTLink::TrackedFrame();
+      UWPOpenIGTLink::TransformRepository^      m_transformRepository = ref new UWPOpenIGTLink::TransformRepository();
+      UWPOpenIGTLink::TransformName^            m_stylusTipToReferenceName = ref new UWPOpenIGTLink::TransformName(L"StylusTip", L"Reference");
+      double                                    m_latestTimestamp = 0;
+      std::vector<float3>                       m_points;
+      std::shared_ptr<Spatial::SurfaceMesh>     m_spatialMesh = nullptr;
+
+      static Platform::String^                  ANCHOR_NAME;
       static const std::wstring                 ANCHOR_MODEL_FILENAME;
     };
   }

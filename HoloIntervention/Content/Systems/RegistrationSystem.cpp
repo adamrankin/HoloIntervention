@@ -30,17 +30,26 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "ModelRenderer.h"
 #include "ModelEntry.h"
 
+// Spatial includes
+#include "SurfaceMesh.h"
+
 // System includes
 #include "SpatialSystem.h"
 #include "NotificationSystem.h"
 
+// Network includes
+#include "IGTLinkIF.h"
+
 using namespace Concurrency;
 using namespace Windows::Perception::Spatial;
+using namespace Windows::Foundation::Numerics;
 
 namespace HoloIntervention
 {
   namespace System
   {
+
+    Platform::String^ RegistrationSystem::ANCHOR_NAME = ref new Platform::String( L"Registration" );
     const std::wstring RegistrationSystem::ANCHOR_MODEL_FILENAME = L"Assets/Models/anchor.cmo";
 
     //----------------------------------------------------------------------------
@@ -71,28 +80,60 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void RegistrationSystem::Update( SpatialCoordinateSystem^ coordinateSystem, SpatialPointerPose^ headPose )
     {
+      // Anchor placement logic
       if ( m_regAnchorRequested )
       {
-        if ( HoloIntervention::instance()->GetSpatialSystem().DropAnchorAtIntersectionHit( L"Registration", coordinateSystem, headPose ) )
+        if ( HoloIntervention::instance()->GetSpatialSystem().DropAnchorAtIntersectionHit( ANCHOR_NAME, coordinateSystem, headPose ) )
         {
           m_regAnchorRequested = false;
           if ( m_regAnchorModel != nullptr )
           {
             m_regAnchorModel->SetVisible( true );
           }
+
+          m_spatialMesh = HoloIntervention::instance()->GetSpatialSystem().GetLastHitMesh();
+
           HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Anchor created." );
         }
       }
 
+      // Anchor position update logic
       if ( HoloIntervention::instance()->GetSpatialSystem().HasAnchor( L"Registration" ) )
       {
-        auto transformContainer = HoloIntervention::instance()->GetSpatialSystem().GetAnchor( L"Registration" )->CoordinateSystem->TryGetTransformTo( coordinateSystem );
+        auto transformContainer = HoloIntervention::instance()->GetSpatialSystem().GetAnchor( ANCHOR_NAME )->CoordinateSystem->TryGetTransformTo( coordinateSystem );
         if ( transformContainer != nullptr )
         {
           float4x4 anchorToWorld = transformContainer->Value;
 
-          // coordinate system has orientation and position
+          // Coordinate system has orientation and position
           m_regAnchorModel->SetWorld( anchorToWorld );
+        }
+      }
+
+      // Point collection logic
+      if ( m_collectingPoints && HoloIntervention::instance()->GetIGTLink().IsConnected() )
+      {
+        if ( HoloIntervention::instance()->GetIGTLink().GetLatestTrackedFrame( m_trackedFrame, m_latestTimestamp ) )
+        {
+          m_transformRepository->SetTransforms( m_trackedFrame );
+          bool isValid;
+          float4x4 stylusTipToReference;
+          try
+          {
+            stylusTipToReference = m_transformRepository->GetTransform( m_stylusTipToReferenceName, &isValid );
+            // Put into column order so that win numerics functions work as expected
+            stylusTipToReference = transpose( stylusTipToReference );
+            if ( isValid )
+            {
+              float3 point = translation( stylusTipToReference );
+              m_points.push_back( point );
+            }
+          }
+          catch ( Platform::Exception^ e )
+          {
+            OutputDebugStringW( e->Message->Data() );
+            //HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Unable to add point." );
+          }
         }
       }
     }
@@ -100,10 +141,13 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     task<void> RegistrationSystem::LoadAppStateAsync()
     {
-      if ( HoloIntervention::instance()->GetSpatialSystem().HasAnchor( L"Registration" ) )
+      return create_task( [ = ]()
       {
-        m_regAnchorModel->SetVisible( true );
-      }
+        if ( HoloIntervention::instance()->GetSpatialSystem().HasAnchor( ANCHOR_NAME ) )
+        {
+          m_regAnchorModel->SetVisible( true );
+        }
+      } );
     }
 
     //----------------------------------------------------------------------------
@@ -111,11 +155,22 @@ namespace HoloIntervention
     {
       callbackMap[L"start collecting points"] = [this]( SpeechRecognitionResult ^ result )
       {
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Collecting points..." );
+        if ( HoloIntervention::instance()->GetIGTLink().IsConnected() )
+        {
+          m_points.clear();
+          m_collectingPoints = true;
+          HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Collecting points..." );
+        }
+        else
+        {
+          HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Not connected!" );
+        }
       };
 
       callbackMap[L"end collecting points"] = [this]( SpeechRecognitionResult ^ result )
       {
+        // TODO : trigger registration calculation
+        m_collectingPoints = false;
         HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Collecting finished." );
       };
 
@@ -130,12 +185,11 @@ namespace HoloIntervention
         {
           m_regAnchorModel->SetVisible( false );
         }
-        if ( HoloIntervention::instance()->GetSpatialSystem().RemoveAnchor( L"Registration" ) == 1 )
+        if ( HoloIntervention::instance()->GetSpatialSystem().RemoveAnchor( ANCHOR_NAME ) == 1 )
         {
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Anchor removed." );
+          HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Anchor \"" + ANCHOR_NAME + "\" removed." );
         }
       };
     }
-
   }
 }

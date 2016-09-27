@@ -71,71 +71,71 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
-  void AppView::Initialize(CoreApplicationView^ applicationView)
+  void AppView::Initialize( CoreApplicationView^ applicationView )
   {
     applicationView->Activated +=
-      ref new TypedEventHandler<CoreApplicationView^, IActivatedEventArgs^>(this, &AppView::OnViewActivated);
+      ref new TypedEventHandler<CoreApplicationView^, IActivatedEventArgs^>( this, &AppView::OnViewActivated );
 
     // Register event handlers for app lifecycle.
     CoreApplication::Suspending +=
-      ref new EventHandler<SuspendingEventArgs^>(this, &AppView::OnSuspending);
+      ref new EventHandler<SuspendingEventArgs^>( this, &AppView::OnSuspending );
 
     CoreApplication::Resuming +=
-      ref new EventHandler<Platform::Object^>(this, &AppView::OnResuming);
+      ref new EventHandler<Platform::Object^>( this, &AppView::OnResuming );
 
     // At this point we have access to the device and we can create device-dependent
     // resources.
     m_deviceResources = std::make_shared<DX::DeviceResources>();
 
-    m_main = std::make_unique<HoloInterventionMain>(m_deviceResources);
+    m_main = std::make_unique<HoloInterventionMain>( m_deviceResources );
   }
 
   // Called when the CoreWindow object is created (or re-created).
-  void AppView::SetWindow(CoreWindow^ window)
+  void AppView::SetWindow( CoreWindow^ window )
   {
     // Register for keypress notifications.
     window->KeyDown +=
-      ref new TypedEventHandler<CoreWindow^, KeyEventArgs^>(this, &AppView::OnKeyPressed);
+      ref new TypedEventHandler<CoreWindow^, KeyEventArgs^>( this, &AppView::OnKeyPressed );
 
     // Register for notification that the app window is being closed.
     window->Closed +=
-      ref new TypedEventHandler<CoreWindow^, CoreWindowEventArgs^>(this, &AppView::OnWindowClosed);
+      ref new TypedEventHandler<CoreWindow^, CoreWindowEventArgs^>( this, &AppView::OnWindowClosed );
 
     // Register for notifications that the app window is losing focus.
     window->VisibilityChanged +=
-      ref new TypedEventHandler<CoreWindow^, VisibilityChangedEventArgs^>(this, &AppView::OnVisibilityChanged);
+      ref new TypedEventHandler<CoreWindow^, VisibilityChangedEventArgs^>( this, &AppView::OnVisibilityChanged );
 
-    m_holographicSpace = HolographicSpace::CreateForCoreWindow(window);
-    m_deviceResources->SetHolographicSpace(m_holographicSpace);
-    m_main->SetHolographicSpace(m_holographicSpace);
+    m_holographicSpace = HolographicSpace::CreateForCoreWindow( window );
+    m_deviceResources->SetHolographicSpace( m_holographicSpace );
+    m_main->SetHolographicSpace( m_holographicSpace );
   }
 
   //----------------------------------------------------------------------------
-  void AppView::Load(Platform::String^ entryPoint)
+  void AppView::Load( Platform::String^ entryPoint )
   {
   }
 
   //----------------------------------------------------------------------------
   void AppView::Run()
   {
-    while (!m_windowClosed)
+    while ( !m_windowClosed )
     {
-      if (m_windowVisible && (m_holographicSpace != nullptr))
+      if ( m_windowVisible && ( m_holographicSpace != nullptr ) )
       {
-        CoreWindow::GetForCurrentThread()->Dispatcher->ProcessEvents(CoreProcessEventsOption::ProcessAllIfPresent);
+        CoreWindow::GetForCurrentThread()->Dispatcher->ProcessEvents( CoreProcessEventsOption::ProcessAllIfPresent );
 
         HolographicFrame^ holographicFrame = m_main->Update();
 
-        if (m_main->Render(holographicFrame))
+        if ( m_main->Render( holographicFrame ) )
         {
           // The holographic frame has an API that presents the swap chain for each
           // holographic camera.
-          m_deviceResources->Present(holographicFrame);
+          m_deviceResources->Present( holographicFrame );
         }
       }
       else
       {
-        CoreWindow::GetForCurrentThread()->Dispatcher->ProcessEvents(CoreProcessEventsOption::ProcessOneAndAllPending);
+        CoreWindow::GetForCurrentThread()->Dispatcher->ProcessEvents( CoreProcessEventsOption::ProcessOneAndAllPending );
       }
     }
   }
@@ -165,9 +165,21 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
-  HoloIntervention::Sound::SoundManager & AppView::GetSoundManager()
+  System::RegistrationSystem& AppView::GetRegistrationSystem()
+  {
+    return m_main->GetRegistrationSystem();
+  }
+
+  //----------------------------------------------------------------------------
+  HoloIntervention::Sound::SoundManager& AppView::GetSoundManager()
   {
     return m_main->GetSoundManager();
+  }
+
+  //----------------------------------------------------------------------------
+  HoloIntervention::Network::IGTLinkIF& AppView::GetIGTLink()
+  {
+    return m_main->GetIGTLink();
   }
 
   //----------------------------------------------------------------------------
@@ -189,14 +201,14 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
-  void AppView::OnViewActivated(CoreApplicationView^ sender, IActivatedEventArgs^ args)
+  void AppView::OnViewActivated( CoreApplicationView^ sender, IActivatedEventArgs^ args )
   {
     // Run() won't start until the CoreWindow is activated.
     sender->CoreWindow->Activate();
   }
 
   //----------------------------------------------------------------------------
-  void AppView::OnSuspending(Platform::Object^ sender, SuspendingEventArgs^ args)
+  void AppView::OnSuspending( Platform::Object^ sender, SuspendingEventArgs^ args )
   {
     // Save app state asynchronously after requesting a deferral. Holding a deferral
     // indicates that the application is busy performing suspending operations. Be
@@ -204,56 +216,56 @@ namespace HoloIntervention
     // the app will be forced to exit.
     SuspendingDeferral^ deferral = args->SuspendingOperation->GetDeferral();
 
-    create_task([this, deferral]()
+    create_task( [this, deferral]()
     {
       m_deviceResources->Trim();
 
-      if (m_main != nullptr)
+      if ( m_main != nullptr )
       {
         try
         {
           m_main->SaveAppStateAsync();
         }
-        catch (const std::exception& e)
+        catch ( const std::exception& e )
         {
-          OutputDebugStringA(e.what());
+          OutputDebugStringA( e.what() );
         }
       }
 
       deferral->Complete();
-    });
+    } );
   }
 
   //----------------------------------------------------------------------------
-  void AppView::OnResuming(Platform::Object^ sender, Platform::Object^ args)
+  void AppView::OnResuming( Platform::Object^ sender, Platform::Object^ args )
   {
-    if (m_main != nullptr)
+    if ( m_main != nullptr )
     {
       try
       {
         m_main->LoadAppStateAsync();
       }
-      catch (const std::exception&)
+      catch ( const std::exception& )
       {
-        m_main->GetNotificationsSystem().QueueMessage(L"Unable to load spatial anchor store. Please re-place anchors.");
+        m_main->GetNotificationsSystem().QueueMessage( L"Unable to load spatial anchor store. Please re-place anchors." );
       }
     }
   }
 
   //----------------------------------------------------------------------------
-  void AppView::OnVisibilityChanged(CoreWindow^ sender, VisibilityChangedEventArgs^ args)
+  void AppView::OnVisibilityChanged( CoreWindow^ sender, VisibilityChangedEventArgs^ args )
   {
     m_windowVisible = args->Visible;
   }
 
   //----------------------------------------------------------------------------
-  void AppView::OnWindowClosed(CoreWindow^ sender, CoreWindowEventArgs^ args)
+  void AppView::OnWindowClosed( CoreWindow^ sender, CoreWindowEventArgs^ args )
   {
     m_windowClosed = true;
   }
 
   //----------------------------------------------------------------------------
-  void AppView::OnKeyPressed(CoreWindow^ sender, KeyEventArgs^ args)
+  void AppView::OnKeyPressed( CoreWindow^ sender, KeyEventArgs^ args )
   {
     // TODO: Bluetooth keyboards are supported by HoloLens.
   }

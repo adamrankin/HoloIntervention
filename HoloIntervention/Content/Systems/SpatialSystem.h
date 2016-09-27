@@ -41,6 +41,11 @@ namespace DX
 
 namespace HoloIntervention
 {
+  namespace Spatial
+  {
+    class SurfaceMesh;
+  }
+
   namespace Rendering
   {
     class ModelEntry;
@@ -72,6 +77,9 @@ namespace HoloIntervention
                                 float3& outHitPosition,
                                 float3& outHitNormal,
                                 float3& outHitEdge );
+      bool GetLastHitPosition(_Out_ float3& position, _In_ bool considerOldHits = false);
+      bool GetLastHitNormal(_Out_ float3& normal, _In_ bool considerOldHits = false);
+      std::shared_ptr<Spatial::SurfaceMesh> GetLastHitMesh();
 
       // Initializes the Spatial Mapping surface observer.
       void InitializeSurfaceObserver( SpatialCoordinateSystem^ coordinateSystem );

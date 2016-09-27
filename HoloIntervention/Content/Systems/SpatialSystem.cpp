@@ -39,6 +39,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <ppltasks.h>
 #include <sstream>
 
+// Spatial includes
+#include "SurfaceMesh.h"
+
 // Rendering includes
 #include "ModelRenderer.h"
 #include "ModelEntry.h"
@@ -148,6 +151,32 @@ namespace HoloIntervention
     bool SpatialSystem::TestRayIntersection( SpatialCoordinateSystem^ desiredCoordinateSystem, const float3 rayOrigin, const float3 rayDirection, float3& outHitPosition, float3& outHitNormal, float3& outHitEdge )
     {
       return m_surfaceCollection->TestRayIntersection( desiredCoordinateSystem, rayOrigin, rayDirection, outHitPosition, outHitNormal, outHitEdge );
+    }
+
+    //----------------------------------------------------------------------------
+    bool SpatialSystem::GetLastHitPosition(_Out_ float3& position, _In_ bool considerOldHits /*= false*/)
+    {
+      if (m_surfaceCollection == nullptr)
+      {
+        return false;
+      }
+      return m_surfaceCollection->GetLastHitPosition(position, considerOldHits);
+    }
+
+    //----------------------------------------------------------------------------
+    bool SpatialSystem::GetLastHitNormal(_Out_ float3& normal, _In_ bool considerOldHits /*= false*/)
+    {
+      if (m_surfaceCollection == nullptr)
+      {
+        return false;
+      }
+      return m_surfaceCollection->GetLastHitNormal(normal, considerOldHits);
+    }
+
+    //----------------------------------------------------------------------------
+    std::shared_ptr<HoloIntervention::Spatial::SurfaceMesh> SpatialSystem::GetLastHitMesh()
+    {
+      return m_surfaceCollection->GetLastHitMesh();
     }
 
     //----------------------------------------------------------------------------

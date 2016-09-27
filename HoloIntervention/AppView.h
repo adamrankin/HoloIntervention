@@ -60,9 +60,13 @@ namespace HoloIntervention
     System::NotificationSystem & GetNotificationSystem();
     System::SpatialSystem & GetSpatialSystem();
     System::GazeSystem & GetGazeSystem();
+    System::RegistrationSystem & GetRegistrationSystem();
 
     // Provide app wide access to the sound manager
     Sound::SoundManager & GetSoundManager();
+
+    // Provide access to the network link
+    Network::IGTLinkIF& GetIGTLink();
 
     // Provide app wide access to the renderers
     Rendering::ModelRenderer & GetModelRenderer();

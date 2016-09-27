@@ -95,7 +95,9 @@
     <ClCompile Include="Content\Rendering\DirectXTK\InstancedGeometricPrimitive.cpp">
       <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
     </ClCompile>
-    <ClCompile Include="Content\Systems\RegistrationSystem.cpp" />
+    <ClCompile Include="Content\Systems\RegistrationSystem.cpp">
+      <Filter>Content\Systems\Registration</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="HoloInterventionMain.h" />
@@ -207,7 +209,9 @@
     <ClInclude Include="Content\Sound\IVoiceInput.h">
       <Filter>Content\Sound</Filter>
     </ClInclude>
-    <ClInclude Include="Content\Systems\RegistrationSystem.h" />
+    <ClInclude Include="Content\Systems\RegistrationSystem.h">
+      <Filter>Content\Systems\Registration</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\LockScreenLogo.scale-200.png">

@@ -232,10 +232,11 @@ namespace HoloIntervention
     {
       SpatialPointerPose^ pose = SpatialPointerPose::TryGetAtTimestamp( currentCoordinateSystem, prediction->Timestamp );
 
-      m_spatialSystem->Update( currentCoordinateSystem, pose );
+      m_spatialSystem->Update( currentCoordinateSystem );
 
       if ( pose != nullptr )
       {
+        m_registrationSystem->Update( currentCoordinateSystem, pose );
         m_gazeSystem->Update( m_timer, currentCoordinateSystem, pose );
         m_soundManager->Update( m_timer, currentCoordinateSystem );
         m_sliceRenderer->Update( pose, m_timer );
@@ -447,6 +448,12 @@ namespace HoloIntervention
   HoloIntervention::Sound::SoundManager& HoloInterventionMain::GetSoundManager()
   {
     return *m_soundManager.get();
+  }
+
+  //----------------------------------------------------------------------------
+  HoloIntervention::Network::IGTLinkIF& HoloInterventionMain::GetIGTLink()
+  {
+    return *m_igtLinkIF.get();
   }
 
   //----------------------------------------------------------------------------
