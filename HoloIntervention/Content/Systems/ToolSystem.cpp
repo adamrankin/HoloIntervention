@@ -34,6 +34,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 // System includes
 #include "NotificationSystem.h"
 
+using namespace Concurrency;
 using namespace Windows::Storage;
 using namespace Windows::Data::Xml::Dom;
 
@@ -46,7 +47,7 @@ namespace HoloIntervention
       : m_transformRepository( ref new UWPOpenIGTLink::TransformRepository() )
     {
       ;
-      concurrency::create_task( Windows::ApplicationModel::Package::Current->InstalledLocation->GetFileAsync( L"Assets\\Data\\tool_configuration.xml" ) ).then( [this]( concurrency::task<StorageFile^> previousTask )
+      create_task(Windows::ApplicationModel::Package::Current->InstalledLocation->GetFileAsync( L"Assets\\Data\\tool_configuration.xml" ) ).then( [this]( task<StorageFile^> previousTask )
       {
         StorageFile^ file = nullptr;
         try
@@ -59,7 +60,7 @@ namespace HoloIntervention
         }
 
         XmlDocument^ doc = ref new XmlDocument();
-        concurrency::create_task( doc->LoadFromFileAsync( file ) ).then( [this]( concurrency::task<XmlDocument^> previousTask )
+        create_task( doc->LoadFromFileAsync( file ) ).then( [this]( task<XmlDocument^> previousTask )
         {
           XmlDocument^ doc = nullptr;
           try

@@ -61,24 +61,18 @@ namespace HoloIntervention
       /// Set the port to connect to
       void SetPort( int32 port );
 
-      /// Retrieve the oldest tracked frame
-      bool GetOldestTrackedFrame(UWPOpenIGTLink::TrackedFrame^ frame, double& oldestTimestamp);
-
       /// Retrieve the latest tracked frame
-      bool GetLatestTrackedFrame(UWPOpenIGTLink::TrackedFrame^ frame, double& latestTimestamp);
-
-      /// Retrieve the oldest command
-      bool GetOldestCommand(UWPOpenIGTLink::Command^ cmd);
+      bool GetLatestTrackedFrame( UWPOpenIGTLink::TrackedFrame^ frame, double* latestTimestamp );
 
       /// Retrieve the latest command
-      bool GetLatestCommand(UWPOpenIGTLink::Command^ cmd);
+      bool GetLatestCommand( UWPOpenIGTLink::Command^ cmd, double* latestTimestamp );
 
       /// IVoiceInput functions
-      void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap, void* userArg);
+      void RegisterVoiceCallbacks( HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap, void* userArg );
 
     public:
       // Static helper functions
-      static std::shared_ptr<byte> GetSharedImagePtr(UWPOpenIGTLink::TrackedFrame^ frame);
+      static std::shared_ptr<byte> GetSharedImagePtr( UWPOpenIGTLink::TrackedFrame^ frame );
 
     protected:
       // Link to an IGT server

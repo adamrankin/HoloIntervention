@@ -84,51 +84,39 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool IGTLinkIF::GetOldestTrackedFrame( UWPOpenIGTLink::TrackedFrame^ frame, double& oldestTimestamp )
+    bool IGTLinkIF::GetLatestTrackedFrame( UWPOpenIGTLink::TrackedFrame^ frame, double* latestTimestamp )
     {
-      return m_igtClient->GetOldestTrackedFrame( frame, &oldestTimestamp );
+      return m_igtClient->GetLatestTrackedFrame( frame, latestTimestamp );
     }
 
     //----------------------------------------------------------------------------
-    bool IGTLinkIF::GetLatestTrackedFrame( UWPOpenIGTLink::TrackedFrame^ frame, double& latestTimestamp )
+    bool IGTLinkIF::GetLatestCommand( UWPOpenIGTLink::Command^ cmd, double* latestTimestamp )
     {
-      return m_igtClient->GetLatestTrackedFrame( frame, &latestTimestamp );
+      return m_igtClient->GetLatestCommand( cmd, latestTimestamp );
     }
 
     //----------------------------------------------------------------------------
-    bool IGTLinkIF::GetOldestCommand( UWPOpenIGTLink::Command^ cmd )
+    void IGTLinkIF::RegisterVoiceCallbacks( HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap, void* userArg )
     {
-      return m_igtClient->GetOldestCommand( cmd );
-    }
-
-    //----------------------------------------------------------------------------
-    bool IGTLinkIF::GetLatestCommand( UWPOpenIGTLink::Command^ cmd )
-    {
-      return m_igtClient->GetLatestCommand( cmd );
-    }
-
-    //----------------------------------------------------------------------------
-    void IGTLinkIF::RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap, void* userArg)
-    {
-      callbackMap[L"connect"] = [this](SpeechRecognitionResult ^ result)
+      callbackMap[L"connect"] = [this]( SpeechRecognitionResult ^ result )
       {
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Connecting...");
-        this->ConnectAsync(4.0).then([this](bool result)
+        HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Connecting..." );
+        this->ConnectAsync( 4.0 ).then( [this]( bool result )
         {
-          if (result)
+          if ( result )
           {
-            HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Connection successful.");
+            HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Connection successful." );
           }
           else
           {
-            HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Connection failed.");
+            HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Connection failed." );
           }
-        });
+        } );
       };
 
-      callbackMap[L"disconnect"] = [this](SpeechRecognitionResult ^ result)
+      callbackMap[L"disconnect"] = [this]( SpeechRecognitionResult ^ result )
       {
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Disconnected.");
+        HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Disconnected." );
         this->Disconnect();
       };
     }

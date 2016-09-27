@@ -117,7 +117,7 @@ namespace HoloIntervention
     m_registrationSystem = std::make_unique<System::RegistrationSystem>( m_deviceResources, m_timer );
 
     // TODO : remove temp code
-    m_igtLinkIF->SetHostname( L"172.16.80.1" );
+    m_igtLinkIF->SetHostname( L"192.168.1.180" );
 
     try
     {
@@ -252,7 +252,7 @@ namespace HoloIntervention
 
       if ( m_igtLinkIF->IsConnected() )
       {
-        if ( m_igtLinkIF->GetLatestTrackedFrame( m_latestFrame, m_latestTimestamp ) )
+        if ( m_igtLinkIF->GetLatestTrackedFrame( m_latestFrame, &m_latestTimestamp ) )
         {
           // TODO : move this to a slice system, remove it from main
           m_sliceRenderer->UpdateSlice( m_sliceToken,
@@ -556,6 +556,7 @@ namespace HoloIntervention
     m_toolSystem->RegisterVoiceCallbacks( callbacks, nullptr );
     m_sliceRenderer->RegisterVoiceCallbacks( callbacks, &m_sliceToken );
     m_meshRenderer->RegisterVoiceCallbacks( callbacks, nullptr );
+    m_registrationSystem->RegisterVoiceCallbacks( callbacks, nullptr );
 
     auto task = m_voiceInputHandler->CompileCallbacks( callbacks );
   }

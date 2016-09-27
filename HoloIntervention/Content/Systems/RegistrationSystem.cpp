@@ -41,8 +41,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "IGTLinkIF.h"
 
 using namespace Concurrency;
-using namespace Windows::Perception::Spatial;
+using namespace Windows::Data::Xml::Dom;
 using namespace Windows::Foundation::Numerics;
+using namespace Windows::Perception::Spatial;
+using namespace Windows::Storage;
 
 namespace HoloIntervention
 {
@@ -68,6 +70,42 @@ namespace HoloIntervention
         return;
       }
       m_regAnchorModel->SetVisible( false );
+
+      create_task(Windows::ApplicationModel::Package::Current->InstalledLocation->GetFileAsync(L"Assets\\Data\\tool_configuration.xml")).then([this](task<StorageFile^> previousTask)
+      {
+        StorageFile^ file = nullptr;
+        try
+        {
+          file = previousTask.get();
+        }
+        catch (Platform::Exception^ e)
+        {
+          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Unable to locate tool system configuration file.");
+        }
+
+        XmlDocument^ doc = ref new XmlDocument();
+        create_task(doc->LoadFromFileAsync(file)).then([this](task<XmlDocument^> previousTask)
+        {
+          XmlDocument^ doc = nullptr;
+          try
+          {
+            doc = previousTask.get();
+          }
+          catch (Platform::Exception^ e)
+          {
+            HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Tool system configuration file did not contain valid XML.");
+          }
+
+          try
+          {
+            m_transformRepository->ReadConfiguration(doc);
+          }
+          catch (Platform::Exception^ e)
+          {
+            HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Invalid layout in coordinate definitions configuration area.");
+          }
+        });
+      });
     }
 
     //----------------------------------------------------------------------------
@@ -113,7 +151,7 @@ namespace HoloIntervention
       // Point collection logic
       if ( m_collectingPoints && HoloIntervention::instance()->GetIGTLink().IsConnected() )
       {
-        if ( HoloIntervention::instance()->GetIGTLink().GetLatestTrackedFrame( m_trackedFrame, m_latestTimestamp ) )
+        if ( HoloIntervention::instance()->GetIGTLink().GetLatestTrackedFrame( m_trackedFrame, &m_latestTimestamp ) )
         {
           m_transformRepository->SetTransforms( m_trackedFrame );
           bool isValid;
@@ -158,6 +196,7 @@ namespace HoloIntervention
         if ( HoloIntervention::instance()->GetIGTLink().IsConnected() )
         {
           m_points.clear();
+          m_latestTimestamp = 0;
           m_collectingPoints = true;
           HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Collecting points..." );
         }
