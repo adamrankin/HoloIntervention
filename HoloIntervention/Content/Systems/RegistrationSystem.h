@@ -63,6 +63,9 @@ namespace HoloIntervention
 
       virtual void RegisterVoiceCallbacks( HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap, void* userArg );
 
+      // Send the collected points and mesh data to the NetworkPCL interface
+      task<bool> SendRegistrationDataAsync();
+
     protected:
       // Keep a reference to the device resources
       std::shared_ptr<DX::DeviceResources>      m_deviceResources;

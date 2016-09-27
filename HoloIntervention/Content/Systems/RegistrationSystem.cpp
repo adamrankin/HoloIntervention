@@ -169,9 +169,16 @@ namespace HoloIntervention
 
       callbackMap[L"end collecting points"] = [this]( SpeechRecognitionResult ^ result )
       {
-        // TODO : trigger registration calculation
         m_collectingPoints = false;
         HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Collecting finished." );
+
+        SendRegistrationDataAsync().then( [this]( bool result )
+        {
+          if ( result )
+          {
+            HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Computing registration..." );
+          }
+        } );
       };
 
       callbackMap[L"drop anchor"] = [this]( SpeechRecognitionResult ^ result )
@@ -190,6 +197,15 @@ namespace HoloIntervention
           HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Anchor \"" + ANCHOR_NAME + "\" removed." );
         }
       };
+    }
+
+    //----------------------------------------------------------------------------
+    task<bool> RegistrationSystem::SendRegistrationDataAsync()
+    {
+      return create_task( [ = ]()
+      {
+        return true;
+      } );
     }
   }
 }
