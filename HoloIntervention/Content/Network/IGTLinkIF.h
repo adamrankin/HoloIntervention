@@ -58,6 +58,9 @@ namespace HoloIntervention
       /// Set the hostname to connect to
       void SetHostname( const std::wstring& hostname );
 
+      /// Get the hostname to connect to
+      std::wstring GetHostname() const;
+
       /// Set the port to connect to
       void SetPort( int32 port );
 

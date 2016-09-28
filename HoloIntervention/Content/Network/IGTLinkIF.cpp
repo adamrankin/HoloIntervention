@@ -78,6 +78,12 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    std::wstring IGTLinkIF::GetHostname() const
+    {
+      return std::wstring(m_igtClient->ServerHost->Data());
+    }
+
+    //----------------------------------------------------------------------------
     void IGTLinkIF::SetPort( int32 port )
     {
       m_igtClient->ServerPort = port;
