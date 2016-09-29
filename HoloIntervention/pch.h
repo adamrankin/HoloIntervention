@@ -18,6 +18,7 @@
 
 #include <collection.h>
 #include <ppltasks.h>
+#include <agents.h>
 
 #include <XAudio2.h>
 #include <xapo.h>

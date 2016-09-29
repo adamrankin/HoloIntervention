@@ -52,7 +52,7 @@ namespace HoloIntervention
 
     struct IndexBufferType
     {
-      uint32 index;
+      uint16 index;
     };
 
     struct OutputBufferType
@@ -84,6 +84,7 @@ namespace HoloIntervention
       ~SurfaceMesh();
 
       void UpdateSurface( SpatialSurfaceMesh^ newMesh );
+      SpatialSurfaceMesh^ GetSurfaceMesh();
 
       void Update( DX::StepTimer const& timer,
                    SpatialCoordinateSystem^ baseCoordinateSystem );

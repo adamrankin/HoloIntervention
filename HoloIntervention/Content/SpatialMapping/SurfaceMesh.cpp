@@ -72,6 +72,12 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    Surfaces::SpatialSurfaceMesh^ SurfaceMesh::GetSurfaceMesh()
+    {
+      return m_surfaceMesh;
+    }
+
+    //----------------------------------------------------------------------------
     // Spatial Mapping surface meshes each have a transform. This transform is updated every frame.
     void SurfaceMesh::Update( DX::StepTimer const& timer, SpatialCoordinateSystem^ baseCoordinateSystem )
     {

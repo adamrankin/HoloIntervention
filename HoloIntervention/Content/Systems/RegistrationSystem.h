@@ -34,6 +34,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 using namespace Concurrency;
 using namespace Windows::Foundation::Numerics;
+using namespace Windows::Networking::Sockets;
 using namespace Windows::Perception::Spatial;
 using namespace Windows::UI::Input::Spatial;
 
@@ -75,6 +76,9 @@ namespace HoloIntervention
       bool                                      m_regAnchorRequested = false;
       uint64_t                                  m_regAnchorModelId = 0;
       std::shared_ptr<Rendering::ModelEntry>    m_regAnchorModel = nullptr;
+
+      // NetworkPCL related variables
+      StreamSocket^                             m_networkPCLSocket = ref new StreamSocket();
 
       // Point collection behavior variables
       bool                                      m_collectingPoints = false;
