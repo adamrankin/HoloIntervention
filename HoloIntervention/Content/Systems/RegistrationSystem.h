@@ -38,6 +38,25 @@ using namespace Windows::Networking::Sockets;
 using namespace Windows::Perception::Spatial;
 using namespace Windows::UI::Input::Spatial;
 
+namespace NetworkPCL
+{
+  enum PCLMessageType
+  {
+    NetworkPCL_POINT_DATA,
+    NetworkPCL_REGISTRATION_RESULT,
+    NetworkPCL_KEEP_ALIVE
+  };
+
+  struct PCLMessageHeader
+  {
+    uint16_t  messageType;
+    uint32_t  additionalHeaderSize;
+    uint32_t  bodySize;
+    uint32_t  referenceVertexCount;
+    uint32_t  targetVertexCount;
+  };
+}
+
 namespace HoloIntervention
 {
   namespace Spatial
@@ -66,6 +85,12 @@ namespace HoloIntervention
 
       // Send the collected points and mesh data to the NetworkPCL interface
       task<bool> SendRegistrationDataAsync();
+      task<float4x4> WaitForRegistrationResultAsync();
+
+      float4x4 GetRegistrationResult();
+
+    protected:
+      task<void> DataReceiverAsync();
 
     protected:
       // Keep a reference to the device resources
@@ -79,12 +104,18 @@ namespace HoloIntervention
 
       // NetworkPCL related variables
       StreamSocket^                             m_networkPCLSocket = ref new StreamSocket();
+      bool                                      m_connected = false;
+      NetworkPCL::PCLMessageHeader              m_nextHeader;
+      cancellation_token_source                 m_tokenSource;
+      task<void>*                               m_receiverTask = nullptr;
+      bool                                      m_registrationResultReceived = false;
+      float4x4                                  m_registrationResult = float4x4::identity();
 
       // Point collection behavior variables
       bool                                      m_collectingPoints = false;
       UWPOpenIGTLink::TrackedFrame^             m_trackedFrame = ref new UWPOpenIGTLink::TrackedFrame();
       UWPOpenIGTLink::TransformRepository^      m_transformRepository = ref new UWPOpenIGTLink::TransformRepository();
-      UWPOpenIGTLink::TransformName^            m_stylusTipToReferenceName = ref new UWPOpenIGTLink::TransformName(L"StylusTip", L"Reference");
+      UWPOpenIGTLink::TransformName^            m_stylusTipToReferenceName = ref new UWPOpenIGTLink::TransformName( L"StylusTip", L"Reference" );
       double                                    m_latestTimestamp = 0;
       std::vector<float3>                       m_points;
       std::shared_ptr<Spatial::SurfaceMesh>     m_spatialMesh = nullptr;

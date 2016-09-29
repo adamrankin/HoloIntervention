@@ -214,9 +214,9 @@ namespace HoloIntervention
 
           // Our shader pipeline can handle a variety of triangle index formats
           IVectorView<DirectXPixelFormat>^ supportedTriangleIndexFormats = m_surfaceMeshOptions->SupportedTriangleIndexFormats;
-          if ( supportedTriangleIndexFormats->IndexOf( DirectXPixelFormat::R16UInt, &formatIndex ) )
+          if ( supportedTriangleIndexFormats->IndexOf( DirectXPixelFormat::R32UInt, &formatIndex ) )
           {
-            m_surfaceMeshOptions->TriangleIndexFormat = DirectXPixelFormat::R16UInt;
+            m_surfaceMeshOptions->TriangleIndexFormat = DirectXPixelFormat::R32UInt;
           }
           else
           {

@@ -133,6 +133,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AppView.cpp" />
+    <ClCompile Include="Common\Common.cpp" />
     <ClCompile Include="Content\Input\SpatialInputHandler.cpp" />
     <ClCompile Include="Content\Input\VoiceInputHandler.cpp" />
     <ClCompile Include="Content\Network\IGTLinkIF.cpp" />

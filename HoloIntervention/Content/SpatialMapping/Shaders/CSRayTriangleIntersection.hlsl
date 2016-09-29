@@ -39,7 +39,7 @@ struct VertexBufferType
 
 struct IndexBufferType
 {
-  min16uint index;
+  uint      index;
 };
 
 struct OutputBufferType

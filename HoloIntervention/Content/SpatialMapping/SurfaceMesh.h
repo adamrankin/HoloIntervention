@@ -52,7 +52,7 @@ namespace HoloIntervention
 
     struct IndexBufferType
     {
-      uint16 index;
+      uint32 index;
     };
 
     struct OutputBufferType

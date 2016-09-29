@@ -24,6 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "pch.h"
 #include "AppView.h"
+#include "Common.h"
 #include "RegistrationSystem.h"
 
 // Rendering includes
@@ -40,6 +41,12 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Network includes
 #include "IGTLinkIF.h"
 
+// std includes
+#include <sstream>
+
+// DirectXTex includes
+#include <DirectXTex.h>
+
 using namespace Concurrency;
 using namespace Windows::Data::Xml::Dom;
 using namespace Windows::Foundation::Numerics;
@@ -48,85 +55,10 @@ using namespace Windows::Perception::Spatial;
 using namespace Windows::Storage::Streams;
 using namespace Windows::Storage;
 
-namespace
-{
-  struct PCLMessageHeader
-  {
-    uint16_t  additionalHeaderSize;
-    uint32_t  bodySize;
-    uint32_t  referenceVertexCount;
-    uint32_t  targetVertexCount;
-  };
-
-  // Creates a task that completes after the specified delay.
-  task<void> complete_after( unsigned int timeoutMs )
-  {
-    // A task completion event that is set when a timer fires.
-    task_completion_event<void> tce;
-
-    // Create a non-repeating timer.
-    auto fire_once = new timer<int>( timeoutMs, 0, nullptr, false );
-    // Create a call object that sets the completion event after the timer fires.
-    auto callback = new call<int>( [tce]( int )
-    {
-      tce.set();
-    } );
-
-    // Connect the timer to the callback and start the timer.
-    fire_once->link_target( callback );
-    fire_once->start();
-
-    // Create a task that completes after the completion event is set.
-    task<void> event_set( tce );
-
-    // Create a continuation task that cleans up resources and
-    // and return that continuation task.
-    return event_set.then( [callback, fire_once]()
-    {
-      delete callback;
-      delete fire_once;
-    } );
-  }
-
-  // Cancels the provided task after the specified delay, if the task
-  // did not complete.
-  template<typename T>
-  task<T> cancel_after_timeout( task<T> t, cancellation_token_source cts, unsigned int timeout )
-  {
-    // Create a task that returns true after the specified task completes.
-    task<bool> success_task = t.then( []( T )
-    {
-      return true;
-    } );
-    // Create a task that returns false after the specified timeout.
-    task<bool> failure_task = complete_after( timeout ).then( []
-    {
-      return false;
-    } );
-
-    // Create a continuation task that cancels the overall task
-    // if the timeout task finishes first.
-    return ( failure_task || success_task ).then( [t, cts]( bool success )
-    {
-      if ( !success )
-      {
-        // Set the cancellation token. The task that is passed as the
-        // t parameter should respond to the cancellation and stop
-        // as soon as it can.
-        cts.cancel();
-      }
-
-      // Return the original task.
-      return t;
-    } );
-  }
-}
-
 namespace HoloIntervention
 {
   namespace System
   {
-
     Platform::String^ RegistrationSystem::ANCHOR_NAME = ref new Platform::String( L"Registration" );
     const std::wstring RegistrationSystem::ANCHOR_MODEL_FILENAME = L"Assets/Models/anchor.cmo";
 
@@ -189,6 +121,12 @@ namespace HoloIntervention
     {
       m_regAnchorModel = nullptr;
       m_regAnchorModelId = 0;
+      m_tokenSource.cancel();
+      if ( m_receiverTask != nullptr )
+      {
+        m_receiverTask->wait();
+      }
+      m_connected = false;
     }
 
     //----------------------------------------------------------------------------
@@ -291,7 +229,9 @@ namespace HoloIntervention
         {
           if ( result )
           {
-            HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Computing registration..." );
+            std::stringstream ss;
+            ss << m_points.size() << " points collected. Computing registration...";
+            HoloIntervention::instance()->GetNotificationSystem().QueueMessage( ss.str() );
           }
         } );
       };
@@ -321,26 +261,32 @@ namespace HoloIntervention
       {
         auto hostname = ref new HostName( ref new Platform::String( HoloIntervention::instance()->GetIGTLink().GetHostname().c_str() ) );
 
-        cancellation_token_source cts;
-        auto connectTask = cancel_after_timeout( create_task( m_networkPCLSocket->ConnectAsync( hostname, ref new Platform::String( L"24012" ) ) ), cts, 1500 );
+        if ( !m_connected )
+        {
+          auto connectTask = create_task( m_networkPCLSocket->ConnectAsync( hostname, ref new Platform::String( L"24012" ) ) );
 
-        try
-        {
-          connectTask.wait();
-        }
-        catch ( const task_canceled& )
-        {
-          return false;
+          try
+          {
+            connectTask.wait();
+          }
+          catch ( Platform::Exception^ e )
+          {
+            HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Unable to connect to NetworkPCL." );
+            return false;
+          }
+
+          m_connected = true;
         }
 
         DataWriter^ writer = ref new DataWriter( m_networkPCLSocket->OutputStream );
         SpatialSurfaceMesh^ mesh = m_spatialMesh->GetSurfaceMesh();
 
-        // First, write header details to the stream
-        writer->WriteUInt16( 0 ); // no additional header data
-
         // Calculate the body size
         unsigned int bodySize = mesh->TriangleIndices->ElementCount * sizeof( float ) * 3 + m_points.size() * sizeof( float ) * 3;
+
+        // First, write header details to the stream
+        writer->WriteUInt16( NetworkPCL::NetworkPCL_POINT_DATA );
+        writer->WriteUInt32( 0 ); // no additional header data
         writer->WriteUInt32( bodySize );
         writer->WriteUInt32( mesh->TriangleIndices->ElementCount );
         writer->WriteUInt32( m_points.size() );
@@ -351,12 +297,18 @@ namespace HoloIntervention
         for ( unsigned int i = 0; i < mesh->VertexPositions->ElementCount; ++i )
         {
           vertexPosition.push_back( std::array<float, 3> { reader->ReadSingle(), reader->ReadSingle(), reader->ReadSingle() } );
+          if ( HasAlpha( ( DXGI_FORMAT )mesh->VertexPositions->Format ) )
+          {
+            // Consume alpha value and ignore
+            reader->ReadSingle();
+          }
         }
 
-        std::vector<uint16> triangleIndices;
+        reader = DataReader::FromBuffer( mesh->TriangleIndices->Data );
+        std::vector<uint32> triangleIndices;
         for ( unsigned int i = 0; i < mesh->TriangleIndices->ElementCount; ++i )
         {
-          triangleIndices.push_back( reader->ReadUInt16() );
+          triangleIndices.push_back( reader->ReadUInt32() );
         }
 
         for ( unsigned int i = 0; i < triangleIndices.size(); i++ )
@@ -387,25 +339,117 @@ namespace HoloIntervention
             throw std::exception( messageStr.c_str() );
           }
 
-          if ( bytesWritten != bodySize + sizeof( PCLMessageHeader ) )
+          if ( bytesWritten != bodySize + sizeof( NetworkPCL::PCLMessageHeader ) )
           {
             throw std::exception( "Entire message couldn't be sent." );
           }
 
-          create_task( [ = ]()
-          {
-            DataReader^ reader = ref new DataReader( m_networkPCLSocket->InputStream );
-            while ( true )
-            {
-              if ( reader->UnconsumedBufferLength > 0 )
-              {
+          // Start the asynchronous data receiver thread
+          m_registrationResultReceived = false;
+          m_receiverTask = &DataReceiverAsync();
 
-              }
-            }
-          } );
+          cancellation_token_source cts;
+          auto waitTask = cancel_after_timeout( WaitForRegistrationResultAsync(), cts, 10000 );
+
+          try
+          {
+            waitTask.wait();
+          }
+          catch ( const task_canceled& )
+          {
+            HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Timed out waiting for registration result." );
+          }
+
+          HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Registration results received." );
+
+          // TODO : what to do with reg result?
         } );
         return true;
-      }, concurrency::task_continuation_context::use_arbitrary() );
+      }, task_continuation_context::use_arbitrary() );
+    }
+
+    //----------------------------------------------------------------------------
+    task<float4x4> RegistrationSystem::WaitForRegistrationResultAsync()
+    {
+      return create_task( [ = ]() -> float4x4
+      {
+        while ( true )
+        {
+          if ( m_registrationResultReceived )
+          {
+            return m_registrationResult;
+          }
+          else
+          {
+            Sleep( 250 );
+          }
+        }
+      } );
+    }
+
+    //----------------------------------------------------------------------------
+    float4x4 RegistrationSystem::GetRegistrationResult()
+    {
+      return m_registrationResult;
+    }
+
+    //----------------------------------------------------------------------------
+    task<void> RegistrationSystem::DataReceiverAsync()
+    {
+      auto token = m_tokenSource.get_token();
+      return create_task( [ = ]()
+      {
+        bool waitingForHeader = true;
+        bool waitingForBody = false;
+        DataReader^ reader = ref new DataReader( m_networkPCLSocket->InputStream );
+        while ( true )
+        {
+          if ( token.is_canceled() )
+          {
+            return;
+          }
+
+          if ( waitingForHeader )
+          {
+            if ( reader->UnconsumedBufferLength > sizeof( NetworkPCL::PCLMessageHeader ) )
+            {
+              Platform::Array<byte>^ headerRaw = ref new Platform::Array<byte>( sizeof( NetworkPCL::PCLMessageHeader ) );
+              reader->ReadBytes( headerRaw );
+              m_nextHeader = *( NetworkPCL::PCLMessageHeader* )headerRaw->Data;
+
+              if ( m_nextHeader.messageType != NetworkPCL::NetworkPCL_KEEP_ALIVE )
+              {
+                waitingForHeader = false;
+                waitingForBody = true;
+              }
+            }
+            else
+            {
+              Sleep( 100 );
+              continue;
+            }
+          }
+
+          if ( waitingForBody )
+          {
+            Platform::Array<byte>^ body = ref new Platform::Array<byte>( reader->UnconsumedBufferLength );
+            reader->ReadBytes( body );
+
+            if ( m_nextHeader.messageType == NetworkPCL::NetworkPCL_REGISTRATION_RESULT )
+            {
+              if ( body->Length == sizeof( float ) * 16 )
+              {
+                // 16 floats
+                XMFLOAT4X4 mat( ( float* )body->Data );
+                XMStoreFloat4x4( &m_registrationResult, XMLoadFloat4x4( &mat ) );
+              }
+            }
+
+            waitingForHeader = true;
+            waitingForBody = false;
+          }
+        }
+      }, m_tokenSource.get_token() );
     }
   }
 }

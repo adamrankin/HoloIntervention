@@ -26,22 +26,26 @@ OTHER DEALINGS IN THE SOFTWARE.
 // std includes
 #include <string>
 
-// Windows includes
+// WinRT includes
+#include <ppltasks.h>
 #include <robuffer.h>
 #include <windows.h>
 
+using namespace Concurrency;
 using namespace Microsoft::WRL;
 using namespace Windows::Data::Xml::Dom;
 using namespace Windows::UI::Notifications;
 
 namespace HoloIntervention
 {
+  //------------------------------------------------------------------------
   template<class T>
   const T& clamp(const T& x, const T& upper, const T& lower)
   {
     return min(upper, max(x, lower));
   }
 
+  //------------------------------------------------------------------------
   template <typename t = byte>
   t * GetDataFromIBuffer(Windows::Storage::Streams::IBuffer ^ container)
   {
@@ -77,6 +81,7 @@ namespace HoloIntervention
 	  return reinterpret_cast<t*>(pRawData);
   }
 
+  //------------------------------------------------------------------------
   template<typename Functor>
   void RunFunctionAfterDelay(uint32 delayMs, Functor function)
   {
@@ -87,5 +92,40 @@ namespace HoloIntervention
 	  ts.Duration = 10'000'000;
 	  TimerElapsedHandler^ handler = ref new TimerElapsedHandler(function);
 	  ThreadPoolTimer^ timer = ThreadPoolTimer::CreateTimer(handler, ts);
+  }
+
+  //------------------------------------------------------------------------
+  task<void> complete_after(unsigned int timeoutMs);
+
+  //------------------------------------------------------------------------
+  template<typename T>
+  task<T> cancel_after_timeout(task<T> t, cancellation_token_source cts, unsigned int timeoutMs)
+  {
+    // Create a task that returns true after the specified task completes.
+    task<bool> success_task = t.then([](T)
+    {
+      return true;
+    });
+    // Create a task that returns false after the specified timeout.
+    task<bool> failure_task = complete_after(timeoutMs).then([]
+    {
+      return false;
+    });
+
+    // Create a continuation task that cancels the overall task
+    // if the timeout task finishes first.
+    return (failure_task || success_task).then([t, cts](bool success)
+    {
+      if (!success)
+      {
+        // Set the cancellation token. The task that is passed as the
+        // t parameter should respond to the cancellation and stop
+        // as soon as it can.
+        cts.cancel();
+      }
+
+      // Return the original task.
+      return t;
+    });
   }
 }
