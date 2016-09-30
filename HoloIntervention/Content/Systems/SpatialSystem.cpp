@@ -203,7 +203,11 @@ namespace HoloIntervention
 
           IVectorView<DirectXPixelFormat>^ supportedVertexPositionFormats = m_surfaceMeshOptions->SupportedVertexPositionFormats;
           unsigned int formatIndex = 0;
-          if ( supportedVertexPositionFormats->IndexOf( DirectXPixelFormat::R32G32B32A32Float, &formatIndex ) )
+          if (supportedVertexPositionFormats->IndexOf(DirectXPixelFormat::R32G32B32Float, &formatIndex))
+          {
+            m_surfaceMeshOptions->VertexPositionFormat = DirectXPixelFormat::R32G32B32Float;
+          }
+          else if ( supportedVertexPositionFormats->IndexOf( DirectXPixelFormat::R32G32B32A32Float, &formatIndex ) )
           {
             m_surfaceMeshOptions->VertexPositionFormat = DirectXPixelFormat::R32G32B32A32Float;
           }

@@ -116,6 +116,8 @@ namespace HoloIntervention
 
       void SetIsActive( const bool& isActive );
 
+      XMFLOAT4X4 GetMeshToWorldTransform();
+
     protected:
       void SwapVertexBuffers();
 

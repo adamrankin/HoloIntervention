@@ -47,6 +47,7 @@ namespace NetworkPCL
     NetworkPCL_KEEP_ALIVE
   };
 
+#pragma pack(2)
   struct PCLMessageHeader
   {
     uint16_t  messageType;
@@ -55,6 +56,7 @@ namespace NetworkPCL
     uint32_t  referenceVertexCount;
     uint32_t  targetVertexCount;
   };
+#pragma pack()
 }
 
 namespace HoloIntervention

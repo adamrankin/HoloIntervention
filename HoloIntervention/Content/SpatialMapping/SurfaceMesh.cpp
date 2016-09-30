@@ -398,6 +398,12 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    DirectX::XMFLOAT4X4 SurfaceMesh::GetMeshToWorldTransform()
+    {
+      return m_meshToWorldTransform;
+    }
+
+    //----------------------------------------------------------------------------
     void SurfaceMesh::ComputeOBBInverseWorld( SpatialCoordinateSystem^ baseCoordinateSystem )
     {
       m_worldToBoxTransformComputed = false;

@@ -223,6 +223,11 @@ namespace HoloIntervention
       callbackMap[L"end collecting points"] = [this]( SpeechRecognitionResult ^ result )
       {
         m_collectingPoints = false;
+        if ( m_points.size() == 0 )
+        {
+          HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"No points collected." );
+          return;
+        }
         HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Collecting finished." );
 
         SendRegistrationDataAsync().then( [this]( bool result )
@@ -280,6 +285,7 @@ namespace HoloIntervention
 
         DataWriter^ writer = ref new DataWriter( m_networkPCLSocket->OutputStream );
         SpatialSurfaceMesh^ mesh = m_spatialMesh->GetSurfaceMesh();
+        XMFLOAT4X4& meshToWorld = m_spatialMesh->GetMeshToWorldTransform();
 
         // Calculate the body size
         unsigned int bodySize = mesh->TriangleIndices->ElementCount * sizeof( float ) * 3 + m_points.size() * sizeof( float ) * 3;
@@ -292,30 +298,39 @@ namespace HoloIntervention
         writer->WriteUInt32( m_points.size() );
 
         // Convert the mesh data to a stream of vertices, de-indexed
-        auto reader = DataReader::FromBuffer( mesh->VertexPositions->Data );
-        std::vector<std::array<float, 3>> vertexPosition;
+        float* verticesComponents = GetDataFromIBuffer<float>( mesh->VertexPositions->Data );
+        std::vector<XMFLOAT3> vertices;
         for ( unsigned int i = 0; i < mesh->VertexPositions->ElementCount; ++i )
         {
-          vertexPosition.push_back( std::array<float, 3> { reader->ReadSingle(), reader->ReadSingle(), reader->ReadSingle() } );
+          XMFLOAT3 vertex( verticesComponents[0], verticesComponents[1], verticesComponents[2] );
+
+          // Transform it into world coordinates
+          XMStoreFloat3( &vertex, XMVector3Transform( XMLoadFloat3( &vertex ), XMLoadFloat4x4( &meshToWorld ) ) );
+
+          // Store it
+          vertices.push_back( vertex );
+
+          verticesComponents += 3;
           if ( HasAlpha( ( DXGI_FORMAT )mesh->VertexPositions->Format ) )
           {
-            // Consume alpha value and ignore
-            reader->ReadSingle();
+            // Skip alpha value
+            verticesComponents++;
           }
         }
 
-        reader = DataReader::FromBuffer( mesh->TriangleIndices->Data );
-        std::vector<uint32> triangleIndices;
+        uint32* indicies = GetDataFromIBuffer<uint32>( mesh->TriangleIndices->Data );
+        std::vector<uint32> indiciesVector;
         for ( unsigned int i = 0; i < mesh->TriangleIndices->ElementCount; ++i )
         {
-          triangleIndices.push_back( reader->ReadUInt32() );
+          indiciesVector.push_back( *indicies );
+          indicies++;
         }
 
-        for ( unsigned int i = 0; i < triangleIndices.size(); i++ )
+        for ( unsigned int i = 0; i < indiciesVector.size(); i++ )
         {
-          writer->WriteSingle( vertexPosition[triangleIndices[i]][0] );
-          writer->WriteSingle( vertexPosition[triangleIndices[i]][1] );
-          writer->WriteSingle( vertexPosition[triangleIndices[i]][2] );
+          writer->WriteSingle( vertices[indiciesVector[i]].x );
+          writer->WriteSingle( vertices[indiciesVector[i]].y );
+          writer->WriteSingle( vertices[indiciesVector[i]].z );
         }
 
         for ( auto& point : m_points )
@@ -411,7 +426,7 @@ namespace HoloIntervention
 
           if ( waitingForHeader )
           {
-            if ( reader->UnconsumedBufferLength > sizeof( NetworkPCL::PCLMessageHeader ) )
+            if ( reader->UnconsumedBufferLength >= sizeof( NetworkPCL::PCLMessageHeader ) )
             {
               Platform::Array<byte>^ headerRaw = ref new Platform::Array<byte>( sizeof( NetworkPCL::PCLMessageHeader ) );
               reader->ReadBytes( headerRaw );
@@ -432,21 +447,29 @@ namespace HoloIntervention
 
           if ( waitingForBody )
           {
-            Platform::Array<byte>^ body = ref new Platform::Array<byte>( reader->UnconsumedBufferLength );
-            reader->ReadBytes( body );
-
-            if ( m_nextHeader.messageType == NetworkPCL::NetworkPCL_REGISTRATION_RESULT )
+            if ( reader->UnconsumedBufferLength >= sizeof( m_nextHeader.bodySize ) )
             {
-              if ( body->Length == sizeof( float ) * 16 )
-              {
-                // 16 floats
-                XMFLOAT4X4 mat( ( float* )body->Data );
-                XMStoreFloat4x4( &m_registrationResult, XMLoadFloat4x4( &mat ) );
-              }
-            }
+              Platform::Array<byte>^ body = ref new Platform::Array<byte>( reader->UnconsumedBufferLength );
+              reader->ReadBytes( body );
 
-            waitingForHeader = true;
-            waitingForBody = false;
+              if ( m_nextHeader.messageType == NetworkPCL::NetworkPCL_REGISTRATION_RESULT )
+              {
+                if ( body->Length == sizeof( float ) * 16 )
+                {
+                  // 16 floats
+                  XMFLOAT4X4 mat( ( float* )body->Data );
+                  XMStoreFloat4x4( &m_registrationResult, XMLoadFloat4x4( &mat ) );
+                }
+              }
+
+              waitingForHeader = true;
+              waitingForBody = false;
+            }
+            else
+            {
+              Sleep( 100 );
+              continue;
+            }
           }
         }
       }, m_tokenSource.get_token() );
