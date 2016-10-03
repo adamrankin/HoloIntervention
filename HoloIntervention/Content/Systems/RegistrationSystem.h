@@ -55,6 +55,8 @@ namespace NetworkPCL
     uint32_t  bodySize;
     uint32_t  referenceVertexCount;
     uint32_t  targetVertexCount;
+
+    void SwapLittleEndian();
   };
 #pragma pack()
 }

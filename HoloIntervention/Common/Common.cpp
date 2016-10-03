@@ -56,4 +56,12 @@ namespace HoloIntervention
       delete fire_once;
     } );
   }
+
+  //----------------------------------------------------------------------------
+  int IsLittleEndian()
+  {
+    short a = 1;
+    return ((char*)&a)[0];
+  }
+
 }

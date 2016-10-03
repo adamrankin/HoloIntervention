@@ -117,7 +117,7 @@ namespace HoloIntervention
     m_registrationSystem = std::make_unique<System::RegistrationSystem>( m_deviceResources, m_timer );
 
     // TODO : remove temp code
-    m_igtLinkIF->SetHostname( L"192.168.1.26" );
+    m_igtLinkIF->SetHostname( L"192.168.1.180" );
 
     try
     {

@@ -128,4 +128,7 @@ namespace HoloIntervention
       return t;
     });
   }
+
+  //----------------------------------------------------------------------------
+  int IsLittleEndian();
 }

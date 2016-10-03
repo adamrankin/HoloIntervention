@@ -41,6 +41,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Network includes
 #include "IGTLinkIF.h"
 
+// OpenIGTLink includes
+#include <igtlutil/igtl_util.h>
+
 // std includes
 #include <sstream>
 
@@ -328,16 +331,34 @@ namespace HoloIntervention
 
         for ( unsigned int i = 0; i < indiciesVector.size(); i++ )
         {
-          writer->WriteSingle( vertices[indiciesVector[i]].x );
-          writer->WriteSingle( vertices[indiciesVector[i]].y );
-          writer->WriteSingle( vertices[indiciesVector[i]].z );
+          for ( int j = 0; j < 4; ++j )
+          {
+            writer->WriteByte( ( ( byte* )&vertices[indiciesVector[i]].x )[j] );
+          }
+          for ( int j = 0; j < 4; ++j )
+          {
+            writer->WriteByte( ( ( byte* )&vertices[indiciesVector[i]].y )[j] );
+          }
+          for ( int j = 0; j < 4; ++j )
+          {
+            writer->WriteByte( ( ( byte* )&vertices[indiciesVector[i]].z )[j] );
+          }
         }
 
         for ( auto& point : m_points )
         {
-          writer->WriteSingle( point.x );
-          writer->WriteSingle( point.y );
-          writer->WriteSingle( point.z );
+          for ( int j = 0; j < 4; ++j )
+          {
+            writer->WriteByte( ( ( byte* )&point.x )[j] );
+          }
+          for ( int j = 0; j < 4; ++j )
+          {
+            writer->WriteByte( ( ( byte* )&point.y )[j] );
+          }
+          for ( int j = 0; j < 4; ++j )
+          {
+            writer->WriteByte( ( ( byte* )&point.z )[j] );
+          }
         }
 
         create_task( writer->StoreAsync() ).then( [ = ]( task<uint32> writeTask )
@@ -426,53 +447,90 @@ namespace HoloIntervention
 
           if ( waitingForHeader )
           {
-            if ( reader->UnconsumedBufferLength >= sizeof( NetworkPCL::PCLMessageHeader ) )
+            auto readTask = create_task( reader->LoadAsync( sizeof( NetworkPCL::PCLMessageHeader ) ) );
+            int bytesRead( -1 );
+            try
             {
-              Platform::Array<byte>^ headerRaw = ref new Platform::Array<byte>( sizeof( NetworkPCL::PCLMessageHeader ) );
-              reader->ReadBytes( headerRaw );
-              m_nextHeader = *( NetworkPCL::PCLMessageHeader* )headerRaw->Data;
-
-              if ( m_nextHeader.messageType != NetworkPCL::NetworkPCL_KEEP_ALIVE )
-              {
-                waitingForHeader = false;
-                waitingForBody = true;
-              }
+              bytesRead = readTask.get();
             }
-            else
+            catch ( const std::exception& e )
             {
-              Sleep( 100 );
-              continue;
+              OutputDebugStringA( e.what() );
+            }
+            if ( bytesRead != sizeof( NetworkPCL::PCLMessageHeader ) )
+            {
+              throw std::exception( "Bad read over network." );
+            }
+
+            auto buffer = reader->ReadBuffer( sizeof( NetworkPCL::PCLMessageHeader ) );
+            auto header = GetDataFromIBuffer<byte>( buffer );
+            m_nextHeader = *( NetworkPCL::PCLMessageHeader* )header;
+            m_nextHeader.SwapLittleEndian();
+
+            // Drop any additional header data
+            readTask = create_task( reader->LoadAsync( m_nextHeader.additionalHeaderSize ) );
+            try
+            {
+              readTask.wait();
+              reader->ReadBuffer( m_nextHeader.additionalHeaderSize );
+            }
+            catch ( const std::exception& e )
+            {
+              OutputDebugStringA( e.what() );
+            }
+
+            if ( m_nextHeader.messageType != NetworkPCL::NetworkPCL_KEEP_ALIVE )
+            {
+              waitingForHeader = false;
+              waitingForBody = true;
             }
           }
 
           if ( waitingForBody )
           {
-            if ( reader->UnconsumedBufferLength >= sizeof( m_nextHeader.bodySize ) )
+            auto readTask = create_task( reader->LoadAsync( m_nextHeader.bodySize ) );
+            int bytesRead( -1 );
+            try
             {
-              Platform::Array<byte>^ body = ref new Platform::Array<byte>( reader->UnconsumedBufferLength );
-              reader->ReadBytes( body );
-
-              if ( m_nextHeader.messageType == NetworkPCL::NetworkPCL_REGISTRATION_RESULT )
-              {
-                if ( body->Length == sizeof( float ) * 16 )
-                {
-                  // 16 floats
-                  XMFLOAT4X4 mat( ( float* )body->Data );
-                  XMStoreFloat4x4( &m_registrationResult, XMLoadFloat4x4( &mat ) );
-                }
-              }
-
-              waitingForHeader = true;
-              waitingForBody = false;
+              bytesRead = readTask.get();
             }
-            else
+            catch ( const std::exception& e )
             {
-              Sleep( 100 );
-              continue;
+              OutputDebugStringA( e.what() );
             }
+            if ( bytesRead != m_nextHeader.bodySize )
+            {
+              throw std::exception( "Bad read over network." );
+            }
+
+            auto buffer = reader->ReadBuffer( m_nextHeader.bodySize );
+            auto body = GetDataFromIBuffer<float>( buffer );
+
+            if ( m_nextHeader.messageType == NetworkPCL::NetworkPCL_REGISTRATION_RESULT )
+            {
+              // 16 floats
+              XMFLOAT4X4 mat( body );
+              XMStoreFloat4x4( &m_registrationResult, XMLoadFloat4x4( &mat ) );
+            }
+
+            waitingForHeader = true;
+            waitingForBody = false;
           }
         }
       }, m_tokenSource.get_token() );
     }
+  }
+}
+
+//----------------------------------------------------------------------------
+void NetworkPCL::PCLMessageHeader::SwapLittleEndian()
+{
+  if ( igtl_is_little_endian() )
+  {
+    BYTE_SWAP_INT16( messageType );
+    BYTE_SWAP_INT32( additionalHeaderSize );
+    BYTE_SWAP_INT32( bodySize );
+    BYTE_SWAP_INT32( referenceVertexCount );
+    BYTE_SWAP_INT32( targetVertexCount );
   }
 }
