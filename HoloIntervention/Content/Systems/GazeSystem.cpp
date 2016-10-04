@@ -37,6 +37,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "SpatialSystem.h"
 #include "NotificationSystem.h"
 
+// WinRT includes
+#include <WindowsNumerics.h>
+
 using namespace Windows::Foundation::Numerics;
 
 namespace HoloIntervention
@@ -44,6 +47,7 @@ namespace HoloIntervention
   namespace System
   {
     const std::wstring GazeSystem::GAZE_CURSOR_ASSET_LOCATION = L"Assets/Models/gaze_cursor.cmo";
+    const float GazeSystem::LERP_RATE = 2.f;
 
     //----------------------------------------------------------------------------
     GazeSystem::GazeSystem()
@@ -63,6 +67,9 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void GazeSystem::Update( const DX::StepTimer& timer, SpatialCoordinateSystem^ currentCoordinateSystem, SpatialPointerPose^ headPose )
     {
+      const float& deltaTime = static_cast<float>(timer.GetElapsedSeconds());
+
+      // TODO : add future kalman filtering to smooth cursor position
       if ( IsCursorEnabled() )
       {
         float3 outHitPosition;
@@ -78,20 +85,22 @@ namespace HoloIntervention
         if ( hit )
         {
           // Update the gaze system with the pose to render
-          m_lastHitNormal = outHitNormal;
-          m_lastHitPosition = outHitPosition;
-          m_lastHitEdge = outHitEdge;
-
-          float3 iVec( outHitEdge );
-          float3 kVec( outHitNormal );
-
-          float3 jVec = -cross( iVec, kVec );
-          iVec = normalize( iVec );
-          // TODO : what scale is right? where is the upscale coming from? is the model in millimeters even though I specified meters?
-          float4x4 matrix = make_float4x4_scale( 0.001f ) * make_float4x4_world( outHitPosition, kVec, jVec );
-          m_modelEntry->SetWorld( matrix );
+          m_goalHitNormal = outHitNormal;
+          m_goalHitPosition = outHitPosition;
+          m_goalHitEdge = outHitEdge;
         }
       }
+
+      m_currentPosition = lerp(m_currentPosition, m_goalHitPosition, deltaTime * LERP_RATE);
+      m_currentNormal = lerp(m_currentNormal, m_goalHitNormal, deltaTime * LERP_RATE);
+      m_currentEdge = lerp(m_currentEdge, m_goalHitEdge, deltaTime * LERP_RATE);
+
+      float3 iVec(m_currentEdge);
+      float3 kVec(m_currentNormal);
+      float3 jVec = -cross(iVec, kVec);
+      iVec = normalize(iVec);
+      float4x4 matrix = make_float4x4_world(m_currentPosition, kVec, jVec);
+      m_modelEntry->SetWorld(matrix);
     }
 
     //----------------------------------------------------------------------------
@@ -111,13 +120,13 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     const Windows::Foundation::Numerics::float3& GazeSystem::GetHitPosition() const
     {
-      return m_lastHitPosition;
+      return m_goalHitPosition;
     }
 
     //----------------------------------------------------------------------------
     const Windows::Foundation::Numerics::float3& GazeSystem::GetHitNormal() const
     {
-      return m_lastHitNormal;
+      return m_goalHitNormal;
     }
 
     //----------------------------------------------------------------------------

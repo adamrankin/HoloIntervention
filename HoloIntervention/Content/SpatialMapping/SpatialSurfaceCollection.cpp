@@ -49,6 +49,14 @@ using namespace Windows::Graphics::DirectX;
 using namespace Windows::Perception::Spatial::Surfaces;
 using namespace Windows::Perception::Spatial;
 
+namespace
+{
+  inline float magnitude( const float3& vector )
+  {
+    return sqrt( vector.x * vector.x + vector.y * vector.y + vector.z * vector.z );
+  }
+}
+
 namespace HoloIntervention
 {
   namespace Spatial
@@ -206,6 +214,17 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     bool SpatialSurfaceCollection::TestRayIntersection( SpatialCoordinateSystem^ desiredCoordinateSystem, const float3 rayOrigin, const float3 rayDirection, float3& outHitPosition, float3& outHitNormal, float3& outHitEdge )
     {
+      struct hitResult
+      {
+        hitResult( std::shared_ptr<SurfaceMesh> mesh, Platform::Guid guid ): hitMesh( mesh ), hitGuid( guid ) {}
+
+        float3                        hitPosition;
+        float3                        hitNormal;
+        float3                        hitEdge;
+        std::shared_ptr<SurfaceMesh>  hitMesh;
+        Platform::Guid                hitGuid;
+      };
+
       if ( !m_resourcesLoaded )
       {
         return false;
@@ -238,29 +257,36 @@ namespace HoloIntervention
         m_deviceResources->GetD3DDeviceContext()->UpdateSubresource( m_constantBuffer.Get(), 0, nullptr, &buffer, 0, 0 );
         m_deviceResources->GetD3DDeviceContext()->CSSetConstantBuffers( 1, 1, m_constantBuffer.GetAddressOf() );
 
-        if ( m_lastHitMesh != nullptr && potentialHits.find( m_lastHitMeshGuid ) != potentialHits.end() )
+        std::vector<hitResult> results;
+        for ( auto& pair : potentialHits )
         {
-          result = m_lastHitMesh->TestRayIntersection( *m_deviceResources->GetD3DDeviceContext(), currentFrame, outHitPosition, outHitNormal, outHitEdge );
+          hitResult result( pair.second, pair.first );
+          if ( pair.second->TestRayIntersection( *m_deviceResources->GetD3DDeviceContext(), currentFrame, result.hitPosition, result.hitNormal, result.hitEdge ) )
+          {
+            results.push_back( result );
+          }
         }
 
-        if ( !result )
+        if ( results.size() > 0 )
         {
-          if ( potentialHits.find( m_lastHitMeshGuid ) != potentialHits.end() )
+          int i = 0;
+          int closestIndex = 0;
+          float3 closestPosition = results[0].hitPosition;
+          for ( auto& hitResult : results )
           {
-            potentialHits.erase( potentialHits.find( m_lastHitMeshGuid ) );
-            m_lastHitMesh = nullptr;
-          }
-
-          for ( auto& pair : potentialHits )
-          {
-            if ( pair.second->TestRayIntersection( *m_deviceResources->GetD3DDeviceContext(), currentFrame, outHitPosition, outHitNormal, outHitEdge ) )
+            if ( magnitude( hitResult.hitPosition ) < magnitude( closestPosition ) )
             {
-              m_lastHitMesh = pair.second;
-              m_lastHitMeshGuid = pair.first;
-              result = true;
-              break;
+              closestIndex = i;
+              closestPosition = hitResult.hitPosition;
             }
+            ++i;
           }
+          outHitPosition = results[closestIndex].hitPosition;
+          outHitNormal = results[closestIndex].hitNormal;
+          outHitEdge = results[closestIndex].hitEdge;
+          m_lastHitMesh = results[closestIndex].hitMesh;
+          m_lastHitMeshGuid = results[closestIndex].hitGuid;
+          result = true;
         }
 
         ID3D11Buffer* ppCBnullptr[1] = { nullptr };

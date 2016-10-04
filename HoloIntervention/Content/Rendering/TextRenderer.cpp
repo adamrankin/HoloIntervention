@@ -15,6 +15,11 @@
 #include "DirectXHelper.h"
 #include "TextRenderer.h"
 
+// DirectX includes
+#include <d2d1helper.h>
+#include <dwrite.h>
+#include <DirectXColors.h>
+
 namespace HoloIntervention
 {
   namespace Rendering
@@ -47,32 +52,18 @@ namespace HoloIntervention
 
       // Create a text layout to match the screen.
       Microsoft::WRL::ComPtr<IDWriteTextLayout> textLayout;
-      m_deviceResources->GetDWriteFactory()->CreateTextLayout(
-        str.c_str(),
-        static_cast<UINT32>( str.length() ),
-        m_textFormat.Get(),
-        ( float )m_textureWidth,
-        ( float )m_textureHeight,
-        &textLayout
-      );
+      m_deviceResources->GetDWriteFactory()->CreateTextLayout( str.c_str(), static_cast<UINT32>( str.length() ), m_textFormat.Get(), ( float )m_textureWidth, ( float )m_textureHeight, &textLayout );
 
       // Get the text metrics from the text layout.
       DWRITE_TEXT_METRICS metrics;
       DX::ThrowIfFailed( textLayout->GetMetrics( &metrics ) );
 
       // In this example, we position the text in the center of the off-screen render target.
-      D2D1::Matrix3x2F screenTranslation = D2D1::Matrix3x2F::Translation(
-                                             m_textureWidth * 0.5f,
-                                             m_textureHeight * 0.5f + metrics.height * 0.5f
-                                           );
+      D2D1::Matrix3x2F screenTranslation = D2D1::Matrix3x2F::Translation( m_textureWidth * 0.5f, m_textureHeight * 0.5f + metrics.height * 0.5f );
       m_whiteBrush->SetTransform( screenTranslation );
 
       // Render the text using DirectWrite.
-      m_d2dRenderTarget->DrawTextLayout(
-        D2D1::Point2F( 0.0f, 0.0f ),
-        textLayout.Get(),
-        m_whiteBrush.Get()
-      );
+      m_d2dRenderTarget->DrawTextLayout( D2D1::Point2F( 0.0f, 0.0f ), textLayout.Get(), m_whiteBrush.Get() );
 
       // End drawing with D2D.
       HRESULT hr = m_d2dRenderTarget->EndDraw();
@@ -84,20 +75,9 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void TextRenderer::SetFont(const std::wstring& fontName, DWRITE_FONT_WEIGHT fontWeight, DWRITE_FONT_STYLE fontStyle, DWRITE_FONT_STRETCH fontStretch, float fontSize, const std::wstring& locale /*= L""*/)
+    void TextRenderer::SetFont( const std::wstring& fontName, DWRITE_FONT_WEIGHT fontWeight, DWRITE_FONT_STYLE fontStyle, DWRITE_FONT_STRETCH fontStretch, float fontSize, const std::wstring& locale /*= L""*/ )
     {
-      DX::ThrowIfFailed(
-        m_deviceResources->GetDWriteFactory()->CreateTextFormat(
-          fontName.c_str(),
-          NULL,
-          fontWeight,
-          fontStyle,
-          fontStretch,
-          fontSize,
-          locale.c_str(),
-          m_textFormat.ReleaseAndGetAddressOf()
-        )
-      );
+      DX::ThrowIfFailed( m_deviceResources->GetDWriteFactory()->CreateTextFormat( fontName.c_str(), NULL, fontWeight, fontStyle, fontStretch, fontSize, locale.c_str(), m_textFormat.ReleaseAndGetAddressOf() ) );
     }
 
     //----------------------------------------------------------------------------
@@ -135,12 +115,7 @@ namespace HoloIntervention
       m_deviceResources->GetD3DDevice()->CreateRenderTargetView( m_texture.Get(), nullptr, &m_renderTargetView );
 
       // In this example, we are using D2D and DirectWrite; so, we need to create a D2D render target as well.
-      D2D1_RENDER_TARGET_PROPERTIES props = D2D1::RenderTargetProperties(
-                                              D2D1_RENDER_TARGET_TYPE_DEFAULT,
-                                              D2D1::PixelFormat( DXGI_FORMAT_UNKNOWN, D2D1_ALPHA_MODE_PREMULTIPLIED ),
-                                              96,
-                                              96
-                                            );
+      D2D1_RENDER_TARGET_PROPERTIES props = D2D1::RenderTargetProperties( D2D1_RENDER_TARGET_TYPE_DEFAULT, D2D1::PixelFormat( DXGI_FORMAT_UNKNOWN, D2D1_ALPHA_MODE_PREMULTIPLIED ), 96, 96 );
 
       // The DXGI surface is used to create the render target.
       Microsoft::WRL::ComPtr<IDXGISurface> dxgiSurface;
@@ -151,7 +126,7 @@ namespace HoloIntervention
       DX::ThrowIfFailed( m_d2dRenderTarget->CreateSolidColorBrush( D2D1::ColorF( D2D1::ColorF::Cornsilk ), &m_whiteBrush ) );
 
       // This is where we format the text that will be written on the render target.
-      SetFont(m_font.c_str(), DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, 200.0f, L"");
+      SetFont( m_font.c_str(), DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, 200.0f, L"" );
       DX::ThrowIfFailed( m_textFormat->SetTextAlignment( DWRITE_TEXT_ALIGNMENT_CENTER ) );
       DX::ThrowIfFailed( m_textFormat->SetParagraphAlignment( DWRITE_PARAGRAPH_ALIGNMENT_CENTER ) );
     }

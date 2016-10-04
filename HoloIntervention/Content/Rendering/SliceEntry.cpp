@@ -38,8 +38,8 @@ namespace
   // Function taken from https://github.com/mrdooz/kumi/blob/master/animation_manager.cpp
   SimpleMath::Matrix MatrixCompose( const XMFLOAT3& pos, const XMFLOAT4& rot, const XMFLOAT3& scale, bool transpose )
   {
-    XMFLOAT3 zero = { 0,0,0 };
-    XMFLOAT4 id = { 0,0,0,1 };
+    XMFLOAT3 zero = { 0, 0, 0 };
+    XMFLOAT4 id = { 0, 0, 0, 1 };
     XMVECTOR vZero = XMLoadFloat3( &zero );
     XMVECTOR qId = XMLoadFloat4( &id );
     XMVECTOR qRot = XMLoadFloat4( &rot );
@@ -166,28 +166,13 @@ namespace HoloIntervention
       const auto context = m_deviceResources->GetD3DDeviceContext();
 
       // Apply the model constant buffer to the vertex shader.
-      context->VSSetConstantBuffers(
-        0,
-        1,
-        m_sliceConstantBuffer.GetAddressOf()
-      );
+      context->VSSetConstantBuffers( 0, 1, m_sliceConstantBuffer.GetAddressOf() );
 
       // Each vertex is one instance of the VertexPositionColor struct.
       const UINT stride = sizeof( VertexPositionTexture );
       const UINT offset = 0;
-      context->IASetVertexBuffers(
-        0,
-        1,
-        m_vertexBuffer.GetAddressOf(),
-        &stride,
-        &offset
-      );
-
-      context->PSSetShaderResources(
-        0,
-        1,
-        m_shaderResourceView.GetAddressOf()
-      );
+      context->IASetVertexBuffers( 0, 1, m_vertexBuffer.GetAddressOf(), &stride, &offset );
+      context->PSSetShaderResources( 0, 1, m_shaderResourceView.GetAddressOf() );
 
       // Draw the objects.
       context->DrawIndexedInstanced( indexCount, 2, 0, 0, 0 );

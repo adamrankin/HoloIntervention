@@ -61,12 +61,16 @@ namespace HoloIntervention
       std::shared_ptr<Rendering::ModelEntry>    m_modelEntry;
       uint64                                    m_modelToken;
       bool                                      m_systemEnabled;
-      float3                                    m_lastHitPosition;
-      float3                                    m_lastHitNormal;
-      float3                                    m_lastHitEdge;
+      float3                                    m_goalHitPosition;
+      float3                                    m_goalHitNormal;
+      float3                                    m_goalHitEdge;
+      float3                                    m_currentPosition = { 0.f, 0.f, 0.f };
+      float3                                    m_currentNormal = { 0.f, 0.f, 0.f };
+      float3                                    m_currentEdge = { 0.f, 0.f, 0.f };
 
       static const std::wstring GAZE_CURSOR_ASSET_LOCATION;
       static const uint32 FRAMES_UNTIL_HIT_EXPIRES;
+      static const float LERP_RATE;
     };
   }
 }

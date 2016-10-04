@@ -50,11 +50,11 @@ namespace NetworkPCL
 #pragma pack(2)
   struct PCLMessageHeader
   {
-    uint16_t  messageType;
-    uint32_t  additionalHeaderSize;
-    uint32_t  bodySize;
-    uint32_t  referenceVertexCount;
-    uint32_t  targetVertexCount;
+    uint16_t  messageType = NetworkPCL_KEEP_ALIVE;
+    uint32_t  additionalHeaderSize = 0;
+    uint32_t  bodySize = 0;
+    uint32_t  referenceVertexCount = 0;
+    uint32_t  targetVertexCount = 0;
 
     void SwapLittleEndian();
   };
@@ -89,7 +89,6 @@ namespace HoloIntervention
 
       // Send the collected points and mesh data to the NetworkPCL interface
       task<bool> SendRegistrationDataAsync();
-      task<float4x4> WaitForRegistrationResultAsync();
 
       float4x4 GetRegistrationResult();
 

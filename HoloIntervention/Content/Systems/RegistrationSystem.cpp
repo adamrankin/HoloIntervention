@@ -177,6 +177,7 @@ namespace HoloIntervention
           {
             stylusTipToReference = m_transformRepository->GetTransform( m_stylusTipToReferenceName, &isValid );
             // Put into column order so that win numerics functions work as expected
+            stylusTipToReference = stylusTipToReference * make_float4x4_scale( 1.f / 1000.f ); // Scale from mm to m
             stylusTipToReference = transpose( stylusTipToReference );
             if ( isValid )
             {
@@ -187,7 +188,6 @@ namespace HoloIntervention
           catch ( Platform::Exception^ e )
           {
             OutputDebugStringW( e->Message->Data() );
-            //HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Unable to add point." );
           }
         }
       }
@@ -225,6 +225,12 @@ namespace HoloIntervention
 
       callbackMap[L"end collecting points"] = [this]( SpeechRecognitionResult ^ result )
       {
+        if ( !m_collectingPoints )
+        {
+          HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Point collection not active." );
+          return;
+        }
+
         m_collectingPoints = false;
         if ( m_points.size() == 0 )
         {
@@ -233,8 +239,18 @@ namespace HoloIntervention
         }
         HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Collecting finished." );
 
-        SendRegistrationDataAsync().then( [this]( bool result )
+        SendRegistrationDataAsync().then( [this]( task<bool> previousTask )
         {
+          bool result( false );
+          try
+          {
+            result = previousTask.get();
+          }
+          catch ( const std::exception& e )
+          {
+            HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Unable to send registration data." );
+            OutputDebugStringA( e.what() );
+          }
           if ( result )
           {
             std::stringstream ss;
@@ -290,15 +306,17 @@ namespace HoloIntervention
         SpatialSurfaceMesh^ mesh = m_spatialMesh->GetSurfaceMesh();
         XMFLOAT4X4& meshToWorld = m_spatialMesh->GetMeshToWorldTransform();
 
-        // Calculate the body size
-        unsigned int bodySize = mesh->TriangleIndices->ElementCount * sizeof( float ) * 3 + m_points.size() * sizeof( float ) * 3;
+        auto bodySize = mesh->TriangleIndices->ElementCount * sizeof( float ) * 3 + m_points.size() * sizeof( float ) * 3;
 
         // First, write header details to the stream
-        writer->WriteUInt16( NetworkPCL::NetworkPCL_POINT_DATA );
-        writer->WriteUInt32( 0 ); // no additional header data
-        writer->WriteUInt32( bodySize );
-        writer->WriteUInt32( mesh->TriangleIndices->ElementCount );
-        writer->WriteUInt32( m_points.size() );
+        NetworkPCL::PCLMessageHeader header;
+        header.messageType = NetworkPCL::NetworkPCL_POINT_DATA;
+        header.additionalHeaderSize = 0;
+        header.bodySize = bodySize;
+        header.referenceVertexCount = mesh->TriangleIndices->ElementCount;
+        header.targetVertexCount = m_points.size();
+        header.SwapLittleEndian();
+        writer->WriteBytes( Platform::ArrayReference<byte>( ( byte* )&header, sizeof( NetworkPCL::PCLMessageHeader ) ) );
 
         // Convert the mesh data to a stream of vertices, de-indexed
         float* verticesComponents = GetDataFromIBuffer<float>( mesh->VertexPositions->Data );
@@ -307,8 +325,9 @@ namespace HoloIntervention
         {
           XMFLOAT3 vertex( verticesComponents[0], verticesComponents[1], verticesComponents[2] );
 
+          // TODO : does this return the right result? row/column matrix order
           // Transform it into world coordinates
-          XMStoreFloat3( &vertex, XMVector3Transform( XMLoadFloat3( &vertex ), XMLoadFloat4x4( &meshToWorld ) ) );
+          XMStoreFloat3( &vertex, XMVector3Transform( XMLoadFloat3( &vertex ), XMMatrixTranspose( XMLoadFloat4x4( &meshToWorld ) ) ) );
 
           // Store it
           vertices.push_back( vertex );
@@ -383,44 +402,9 @@ namespace HoloIntervention
           // Start the asynchronous data receiver thread
           m_registrationResultReceived = false;
           m_receiverTask = &DataReceiverAsync();
-
-          cancellation_token_source cts;
-          auto waitTask = cancel_after_timeout( WaitForRegistrationResultAsync(), cts, 10000 );
-
-          try
-          {
-            waitTask.wait();
-          }
-          catch ( const task_canceled& )
-          {
-            HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Timed out waiting for registration result." );
-          }
-
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Registration results received." );
-
-          // TODO : what to do with reg result?
         } );
         return true;
       }, task_continuation_context::use_arbitrary() );
-    }
-
-    //----------------------------------------------------------------------------
-    task<float4x4> RegistrationSystem::WaitForRegistrationResultAsync()
-    {
-      return create_task( [ = ]() -> float4x4
-      {
-        while ( true )
-        {
-          if ( m_registrationResultReceived )
-          {
-            return m_registrationResult;
-          }
-          else
-          {
-            Sleep( 250 );
-          }
-        }
-      } );
     }
 
     //----------------------------------------------------------------------------
@@ -468,15 +452,18 @@ namespace HoloIntervention
             m_nextHeader.SwapLittleEndian();
 
             // Drop any additional header data
-            readTask = create_task( reader->LoadAsync( m_nextHeader.additionalHeaderSize ) );
-            try
+            if ( m_nextHeader.additionalHeaderSize > 0 )
             {
-              readTask.wait();
-              reader->ReadBuffer( m_nextHeader.additionalHeaderSize );
-            }
-            catch ( const std::exception& e )
-            {
-              OutputDebugStringA( e.what() );
+              readTask = create_task( reader->LoadAsync( m_nextHeader.additionalHeaderSize ) );
+              try
+              {
+                readTask.wait();
+                reader->ReadBuffer( m_nextHeader.additionalHeaderSize );
+              }
+              catch ( const std::exception& e )
+              {
+                OutputDebugStringA( e.what() );
+              }
             }
 
             if ( m_nextHeader.messageType != NetworkPCL::NetworkPCL_KEEP_ALIVE )
@@ -527,10 +514,10 @@ void NetworkPCL::PCLMessageHeader::SwapLittleEndian()
 {
   if ( igtl_is_little_endian() )
   {
-    BYTE_SWAP_INT16( messageType );
-    BYTE_SWAP_INT32( additionalHeaderSize );
-    BYTE_SWAP_INT32( bodySize );
-    BYTE_SWAP_INT32( referenceVertexCount );
-    BYTE_SWAP_INT32( targetVertexCount );
+    messageType = BYTE_SWAP_INT16( messageType );
+    additionalHeaderSize = BYTE_SWAP_INT32( additionalHeaderSize );
+    bodySize = BYTE_SWAP_INT32( bodySize );
+    referenceVertexCount = BYTE_SWAP_INT32( referenceVertexCount );
+    targetVertexCount = BYTE_SWAP_INT32( targetVertexCount );
   }
 }
