@@ -33,6 +33,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 // DirectX includes
 #include <DirectXMath.h>
 
+// WinRT includes
+#include <WindowsNumerics.h>
+
 using namespace DirectX;
 using namespace Concurrency;
 using namespace Microsoft::WRL;
@@ -68,7 +71,7 @@ namespace HoloIntervention
       // Constant buffers must have a a ByteWidth multiple of 16
       DirectX::XMFLOAT4X4 meshToWorld;
     };
-    static_assert( ( sizeof( WorldConstantBuffer ) % ( sizeof( float ) * 4 ) ) == 0, "World constant buffer size must be 16-byte aligned (16 bytes is the length of four floats)." );
+    static_assert((sizeof(WorldConstantBuffer) % (sizeof(float) * 4)) == 0, "World constant buffer size must be 16-byte aligned (16 bytes is the length of four floats).");
 
     struct SurfaceMeshProperties
     {
@@ -80,30 +83,30 @@ namespace HoloIntervention
     class SurfaceMesh
     {
     public:
-      SurfaceMesh( const std::shared_ptr<DX::DeviceResources>& deviceResources );
+      SurfaceMesh(const std::shared_ptr<DX::DeviceResources>& deviceResources);
       ~SurfaceMesh();
 
-      void UpdateSurface( SpatialSurfaceMesh^ newMesh );
+      void UpdateSurface(SpatialSurfaceMesh^ newMesh);
       SpatialSurfaceMesh^ GetSurfaceMesh();
 
-      void Update( DX::StepTimer const& timer,
-                   SpatialCoordinateSystem^ baseCoordinateSystem );
+      void Update(DX::StepTimer const& timer,
+                  SpatialCoordinateSystem^ baseCoordinateSystem);
 
       void CreateVertexResources();
       void CreateDeviceDependentResources();
       void ReleaseVertexResources();
       void ReleaseDeviceDependentResources();
 
-      bool TestRayOBBIntersection( SpatialCoordinateSystem^ desiredCoordinateSystem,
-                                   uint64_t frameNumber,
-                                   const float3& rayOrigin,
-                                   const float3& rayDirection );
+      bool TestRayOBBIntersection(SpatialCoordinateSystem^ desiredCoordinateSystem,
+                                  uint64_t frameNumber,
+                                  const float3& rayOrigin,
+                                  const float3& rayDirection);
 
-      bool TestRayIntersection( ID3D11DeviceContext& context,
-                                uint64_t frameNumber,
-                                float3& outHitPosition,
-                                float3& outHitNormal,
-                                float3& outHitEdge );
+      bool TestRayIntersection(ID3D11DeviceContext& context,
+                               uint64_t frameNumber,
+                               float3& outHitPosition,
+                               float3& outHitNormal,
+                               float3& outHitEdge);
 
       const bool& GetIsActive() const;
       const float& GetLastActiveTime() const;
@@ -114,39 +117,39 @@ namespace HoloIntervention
       const float3& GetLastHitEdge() const; // this and normal define a coordinate system
       uint64_t GetLastHitFrameNumber() const;
 
-      void SetIsActive( const bool& isActive );
+      void SetIsActive(const bool& isActive);
 
       XMFLOAT4X4 GetMeshToWorldTransform();
 
     protected:
       void SwapVertexBuffers();
 
-      void ComputeOBBInverseWorld( SpatialCoordinateSystem^ baseCoordinateSystem );
+      void ComputeOBBInverseWorld(SpatialCoordinateSystem^ baseCoordinateSystem);
 
-      HRESULT CreateStructuredBuffer( uint32 uStructureSize,
-                                      SpatialSurfaceMeshBuffer^ buffer,
-                                      ID3D11Buffer** target );
+      HRESULT CreateStructuredBuffer(uint32 uStructureSize,
+                                     SpatialSurfaceMeshBuffer^ buffer,
+                                     ID3D11Buffer** target);
 
-      HRESULT CreateStructuredBuffer( uint32 uElementSize,
-                                      uint32 uCount,
-                                      ID3D11Buffer** target );
+      HRESULT CreateStructuredBuffer(uint32 uElementSize,
+                                     uint32 uCount,
+                                     ID3D11Buffer** target);
 
-      HRESULT CreateReadbackBuffer( uint32 uElementSize,
-                                    uint32 uCount );
+      HRESULT CreateReadbackBuffer(uint32 uElementSize,
+                                   uint32 uCount);
 
-      HRESULT CreateBufferSRV( ComPtr<ID3D11Buffer> computeShaderBuffer,
-                               SpatialSurfaceMeshBuffer^ buffer,
-                               ID3D11ShaderResourceView** ppSRVOut );
+      HRESULT CreateBufferSRV(ComPtr<ID3D11Buffer> computeShaderBuffer,
+                              SpatialSurfaceMeshBuffer^ buffer,
+                              ID3D11ShaderResourceView** ppSRVOut);
 
-      HRESULT CreateBufferUAV( ComPtr<ID3D11Buffer> computeShaderBuffer,
-                               ID3D11UnorderedAccessView** ppUAVOut );
+      HRESULT CreateBufferUAV(ComPtr<ID3D11Buffer> computeShaderBuffer,
+                              ID3D11UnorderedAccessView** ppUAVOut);
 
       HRESULT CreateConstantBuffer();
 
-      void RunComputeShader( ID3D11DeviceContext& context,
-                             uint32 nNumViews, ID3D11ShaderResourceView** pShaderResourceViews,
-                             ID3D11UnorderedAccessView* pUnorderedAccessView,
-                             uint32 Xthreads, uint32 Ythreads, uint32 Zthreads );
+      void RunComputeShader(ID3D11DeviceContext& context,
+                            uint32 nNumViews, ID3D11ShaderResourceView** pShaderResourceViews,
+                            ID3D11UnorderedAccessView* pUnorderedAccessView,
+                            uint32 Xthreads, uint32 Ythreads, uint32 Zthreads);
 
     protected:
       // Cache a pointer to the d3d device resources
@@ -187,7 +190,7 @@ namespace HoloIntervention
       float                                 m_lastActiveTime = -1.f;
 
       // Bounding box inverse world matrix
-      XMMATRIX                              m_worldToBoxTransform;
+      XMFLOAT4X4                            m_worldToBoxTransform;
       bool                                  m_worldToBoxTransformComputed = false;
 
       // Number of indices in the mesh data
