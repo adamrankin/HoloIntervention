@@ -296,13 +296,13 @@ namespace HoloIntervention
     {
       std::lock_guard<std::mutex> lock(m_meshResourcesMutex);
 
-      if (!m_vertexLoadingComplete)
+      if (!m_vertexLoadingComplete || !m_loadingComplete)
       {
         return false;
       }
 
       WorldConstantBuffer buffer;
-      XMStoreFloat4x4(&buffer.meshToWorld, XMLoadFloat4x4(&m_meshToWorldTransform));
+      buffer.meshToWorld = m_meshToWorldTransform;
       context.UpdateSubresource(m_meshConstantBuffer.Get(), 0, nullptr, &buffer, 0, 0);
       context.CSSetConstantBuffers(0, 1, m_meshConstantBuffer.GetAddressOf());
 
@@ -331,6 +331,9 @@ namespace HoloIntervention
       context.Unmap(m_readBackBuffer.Get(), 0);
 
       m_lastFrameNumberComputed = frameNumber;
+
+      ID3D11Buffer* ppCBnullptr[1] = { nullptr };
+      context.CSSetConstantBuffers(0, 1, ppCBnullptr);
 
       if (result->intersection)
       {
@@ -531,10 +534,6 @@ namespace HoloIntervention
         return hr;
       }
 
-#if defined(_DEBUG) || defined(PROFILE)
-      m_meshConstantBuffer->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("RayConstantBuffer") - 1, "RayConstantBuffer");
-#endif
-
       return hr;
     }
 
@@ -566,9 +565,6 @@ namespace HoloIntervention
 
       ID3D11ShaderResourceView* ppSRVnullptr[2] = { nullptr, nullptr };
       context.CSSetShaderResources(0, 2, ppSRVnullptr);
-
-      ID3D11Buffer* ppCBnullptr[1] = { nullptr };
-      context.CSSetConstantBuffers(0, 1, ppCBnullptr);
     }
 
     //----------------------------------------------------------------------------
