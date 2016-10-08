@@ -62,61 +62,61 @@ namespace HoloIntervention
 {
   namespace System
   {
-    Platform::String^ RegistrationSystem::ANCHOR_NAME = ref new Platform::String( L"Registration" );
+    Platform::String^ RegistrationSystem::ANCHOR_NAME = ref new Platform::String(L"Registration");
     const std::wstring RegistrationSystem::ANCHOR_MODEL_FILENAME = L"Assets/Models/anchor.cmo";
 
     //----------------------------------------------------------------------------
-    RegistrationSystem::RegistrationSystem( const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer )
-      : m_deviceResources( deviceResources )
-      , m_stepTimer( stepTimer )
+    RegistrationSystem::RegistrationSystem(const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer)
+      : m_deviceResources(deviceResources)
+      , m_stepTimer(stepTimer)
     {
-      m_regAnchorModelId = HoloIntervention::instance()->GetModelRenderer().AddModel( ANCHOR_MODEL_FILENAME );
-      if ( m_regAnchorModelId != Rendering::INVALID_MODEL_ENTRY )
+      m_regAnchorModelId = HoloIntervention::instance()->GetModelRenderer().AddModel(ANCHOR_MODEL_FILENAME);
+      if (m_regAnchorModelId != Rendering::INVALID_MODEL_ENTRY)
       {
-        m_regAnchorModel = HoloIntervention::instance()->GetModelRenderer().GetModel( m_regAnchorModelId );
+        m_regAnchorModel = HoloIntervention::instance()->GetModelRenderer().GetModel(m_regAnchorModelId);
       }
-      if ( m_regAnchorModel == nullptr )
+      if (m_regAnchorModel == nullptr)
       {
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Unable to retrieve anchor model." );
+        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Unable to retrieve anchor model.");
         return;
       }
-      m_regAnchorModel->SetVisible( false );
+      m_regAnchorModel->SetVisible(false);
 
-      create_task( Windows::ApplicationModel::Package::Current->InstalledLocation->GetFileAsync( L"Assets\\Data\\tool_configuration.xml" ) ).then( [this]( task<StorageFile^> previousTask )
+      create_task(Windows::ApplicationModel::Package::Current->InstalledLocation->GetFileAsync(L"Assets\\Data\\tool_configuration.xml")).then([this](task<StorageFile^> previousTask)
       {
         StorageFile^ file = nullptr;
         try
         {
           file = previousTask.get();
         }
-        catch ( Platform::Exception^ e )
+        catch (Platform::Exception^ e)
         {
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Unable to locate tool system configuration file." );
+          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Unable to locate tool system configuration file.");
         }
 
         XmlDocument^ doc = ref new XmlDocument();
-        create_task( doc->LoadFromFileAsync( file ) ).then( [this]( task<XmlDocument^> previousTask )
+        create_task(doc->LoadFromFileAsync(file)).then([this](task<XmlDocument^> previousTask)
         {
           XmlDocument^ doc = nullptr;
           try
           {
             doc = previousTask.get();
           }
-          catch ( Platform::Exception^ e )
+          catch (Platform::Exception^ e)
           {
-            HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Tool system configuration file did not contain valid XML." );
+            HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Tool system configuration file did not contain valid XML.");
           }
 
           try
           {
-            m_transformRepository->ReadConfiguration( doc );
+            m_transformRepository->ReadConfiguration(doc);
           }
-          catch ( Platform::Exception^ e )
+          catch (Platform::Exception^ e)
           {
-            HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Invalid layout in coordinate definitions configuration area." );
+            HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Invalid layout in coordinate definitions configuration area.");
           }
-        } );
-      } );
+        });
+      });
     }
 
     //----------------------------------------------------------------------------
@@ -125,7 +125,7 @@ namespace HoloIntervention
       m_regAnchorModel = nullptr;
       m_regAnchorModelId = 0;
       m_tokenSource.cancel();
-      if ( m_receiverTask != nullptr )
+      if (m_receiverTask != nullptr)
       {
         m_receiverTask->wait();
       }
@@ -133,61 +133,61 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void RegistrationSystem::Update( SpatialCoordinateSystem^ coordinateSystem, SpatialPointerPose^ headPose )
+    void RegistrationSystem::Update(SpatialCoordinateSystem^ coordinateSystem, SpatialPointerPose^ headPose)
     {
       // Anchor placement logic
-      if ( m_regAnchorRequested )
+      if (m_regAnchorRequested)
       {
-        if ( HoloIntervention::instance()->GetSpatialSystem().DropAnchorAtIntersectionHit( ANCHOR_NAME, coordinateSystem, headPose ) )
+        if (HoloIntervention::instance()->GetSpatialSystem().DropAnchorAtIntersectionHit(ANCHOR_NAME, coordinateSystem, headPose))
         {
           m_regAnchorRequested = false;
-          if ( m_regAnchorModel != nullptr )
+          if (m_regAnchorModel != nullptr)
           {
-            m_regAnchorModel->SetVisible( true );
+            m_regAnchorModel->SetVisible(true);
           }
 
           m_spatialMesh = HoloIntervention::instance()->GetSpatialSystem().GetLastHitMesh();
 
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Anchor created." );
+          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Anchor created.");
         }
       }
 
       // Anchor position update logic
-      if ( HoloIntervention::instance()->GetSpatialSystem().HasAnchor( L"Registration" ) )
+      if (HoloIntervention::instance()->GetSpatialSystem().HasAnchor(L"Registration"))
       {
-        auto transformContainer = HoloIntervention::instance()->GetSpatialSystem().GetAnchor( ANCHOR_NAME )->CoordinateSystem->TryGetTransformTo( coordinateSystem );
-        if ( transformContainer != nullptr )
+        auto transformContainer = HoloIntervention::instance()->GetSpatialSystem().GetAnchor(ANCHOR_NAME)->CoordinateSystem->TryGetTransformTo(coordinateSystem);
+        if (transformContainer != nullptr)
         {
           float4x4 anchorToWorld = transformContainer->Value;
 
           // Coordinate system has orientation and position
-          m_regAnchorModel->SetWorld( anchorToWorld );
+          m_regAnchorModel->SetWorld(anchorToWorld);
         }
       }
 
       // Point collection logic
-      if ( m_collectingPoints && HoloIntervention::instance()->GetIGTLink().IsConnected() )
+      if (m_collectingPoints && HoloIntervention::instance()->GetIGTLink().IsConnected())
       {
-        if ( HoloIntervention::instance()->GetIGTLink().GetLatestTrackedFrame( m_trackedFrame, &m_latestTimestamp ) )
+        if (HoloIntervention::instance()->GetIGTLink().GetLatestTrackedFrame(m_trackedFrame, &m_latestTimestamp))
         {
-          m_transformRepository->SetTransforms( m_trackedFrame );
+          m_transformRepository->SetTransforms(m_trackedFrame);
           bool isValid;
           float4x4 stylusTipToReference;
           try
           {
-            stylusTipToReference = m_transformRepository->GetTransform( m_stylusTipToReferenceName, &isValid );
+            stylusTipToReference = m_transformRepository->GetTransform(m_stylusTipToReferenceName, &isValid);
             // Put into column order so that win numerics functions work as expected
-            stylusTipToReference = stylusTipToReference * make_float4x4_scale( 1.f / 1000.f ); // Scale from mm to m
-            stylusTipToReference = transpose( stylusTipToReference );
-            if ( isValid )
+            stylusTipToReference = stylusTipToReference * make_float4x4_scale(1.f / 1000.f);   // Scale from mm to m
+            stylusTipToReference = transpose(stylusTipToReference);
+            if (isValid)
             {
-              float3 point = translation( stylusTipToReference );
-              m_points.push_back( point );
+              float3 point = translation(stylusTipToReference);
+              m_points.push_back(point);
             }
           }
-          catch ( Platform::Exception^ e )
+          catch (Platform::Exception^ e)
           {
-            OutputDebugStringW( e->Message->Data() );
+            OutputDebugStringW(e->Message->Data());
           }
         }
       }
@@ -196,84 +196,84 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     task<void> RegistrationSystem::LoadAppStateAsync()
     {
-      return create_task( [ = ]()
+      return create_task([ = ]()
       {
-        if ( HoloIntervention::instance()->GetSpatialSystem().HasAnchor( ANCHOR_NAME ) )
+        if (HoloIntervention::instance()->GetSpatialSystem().HasAnchor(ANCHOR_NAME))
         {
-          m_regAnchorModel->SetVisible( true );
+          m_regAnchorModel->SetVisible(true);
         }
-      } );
+      });
     }
 
     //----------------------------------------------------------------------------
-    void RegistrationSystem::RegisterVoiceCallbacks( HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap, void* userArg )
+    void RegistrationSystem::RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap, void* userArg)
     {
-      callbackMap[L"start collecting points"] = [this]( SpeechRecognitionResult ^ result )
+      callbackMap[L"start collecting points"] = [this](SpeechRecognitionResult ^ result)
       {
-        if ( HoloIntervention::instance()->GetIGTLink().IsConnected() )
+        if (HoloIntervention::instance()->GetIGTLink().IsConnected())
         {
           m_points.clear();
           m_latestTimestamp = 0;
           m_collectingPoints = true;
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Collecting points..." );
+          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Collecting points...");
         }
         else
         {
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Not connected!" );
+          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Not connected!");
         }
       };
 
-      callbackMap[L"end collecting points"] = [this]( SpeechRecognitionResult ^ result )
+      callbackMap[L"end collecting points"] = [this](SpeechRecognitionResult ^ result)
       {
-        if ( !m_collectingPoints )
+        if (!m_collectingPoints)
         {
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Point collection not active." );
+          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Point collection not active.");
           return;
         }
 
         m_collectingPoints = false;
-        if ( m_points.size() == 0 )
+        if (m_points.size() == 0)
         {
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"No points collected." );
+          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"No points collected.");
           return;
         }
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Collecting finished." );
+        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Collecting finished.");
 
-        SendRegistrationDataAsync().then( [this]( task<bool> previousTask )
+        SendRegistrationDataAsync().then([this](task<bool> previousTask)
         {
-          bool result( false );
+          bool result(false);
           try
           {
             result = previousTask.get();
           }
-          catch ( const std::exception& e )
+          catch (const std::exception& e)
           {
-            HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Unable to send registration data." );
-            OutputDebugStringA( e.what() );
+            HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Unable to send registration data.");
+            OutputDebugStringA(e.what());
           }
-          if ( result )
+          if (result)
           {
             std::stringstream ss;
             ss << m_points.size() << " points collected. Computing registration...";
-            HoloIntervention::instance()->GetNotificationSystem().QueueMessage( ss.str() );
+            HoloIntervention::instance()->GetNotificationSystem().QueueMessage(ss.str());
           }
-        } );
+        });
       };
 
-      callbackMap[L"drop anchor"] = [this]( SpeechRecognitionResult ^ result )
+      callbackMap[L"drop anchor"] = [this](SpeechRecognitionResult ^ result)
       {
         m_regAnchorRequested = true;
       };
 
-      callbackMap[L"remove anchor"] = [this]( SpeechRecognitionResult ^ result )
+      callbackMap[L"remove anchor"] = [this](SpeechRecognitionResult ^ result)
       {
-        if ( m_regAnchorModel )
+        if (m_regAnchorModel)
         {
-          m_regAnchorModel->SetVisible( false );
+          m_regAnchorModel->SetVisible(false);
         }
-        if ( HoloIntervention::instance()->GetSpatialSystem().RemoveAnchor( ANCHOR_NAME ) == 1 )
+        if (HoloIntervention::instance()->GetSpatialSystem().RemoveAnchor(ANCHOR_NAME) == 1)
         {
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Anchor \"" + ANCHOR_NAME + "\" removed." );
+          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Anchor \"" + ANCHOR_NAME + "\" removed.");
         }
       };
     }
@@ -281,32 +281,32 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     task<bool> RegistrationSystem::SendRegistrationDataAsync()
     {
-      return create_task( [ = ]() -> bool
+      auto sendTask = create_task([ = ]() -> bool
       {
-        auto hostname = ref new HostName( ref new Platform::String( HoloIntervention::instance()->GetIGTLink().GetHostname().c_str() ) );
+        auto hostname = ref new HostName(ref new Platform::String(HoloIntervention::instance()->GetIGTLink().GetHostname().c_str()));
 
-        if ( !m_connected )
+        if (!m_connected)
         {
-          auto connectTask = create_task( m_networkPCLSocket->ConnectAsync( hostname, ref new Platform::String( L"24012" ) ) );
+          auto connectTask = create_task(m_networkPCLSocket->ConnectAsync(hostname, ref new Platform::String(L"24012")));
 
           try
           {
             connectTask.wait();
           }
-          catch ( Platform::Exception^ e )
+          catch (Platform::Exception^ e)
           {
-            HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Unable to connect to NetworkPCL." );
+            HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Unable to connect to NetworkPCL.");
             return false;
           }
 
           m_connected = true;
         }
 
-        DataWriter^ writer = ref new DataWriter( m_networkPCLSocket->OutputStream );
+        DataWriter^ writer = ref new DataWriter(m_networkPCLSocket->OutputStream);
         SpatialSurfaceMesh^ mesh = m_spatialMesh->GetSurfaceMesh();
         XMFLOAT4X4& meshToWorld = m_spatialMesh->GetMeshToWorldTransform();
 
-        auto bodySize = mesh->TriangleIndices->ElementCount * sizeof( float ) * 3 + m_points.size() * sizeof( float ) * 3;
+        auto bodySize = mesh->TriangleIndices->ElementCount * sizeof(float) * 3 + m_points.size() * sizeof(float) * 3;
 
         // First, write header details to the stream
         NetworkPCL::PCLMessageHeader header;
@@ -316,95 +316,151 @@ namespace HoloIntervention
         header.referenceVertexCount = mesh->TriangleIndices->ElementCount;
         header.targetVertexCount = m_points.size();
         header.SwapLittleEndian();
-        writer->WriteBytes( Platform::ArrayReference<byte>( ( byte* )&header, sizeof( NetworkPCL::PCLMessageHeader ) ) );
+        writer->WriteBytes(Platform::ArrayReference<byte>((byte*)&header, sizeof(NetworkPCL::PCLMessageHeader)));
 
         // Convert the mesh data to a stream of vertices, de-indexed
-        float* verticesComponents = GetDataFromIBuffer<float>( mesh->VertexPositions->Data );
+        float* verticesComponents = GetDataFromIBuffer<float>(mesh->VertexPositions->Data);
         std::vector<XMFLOAT3> vertices;
-        for ( unsigned int i = 0; i < mesh->VertexPositions->ElementCount; ++i )
+        for (unsigned int i = 0; i < mesh->VertexPositions->ElementCount; ++i)
         {
-          XMFLOAT3 vertex( verticesComponents[0], verticesComponents[1], verticesComponents[2] );
+          XMFLOAT3 vertex(verticesComponents[0], verticesComponents[1], verticesComponents[2]);
 
           // TODO : does this return the right result? row/column matrix order
           // Transform it into world coordinates
-          XMStoreFloat3( &vertex, XMVector3Transform( XMLoadFloat3( &vertex ), XMMatrixTranspose( XMLoadFloat4x4( &meshToWorld ) ) ) );
+          XMStoreFloat3(&vertex, XMVector3Transform(XMLoadFloat3(&vertex), XMMatrixTranspose(XMLoadFloat4x4(&meshToWorld))));
 
           // Store it
-          vertices.push_back( vertex );
+          vertices.push_back(vertex);
 
           verticesComponents += 3;
-          if ( HasAlpha( ( DXGI_FORMAT )mesh->VertexPositions->Format ) )
+          if (HasAlpha((DXGI_FORMAT)mesh->VertexPositions->Format))
           {
             // Skip alpha value
             verticesComponents++;
           }
         }
 
-        uint32* indicies = GetDataFromIBuffer<uint32>( mesh->TriangleIndices->Data );
+        uint32* indicies = GetDataFromIBuffer<uint32>(mesh->TriangleIndices->Data);
         std::vector<uint32> indiciesVector;
-        for ( unsigned int i = 0; i < mesh->TriangleIndices->ElementCount; ++i )
+        for (unsigned int i = 0; i < mesh->TriangleIndices->ElementCount; ++i)
         {
-          indiciesVector.push_back( *indicies );
+          indiciesVector.push_back(*indicies);
           indicies++;
         }
 
-        for ( unsigned int i = 0; i < indiciesVector.size(); i++ )
+        for (unsigned int i = 0; i < indiciesVector.size(); i++)
         {
-          for ( int j = 0; j < 4; ++j )
+          for (int j = 0; j < 4; ++j)
           {
-            writer->WriteByte( ( ( byte* )&vertices[indiciesVector[i]].x )[j] );
+            writer->WriteByte(((byte*)&vertices[indiciesVector[i]].x)[j]);
           }
-          for ( int j = 0; j < 4; ++j )
+          for (int j = 0; j < 4; ++j)
           {
-            writer->WriteByte( ( ( byte* )&vertices[indiciesVector[i]].y )[j] );
+            writer->WriteByte(((byte*)&vertices[indiciesVector[i]].y)[j]);
           }
-          for ( int j = 0; j < 4; ++j )
+          for (int j = 0; j < 4; ++j)
           {
-            writer->WriteByte( ( ( byte* )&vertices[indiciesVector[i]].z )[j] );
+            writer->WriteByte(((byte*)&vertices[indiciesVector[i]].z)[j]);
           }
         }
 
-        for ( auto& point : m_points )
+        for (auto& point : m_points)
         {
-          for ( int j = 0; j < 4; ++j )
+          for (int j = 0; j < 4; ++j)
           {
-            writer->WriteByte( ( ( byte* )&point.x )[j] );
+            writer->WriteByte(((byte*)&point.x)[j]);
           }
-          for ( int j = 0; j < 4; ++j )
+          for (int j = 0; j < 4; ++j)
           {
-            writer->WriteByte( ( ( byte* )&point.y )[j] );
+            writer->WriteByte(((byte*)&point.y)[j]);
           }
-          for ( int j = 0; j < 4; ++j )
+          for (int j = 0; j < 4; ++j)
           {
-            writer->WriteByte( ( ( byte* )&point.z )[j] );
+            writer->WriteByte(((byte*)&point.z)[j]);
           }
         }
 
-        create_task( writer->StoreAsync() ).then( [ = ]( task<uint32> writeTask )
+        auto storeTask = create_task(writer->StoreAsync()).then([ = ](task<uint32> writeTask)
         {
           uint32 bytesWritten;
           try
           {
             bytesWritten = writeTask.get();
           }
-          catch ( Platform::Exception^ exception )
+          catch (Platform::Exception^ exception)
           {
-            std::wstring message( exception->Message->Data() );
-            std::string messageStr( message.begin(), message.end() );
-            throw std::exception( messageStr.c_str() );
+            std::wstring message(exception->Message->Data());
+            std::string messageStr(message.begin(), message.end());
+            throw std::exception(messageStr.c_str());
           }
 
-          if ( bytesWritten != bodySize + sizeof( NetworkPCL::PCLMessageHeader ) )
+          if (bytesWritten != bodySize + sizeof(NetworkPCL::PCLMessageHeader))
           {
-            throw std::exception( "Entire message couldn't be sent." );
+            throw std::exception("Entire message couldn't be sent.");
           }
 
           // Start the asynchronous data receiver thread
           m_registrationResultReceived = false;
+
+          return bytesWritten;
+        });
+
+        int bytesWritten;
+        try
+        {
+          bytesWritten = storeTask.get();
+        }
+        catch (const std::exception& e)
+        {
+          OutputDebugStringA(e.what());
+        }
+        catch (Platform::Exception^ e)
+        {
+          OutputDebugStringW(e->Message->Data());
+        }
+
+        if (bytesWritten > 0)
+        {
+          return true;
+        }
+        return false;
+      }, task_continuation_context::use_arbitrary());
+
+      sendTask.then([ = ](task<bool> previousTask)
+      {
+        bool result(false);
+        try
+        {
+          result = previousTask.get();
+        }
+        catch (const std::exception& e)
+        {
+          OutputDebugStringA(e.what());
+        }
+        catch (Platform::Exception^ e)
+        {
+          OutputDebugStringW(e->Message->Data());
+        }
+
+        if (result)
+        {
           m_receiverTask = &DataReceiverAsync();
-        } );
-        return true;
-      }, task_continuation_context::use_arbitrary() );
+          try
+          {
+            m_receiverTask->wait();
+          }
+          catch (const std::exception& e)
+          {
+            OutputDebugStringA(e.what());
+          }
+          catch (Platform::Exception^ e)
+          {
+            OutputDebugStringW(e->Message->Data());
+          }
+        }
+      });
+
+      return sendTask;
     }
 
     //----------------------------------------------------------------------------
@@ -417,94 +473,98 @@ namespace HoloIntervention
     task<void> RegistrationSystem::DataReceiverAsync()
     {
       auto token = m_tokenSource.get_token();
-      return create_task( [ = ]()
+      return create_task([ = ]()
       {
         bool waitingForHeader = true;
         bool waitingForBody = false;
-        DataReader^ reader = ref new DataReader( m_networkPCLSocket->InputStream );
-        while ( true )
+        DataReader^ reader = ref new DataReader(m_networkPCLSocket->InputStream);
+        while (true)
         {
-          if ( token.is_canceled() )
+          if (token.is_canceled())
           {
             return;
           }
 
-          if ( waitingForHeader )
+          if (waitingForHeader)
           {
-            auto readTask = create_task( reader->LoadAsync( sizeof( NetworkPCL::PCLMessageHeader ) ) );
-            int bytesRead( -1 );
+            auto readTask = create_task(reader->LoadAsync(sizeof(NetworkPCL::PCLMessageHeader)));
+            int bytesRead(-1);
             try
             {
               bytesRead = readTask.get();
             }
-            catch ( const std::exception& e )
+            catch (const std::exception& e)
             {
-              OutputDebugStringA( e.what() );
+              OutputDebugStringA(e.what());
             }
-            if ( bytesRead != sizeof( NetworkPCL::PCLMessageHeader ) )
+            catch (Platform::Exception^ e)
             {
-              throw std::exception( "Bad read over network." );
+              OutputDebugStringW(e->Message->Data());
+            }
+            if (bytesRead != sizeof(NetworkPCL::PCLMessageHeader))
+            {
+              throw std::exception("Bad read over network.");
             }
 
-            auto buffer = reader->ReadBuffer( sizeof( NetworkPCL::PCLMessageHeader ) );
-            auto header = GetDataFromIBuffer<byte>( buffer );
-            m_nextHeader = *( NetworkPCL::PCLMessageHeader* )header;
+            auto buffer = reader->ReadBuffer(sizeof(NetworkPCL::PCLMessageHeader));
+            auto header = GetDataFromIBuffer<byte>(buffer);
+            m_nextHeader = *(NetworkPCL::PCLMessageHeader*)header;
             m_nextHeader.SwapLittleEndian();
 
             // Drop any additional header data
-            if ( m_nextHeader.additionalHeaderSize > 0 )
+            if (m_nextHeader.additionalHeaderSize > 0)
             {
-              readTask = create_task( reader->LoadAsync( m_nextHeader.additionalHeaderSize ) );
+              readTask = create_task(reader->LoadAsync(m_nextHeader.additionalHeaderSize));
               try
               {
                 readTask.wait();
-                reader->ReadBuffer( m_nextHeader.additionalHeaderSize );
+                reader->ReadBuffer(m_nextHeader.additionalHeaderSize);
               }
-              catch ( const std::exception& e )
+              catch (const std::exception& e)
               {
-                OutputDebugStringA( e.what() );
+                OutputDebugStringA(e.what());
               }
             }
 
-            if ( m_nextHeader.messageType != NetworkPCL::NetworkPCL_KEEP_ALIVE )
+            if (m_nextHeader.messageType != NetworkPCL::NetworkPCL_KEEP_ALIVE)
             {
               waitingForHeader = false;
               waitingForBody = true;
             }
           }
 
-          if ( waitingForBody )
+          if (waitingForBody)
           {
-            auto readTask = create_task( reader->LoadAsync( m_nextHeader.bodySize ) );
-            int bytesRead( -1 );
+            auto readTask = create_task(reader->LoadAsync(m_nextHeader.bodySize));
+            int bytesRead(-1);
             try
             {
               bytesRead = readTask.get();
             }
-            catch ( const std::exception& e )
+            catch (const std::exception& e)
             {
-              OutputDebugStringA( e.what() );
+              OutputDebugStringA(e.what());
             }
-            if ( bytesRead != m_nextHeader.bodySize )
+            if (bytesRead != m_nextHeader.bodySize)
             {
-              throw std::exception( "Bad read over network." );
+              throw std::exception("Bad read over network.");
             }
 
-            auto buffer = reader->ReadBuffer( m_nextHeader.bodySize );
-            auto body = GetDataFromIBuffer<float>( buffer );
+            auto buffer = reader->ReadBuffer(m_nextHeader.bodySize);
+            auto body = GetDataFromIBuffer<float>(buffer);
 
-            if ( m_nextHeader.messageType == NetworkPCL::NetworkPCL_REGISTRATION_RESULT )
+            if (m_nextHeader.messageType == NetworkPCL::NetworkPCL_REGISTRATION_RESULT)
             {
               // 16 floats
-              XMFLOAT4X4 mat( body );
-              XMStoreFloat4x4( &m_registrationResult, XMLoadFloat4x4( &mat ) );
+              XMFLOAT4X4 mat(body);
+              XMStoreFloat4x4(&m_registrationResult, XMLoadFloat4x4(&mat));
             }
 
             waitingForHeader = true;
             waitingForBody = false;
           }
         }
-      }, m_tokenSource.get_token() );
+      }, m_tokenSource.get_token());
     }
   }
 }
@@ -512,12 +572,12 @@ namespace HoloIntervention
 //----------------------------------------------------------------------------
 void NetworkPCL::PCLMessageHeader::SwapLittleEndian()
 {
-  if ( igtl_is_little_endian() )
+  if (igtl_is_little_endian())
   {
-    messageType = BYTE_SWAP_INT16( messageType );
-    additionalHeaderSize = BYTE_SWAP_INT32( additionalHeaderSize );
-    bodySize = BYTE_SWAP_INT32( bodySize );
-    referenceVertexCount = BYTE_SWAP_INT32( referenceVertexCount );
-    targetVertexCount = BYTE_SWAP_INT32( targetVertexCount );
+    messageType = BYTE_SWAP_INT16(messageType);
+    additionalHeaderSize = BYTE_SWAP_INT32(additionalHeaderSize);
+    bodySize = BYTE_SWAP_INT32(bodySize);
+    referenceVertexCount = BYTE_SWAP_INT32(referenceVertexCount);
+    targetVertexCount = BYTE_SWAP_INT32(targetVertexCount);
   }
 }

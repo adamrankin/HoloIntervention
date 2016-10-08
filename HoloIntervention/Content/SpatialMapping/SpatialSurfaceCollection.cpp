@@ -88,7 +88,7 @@ namespace HoloIntervention
 
       // Update meshes as needed, based on the current coordinate system.
       // Also remove meshes that are inactive for too long.
-      for(auto iter = m_meshCollection.begin(); iter != m_meshCollection.end();)
+      for (auto iter = m_meshCollection.begin(); iter != m_meshCollection.end();)
       {
         auto& pair = *iter;
         auto& surfaceMesh = pair.second;
@@ -99,7 +99,7 @@ namespace HoloIntervention
         // Check to see if the mesh has expired.
         float lastActiveTime = surfaceMesh->GetLastActiveTime();
         float inactiveDuration = timeElapsed - lastActiveTime;
-        if(inactiveDuration > MAX_INACTIVE_MESH_TIME_SEC)
+        if (inactiveDuration > MAX_INACTIVE_MESH_TIME_SEC)
         {
           // Surface mesh is expired.
           iter = m_meshCollection.erase(iter);
@@ -116,7 +116,7 @@ namespace HoloIntervention
     {
       std::lock_guard<std::mutex> guard(m_meshCollectionLock);
 
-      for(auto pair : m_meshCollection)
+      for (auto pair : m_meshCollection)
       {
         pair.second->CreateDeviceDependentResources();
       }
@@ -130,7 +130,7 @@ namespace HoloIntervention
 
       auto hr = m_deviceResources->GetD3DDevice()->CreateBuffer(&constant_buffer_desc, nullptr, &m_constantBuffer);
 
-      if(FAILED(hr))
+      if (FAILED(hr))
       {
         OutputDebugStringA("Unable to create constant buffer in SpatialSurfaceCollection.");
         ReleaseDeviceDependentResources();
@@ -141,7 +141,7 @@ namespace HoloIntervention
       {
         auto hr = m_deviceResources->GetD3DDevice()->CreateComputeShader(&data.front(), data.size(), nullptr, &m_d3d11ComputeShader);
 
-        if(FAILED(hr))
+        if (FAILED(hr))
         {
           OutputDebugStringA("Unable to create compute shader.");
           ReleaseDeviceDependentResources();
@@ -162,7 +162,7 @@ namespace HoloIntervention
       m_d3d11ComputeShader = nullptr;
       m_constantBuffer = nullptr;
 
-      for(auto pair : m_meshCollection)
+      for (auto pair : m_meshCollection)
       {
         pair.second->ReleaseDeviceDependentResources();
       }
@@ -178,12 +178,12 @@ namespace HoloIntervention
       auto createMeshTask = create_task(newSurface->TryComputeLatestMeshAsync(m_maxTrianglesPerCubicMeter, meshOptions));
       auto processMeshTask = createMeshTask.then([this, id, newSurface, meshOptions](SpatialSurfaceMesh ^ mesh)
       {
-        if(mesh != nullptr)
+        if (mesh != nullptr)
         {
           std::lock_guard<std::mutex> guard(m_meshCollectionLock);
 
           auto entry = m_meshCollection.find(id);
-          if(entry == m_meshCollection.end())
+          if (entry == m_meshCollection.end())
           {
             m_meshCollection[id] = std::make_shared<SurfaceMesh>(m_deviceResources);
           }
@@ -225,7 +225,7 @@ namespace HoloIntervention
         Platform::Guid                hitGuid;
       };
 
-      if(!m_resourcesLoaded)
+      if (!m_resourcesLoaded)
       {
         return false;
       }
@@ -239,7 +239,7 @@ namespace HoloIntervention
       Concurrency::parallel_for_each(m_meshCollection.begin(), m_meshCollection.end(), [ =, &potentialHits, &potentialHitsMutex ](auto pair)
       {
         auto mesh = pair.second;
-        if(mesh->TestRayOBBIntersection(desiredCoordinateSystem, currentFrame, rayOrigin, rayDirection))
+        if (mesh->TestRayOBBIntersection(desiredCoordinateSystem, currentFrame, rayOrigin, rayDirection))
         {
           std::lock_guard<std::mutex> lock(potentialHitsMutex);
           potentialHits[pair.first] = pair.second;
@@ -247,7 +247,7 @@ namespace HoloIntervention
       });
 
       bool result(false);
-      if(potentialHits.size() > 0)
+      if (potentialHits.size() > 0)
       {
         m_deviceResources->GetD3DDeviceContext()->CSSetShader(m_d3d11ComputeShader.Get(), nullptr, 0);
 
@@ -258,23 +258,23 @@ namespace HoloIntervention
         m_deviceResources->GetD3DDeviceContext()->CSSetConstantBuffers(1, 1, m_constantBuffer.GetAddressOf());
 
         std::vector<hitResult> results;
-        for(auto& pair : potentialHits)
+        for (auto& pair : potentialHits)
         {
           hitResult result(pair.second, pair.first);
-          if(pair.second->TestRayIntersection(*m_deviceResources->GetD3DDeviceContext(), currentFrame, result.hitPosition, result.hitNormal, result.hitEdge))
+          if (pair.second->TestRayIntersection(*m_deviceResources->GetD3DDeviceContext(), currentFrame, result.hitPosition, result.hitNormal, result.hitEdge))
           {
             results.push_back(result);
           }
         }
 
-        if(results.size() > 0)
+        if (results.size() > 0)
         {
           int i = 0;
           int closestIndex = 0;
           float3 closestPosition = results[0].hitPosition;
-          for(auto& hitResult : results)
+          for (auto& hitResult : results)
           {
-            if(magnitude(hitResult.hitPosition) < magnitude(closestPosition))
+            if (magnitude(hitResult.hitPosition) < magnitude(closestPosition))
             {
               closestIndex = i;
               closestPosition = hitResult.hitPosition;
@@ -303,7 +303,7 @@ namespace HoloIntervention
       std::lock_guard<std::mutex> guard(m_meshCollectionLock);
 
       // Hide surfaces that aren't actively listed in the surface collection.
-      for(auto& pair : m_meshCollection)
+      for (auto& pair : m_meshCollection)
       {
         const auto& id = pair.first;
         auto& surfaceMesh = pair.second;
@@ -315,12 +315,12 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     bool SpatialSurfaceCollection::GetLastHitPosition(float3& position, bool considerOldHits /* = false */)
     {
-      if(m_lastHitMesh != nullptr)
+      if (m_lastHitMesh != nullptr)
       {
-        if(!considerOldHits)
+        if (!considerOldHits)
         {
           uint64_t frames = m_stepTimer.GetFrameCount() - m_lastHitMesh->GetLastHitFrameNumber();
-          if(frames > FRAMES_BEFORE_EXPIRED)
+          if (frames > FRAMES_BEFORE_EXPIRED)
           {
             return false;
           }
@@ -330,7 +330,7 @@ namespace HoloIntervention
         {
           position = m_lastHitMesh->GetLastHitPosition();
         }
-        catch(const std::exception& e)
+        catch (const std::exception& e)
         {
           HoloIntervention::instance()->GetNotificationSystem().QueueMessage(e.what());
           return false;
@@ -345,12 +345,12 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     bool SpatialSurfaceCollection::GetLastHitNormal(float3& normal, bool considerOldHits /*= false*/)
     {
-      if(m_lastHitMesh != nullptr)
+      if (m_lastHitMesh != nullptr)
       {
-        if(!considerOldHits)
+        if (!considerOldHits)
         {
           uint64_t frames = m_stepTimer.GetFrameCount() - m_lastHitMesh->GetLastHitFrameNumber();
-          if(frames > FRAMES_BEFORE_EXPIRED)
+          if (frames > FRAMES_BEFORE_EXPIRED)
           {
             return false;
           }
@@ -360,7 +360,7 @@ namespace HoloIntervention
         {
           normal = m_lastHitMesh->GetLastHitNormal();
         }
-        catch(const std::exception& e)
+        catch (const std::exception& e)
         {
           HoloIntervention::instance()->GetNotificationSystem().QueueMessage(e.what());
           return false;
@@ -390,7 +390,7 @@ namespace HoloIntervention
     {
       std::lock_guard<std::mutex> guard(m_meshCollectionLock);
       auto& meshIter = m_meshCollection.find(id);
-      if(meshIter != m_meshCollection.end())
+      if (meshIter != m_meshCollection.end())
       {
         auto const& mesh = meshIter->second;
         return mesh->GetLastUpdateTime();

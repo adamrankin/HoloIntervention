@@ -78,14 +78,14 @@ namespace HoloIntervention
     class RegistrationSystem : public Sound::IVoiceInput
     {
     public:
-      RegistrationSystem( const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer );
+      RegistrationSystem(const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer);
       ~RegistrationSystem();
 
-      void Update( SpatialCoordinateSystem^ coordinateSystem, SpatialPointerPose^ headPose );
+      void Update(SpatialCoordinateSystem^ coordinateSystem, SpatialPointerPose^ headPose);
 
       task<void> LoadAppStateAsync();
 
-      virtual void RegisterVoiceCallbacks( HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap, void* userArg );
+      virtual void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap, void* userArg);
 
       // Send the collected points and mesh data to the NetworkPCL interface
       task<bool> SendRegistrationDataAsync();
@@ -118,7 +118,7 @@ namespace HoloIntervention
       bool                                      m_collectingPoints = false;
       UWPOpenIGTLink::TrackedFrame^             m_trackedFrame = ref new UWPOpenIGTLink::TrackedFrame();
       UWPOpenIGTLink::TransformRepository^      m_transformRepository = ref new UWPOpenIGTLink::TransformRepository();
-      UWPOpenIGTLink::TransformName^            m_stylusTipToReferenceName = ref new UWPOpenIGTLink::TransformName( L"StylusTip", L"Reference" );
+      UWPOpenIGTLink::TransformName^            m_stylusTipToReferenceName = ref new UWPOpenIGTLink::TransformName(L"StylusTip", L"Reference");
       double                                    m_latestTimestamp = 0;
       std::vector<float3>                       m_points;
       std::shared_ptr<Spatial::SurfaceMesh>     m_spatialMesh = nullptr;

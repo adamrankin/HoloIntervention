@@ -74,58 +74,59 @@ namespace HoloIntervention
 {
   //----------------------------------------------------------------------------
   // Loads and initializes application assets when the application is loaded.
-  HoloInterventionMain::HoloInterventionMain( const std::shared_ptr<DX::DeviceResources>& deviceResources )
-    : m_deviceResources( deviceResources )
-    , m_sliceToken( 0 )
-    , m_latestFrame( ref new UWPOpenIGTLink::TrackedFrame() )
+  HoloInterventionMain::HoloInterventionMain(const std::shared_ptr<DX::DeviceResources>& deviceResources)
+    : m_deviceResources(deviceResources)
+    , m_sliceToken(0)
+    , m_latestFrame(ref new UWPOpenIGTLink::TrackedFrame())
   {
     // Register to be notified if the device is lost or recreated.
-    m_deviceResources->RegisterDeviceNotify( this );
+    m_deviceResources->RegisterDeviceNotify(this);
   }
 
   //----------------------------------------------------------------------------
   HoloInterventionMain::~HoloInterventionMain()
   {
     // De-register device notification.
-    m_deviceResources->RegisterDeviceNotify( nullptr );
+    m_deviceResources->RegisterDeviceNotify(nullptr);
 
     UnregisterHolographicEventHandlers();
   }
 
   //----------------------------------------------------------------------------
-  void HoloInterventionMain::SetHolographicSpace( HolographicSpace^ holographicSpace )
+  void HoloInterventionMain::SetHolographicSpace(HolographicSpace^ holographicSpace)
   {
     UnregisterHolographicEventHandlers();
 
     m_holographicSpace = holographicSpace;
 
     // Initialize the system components
-    m_modelRenderer = std::make_unique<Rendering::ModelRenderer>( m_deviceResources );
-    m_sliceRenderer = std::make_unique<Rendering::SliceRenderer>( m_deviceResources );
-    m_meshRenderer = std::make_unique<Rendering::SpatialMeshRenderer>( m_deviceResources );
+    m_modelRenderer = std::make_unique<Rendering::ModelRenderer>(m_deviceResources);
+    m_sliceRenderer = std::make_unique<Rendering::SliceRenderer>(m_deviceResources);
+    m_meshRenderer = std::make_unique<Rendering::SpatialMeshRenderer>(m_deviceResources);
     m_soundManager = std::make_unique<Sound::SoundManager>();
 
-    m_notificationSystem = std::make_unique<System::NotificationSystem>( m_deviceResources );
+    m_notificationSystem = std::make_unique<System::NotificationSystem>(m_deviceResources);
     m_spatialInputHandler = std::make_unique<Input::SpatialInputHandler>();
     m_voiceInputHandler = std::make_unique<Input::VoiceInputHandler>();
-    m_spatialSystem = std::make_unique<System::SpatialSystem>( m_deviceResources, m_timer );
+    m_spatialSystem = std::make_unique<System::SpatialSystem>(m_deviceResources, m_timer);
     m_igtLinkIF = std::make_unique<Network::IGTLinkIF>();
 
     // Model renderer must come before the following systems
     m_gazeSystem = std::make_unique<System::GazeSystem>();
     m_toolSystem = std::make_unique<System::ToolSystem>();
-    m_registrationSystem = std::make_unique<System::RegistrationSystem>( m_deviceResources, m_timer );
+    m_registrationSystem = std::make_unique<System::RegistrationSystem>(m_deviceResources, m_timer);
 
     // TODO : remove temp code
-    m_igtLinkIF->SetHostname( L"192.168.1.180" );
+    m_igtLinkIF->SetHostname(L"192.168.11.7");
 
     try
     {
       m_soundManager->InitializeAsync();
     }
-    catch ( Platform::Exception^ e )
+    catch (Platform::Exception^ e)
     {
-      OutputDebugStringW( e->Message->Data() );
+      m_notificationSystem->QueueMessage(L"Unable to initialize audio system. See log.");
+      OutputDebugStringW((L"Audio Error" + e->Message)->Data());
     }
 
     InitializeVoiceSystem();
@@ -136,69 +137,52 @@ namespace HoloIntervention
     m_locatabilityChangedToken =
       m_locator->LocatabilityChanged +=
         ref new Windows::Foundation::TypedEventHandler<SpatialLocator^, Object^>(
-          std::bind( &HoloInterventionMain::OnLocatabilityChanged, this, std::placeholders::_1, std::placeholders::_2 )
+          std::bind(&HoloInterventionMain::OnLocatabilityChanged, this, std::placeholders::_1, std::placeholders::_2)
         );
 
     m_cameraAddedToken =
       m_holographicSpace->CameraAdded +=
         ref new Windows::Foundation::TypedEventHandler<HolographicSpace^, HolographicSpaceCameraAddedEventArgs^>(
-          std::bind( &HoloInterventionMain::OnCameraAdded, this, std::placeholders::_1, std::placeholders::_2 )
+          std::bind(&HoloInterventionMain::OnCameraAdded, this, std::placeholders::_1, std::placeholders::_2)
         );
 
     m_cameraRemovedToken =
       m_holographicSpace->CameraRemoved +=
         ref new Windows::Foundation::TypedEventHandler<HolographicSpace^, HolographicSpaceCameraRemovedEventArgs^>(
-          std::bind( &HoloInterventionMain::OnCameraRemoved, this, std::placeholders::_1, std::placeholders::_2 )
+          std::bind(&HoloInterventionMain::OnCameraRemoved, this, std::placeholders::_1, std::placeholders::_2)
         );
 
     m_attachedReferenceFrame = m_locator->CreateAttachedFrameOfReferenceAtCurrentHeading();
-    m_stationaryReferenceFrame = m_locator->CreateStationaryFrameOfReferenceAtCurrentLocation();
-
-    m_spatialSystem->InitializeSurfaceObserver( m_stationaryReferenceFrame->CoordinateSystem );
 
     // Initialize the notification system with a bogus frame to grab sensor data
     HolographicFrame^ holographicFrame = m_holographicSpace->CreateNextFrame();
-    SpatialCoordinateSystem^ currentCoordinateSystem = m_attachedReferenceFrame->GetStationaryCoordinateSystemAtTimestamp( holographicFrame->CurrentPrediction->Timestamp );
-    SpatialPointerPose^ pose = SpatialPointerPose::TryGetAtTimestamp( currentCoordinateSystem, holographicFrame->CurrentPrediction->Timestamp );
-    m_notificationSystem->Initialize( pose );
-
-    // TODO : remove temp code, no such thing as default server
-    // Give the system 1s to spin up and then attempt to connect to the default IGT server
-    RunFunctionAfterDelay( 1000, [this]( ThreadPoolTimer ^ timer ) -> void
-    {
-      m_igtLinkIF->ConnectAsync().then( [this]( bool result )
-      {
-        if ( result )
-        {
-          m_sliceToken = m_sliceRenderer->AddSlice();
-          m_notificationSystem->QueueMessage( L"Connected." );
-          m_sliceRenderer->SetSliceVisible( m_sliceToken, true );
-        }
-      } );
-    } );
+    SpatialCoordinateSystem^ currentCoordinateSystem = m_attachedReferenceFrame->GetStationaryCoordinateSystemAtTimestamp(holographicFrame->CurrentPrediction->Timestamp);
+    SpatialPointerPose^ pose = SpatialPointerPose::TryGetAtTimestamp(currentCoordinateSystem, holographicFrame->CurrentPrediction->Timestamp);
+    m_notificationSystem->Initialize(pose);
+    m_spatialSystem->InitializeSurfaceObserver(m_attachedReferenceFrame->GetStationaryCoordinateSystemAtTimestamp(holographicFrame->CurrentPrediction->Timestamp));
   }
 
   //----------------------------------------------------------------------------
   void HoloInterventionMain::UnregisterHolographicEventHandlers()
   {
-    if ( m_holographicSpace != nullptr )
+    if (m_holographicSpace != nullptr)
     {
       // Clear previous event registrations.
 
-      if ( m_cameraAddedToken.Value != 0 )
+      if (m_cameraAddedToken.Value != 0)
       {
         m_holographicSpace->CameraAdded -= m_cameraAddedToken;
         m_cameraAddedToken.Value = 0;
       }
 
-      if ( m_cameraRemovedToken.Value != 0 )
+      if (m_cameraRemovedToken.Value != 0)
       {
         m_holographicSpace->CameraRemoved -= m_cameraRemovedToken;
         m_cameraRemovedToken.Value = 0;
       }
     }
 
-    if ( m_locator != nullptr )
+    if (m_locator != nullptr)
     {
       m_locator->LocatabilityChanged -= m_locatabilityChangedToken;
     }
@@ -211,70 +195,70 @@ namespace HoloIntervention
     HolographicFrame^ holographicFrame = m_holographicSpace->CreateNextFrame();
     HolographicFramePrediction^ prediction = holographicFrame->CurrentPrediction;
 
-    m_deviceResources->EnsureCameraResources( holographicFrame, prediction );
+    m_deviceResources->EnsureCameraResources(holographicFrame, prediction);
 
-    SpatialCoordinateSystem^ currentCoordinateSystem = m_attachedReferenceFrame->GetStationaryCoordinateSystemAtTimestamp( prediction->Timestamp );
+    SpatialCoordinateSystem^ currentCoordinateSystem = m_attachedReferenceFrame->GetStationaryCoordinateSystemAtTimestamp(prediction->Timestamp);
 
     DX::ViewProjection vp;
     m_deviceResources->UseHolographicCameraResources<bool>(
-      [this, holographicFrame, prediction, currentCoordinateSystem, &vp]( std::map<UINT32, std::unique_ptr<DX::CameraResources>>& cameraResourceMap )
+      [this, holographicFrame, prediction, currentCoordinateSystem, &vp](std::map<UINT32, std::unique_ptr<DX::CameraResources>>& cameraResourceMap)
     {
-      for ( auto cameraPose : prediction->CameraPoses )
+      for (auto cameraPose : prediction->CameraPoses)
       {
         DX::CameraResources* pCameraResources = cameraResourceMap[cameraPose->HolographicCamera->Id].get();
-        auto result = pCameraResources->UpdateViewProjectionBuffer( m_deviceResources, cameraPose, currentCoordinateSystem, vp );
+        auto result = pCameraResources->UpdateViewProjectionBuffer(m_deviceResources, cameraPose, currentCoordinateSystem, vp);
       }
       return true;
-    } );
+    });
 
     // Time-based updates
-    m_timer.Tick( [&]()
+    m_timer.Tick([&]()
     {
-      SpatialPointerPose^ pose = SpatialPointerPose::TryGetAtTimestamp( currentCoordinateSystem, prediction->Timestamp );
+      SpatialPointerPose^ pose = SpatialPointerPose::TryGetAtTimestamp(currentCoordinateSystem, prediction->Timestamp);
 
-      m_spatialSystem->Update( currentCoordinateSystem );
+      m_spatialSystem->Update(currentCoordinateSystem);
 
-      if ( pose != nullptr )
+      if (pose != nullptr)
       {
-        m_registrationSystem->Update( currentCoordinateSystem, pose );
-        m_gazeSystem->Update( m_timer, currentCoordinateSystem, pose );
-        m_soundManager->Update( m_timer, currentCoordinateSystem );
-        m_sliceRenderer->Update( pose, m_timer );
+        m_registrationSystem->Update(currentCoordinateSystem, pose);
+        m_gazeSystem->Update(m_timer, currentCoordinateSystem, pose);
+        m_soundManager->Update(m_timer, currentCoordinateSystem);
+        m_sliceRenderer->Update(pose, m_timer);
       }
 
-      m_meshRenderer->Update( vp, m_timer, currentCoordinateSystem );
+      m_meshRenderer->Update(vp, m_timer, currentCoordinateSystem);
 
-      if ( pose != nullptr )
+      if (pose != nullptr)
       {
-        m_notificationSystem->Update( pose, m_timer );
+        m_notificationSystem->Update(pose, m_timer);
       }
-      m_modelRenderer->Update( m_timer, vp );
+      m_modelRenderer->Update(m_timer, vp);
 
-      if ( m_igtLinkIF->IsConnected() )
+      if (m_igtLinkIF->IsConnected())
       {
-        if ( m_igtLinkIF->GetLatestTrackedFrame( m_latestFrame, &m_latestTimestamp ) )
+        if (m_igtLinkIF->GetLatestTrackedFrame(m_latestFrame, &m_latestTimestamp))
         {
           // TODO : move this to a slice system, remove it from main
-          m_sliceRenderer->UpdateSlice( m_sliceToken,
-                                        Network::IGTLinkIF::GetSharedImagePtr( m_latestFrame ),
-                                        m_latestFrame->Width,
-                                        m_latestFrame->Height,
-                                        ( DXGI_FORMAT )m_latestFrame->PixelFormat,
-                                        m_latestFrame->EmbeddedImageTransform );
-          m_toolSystem->Update( m_timer, m_latestFrame );
+          m_sliceRenderer->UpdateSlice(m_sliceToken,
+                                       Network::IGTLinkIF::GetSharedImagePtr(m_latestFrame),
+                                       m_latestFrame->Width,
+                                       m_latestFrame->Height,
+                                       (DXGI_FORMAT)m_latestFrame->PixelFormat,
+                                       m_latestFrame->EmbeddedImageTransform);
+          m_toolSystem->Update(m_timer, m_latestFrame);
         }
       }
-    } );
+    });
 
     // We complete the frame update by using information about our content positioning to set the focus point.
-    for ( auto cameraPose : prediction->CameraPoses )
+    for (auto cameraPose : prediction->CameraPoses)
     {
-      HolographicCameraRenderingParameters^ renderingParameters = holographicFrame->GetRenderingParameters( cameraPose );
+      HolographicCameraRenderingParameters^ renderingParameters = holographicFrame->GetRenderingParameters(cameraPose);
 
-      if ( m_notificationSystem->IsShowingNotification() )
+      if (m_notificationSystem->IsShowingNotification())
       {
         float3 const& focusPointPosition = m_notificationSystem->GetPosition();
-        float3        focusPointNormal = ( focusPointPosition == float3( 0.f ) ) ? float3( 0.f, 0.f, 1.f ) : -normalize( focusPointPosition );
+        float3        focusPointNormal = (focusPointPosition == float3(0.f)) ? float3(0.f, 0.f, 1.f) : -normalize(focusPointPosition);
         float3 const& focusPointVelocity = m_notificationSystem->GetVelocity();
 
         renderingParameters->SetFocusPoint(
@@ -284,48 +268,48 @@ namespace HoloIntervention
           focusPointVelocity
         );
       }
-      else if( m_sliceToken != 0 )
+      else if (m_sliceToken != 0)
       {
         // TODO : add slice system and control visibility
         float4x4 mat;
-        if ( m_sliceRenderer->GetSlicePose( m_sliceToken, mat ) )
+        if (m_sliceRenderer->GetSlicePose(m_sliceToken, mat))
         {
           SimpleMath::Matrix matrix;
-          XMStoreFloat4x4( &matrix, XMMatrixTranspose( XMLoadFloat4x4( &mat ) ) );
+          XMStoreFloat4x4(&matrix, XMMatrixTranspose(XMLoadFloat4x4(&mat)));
           SimpleMath::Vector3 translation;
           SimpleMath::Vector3 scale;
           SimpleMath::Quaternion rotation;
-          matrix.Decompose( scale, rotation, translation );
+          matrix.Decompose(scale, rotation, translation);
 
-          float3 focusPointPosition( translation.x, translation.y, translation.z );
-          float3 focusPointNormal = ( focusPointPosition == float3( 0.f ) ) ? float3( 0.f, 0.f, 1.f ) : -normalize( focusPointPosition );
+          float3 focusPointPosition(translation.x, translation.y, translation.z);
+          float3 focusPointNormal = (focusPointPosition == float3(0.f)) ? float3(0.f, 0.f, 1.f) : -normalize(focusPointPosition);
           // TODO : store velocity of slice for stabilization?
-          float3 focusPointVelocity = float3( 0.f );
+          float3 focusPointVelocity = float3(0.f);
 
           renderingParameters->SetFocusPoint(
             currentCoordinateSystem,
             focusPointPosition,
             focusPointNormal,
-            focusPointVelocity );
+            focusPointVelocity);
         }
       }
-      else if ( m_gazeSystem->IsCursorEnabled() && m_gazeSystem->GetHitNormal() != float3::zero() )
+      else if (m_gazeSystem->IsCursorEnabled() && m_gazeSystem->GetHitNormal() != float3::zero())
       {
         // TODO : move this to higher priority once it's working
         // Set the focus to be the cursor
         try
         {
-          renderingParameters->SetFocusPoint( currentCoordinateSystem, m_gazeSystem->GetHitPosition(), m_gazeSystem->GetHitNormal() );
+          renderingParameters->SetFocusPoint(currentCoordinateSystem, m_gazeSystem->GetHitPosition(), m_gazeSystem->GetHitNormal());
         }
-        catch ( Platform::InvalidArgumentException^ iex )
+        catch (Platform::InvalidArgumentException^ iex)
         {
           continue;
         }
-        catch ( Platform::Exception^ ex )
+        catch (Platform::Exception^ ex)
         {
           // Turn the cursor off and output the message
-          m_gazeSystem->EnableCursor( false );
-          m_notificationSystem->QueueMessage( ex->Message );
+          m_gazeSystem->EnableCursor(false);
+          m_notificationSystem->QueueMessage(ex->Message);
         }
       }
     }
@@ -337,16 +321,16 @@ namespace HoloIntervention
   // Renders the current frame to each holographic camera, according to the
   // current application and spatial positioning state. Returns true if the
   // frame was rendered to at least one camera.
-  bool HoloInterventionMain::Render( Windows::Graphics::Holographic::HolographicFrame^ holographicFrame )
+  bool HoloInterventionMain::Render(Windows::Graphics::Holographic::HolographicFrame^ holographicFrame)
   {
-    if ( m_timer.GetFrameCount() == 0 )
+    if (m_timer.GetFrameCount() == 0)
     {
       return false;
     }
 
     // Lock the set of holographic camera resources, then draw to each camera in this frame.
     return m_deviceResources->UseHolographicCameraResources<bool>(
-             [this, holographicFrame]( std::map<UINT32, std::unique_ptr<DX::CameraResources>>& cameraResourceMap ) -> bool
+             [this, holographicFrame](std::map<UINT32, std::unique_ptr<DX::CameraResources>>& cameraResourceMap) -> bool
     {
       // Up-to-date frame predictions enhance the effectiveness of image stabilization and
       // allow more accurate positioning of holograms.
@@ -354,10 +338,10 @@ namespace HoloIntervention
       HolographicFramePrediction^ prediction = holographicFrame->CurrentPrediction;
 
       SpatialCoordinateSystem^ currentCoordinateSystem =
-      m_attachedReferenceFrame->GetStationaryCoordinateSystemAtTimestamp( prediction->Timestamp );
+      m_attachedReferenceFrame->GetStationaryCoordinateSystemAtTimestamp(prediction->Timestamp);
 
       bool atLeastOneCameraRendered = false;
-      for ( auto cameraPose : prediction->CameraPoses )
+      for (auto cameraPose : prediction->CameraPoses)
       {
         // This represents the device-based resources for a HolographicCamera.
         DX::CameraResources* pCameraResources = cameraResourceMap[cameraPose->HolographicCamera->Id].get();
@@ -368,17 +352,17 @@ namespace HoloIntervention
 
         // Set render targets to the current holographic camera.
         ID3D11RenderTargetView* const targets[1] = { pCameraResources->GetBackBufferRenderTargetView() };
-        context->OMSetRenderTargets( 1, targets, depthStencilView );
+        context->OMSetRenderTargets(1, targets, depthStencilView);
 
         // Clear the back buffer and depth stencil view.
-        context->ClearRenderTargetView( targets[0], DirectX::Colors::Transparent );
-        context->ClearDepthStencilView( depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0 );
+        context->ClearRenderTargetView(targets[0], DirectX::Colors::Transparent);
+        context->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
         DX::ViewProjection throwAway;
-        pCameraResources->UpdateViewProjectionBuffer( m_deviceResources, cameraPose, currentCoordinateSystem, throwAway );
-        bool activeCamera = pCameraResources->AttachViewProjectionBuffer( m_deviceResources );
+        pCameraResources->UpdateViewProjectionBuffer(m_deviceResources, cameraPose, currentCoordinateSystem, throwAway);
+        bool activeCamera = pCameraResources->AttachViewProjectionBuffer(m_deviceResources);
 
-        if ( activeCamera )
+        if (activeCamera)
         {
           m_meshRenderer->Render();
           m_modelRenderer->Render();
@@ -386,7 +370,7 @@ namespace HoloIntervention
         }
 
         // Only render world-locked content when positional tracking is active.
-        if ( m_notificationSystem->IsShowingNotification() )
+        if (m_notificationSystem->IsShowingNotification())
         {
           m_notificationSystem->GetRenderer()->Render();
         }
@@ -395,7 +379,7 @@ namespace HoloIntervention
       }
 
       return atLeastOneCameraRendered;
-    } );
+    });
   }
 
   //----------------------------------------------------------------------------
@@ -407,11 +391,11 @@ namespace HoloIntervention
   //----------------------------------------------------------------------------
   task<void> HoloInterventionMain::LoadAppStateAsync()
   {
-    return m_spatialSystem->LoadAppStateAsync().then( [ = ]()
+    return m_spatialSystem->LoadAppStateAsync().then([ = ]()
     {
       // Registration must follow spatial due to anchor store
       m_registrationSystem->LoadAppStateAsync();
-    } );
+    });
   }
 
   //----------------------------------------------------------------------------
@@ -489,15 +473,15 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
-  void HoloInterventionMain::OnLocatabilityChanged( SpatialLocator^ sender, Object^ args )
+  void HoloInterventionMain::OnLocatabilityChanged(SpatialLocator^ sender, Object^ args)
   {
     m_locatability = sender->Locatability;
 
-    switch ( sender->Locatability )
+    switch (sender->Locatability)
     {
     case SpatialLocatability::Unavailable:
     {
-      m_notificationSystem->QueueMessage( L"Warning! Positional tracking is unavailable." );
+      m_notificationSystem->QueueMessage(L"Warning! Positional tracking is unavailable.");
     }
     break;
 
@@ -508,7 +492,7 @@ namespace HoloIntervention
       break;
 
     case SpatialLocatability::PositionalTrackingActive:
-      m_notificationSystem->QueueMessage( L"Positional tracking is active." );
+      m_notificationSystem->QueueMessage(L"Positional tracking is active.");
       break;
     }
   }
@@ -521,13 +505,13 @@ namespace HoloIntervention
   {
     Deferral^ deferral = args->GetDeferral();
     HolographicCamera^ holographicCamera = args->Camera;
-    create_task( [this, deferral, holographicCamera]()
+    create_task([this, deferral, holographicCamera]()
     {
-      m_deviceResources->AddHolographicCamera( holographicCamera );
+      m_deviceResources->AddHolographicCamera(holographicCamera);
 
       // Holographic frame predictions will not include any information about this camera until the deferral is completed.
       deferral->Complete();
-    } );
+    });
   }
 
   //----------------------------------------------------------------------------
@@ -536,13 +520,13 @@ namespace HoloIntervention
     HolographicSpaceCameraRemovedEventArgs^ args
   )
   {
-    create_task( [this]()
+    create_task([this]()
     {
       // TODO: Asynchronously unload or deactivate content resources (not back buffer
       //       resources) that are specific only to the camera that was removed.
-    } );
+    });
 
-    m_deviceResources->RemoveHolographicCamera( args->Camera );
+    m_deviceResources->RemoveHolographicCamera(args->Camera);
   }
 
   //----------------------------------------------------------------------------
@@ -550,27 +534,27 @@ namespace HoloIntervention
   {
     Sound::VoiceInputCallbackMap callbacks;
 
-    m_gazeSystem->RegisterVoiceCallbacks( callbacks, nullptr );
-    m_igtLinkIF->RegisterVoiceCallbacks( callbacks, nullptr );
-    m_spatialSystem->RegisterVoiceCallbacks( callbacks, nullptr );
-    m_toolSystem->RegisterVoiceCallbacks( callbacks, nullptr );
-    m_sliceRenderer->RegisterVoiceCallbacks( callbacks, &m_sliceToken );
-    m_meshRenderer->RegisterVoiceCallbacks( callbacks, nullptr );
-    m_registrationSystem->RegisterVoiceCallbacks( callbacks, nullptr );
+    m_gazeSystem->RegisterVoiceCallbacks(callbacks, nullptr);
+    m_igtLinkIF->RegisterVoiceCallbacks(callbacks, nullptr);
+    m_spatialSystem->RegisterVoiceCallbacks(callbacks, nullptr);
+    m_toolSystem->RegisterVoiceCallbacks(callbacks, nullptr);
+    m_sliceRenderer->RegisterVoiceCallbacks(callbacks, &m_sliceToken);
+    m_meshRenderer->RegisterVoiceCallbacks(callbacks, nullptr);
+    m_registrationSystem->RegisterVoiceCallbacks(callbacks, nullptr);
 
-    auto task = m_voiceInputHandler->CompileCallbacks( callbacks );
+    auto task = m_voiceInputHandler->CompileCallbacks(callbacks);
   }
 
   //----------------------------------------------------------------------------
-  void HoloInterventionMain::TrackedFrameCallback( UWPOpenIGTLink::TrackedFrame^ frame )
+  void HoloInterventionMain::TrackedFrameCallback(UWPOpenIGTLink::TrackedFrame^ frame)
   {
-    if ( m_sliceToken == 0 )
+    if (m_sliceToken == 0)
     {
       // For now, our slice renderer only draws one slice, in the future, it will have to draw more
-      m_sliceToken = m_sliceRenderer->AddSlice( Network::IGTLinkIF::GetSharedImagePtr( frame ), frame->FrameSize->GetAt( 0 ), frame->FrameSize->GetAt( 1 ), ( DXGI_FORMAT )frame->PixelFormat, frame->EmbeddedImageTransform );
+      m_sliceToken = m_sliceRenderer->AddSlice(Network::IGTLinkIF::GetSharedImagePtr(frame), frame->FrameSize->GetAt(0), frame->FrameSize->GetAt(1), (DXGI_FORMAT)frame->PixelFormat, frame->EmbeddedImageTransform);
       return;
     }
 
-    m_sliceRenderer->UpdateSlice( m_sliceToken, Network::IGTLinkIF::GetSharedImagePtr( frame ), frame->FrameSize->GetAt( 0 ), frame->FrameSize->GetAt( 1 ), ( DXGI_FORMAT )frame->PixelFormat, frame->EmbeddedImageTransform );
+    m_sliceRenderer->UpdateSlice(m_sliceToken, Network::IGTLinkIF::GetSharedImagePtr(frame), frame->FrameSize->GetAt(0), frame->FrameSize->GetAt(1), (DXGI_FORMAT)frame->PixelFormat, frame->EmbeddedImageTransform);
   }
 }

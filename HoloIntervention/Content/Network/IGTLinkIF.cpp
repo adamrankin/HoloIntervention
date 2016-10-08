@@ -31,8 +31,12 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <ppltasks.h>
 #include <vccorlib.h>
 
+// UWPOpenIGT includes
+#include <IGTCommon.h>
+
 // IGT includes
 #include <igtlMessageBase.h>
+#include <igtlStatusMessage.h>
 
 using namespace Concurrency;
 
@@ -44,7 +48,6 @@ namespace HoloIntervention
 
     //----------------------------------------------------------------------------
     IGTLinkIF::IGTLinkIF()
-      : m_igtClient( ref new UWPOpenIGTLink::IGTLinkClient() )
     {
     }
 
@@ -54,27 +57,38 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    concurrency::task<bool> IGTLinkIF::ConnectAsync( double timeoutSec )
+    concurrency::task<bool> IGTLinkIF::ConnectAsync(double timeoutSec)
     {
-      return create_task( m_igtClient->ConnectAsync( timeoutSec ) );
+      std::lock_guard<std::mutex> guard(m_clientMutex);
+      auto connectTask = create_task(m_igtClient->ConnectAsync(timeoutSec));
+
+      connectTask.then([this](bool result)
+      {
+        m_connected = result;
+      });
+
+      return connectTask;
     }
 
     //----------------------------------------------------------------------------
     void IGTLinkIF::Disconnect()
     {
+      m_connected = false;
+      std::lock_guard<std::mutex> guard(m_clientMutex);
       m_igtClient->Disconnect();
     }
 
     //----------------------------------------------------------------------------
     bool IGTLinkIF::IsConnected()
     {
-      return m_igtClient->Connected;
+      return m_connected;
     }
 
     //----------------------------------------------------------------------------
-    void IGTLinkIF::SetHostname( const std::wstring& hostname )
+    void IGTLinkIF::SetHostname(const std::wstring& hostname)
     {
-      m_igtClient->ServerHost = ref new Platform::String( hostname.c_str() );
+      std::lock_guard<std::mutex> guard(m_clientMutex);
+      m_igtClient->ServerHost = ref new Platform::String(hostname.c_str());
     }
 
     //----------------------------------------------------------------------------
@@ -84,54 +98,110 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void IGTLinkIF::SetPort( int32 port )
+    void IGTLinkIF::SetPort(int32 port)
     {
+      std::lock_guard<std::mutex> guard(m_clientMutex);
       m_igtClient->ServerPort = port;
     }
 
     //----------------------------------------------------------------------------
-    bool IGTLinkIF::GetLatestTrackedFrame( UWPOpenIGTLink::TrackedFrame^ frame, double* latestTimestamp )
+    bool IGTLinkIF::GetLatestTrackedFrame(UWPOpenIGTLink::TrackedFrame^ frame, double* latestTimestamp)
     {
-      return m_igtClient->GetLatestTrackedFrame( frame, latestTimestamp );
+      return m_igtClient->GetLatestTrackedFrame(frame, latestTimestamp);
     }
 
     //----------------------------------------------------------------------------
-    bool IGTLinkIF::GetLatestCommand( UWPOpenIGTLink::Command^ cmd, double* latestTimestamp )
+    bool IGTLinkIF::GetLatestCommand(UWPOpenIGTLink::Command^ cmd, double* latestTimestamp)
     {
-      return m_igtClient->GetLatestCommand( cmd, latestTimestamp );
+      return m_igtClient->GetLatestCommand(cmd, latestTimestamp);
     }
 
     //----------------------------------------------------------------------------
-    void IGTLinkIF::RegisterVoiceCallbacks( HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap, void* userArg )
+    void IGTLinkIF::RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap, void* userArg)
     {
-      callbackMap[L"connect"] = [this]( SpeechRecognitionResult ^ result )
+      callbackMap[L"connect"] = [this](SpeechRecognitionResult ^ result)
       {
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Connecting..." );
-        this->ConnectAsync( 4.0 ).then( [this]( bool result )
+        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Connecting...");
+        this->ConnectAsync(4.0).then([this](bool result)
         {
-          if ( result )
+          if (result)
           {
-            HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Connection successful." );
+            HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Connection successful.");
           }
           else
           {
-            HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Connection failed." );
+            HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Connection failed.");
           }
-        } );
+
+          if (result)
+          {
+            m_keepAliveTask = &KeepAliveAsync();
+            try
+            {
+              m_keepAliveTask->wait();
+            }
+            catch (const std::exception& e)
+            {
+              OutputDebugStringA(e.what());
+              m_keepAliveTask = nullptr;
+            }
+            catch (Platform::Exception^ e)
+            {
+              OutputDebugStringW(e->Message->Data());
+              m_keepAliveTask = nullptr;
+            }
+          }
+        });
       };
 
-      callbackMap[L"disconnect"] = [this]( SpeechRecognitionResult ^ result )
+      callbackMap[L"disconnect"] = [this](SpeechRecognitionResult ^ result)
       {
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Disconnected." );
+        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Disconnected.");
         this->Disconnect();
       };
     }
 
     //----------------------------------------------------------------------------
-    std::shared_ptr<byte> IGTLinkIF::GetSharedImagePtr( UWPOpenIGTLink::TrackedFrame^ frame )
+    std::shared_ptr<byte> IGTLinkIF::GetSharedImagePtr(UWPOpenIGTLink::TrackedFrame^ frame)
     {
-      return *( std::shared_ptr<byte>* )frame->ImageDataSharedPtr;
+      return *(std::shared_ptr<byte>*)frame->ImageDataSharedPtr;
     }
 
+    //----------------------------------------------------------------------------
+    Concurrency::task<void> IGTLinkIF::KeepAliveAsync()
+    {
+      m_tokenSource = cancellation_token_source();
+      auto token = m_tokenSource.get_token();
+      return create_task([this, token]()
+      {
+        while (!token.is_canceled())
+        {
+          if (m_connected)
+          {
+            // send keep alive message
+            std::lock_guard<std::mutex> guard(m_clientMutex);
+            igtl::StatusMessage::Pointer statusMsg = igtl::StatusMessage::New();
+            statusMsg->SetCode(igtl::StatusMessage::STATUS_OK);
+            statusMsg->Pack();
+            bool result(false);
+            RETRY_UNTIL_TRUE(result = m_igtClient->SendMessage((UWPOpenIGTLink::MessageBasePointerPtr)&statusMsg), 10, 25);
+            if (!result)
+            {
+              m_tokenSource.cancel();
+              m_connected = false;
+              m_igtClient->Disconnect();
+              if (m_reconnectOnDrop)
+              {
+
+              }
+            }
+          }
+          else
+          {
+            OutputDebugStringA("Keep alive running unconnected but token not canceled.");
+          }
+        }
+      }, m_tokenSource.get_token());
+    }
   }
 }

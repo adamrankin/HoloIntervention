@@ -29,6 +29,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Windows includes
 #include <ppltasks.h>
 
+// std includes
+#include <mutex>
+
 // IGT forward declarations
 namespace igtl
 {
@@ -47,7 +50,7 @@ namespace HoloIntervention
 
       /// Connect to the server specified by SetHostname() and SetPort()
       /// If connected to a server, disconnects first.
-      concurrency::task<bool> ConnectAsync( double timeoutSec = CONNECT_TIMEOUT_SEC );
+      concurrency::task<bool> ConnectAsync(double timeoutSec = CONNECT_TIMEOUT_SEC);
 
       /// Disconnect from the server
       void Disconnect();
@@ -56,33 +59,40 @@ namespace HoloIntervention
       bool IsConnected();
 
       /// Set the hostname to connect to
-      void SetHostname( const std::wstring& hostname );
+      void SetHostname(const std::wstring& hostname);
 
       /// Get the hostname to connect to
       std::wstring GetHostname() const;
 
       /// Set the port to connect to
-      void SetPort( int32 port );
+      void SetPort(int32 port);
 
       /// Retrieve the latest tracked frame
-      bool GetLatestTrackedFrame( UWPOpenIGTLink::TrackedFrame^ frame, double* latestTimestamp );
+      bool GetLatestTrackedFrame(UWPOpenIGTLink::TrackedFrame^ frame, double* latestTimestamp);
 
       /// Retrieve the latest command
-      bool GetLatestCommand( UWPOpenIGTLink::Command^ cmd, double* latestTimestamp );
+      bool GetLatestCommand(UWPOpenIGTLink::Command^ cmd, double* latestTimestamp);
 
       /// IVoiceInput functions
-      void RegisterVoiceCallbacks( HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap, void* userArg );
+      void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap, void* userArg);
 
     public:
       // Static helper functions
-      static std::shared_ptr<byte> GetSharedImagePtr( UWPOpenIGTLink::TrackedFrame^ frame );
+      static std::shared_ptr<byte> GetSharedImagePtr(UWPOpenIGTLink::TrackedFrame^ frame);
 
     protected:
-      // Link to an IGT server
-      UWPOpenIGTLink::IGTLinkClient^    m_igtClient;
+      task<void> KeepAliveAsync();
+
+    protected:
+      UWPOpenIGTLink::IGTLinkClient^            m_igtClient = ref new UWPOpenIGTLink::IGTLinkClient();
+      bool                                      m_connected = false;
+      std::mutex                                m_clientMutex;
+      task<void>*                               m_keepAliveTask = nullptr;
+      concurrency::cancellation_token_source    m_tokenSource;
+      bool                                      m_reconnectOnDrop = true;
 
       // Constants relating to IGT behavior
-      static const double               CONNECT_TIMEOUT_SEC;
+      static const double                       CONNECT_TIMEOUT_SEC;
     };
   }
 }

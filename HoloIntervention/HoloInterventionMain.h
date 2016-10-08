@@ -81,18 +81,18 @@ namespace HoloIntervention
   class HoloInterventionMain : public DX::IDeviceNotify
   {
   public:
-    HoloInterventionMain( const std::shared_ptr<DX::DeviceResources>& deviceResources );
+    HoloInterventionMain(const std::shared_ptr<DX::DeviceResources>& deviceResources);
     ~HoloInterventionMain();
 
     // Sets the holographic space. This is our closest analogue to setting a new window
     // for the app.
-    void SetHolographicSpace( HolographicSpace^ holographicSpace );
+    void SetHolographicSpace(HolographicSpace^ holographicSpace);
 
     // Starts the holographic frame and updates the content.
     HolographicFrame^ Update();
 
     // Renders holograms, including world-locked content.
-    bool Render( HolographicFrame^ holographicFrame );
+    bool Render(HolographicFrame^ holographicFrame);
 
     // Handle saving and loading of app state owned by AppMain.
     task<void> SaveAppStateAsync();
@@ -123,24 +123,22 @@ namespace HoloIntervention
 
   protected:
     // Asynchronously creates resources for new holographic cameras.
-    void OnCameraAdded( HolographicSpace^ sender, HolographicSpaceCameraAddedEventArgs^ args );
+    void OnCameraAdded(HolographicSpace^ sender, HolographicSpaceCameraAddedEventArgs^ args);
 
-    // Synchronously releases resources for holographic cameras that are no longer
-    // attached to the system.
-    void OnCameraRemoved( HolographicSpace^ sender, HolographicSpaceCameraRemovedEventArgs^ args );
+    // Synchronously releases resources for holographic cameras that are no longer attached to the system.
+    void OnCameraRemoved(HolographicSpace^ sender, HolographicSpaceCameraRemovedEventArgs^ args);
 
     // Used to notify the app when the positional tracking state changes.
-    void OnLocatabilityChanged( SpatialLocator^ sender, Platform::Object^ args );
+    void OnLocatabilityChanged(SpatialLocator^ sender, Platform::Object^ args);
 
-    // Clears event registration state. Used when changing to a new HolographicSpace
-    // and when tearing down AppMain.
+    // Clears event registration state. Used when changing to a new HolographicSpace and when tearing down AppMain.
     void UnregisterHolographicEventHandlers();
 
     // Check for any voice input commands
     void InitializeVoiceSystem();
 
     // Callback when a frame is received by the system over IGTlink
-    void TrackedFrameCallback( UWPOpenIGTLink::TrackedFrame^ frame );
+    void TrackedFrameCallback(UWPOpenIGTLink::TrackedFrame^ frame);
 
   protected:
     // Renderers
@@ -151,9 +149,8 @@ namespace HoloIntervention
     // Tokens
     uint32                                                m_sliceToken;
 
-    // Spatial input event handler
+    // Event handlers
     std::unique_ptr<Input::SpatialInputHandler>           m_spatialInputHandler;
-    // Voice input event handler
     std::unique_ptr<Input::VoiceInputHandler>             m_voiceInputHandler;
 
     // Interface that manages a network connection to an IGT link server
@@ -175,9 +172,6 @@ namespace HoloIntervention
 
     // A reference frame attached to the holographic camera.
     SpatialLocatorAttachedFrameOfReference^               m_attachedReferenceFrame;
-
-    // A reference frame placed in the environment.
-    SpatialStationaryFrameOfReference^                    m_stationaryReferenceFrame;
 
     // Event registration tokens.
     Windows::Foundation::EventRegistrationToken           m_cameraAddedToken;
