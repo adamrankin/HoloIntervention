@@ -23,19 +23,45 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-using namespace Windows::Media::SpeechRecognition;
+// Local includes
+#include "IVoiceInput.h"
+
+// Rendering includes
+#include "SliceRenderer.h"
+
+using namespace Windows::Foundation::Numerics;
+using namespace Windows::UI::Input::Spatial;
+
+namespace DX
+{
+  class StepTimer;
+}
 
 namespace HoloIntervention
 {
-  namespace Sound
+  namespace System
   {
-    typedef std::map<std::wstring, std::function<void(SpeechRecognitionResult^ result)>> VoiceInputCallbackMap;
-
-    class IVoiceInput
+    class ImagingSystem : public Sound::IVoiceInput
     {
     public:
-      virtual void RegisterVoiceCallbacks(VoiceInputCallbackMap& callbackMap) = 0;
-      virtual ~IVoiceInput() {};
+      ImagingSystem();
+      ~ImagingSystem();
+
+      void Update(UWPOpenIGTLink::TrackedFrame^ frame, const DX::StepTimer& timer);
+
+      bool HasSlice() const;
+      float4x4 GetSlicePose() const;
+
+      // IVoiceInput functions
+      virtual void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap);
+
+    protected:
+      void Process2DFrame(UWPOpenIGTLink::TrackedFrame^ frame);
+      void Process3DFrame(UWPOpenIGTLink::TrackedFrame^ frame);
+
+    protected:
+      // Tokens
+      uint32                    m_sliceToken = Rendering::SliceRenderer::INVALID_SLICE_INDEX;
     };
   }
 }

@@ -83,7 +83,7 @@ namespace HoloIntervention
       bool GetLatestCommand(UWPOpenIGTLink::Command^& cmd, double* latestTimestamp);
 
       /// IVoiceInput functions
-      void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap, void* userArg);
+      void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap);
 
     public:
       // Static helper functions
@@ -97,7 +97,7 @@ namespace HoloIntervention
       ConnectionState                           m_connectionState = CONNECTION_STATE_UNKNOWN;
       std::mutex                                m_clientMutex;
       task<void>*                               m_keepAliveTask = nullptr;
-      concurrency::cancellation_token_source    m_tokenSource;
+      concurrency::cancellation_token_source    m_keepAliveTokenSource;
       bool                                      m_reconnectOnDrop = true;
 
       // Constants relating to IGT behavior

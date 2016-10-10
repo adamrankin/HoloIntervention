@@ -47,16 +47,16 @@ namespace HoloIntervention
   namespace System
   {
     const std::wstring GazeSystem::GAZE_CURSOR_ASSET_LOCATION = L"Assets/Models/gaze_cursor.cmo";
-    const float GazeSystem::LERP_RATE = 2.f;
+    const float GazeSystem::LERP_RATE = 6.f;
 
     //----------------------------------------------------------------------------
     GazeSystem::GazeSystem()
-      : m_modelEntry( nullptr )
-      , m_modelToken( 0 )
+      : m_modelEntry(nullptr)
+      , m_modelToken(0)
     {
-      m_modelToken = HoloIntervention::instance()->GetModelRenderer().AddModel( GAZE_CURSOR_ASSET_LOCATION );
-      m_modelEntry = HoloIntervention::instance()->GetModelRenderer().GetModel( m_modelToken );
-      m_modelEntry->SetVisible( false );
+      m_modelToken = HoloIntervention::instance()->GetModelRenderer().AddModel(GAZE_CURSOR_ASSET_LOCATION);
+      m_modelEntry = HoloIntervention::instance()->GetModelRenderer().GetModel(m_modelToken);
+      m_modelEntry->SetVisible(false);
     }
 
     //----------------------------------------------------------------------------
@@ -65,24 +65,24 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void GazeSystem::Update( const DX::StepTimer& timer, SpatialCoordinateSystem^ currentCoordinateSystem, SpatialPointerPose^ headPose )
+    void GazeSystem::Update(const DX::StepTimer& timer, SpatialCoordinateSystem^ currentCoordinateSystem, SpatialPointerPose^ headPose)
     {
       const float& deltaTime = static_cast<float>(timer.GetElapsedSeconds());
 
       // TODO : add future kalman filtering to smooth cursor position
-      if ( IsCursorEnabled() )
+      if (IsCursorEnabled())
       {
         float3 outHitPosition;
         float3 outHitNormal;
         float3 outHitEdge;
-        bool hit = HoloIntervention::instance()->GetSpatialSystem().TestRayIntersection( currentCoordinateSystem,
+        bool hit = HoloIntervention::instance()->GetSpatialSystem().TestRayIntersection(currentCoordinateSystem,
                    headPose->Head->Position,
                    headPose->Head->ForwardDirection,
                    outHitPosition,
                    outHitNormal,
-                   outHitEdge );
+                   outHitEdge);
 
-        if ( hit )
+        if (hit)
         {
           // Update the gaze system with the pose to render
           m_goalHitNormal = outHitNormal;
@@ -91,6 +91,7 @@ namespace HoloIntervention
         }
       }
 
+      m_lastPosition = m_currentPosition;
       m_currentPosition = lerp(m_currentPosition, m_goalHitPosition, deltaTime * LERP_RATE);
       m_currentNormal = lerp(m_currentNormal, m_goalHitNormal, deltaTime * LERP_RATE);
       m_currentEdge = lerp(m_currentEdge, m_goalHitEdge, deltaTime * LERP_RATE);
@@ -101,14 +102,16 @@ namespace HoloIntervention
       iVec = normalize(iVec);
       float4x4 matrix = make_float4x4_world(m_currentPosition, kVec, jVec);
       m_modelEntry->SetWorld(matrix);
+
+      CalculateVelocity(1.f / static_cast<float>(timer.GetElapsedSeconds()));
     }
 
     //----------------------------------------------------------------------------
-    void GazeSystem::EnableCursor( bool enable )
+    void GazeSystem::EnableCursor(bool enable)
     {
       m_systemEnabled = enable;
 
-      m_modelEntry->SetVisible( enable );
+      m_modelEntry->SetVisible(enable);
     }
 
     //----------------------------------------------------------------------------
@@ -130,19 +133,32 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void GazeSystem::RegisterVoiceCallbacks( HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap, void* userArg )
+    Windows::Foundation::Numerics::float3 GazeSystem::GetHitVelocity() const
     {
-      callbackMap[L"show cursor"] = [this]( SpeechRecognitionResult ^ result )
+      return m_velocity;
+    }
+
+    //----------------------------------------------------------------------------
+    void GazeSystem::RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap)
+    {
+      callbackMap[L"show cursor"] = [this](SpeechRecognitionResult ^ result)
       {
-        EnableCursor( true );
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Cursor on." );
+        EnableCursor(true);
+        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Cursor on.");
       };
 
-      callbackMap[L"hide cursor"] = [this]( SpeechRecognitionResult ^ result )
+      callbackMap[L"hide cursor"] = [this](SpeechRecognitionResult ^ result)
       {
-        EnableCursor( false );
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Cursor off." );
+        EnableCursor(false);
+        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Cursor off.");
       };
+    }
+
+    //----------------------------------------------------------------------------
+    void GazeSystem::CalculateVelocity(float oneOverDeltaTime)
+    {
+      const float3 deltaPosition = m_currentPosition - m_lastPosition; // meters
+      m_velocity = deltaPosition * oneOverDeltaTime; // meters per second
     }
   }
 }

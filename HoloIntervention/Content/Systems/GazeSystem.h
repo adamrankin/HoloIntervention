@@ -46,16 +46,20 @@ namespace HoloIntervention
       GazeSystem();
       ~GazeSystem();
 
-      void Update( const DX::StepTimer& timer, SpatialCoordinateSystem^ currentCoordinateSystem, SpatialPointerPose^ headPose );
+      void Update(const DX::StepTimer& timer, SpatialCoordinateSystem^ currentCoordinateSystem, SpatialPointerPose^ headPose);
 
-      void EnableCursor( bool enable );
+      void EnableCursor(bool enable);
       bool IsCursorEnabled();
 
       const float3& GetHitPosition() const;
       const float3& GetHitNormal() const;
+      float3 GetHitVelocity() const;
 
       // IVoiceInput functions
-      virtual void RegisterVoiceCallbacks( HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap, void* userArg );
+      virtual void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap);
+
+    protected:
+      void CalculateVelocity(float oneOverDeltaTime);
 
     protected:
       std::shared_ptr<Rendering::ModelEntry>    m_modelEntry;
@@ -67,6 +71,8 @@ namespace HoloIntervention
       float3                                    m_currentPosition = { 0.f, 0.f, 0.f };
       float3                                    m_currentNormal = { 0.f, 0.f, 0.f };
       float3                                    m_currentEdge = { 0.f, 0.f, 0.f };
+      float3                                    m_lastPosition = { 0.f, 0.f, 0.f };
+      float3                                    m_velocity = { 0.f, 0.f, 0.f };
 
       static const std::wstring GAZE_CURSOR_ASSET_LOCATION;
       static const uint32 FRAMES_UNTIL_HIT_EXPIRES;

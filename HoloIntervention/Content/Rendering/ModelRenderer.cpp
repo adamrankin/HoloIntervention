@@ -109,7 +109,7 @@ namespace HoloIntervention
     std::shared_ptr<ModelEntry> ModelRenderer::GetModel( uint64 modelId ) const
     {
       std::shared_ptr<ModelEntry> entry;
-      if ( this->FindModel( modelId, entry ) )
+      if ( FindModel( modelId, entry ) )
       {
         return entry;
       }

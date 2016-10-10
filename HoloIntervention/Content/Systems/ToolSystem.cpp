@@ -44,60 +44,60 @@ namespace HoloIntervention
   {
     //----------------------------------------------------------------------------
     ToolSystem::ToolSystem()
-      : m_transformRepository( ref new UWPOpenIGTLink::TransformRepository() )
+      : m_transformRepository(ref new UWPOpenIGTLink::TransformRepository())
     {
       ;
-      create_task(Windows::ApplicationModel::Package::Current->InstalledLocation->GetFileAsync( L"Assets\\Data\\tool_configuration.xml" ) ).then( [this]( task<StorageFile^> previousTask )
+      create_task(Windows::ApplicationModel::Package::Current->InstalledLocation->GetFileAsync(L"Assets\\Data\\tool_configuration.xml")).then([this](task<StorageFile^> previousTask)
       {
         StorageFile^ file = nullptr;
         try
         {
           file = previousTask.get();
         }
-        catch ( Platform::Exception^ e )
+        catch (Platform::Exception^ e)
         {
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Unable to locate tool system configuration file." );
+          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Unable to locate tool system configuration file.");
         }
 
         XmlDocument^ doc = ref new XmlDocument();
-        create_task( doc->LoadFromFileAsync( file ) ).then( [this]( task<XmlDocument^> previousTask )
+        create_task(doc->LoadFromFileAsync(file)).then([this](task<XmlDocument^> previousTask)
         {
           XmlDocument^ doc = nullptr;
           try
           {
             doc = previousTask.get();
           }
-          catch ( Platform::Exception^ e )
+          catch (Platform::Exception^ e)
           {
-            HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Tool system configuration file did not contain valid XML." );
+            HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Tool system configuration file did not contain valid XML.");
           }
 
           try
           {
-            m_transformRepository->ReadConfiguration( doc );
+            m_transformRepository->ReadConfiguration(doc);
           }
-          catch ( Platform::Exception^ e )
+          catch (Platform::Exception^ e)
           {
-            HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Invalid layout in coordinate definitions configuration area." );
+            HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Invalid layout in coordinate definitions configuration area.");
           }
 
-          InitAsync( doc ).then( [ = ]()
+          InitAsync(doc).then([ = ]()
           {
             // Ensure that ReferenceToWorld exists
             bool isValid;
             float4x4 transform;
-            UWPOpenIGTLink::TransformName^ trName = ref new UWPOpenIGTLink::TransformName( L"Reference", L"World" );
+            UWPOpenIGTLink::TransformName^ trName = ref new UWPOpenIGTLink::TransformName(L"Reference", L"World");
             try
             {
-              transform = m_transformRepository->GetTransform( trName, &isValid );
+              transform = m_transformRepository->GetTransform(trName, &isValid);
             }
-            catch ( Platform::Exception^ e )
+            catch (Platform::Exception^ e)
             {
-              m_transformRepository->SetTransform( trName, &float4x4::identity(), true );
+              m_transformRepository->SetTransform(trName, &float4x4::identity(), true);
             }
-          } );
-        } );
-      } );
+          });
+        });
+      });
     }
 
     //----------------------------------------------------------------------------
@@ -106,21 +106,21 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    uint64 ToolSystem::RegisterTool( const std::wstring& modelName, UWPOpenIGTLink::TransformName^ coordinateFrame )
+    uint64 ToolSystem::RegisterTool(const std::wstring& modelName, UWPOpenIGTLink::TransformName^ coordinateFrame)
     {
-      std::shared_ptr<Tools::ToolEntry> entry = std::make_shared<Tools::ToolEntry>( coordinateFrame, modelName, m_transformRepository );
-      m_toolEntries.push_back( entry );
+      std::shared_ptr<Tools::ToolEntry> entry = std::make_shared<Tools::ToolEntry>(coordinateFrame, modelName, m_transformRepository);
+      m_toolEntries.push_back(entry);
       return entry->GetId();
     }
 
     //----------------------------------------------------------------------------
-    void ToolSystem::UnregisterTool( uint64 toolToken )
+    void ToolSystem::UnregisterTool(uint64 toolToken)
     {
-      for ( auto iter = m_toolEntries.begin(); iter != m_toolEntries.end(); ++iter )
+      for (auto iter = m_toolEntries.begin(); iter != m_toolEntries.end(); ++iter)
       {
-        if ( toolToken == ( *iter )->GetId() )
+        if (toolToken == (*iter)->GetId())
         {
-          m_toolEntries.erase( iter );
+          m_toolEntries.erase(iter);
           return;
         }
       }
@@ -133,60 +133,60 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ToolSystem::Update( const DX::StepTimer& timer, UWPOpenIGTLink::TrackedFrame^ frame )
+    void ToolSystem::Update(UWPOpenIGTLink::TrackedFrame^ frame, const DX::StepTimer& timer)
     {
-      m_transformRepository->SetTransforms( frame );
+      m_transformRepository->SetTransforms(frame);
 
-      for ( auto entry : m_toolEntries )
+      for (auto entry : m_toolEntries)
       {
-        entry->Update( timer );
+        entry->Update(timer);
       }
     }
 
     //----------------------------------------------------------------------------
-    void ToolSystem::RegisterVoiceCallbacks( HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap, void* userArg )
+    void ToolSystem::RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap)
     {
 
     }
 
     //----------------------------------------------------------------------------
-    concurrency::task<void> ToolSystem::InitAsync( XmlDocument^ doc )
+    concurrency::task<void> ToolSystem::InitAsync(XmlDocument^ doc)
     {
-      return create_task( [ = ]()
+      return create_task([ = ]()
       {
-        auto xpath = ref new Platform::String( L"/HoloIntervention/Tools/Tool" );
-        if ( doc->SelectNodes( xpath )->Length == 0 )
+        auto xpath = ref new Platform::String(L"/HoloIntervention/Tools/Tool");
+        if (doc->SelectNodes(xpath)->Length == 0)
         {
-          throw ref new Platform::Exception( E_INVALIDARG, L"No tools defined in the configuration file. Check for the existence of Tools/Tool" );
+          throw ref new Platform::Exception(E_INVALIDARG, L"No tools defined in the configuration file. Check for the existence of Tools/Tool");
         }
 
-        for ( auto toolNode : doc->SelectNodes( xpath ) )
+        for (auto toolNode : doc->SelectNodes(xpath))
         {
           // model, transform
-          if ( toolNode->Attributes->GetNamedItem( L"Model" ) == nullptr )
+          if (toolNode->Attributes->GetNamedItem(L"Model") == nullptr)
           {
-            throw ref new Platform::Exception( E_FAIL, L"Tool entry does not contain model attribute." );
+            throw ref new Platform::Exception(E_FAIL, L"Tool entry does not contain model attribute.");
           }
-          if ( toolNode->Attributes->GetNamedItem( L"Transform" ) == nullptr )
+          if (toolNode->Attributes->GetNamedItem(L"Transform") == nullptr)
           {
-            throw ref new Platform::Exception( E_FAIL, L"Tool entry does not contain transform attribute." );
+            throw ref new Platform::Exception(E_FAIL, L"Tool entry does not contain transform attribute.");
           }
-          Platform::String^ modelString = dynamic_cast<Platform::String^>( toolNode->Attributes->GetNamedItem( L"Model" )->NodeValue );
-          Platform::String^ transformString = dynamic_cast<Platform::String^>( toolNode->Attributes->GetNamedItem( L"Transform" )->NodeValue );
-          if ( modelString->IsEmpty() || transformString->IsEmpty() )
+          Platform::String^ modelString = dynamic_cast<Platform::String^>(toolNode->Attributes->GetNamedItem(L"Model")->NodeValue);
+          Platform::String^ transformString = dynamic_cast<Platform::String^>(toolNode->Attributes->GetNamedItem(L"Transform")->NodeValue);
+          if (modelString->IsEmpty() || transformString->IsEmpty())
           {
-            throw ref new Platform::Exception( E_FAIL, L"Tool entry contains an empty attribute." );
-          }
-
-          UWPOpenIGTLink::TransformName^ trName = ref new UWPOpenIGTLink::TransformName( transformString );
-          if ( !trName->IsValid() )
-          {
-            throw ref new Platform::Exception( E_FAIL, L"Tool entry contains invalid transform name." );
+            throw ref new Platform::Exception(E_FAIL, L"Tool entry contains an empty attribute.");
           }
 
-          RegisterTool( std::wstring( modelString->Data() ), trName );
+          UWPOpenIGTLink::TransformName^ trName = ref new UWPOpenIGTLink::TransformName(transformString);
+          if (!trName->IsValid())
+          {
+            throw ref new Platform::Exception(E_FAIL, L"Tool entry contains invalid transform name.");
+          }
+
+          RegisterTool(std::wstring(modelString->Data()), trName);
         }
-      } );
+      });
     }
 
   }

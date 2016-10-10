@@ -85,7 +85,7 @@ namespace HoloIntervention
 
       task<void> LoadAppStateAsync();
 
-      virtual void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap, void* userArg);
+      virtual void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callba);
 
       // Send the collected points and mesh data to the NetworkPCL interface
       task<bool> SendRegistrationDataAsync();

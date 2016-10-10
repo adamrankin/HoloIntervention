@@ -85,7 +85,7 @@ namespace HoloIntervention
       std::unique_ptr<Rendering::NotificationRenderer>& GetRenderer();
 
       // ISystem functions
-      virtual void RegisterVoiceCallbacks( HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap, void* userArg );
+      virtual void RegisterVoiceCallbacks( HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap);
 
     protected:
       void UpdateHologramPosition( SpatialPointerPose^ pointerPose, const DX::StepTimer& timer );

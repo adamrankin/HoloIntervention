@@ -556,7 +556,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SpatialMeshRenderer::RegisterVoiceCallbacks( HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap, void* userArg )
+    void SpatialMeshRenderer::RegisterVoiceCallbacks( HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap)
     {
       // Disable debug mesh commands until needed again
       callbackMap[L"mesh on"] = [this]( SpeechRecognitionResult ^ result )

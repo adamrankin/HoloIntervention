@@ -26,10 +26,11 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "AppView.h"
 #include "Common.h"
 #include "DirectXHelper.h"
-#include "HoloInterventionMain.h"
+#include "HoloInterventionCore.h"
 
 // System includes
 #include "GazeSystem.h"
+#include "ImagingSystem.h"
 #include "NotificationSystem.h"
 #include "RegistrationSystem.h"
 #include "SpatialSystem.h"
@@ -74,9 +75,8 @@ namespace HoloIntervention
 {
   //----------------------------------------------------------------------------
   // Loads and initializes application assets when the application is loaded.
-  HoloInterventionMain::HoloInterventionMain(const std::shared_ptr<DX::DeviceResources>& deviceResources)
+  HoloInterventionCore::HoloInterventionCore(const std::shared_ptr<DX::DeviceResources>& deviceResources)
     : m_deviceResources(deviceResources)
-    , m_sliceToken(0)
     , m_latestFrame(ref new UWPOpenIGTLink::TrackedFrame())
   {
     // Register to be notified if the device is lost or recreated.
@@ -84,7 +84,7 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
-  HoloInterventionMain::~HoloInterventionMain()
+  HoloInterventionCore::~HoloInterventionCore()
   {
     // De-register device notification.
     m_deviceResources->RegisterDeviceNotify(nullptr);
@@ -93,7 +93,7 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
-  void HoloInterventionMain::SetHolographicSpace(HolographicSpace^ holographicSpace)
+  void HoloInterventionCore::SetHolographicSpace(HolographicSpace^ holographicSpace)
   {
     UnregisterHolographicEventHandlers();
 
@@ -115,9 +115,10 @@ namespace HoloIntervention
     m_gazeSystem = std::make_unique<System::GazeSystem>();
     m_toolSystem = std::make_unique<System::ToolSystem>();
     m_registrationSystem = std::make_unique<System::RegistrationSystem>(m_deviceResources, m_timer);
+    m_imagingSystem = std::make_unique<System::ImagingSystem>();
 
     // TODO : remove temp code
-    m_igtLinkIF->SetHostname(L"192.168.11.7");
+    m_igtLinkIF->SetHostname(L"192.168.1.26");
 
     try
     {
@@ -137,19 +138,19 @@ namespace HoloIntervention
     m_locatabilityChangedToken =
       m_locator->LocatabilityChanged +=
         ref new Windows::Foundation::TypedEventHandler<SpatialLocator^, Object^>(
-          std::bind(&HoloInterventionMain::OnLocatabilityChanged, this, std::placeholders::_1, std::placeholders::_2)
+          std::bind(&HoloInterventionCore::OnLocatabilityChanged, this, std::placeholders::_1, std::placeholders::_2)
         );
 
     m_cameraAddedToken =
       m_holographicSpace->CameraAdded +=
         ref new Windows::Foundation::TypedEventHandler<HolographicSpace^, HolographicSpaceCameraAddedEventArgs^>(
-          std::bind(&HoloInterventionMain::OnCameraAdded, this, std::placeholders::_1, std::placeholders::_2)
+          std::bind(&HoloInterventionCore::OnCameraAdded, this, std::placeholders::_1, std::placeholders::_2)
         );
 
     m_cameraRemovedToken =
       m_holographicSpace->CameraRemoved +=
         ref new Windows::Foundation::TypedEventHandler<HolographicSpace^, HolographicSpaceCameraRemovedEventArgs^>(
-          std::bind(&HoloInterventionMain::OnCameraRemoved, this, std::placeholders::_1, std::placeholders::_2)
+          std::bind(&HoloInterventionCore::OnCameraRemoved, this, std::placeholders::_1, std::placeholders::_2)
         );
 
     m_attachedReferenceFrame = m_locator->CreateAttachedFrameOfReferenceAtCurrentHeading();
@@ -163,7 +164,7 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
-  void HoloInterventionMain::UnregisterHolographicEventHandlers()
+  void HoloInterventionCore::UnregisterHolographicEventHandlers()
   {
     if (m_holographicSpace != nullptr)
     {
@@ -190,7 +191,7 @@ namespace HoloIntervention
 
   //----------------------------------------------------------------------------
   // Updates the application state once per frame.
-  HolographicFrame^ HoloInterventionMain::Update()
+  HolographicFrame^ HoloInterventionCore::Update()
   {
     HolographicFrame^ holographicFrame = m_holographicSpace->CreateNextFrame();
     HolographicFramePrediction^ prediction = holographicFrame->CurrentPrediction;
@@ -224,95 +225,24 @@ namespace HoloIntervention
         m_gazeSystem->Update(m_timer, currentCoordinateSystem, pose);
         m_soundManager->Update(m_timer, currentCoordinateSystem);
         m_sliceRenderer->Update(pose, m_timer);
+        m_notificationSystem->Update(pose, m_timer);
       }
 
       m_meshRenderer->Update(vp, m_timer, currentCoordinateSystem);
-
-      if (pose != nullptr)
-      {
-        m_notificationSystem->Update(pose, m_timer);
-      }
       m_modelRenderer->Update(m_timer, vp);
 
       if (m_igtLinkIF->IsConnected())
       {
         if (m_igtLinkIF->GetLatestTrackedFrame(m_latestFrame, &m_latestTimestamp))
         {
-          // TODO : move this to a slice system, remove it from main
-          m_sliceRenderer->UpdateSlice(m_sliceToken,
-                                       Network::IGTLinkIF::GetSharedImagePtr(m_latestFrame),
-                                       m_latestFrame->Width,
-                                       m_latestFrame->Height,
-                                       (DXGI_FORMAT)m_latestFrame->PixelFormat,
-                                       m_latestFrame->EmbeddedImageTransform);
-          m_toolSystem->Update(m_timer, m_latestFrame);
+          m_imagingSystem->Update(m_latestFrame, m_timer);
+          m_toolSystem->Update(m_latestFrame, m_timer);
         }
       }
     });
 
-    // We complete the frame update by using information about our content positioning to set the focus point.
-    for (auto cameraPose : prediction->CameraPoses)
-    {
-      HolographicCameraRenderingParameters^ renderingParameters = holographicFrame->GetRenderingParameters(cameraPose);
+    SetHolographicFocusPoint(prediction, holographicFrame, currentCoordinateSystem);
 
-      if (m_notificationSystem->IsShowingNotification())
-      {
-        float3 const& focusPointPosition = m_notificationSystem->GetPosition();
-        float3        focusPointNormal = (focusPointPosition == float3(0.f)) ? float3(0.f, 0.f, 1.f) : -normalize(focusPointPosition);
-        float3 const& focusPointVelocity = m_notificationSystem->GetVelocity();
-
-        renderingParameters->SetFocusPoint(
-          currentCoordinateSystem,
-          focusPointPosition,
-          focusPointNormal,
-          focusPointVelocity
-        );
-      }
-      else if (m_sliceToken != 0)
-      {
-        // TODO : add slice system and control visibility
-        float4x4 mat;
-        if (m_sliceRenderer->GetSlicePose(m_sliceToken, mat))
-        {
-          SimpleMath::Matrix matrix;
-          XMStoreFloat4x4(&matrix, XMMatrixTranspose(XMLoadFloat4x4(&mat)));
-          SimpleMath::Vector3 translation;
-          SimpleMath::Vector3 scale;
-          SimpleMath::Quaternion rotation;
-          matrix.Decompose(scale, rotation, translation);
-
-          float3 focusPointPosition(translation.x, translation.y, translation.z);
-          float3 focusPointNormal = (focusPointPosition == float3(0.f)) ? float3(0.f, 0.f, 1.f) : -normalize(focusPointPosition);
-          // TODO : store velocity of slice for stabilization?
-          float3 focusPointVelocity = float3(0.f);
-
-          renderingParameters->SetFocusPoint(
-            currentCoordinateSystem,
-            focusPointPosition,
-            focusPointNormal,
-            focusPointVelocity);
-        }
-      }
-      else if (m_gazeSystem->IsCursorEnabled() && m_gazeSystem->GetHitNormal() != float3::zero())
-      {
-        // TODO : move this to higher priority once it's working
-        // Set the focus to be the cursor
-        try
-        {
-          renderingParameters->SetFocusPoint(currentCoordinateSystem, m_gazeSystem->GetHitPosition(), m_gazeSystem->GetHitNormal());
-        }
-        catch (Platform::InvalidArgumentException^ iex)
-        {
-          continue;
-        }
-        catch (Platform::Exception^ ex)
-        {
-          // Turn the cursor off and output the message
-          m_gazeSystem->EnableCursor(false);
-          m_notificationSystem->QueueMessage(ex->Message);
-        }
-      }
-    }
 
     return holographicFrame;
   }
@@ -321,7 +251,7 @@ namespace HoloIntervention
   // Renders the current frame to each holographic camera, according to the
   // current application and spatial positioning state. Returns true if the
   // frame was rendered to at least one camera.
-  bool HoloInterventionMain::Render(Windows::Graphics::Holographic::HolographicFrame^ holographicFrame)
+  bool HoloInterventionCore::Render(Windows::Graphics::Holographic::HolographicFrame^ holographicFrame)
   {
     if (m_timer.GetFrameCount() == 0)
     {
@@ -383,13 +313,13 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
-  task<void> HoloInterventionMain::SaveAppStateAsync()
+  task<void> HoloInterventionCore::SaveAppStateAsync()
   {
     return m_spatialSystem->SaveAppStateAsync();
   }
 
   //----------------------------------------------------------------------------
-  task<void> HoloInterventionMain::LoadAppStateAsync()
+  task<void> HoloInterventionCore::LoadAppStateAsync()
   {
     return m_spatialSystem->LoadAppStateAsync().then([ = ]()
     {
@@ -399,61 +329,73 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
-  uint64 HoloInterventionMain::GetCurrentFrameNumber() const
+  uint64 HoloInterventionCore::GetCurrentFrameNumber() const
   {
     return m_timer.GetFrameCount();
   }
 
   //----------------------------------------------------------------------------
-  System::NotificationSystem& HoloInterventionMain::GetNotificationsSystem()
+  System::NotificationSystem& HoloInterventionCore::GetNotificationsSystem()
   {
     return *m_notificationSystem.get();
   }
 
   //----------------------------------------------------------------------------
-  System::SpatialSystem& HoloInterventionMain::GetSpatialSystem()
+  System::SpatialSystem& HoloInterventionCore::GetSpatialSystem()
   {
     return *m_spatialSystem.get();
   }
 
   //----------------------------------------------------------------------------
-  System::GazeSystem& HoloInterventionMain::GetGazeSystem()
+  System::ToolSystem& HoloInterventionCore::GetToolSystem()
+  {
+    return *m_toolSystem.get();
+  }
+
+  //----------------------------------------------------------------------------
+  System::GazeSystem& HoloInterventionCore::GetGazeSystem()
   {
     return *m_gazeSystem.get();
   }
 
   //----------------------------------------------------------------------------
-  HoloIntervention::System::RegistrationSystem& HoloInterventionMain::GetRegistrationSystem()
+  System::RegistrationSystem& HoloInterventionCore::GetRegistrationSystem()
   {
     return *m_registrationSystem.get();
   }
 
   //----------------------------------------------------------------------------
-  HoloIntervention::Sound::SoundManager& HoloInterventionMain::GetSoundManager()
+  System::ImagingSystem& HoloInterventionCore::GetImagingSystem()
+  {
+    return *m_imagingSystem.get();
+  }
+
+  //----------------------------------------------------------------------------
+  Sound::SoundManager& HoloInterventionCore::GetSoundManager()
   {
     return *m_soundManager.get();
   }
 
   //----------------------------------------------------------------------------
-  HoloIntervention::Network::IGTLinkIF& HoloInterventionMain::GetIGTLink()
+  Network::IGTLinkIF& HoloInterventionCore::GetIGTLink()
   {
     return *m_igtLinkIF.get();
   }
 
   //----------------------------------------------------------------------------
-  Rendering::ModelRenderer& HoloInterventionMain::GetModelRenderer()
+  Rendering::ModelRenderer& HoloInterventionCore::GetModelRenderer()
   {
     return *m_modelRenderer.get();
   }
 
   //----------------------------------------------------------------------------
-  Rendering::SliceRenderer& HoloInterventionMain::GetSliceRenderer()
+  Rendering::SliceRenderer& HoloInterventionCore::GetSliceRenderer()
   {
     return *m_sliceRenderer.get();
   }
 
   //----------------------------------------------------------------------------
-  void HoloInterventionMain::OnDeviceLost()
+  void HoloInterventionCore::OnDeviceLost()
   {
     m_meshRenderer->ReleaseDeviceDependentResources();
     m_spatialSystem->ReleaseDeviceDependentResources();
@@ -463,7 +405,7 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
-  void HoloInterventionMain::OnDeviceRestored()
+  void HoloInterventionCore::OnDeviceRestored()
   {
     m_meshRenderer->CreateDeviceDependentResources();
     m_modelRenderer->CreateDeviceDependentResources();
@@ -473,7 +415,7 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
-  void HoloInterventionMain::OnLocatabilityChanged(SpatialLocator^ sender, Object^ args)
+  void HoloInterventionCore::OnLocatabilityChanged(SpatialLocator^ sender, Object^ args)
   {
     m_locatability = sender->Locatability;
 
@@ -498,7 +440,7 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
-  void HoloInterventionMain::OnCameraAdded(
+  void HoloInterventionCore::OnCameraAdded(
     HolographicSpace^ sender,
     HolographicSpaceCameraAddedEventArgs^ args
   )
@@ -515,7 +457,7 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
-  void HoloInterventionMain::OnCameraRemoved(
+  void HoloInterventionCore::OnCameraRemoved(
     HolographicSpace^ sender,
     HolographicSpaceCameraRemovedEventArgs^ args
   )
@@ -530,31 +472,77 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
-  void HoloInterventionMain::InitializeVoiceSystem()
+  void HoloInterventionCore::InitializeVoiceSystem()
   {
     Sound::VoiceInputCallbackMap callbacks;
 
-    m_gazeSystem->RegisterVoiceCallbacks(callbacks, nullptr);
-    m_igtLinkIF->RegisterVoiceCallbacks(callbacks, nullptr);
-    m_spatialSystem->RegisterVoiceCallbacks(callbacks, nullptr);
-    m_toolSystem->RegisterVoiceCallbacks(callbacks, nullptr);
-    m_sliceRenderer->RegisterVoiceCallbacks(callbacks, &m_sliceToken);
-    m_meshRenderer->RegisterVoiceCallbacks(callbacks, nullptr);
-    m_registrationSystem->RegisterVoiceCallbacks(callbacks, nullptr);
+    m_gazeSystem->RegisterVoiceCallbacks(callbacks);
+    m_igtLinkIF->RegisterVoiceCallbacks(callbacks);
+    m_spatialSystem->RegisterVoiceCallbacks(callbacks);
+    m_toolSystem->RegisterVoiceCallbacks(callbacks);
+    m_imagingSystem->RegisterVoiceCallbacks(callbacks);
+    m_meshRenderer->RegisterVoiceCallbacks(callbacks);
+    m_registrationSystem->RegisterVoiceCallbacks(callbacks);
 
     auto task = m_voiceInputHandler->CompileCallbacks(callbacks);
   }
 
   //----------------------------------------------------------------------------
-  void HoloInterventionMain::TrackedFrameCallback(UWPOpenIGTLink::TrackedFrame^ frame)
+  void HoloInterventionCore::SetHolographicFocusPoint(HolographicFramePrediction^ prediction, HolographicFrame^ holographicFrame, SpatialCoordinateSystem^ currentCoordinateSystem)
   {
-    if (m_sliceToken == 0)
+    for (auto cameraPose : prediction->CameraPoses)
     {
-      // For now, our slice renderer only draws one slice, in the future, it will have to draw more
-      m_sliceToken = m_sliceRenderer->AddSlice(Network::IGTLinkIF::GetSharedImagePtr(frame), frame->FrameSize->GetAt(0), frame->FrameSize->GetAt(1), (DXGI_FORMAT)frame->PixelFormat, frame->EmbeddedImageTransform);
-      return;
-    }
+      HolographicCameraRenderingParameters^ renderingParameters = holographicFrame->GetRenderingParameters(cameraPose);
 
-    m_sliceRenderer->UpdateSlice(m_sliceToken, Network::IGTLinkIF::GetSharedImagePtr(frame), frame->FrameSize->GetAt(0), frame->FrameSize->GetAt(1), (DXGI_FORMAT)frame->PixelFormat, frame->EmbeddedImageTransform);
+      float3 focusPointPosition = { 0.f, 0.f, 0.f };
+      float3 focusPointNormal = { 0.f, 0.f, 0.f };
+      float3 focusPointVelocity = { 0.f, 0.f, 0.f };
+
+      if (m_notificationSystem->IsShowingNotification())
+      {
+        focusPointPosition = m_notificationSystem->GetPosition();
+        focusPointNormal = (focusPointPosition == float3(0.f)) ? float3(0.f, 0.f, 1.f) : -normalize(focusPointPosition);
+        focusPointVelocity = m_notificationSystem->GetVelocity();
+      }
+      else if (m_imagingSystem->HasSlice())
+      {
+        float4x4 mat = m_imagingSystem->GetSlicePose();
+
+        SimpleMath::Matrix matrix;
+        XMStoreFloat4x4(&matrix, XMMatrixTranspose(XMLoadFloat4x4(&mat)));
+        SimpleMath::Vector3 translation;
+        SimpleMath::Vector3 scale;
+        SimpleMath::Quaternion rotation;
+        matrix.Decompose(scale, rotation, translation);
+
+        focusPointPosition = { translation.x, translation.y, translation.z };
+        focusPointNormal = (focusPointPosition == float3(0.f)) ? float3(0.f, 0.f, 1.f) : -normalize(focusPointPosition);
+        // TODO : store velocity of slice for stabilization?
+        focusPointVelocity = float3(0.f);
+      }
+      else if (m_gazeSystem->IsCursorEnabled() && m_gazeSystem->GetHitNormal() != float3::zero())
+      {
+        focusPointPosition = m_gazeSystem->GetHitPosition();
+        focusPointNormal = m_gazeSystem->GetHitNormal();
+        focusPointVelocity = m_gazeSystem->GetHitVelocity();
+      }
+
+      if (focusPointNormal != float3::zero())
+      {
+        try
+        {
+          renderingParameters->SetFocusPoint(
+            currentCoordinateSystem,
+            focusPointPosition,
+            focusPointNormal,
+            focusPointVelocity
+          );
+        }
+        catch (Platform::Exception^ ex)
+        {
+          m_notificationSystem->QueueMessage(ex->Message);
+        }
+      }
+    }
   }
 }

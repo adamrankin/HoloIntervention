@@ -1,7 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="HoloInterventionMain.cpp" />
     <ClCompile Include="Common\CameraResources.cpp">
       <Filter>Common</Filter>
     </ClCompile>
@@ -101,9 +100,10 @@
     <ClCompile Include="Common\Common.cpp">
       <Filter>Common</Filter>
     </ClCompile>
+    <ClCompile Include="Content\Systems\ImagingSystem.cpp" />
+    <ClCompile Include="HoloInterventionCore.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="HoloInterventionMain.h" />
     <ClInclude Include="Common\CameraResources.h">
       <Filter>Common</Filter>
     </ClInclude>
@@ -215,6 +215,8 @@
     <ClInclude Include="Content\Systems\RegistrationSystem.h">
       <Filter>Content\Systems\Registration</Filter>
     </ClInclude>
+    <ClInclude Include="Content\Systems\ImagingSystem.h" />
+    <ClInclude Include="HoloInterventionCore.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\LockScreenLogo.scale-200.png">
@@ -517,6 +519,9 @@
     </Filter>
     <Filter Include="Content\Systems\Registration">
       <UniqueIdentifier>{3abd7a54-f6ea-4c27-93d4-194aca8505bd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Systems\Imaging">
+      <UniqueIdentifier>{4a1cdeda-e9eb-485e-8933-79c8c9ef49b4}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

@@ -39,17 +39,17 @@ namespace HoloIntervention
       ToolSystem();
       ~ToolSystem();
 
-      uint64 RegisterTool( const std::wstring& modelName, UWPOpenIGTLink::TransformName^ coordinateFrame );
-      void UnregisterTool( uint64 toolToken );
+      uint64 RegisterTool(const std::wstring& modelName, UWPOpenIGTLink::TransformName^ coordinateFrame);
+      void UnregisterTool(uint64 toolToken);
       void ClearTools();
 
-      void Update( const DX::StepTimer& timer, UWPOpenIGTLink::TrackedFrame^ frame );
+      void Update(UWPOpenIGTLink::TrackedFrame^ frame, const DX::StepTimer& timer);
 
       // IVoiceInput functions
-      virtual void RegisterVoiceCallbacks( HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap, void* userArg );
+      virtual void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap);
 
     protected:
-      concurrency::task<void> InitAsync( Windows::Data::Xml::Dom::XmlDocument^ document );
+      concurrency::task<void> InitAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
 
     protected:
       std::vector<std::shared_ptr<Tools::ToolEntry>>   m_toolEntries;

@@ -51,6 +51,7 @@ namespace HoloIntervention
     class RegistrationSystem;
     class SpatialSystem;
     class ToolSystem;
+    class ImagingSystem;
   }
 
   namespace Input
@@ -78,11 +79,11 @@ namespace HoloIntervention
   }
 
   // Updates, renders, and presents holographic content using Direct3D.
-  class HoloInterventionMain : public DX::IDeviceNotify
+  class HoloInterventionCore : public DX::IDeviceNotify
   {
   public:
-    HoloInterventionMain(const std::shared_ptr<DX::DeviceResources>& deviceResources);
-    ~HoloInterventionMain();
+    HoloInterventionCore(const std::shared_ptr<DX::DeviceResources>& deviceResources);
+    ~HoloInterventionCore();
 
     // Sets the holographic space. This is our closest analogue to setting a new window
     // for the app.
@@ -102,10 +103,12 @@ namespace HoloIntervention
     uint64 GetCurrentFrameNumber() const;
 
     // Provide access to the logic systems
-    System::NotificationSystem& GetNotificationsSystem();
-    System::SpatialSystem& GetSpatialSystem();
     System::GazeSystem& GetGazeSystem();
+    System::ImagingSystem& GetImagingSystem();
+    System::NotificationSystem& GetNotificationsSystem();
     System::RegistrationSystem& GetRegistrationSystem();
+    System::SpatialSystem& GetSpatialSystem();
+    System::ToolSystem& GetToolSystem();
 
     // Provide access to the sound manager
     Sound::SoundManager& GetSoundManager();
@@ -137,17 +140,14 @@ namespace HoloIntervention
     // Check for any voice input commands
     void InitializeVoiceSystem();
 
-    // Callback when a frame is received by the system over IGTlink
-    void TrackedFrameCallback(UWPOpenIGTLink::TrackedFrame^ frame);
+    // Set the focus point depending on the state of all the systems
+    void SetHolographicFocusPoint(HolographicFramePrediction^ prediction, HolographicFrame^ holographicFrame, SpatialCoordinateSystem^ currentCoordinateSystem);
 
   protected:
     // Renderers
     std::unique_ptr<Rendering::ModelRenderer>             m_modelRenderer;
     std::unique_ptr<Rendering::SliceRenderer>             m_sliceRenderer;
     std::unique_ptr<Rendering::SpatialMeshRenderer>       m_meshRenderer;
-
-    // Tokens
-    uint32                                                m_sliceToken;
 
     // Event handlers
     std::unique_ptr<Input::SpatialInputHandler>           m_spatialInputHandler;
@@ -188,6 +188,7 @@ namespace HoloIntervention
     std::unique_ptr<System::ToolSystem>                   m_toolSystem;
     std::unique_ptr<System::NotificationSystem>           m_notificationSystem;
     std::unique_ptr<System::RegistrationSystem>           m_registrationSystem;
+    std::unique_ptr<System::ImagingSystem>                m_imagingSystem;
 
     // Sound assets
     std::unique_ptr<Sound::SoundManager>                  m_soundManager;

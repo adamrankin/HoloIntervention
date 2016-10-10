@@ -61,8 +61,6 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     task<bool> IGTLinkIF::ConnectAsync(double timeoutSec, task_options& options)
     {
-      Disconnect();
-
       m_connectionState = CONNECTION_STATE_CONNECTING;
 
       std::lock_guard<std::mutex> guard(m_clientMutex);
@@ -80,11 +78,6 @@ namespace HoloIntervention
     void IGTLinkIF::Disconnect()
     {
       m_connectionState = CONNECTION_STATE_DISCONNECTED;
-      if (m_keepAliveTask != nullptr)
-      {
-        m_tokenSource.cancel();
-        m_keepAliveTask = nullptr;
-      }
       std::lock_guard<std::mutex> guard(m_clientMutex);
       m_igtClient->Disconnect();
     }
@@ -118,34 +111,38 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     bool IGTLinkIF::GetLatestTrackedFrame(UWPOpenIGTLink::TrackedFrame^& frame, double* latestTimestamp)
     {
-      auto latestFrame = m_igtClient->GetLatestTrackedFrame(latestTimestamp);
+      double ts = latestTimestamp == nullptr ? 0.0 : *latestTimestamp;
+      auto latestFrame = m_igtClient->GetLatestTrackedFrame(ts);
       if (latestFrame == nullptr)
       {
         return false;
       }
       frame = latestFrame;
+      *latestTimestamp = frame->Timestamp;
       return true;
     }
 
     //----------------------------------------------------------------------------
     bool IGTLinkIF::GetLatestCommand(UWPOpenIGTLink::Command^& cmd, double* latestTimestamp)
     {
-      auto latestCommand =  m_igtClient->GetLatestCommand(latestTimestamp);
+      double ts = latestTimestamp == nullptr ? 0.0 : *latestTimestamp;
+      auto latestCommand =  m_igtClient->GetLatestCommand(ts);
       if (latestCommand == nullptr)
       {
         return false;
       }
       cmd = latestCommand;
+      *latestTimestamp = cmd->Timestamp;
       return true;
     }
 
     //----------------------------------------------------------------------------
-    void IGTLinkIF::RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap, void* userArg)
+    void IGTLinkIF::RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap)
     {
       callbackMap[L"connect"] = [this](SpeechRecognitionResult ^ result)
       {
         HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Connecting...");
-        this->ConnectAsync(4.0).then([this](bool result)
+        ConnectAsync(4.0).then([this](bool result)
         {
           if (result)
           {
@@ -165,7 +162,13 @@ namespace HoloIntervention
 
       callbackMap[L"disconnect"] = [this](SpeechRecognitionResult ^ result)
       {
-        this->Disconnect();
+        if (m_keepAliveTask != nullptr)
+        {
+          m_keepAliveTokenSource.cancel();
+          m_keepAliveTask = nullptr;
+        }
+
+        Disconnect();
         HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Disconnected.");
       };
     }
@@ -179,24 +182,26 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     task<void> IGTLinkIF::KeepAliveAsync()
     {
-      m_tokenSource = cancellation_token_source();
-      auto token = m_tokenSource.get_token();
+      m_keepAliveTokenSource = cancellation_token_source();
+      auto token = m_keepAliveTokenSource.get_token();
       return create_task([this, token]()
       {
         while (!token.is_canceled())
         {
-          if (m_connectionState == CONNECTION_STATE_CONNECTING)
+          if (m_connectionState == CONNECTION_STATE_CONNECTED)
           {
             // send keep alive message
-            std::lock_guard<std::mutex> guard(m_clientMutex);
+
             igtl::StatusMessage::Pointer statusMsg = igtl::StatusMessage::New();
             statusMsg->SetCode(igtl::StatusMessage::STATUS_OK);
             statusMsg->Pack();
             bool result(false);
-            RETRY_UNTIL_TRUE(result = m_igtClient->SendMessage((UWPOpenIGTLink::MessageBasePointerPtr)&statusMsg), 10, 25);
+            {
+              std::lock_guard<std::mutex> guard(m_clientMutex);
+              RETRY_UNTIL_TRUE(result = m_igtClient->SendMessage((UWPOpenIGTLink::MessageBasePointerPtr)&statusMsg), 10, 25);
+            }
             if (!result)
             {
-              m_tokenSource.cancel();
               m_connectionState = CONNECTION_STATE_CONNECTION_LOST;
               m_igtClient->Disconnect();
               if (m_reconnectOnDrop)
@@ -216,14 +221,35 @@ namespace HoloIntervention
                     }
                   }, task_continuation_context::use_arbitrary());
 
-                  connectTask.wait();
+                  try
+                  {
+                    connectTask.wait();
+                  }
+                  catch (const std::exception& e)
+                  {
+                    OutputDebugStringA(e.what());
+                  }
+                  catch (Platform::Exception^ e)
+                  {
+                    OutputDebugStringW(e->Message->Data());
+                  }
                 }
 
                 if (m_connectionState != CONNECTION_STATE_CONNECTED)
                 {
+                  m_keepAliveTokenSource.cancel();
+                  m_keepAliveTask = nullptr;
                   HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Connection lost. Check server.");
                   return;
                 }
+              }
+              else
+              {
+                // Don't reconnect on drop
+                m_keepAliveTokenSource.cancel();
+                m_keepAliveTask = nullptr;
+                HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Connection lost. Check server.");
+                return;
               }
             }
           }

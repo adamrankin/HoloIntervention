@@ -236,7 +236,7 @@ namespace HoloIntervention
       std::mutex potentialHitsMutex;
       GuidMeshMap potentialHits;
       int size = m_meshCollection.size();
-      Concurrency::parallel_for_each(m_meshCollection.begin(), m_meshCollection.end(), [ =, &potentialHits, &potentialHitsMutex ](auto pair)
+      parallel_for_each(m_meshCollection.begin(), m_meshCollection.end(), [ =, &potentialHits, &potentialHitsMutex ](auto pair)
       {
         auto mesh = pair.second;
         if (mesh->TestRayOBBIntersection(desiredCoordinateSystem, currentFrame, rayOrigin, rayDirection))
@@ -257,36 +257,60 @@ namespace HoloIntervention
         m_deviceResources->GetD3DDeviceContext()->UpdateSubresource(m_constantBuffer.Get(), 0, nullptr, &buffer, 0, 0);
         m_deviceResources->GetD3DDeviceContext()->CSSetConstantBuffers(1, 1, m_constantBuffer.GetAddressOf());
 
-        std::vector<hitResult> results;
-        for (auto& pair : potentialHits)
+        // Before checking the list of candidates, check the last hit mesh, as we most likely have temporal locality
+        if (potentialHits.find(m_lastHitMeshGuid) != potentialHits.end())
         {
-          hitResult result(pair.second, pair.first);
-          if (pair.second->TestRayIntersection(*m_deviceResources->GetD3DDeviceContext(), currentFrame, result.hitPosition, result.hitNormal, result.hitEdge))
+          hitResult hitRes(m_lastHitMesh, m_lastHitMeshGuid);
+          if (m_lastHitMesh->TestRayIntersection(*m_deviceResources->GetD3DDeviceContext(), currentFrame, hitRes.hitPosition, hitRes.hitNormal, hitRes.hitEdge))
           {
-            results.push_back(result);
+            outHitPosition = hitRes.hitPosition;
+            outHitNormal = hitRes.hitNormal;
+            outHitEdge = hitRes.hitEdge;
+            result = true;
+          }
+          else
+          {
+            potentialHits.erase(m_lastHitMeshGuid);
+            m_lastHitMesh = nullptr;
+            m_lastHitMeshGuid = Platform::Guid(0, 0, 0, nullptr);
           }
         }
 
-        if (results.size() > 0)
+        // Our optimization failed, check all potential hits
+        if (!result)
         {
-          int i = 0;
-          int closestIndex = 0;
-          float3 closestPosition = results[0].hitPosition;
-          for (auto& hitResult : results)
+          std::vector<hitResult> results;
+          for (auto& pair : potentialHits)
           {
-            if (magnitude(hitResult.hitPosition) < magnitude(closestPosition))
+            hitResult hitRes(pair.second, pair.first);
+            if (pair.second->TestRayIntersection(*m_deviceResources->GetD3DDeviceContext(), currentFrame, hitRes.hitPosition, hitRes.hitNormal, hitRes.hitEdge))
             {
-              closestIndex = i;
-              closestPosition = hitResult.hitPosition;
+              results.push_back(hitRes);
             }
-            ++i;
           }
-          outHitPosition = results[closestIndex].hitPosition;
-          outHitNormal = results[closestIndex].hitNormal;
-          outHitEdge = results[closestIndex].hitEdge;
-          m_lastHitMesh = results[closestIndex].hitMesh;
-          m_lastHitMeshGuid = results[closestIndex].hitGuid;
-          result = true;
+
+          // find the closest hit, and submit that as our accepted hit
+          if (results.size() > 0)
+          {
+            int i = 0;
+            int closestIndex = 0;
+            float3 closestPosition = results[0].hitPosition;
+            for (auto& hitResult : results)
+            {
+              if (magnitude(hitResult.hitPosition) < magnitude(closestPosition))
+              {
+                closestIndex = i;
+                closestPosition = hitResult.hitPosition;
+              }
+              ++i;
+            }
+            outHitPosition = results[closestIndex].hitPosition;
+            outHitNormal = results[closestIndex].hitNormal;
+            outHitEdge = results[closestIndex].hitEdge;
+            m_lastHitMesh = results[closestIndex].hitMesh;
+            m_lastHitMeshGuid = results[closestIndex].hitGuid;
+            result = true;
+          }
         }
 
         ID3D11Buffer* ppCBnullptr[1] = { nullptr };

@@ -206,7 +206,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void RegistrationSystem::RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap, void* userArg)
+    void RegistrationSystem::RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap)
     {
       callbackMap[L"start collecting points"] = [this](SpeechRecognitionResult ^ result)
       {

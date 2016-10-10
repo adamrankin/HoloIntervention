@@ -60,13 +60,13 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void NotificationSystem::QueueMessage( const std::string& message, double duration )
     {
-      this->QueueMessage( std::wstring( message.begin(), message.end() ), duration );
+      QueueMessage( std::wstring( message.begin(), message.end() ), duration );
     }
 
     //----------------------------------------------------------------------------
     void NotificationSystem::QueueMessage( Platform::String^ message, double duration )
     {
-      this->QueueMessage( std::wstring( message->Data() ), duration );
+      QueueMessage( std::wstring( message->Data() ), duration );
     }
 
     //----------------------------------------------------------------------------
@@ -302,7 +302,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void NotificationSystem::RegisterVoiceCallbacks( HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap, void* userArg )
+    void NotificationSystem::RegisterVoiceCallbacks( HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap)
     {
 
     }

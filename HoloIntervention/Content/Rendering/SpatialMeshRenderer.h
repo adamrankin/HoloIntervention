@@ -66,7 +66,7 @@ namespace HoloIntervention
       void Reset();
 
       // IVoiceInput functions
-      virtual void RegisterVoiceCallbacks( HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap, void* userArg );
+      virtual void RegisterVoiceCallbacks( HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap);
 
     protected:
       void InitObserver( SpatialCoordinateSystem^ coordinateSystem );

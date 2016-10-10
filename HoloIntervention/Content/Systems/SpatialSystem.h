@@ -56,48 +56,48 @@ namespace HoloIntervention
     class SpatialSystem : public Sound::IVoiceInput
     {
     public:
-      SpatialSystem( const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer );
+      SpatialSystem(const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer);
       ~SpatialSystem();
 
-      void Update( SpatialCoordinateSystem^ coordinateSystem );
+      void Update(SpatialCoordinateSystem^ coordinateSystem);
 
       void CreateDeviceDependentResources();
       void ReleaseDeviceDependentResources();
 
       // Handle surface change events.
-      void OnSurfacesChanged( SpatialSurfaceObserver^ sender, Platform::Object^ args );
+      void OnSurfacesChanged(SpatialSurfaceObserver^ sender, Platform::Object^ args);
 
       // Positions the Spatial Mapping surface observer at the origin of the given coordinate system.
-      void UpdateSurfaceObserverPosition( SpatialCoordinateSystem^ coordinateSystem );
+      void UpdateSurfaceObserverPosition(SpatialCoordinateSystem^ coordinateSystem);
 
       // Perform a ray cast to determine if the ray hits any stored mesh
-      bool TestRayIntersection( SpatialCoordinateSystem^ desiredCoordinateSystem,
-                                const float3 rayOrigin,
-                                const float3 rayDirection,
-                                float3& outHitPosition,
-                                float3& outHitNormal,
-                                float3& outHitEdge );
+      bool TestRayIntersection(SpatialCoordinateSystem^ desiredCoordinateSystem,
+                               const float3 rayOrigin,
+                               const float3 rayDirection,
+                               float3& outHitPosition,
+                               float3& outHitNormal,
+                               float3& outHitEdge);
       bool GetLastHitPosition(_Out_ float3& position, _In_ bool considerOldHits = false);
       bool GetLastHitNormal(_Out_ float3& normal, _In_ bool considerOldHits = false);
       std::shared_ptr<Spatial::SurfaceMesh> GetLastHitMesh();
 
       // Initializes the Spatial Mapping surface observer.
-      void InitializeSurfaceObserver( SpatialCoordinateSystem^ coordinateSystem );
+      void InitializeSurfaceObserver(SpatialCoordinateSystem^ coordinateSystem);
 
       // Handle saving and loading of app state owned by AppMain.
       task<void> SaveAppStateAsync();
       task<void> LoadAppStateAsync();
 
-      bool DropAnchorAtIntersectionHit( Platform::String^ anchorName, SpatialCoordinateSystem^ coordinateSystem, SpatialPointerPose^ headPose );
-      size_t RemoveAnchor( Platform::String^ anchorName );
-      SpatialAnchor^ GetAnchor( Platform::String^ anchorName );
-      bool HasAnchor( Platform::String^ anchorName );
+      bool DropAnchorAtIntersectionHit(Platform::String^ anchorName, SpatialCoordinateSystem^ coordinateSystem, SpatialPointerPose^ headPose);
+      size_t RemoveAnchor(Platform::String^ anchorName);
+      SpatialAnchor^ GetAnchor(Platform::String^ anchorName);
+      bool HasAnchor(Platform::String^ anchorName);
 
       // IVoiceInput functions
-      virtual void RegisterVoiceCallbacks( HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap, void* userArg );
+      virtual void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap);
 
     protected:
-      void OnRawCoordinateSystemAdjusted( SpatialAnchor^ sender, SpatialAnchorRawCoordinateSystemAdjustedEventArgs^ args );
+      void OnRawCoordinateSystemAdjusted(SpatialAnchor^ sender, SpatialAnchorRawCoordinateSystemAdjustedEventArgs^ args);
 
     protected:
       // Event registration tokens.

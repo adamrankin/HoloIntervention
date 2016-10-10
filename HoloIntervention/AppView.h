@@ -25,21 +25,18 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "DeviceResources.h"
-#include "HoloInterventionMain.h"
+#include "HoloInterventionCore.h"
 
 namespace HoloIntervention
 {
-  namespace Notifications
-  {
-    class NotificationSystem;
-  }
-  namespace Spatial
-  {
-    class SpatialSystem;
-  }
-  namespace Gaze
+  namespace System
   {
     class GazeSystem;
+    class ImagingSystem;
+    class NotificationSystem;
+    class RegistrationSystem;
+    class SpatialSystem;
+    class ToolSystem;
   }
 
   // IFrameworkView class. Connects the app with the Windows shell and handles application lifecycle events.
@@ -49,9 +46,9 @@ namespace HoloIntervention
     AppView();
 
     // IFrameworkView methods.
-    virtual void Initialize( Windows::ApplicationModel::Core::CoreApplicationView ^ applicationView );
-    virtual void SetWindow( Windows::UI::Core::CoreWindow ^ window );
-    virtual void Load( Platform::String ^ entryPoint );
+    virtual void Initialize(Windows::ApplicationModel::Core::CoreApplicationView ^ applicationView);
+    virtual void SetWindow(Windows::UI::Core::CoreWindow ^ window);
+    virtual void Load(Platform::String ^ entryPoint);
     virtual void Run();
     virtual void Uninitialize();
 
@@ -61,12 +58,14 @@ namespace HoloIntervention
     System::SpatialSystem & GetSpatialSystem();
     System::GazeSystem & GetGazeSystem();
     System::RegistrationSystem & GetRegistrationSystem();
+    System::ToolSystem & GetToolSystem();
+    System::ImagingSystem & GetImagingSystem();
 
     // Provide app wide access to the sound manager
     Sound::SoundManager & GetSoundManager();
 
     // Provide access to the network link
-    Network::IGTLinkIF& GetIGTLink();
+    Network::IGTLinkIF & GetIGTLink();
 
     // Provide app wide access to the renderers
     Rendering::ModelRenderer & GetModelRenderer();
@@ -77,19 +76,19 @@ namespace HoloIntervention
 
   protected:
     // Application lifecycle event handlers.
-    void OnViewActivated( Windows::ApplicationModel::Core::CoreApplicationView ^ sender, Windows::ApplicationModel::Activation::IActivatedEventArgs ^ args );
-    void OnSuspending( Platform::Object ^ sender, Windows::ApplicationModel::SuspendingEventArgs ^ args );
-    void OnResuming( Platform::Object ^ sender, Platform::Object ^ args );
+    void OnViewActivated(Windows::ApplicationModel::Core::CoreApplicationView ^ sender, Windows::ApplicationModel::Activation::IActivatedEventArgs ^ args);
+    void OnSuspending(Platform::Object ^ sender, Windows::ApplicationModel::SuspendingEventArgs ^ args);
+    void OnResuming(Platform::Object ^ sender, Platform::Object ^ args);
 
     // Window event handlers.
-    void OnVisibilityChanged( Windows::UI::Core::CoreWindow ^ sender, Windows::UI::Core::VisibilityChangedEventArgs ^ args );
-    void OnWindowClosed( Windows::UI::Core::CoreWindow ^ sender, Windows::UI::Core::CoreWindowEventArgs ^ args );
+    void OnVisibilityChanged(Windows::UI::Core::CoreWindow ^ sender, Windows::UI::Core::VisibilityChangedEventArgs ^ args);
+    void OnWindowClosed(Windows::UI::Core::CoreWindow ^ sender, Windows::UI::Core::CoreWindowEventArgs ^ args);
 
     // CoreWindow input event handlers.
-    void OnKeyPressed( Windows::UI::Core::CoreWindow ^ sender, Windows::UI::Core::KeyEventArgs ^ args );
+    void OnKeyPressed(Windows::UI::Core::CoreWindow ^ sender, Windows::UI::Core::KeyEventArgs ^ args);
 
   private:
-    std::unique_ptr<HoloInterventionMain> m_main;
+    std::unique_ptr<HoloInterventionCore> m_main;
 
     std::shared_ptr<DX::DeviceResources> m_deviceResources;
     bool m_windowClosed  = false;
