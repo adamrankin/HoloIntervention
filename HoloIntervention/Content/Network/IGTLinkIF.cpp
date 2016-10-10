@@ -45,6 +45,8 @@ namespace HoloIntervention
   namespace Network
   {
     const double IGTLinkIF::CONNECT_TIMEOUT_SEC = 3.0;
+    const uint32_t IGTLinkIF::RECONNECT_RETRY_DELAY_MSEC = 100;
+    const uint32_t IGTLinkIF::RECONNECT_RETRY_COUNT = 10;
 
     //----------------------------------------------------------------------------
     IGTLinkIF::IGTLinkIF()
@@ -59,12 +61,16 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     concurrency::task<bool> IGTLinkIF::ConnectAsync(double timeoutSec)
     {
+      Disconnect();
+
+      m_connectionState = CONNECTION_STATE_CONNECTING;
+
       std::lock_guard<std::mutex> guard(m_clientMutex);
       auto connectTask = create_task(m_igtClient->ConnectAsync(timeoutSec));
 
       connectTask.then([this](bool result)
       {
-        m_connected = result;
+        m_connectionState = CONNECTION_STATE_CONNECTED;
       });
 
       return connectTask;
@@ -73,7 +79,12 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void IGTLinkIF::Disconnect()
     {
-      m_connected = false;
+      m_connectionState = CONNECTION_STATE_DISCONNECTED;
+      if (m_keepAliveTask != nullptr)
+      {
+        m_tokenSource.cancel();
+        m_keepAliveTask = nullptr;
+      }
       std::lock_guard<std::mutex> guard(m_clientMutex);
       m_igtClient->Disconnect();
     }
@@ -81,7 +92,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     bool IGTLinkIF::IsConnected()
     {
-      return m_connected;
+      return m_connectionState == CONNECTION_STATE_CONNECTED;
     }
 
     //----------------------------------------------------------------------------
@@ -105,13 +116,13 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool IGTLinkIF::GetLatestTrackedFrame(UWPOpenIGTLink::TrackedFrame^ frame, double* latestTimestamp)
+    bool IGTLinkIF::GetLatestTrackedFrame(UWPOpenIGTLink::TrackedFrame^& frame, double* latestTimestamp)
     {
       return m_igtClient->GetLatestTrackedFrame(frame, latestTimestamp);
     }
 
     //----------------------------------------------------------------------------
-    bool IGTLinkIF::GetLatestCommand(UWPOpenIGTLink::Command^ cmd, double* latestTimestamp)
+    bool IGTLinkIF::GetLatestCommand(UWPOpenIGTLink::Command^& cmd, double* latestTimestamp)
     {
       return m_igtClient->GetLatestCommand(cmd, latestTimestamp);
     }
@@ -136,28 +147,14 @@ namespace HoloIntervention
           if (result)
           {
             m_keepAliveTask = &KeepAliveAsync();
-            try
-            {
-              m_keepAliveTask->wait();
-            }
-            catch (const std::exception& e)
-            {
-              OutputDebugStringA(e.what());
-              m_keepAliveTask = nullptr;
-            }
-            catch (Platform::Exception^ e)
-            {
-              OutputDebugStringW(e->Message->Data());
-              m_keepAliveTask = nullptr;
-            }
           }
-        });
+        }, concurrency::task_continuation_context::use_arbitrary());
       };
 
       callbackMap[L"disconnect"] = [this](SpeechRecognitionResult ^ result)
       {
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Disconnected.");
         this->Disconnect();
+        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Disconnected.");
       };
     }
 
@@ -168,7 +165,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    Concurrency::task<void> IGTLinkIF::KeepAliveAsync()
+    task<void> IGTLinkIF::KeepAliveAsync()
     {
       m_tokenSource = cancellation_token_source();
       auto token = m_tokenSource.get_token();
@@ -176,7 +173,7 @@ namespace HoloIntervention
       {
         while (!token.is_canceled())
         {
-          if (m_connected)
+          if (m_connectionState == CONNECTION_STATE_CONNECTING)
           {
             // send keep alive message
             std::lock_guard<std::mutex> guard(m_clientMutex);
@@ -188,20 +185,43 @@ namespace HoloIntervention
             if (!result)
             {
               m_tokenSource.cancel();
-              m_connected = false;
+              m_connectionState = CONNECTION_STATE_CONNECTION_LOST;
               m_igtClient->Disconnect();
               if (m_reconnectOnDrop)
               {
+                uint32_t retryCount(0);
+                while (m_connectionState != CONNECTION_STATE_CONNECTED && retryCount < RECONNECT_RETRY_COUNT)
+                {
+                  // Either it's up and running and it can connect right away, or it's down and will never connect
+                  auto connectTask = create_task(ConnectAsync(0.1), concurrency::task_continuation_context::use_arbitrary()).then([this, &retryCount](task<bool> previousTask)
+                  {
+                    bool result = previousTask.get();
 
+                    if (!result)
+                    {
+                      std::this_thread::sleep_for(std::chrono::milliseconds(RECONNECT_RETRY_DELAY_MSEC));
+                      retryCount++;
+                    }
+                  }, concurrency::task_continuation_context::use_arbitrary());
+
+                  connectTask.wait();
+                }
+
+                if (m_connectionState != CONNECTION_STATE_CONNECTED)
+                {
+                  HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Connection lost. Check server.");
+                  return;
+                }
               }
             }
           }
           else
           {
             OutputDebugStringA("Keep alive running unconnected but token not canceled.");
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
           }
         }
-      }, m_tokenSource.get_token());
+      }, concurrency::task_options(token, concurrency::task_continuation_context::use_arbitrary()));
     }
   }
 }

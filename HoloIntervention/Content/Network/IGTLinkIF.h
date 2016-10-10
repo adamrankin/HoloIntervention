@@ -42,6 +42,15 @@ namespace HoloIntervention
 {
   namespace Network
   {
+    enum ConnectionState
+    {
+      CONNECTION_STATE_UNKNOWN,
+      CONNECTION_STATE_CONNECTING,
+      CONNECTION_STATE_CONNECTION_LOST,
+      CONNECTION_STATE_DISCONNECTED,
+      CONNECTION_STATE_CONNECTED
+    };
+
     class IGTLinkIF : public Sound::IVoiceInput
     {
     public:
@@ -68,10 +77,10 @@ namespace HoloIntervention
       void SetPort(int32 port);
 
       /// Retrieve the latest tracked frame
-      bool GetLatestTrackedFrame(UWPOpenIGTLink::TrackedFrame^ frame, double* latestTimestamp);
+      bool GetLatestTrackedFrame(UWPOpenIGTLink::TrackedFrame^& frame, double* latestTimestamp);
 
       /// Retrieve the latest command
-      bool GetLatestCommand(UWPOpenIGTLink::Command^ cmd, double* latestTimestamp);
+      bool GetLatestCommand(UWPOpenIGTLink::Command^& cmd, double* latestTimestamp);
 
       /// IVoiceInput functions
       void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap, void* userArg);
@@ -85,7 +94,7 @@ namespace HoloIntervention
 
     protected:
       UWPOpenIGTLink::IGTLinkClient^            m_igtClient = ref new UWPOpenIGTLink::IGTLinkClient();
-      bool                                      m_connected = false;
+      ConnectionState                           m_connectionState = CONNECTION_STATE_UNKNOWN;
       std::mutex                                m_clientMutex;
       task<void>*                               m_keepAliveTask = nullptr;
       concurrency::cancellation_token_source    m_tokenSource;
@@ -93,6 +102,8 @@ namespace HoloIntervention
 
       // Constants relating to IGT behavior
       static const double                       CONNECT_TIMEOUT_SEC;
+      static const uint32_t                     RECONNECT_RETRY_DELAY_MSEC;
+      static const uint32_t                     RECONNECT_RETRY_COUNT;
     };
   }
 }
