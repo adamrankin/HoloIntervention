@@ -59,14 +59,14 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    concurrency::task<bool> IGTLinkIF::ConnectAsync(double timeoutSec)
+    task<bool> IGTLinkIF::ConnectAsync(double timeoutSec, task_options& options)
     {
       Disconnect();
 
       m_connectionState = CONNECTION_STATE_CONNECTING;
 
       std::lock_guard<std::mutex> guard(m_clientMutex);
-      auto connectTask = create_task(m_igtClient->ConnectAsync(timeoutSec));
+      auto connectTask = create_task(m_igtClient->ConnectAsync(timeoutSec), options);
 
       connectTask.then([this](bool result)
       {
@@ -118,13 +118,25 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     bool IGTLinkIF::GetLatestTrackedFrame(UWPOpenIGTLink::TrackedFrame^& frame, double* latestTimestamp)
     {
-      return m_igtClient->GetLatestTrackedFrame(frame, latestTimestamp);
+      auto latestFrame = m_igtClient->GetLatestTrackedFrame(latestTimestamp);
+      if (latestFrame == nullptr)
+      {
+        return false;
+      }
+      frame = latestFrame;
+      return true;
     }
 
     //----------------------------------------------------------------------------
     bool IGTLinkIF::GetLatestCommand(UWPOpenIGTLink::Command^& cmd, double* latestTimestamp)
     {
-      return m_igtClient->GetLatestCommand(cmd, latestTimestamp);
+      auto latestCommand =  m_igtClient->GetLatestCommand(latestTimestamp);
+      if (latestCommand == nullptr)
+      {
+        return false;
+      }
+      cmd = latestCommand;
+      return true;
     }
 
     //----------------------------------------------------------------------------
@@ -193,7 +205,7 @@ namespace HoloIntervention
                 while (m_connectionState != CONNECTION_STATE_CONNECTED && retryCount < RECONNECT_RETRY_COUNT)
                 {
                   // Either it's up and running and it can connect right away, or it's down and will never connect
-                  auto connectTask = create_task(ConnectAsync(0.1), concurrency::task_continuation_context::use_arbitrary()).then([this, &retryCount](task<bool> previousTask)
+                  auto connectTask = ConnectAsync(0.1, task_options(task_continuation_context::use_arbitrary())).then([this, &retryCount](task<bool> previousTask)
                   {
                     bool result = previousTask.get();
 
@@ -202,7 +214,7 @@ namespace HoloIntervention
                       std::this_thread::sleep_for(std::chrono::milliseconds(RECONNECT_RETRY_DELAY_MSEC));
                       retryCount++;
                     }
-                  }, concurrency::task_continuation_context::use_arbitrary());
+                  }, task_continuation_context::use_arbitrary());
 
                   connectTask.wait();
                 }
@@ -221,7 +233,7 @@ namespace HoloIntervention
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
           }
         }
-      }, concurrency::task_options(token, concurrency::task_continuation_context::use_arbitrary()));
+      }, task_options(token, task_continuation_context::use_arbitrary()));
     }
   }
 }

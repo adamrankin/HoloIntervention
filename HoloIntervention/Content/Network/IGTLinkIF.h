@@ -59,7 +59,7 @@ namespace HoloIntervention
 
       /// Connect to the server specified by SetHostname() and SetPort()
       /// If connected to a server, disconnects first.
-      concurrency::task<bool> ConnectAsync(double timeoutSec = CONNECT_TIMEOUT_SEC);
+      concurrency::task<bool> ConnectAsync(double timeoutSec = CONNECT_TIMEOUT_SEC, concurrency::task_options& options = concurrency::task_options());
 
       /// Disconnect from the server
       void Disconnect();
