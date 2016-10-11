@@ -47,40 +47,41 @@ namespace HoloIntervention
       XMFLOAT4 rayOrigin;
       XMFLOAT4 rayDirection;
     };
-    static_assert( ( sizeof( RayConstantBuffer ) % ( sizeof( float ) * 4 ) ) == 0, "Ray constant buffer size must be 16-byte aligned (16 bytes is the length of four floats)." );
+    static_assert((sizeof(RayConstantBuffer) % (sizeof(float) * 4)) == 0, "Ray constant buffer size must be 16-byte aligned (16 bytes is the length of four floats).");
 
     class SpatialSurfaceCollection
     {
       typedef std::map<Platform::Guid, std::shared_ptr<SurfaceMesh> > GuidMeshMap;
 
     public:
-      SpatialSurfaceCollection( const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer );
+      SpatialSurfaceCollection(const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer);
       ~SpatialSurfaceCollection();
 
-      void Update( SpatialCoordinateSystem^ coordinateSystem );
+      void Update(SpatialCoordinateSystem^ coordinateSystem);
 
       void CreateDeviceDependentResources();
       void ReleaseDeviceDependentResources();
 
-      bool HasSurface( Platform::Guid id );
-      task<void> AddOrUpdateSurfaceAsync( Platform::Guid id, SpatialSurfaceInfo^ newSurface, SpatialSurfaceMeshOptions^ meshOptions );
-      void RemoveSurface( Platform::Guid id );
+      bool HasSurface(Platform::Guid id);
+      task<void> AddOrUpdateSurfaceAsync(Platform::Guid id, SpatialSurfaceInfo^ newSurface, SpatialSurfaceMeshOptions^ meshOptions);
+      void RemoveSurface(Platform::Guid id);
       void ClearSurfaces();
 
-      bool TestRayIntersection( SpatialCoordinateSystem^ desiredCoordinateSystem,
-                                const float3 rayOrigin,
-                                const float3 rayDirection,
-                                float3& outHitPosition,
-                                float3& outHitNormal,
-                                float3& outHitEdge );
+      bool TestRayIntersection(SpatialCoordinateSystem^ desiredCoordinateSystem,
+                               const float3 rayOrigin,
+                               const float3 rayDirection,
+                               float3& outHitPosition,
+                               float3& outHitNormal,
+                               float3& outHitEdge);
 
-      Windows::Foundation::DateTime GetLastUpdateTime( Platform::Guid id );
+      Windows::Foundation::DateTime GetLastUpdateTime(Platform::Guid id);
 
-      void HideInactiveMeshes( Windows::Foundation::Collections::IMapView<Platform::Guid, SpatialSurfaceInfo^>^ const& surfaceCollection );
+      void HideInactiveMeshes(Windows::Foundation::Collections::IMapView<Platform::Guid, SpatialSurfaceInfo^>^ const& surfaceCollection);
 
-      bool GetLastHitPosition( _Out_ float3& position, _In_ bool considerOldHits = false );
-      bool GetLastHitNormal( _Out_ float3& normal, _In_ bool considerOldHits = false );
+      bool GetLastHitPosition(_Out_ float3& position, _In_ bool considerOldHits = false);
+      bool GetLastHitNormal(_Out_ float3& normal, _In_ bool considerOldHits = false);
       std::shared_ptr<SurfaceMesh> GetLastHitMesh();
+      Platform::Guid GetLastHitMeshGuid();
 
     protected:
       // Cache the step timer for out of date queries

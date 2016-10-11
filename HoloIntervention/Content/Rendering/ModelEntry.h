@@ -53,10 +53,10 @@ namespace HoloIntervention
     class ModelEntry
     {
     public:
-      ModelEntry( const std::shared_ptr<DX::DeviceResources>& deviceResources, const std::wstring& assetLocation );
+      ModelEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, const std::wstring& assetLocation);
       ~ModelEntry();
 
-      void Update( const DX::StepTimer& timer, const DX::ViewProjection& vp );
+      void Update(const DX::StepTimer& timer, const DX::ViewProjection& vp);
       void Render();
 
       // D3D device related controls
@@ -64,24 +64,24 @@ namespace HoloIntervention
       void ReleaseDeviceDependentResources();
 
       // Model enable control
-      void SetVisible( bool enable );
+      void SetVisible(bool enable);
       void ToggleVisible();
       bool IsVisible() const;
 
       // Model pose control
-      void SetWorld( const float4x4& world );
+      void SetWorld(const float4x4& world);
 
       // Accessors
       uint64 GetId() const;
-      void SetId( uint64 id );
+      void SetId(uint64 id);
 
       // Alternate rendering options
       void RenderGreyscale();
       void RenderDefault();
 
     protected:
-      void DrawMesh( _In_ const DirectX::ModelMesh& mesh, _In_ bool alpha );
-      void DrawMeshPart( _In_ const DirectX::ModelMeshPart& part, _In_opt_ std::function<void __cdecl()> setCustomState = nullptr );
+      void DrawMesh(_In_ const DirectX::ModelMesh& mesh, _In_ bool alpha, _In_opt_ std::function<void __cdecl(std::shared_ptr<DirectX::IEffect>)> setCustomState = nullptr);
+      void DrawMeshPart(_In_ const DirectX::ModelMeshPart& part, _In_opt_ std::function<void __cdecl(std::shared_ptr<DirectX::IEffect>)> setCustomState = nullptr);
 
       // Update all effects used by the model
       void __cdecl UpdateEffects(_In_ std::function<void __cdecl(DirectX::IEffect*)> setEffect);
@@ -95,6 +95,7 @@ namespace HoloIntervention
       std::unique_ptr<DirectX::InstancedEffectFactory>    m_effectFactory = nullptr;
       std::shared_ptr<DirectX::Model>                     m_model = nullptr;
       std::wstring                                        m_assetLocation;
+      DirectX::XMFLOAT3                                   m_defaultColour;
 
       // Cached eye view projection to pass to IEffect system
       DX::ViewProjection                                  m_viewProjection;

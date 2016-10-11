@@ -80,6 +80,7 @@ namespace HoloIntervention
       bool GetLastHitPosition(_Out_ float3& position, _In_ bool considerOldHits = false);
       bool GetLastHitNormal(_Out_ float3& normal, _In_ bool considerOldHits = false);
       std::shared_ptr<Spatial::SurfaceMesh> GetLastHitMesh();
+      Platform::Guid GetLastHitMeshGuid();
 
       // Initializes the Spatial Mapping surface observer.
       void InitializeSurfaceObserver(SpatialCoordinateSystem^ coordinateSystem);

@@ -180,6 +180,12 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    Platform::Guid SpatialSystem::GetLastHitMeshGuid()
+    {
+      return m_surfaceCollection->GetLastHitMeshGuid();
+    }
+
+    //----------------------------------------------------------------------------
     void SpatialSystem::InitializeSurfaceObserver(SpatialCoordinateSystem^ coordinateSystem)
     {
       // If a SpatialSurfaceObserver exists, we need to unregister from event notifications before releasing it.

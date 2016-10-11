@@ -88,6 +88,15 @@ namespace HoloIntervention
           m_goalHitNormal = outHitNormal;
           m_goalHitPosition = outHitPosition;
           m_goalHitEdge = outHitEdge;
+          m_modelEntry->RenderDefault();
+        }
+        else
+        {
+          // Couldn't find a hit, throw the cursor where the gaze head vector is at 2m depth, and turn the model grey
+          m_goalHitPosition = headPose->Head->Position + (2.f * (headPose->Head->ForwardDirection));
+          m_goalHitNormal = -headPose->Head->ForwardDirection;
+          m_goalHitEdge = { 1.f, 0.f, 0.f }; // right relative to head pose
+          m_modelEntry->RenderGreyscale();
         }
       }
 

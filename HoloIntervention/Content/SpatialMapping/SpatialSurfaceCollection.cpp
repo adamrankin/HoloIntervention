@@ -230,6 +230,8 @@ namespace HoloIntervention
         return false;
       }
 
+      std::lock_guard<std::mutex> guard(m_meshCollectionLock);
+
       uint64 currentFrame = HoloIntervention::instance()->GetCurrentFrameNumber();
 
       // Perform CPU based pre-check using OBB
@@ -258,7 +260,7 @@ namespace HoloIntervention
         m_deviceResources->GetD3DDeviceContext()->CSSetConstantBuffers(1, 1, m_constantBuffer.GetAddressOf());
 
         // Before checking the list of candidates, check the last hit mesh, as we most likely have temporal locality
-        if (potentialHits.find(m_lastHitMeshGuid) != potentialHits.end())
+        if (m_lastHitMesh != nullptr && potentialHits.find(m_lastHitMeshGuid) != potentialHits.end())
         {
           hitResult hitRes(m_lastHitMesh, m_lastHitMeshGuid);
           if (m_lastHitMesh->TestRayIntersection(*m_deviceResources->GetD3DDeviceContext(), currentFrame, hitRes.hitPosition, hitRes.hitNormal, hitRes.hitEdge))
@@ -272,7 +274,6 @@ namespace HoloIntervention
           {
             potentialHits.erase(m_lastHitMeshGuid);
             m_lastHitMesh = nullptr;
-            m_lastHitMeshGuid = Platform::Guid(0, 0, 0, nullptr);
           }
         }
 
@@ -400,6 +401,12 @@ namespace HoloIntervention
     std::shared_ptr<HoloIntervention::Spatial::SurfaceMesh> SpatialSurfaceCollection::GetLastHitMesh()
     {
       return m_lastHitMesh;
+    }
+
+    //----------------------------------------------------------------------------
+    Platform::Guid SpatialSurfaceCollection::GetLastHitMeshGuid()
+    {
+      return m_lastHitMeshGuid;
     }
 
     //----------------------------------------------------------------------------

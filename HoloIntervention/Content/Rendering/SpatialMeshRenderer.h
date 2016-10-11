@@ -35,44 +35,44 @@ namespace HoloIntervention
   {
     class SpatialMeshRenderer : public Sound::IVoiceInput
     {
-      typedef std::map<Platform::Guid, SpatialMesh> MeshMap;
+      typedef std::map<Platform::Guid, SpatialMesh> GuidMeshMap;
 
     public:
-      SpatialMeshRenderer( const std::shared_ptr<DX::DeviceResources>& deviceResources );
+      SpatialMeshRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources);
 
-      void Update( DX::ViewProjection& vp, DX::StepTimer const& timer, SpatialCoordinateSystem^ coordinateSystem );
+      void Update(DX::ViewProjection& vp, DX::StepTimer const& timer, SpatialCoordinateSystem^ coordinateSystem);
       void Render();
 
       void SetEnabled(bool arg);
       bool GetEnabled() const;
 
-      bool HasSurface( Platform::Guid id );
-      void AddSurface( Platform::Guid id, Surfaces::SpatialSurfaceInfo^ newSurface );
-      void UpdateSurface( Platform::Guid id, Surfaces::SpatialSurfaceInfo^ newSurface );
-      void RemoveSurface( Platform::Guid id );
+      bool HasSurface(Platform::Guid id);
+      void AddSurface(Platform::Guid id, Surfaces::SpatialSurfaceInfo^ newSurface);
+      void UpdateSurface(Platform::Guid id, Surfaces::SpatialSurfaceInfo^ newSurface);
+      void RemoveSurface(Platform::Guid id);
       void ClearSurfaces();
 
-      Windows::Foundation::DateTime GetLastUpdateTime( Platform::Guid id );
+      Windows::Foundation::DateTime GetLastUpdateTime(Platform::Guid id);
 
-      void HideInactiveMeshes( IMapView<Platform::Guid, Surfaces::SpatialSurfaceInfo^>^ const& surfaceCollection );
+      void HideInactiveMeshes(IMapView<Platform::Guid, Surfaces::SpatialSurfaceInfo^>^ const& surfaceCollection);
 
       void CreateDeviceDependentResources();
       void ReleaseDeviceDependentResources();
 
-      void DebugDrawBoundingBox( int32_t index );
-      void DebugDrawBoundingBoxes( bool draw );
+      void DebugDrawBoundingBox(int32_t index);
+      void DebugDrawBoundingBoxes(bool draw);
       void DebugLoopThroughMeshes();
 
       void Reset();
 
       // IVoiceInput functions
-      virtual void RegisterVoiceCallbacks( HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap);
+      virtual void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap);
 
     protected:
-      void InitObserver( SpatialCoordinateSystem^ coordinateSystem );
-      void RequestAccessAsync( SpatialCoordinateSystem^ coordinateSystem );
-      Concurrency::task<void> AddOrUpdateSurfaceAsync( Platform::Guid id, Surfaces::SpatialSurfaceInfo^ newSurface );
-      void OnSurfacesChanged( Windows::Perception::Spatial::Surfaces::SpatialSurfaceObserver^ sender, Platform::Object^ args );
+      void InitObserver(SpatialCoordinateSystem^ coordinateSystem);
+      void RequestAccessAsync(SpatialCoordinateSystem^ coordinateSystem);
+      task<void> AddOrUpdateSurfaceAsync(Platform::Guid id, Surfaces::SpatialSurfaceInfo^ newSurface);
+      void OnSurfacesChanged(Surfaces::SpatialSurfaceObserver^ sender, Platform::Object^ args);
 
     protected:
       // Cached pointer to device resources.
@@ -89,16 +89,18 @@ namespace HoloIntervention
       bool                                            m_renderEnabled = false;
 
       // Looping related variables
-      bool                                            m_isLooping;
-      size_t                                          m_currentLoopIndex;
-      float                                           m_loopTimer;
+      bool                                            m_isLooping = false;
+      size_t                                          m_currentLoopIndex = 0;
+      float                                           m_loopTimer = 0.f;
+      bool                                            m_drawSingleMesh = false;
+      Platform::Guid                                  m_drawSingleMeshGuid;
 
       // Bounding box debug related variables
       bool                                            m_debugBoundingBox;
       int32_t                                         m_overrideDrawIndex = -1;
 
       // The set of surfaces in the collection.
-      MeshMap                                         m_meshCollection;
+      GuidMeshMap                                     m_meshCollection;
 
       // A way to lock map access.
       std::mutex                                      m_meshCollectionLock;
