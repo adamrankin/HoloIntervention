@@ -104,11 +104,14 @@
     <ClCompile Include="Content\Systems\Tool\ToolSystem.cpp">
       <Filter>Content\Systems\Tools</Filter>
     </ClCompile>
-    <ClCompile Include="Content\Systems\Registration\NetworkPCLRegistration.cpp">
-      <Filter>Content\Systems\Registration\CameraPointToLine</Filter>
-    </ClCompile>
     <ClCompile Include="Content\Systems\Registration\CameraRegistration.cpp">
-      <Filter>Content\Systems\Registration\CameraPointToLine</Filter>
+      <Filter>Content\Systems\Registration\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Systems\Registration\NetworkPCLRegistration.cpp">
+      <Filter>Content\Systems\Registration\NetworkPCL</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Systems\Registration\MediaCaptureManager.cpp">
+      <Filter>Content\Systems\Registration\Camera</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -227,11 +230,14 @@
     <ClInclude Include="Content\Systems\Tool\ToolSystem.h">
       <Filter>Content\Systems\Tools</Filter>
     </ClInclude>
-    <ClInclude Include="Content\Systems\Registration\NetworkPCLRegistration.h">
-      <Filter>Content\Systems\Registration\CameraPointToLine</Filter>
-    </ClInclude>
     <ClInclude Include="Content\Systems\Registration\CameraRegistration.h">
-      <Filter>Content\Systems\Registration\CameraPointToLine</Filter>
+      <Filter>Content\Systems\Registration\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Systems\Registration\NetworkPCLRegistration.h">
+      <Filter>Content\Systems\Registration\NetworkPCL</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Systems\Registration\MediaCaptureManager.h">
+      <Filter>Content\Systems\Registration\Camera</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -539,7 +545,10 @@
     <Filter Include="Content\Systems\Imaging">
       <UniqueIdentifier>{4a1cdeda-e9eb-485e-8933-79c8c9ef49b4}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Content\Systems\Registration\CameraPointToLine">
+    <Filter Include="Content\Systems\Registration\NetworkPCL">
+      <UniqueIdentifier>{a81ad6cb-8eb5-4f89-9e6b-a994cf084957}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Systems\Registration\Camera">
       <UniqueIdentifier>{51115ad3-67e3-4e0f-8bc0-c4d42023c829}</UniqueIdentifier>
     </Filter>
   </ItemGroup>

@@ -124,6 +124,7 @@
     <ClInclude Include="Content\Systems\Imaging\ImagingSystem.h" />
     <ClInclude Include="Content\Systems\Notification\NotificationSystem.h" />
     <ClInclude Include="Content\Systems\Registration\CameraRegistration.h" />
+    <ClInclude Include="Content\Systems\Registration\MediaCaptureManager.h" />
     <ClInclude Include="Content\Systems\Registration\NetworkPCLRegistration.h" />
     <ClInclude Include="Content\Systems\Registration\RegistrationSystem.h" />
     <ClInclude Include="Content\Systems\Spatial\SpatialSystem.h" />
@@ -163,6 +164,7 @@
     <ClCompile Include="Content\Systems\Imaging\ImagingSystem.cpp" />
     <ClCompile Include="Content\Systems\Notification\NotificationSystem.cpp" />
     <ClCompile Include="Content\Systems\Registration\CameraRegistration.cpp" />
+    <ClCompile Include="Content\Systems\Registration\MediaCaptureManager.cpp" />
     <ClCompile Include="Content\Systems\Registration\NetworkPCLRegistration.cpp" />
     <ClCompile Include="Content\Systems\Registration\RegistrationSystem.cpp" />
     <ClCompile Include="Content\Systems\Spatial\SpatialSystem.cpp" />
