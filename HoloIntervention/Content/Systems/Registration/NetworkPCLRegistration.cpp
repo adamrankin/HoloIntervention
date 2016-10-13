@@ -25,14 +25,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "pch.h"
 #include "AppView.h"
 #include "Common.h"
-#include "RegistrationSystem.h"
-
-// Rendering includes
-#include "ModelRenderer.h"
-#include "ModelEntry.h"
-
-// Spatial includes
-#include "SurfaceMesh.h"
+#include "NetworkPCLRegistration.h"
 
 // System includes
 #include "SpatialSystem.h"
@@ -40,6 +33,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Network includes
 #include "IGTLinkIF.h"
+
+// Spatial includes
+#include "SurfaceMesh.h"
 
 // OpenIGTLink includes
 #include <igtlutil/igtl_util.h>
@@ -50,11 +46,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 // DirectXTex includes
 #include <DirectXTex.h>
 
-using namespace Concurrency;
 using namespace Windows::Data::Xml::Dom;
-using namespace Windows::Foundation::Numerics;
 using namespace Windows::Networking;
-using namespace Windows::Perception::Spatial;
 using namespace Windows::Storage::Streams;
 using namespace Windows::Storage;
 
@@ -62,26 +55,9 @@ namespace HoloIntervention
 {
   namespace System
   {
-    Platform::String^ RegistrationSystem::ANCHOR_NAME = ref new Platform::String(L"Registration");
-    const std::wstring RegistrationSystem::ANCHOR_MODEL_FILENAME = L"Assets/Models/anchor.cmo";
-
     //----------------------------------------------------------------------------
-    RegistrationSystem::RegistrationSystem(const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer)
-      : m_deviceResources(deviceResources)
-      , m_stepTimer(stepTimer)
+    NetworkPCLRegistration::NetworkPCLRegistration()
     {
-      m_regAnchorModelId = HoloIntervention::instance()->GetModelRenderer().AddModel(ANCHOR_MODEL_FILENAME);
-      if (m_regAnchorModelId != Rendering::INVALID_MODEL_ENTRY)
-      {
-        m_regAnchorModel = HoloIntervention::instance()->GetModelRenderer().GetModel(m_regAnchorModelId);
-      }
-      if (m_regAnchorModel == nullptr)
-      {
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Unable to retrieve anchor model.");
-        return;
-      }
-      m_regAnchorModel->SetVisible(false);
-
       create_task(Windows::ApplicationModel::Package::Current->InstalledLocation->GetFileAsync(L"Assets\\Data\\tool_configuration.xml")).then([this](task<StorageFile^> previousTask)
       {
         StorageFile^ file = nullptr;
@@ -120,10 +96,8 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    RegistrationSystem::~RegistrationSystem()
+    NetworkPCLRegistration::~NetworkPCLRegistration()
     {
-      m_regAnchorModel = nullptr;
-      m_regAnchorModelId = 0;
       m_tokenSource.cancel();
       if (m_receiverTask != nullptr)
       {
@@ -133,38 +107,8 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void RegistrationSystem::Update(SpatialCoordinateSystem^ coordinateSystem, SpatialPointerPose^ headPose)
+    void NetworkPCLRegistration::Update(SpatialCoordinateSystem^ coordinateSystem)
     {
-      // Anchor placement logic
-      if (m_regAnchorRequested)
-      {
-        if (HoloIntervention::instance()->GetSpatialSystem().DropAnchorAtIntersectionHit(ANCHOR_NAME, coordinateSystem, headPose))
-        {
-          m_regAnchorRequested = false;
-          if (m_regAnchorModel != nullptr)
-          {
-            m_regAnchorModel->SetVisible(true);
-          }
-
-          m_spatialMesh = HoloIntervention::instance()->GetSpatialSystem().GetLastHitMesh();
-
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Anchor created.");
-        }
-      }
-
-      // Anchor position update logic
-      if (HoloIntervention::instance()->GetSpatialSystem().HasAnchor(L"Registration"))
-      {
-        auto transformContainer = HoloIntervention::instance()->GetSpatialSystem().GetAnchor(ANCHOR_NAME)->CoordinateSystem->TryGetTransformTo(coordinateSystem);
-        if (transformContainer != nullptr)
-        {
-          float4x4 anchorToWorld = transformContainer->Value;
-
-          // Coordinate system has orientation and position
-          m_regAnchorModel->SetWorld(anchorToWorld);
-        }
-      }
-
       // Point collection logic
       if (m_collectingPoints && HoloIntervention::instance()->GetIGTLink().IsConnected())
       {
@@ -194,92 +138,60 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<void> RegistrationSystem::LoadAppStateAsync()
+    void NetworkPCLRegistration::StartCollectingPoints()
     {
-      return create_task([ = ]()
+      m_points.clear();
+      m_latestTimestamp = 0;
+      m_collectingPoints = true;
+    }
+
+    //----------------------------------------------------------------------------
+    void NetworkPCLRegistration::EndCollectingPoints()
+    {
+      m_collectingPoints = false;
+      if (m_points.size() == 0)
       {
-        if (HoloIntervention::instance()->GetSpatialSystem().HasAnchor(ANCHOR_NAME))
+        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"No points collected.");
+        return;
+      }
+      HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Collecting finished.");
+
+      SendRegistrationDataAsync().then([this](task<bool> previousTask)
+      {
+        bool result(false);
+        try
         {
-          m_regAnchorModel->SetVisible(true);
+          result = previousTask.get();
+        }
+        catch (const std::exception& e)
+        {
+          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Unable to send registration data.");
+          OutputDebugStringA(e.what());
+        }
+        if (result)
+        {
+          std::stringstream ss;
+          ss << m_points.size() << " points collected. Computing registration...";
+          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(ss.str());
         }
       });
     }
 
     //----------------------------------------------------------------------------
-    void RegistrationSystem::RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap)
+    void NetworkPCLRegistration::SetSpatialMesh(std::shared_ptr<Spatial::SurfaceMesh> mesh)
     {
-      callbackMap[L"start collecting points"] = [this](SpeechRecognitionResult ^ result)
-      {
-        if (HoloIntervention::instance()->GetIGTLink().IsConnected())
-        {
-          m_points.clear();
-          m_latestTimestamp = 0;
-          m_collectingPoints = true;
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Collecting points...");
-        }
-        else
-        {
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Not connected!");
-        }
-      };
+      m_spatialMesh = mesh;
+    }
 
-      callbackMap[L"end collecting points"] = [this](SpeechRecognitionResult ^ result)
-      {
-        if (!m_collectingPoints)
-        {
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Point collection not active.");
-          return;
-        }
 
-        m_collectingPoints = false;
-        if (m_points.size() == 0)
-        {
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"No points collected.");
-          return;
-        }
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Collecting finished.");
-
-        SendRegistrationDataAsync().then([this](task<bool> previousTask)
-        {
-          bool result(false);
-          try
-          {
-            result = previousTask.get();
-          }
-          catch (const std::exception& e)
-          {
-            HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Unable to send registration data.");
-            OutputDebugStringA(e.what());
-          }
-          if (result)
-          {
-            std::stringstream ss;
-            ss << m_points.size() << " points collected. Computing registration...";
-            HoloIntervention::instance()->GetNotificationSystem().QueueMessage(ss.str());
-          }
-        });
-      };
-
-      callbackMap[L"drop anchor"] = [this](SpeechRecognitionResult ^ result)
-      {
-        m_regAnchorRequested = true;
-      };
-
-      callbackMap[L"remove anchor"] = [this](SpeechRecognitionResult ^ result)
-      {
-        if (m_regAnchorModel)
-        {
-          m_regAnchorModel->SetVisible(false);
-        }
-        if (HoloIntervention::instance()->GetSpatialSystem().RemoveAnchor(ANCHOR_NAME) == 1)
-        {
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Anchor \"" + ANCHOR_NAME + "\" removed.");
-        }
-      };
+    //----------------------------------------------------------------------------
+    Windows::Foundation::Numerics::float4x4 NetworkPCLRegistration::GetRegistrationResult()
+    {
+      return m_registrationResult;
     }
 
     //----------------------------------------------------------------------------
-    task<bool> RegistrationSystem::SendRegistrationDataAsync()
+    task<bool> NetworkPCLRegistration::SendRegistrationDataAsync()
     {
       auto sendTask = create_task([ = ]() -> bool
       {
@@ -464,13 +376,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    float4x4 RegistrationSystem::GetRegistrationResult()
-    {
-      return m_registrationResult;
-    }
-
-    //----------------------------------------------------------------------------
-    task<void> RegistrationSystem::DataReceiverAsync()
+    task<void> NetworkPCLRegistration::DataReceiverAsync()
     {
       auto token = m_tokenSource.get_token();
       return create_task([ = ]()

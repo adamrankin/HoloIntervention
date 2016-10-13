@@ -58,15 +58,6 @@
     <ClCompile Include="Content\Network\IGTLinkIF.cpp">
       <Filter>Content\Network</Filter>
     </ClCompile>
-    <ClCompile Include="Content\Systems\NotificationSystem.cpp">
-      <Filter>Content\Systems\Notification</Filter>
-    </ClCompile>
-    <ClCompile Include="Content\Systems\SpatialSystem.cpp">
-      <Filter>Content\Systems\Spatial</Filter>
-    </ClCompile>
-    <ClCompile Include="Content\Systems\GazeSystem.cpp">
-      <Filter>Content\Systems\Gaze</Filter>
-    </ClCompile>
     <ClCompile Include="Content\Rendering\DirectXTK\InstancedEffectCommon.cpp">
       <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
     </ClCompile>
@@ -75,12 +66,6 @@
     </ClCompile>
     <ClCompile Include="Content\Rendering\DirectXTK\InstancedBasicEffect.cpp">
       <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
-    </ClCompile>
-    <ClCompile Include="Content\Systems\ToolSystem.cpp">
-      <Filter>Content\Systems\Tools</Filter>
-    </ClCompile>
-    <ClCompile Include="Content\Systems\ToolEntry.cpp">
-      <Filter>Content\Systems\Tools</Filter>
     </ClCompile>
     <ClCompile Include="Content\Rendering\SpatialMeshRenderer.cpp">
       <Filter>Content\Rendering\SpatialMeshRenderer</Filter>
@@ -94,14 +79,37 @@
     <ClCompile Include="Content\Rendering\DirectXTK\InstancedGeometricPrimitive.cpp">
       <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
     </ClCompile>
-    <ClCompile Include="Content\Systems\RegistrationSystem.cpp">
-      <Filter>Content\Systems\Registration</Filter>
-    </ClCompile>
     <ClCompile Include="Common\Common.cpp">
       <Filter>Common</Filter>
     </ClCompile>
-    <ClCompile Include="Content\Systems\ImagingSystem.cpp" />
     <ClCompile Include="HoloInterventionCore.cpp" />
+    <ClCompile Include="Content\Systems\Registration\RegistrationSystem.cpp">
+      <Filter>Content\Systems\Registration</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Systems\Imaging\ImagingSystem.cpp">
+      <Filter>Content\Systems\Imaging</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Systems\Gaze\GazeSystem.cpp">
+      <Filter>Content\Systems\Gaze</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Systems\Notification\NotificationSystem.cpp">
+      <Filter>Content\Systems\Notification</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Systems\Spatial\SpatialSystem.cpp">
+      <Filter>Content\Systems\Spatial</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Systems\Tool\ToolEntry.cpp">
+      <Filter>Content\Systems\Tools</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Systems\Tool\ToolSystem.cpp">
+      <Filter>Content\Systems\Tools</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Systems\Registration\NetworkPCLRegistration.cpp">
+      <Filter>Content\Systems\Registration\CameraPointToLine</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Systems\Registration\CameraRegistration.cpp">
+      <Filter>Content\Systems\Registration\CameraPointToLine</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common\CameraResources.h">
@@ -173,15 +181,6 @@
     <ClInclude Include="Content\Network\IGTLinkIF.h">
       <Filter>Content\Network</Filter>
     </ClInclude>
-    <ClInclude Include="Content\Systems\NotificationSystem.h">
-      <Filter>Content\Systems\Notification</Filter>
-    </ClInclude>
-    <ClInclude Include="Content\Systems\SpatialSystem.h">
-      <Filter>Content\Systems\Spatial</Filter>
-    </ClInclude>
-    <ClInclude Include="Content\Systems\GazeSystem.h">
-      <Filter>Content\Systems\Gaze</Filter>
-    </ClInclude>
     <ClInclude Include="Content\Rendering\DirectXTK\InstancedEffectFactory.h">
       <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
     </ClInclude>
@@ -190,12 +189,6 @@
     </ClInclude>
     <ClInclude Include="Content\Rendering\DirectXTK\InstancedEffects.h">
       <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
-    </ClInclude>
-    <ClInclude Include="Content\Systems\ToolSystem.h">
-      <Filter>Content\Systems\Tools</Filter>
-    </ClInclude>
-    <ClInclude Include="Content\Systems\ToolEntry.h">
-      <Filter>Content\Systems\Tools</Filter>
     </ClInclude>
     <ClInclude Include="Content\Rendering\SpatialMeshRenderer.h">
       <Filter>Content\Rendering\SpatialMeshRenderer</Filter>
@@ -212,11 +205,34 @@
     <ClInclude Include="Content\Sound\IVoiceInput.h">
       <Filter>Content\Sound</Filter>
     </ClInclude>
-    <ClInclude Include="Content\Systems\RegistrationSystem.h">
+    <ClInclude Include="HoloInterventionCore.h" />
+    <ClInclude Include="Content\Systems\Registration\RegistrationSystem.h">
       <Filter>Content\Systems\Registration</Filter>
     </ClInclude>
-    <ClInclude Include="Content\Systems\ImagingSystem.h" />
-    <ClInclude Include="HoloInterventionCore.h" />
+    <ClInclude Include="Content\Systems\Imaging\ImagingSystem.h">
+      <Filter>Content\Systems\Imaging</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Systems\Gaze\GazeSystem.h">
+      <Filter>Content\Systems\Gaze</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Systems\Notification\NotificationSystem.h">
+      <Filter>Content\Systems\Notification</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Systems\Spatial\SpatialSystem.h">
+      <Filter>Content\Systems\Spatial</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Systems\Tool\ToolEntry.h">
+      <Filter>Content\Systems\Tools</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Systems\Tool\ToolSystem.h">
+      <Filter>Content\Systems\Tools</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Systems\Registration\NetworkPCLRegistration.h">
+      <Filter>Content\Systems\Registration\CameraPointToLine</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Systems\Registration\CameraRegistration.h">
+      <Filter>Content\Systems\Registration\CameraPointToLine</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\LockScreenLogo.scale-200.png">
@@ -522,6 +538,9 @@
     </Filter>
     <Filter Include="Content\Systems\Imaging">
       <UniqueIdentifier>{4a1cdeda-e9eb-485e-8933-79c8c9ef49b4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Systems\Registration\CameraPointToLine">
+      <UniqueIdentifier>{51115ad3-67e3-4e0f-8bc0-c4d42023c829}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
