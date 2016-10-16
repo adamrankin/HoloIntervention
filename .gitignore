@@ -13,4 +13,5 @@
 /HoloIntervention/Content/Rendering/Shaders/Compiled
 /packages
 /debug.log
-/MediaCapture/Debug
+/LocatableMediaCapture/Debug
+/LocatableMediaCapture/Release
