@@ -27,5 +27,6 @@
     <Capability Name="privateNetworkClientServer" />
     <uap2:Capability Name="spatialPerception" />
     <DeviceCapability Name="microphone" />
+    <DeviceCapability Name="webcam" />
   </Capabilities>
 </Package>

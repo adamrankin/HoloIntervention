@@ -53,12 +53,6 @@ namespace HoloIntervention
     class RegistrationSystem : public Sound::IVoiceInput
     {
     public:
-      enum RegistrationMethod
-      {
-        Registration_NetworkPCL,
-        Registration_CameraPointToLine
-      };
-
       RegistrationSystem(const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer);
       ~RegistrationSystem();
 
@@ -66,7 +60,7 @@ namespace HoloIntervention
 
       task<void> LoadAppStateAsync();
 
-      virtual void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callba);
+      virtual void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbacks);
 
       float4x4 GetRegistrationResult();
 
@@ -80,11 +74,8 @@ namespace HoloIntervention
       uint64_t                                        m_regAnchorModelId = 0;
       std::shared_ptr<Rendering::ModelEntry>          m_regAnchorModel = nullptr;
 
-      // System related variables
-      RegistrationMethod                              m_registrationMethod = Registration_CameraPointToLine;
-
       // Registration methods
-      std::shared_ptr<CameraRegistration>  m_cameraPointToLineRegistration = std::make_shared<CameraRegistration>();
+      std::shared_ptr<CameraRegistration>             m_cameraRegistration;
       std::shared_ptr<NetworkPCLRegistration>         m_networkPCLRegistration = std::make_shared<NetworkPCLRegistration>();
 
       // Result variables

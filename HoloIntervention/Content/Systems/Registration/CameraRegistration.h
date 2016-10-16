@@ -23,21 +23,48 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
+// Local includes
+#include "LocatableCaptureDevice.h"
+
+// Sound includes
+#include "IVoiceInput.h"
+
 using namespace Windows::Perception::Spatial;
+
+namespace DX
+{
+  class DeviceResources;
+}
 
 namespace HoloIntervention
 {
   namespace System
   {
-    class CameraRegistration
+    class CameraRegistration : public Sound::IVoiceInput
     {
+      enum State
+      {
+        Stopped,
+        Initializing,
+        Initialized,
+        Recording,
+      };
     public:
-      CameraRegistration();
+      CameraRegistration(const std::shared_ptr<DX::DeviceResources>& deviceResources);
       ~CameraRegistration();
 
       void Update(SpatialCoordinateSystem^ coordinateSystem);
 
+      virtual void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbacks);
+
     protected:
+      // Cached pointer to device resources.
+      std::shared_ptr<DX::DeviceResources>  m_deviceResources;
+
+      LocatableCaptureDevice^               m_captureDevice = ref new LocatableCaptureDevice();
+      bool                                  m_initialized = false;
+      task<void>                            m_initTask;
+      bool                                  m_recording = false;
     };
   }
 }

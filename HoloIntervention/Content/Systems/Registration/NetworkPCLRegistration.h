@@ -23,6 +23,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
+// Sound includes
+#include "IVoiceInput.h"
+
 // WinRT includes
 #include <ppltasks.h>
 
@@ -62,7 +65,7 @@ namespace HoloIntervention
 
   namespace System
   {
-    class NetworkPCLRegistration
+    class NetworkPCLRegistration : public Sound::IVoiceInput
     {
     public:
       NetworkPCLRegistration();
@@ -76,6 +79,8 @@ namespace HoloIntervention
       void SetSpatialMesh(std::shared_ptr<Spatial::SurfaceMesh> mesh);
 
       float4x4 GetRegistrationResult();
+
+      virtual void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbacks);
 
     protected:
       // Send the collected points and mesh data to the NetworkPCL interface

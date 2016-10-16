@@ -191,6 +191,31 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    void NetworkPCLRegistration::RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbacks)
+    {
+      callbacks[L"start collecting points"] = [this](SpeechRecognitionResult ^ result)
+      {
+        if (HoloIntervention::instance()->GetIGTLink().IsConnected())
+        {
+          StartCollectingPoints();
+          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Collecting points...");
+        }
+        else
+        {
+          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Not connected!");
+        }
+      };
+
+      callbacks[L"end collecting points"] = [this](SpeechRecognitionResult ^ result)
+      {
+        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Point collection not active.");
+        return;
+
+        EndCollectingPoints();
+      };
+    }
+
+    //----------------------------------------------------------------------------
     task<bool> NetworkPCLRegistration::SendRegistrationDataAsync()
     {
       auto sendTask = create_task([ = ]() -> bool

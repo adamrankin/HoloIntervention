@@ -55,6 +55,7 @@ namespace HoloIntervention
     RegistrationSystem::RegistrationSystem(const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer)
       : m_deviceResources(deviceResources)
       , m_stepTimer(stepTimer)
+      , m_cameraRegistration(std::make_shared<CameraRegistration>(deviceResources))
     {
       m_regAnchorModelId = HoloIntervention::instance()->GetModelRenderer().AddModel(ANCHOR_MODEL_FILENAME);
       if (m_regAnchorModelId != Rendering::INVALID_MODEL_ENTRY)
@@ -109,14 +110,8 @@ namespace HoloIntervention
         }
       }
 
-      if (m_registrationMethod == Registration_NetworkPCL)
-      {
-        m_networkPCLRegistration->Update(coordinateSystem);
-      }
-      else if (m_registrationMethod == Registration_CameraPointToLine)
-      {
-        m_cameraPointToLineRegistration->Update(coordinateSystem);
-      }
+      m_networkPCLRegistration->Update(coordinateSystem);
+      m_cameraRegistration->Update(coordinateSystem);
     }
 
     //----------------------------------------------------------------------------
@@ -134,40 +129,8 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void RegistrationSystem::RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap)
     {
-      callbackMap[L"start camera"] = [this](SpeechRecognitionResult ^ result)
-      {
-        m_registrationMethod = Registration_CameraPointToLine;
-      };
-
-      callbackMap[L"stop camera"] = [this](SpeechRecognitionResult ^ result)
-      {
-
-      };
-
-      callbackMap[L"start collecting points"] = [this](SpeechRecognitionResult ^ result)
-      {
-        m_registrationMethod = Registration_NetworkPCL;
-        if (HoloIntervention::instance()->GetIGTLink().IsConnected())
-        {
-          m_networkPCLRegistration->StartCollectingPoints();
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Collecting points...");
-        }
-        else
-        {
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Not connected!");
-        }
-      };
-
-      callbackMap[L"end collecting points"] = [this](SpeechRecognitionResult ^ result)
-      {
-        if (m_registrationMethod == Registration_NetworkPCL)
-        {
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Point collection not active.");
-          return;
-        }
-
-        m_networkPCLRegistration->EndCollectingPoints();
-      };
+      m_cameraRegistration->RegisterVoiceCallbacks(callbackMap);
+      m_networkPCLRegistration->RegisterVoiceCallbacks(callbackMap);
 
       callbackMap[L"drop anchor"] = [this](SpeechRecognitionResult ^ result)
       {

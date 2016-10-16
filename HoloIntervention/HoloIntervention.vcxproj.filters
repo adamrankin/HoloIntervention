@@ -110,7 +110,7 @@
     <ClCompile Include="Content\Systems\Registration\NetworkPCLRegistration.cpp">
       <Filter>Content\Systems\Registration\NetworkPCL</Filter>
     </ClCompile>
-    <ClCompile Include="Content\Systems\Registration\MediaCaptureManager.cpp">
+    <ClCompile Include="Content\Systems\Registration\LocatableCaptureDevice.cpp">
       <Filter>Content\Systems\Registration\Camera</Filter>
     </ClCompile>
   </ItemGroup>
@@ -236,7 +236,7 @@
     <ClInclude Include="Content\Systems\Registration\NetworkPCLRegistration.h">
       <Filter>Content\Systems\Registration\NetworkPCL</Filter>
     </ClInclude>
-    <ClInclude Include="Content\Systems\Registration\MediaCaptureManager.h">
+    <ClInclude Include="Content\Systems\Registration\LocatableCaptureDevice.h">
       <Filter>Content\Systems\Registration\Camera</Filter>
     </ClInclude>
   </ItemGroup>

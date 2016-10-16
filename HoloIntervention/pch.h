@@ -1,5 +1,6 @@
 #pragma once
 
+#include <windows.h>
 #include <agile.h>
 #include <concrt.h>
 #include <d2d1_2.h>

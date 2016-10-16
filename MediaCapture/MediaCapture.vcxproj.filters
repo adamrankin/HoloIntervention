@@ -1,0 +1,65 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="Marker.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="Trace.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="Validation.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="LocatableStreamSink.cpp">
+      <Filter>Locatable</Filter>
+    </ClCompile>
+    <ClCompile Include="LocatableMediaSinkProxy.cpp">
+      <Filter>Locatable</Filter>
+    </ClCompile>
+    <ClCompile Include="LocatableMediaSink.cpp">
+      <Filter>Locatable</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="AsyncCB.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="BaseAttributes.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="LinkList.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Marker.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="OpQueue.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Trace.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="LocatableStreamSink.h">
+      <Filter>Locatable</Filter>
+    </ClInclude>
+    <ClInclude Include="LocatableMediaSinkProxy.h">
+      <Filter>Locatable</Filter>
+    </ClInclude>
+    <ClInclude Include="LocatableMediaSink.h">
+      <Filter>Locatable</Filter>
+    </ClInclude>
+    <ClInclude Include="LocatableDefs.h">
+      <Filter>Locatable</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Common">
+      <UniqueIdentifier>{6abb41ea-4fe1-4fa0-a63a-c187cb60f0f6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Locatable">
+      <UniqueIdentifier>{8e277530-0a20-45ef-ae1b-16137e4edae4}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

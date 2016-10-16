@@ -23,49 +23,37 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-// WinRT includes
-#include <ppltasks.h>
-#include <mfapi.h>
-
-using namespace Concurrency;
-using namespace Microsoft::WRL;
-using namespace Windows::Media::Capture;
+// Local includes
+#include "LocatableDefs.h"
 
 namespace HoloIntervention
 {
-  namespace Systems
+  namespace LocatableMediaCapture
   {
-    class MediaCaptureManager
+    class CMarker : public IMarker
     {
-      enum CaptureState
-      {
-        Unknown,
-        Initialized,
-        StartingRecord,
-        Recording,
-        StoppingRecord,
-        TakingPhoto
-      };
-
     public:
-      MediaCaptureManager();
-      virtual ~MediaCaptureManager();
+      static HRESULT Create(MFSTREAMSINK_MARKER_TYPE eMarkerType, const PROPVARIANT* pvarMarkerValue, const PROPVARIANT* pvarContextValue, IMarker** ppMarker);
 
-      task<void> InitializeAsync(IMFDXGIDeviceManager* pDxgiDeviceManager = nullptr);
+      // IUnknown methods.
+      IFACEMETHOD(QueryInterface)(REFIID riid, void** ppv);
+      IFACEMETHOD_(ULONG, AddRef)();
+      IFACEMETHOD_(ULONG, Release)();
 
-      task<void> StartRecordingAsync();
-      task<void> StopRecordingAsync();
-
-      task<void> TakePhotoAsync();
-      bool CanTakePhoto();
+      IFACEMETHOD(GetMarkerType)(MFSTREAMSINK_MARKER_TYPE* pType);
+      IFACEMETHOD(GetMarkerValue)(PROPVARIANT* pvar);
+      IFACEMETHOD(GetContext)(PROPVARIANT* pvar);
 
     protected:
-      Wrappers::SRWLock               m_lock;
-      Platform::Agile<MediaCapture>   m_mediaCapture;
+      MFSTREAMSINK_MARKER_TYPE _eMarkerType;
+      PROPVARIANT _varMarkerValue;
+      PROPVARIANT _varContextValue;
 
-      CaptureState                    m_currentState;
+    private:
+      long    _cRef;
 
-      ComPtr<IMFDXGIDeviceManager>    m_spMFDXGIDeviceManager;
+      CMarker(MFSTREAMSINK_MARKER_TYPE eMarkerType);
+      virtual ~CMarker();
     };
   }
 }
