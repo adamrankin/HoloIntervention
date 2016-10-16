@@ -11,7 +11,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "UWPOpenIGTLink", "UWPOpenIG
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DirectXTex", "DirectXTex\DirectXTex\DirectXTex_Windows10.vcxproj", "{FB3F52B5-BFE8-43FD-836F-363735DAB738}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MediaCapture", "MediaCapture\MediaCapture.vcxproj", "{DFEEA5AA-D079-40F7-BFD3-394D5C000047}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LocatableMediaCapture", "LocatableMediaCapture\LocatableMediaCapture.vcxproj", "{DFEEA5AA-D079-40F7-BFD3-394D5C000047}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
