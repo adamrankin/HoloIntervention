@@ -47,20 +47,13 @@ namespace HoloIntervention
     CameraRegistration::CameraRegistration(const std::shared_ptr<DX::DeviceResources>& deviceResources)
       : m_deviceResources(deviceResources)
     {
-      m_initTask = m_captureDevice->InitializeAsync(nullptr).then([this]()
-      {
-        m_initialized = true;
-      });
+
     }
 
     //----------------------------------------------------------------------------
     CameraRegistration::~CameraRegistration()
     {
-      if (m_initialized)
-      {
-        m_captureDevice->CleanupAsync();
-        m_initialized = false;
-      }
+
     }
 
     //----------------------------------------------------------------------------
@@ -70,8 +63,6 @@ namespace HoloIntervention
       {
         return;
       }
-
-      m_captureDevice->SetCoordinateSystem(coordinateSystem);
     }
 
     //----------------------------------------------------------------------------
@@ -81,43 +72,11 @@ namespace HoloIntervention
       {
         if (!m_initialized)
         {
-          create_task([this]()
-          {
-            uint32_t accumulator(0);
-            while (!m_captureDevice->Initialized && accumulator < 10000) // 10s timeout
-            {
-              std::this_thread::sleep_for(std::chrono::milliseconds(100));
-              accumulator += 100;
-            }
-            return m_captureDevice->Initialized;
-          }).then([this](bool initialized)
-          {
-            if (m_recording || !initialized)
-            {
-              return;
-            }
 
-            try
-            {
-              m_captureDevice->StartRecordingAsync(MediaEncodingProfile::CreateMp4(VideoEncodingQuality::Auto)).then([this]()
-              {
-                m_recording = true;
-                HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Capturing...");
-              });
-            }
-            catch (Platform::Exception^ e)
-            {
-              OutputDebugStringW(e->Message->Data());
-            }
-          });
         }
         else
         {
-          m_captureDevice->StartRecordingAsync(MediaEncodingProfile::CreateMp4(VideoEncodingQuality::Auto)).then([this]()
-          {
-            m_recording = true;
-            HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Capturing...");
-          });
+
         }
       };
 
@@ -125,12 +84,7 @@ namespace HoloIntervention
       {
         if (m_recording)
         {
-          m_captureDevice->StopRecordingAsync().then([this]()
-          {
-            // TODO : grab frames, and process
-            m_recording = false;
-            HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Capturing stopped.");
-          });
+
         }
       };
     }

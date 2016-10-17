@@ -23,9 +23,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-// Local includes
-#include "LocatableCaptureDevice.h"
-
 // Sound includes
 #include "IVoiceInput.h"
 
@@ -61,7 +58,6 @@ namespace HoloIntervention
       // Cached pointer to device resources.
       std::shared_ptr<DX::DeviceResources>  m_deviceResources;
 
-      LocatableCaptureDevice^               m_captureDevice = ref new LocatableCaptureDevice();
       bool                                  m_initialized = false;
       task<void>                            m_initTask;
       bool                                  m_recording = false;

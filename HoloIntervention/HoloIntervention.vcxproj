@@ -128,7 +128,6 @@
     <ClInclude Include="Content\Systems\Imaging\ImagingSystem.h" />
     <ClInclude Include="Content\Systems\Notification\NotificationSystem.h" />
     <ClInclude Include="Content\Systems\Registration\CameraRegistration.h" />
-    <ClInclude Include="Content\Systems\Registration\LocatableCaptureDevice.h" />
     <ClInclude Include="Content\Systems\Registration\NetworkPCLRegistration.h" />
     <ClInclude Include="Content\Systems\Registration\RegistrationSystem.h" />
     <ClInclude Include="Content\Systems\Spatial\SpatialSystem.h" />
@@ -168,7 +167,6 @@
     <ClCompile Include="Content\Systems\Imaging\ImagingSystem.cpp" />
     <ClCompile Include="Content\Systems\Notification\NotificationSystem.cpp" />
     <ClCompile Include="Content\Systems\Registration\CameraRegistration.cpp" />
-    <ClCompile Include="Content\Systems\Registration\LocatableCaptureDevice.cpp" />
     <ClCompile Include="Content\Systems\Registration\NetworkPCLRegistration.cpp" />
     <ClCompile Include="Content\Systems\Registration\RegistrationSystem.cpp" />
     <ClCompile Include="Content\Systems\Spatial\SpatialSystem.cpp" />
@@ -427,9 +425,6 @@
     </ProjectReference>
     <ProjectReference Include="..\DirectXTK\DirectXTK_Windows10.vcxproj">
       <Project>{f4776924-619c-42c7-88b2-82c947ccc9e7}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\LocatableMediaCapture\LocatableMediaCapture.vcxproj">
-      <Project>{dfeea5aa-d079-40f7-bfd3-394d5c000047}</Project>
     </ProjectReference>
     <ProjectReference Include="..\UWPOpenIGTLink\UWPOpenIGTLink\UWPOpenIGTLink.vcxproj">
       <Project>{341616a4-cfc4-47cf-87e3-58d619b8475a}</Project>
