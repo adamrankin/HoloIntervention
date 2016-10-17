@@ -20,6 +20,12 @@
     <ClCompile Include="LocatableMediaSink.cpp">
       <Filter>Locatable</Filter>
     </ClCompile>
+    <ClCompile Include="LocatableEffect.cpp">
+      <Filter>Locatable</Filter>
+    </ClCompile>
+    <ClCompile Include="LocatableVideoEffectDefinition.cpp">
+      <Filter>Locatable</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AsyncCB.h">
@@ -51,6 +57,12 @@
       <Filter>Locatable</Filter>
     </ClInclude>
     <ClInclude Include="LocatableDefs.h">
+      <Filter>Locatable</Filter>
+    </ClInclude>
+    <ClInclude Include="LocatableEffect.h">
+      <Filter>Locatable</Filter>
+    </ClInclude>
+    <ClInclude Include="LocatableVideoEffectDefinition.h">
       <Filter>Locatable</Filter>
     </ClInclude>
   </ItemGroup>

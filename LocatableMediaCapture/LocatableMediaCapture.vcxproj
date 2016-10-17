@@ -225,6 +225,8 @@
     <ClInclude Include="AsyncCB.h" />
     <ClInclude Include="BaseAttributes.h" />
     <ClInclude Include="LinkList.h" />
+    <ClInclude Include="LocatableEffect.h" />
+    <ClInclude Include="LocatableVideoEffectDefinition.h" />
     <ClInclude Include="Marker.h" />
     <ClInclude Include="OpQueue.h" />
     <ClInclude Include="pch.h" />
@@ -235,6 +237,8 @@
     <ClInclude Include="Trace.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="LocatableEffect.cpp" />
+    <ClCompile Include="LocatableVideoEffectDefinition.cpp" />
     <ClCompile Include="Marker.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

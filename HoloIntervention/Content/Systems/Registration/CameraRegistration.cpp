@@ -70,6 +70,8 @@ namespace HoloIntervention
       {
         return;
       }
+
+      m_captureDevice->SetCoordinateSystem(coordinateSystem);
     }
 
     //----------------------------------------------------------------------------
@@ -113,6 +115,7 @@ namespace HoloIntervention
         {
           m_captureDevice->StartRecordingAsync(MediaEncodingProfile::CreateMp4(VideoEncodingQuality::Auto)).then([this]()
           {
+            m_recording = true;
             HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Capturing...");
           });
         }

@@ -30,19 +30,28 @@ namespace HoloIntervention
 {
   namespace LocatableMediaCapture
   {
-#define SET_SAMPLE_FLAG(dest, destMask, pSample, flagName) \
-    { \
-        UINT32 unValue; \
-        if (SUCCEEDED(pSample->GetUINT32(MFSampleExtension_##flagName, &unValue))) \
-        { \
-            dest |= (unValue != FALSE) ? LocatableSampleFlag_##flagName : 0; \
-            destMask |= LocatableSampleFlag_##flagName; \
-        } \
-    }
-
-    EXTERN_GUID(MFSampleExtension_Spatial_CameraViewTransform, 0x4e251fa4, 0x830f, 0x4770, 0x85, 0x9a, 0x4b, 0x8d, 0x99, 0xaa, 0x80, 0x9b);
     EXTERN_GUID(MFSampleExtension_Spatial_CameraCoordinateSystem, 0x9d13c82f, 0x2199, 0x4e67, 0x91, 0xcd, 0xd1, 0xa4, 0x18, 0x1f, 0x25, 0x34);
+    EXTERN_GUID(MFSampleExtension_Spatial_CameraViewTransform, 0x4e251fa4, 0x830f, 0x4770, 0x85, 0x9a, 0x4b, 0x8d, 0x99, 0xaa, 0x80, 0x9b);
     EXTERN_GUID(MFSampleExtension_Spatial_CameraProjectionTransform, 0x47f9fcb5, 0x2a02, 0x4f26, 0xa4, 0x77, 0x79, 0x2f, 0xdf, 0x95, 0x88, 0x6a);
+
+#define SET_SAMPLE_FLAG(dest, destMask, pSample, flagName) \
+  { \
+    UINT32 unValue; \
+    if (SUCCEEDED(pSample->GetUINT32(MFSampleExtension_##flagName, &unValue))) \
+    { \
+      dest |= (unValue != FALSE) ? LocatableSampleFlag_##flagName : 0; \
+      destMask |= LocatableSampleFlag_##flagName; \
+    } \
+  }
+
+#define CHECK_HR(func, message) \
+  { \
+    HRESULT asi_macro_hr_ = ( func ); \
+    if (FAILED(asi_macro_hr_)) \
+    { \
+      OutputDebugStringA(message); \
+    } \
+  }
 
     //----------------------------------------------------------------------------
     CStreamSink::CStreamSink(DWORD dwIdentifier, ISinkCallback^ callback)
@@ -314,7 +323,6 @@ namespace HoloIntervention
       // Unless we are paused, start an async operation to dispatch the next sample.
       if (SUCCEEDED(hr))
       {
-        m_callback->OnSampleReceived((int*)pSample);
         if (m_state != State_Paused)
         {
           // Queue the operation.
@@ -522,7 +530,6 @@ namespace HoloIntervention
           ComPtr<IMFMediaType> spType;
           ThrowIfError(MFCreateMediaType(&spType));
           ThrowIfError(pMediaType->CopyAllItems(spType.Get()));
-          ProcessFormatChange(spType.Get());
         }
       }
       catch (Exception^ exc)
@@ -789,17 +796,18 @@ namespace HoloIntervention
     HRESULT CStreamSink::OnDispatchWorkItem(IMFAsyncResult* pAsyncResult)
     {
       // Called by work queue thread. Need to hold the critical section.
-      std::lock_guard<std::mutex> guard(m_mutex);
-
       try
       {
-        ComPtr<IUnknown> spState;
+        StreamOperation op(Op_Count);
+        {
+          std::lock_guard<std::mutex> guard(m_mutex);
+          ComPtr<IUnknown> spState;
+          ThrowIfError(pAsyncResult->GetState(&spState));
 
-        ThrowIfError(pAsyncResult->GetState(&spState));
-
-        // The state object is a CAsncOperation object.
-        CAsyncOperation* pOp = static_cast<CAsyncOperation*>(spState.Get());
-        StreamOperation op = pOp->m_op;
+          // The state object is a CAsncOperation object.
+          CAsyncOperation* pOp = static_cast<CAsyncOperation*>(spState.Get());
+          op = pOp->m_op;
+        }
 
         switch (op)
         {
@@ -809,24 +817,36 @@ namespace HoloIntervention
           ThrowIfError(QueueEvent(MEStreamSinkStarted, GUID_NULL, S_OK, nullptr));
           ThrowIfError(QueueEvent(MEStreamSinkRequestSample, GUID_NULL, S_OK, nullptr));
           break;
-
         case OpStop:
-          // Drop samples from queue.
-          m_sampleQueue.Clear();
+        {
+          {
+            std::lock_guard<std::mutex> guard(m_mutex);
+            // Drop samples from queue.
+            m_sampleQueue.Clear();
+          }
 
           // Send the event even if the previous call failed.
           ThrowIfError(QueueEvent(MEStreamSinkStopped, GUID_NULL, S_OK, nullptr));
           break;
-
+        }
         case OpPause:
+        {
           ThrowIfError(QueueEvent(MEStreamSinkPaused, GUID_NULL, S_OK, nullptr));
           break;
-
+        }
         case OpProcessSample:
-          ThrowIfError(QueueEvent(MEStreamSinkRequestSample, GUID_NULL, S_OK, nullptr));
         case OpPlaceMarker:
         case OpSetMediaType:
-          break;
+        {
+          if (ProcessSamplesFromQueue())
+          {
+            if (op == OpProcessSample)
+            {
+              ThrowIfError(QueueEvent(MEStreamSinkRequestSample, GUID_NULL, S_OK, nullptr));
+            }
+          }
+        }
+        break;
         }
       }
       catch (Exception^ exc)
@@ -837,16 +857,124 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void CStreamSink::ProcessFormatChange(IMFMediaType* pMediaType)
+    bool CStreamSink::ProcessSamplesFromQueue()
     {
-      assert(pMediaType != nullptr);
+      bool needMoreSamples = false;
 
-      // Add the media type to the sample queue.
-      ThrowIfError(m_sampleQueue.InsertBack(pMediaType));
+      ComPtr<IUnknown> unknownSample;
 
-      // Unless we are paused, start an async operation to dispatch the next sample.
-      // Queue the operation.
-      ThrowIfError(QueueAsyncOperation(OpSetMediaType));
+      bool sendSamples = true;
+      bool sendEOS = false;
+
+      if (FAILED(m_sampleQueue.RemoveFront(&unknownSample)))
+      {
+        needMoreSamples = true;
+        sendSamples = false;
+      }
+
+      while (sendSamples)
+      {
+        ComPtr<IMFSample> sample;
+        bool processingSample = false;
+        assert(unknownSample);
+
+        // Figure out if this is a marker or a sample.
+        if (SUCCEEDED(unknownSample.As(&sample)))
+        {
+          assert(sample);    // Not a marker, must be a sample
+
+          ComPtr<IUnknown> spUnknown;
+          Windows::Perception::Spatial::SpatialCoordinateSystem^ spSpatialCoordinateSystem;
+          Windows::Foundation::Numerics::float4x4 worldToCameraMatrix;
+          Windows::Foundation::Numerics::float4x4 viewMatrix;
+          Windows::Foundation::Numerics::float4x4 projectionMatrix;
+          UINT32 cbBlobSize = 0;
+          auto hr = sample->GetUnknown(MFSampleExtension_Spatial_CameraCoordinateSystem, IID_PPV_ARGS(&spUnknown));
+          if (SUCCEEDED(hr))
+          {
+            spSpatialCoordinateSystem = reinterpret_cast<Windows::Perception::Spatial::SpatialCoordinateSystem^>(spUnknown.Get());
+            //hr = spUnknown.As(&spSpatialCoordinateSystem);
+            //if (FAILED(hr))
+            //{
+            //            return hr;
+            //}
+            hr = sample->GetBlob(MFSampleExtension_Spatial_CameraViewTransform,
+                                 (UINT8*)(&viewMatrix),
+                                 sizeof(viewMatrix),
+                                 &cbBlobSize);
+            if (SUCCEEDED(hr) && cbBlobSize == sizeof(Windows::Foundation::Numerics::float4x4))
+            {
+              hr = sample->GetBlob(MFSampleExtension_Spatial_CameraProjectionTransform,
+                                   (UINT8*)(&projectionMatrix),
+                                   sizeof(projectionMatrix),
+                                   &cbBlobSize);
+              if (SUCCEEDED(hr) && cbBlobSize == sizeof(Windows::Foundation::Numerics::float4x4))
+              {
+                //XMMATRIX transform;
+                //auto tryTransform = m_coordSystem->TryGetTransformTo(reinterpret_cast<Windows::Perception::Spatial::SpatialCoordinateSystem^>(spSpatialCoordinateSystem.Get()));
+                //if (tryTransform != nullptr)
+                //{
+                //                transform = XMLoadFloat4x4(&tryTransform->Value);
+                //}
+              }
+            }
+
+            m_callback->OnSampleReceived(nullptr);
+          }
+        }
+        else
+        {
+          ComPtr<IMarker> marker;
+          // Check if it is a marker
+          if (SUCCEEDED(unknownSample.As(&marker)))
+          {
+            MFSTREAMSINK_MARKER_TYPE markerType;
+            PROPVARIANT var;
+            PropVariantInit(&var);
+            ThrowIfError(marker->GetMarkerType(&markerType));
+            // Get the context data.
+            ThrowIfError(marker->GetContext(&var));
+
+            HRESULT hr = QueueEvent(MEStreamSinkMarker, GUID_NULL, S_OK, &var);
+
+            PropVariantClear(&var);
+
+            ThrowIfError(hr);
+
+            if (markerType == MFSTREAMSINK_MARKER_ENDOFSEGMENT)
+            {
+              sendEOS = true;
+            }
+          }
+          else
+          {
+            ComPtr<IMFMediaType> type;
+            ThrowIfError(unknownSample.As(&type));
+            // TODO : anyone need to know the media type was changed?
+          }
+        }
+
+        if (sendSamples)
+        {
+          if (FAILED(m_sampleQueue.RemoveFront(unknownSample.ReleaseAndGetAddressOf())))
+          {
+            needMoreSamples = true;
+            sendSamples = false;
+          }
+        }
+
+      }
+
+      if (sendEOS)
+      {
+        ComPtr<CMediaSink> parent = m_parent;
+        concurrency::create_task([parent]()
+        {
+          //parent->ReportEndOfStream();
+        });
+      }
+
+      return needMoreSamples;
     }
 
     //----------------------------------------------------------------------------

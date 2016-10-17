@@ -140,7 +140,7 @@ namespace HoloIntervention
       HRESULT     QueueAsyncOperation(StreamOperation op);
 
       HRESULT     OnDispatchWorkItem(IMFAsyncResult* pAsyncResult);
-      void        ProcessFormatChange(IMFMediaType* pMediaType);
+      bool        ProcessSamplesFromQueue();
       void        HandleError(HRESULT hr);
 
     private:

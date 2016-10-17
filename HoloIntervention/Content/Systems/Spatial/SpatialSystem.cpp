@@ -233,11 +233,11 @@ namespace HoloIntervention
             OutputDebugStringA("WARNING - Cannot load desired index format.");
           }
 
-          // Create the observer.
-          m_surfaceObserver = ref new SpatialSurfaceObserver();
-
-          // The surface observer can now be configured as needed.
-          UpdateSurfaceObserverPosition(coordinateSystem);
+          if (m_surfaceObserver == nullptr)
+          {
+            m_surfaceObserver = ref new SpatialSurfaceObserver();
+            UpdateSurfaceObserverPosition(coordinateSystem);
+          }
         }
         break;
         case SpatialPerceptionAccessStatus::DeniedBySystem:

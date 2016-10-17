@@ -47,8 +47,8 @@ namespace HoloIntervention
     internal:
       LocatableCaptureDevice();
 
-      task<void> InitializeAsync(IMFDXGIDeviceManager* pDxgiDeviceManager);
-      void CleanupSink();
+      void SetCoordinateSystem(Windows::Perception::Spatial::SpatialCoordinateSystem^ system);
+      task<void> InitializeAsync(IMFDXGIDeviceManager* dxgiDeviceManager);
       void DoCleanup();
       task<void> CleanupAsync();
       task<void> SelectPreferredCameraStreamSettingAsync(Windows::Media::Capture::MediaStreamType mediaStreamType, VideoSettingsFilter^ settingsFilterFunc);
@@ -62,14 +62,14 @@ namespace HoloIntervention
 
     private:
       // Media capture object
-      Platform::Agile<Windows::Media::Capture::MediaCapture>  m_mediaCapture = nullptr;
-      bool                                                    m_initialized = false;
-      HoloIntervention::MediaCapture::StspMediaSinkProxy^     m_mediaSink = nullptr;
-      Microsoft::WRL::ComPtr<IMFDXGIDeviceManager>            m_MFDXGIDeviceManager;
-      bool                                                    m_recordingStarted = false;
+      Windows::Perception::Spatial::SpatialCoordinateSystem^              m_coordSystem = nullptr;
+      Platform::Agile<Windows::Media::Capture::MediaCapture>              m_mediaCapture = nullptr;
+      bool                                                                m_initialized = false;
+      Microsoft::WRL::ComPtr<IMFDXGIDeviceManager>                        m_MFDXGIDeviceManager;
+      bool                                                                m_recordingStarted = false;
 
-      std::mutex                                              m_sampleAccess;
-      std::vector<IMFSample*>                                 m_samples;
+      std::mutex                                                          m_sampleAccess;
+      std::vector<IMFSample*>                                             m_samples;
     };
   }
 }

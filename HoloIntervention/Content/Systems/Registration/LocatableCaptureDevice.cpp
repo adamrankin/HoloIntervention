@@ -43,6 +43,7 @@ namespace HoloIntervention
 {
   namespace System
   {
+
     //----------------------------------------------------------------------------
     LocatableCaptureDevice::LocatableCaptureDevice()
     {
@@ -50,7 +51,13 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<void> LocatableCaptureDevice::InitializeAsync(IMFDXGIDeviceManager* pDxgiDeviceManager)
+    void LocatableCaptureDevice::SetCoordinateSystem(Windows::Perception::Spatial::SpatialCoordinateSystem^ system)
+    {
+      m_coordSystem = system;
+    }
+
+    //----------------------------------------------------------------------------
+    task<void> LocatableCaptureDevice::InitializeAsync(IMFDXGIDeviceManager* dxgiDeviceManager)
     {
       auto hr = MFStartup(MF_VERSION);
       if (FAILED(hr))
@@ -73,14 +80,14 @@ namespace HoloIntervention
         initSetting->StreamingCaptureMode = StreamingCaptureMode::AudioAndVideo;
         initSetting->MediaCategory = MediaCategory::Media;
 
-        if (pDxgiDeviceManager)
+        if (dxgiDeviceManager)
         {
           // Optionally, you can put your D3D device into MediaCapture.
           // But, in most case, this is not mandatory.
-          m_MFDXGIDeviceManager = pDxgiDeviceManager;
-          Microsoft::WRL::ComPtr<IAdvancedMediaCaptureInitializationSettings> spAdvancedSettings;
-          ((IUnknown*)initSetting)->QueryInterface(IID_PPV_ARGS(&spAdvancedSettings));
-          spAdvancedSettings->SetDirectxDeviceManager(m_MFDXGIDeviceManager.Get());
+          m_MFDXGIDeviceManager = dxgiDeviceManager;
+          Microsoft::WRL::ComPtr<IAdvancedMediaCaptureInitializationSettings> advancedSettings;
+          ((IUnknown*)initSetting)->QueryInterface(IID_PPV_ARGS(&advancedSettings));
+          advancedSettings->SetDirectxDeviceManager(m_MFDXGIDeviceManager.Get());
         }
 
         return create_task(DeviceInformation::FindAllAsync(DeviceClass::VideoCapture)).then([this, initSetting](DeviceInformationCollection ^ collection)
@@ -110,20 +117,8 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void LocatableCaptureDevice::CleanupSink()
-    {
-      if (m_mediaSink)
-      {
-        delete m_mediaSink;
-        m_mediaSink = nullptr;
-        m_recordingStarted = false;
-      }
-    }
-
-    //----------------------------------------------------------------------------
     void LocatableCaptureDevice::DoCleanup()
     {
-      CleanupSink();
       auto hr = MFShutdown();
     }
 
@@ -131,7 +126,7 @@ namespace HoloIntervention
     task<void> LocatableCaptureDevice::CleanupAsync()
     {
       Windows::Media::Capture::MediaCapture^ mediaCapture = m_mediaCapture.Get();
-      if (mediaCapture == nullptr && !m_mediaSink)
+      if (mediaCapture == nullptr)
       {
         return create_task([]() {});
       }
@@ -185,25 +180,15 @@ namespace HoloIntervention
     task<void> LocatableCaptureDevice::StartRecordingAsync(Windows::Media::MediaProperties::MediaEncodingProfile^ mediaEncodingProfile)
     {
       // We cannot start recording twice.
-      if (m_mediaSink && m_recordingStarted)
+      if (m_recordingStarted)
       {
         throw ref new Platform::Exception(__HRESULT_FROM_WIN32(ERROR_INVALID_STATE));
       }
 
-      // Release sink if there is one already.
-      CleanupSink();
+      auto videoEffectDefinition = ref new LocatableMediaCapture::LocatableVideoEffectDefinition();
+      videoEffectDefinition->StreamType = MediaStreamType::VideoRecord;
 
-      // Create new sink
-      m_mediaSink = ref new HoloIntervention::MediaCapture::StspMediaSinkProxy();
-      m_mediaSink->RegisterSampleCallback(ref new HoloIntervention::MediaCapture::SampleReceivedCallback([this](int* sample)
-      {
-        IMFSample* mfSample = (IMFSample*)(sample);
-
-        std::lock_guard<std::mutex> guard(m_sampleAccess);
-        m_samples.push_back(mfSample);
-      }));
-
-      return create_task(m_mediaSink->InitializeAsync(mediaEncodingProfile->Audio, mediaEncodingProfile->Video)).then([this, mediaEncodingProfile](Windows::Media::IMediaExtension ^ mediaExtension)
+      return create_task(m_mediaCapture->AddVideoEffectAsync(videoEffectDefinition, MediaStreamType::VideoRecord)).then([this, mediaEncodingProfile](Windows::Media::IMediaExtension ^ mediaExtension)
       {
         return create_task(m_mediaCapture->StartRecordToCustomSinkAsync(mediaEncodingProfile, mediaExtension)).then([this](task<void>& asyncInfo)
         {
@@ -214,7 +199,6 @@ namespace HoloIntervention
           }
           catch (Platform::Exception^)
           {
-            CleanupSink();
             throw;
           }
         });
@@ -228,7 +212,7 @@ namespace HoloIntervention
       {
         return create_task(m_mediaCapture.Get()->StopRecordAsync()).then([this]()
         {
-          CleanupSink();
+          m_recordingStarted = false;
         });
       }
 
