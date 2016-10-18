@@ -195,16 +195,6 @@ namespace HoloIntervention
             // Validate that the incoming frame format is compatible
             if (videoMediaFrame->SoftwareBitmap)
             {
-              uint32_t BYTES_PER_PIXEL(4);
-              if (videoMediaFrame->SoftwareBitmap->BitmapPixelFormat == BitmapPixelFormat::Bgra8)
-              {
-                BYTES_PER_PIXEL = 4;
-              }
-              else if (videoMediaFrame->SoftwareBitmap->BitmapPixelFormat == BitmapPixelFormat::Nv12)
-              {
-                BYTES_PER_PIXEL = 12;
-              }
-
               auto buffer = videoMediaFrame->SoftwareBitmap->LockBuffer(BitmapBufferAccessMode::Read);
               IMemoryBufferReference^ reference = buffer->CreateReference();
 
@@ -242,7 +232,7 @@ namespace HoloIntervention
                 std::vector<cv::Vec3f> circles;
 
                 // Apply the Hough Transform to find the circles
-                HoughCircles(mask, circles, CV_HOUGH_GRADIENT, 2, mask.rows / 16, 255, 30);
+                cv::HoughCircles(mask, circles, CV_HOUGH_GRADIENT, 2, mask.rows / 16, 255, 30);
 
                 // Draw the circles detected
                 cv::Mat canny_output;
@@ -272,15 +262,13 @@ namespace HoloIntervention
 
                   /// Approximate contours to polygons + get bounding rects and circles
                   std::vector<std::vector<cv::Point> > contours_poly(contours.size());
-                  std::vector<cv::Rect> boundRect(contours.size());
                   std::vector<cv::Point2f>center(contours.size());
                   std::vector<float>radius(contours.size());
 
                   for (int i = 0; i < contours.size(); i++)
                   {
-                    cv::approxPolyDP(cv::Mat(contours[i]), contours_poly[i], 3, true); // Finds polygon
-                    boundRect[i] = cv::boundingRect(cv::Mat(contours_poly[i]));      // Finds rectangle
-                    cv::minEnclosingCircle((cv::Mat)contours_poly[i], center[i], radius[i]); // Finds circle
+                    cv::approxPolyDP(cv::Mat(contours[i]), contours_poly[i], 3, true);        // Finds polygon
+                    cv::minEnclosingCircle((cv::Mat)contours_poly[i], center[i], radius[i]);  // Finds circle
                   }
 
                   poseCenters.push_back(center[0]);
