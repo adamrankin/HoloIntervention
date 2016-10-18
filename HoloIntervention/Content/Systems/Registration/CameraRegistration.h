@@ -23,8 +23,14 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
+// Capture includes
+#include "VideoFrameProcessor.h"
+
 // Sound includes
 #include "IVoiceInput.h"
+
+// stl includes
+#include <memory>
 
 using namespace Windows::Perception::Spatial;
 
@@ -56,11 +62,10 @@ namespace HoloIntervention
 
     protected:
       // Cached pointer to device resources.
-      std::shared_ptr<DX::DeviceResources>  m_deviceResources;
-
-      bool                                  m_initialized = false;
-      task<void>                            m_initTask;
-      bool                                  m_recording = false;
+      std::shared_ptr<DX::DeviceResources>                  m_deviceResources;
+      std::shared_ptr<Capture::VideoFrameProcessor>         m_videoFrameProcessor = nullptr;
+      bool                                                  m_initialized = false;
+      task<std::shared_ptr<Capture::VideoFrameProcessor>>*  m_createTask = nullptr;
     };
   }
 }

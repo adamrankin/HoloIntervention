@@ -38,6 +38,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 using namespace Concurrency;
 using namespace Windows::Perception::Spatial;
 using namespace Windows::Media::MediaProperties;
+using namespace Windows::Media::Capture::Frames;
 
 namespace HoloIntervention
 {
@@ -72,19 +73,61 @@ namespace HoloIntervention
       {
         if (!m_initialized)
         {
-
+          if (m_createTask != nullptr)
+          {
+            m_createTask = &Capture::VideoFrameProcessor::CreateAsync();
+            m_createTask->then([this](std::shared_ptr<Capture::VideoFrameProcessor> processor)
+            {
+              if (processor == nullptr)
+              {
+                HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Unable to initialize capture system.");
+              }
+              else
+              {
+                m_videoFrameProcessor = processor;
+                m_initialized = true;
+              }
+            }).then([this]()
+            {
+              m_videoFrameProcessor->StartAsync().then([this](MediaFrameReaderStartStatus status)
+              {
+                if (status == MediaFrameReaderStartStatus::Success)
+                {
+                  HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Capturing...");
+                }
+                else
+                {
+                  HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Unable to start capturing.");
+                }
+              });
+            });
+          }
         }
         else
         {
-
+          m_videoFrameProcessor->StartAsync().then([this](MediaFrameReaderStartStatus status)
+          {
+            if (status == MediaFrameReaderStartStatus::Success)
+            {
+              HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Capturing...");
+            }
+            else
+            {
+              HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Unable to start capturing.");
+            }
+          });
         }
       };
 
       callbackMap[L"stop camera"] = [this](SpeechRecognitionResult ^ result)
       {
-        if (m_recording)
+        if (m_initialized && m_videoFrameProcessor->IsStarted())
         {
-
+          m_initialized = false;
+          m_videoFrameProcessor->StopAsync().then([this]()
+          {
+            HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Capturing stopped.");
+          });
         }
       };
     }

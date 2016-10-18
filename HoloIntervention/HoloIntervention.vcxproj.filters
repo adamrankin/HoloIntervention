@@ -110,6 +110,9 @@
     <ClCompile Include="Content\Systems\Registration\NetworkPCLRegistration.cpp">
       <Filter>Content\Systems\Registration\NetworkPCL</Filter>
     </ClCompile>
+    <ClCompile Include="Content\Capture\VideoFrameProcessor.cpp">
+      <Filter>Content\Capture</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common\CameraResources.h">
@@ -232,6 +235,9 @@
     </ClInclude>
     <ClInclude Include="Content\Systems\Registration\NetworkPCLRegistration.h">
       <Filter>Content\Systems\Registration\NetworkPCL</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Capture\VideoFrameProcessor.h">
+      <Filter>Content\Capture</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -544,6 +550,9 @@
     </Filter>
     <Filter Include="Content\Systems\Registration\Camera">
       <UniqueIdentifier>{51115ad3-67e3-4e0f-8bc0-c4d42023c829}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Capture">
+      <UniqueIdentifier>{1037916d-19bc-4828-8cac-31114b66c211}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
