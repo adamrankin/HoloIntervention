@@ -92,8 +92,8 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     MediaFrameReference^ VideoFrameProcessor::GetLatestFrame(void) const
     {
-      auto lock = std::shared_lock<std::shared_mutex>(m_propertiesLock);
-      return *m_frames.rbegin();
+      std::lock_guard<std::mutex> guard(m_propertiesLock);
+      return m_latestFrame;
     }
 
     //----------------------------------------------------------------------------
@@ -136,8 +136,8 @@ namespace HoloIntervention
     {
       if (MediaFrameReference^ frame = sender->TryAcquireLatestFrame())
       {
-        std::lock_guard<std::shared_mutex> lock(m_propertiesLock);
-        m_frames.push_back(frame);
+        std::lock_guard<std::mutex> guard(m_propertiesLock);
+        m_latestFrame = frame;
       }
     }
   }

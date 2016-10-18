@@ -438,6 +438,114 @@
     <None Include="Assets\Models\anchor.cmo">
       <Filter>Assets\Models</Filter>
     </None>
+    <None Include="..\OpenCV-bin\bin\Debug\opencv_videoio310d.dll">
+      <Filter>OpenCV\Debug</Filter>
+    </None>
+    <None Include="..\OpenCV-bin\bin\Debug\opencv_core310d.dll">
+      <Filter>OpenCV\Debug</Filter>
+    </None>
+    <None Include="..\OpenCV-bin\bin\Debug\opencv_features2d310d.dll">
+      <Filter>OpenCV\Debug</Filter>
+    </None>
+    <None Include="..\OpenCV-bin\bin\Debug\opencv_flann310d.dll">
+      <Filter>OpenCV\Debug</Filter>
+    </None>
+    <None Include="..\OpenCV-bin\bin\Debug\opencv_highgui310d.dll">
+      <Filter>OpenCV\Debug</Filter>
+    </None>
+    <None Include="..\OpenCV-bin\bin\Debug\opencv_imgcodecs310d.dll">
+      <Filter>OpenCV\Debug</Filter>
+    </None>
+    <None Include="..\OpenCV-bin\bin\Debug\opencv_imgproc310d.dll">
+      <Filter>OpenCV\Debug</Filter>
+    </None>
+    <None Include="..\OpenCV-bin\bin\Debug\opencv_ml310d.dll">
+      <Filter>OpenCV\Debug</Filter>
+    </None>
+    <None Include="..\OpenCV-bin\bin\Debug\opencv_objdetect310d.dll">
+      <Filter>OpenCV\Debug</Filter>
+    </None>
+    <None Include="..\OpenCV-bin\bin\Debug\opencv_photo310d.dll">
+      <Filter>OpenCV\Debug</Filter>
+    </None>
+    <None Include="..\OpenCV-bin\bin\Debug\opencv_shape310d.dll">
+      <Filter>OpenCV\Debug</Filter>
+    </None>
+    <None Include="..\OpenCV-bin\bin\Debug\opencv_superres310d.dll">
+      <Filter>OpenCV\Debug</Filter>
+    </None>
+    <None Include="..\OpenCV-bin\bin\Debug\opencv_video310d.dll">
+      <Filter>OpenCV\Debug</Filter>
+    </None>
+    <None Include="..\OpenCV-bin\bin\Release\opencv_core310.dll">
+      <Filter>OpenCV\Release</Filter>
+    </None>
+    <None Include="..\OpenCV-bin\bin\Release\opencv_features2d310.dll">
+      <Filter>OpenCV\Release</Filter>
+    </None>
+    <None Include="..\OpenCV-bin\bin\Release\opencv_flann310.dll">
+      <Filter>OpenCV\Release</Filter>
+    </None>
+    <None Include="..\OpenCV-bin\bin\Release\opencv_highgui310.dll">
+      <Filter>OpenCV\Release</Filter>
+    </None>
+    <None Include="..\OpenCV-bin\bin\Release\opencv_imgcodecs310.dll">
+      <Filter>OpenCV\Release</Filter>
+    </None>
+    <None Include="..\OpenCV-bin\bin\Release\opencv_imgproc310.dll">
+      <Filter>OpenCV\Release</Filter>
+    </None>
+    <None Include="..\OpenCV-bin\bin\Release\opencv_ml310.dll">
+      <Filter>OpenCV\Release</Filter>
+    </None>
+    <None Include="..\OpenCV-bin\bin\Release\opencv_objdetect310.dll">
+      <Filter>OpenCV\Release</Filter>
+    </None>
+    <None Include="..\OpenCV-bin\bin\Release\opencv_photo310.dll">
+      <Filter>OpenCV\Release</Filter>
+    </None>
+    <None Include="..\OpenCV-bin\bin\Release\opencv_shape310.dll">
+      <Filter>OpenCV\Release</Filter>
+    </None>
+    <None Include="..\OpenCV-bin\bin\Release\opencv_superres310.dll">
+      <Filter>OpenCV\Release</Filter>
+    </None>
+    <None Include="..\OpenCV-bin\bin\Release\opencv_video310.dll">
+      <Filter>OpenCV\Release</Filter>
+    </None>
+    <None Include="..\OpenCV-bin\bin\Release\opencv_videoio310.dll">
+      <Filter>OpenCV\Release</Filter>
+    </None>
+    <None Include="..\OpenCVDependencies\msvcp140d.dll">
+      <Filter>OpenCV\Debug\Dependencies</Filter>
+    </None>
+    <None Include="..\OpenCVDependencies\concrt140d.dll">
+      <Filter>OpenCV\Debug\Dependencies</Filter>
+    </None>
+    <None Include="..\OpenCVDependencies\ucrtbased.dll">
+      <Filter>OpenCV\Debug\Dependencies</Filter>
+    </None>
+    <None Include="..\OpenCVDependencies\vccorlib140d.dll">
+      <Filter>OpenCV\Debug\Dependencies</Filter>
+    </None>
+    <None Include="..\OpenCVDependencies\vcruntime140d.dll">
+      <Filter>OpenCV\Debug\Dependencies</Filter>
+    </None>
+    <None Include="..\OpenCVDependencies\vcruntime140.dll">
+      <Filter>OpenCV\Release\Dependencies</Filter>
+    </None>
+    <None Include="..\OpenCVDependencies\concrt140.dll">
+      <Filter>OpenCV\Release\Dependencies</Filter>
+    </None>
+    <None Include="..\OpenCVDependencies\msvcp140.dll">
+      <Filter>OpenCV\Release\Dependencies</Filter>
+    </None>
+    <None Include="..\OpenCVDependencies\ucrtbase.dll">
+      <Filter>OpenCV\Release\Dependencies</Filter>
+    </None>
+    <None Include="..\OpenCVDependencies\vccorlib140.dll">
+      <Filter>OpenCV\Release\Dependencies</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Content">
@@ -553,6 +661,21 @@
     </Filter>
     <Filter Include="Content\Capture">
       <UniqueIdentifier>{1037916d-19bc-4828-8cac-31114b66c211}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="OpenCV">
+      <UniqueIdentifier>{44f26e17-5623-4b7e-98a6-fbca504b9579}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="OpenCV\Debug">
+      <UniqueIdentifier>{d9f429d4-a9ee-4195-a337-30922aa4126b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="OpenCV\Release">
+      <UniqueIdentifier>{c3d93022-7ad1-4073-9bee-e3d40fa13c62}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="OpenCV\Debug\Dependencies">
+      <UniqueIdentifier>{2d5cc1ed-aefe-48e3-b439-273510527646}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="OpenCV\Release\Dependencies">
+      <UniqueIdentifier>{b5534685-e53e-4465-9808-187b66f4a64c}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

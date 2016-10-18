@@ -10,3 +10,6 @@
 [submodule "DirectXMesh"]
 	path = DirectXMesh
 	url = https://github.com/Microsoft/DirectXMesh.git
+[submodule "OpenCV"]
+	path = OpenCV
+	url = https://github.com/opencv/opencv.git

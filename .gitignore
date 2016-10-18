@@ -15,3 +15,4 @@
 /debug.log
 /LocatableMediaCapture/Debug
 /LocatableMediaCapture/Release
+/OpenCV-bin/*

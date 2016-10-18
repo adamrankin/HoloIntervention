@@ -30,6 +30,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "IVoiceInput.h"
 
 // stl includes
+#include <future>
 #include <memory>
 
 using namespace Windows::Perception::Spatial;
@@ -61,11 +62,23 @@ namespace HoloIntervention
       virtual void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbacks);
 
     protected:
+      void ProcessAvailableFrames(cancellation_token token);
+
+    protected:
       // Cached pointer to device resources.
       std::shared_ptr<DX::DeviceResources>                  m_deviceResources;
+      std::mutex                                            m_processorLock;
       std::shared_ptr<Capture::VideoFrameProcessor>         m_videoFrameProcessor = nullptr;
-      bool                                                  m_initialized = false;
       task<std::shared_ptr<Capture::VideoFrameProcessor>>*  m_createTask = nullptr;
+
+      SpatialCoordinateSystem^                              m_worldCoordinateSystem = nullptr;
+      std::mutex                                            m_framesLock;
+      Windows::Media::Capture::Frames::MediaFrameReference^ m_currentFrame = nullptr;
+      Windows::Media::Capture::Frames::MediaFrameReference^ m_nextFrame = nullptr;
+
+      Concurrency::task<void>*                              m_workerTask = nullptr;
+      Concurrency::cancellation_token_source                m_tokenSource;
+      Windows::Foundation::Numerics::float4x4               m_cameraToWorld = Windows::Foundation::Numerics::float4x4::identity();
     };
   }
 }
