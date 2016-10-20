@@ -214,7 +214,6 @@ namespace HoloIntervention
                 cv::Mat hsv;
                 cv::Mat threshold;
 
-                cv::Mat image(desc.Height, desc.Width, CV_8UC4);
                 cv::Mat imageYUV(desc.Height + desc.Height / 2, desc.Width, CV_8UC1, (void*)data);
                 cv::Mat imageRGB(desc.Height, desc.Width, CV_8UC3);
                 cv::cvtColor(imageYUV, imageRGB, CV_YUV2RGB_NV12, 3);
@@ -250,7 +249,6 @@ namespace HoloIntervention
                 {
                   int thresh = 100;
                   int max_thresh = 255;
-                  cv::RNG rng(12345);
 
                   cv::medianBlur(mask, mask, 3);
 

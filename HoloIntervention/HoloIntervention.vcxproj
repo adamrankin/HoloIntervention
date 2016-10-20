@@ -129,6 +129,7 @@
     <ClInclude Include="Content\Systems\Imaging\ImagingSystem.h" />
     <ClInclude Include="Content\Systems\Notification\NotificationSystem.h" />
     <ClInclude Include="Content\Systems\Registration\CameraRegistration.h" />
+    <ClInclude Include="Content\Systems\Registration\LandmarkRegistration.h" />
     <ClInclude Include="Content\Systems\Registration\NetworkPCLRegistration.h" />
     <ClInclude Include="Content\Systems\Registration\RegistrationSystem.h" />
     <ClInclude Include="Content\Systems\Spatial\SpatialSystem.h" />
@@ -169,6 +170,7 @@
     <ClCompile Include="Content\Systems\Imaging\ImagingSystem.cpp" />
     <ClCompile Include="Content\Systems\Notification\NotificationSystem.cpp" />
     <ClCompile Include="Content\Systems\Registration\CameraRegistration.cpp" />
+    <ClCompile Include="Content\Systems\Registration\LandmarkRegistration.cpp" />
     <ClCompile Include="Content\Systems\Registration\NetworkPCLRegistration.cpp" />
     <ClCompile Include="Content\Systems\Registration\RegistrationSystem.cpp" />
     <ClCompile Include="Content\Systems\Spatial\SpatialSystem.cpp" />
@@ -276,10 +278,12 @@
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
     </None>
     <None Include="..\OpenCVDependencies\ucrtbase.dll">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </DeploymentContent>
     </None>
     <None Include="..\OpenCVDependencies\ucrtbased.dll">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </DeploymentContent>
     </None>
     <None Include="..\OpenCVDependencies\vccorlib140.dll">
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>

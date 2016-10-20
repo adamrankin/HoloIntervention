@@ -113,6 +113,9 @@
     <ClCompile Include="Content\Capture\VideoFrameProcessor.cpp">
       <Filter>Content\Capture</Filter>
     </ClCompile>
+    <ClCompile Include="Content\Systems\Registration\LandmarkRegistration.cpp">
+      <Filter>Content\Systems\Registration\Camera</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common\CameraResources.h">
@@ -238,6 +241,9 @@
     </ClInclude>
     <ClInclude Include="Content\Capture\VideoFrameProcessor.h">
       <Filter>Content\Capture</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Systems\Registration\LandmarkRegistration.h">
+      <Filter>Content\Systems\Registration\Camera</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
