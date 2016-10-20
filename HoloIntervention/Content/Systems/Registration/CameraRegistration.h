@@ -23,6 +23,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
+// Local includes
+#include "LandmarkRegistration.h"
+
 // Capture includes
 #include "VideoFrameProcessor.h"
 
@@ -44,8 +47,6 @@ namespace HoloIntervention
 {
   namespace System
   {
-    class LandmarkRegistration;
-
     class CameraRegistration : public Sound::IVoiceInput
     {
       enum State

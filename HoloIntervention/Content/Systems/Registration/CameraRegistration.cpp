@@ -36,6 +36,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 // WinRT includes
 #include <MemoryBuffer.h>
 #include <ppltasks.h>
+#include <ppl.h>
 
 // stl includes
 #include <algorithm>
@@ -164,19 +165,27 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void CameraRegistration::ProcessAvailableFrames(cancellation_token token)
     {
-      std::vector<cv::Point2f> poseCenters;
-      cv::Mat thresholdFinal;
+      enum SphereColour
+      {
+        Red,
+        Blue,
+        Green,
+        Black,
+        Gray
+      };
+      std::vector<std::pair<SphereColour, cv::Point2f>> poseCenters;
+      cv::Mat redMat;
       cv::Mat hsv;
-      cv::Mat threshold;
+      cv::Mat redMatWrap;
+      cv::Mat blueMat;
+      cv::Mat greenMat;
+      cv::Mat blackMat;
       cv::Mat imageRGB;
-      cv::Mat mask;
-      std::vector<cv::Vec3f> circles;
-      std::vector<std::vector<cv::Point>> contours;
-      std::vector<cv::Vec4i> hierarchy;
-      cv::Mat canny_output;
+      std::array<cv::Mat, 5> mask;
       bool l_initialized(false);
       int32_t l_height(0);
       int32_t l_width(0);
+      std::mutex l_lockAccess;
 
       while (!token.is_canceled())
       {
@@ -216,7 +225,6 @@ namespace HoloIntervention
               if (SUCCEEDED(reinterpret_cast<IUnknown*>(reference)->QueryInterface(IID_PPV_ARGS(&byteAccess))))
               {
                 poseCenters.clear();
-                circles.clear();
 
                 // Get a pointer to the pixel buffer
                 byte* data;
@@ -228,12 +236,15 @@ namespace HoloIntervention
 
                 if (!l_initialized || l_height != desc.Height || l_width != desc.Width)
                 {
-                  thresholdFinal = cv::Mat(desc.Height, desc.Width, CV_8UC3);
+                  redMatWrap = cv::Mat(desc.Height, desc.Width, CV_8UC3);
                   hsv = cv::Mat(desc.Height, desc.Width, CV_8UC3);
-                  threshold = cv::Mat(desc.Height, desc.Width, CV_8UC3);
+                  redMat = cv::Mat(desc.Height, desc.Width, CV_8UC3);
                   imageRGB = cv::Mat(desc.Height, desc.Width, CV_8UC3);
-                  mask = cv::Mat(desc.Height, desc.Width, CV_8UC3);
-                  canny_output = cv::Mat(desc.Width, desc.Height, CV_8UC1);
+                  mask[0] = cv::Mat(desc.Height, desc.Width, CV_8UC3);
+                  mask[1] = cv::Mat(desc.Height, desc.Width, CV_8UC3);
+                  mask[2] = cv::Mat(desc.Height, desc.Width, CV_8UC3);
+                  mask[3] = cv::Mat(desc.Height, desc.Width, CV_8UC3);
+                  mask[4] = cv::Mat(desc.Height, desc.Width, CV_8UC3);
                   l_initialized = true;
                   l_height = desc.Height;
                   l_width = desc.Width;
@@ -245,54 +256,85 @@ namespace HoloIntervention
                 // Convert BGRA image to HSV image
                 cv::cvtColor(imageRGB, hsv, cv::COLOR_RGB2HSV);
 
-                // Filter everything except red - (0, 70, 50) -> (10, 255, 255) & (160, 70, 50) -> (179, 255, 255)
-                cv::inRange(hsv, cv::Scalar(0, 70, 50), cv::Scalar(10, 255, 255), thresholdFinal);
-                cv::inRange(hsv, cv::Scalar(160, 70, 50), cv::Scalar(179, 255, 255), threshold);
-
-                cv::addWeighted(thresholdFinal, 1.0, threshold, 1.0, 0.0, mask);
-
-                // Create a Gaussian & median Blur Filter
-                cv::medianBlur(mask, mask, 5);
-                cv::GaussianBlur(mask, mask, cv::Size(9, 9), 2, 2);
-
-                // Apply the Hough Transform to find the circles
-                cv::HoughCircles(mask, circles, CV_HOUGH_GRADIENT, 2, mask.rows / 16, 255, 30);
-
-                // Outline circle and centroid
-                if (circles.size() > 0)
+                auto redTask = create_task([&]()
                 {
-                  cv::Point center(cvRound(circles[0][0]), cvRound(circles[0][1]));
-                  poseCenters.push_back(center);
-                }
-                else if (circles.size() == 0)
+                  // Filter everything except red - (0, 70, 50) -> (10, 255, 255) & (160, 70, 50) -> (179, 255, 255)
+                  cv::inRange(hsv, cv::Scalar(0, 70, 50), cv::Scalar(10, 255, 255), redMat);
+                  cv::inRange(hsv, cv::Scalar(160, 70, 50), cv::Scalar(179, 255, 255), redMatWrap);
+                  cv::addWeighted(redMat, 1.0, redMatWrap, 1.0, 0.0, mask[0]);
+                  return mask[0];
+                });
+                auto blueTask = create_task([&]()
                 {
-                  contours.clear();
-                  hierarchy.clear();
-                  int thresh = 100;
-                  int max_thresh = 255;
-
-                  // Blur the image
-                  cv::medianBlur(mask, mask, 3);
-
-                  // Detect edges using canny
-                  cv::Canny(mask, canny_output, thresh, thresh * 2, 3);
-
-                  // Find contours
-                  cv::findContours(canny_output, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
-
-                  /// Approximate contours to polygons + get bounding rects and circles
-                  std::vector<std::vector<cv::Point> > contours_poly(contours.size());
-                  std::vector<cv::Point2f>center(contours.size());
-                  std::vector<float>radius(contours.size());
-
-                  for (int i = 0; i < contours.size(); i++)
+                  // Filter everything except blue -
+                  cv::inRange(hsv, cv::Scalar(110, 50, 50), cv::Scalar(130, 255, 255), mask[1]);
+                  return mask[1];
+                });
+                auto greenTask = create_task([&]()
+                {
+                  // Filter everything except blue -
+                  cv::inRange(hsv, cv::Scalar(50, 50, 50), cv::Scalar(70, 255, 255), mask[2]);
+                  return mask[2];
+                });
+                // This order must match enum order above
+                std::array<task<cv::Mat>*, 3> tasks = { &redTask, &blueTask, &greenTask };
+                std::vector<task<void>> resultTasks;
+                for (int i = 0; i < 3; ++i)
+                {
+                  resultTasks.push_back(tasks[i]->then([this, i, &poseCenters, &l_lockAccess](cv::Mat mask) -> void
                   {
-                    cv::approxPolyDP(cv::Mat(contours[i]), contours_poly[i], 3, true);        // Finds polygon
-                    cv::minEnclosingCircle((cv::Mat)contours_poly[i], center[i], radius[i]);  // Finds circle
-                  }
+                    std::vector<cv::Vec3f> circles;
 
-                  poseCenters.push_back(center[0]);
+                    // Create a Gaussian & median Blur Filter
+                    cv::medianBlur(mask, mask, 5);
+                    cv::GaussianBlur(mask, mask, cv::Size(9, 9), 2, 2);
+
+                    // Apply the Hough Transform to find the circles
+                    cv::HoughCircles(mask, circles, CV_HOUGH_GRADIENT, 2, mask.rows / 16, 255, 30);
+                    if (circles.size() > 0)
+                    {
+                      cv::Point center(cvRound(circles[0][0]), cvRound(circles[0][1]));
+
+                      std::lock_guard<std::mutex> guard(l_lockAccess);
+                      poseCenters.push_back(std::pair<SphereColour, cv::Point2f>((SphereColour)i, center));
+                    }
+                    else
+                    {
+                      std::vector<std::vector<cv::Point>> contours;
+                      std::vector<cv::Vec4i> hierarchy;
+                      cv::Mat canny_output;
+
+                      int thresh = 100;
+                      int max_thresh = 255;
+
+                      // Blur the image
+                      cv::medianBlur(mask, mask, 3);
+
+                      // Detect edges using canny
+                      cv::Canny(mask, canny_output, thresh, thresh * 2, 3);
+
+                      // Find contours
+                      cv::findContours(canny_output, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
+
+                      /// Approximate contours to polygons + get bounding rects and circles
+                      std::vector<std::vector<cv::Point> > contours_poly(contours.size());
+                      std::vector<cv::Point2f>center(contours.size());
+                      std::vector<float>radius(contours.size());
+
+                      for (uint32_t j = 0; j < contours.size(); j++)
+                      {
+                        cv::approxPolyDP(cv::Mat(contours[j]), contours_poly[j], 3, true);        // Finds polygon
+                        cv::minEnclosingCircle((cv::Mat)contours_poly[j], center[j], radius[j]);  // Finds circle
+                      }
+
+                      std::lock_guard<std::mutex> guard(l_lockAccess);
+                      poseCenters.push_back(std::pair<SphereColour, cv::Point2f>((SphereColour)i, center[0]));
+                    }
+                  }));
                 }
+
+                auto joinTask = when_all(std::begin(resultTasks), std::end(resultTasks));
+                joinTask.wait();
               }
 
               delete reference;
