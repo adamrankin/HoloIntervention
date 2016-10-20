@@ -170,16 +170,13 @@ namespace HoloIntervention
         Red,
         Blue,
         Green,
-        Black,
-        Gray
+        Blue,
+        Pink
       };
       std::vector<std::pair<SphereColour, cv::Point2f>> poseCenters;
       cv::Mat redMat;
       cv::Mat hsv;
       cv::Mat redMatWrap;
-      cv::Mat blueMat;
-      cv::Mat greenMat;
-      cv::Mat blackMat;
       cv::Mat imageRGB;
       std::array<cv::Mat, 5> mask;
       bool l_initialized(false);
@@ -258,28 +255,40 @@ namespace HoloIntervention
 
                 auto redTask = create_task([&]()
                 {
-                  // Filter everything except red - (0, 70, 50) -> (10, 255, 255) & (160, 70, 50) -> (179, 255, 255)
+                  // Filter everything except red - (0, 70, 50) -> (10, 255, 255) & (170, 70, 50) -> (180, 255, 255)
                   cv::inRange(hsv, cv::Scalar(0, 70, 50), cv::Scalar(10, 255, 255), redMat);
-                  cv::inRange(hsv, cv::Scalar(160, 70, 50), cv::Scalar(179, 255, 255), redMatWrap);
+                  cv::inRange(hsv, cv::Scalar(170, 70, 50), cv::Scalar(180, 255, 255), redMatWrap);
                   cv::addWeighted(redMat, 1.0, redMatWrap, 1.0, 0.0, mask[0]);
                   return mask[0];
                 });
                 auto blueTask = create_task([&]()
                 {
-                  // Filter everything except blue -
-                  cv::inRange(hsv, cv::Scalar(110, 50, 50), cv::Scalar(130, 255, 255), mask[1]);
+                  // Filter everything except blue
+                  cv::inRange(hsv, cv::Scalar(110, 70, 50), cv::Scalar(130, 255, 255), mask[1]);
                   return mask[1];
                 });
                 auto greenTask = create_task([&]()
                 {
-                  // Filter everything except blue -
-                  cv::inRange(hsv, cv::Scalar(50, 50, 50), cv::Scalar(70, 255, 255), mask[2]);
+                  // Filter everything except green
+                  cv::inRange(hsv, cv::Scalar(50, 70, 50), cv::Scalar(70, 255, 255), mask[2]);
                   return mask[2];
                 });
+                auto yellowTask = create_task([&]()
+                {
+                  // Filter everything except yellow
+                  cv::inRange(hsv, cv::Scalar(25, 70, 50), cv::Scalar(35, 255, 255), mask[3]);
+                  return mask[3];
+                });
+                auto pinkTask = create_task([&]()
+                {
+                  // Filter everything except pink
+                  cv::inRange(hsv, cv::Scalar(145, 70, 50), cv::Scalar(155, 255, 255), mask[3]);
+                  return mask[4];
+                });
                 // This order must match enum order above
-                std::array<task<cv::Mat>*, 3> tasks = { &redTask, &blueTask, &greenTask };
+                std::array<task<cv::Mat>*, 5> tasks = { &redTask, &blueTask, &greenTask, &yellowTask, &pinkTask };
                 std::vector<task<void>> resultTasks;
-                for (int i = 0; i < 3; ++i)
+                for (int i = 0; i < 5; ++i)
                 {
                   resultTasks.push_back(tasks[i]->then([this, i, &poseCenters, &l_lockAccess](cv::Mat mask) -> void
                   {
