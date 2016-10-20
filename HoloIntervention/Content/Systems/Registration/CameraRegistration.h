@@ -44,6 +44,8 @@ namespace HoloIntervention
 {
   namespace System
   {
+    class LandmarkRegistration;
+
     class CameraRegistration : public Sound::IVoiceInput
     {
       enum State
@@ -79,6 +81,8 @@ namespace HoloIntervention
       Concurrency::task<void>*                              m_workerTask = nullptr;
       Concurrency::cancellation_token_source                m_tokenSource;
       Windows::Foundation::Numerics::float4x4               m_cameraToWorld = Windows::Foundation::Numerics::float4x4::identity();
+
+      std::shared_ptr<LandmarkRegistration>                 m_landmarkRegistration = std::make_shared<LandmarkRegistration>();
     };
   }
 }
