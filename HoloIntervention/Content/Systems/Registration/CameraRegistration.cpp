@@ -164,6 +164,20 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void CameraRegistration::ProcessAvailableFrames(cancellation_token token)
     {
+      std::vector<cv::Point2f> poseCenters;
+      cv::Mat thresholdFinal;
+      cv::Mat hsv;
+      cv::Mat threshold;
+      cv::Mat imageRGB;
+      cv::Mat mask;
+      std::vector<cv::Vec3f> circles;
+      std::vector<std::vector<cv::Point>> contours;
+      std::vector<cv::Vec4i> hierarchy;
+      cv::Mat canny_output;
+      bool l_initialized(false);
+      int32_t l_height(0);
+      int32_t l_width(0);
+
       while (!token.is_canceled())
       {
         if (m_videoFrameProcessor == nullptr)
@@ -201,6 +215,9 @@ namespace HoloIntervention
               Microsoft::WRL::ComPtr<IMemoryBufferByteAccess> byteAccess;
               if (SUCCEEDED(reinterpret_cast<IUnknown*>(reference)->QueryInterface(IID_PPV_ARGS(&byteAccess))))
               {
+                poseCenters.clear();
+                circles.clear();
+
                 // Get a pointer to the pixel buffer
                 byte* data;
                 unsigned capacity;
@@ -209,49 +226,52 @@ namespace HoloIntervention
                 // Get information about the BitmapBuffer
                 auto desc = buffer->GetPlaneDescription(0);
 
-                std::vector<cv::Point2f> poseCenters;
-                cv::Mat thresholdFinal;
-                cv::Mat hsv;
-                cv::Mat threshold;
+                if (!l_initialized || l_height != desc.Height || l_width != desc.Width)
+                {
+                  thresholdFinal = cv::Mat(desc.Height, desc.Width, CV_8UC3);
+                  hsv = cv::Mat(desc.Height, desc.Width, CV_8UC3);
+                  threshold = cv::Mat(desc.Height, desc.Width, CV_8UC3);
+                  imageRGB = cv::Mat(desc.Height, desc.Width, CV_8UC3);
+                  mask = cv::Mat(desc.Height, desc.Width, CV_8UC3);
+                  canny_output = cv::Mat(desc.Width, desc.Height, CV_8UC1);
+                  l_initialized = true;
+                  l_height = desc.Height;
+                  l_width = desc.Width;
+                }
 
-                cv::Mat image(desc.Height, desc.Width, CV_8UC4);
-                cv::Mat imageYUV(desc.Height + desc.Height / 2, desc.Width, CV_8UC1, (void*)data);
-                cv::Mat imageRGB(desc.Height, desc.Width, CV_8UC3);
+                cv::Mat imageYUV(l_height + l_height / 2, l_width, CV_8UC1, (void*)data);
                 cv::cvtColor(imageYUV, imageRGB, CV_YUV2RGB_NV12, 3);
+
+                // Convert BGRA image to HSV image
+                cv::cvtColor(imageRGB, hsv, cv::COLOR_RGB2HSV);
 
                 // Filter everything except red - (0, 70, 50) -> (10, 255, 255) & (160, 70, 50) -> (179, 255, 255)
                 cv::inRange(hsv, cv::Scalar(0, 70, 50), cv::Scalar(10, 255, 255), thresholdFinal);
                 cv::inRange(hsv, cv::Scalar(160, 70, 50), cv::Scalar(179, 255, 255), threshold);
 
-                cv::Mat mask;
                 cv::addWeighted(thresholdFinal, 1.0, threshold, 1.0, 0.0, mask);
 
                 // Create a Gaussian & median Blur Filter
                 cv::medianBlur(mask, mask, 5);
                 cv::GaussianBlur(mask, mask, cv::Size(9, 9), 2, 2);
-                std::vector<cv::Vec3f> circles;
 
                 // Apply the Hough Transform to find the circles
                 cv::HoughCircles(mask, circles, CV_HOUGH_GRADIENT, 2, mask.rows / 16, 255, 30);
-
-                // Draw the circles detected
-                cv::Mat canny_output;
-                std::vector<std::vector<cv::Point>> contours;
-                std::vector<cv::Vec4i> hierarchy;
 
                 // Outline circle and centroid
                 if (circles.size() > 0)
                 {
                   cv::Point center(cvRound(circles[0][0]), cvRound(circles[0][1]));
-                  int radius = cvRound(circles[0][2]);
                   poseCenters.push_back(center);
                 }
                 else if (circles.size() == 0)
                 {
+                  contours.clear();
+                  hierarchy.clear();
                   int thresh = 100;
                   int max_thresh = 255;
-                  cv::RNG rng(12345);
 
+                  // Blur the image
                   cv::medianBlur(mask, mask, 3);
 
                   // Detect edges using canny
