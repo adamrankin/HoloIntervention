@@ -214,7 +214,8 @@ namespace HoloIntervention
             }
           }
 
-          m_trackerFrameResults.push_back(ComputeTrackerFrameLocations(l_latestTrackedFrame));
+          DetectedSphereWorldList results;
+          if (!ComputeTrackerFrameLocations(l_latestTrackedFrame, results)) {continue;}
 
           if (VideoMediaFrame^ videoMediaFrame = l_latestCameraFrame->VideoMediaFrame)
           {
@@ -227,7 +228,12 @@ namespace HoloIntervention
               Microsoft::WRL::ComPtr<IMemoryBufferByteAccess> byteAccess;
               if (SUCCEEDED(reinterpret_cast<IUnknown*>(reference)->QueryInterface(IID_PPV_ARGS(&byteAccess))))
               {
-                m_cameraFrameResults.push_back(ComputeCircleLocations(byteAccess, buffer, l_initialized, l_height, l_width, l_hsv, l_redMat, l_redMatWrap, l_imageRGB, l_mask, l_canny_output, l_cannyLock));
+                DetectedSphereWorldList cameraResults;
+                if (!results.empty() && ComputeCircleLocations(byteAccess, buffer, l_initialized, l_height, l_width, l_hsv, l_redMat, l_redMatWrap, l_imageRGB, l_mask, l_canny_output, l_cannyLock, cameraResults))
+                {
+                  m_cameraFrameResults.push_back(cameraResults);
+                  m_trackerFrameResults.push_back(results);
+                }
               }
 
               delete reference;
@@ -239,7 +245,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    CameraRegistration::DetectedSphereWorldList CameraRegistration::ComputeCircleLocations(Microsoft::WRL::ComPtr<Windows::Foundation::IMemoryBufferByteAccess>& byteAccess,
+    bool CameraRegistration::ComputeCircleLocations(Microsoft::WRL::ComPtr<Windows::Foundation::IMemoryBufferByteAccess>& byteAccess,
         Windows::Graphics::Imaging::BitmapBuffer^ buffer,
         bool& initialized,
         int32_t& height,
@@ -250,7 +256,8 @@ namespace HoloIntervention
         cv::Mat& imageRGB,
         std::array<cv::Mat, 5>& mask,
         cv::Mat& cannyOutput,
-        std::mutex& cannyLock)
+        std::mutex& cannyLock,
+        DetectedSphereWorldList& cameraResults)
     {
       // Get a pointer to the pixel buffer
       byte* data;
@@ -299,25 +306,25 @@ namespace HoloIntervention
         create_task([&]()
         {
           // Filter everything except blue
-          cv::inRange(hsv, cv::Scalar(110, 70, 50), cv::Scalar(130, 255, 255), mask[Blue]);
+          cv::inRange(hsv, cv::Scalar(100, 70, 50), cv::Scalar(120, 255, 255), mask[Blue]);
           return &mask[Blue];
         }),
         create_task([&]()
         {
           // Filter everything except green
-          cv::inRange(hsv, cv::Scalar(50, 70, 50), cv::Scalar(70, 255, 255), mask[Green]);
+          cv::inRange(hsv, cv::Scalar(65, 70, 50), cv::Scalar(85, 255, 255), mask[Green]);
           return &mask[Green];
         }),
         create_task([&]()
         {
           // Filter everything except yellow
-          cv::inRange(hsv, cv::Scalar(25, 70, 50), cv::Scalar(35, 255, 255), mask[Yellow]);
+          cv::inRange(hsv, cv::Scalar(15, 70, 50), cv::Scalar(35, 255, 255), mask[Yellow]);
           return &mask[Yellow];
         }),
         create_task([&]()
         {
           // Filter everything except pink
-          cv::inRange(hsv, cv::Scalar(145, 70, 50), cv::Scalar(155, 255, 255), mask[Pink]);
+          cv::inRange(hsv, cv::Scalar(140, 70, 50), cv::Scalar(160, 255, 255), mask[Pink]);
           return &mask[Pink];
         })
       };
@@ -337,7 +344,7 @@ namespace HoloIntervention
 
           // Apply the Hough Transform to find the circles
           cv::HoughCircles(*mask, circles, CV_HOUGH_GRADIENT, 2, mask->rows / 16, 255, 30);
-          if (circles.size() > 0)
+          if (!circles.empty())
           {
             cv::Point center(cvRound(circles[0][0]), cvRound(circles[0][1]));
 
@@ -385,13 +392,39 @@ namespace HoloIntervention
       auto joinTask = when_all(std::begin(resultTasks), std::end(resultTasks));
       joinTask.wait();
 
-      // TODO : calculate world position from pixel locations
       DetectedSphereWorldList worldResults;
-      return worldResults;
+      if (spheres.size() < 3)
+      {
+        // Cannot compute world space with less than 3 detected spheres
+        return false;
+      }
+
+      /*
+      float2 ImagePosZeroToOne = float2( PixelPos.x / ImageWidth, 1.0 - (PixelPos.y / ImageHeight ) );
+      float2 ImagePosProjected = ( ( ImagePosZeroToOne * 2.0 ) - float2(1,1) ); // -1 to 1 space
+      float3 CameraSpacePos = UnProjectVector( Projection, float3( ImagePosProjected, 1) );
+      float3 WorldSpaceRayPoint1 = mul( CameraToWorld, float4(0,0,0,1) ); // camera location in world space
+      float3 WorldSpaceRayPoint2 = mul( CameraToWorld, CameraSpacePos ); // ray point in world space
+
+      public static Vector3 UnProjectVector(Matrix4x4 proj, Vector3 to)
+      {
+      Vector3 from = new Vector3(0, 0, 0);
+      var axsX = proj.GetRow(0);
+      var axsY = proj.GetRow(1);
+      var axsZ = proj.GetRow(2);
+      from.z = to.z / axsZ.z;
+      from.y = (to.y - (from.z * axsY.z)) / axsY.y;
+      from.x = (to.x - (from.z * axsX.z)) / axsX.x;
+      return from;
+      }
+      */
+
+      // TODO : calculate world position from pixel locations
+      return true;
     }
 
     //----------------------------------------------------------------------------
-    HoloIntervention::System::CameraRegistration::DetectedSphereWorldList CameraRegistration::ComputeTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame)
+    bool CameraRegistration::ComputeTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame, CameraRegistration::DetectedSphereWorldList& worldResults)
     {
       m_transformRepository->SetTransforms(trackedFrame);
 
@@ -399,6 +432,7 @@ namespace HoloIntervention
       bool isValid(false);
       float4x4 redToGreenTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"RedSphere", L"GreenSphere"), &isValid);
       float4x4 redToReferenceTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"RedSphere", L"Reference"), &isValid);
+      if (!isValid) {return false;}
 
       float4x4 greenToPinkTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"GreenSphere", L"PinkSphere"), &isValid);
       float4x4 greenToReferenceTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"GreenSphere", L"Reference"), &isValid);
@@ -412,8 +446,30 @@ namespace HoloIntervention
       float4x4 yellowToRedTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"YellowSphere", L"RedSphere"), &isValid);
       float4x4 yellowToReferenceTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"YellowSphere", L"Reference"), &isValid);
 
-      DetectedSphereWorldList worldResults;
-      return worldResults;
+      float3 scale;
+      quaternion quat;
+      float3 translation;
+      bool result = decompose(transpose(redToReferenceTransform), &scale, &quat, &translation);
+      if (!result) { return result; }
+      worldResults.push_back(DetectedSphereWorld(Red, cv::Point3f(translation.x, translation.y, translation.z)));
+
+      result = decompose(transpose(greenToReferenceTransform), &scale, &quat, &translation);
+      if (!result) { return result; }
+      worldResults.push_back(DetectedSphereWorld(Green, cv::Point3f(translation.x, translation.y, translation.z)));
+
+      result = decompose(transpose(pinkToReferenceTransform), &scale, &quat, &translation);
+      if (!result) { return result; }
+      worldResults.push_back(DetectedSphereWorld(Pink, cv::Point3f(translation.x, translation.y, translation.z)));
+
+      result = decompose(transpose(blueToReferenceTransform), &scale, &quat, &translation);
+      if (!result) { return result; }
+      worldResults.push_back(DetectedSphereWorld(Blue, cv::Point3f(translation.x, translation.y, translation.z)));
+
+      result = decompose(transpose(yellowToReferenceTransform), &scale, &quat, &translation);
+      if (!result) { return result; }
+      worldResults.push_back(DetectedSphereWorld(Yellow, cv::Point3f(translation.x, translation.y, translation.z)));
+
+      return true;
     }
 
   }

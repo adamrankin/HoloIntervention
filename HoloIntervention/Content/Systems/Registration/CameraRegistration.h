@@ -87,20 +87,21 @@ namespace HoloIntervention
     protected:
       void ProcessAvailableFrames(Concurrency::cancellation_token token);
 
-      DetectedSphereWorldList ComputeTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame);
+      bool CameraRegistration::ComputeTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame, CameraRegistration::DetectedSphereWorldList& worldResults);
 
-      DetectedSphereWorldList ComputeCircleLocations(Microsoft::WRL::ComPtr<Windows::Foundation::IMemoryBufferByteAccess>& byteAccess,
-          Windows::Graphics::Imaging::BitmapBuffer^ buffer,
-          bool& initialized,
-          int32_t& height,
-          int32_t& width,
-          cv::Mat& hsv,
-          cv::Mat& redMat,
-          cv::Mat& redMatWrap,
-          cv::Mat& imageRGB,
-          std::array<cv::Mat, 5>& mask,
-          cv::Mat& cannyOutput,
-          std::mutex& cannyLock);
+      bool ComputeCircleLocations(Microsoft::WRL::ComPtr<Windows::Foundation::IMemoryBufferByteAccess>& byteAccess,
+                                  Windows::Graphics::Imaging::BitmapBuffer^ buffer,
+                                  bool& initialized,
+                                  int32_t& height,
+                                  int32_t& width,
+                                  cv::Mat& hsv,
+                                  cv::Mat& redMat,
+                                  cv::Mat& redMatWrap,
+                                  cv::Mat& imageRGB,
+                                  std::array<cv::Mat, 5>& mask,
+                                  cv::Mat& cannyOutput,
+                                  std::mutex& cannyLock,
+                                  DetectedSphereWorldList& cameraResults);
 
     protected:
       // Cached pointer to device resources.
