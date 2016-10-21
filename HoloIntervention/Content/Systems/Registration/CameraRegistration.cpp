@@ -34,12 +34,14 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "NotificationSystem.h"
 
 // WinRT includes
-#include <MemoryBuffer.h>
 #include <ppltasks.h>
 #include <ppl.h>
 
 // stl includes
 #include <algorithm>
+
+// Network includes
+#include "IGTLinkIF.h"
 
 // OpenCV includes
 #include <opencv2/core.hpp>
@@ -165,40 +167,41 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void CameraRegistration::ProcessAvailableFrames(cancellation_token token)
     {
-      enum SphereColour
-      {
-        Red,
-        Blue,
-        Green,
-        Blue,
-        Pink
-      };
-      std::vector<std::pair<SphereColour, cv::Point2f>> poseCenters;
-      cv::Mat redMat;
-      cv::Mat hsv;
-      cv::Mat redMatWrap;
-      cv::Mat imageRGB;
-      std::array<cv::Mat, 5> mask;
+      cv::Mat l_hsv;
+      cv::Mat l_redMat;
+      cv::Mat l_redMatWrap;
+      cv::Mat l_imageRGB;
+      cv::Mat l_canny_output;
+      std::mutex l_cannyLock;
+      std::array<cv::Mat, 5> l_mask;
       bool l_initialized(false);
       int32_t l_height(0);
       int32_t l_width(0);
-      std::mutex l_lockAccess;
+      UWPOpenIGTLink::TrackedFrame^ l_latestTrackedFrame(nullptr);
+      MediaFrameReference^ l_latestCameraFrame(nullptr);
 
       while (!token.is_canceled())
       {
-        if (m_videoFrameProcessor == nullptr)
+        if (m_videoFrameProcessor == nullptr || !HoloIntervention::instance()->GetIGTLink().IsConnected())
         {
           std::this_thread::sleep_for(std::chrono::milliseconds(100));
           continue;
         }
 
-        if (auto frame = m_videoFrameProcessor->GetLatestFrame())
+        UWPOpenIGTLink::TrackedFrame^ trackedFrame(nullptr);
+        MediaFrameReference^ cameraFrame(m_videoFrameProcessor->GetLatestFrame());
+        if (HoloIntervention::instance()->GetIGTLink().GetLatestTrackedFrame(l_latestTrackedFrame, &m_latestTimestamp) &&
+            l_latestTrackedFrame != trackedFrame &&
+            cameraFrame != nullptr &&
+            cameraFrame != l_latestCameraFrame)
         {
-          if (m_worldCoordinateSystem != nullptr && frame->CoordinateSystem != nullptr)
+          l_latestTrackedFrame = trackedFrame;
+          l_latestCameraFrame = cameraFrame;
+          if (m_worldCoordinateSystem != nullptr && l_latestCameraFrame->CoordinateSystem != nullptr)
           {
             try
             {
-              Platform::IBox<float4x4>^ transformBox = frame->CoordinateSystem->TryGetTransformTo(m_worldCoordinateSystem);
+              Platform::IBox<float4x4>^ transformBox = l_latestCameraFrame->CoordinateSystem->TryGetTransformTo(m_worldCoordinateSystem);
               if (transformBox != nullptr)
               {
                 m_cameraToWorld = transformBox->Value;
@@ -207,10 +210,13 @@ namespace HoloIntervention
             catch (Platform::Exception^ e)
             {
               OutputDebugStringW(L"Cannot retrieve camera to world transformation.");
+              continue;
             }
           }
 
-          if (VideoMediaFrame^ videoMediaFrame = frame->VideoMediaFrame)
+          m_trackerFrameResults.push_back(ComputeTrackerFrameLocations(l_latestTrackedFrame));
+
+          if (VideoMediaFrame^ videoMediaFrame = l_latestCameraFrame->VideoMediaFrame)
           {
             // Validate that the incoming frame format is compatible
             if (videoMediaFrame->SoftwareBitmap)
@@ -221,129 +227,7 @@ namespace HoloIntervention
               Microsoft::WRL::ComPtr<IMemoryBufferByteAccess> byteAccess;
               if (SUCCEEDED(reinterpret_cast<IUnknown*>(reference)->QueryInterface(IID_PPV_ARGS(&byteAccess))))
               {
-                poseCenters.clear();
-
-                // Get a pointer to the pixel buffer
-                byte* data;
-                unsigned capacity;
-                byteAccess->GetBuffer(&data, &capacity);
-
-                // Get information about the BitmapBuffer
-                auto desc = buffer->GetPlaneDescription(0);
-
-                if (!l_initialized || l_height != desc.Height || l_width != desc.Width)
-                {
-                  redMatWrap = cv::Mat(desc.Height, desc.Width, CV_8UC3);
-                  hsv = cv::Mat(desc.Height, desc.Width, CV_8UC3);
-                  redMat = cv::Mat(desc.Height, desc.Width, CV_8UC3);
-                  imageRGB = cv::Mat(desc.Height, desc.Width, CV_8UC3);
-                  mask[0] = cv::Mat(desc.Height, desc.Width, CV_8UC3);
-                  mask[1] = cv::Mat(desc.Height, desc.Width, CV_8UC3);
-                  mask[2] = cv::Mat(desc.Height, desc.Width, CV_8UC3);
-                  mask[3] = cv::Mat(desc.Height, desc.Width, CV_8UC3);
-                  mask[4] = cv::Mat(desc.Height, desc.Width, CV_8UC3);
-                  l_initialized = true;
-                  l_height = desc.Height;
-                  l_width = desc.Width;
-                }
-
-                cv::Mat imageYUV(l_height + l_height / 2, l_width, CV_8UC1, (void*)data);
-                cv::cvtColor(imageYUV, imageRGB, CV_YUV2RGB_NV12, 3);
-
-                // Convert BGRA image to HSV image
-                cv::cvtColor(imageRGB, hsv, cv::COLOR_RGB2HSV);
-
-                auto redTask = create_task([&]()
-                {
-                  // Filter everything except red - (0, 70, 50) -> (10, 255, 255) & (170, 70, 50) -> (180, 255, 255)
-                  cv::inRange(hsv, cv::Scalar(0, 70, 50), cv::Scalar(10, 255, 255), redMat);
-                  cv::inRange(hsv, cv::Scalar(170, 70, 50), cv::Scalar(180, 255, 255), redMatWrap);
-                  cv::addWeighted(redMat, 1.0, redMatWrap, 1.0, 0.0, mask[0]);
-                  return mask[0];
-                });
-                auto blueTask = create_task([&]()
-                {
-                  // Filter everything except blue
-                  cv::inRange(hsv, cv::Scalar(110, 70, 50), cv::Scalar(130, 255, 255), mask[1]);
-                  return mask[1];
-                });
-                auto greenTask = create_task([&]()
-                {
-                  // Filter everything except green
-                  cv::inRange(hsv, cv::Scalar(50, 70, 50), cv::Scalar(70, 255, 255), mask[2]);
-                  return mask[2];
-                });
-                auto yellowTask = create_task([&]()
-                {
-                  // Filter everything except yellow
-                  cv::inRange(hsv, cv::Scalar(25, 70, 50), cv::Scalar(35, 255, 255), mask[3]);
-                  return mask[3];
-                });
-                auto pinkTask = create_task([&]()
-                {
-                  // Filter everything except pink
-                  cv::inRange(hsv, cv::Scalar(145, 70, 50), cv::Scalar(155, 255, 255), mask[3]);
-                  return mask[4];
-                });
-                // This order must match enum order above
-                std::array<task<cv::Mat>*, 5> tasks = { &redTask, &blueTask, &greenTask, &yellowTask, &pinkTask };
-                std::vector<task<void>> resultTasks;
-                for (int i = 0; i < 5; ++i)
-                {
-                  resultTasks.push_back(tasks[i]->then([this, i, &poseCenters, &l_lockAccess](cv::Mat mask) -> void
-                  {
-                    std::vector<cv::Vec3f> circles;
-
-                    // Create a Gaussian & median Blur Filter
-                    cv::medianBlur(mask, mask, 5);
-                    cv::GaussianBlur(mask, mask, cv::Size(9, 9), 2, 2);
-
-                    // Apply the Hough Transform to find the circles
-                    cv::HoughCircles(mask, circles, CV_HOUGH_GRADIENT, 2, mask.rows / 16, 255, 30);
-                    if (circles.size() > 0)
-                    {
-                      cv::Point center(cvRound(circles[0][0]), cvRound(circles[0][1]));
-
-                      std::lock_guard<std::mutex> guard(l_lockAccess);
-                      poseCenters.push_back(std::pair<SphereColour, cv::Point2f>((SphereColour)i, center));
-                    }
-                    else
-                    {
-                      std::vector<std::vector<cv::Point>> contours;
-                      std::vector<cv::Vec4i> hierarchy;
-                      cv::Mat canny_output;
-
-                      int thresh = 100;
-                      int max_thresh = 255;
-
-                      // Blur the image
-                      cv::medianBlur(mask, mask, 3);
-
-                      // Detect edges using canny
-                      cv::Canny(mask, canny_output, thresh, thresh * 2, 3);
-
-                      // Find contours
-                      cv::findContours(canny_output, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
-
-                      /// Approximate contours to polygons + get bounding rects and circles
-                      std::vector<std::vector<cv::Point> > contours_poly(contours.size());
-                      std::vector<cv::Point2f>center(contours.size());
-                      std::vector<float>radius(contours.size());
-
-                      for (uint32_t j = 0; j < contours.size(); j++)
-                      {
-                        cv::approxPolyDP(cv::Mat(contours[j]), contours_poly[j], 3, true);        // Finds polygon
-                        cv::minEnclosingCircle((cv::Mat)contours_poly[j], center[j], radius[j]);  // Finds circle
-                      }
-
-                      std::lock_guard<std::mutex> guard(l_lockAccess);
-                      poseCenters.push_back(std::pair<SphereColour, cv::Point2f>((SphereColour)i, center[0]));
-                    }
-                  }));
-                }
-
-                auto joinTask = when_all(std::begin(resultTasks), std::end(resultTasks));
-                joinTask.wait();
+                m_cameraFrameResults.push_back(ComputeCircleLocations(byteAccess, buffer, l_initialized, l_height, l_width, l_hsv, l_redMat, l_redMatWrap, l_imageRGB, l_mask, l_canny_output, l_cannyLock));
               }
 
               delete reference;
@@ -352,6 +236,184 @@ namespace HoloIntervention
           }
         }
       }
+    }
+
+    //----------------------------------------------------------------------------
+    CameraRegistration::DetectedSphereWorldList CameraRegistration::ComputeCircleLocations(Microsoft::WRL::ComPtr<Windows::Foundation::IMemoryBufferByteAccess>& byteAccess,
+        Windows::Graphics::Imaging::BitmapBuffer^ buffer,
+        bool& initialized,
+        int32_t& height,
+        int32_t& width,
+        cv::Mat& hsv,
+        cv::Mat& redMat,
+        cv::Mat& redMatWrap,
+        cv::Mat& imageRGB,
+        std::array<cv::Mat, 5>& mask,
+        cv::Mat& cannyOutput,
+        std::mutex& cannyLock)
+    {
+      // Get a pointer to the pixel buffer
+      byte* data;
+      unsigned capacity;
+      byteAccess->GetBuffer(&data, &capacity);
+
+      // Get information about the BitmapBuffer
+      auto desc = buffer->GetPlaneDescription(0);
+
+      if (!initialized || height != desc.Height || width != desc.Width)
+      {
+        hsv = cv::Mat(desc.Height, desc.Width, CV_8UC3);
+        redMat = cv::Mat(desc.Height, desc.Width, CV_8UC3);
+        redMatWrap = cv::Mat(desc.Height, desc.Width, CV_8UC3);
+        imageRGB = cv::Mat(desc.Height, desc.Width, CV_8UC3);
+        mask[Red] = cv::Mat(desc.Height, desc.Width, CV_8UC3);
+        mask[Green] = cv::Mat(desc.Height, desc.Width, CV_8UC3);
+        mask[Blue] = cv::Mat(desc.Height, desc.Width, CV_8UC3);
+        mask[Yellow] = cv::Mat(desc.Height, desc.Width, CV_8UC3);
+        mask[Pink] = cv::Mat(desc.Height, desc.Width, CV_8UC3);
+        cannyOutput = cv::Mat(desc.Height, desc.Width, CV_8UC1);
+
+        initialized = true;
+        height = desc.Height;
+        width = desc.Width;
+      }
+
+      cv::Mat imageYUV(height + height / 2, width, CV_8UC1, (void*)data);
+      cv::cvtColor(imageYUV, imageRGB, CV_YUV2RGB_NV12, 3);
+
+      // Convert BGRA image to HSV image
+      cv::cvtColor(imageRGB, hsv, cv::COLOR_RGB2HSV);
+
+      // This order must match enum order above
+      std::array<task<cv::Mat*>, 5> maskTasks =
+      {
+        create_task([&]()
+        {
+          // In HSV, red wraps around, check 0-10, 170-180
+          // Filter everything except red - (0, 70, 50) -> (10, 255, 255) & (170, 70, 50) -> (180, 255, 255)
+          cv::inRange(hsv, cv::Scalar(0, 70, 50), cv::Scalar(10, 255, 255), redMat);
+          cv::inRange(hsv, cv::Scalar(170, 70, 50), cv::Scalar(180, 255, 255), redMatWrap);
+          cv::addWeighted(redMat, 1.0, redMatWrap, 1.0, 0.0, mask[Red]);
+          return &mask[Red];
+        }),
+        create_task([&]()
+        {
+          // Filter everything except blue
+          cv::inRange(hsv, cv::Scalar(110, 70, 50), cv::Scalar(130, 255, 255), mask[Blue]);
+          return &mask[Blue];
+        }),
+        create_task([&]()
+        {
+          // Filter everything except green
+          cv::inRange(hsv, cv::Scalar(50, 70, 50), cv::Scalar(70, 255, 255), mask[Green]);
+          return &mask[Green];
+        }),
+        create_task([&]()
+        {
+          // Filter everything except yellow
+          cv::inRange(hsv, cv::Scalar(25, 70, 50), cv::Scalar(35, 255, 255), mask[Yellow]);
+          return &mask[Yellow];
+        }),
+        create_task([&]()
+        {
+          // Filter everything except pink
+          cv::inRange(hsv, cv::Scalar(145, 70, 50), cv::Scalar(155, 255, 255), mask[Pink]);
+          return &mask[Pink];
+        })
+      };
+
+      std::array<task<void>, 5> resultTasks;
+      DetectedSpherePixelList spheres;
+      std::mutex sphereLock;
+      for (int i = 0; i < 5; ++i)
+      {
+        resultTasks[i] = maskTasks[i].then([this, i, &cannyOutput, &spheres, &sphereLock, &cannyLock](cv::Mat * mask) -> void
+        {
+          std::vector<cv::Vec3f> circles;
+
+          // Create a Gaussian & median Blur Filter
+          cv::medianBlur(*mask, *mask, 5);
+          cv::GaussianBlur(*mask, *mask, cv::Size(9, 9), 2, 2);
+
+          // Apply the Hough Transform to find the circles
+          cv::HoughCircles(*mask, circles, CV_HOUGH_GRADIENT, 2, mask->rows / 16, 255, 30);
+          if (circles.size() > 0)
+          {
+            cv::Point center(cvRound(circles[0][0]), cvRound(circles[0][1]));
+
+            std::lock_guard<std::mutex> guard(sphereLock);
+            spheres.push_back(DetectedSpherePixel((SphereColour)i, center));
+          }
+          else
+          {
+            std::vector<std::vector<cv::Point>> contours;
+            std::vector<cv::Vec4i> hierarchy;
+
+            int thresh = 100;
+            int max_thresh = 255;
+
+            // Blur the image
+            cv::medianBlur(*mask, *mask, 3);
+
+            {
+              std::lock_guard<std::mutex> guard(cannyLock);
+
+              // Detect edges using canny
+              cv::Canny(*mask, cannyOutput, thresh, thresh * 2, 3);
+
+              // Find contours
+              cv::findContours(cannyOutput, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
+            }
+
+            /// Approximate contours to polygons + get bounding rects and circles
+            std::vector<std::vector<cv::Point> > contours_poly(contours.size());
+            std::vector<cv::Point2f>center(contours.size());
+            std::vector<float>radius(contours.size());
+
+            for (uint32_t j = 0; j < contours.size(); j++)
+            {
+              cv::approxPolyDP(cv::Mat(contours[j]), contours_poly[j], 3, true);        // Finds polygon
+              cv::minEnclosingCircle((cv::Mat)contours_poly[j], center[j], radius[j]);  // Finds circle
+            }
+
+            std::lock_guard<std::mutex> guard(sphereLock);
+            spheres.push_back(DetectedSpherePixel((SphereColour)i, center[0]));
+          }
+        });
+      }
+
+      auto joinTask = when_all(std::begin(resultTasks), std::end(resultTasks));
+      joinTask.wait();
+
+      // TODO : calculate world position from pixel locations
+      DetectedSphereWorldList worldResults;
+      return worldResults;
+    }
+
+    //----------------------------------------------------------------------------
+    HoloIntervention::System::CameraRegistration::DetectedSphereWorldList CameraRegistration::ComputeTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame)
+    {
+      m_transformRepository->SetTransforms(trackedFrame);
+
+      // Calculate world position from transforms in tracked frame
+      bool isValid(false);
+      float4x4 redToGreenTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"RedSphere", L"GreenSphere"), &isValid);
+      float4x4 redToReferenceTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"RedSphere", L"Reference"), &isValid);
+
+      float4x4 greenToPinkTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"GreenSphere", L"PinkSphere"), &isValid);
+      float4x4 greenToReferenceTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"GreenSphere", L"Reference"), &isValid);
+
+      float4x4 pinkToBlueTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"PinkSphere", L"BlueSphere"), &isValid);
+      float4x4 pinkToReferenceTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"PinkSphere", L"Reference"), &isValid);
+
+      float4x4 blueToYellowTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"BlueSphere", L"YellowSphere"), &isValid);
+      float4x4 blueToReferenceTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"BlueSphere", L"Reference"), &isValid);
+
+      float4x4 yellowToRedTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"YellowSphere", L"RedSphere"), &isValid);
+      float4x4 yellowToReferenceTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"YellowSphere", L"Reference"), &isValid);
+
+      DetectedSphereWorldList worldResults;
+      return worldResults;
     }
 
   }

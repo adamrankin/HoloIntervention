@@ -77,10 +77,10 @@ namespace HoloIntervention
       void SetPort(int32 port);
 
       /// Retrieve the latest tracked frame
-      bool GetLatestTrackedFrame(UWPOpenIGTLink::TrackedFrame^& frame, double* latestTimestamp);
+      bool GetLatestTrackedFrame(UWPOpenIGTLink::TrackedFrame^& frame, double* latestTimestamp = nullptr);
 
       /// Retrieve the latest command
-      bool GetLatestCommand(UWPOpenIGTLink::Command^& cmd, double* latestTimestamp);
+      bool GetLatestCommand(UWPOpenIGTLink::Command^& cmd, double* latestTimestamp = nullptr);
 
       /// IVoiceInput functions
       void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap);
