@@ -115,6 +115,7 @@ namespace HoloIntervention
       Windows::Media::Capture::Frames::MediaFrameReference^   m_currentFrame = nullptr;
       Windows::Media::Capture::Frames::MediaFrameReference^   m_nextFrame = nullptr;
       DetectionFrameList                                      m_cameraFrameResults;
+      std::vector<std::vector<cv::Point3f>>                   m_phantomFiducialCoords;
 
       // IGT link
       UWPOpenIGTLink::TransformRepository^                    m_transformRepository = ref new UWPOpenIGTLink::TransformRepository();
