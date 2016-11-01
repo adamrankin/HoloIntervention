@@ -32,10 +32,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 // winrt includes
 #include <collection.h>
 
-using namespace Concurrency;
-using namespace Windows::Graphics::Holographic;
-using namespace Windows::Perception::Spatial;
-
 // Forward declarations
 namespace DX
 {
@@ -66,6 +62,7 @@ namespace HoloIntervention
     class NotificationRenderer;
     class SliceRenderer;
     class SpatialMeshRenderer;
+    class VolumeRenderer;
   }
 
   namespace Network
@@ -87,17 +84,17 @@ namespace HoloIntervention
 
     // Sets the holographic space. This is our closest analogue to setting a new window
     // for the app.
-    void SetHolographicSpace(HolographicSpace^ holographicSpace);
+    void SetHolographicSpace(Windows::Graphics::Holographic::HolographicSpace^ holographicSpace);
 
     // Starts the holographic frame and updates the content.
-    HolographicFrame^ Update();
+    Windows::Graphics::Holographic::HolographicFrame^ Update();
 
     // Renders holograms, including world-locked content.
-    bool Render(HolographicFrame^ holographicFrame);
+    bool Render(Windows::Graphics::Holographic::HolographicFrame^ holographicFrame);
 
     // Handle saving and loading of app state owned by AppMain.
-    task<void> SaveAppStateAsync();
-    task<void> LoadAppStateAsync();
+    Concurrency::task<void> SaveAppStateAsync();
+    Concurrency::task<void> LoadAppStateAsync();
 
     // Global access to the current frame number
     uint64 GetCurrentFrameNumber() const;
@@ -119,6 +116,7 @@ namespace HoloIntervention
     // Provide access to the renderers
     Rendering::ModelRenderer& GetModelRenderer();
     Rendering::SliceRenderer& GetSliceRenderer();
+    Rendering::VolumeRenderer& GetVolumeRenderer();
 
     // IDeviceNotify
     virtual void OnDeviceLost();
@@ -126,13 +124,13 @@ namespace HoloIntervention
 
   protected:
     // Asynchronously creates resources for new holographic cameras.
-    void OnCameraAdded(HolographicSpace^ sender, HolographicSpaceCameraAddedEventArgs^ args);
+    void OnCameraAdded(Windows::Graphics::Holographic::HolographicSpace^ sender, Windows::Graphics::Holographic::HolographicSpaceCameraAddedEventArgs^ args);
 
     // Synchronously releases resources for holographic cameras that are no longer attached to the system.
-    void OnCameraRemoved(HolographicSpace^ sender, HolographicSpaceCameraRemovedEventArgs^ args);
+    void OnCameraRemoved(Windows::Graphics::Holographic::HolographicSpace^ sender, Windows::Graphics::Holographic::HolographicSpaceCameraRemovedEventArgs^ args);
 
     // Used to notify the app when the positional tracking state changes.
-    void OnLocatabilityChanged(SpatialLocator^ sender, Platform::Object^ args);
+    void OnLocatabilityChanged(Windows::Perception::Spatial::SpatialLocator^ sender, Platform::Object^ args);
 
     // Clears event registration state. Used when changing to a new HolographicSpace and when tearing down AppMain.
     void UnregisterHolographicEventHandlers();
@@ -141,13 +139,14 @@ namespace HoloIntervention
     void InitializeVoiceSystem();
 
     // Set the focus point depending on the state of all the systems
-    void SetHolographicFocusPoint(HolographicFramePrediction^ prediction, HolographicFrame^ holographicFrame, SpatialCoordinateSystem^ currentCoordinateSystem);
+    void SetHolographicFocusPoint(Windows::Graphics::Holographic::HolographicFramePrediction^ prediction, Windows::Graphics::Holographic::HolographicFrame^ holographicFrame, Windows::Perception::Spatial::SpatialCoordinateSystem^ currentCoordinateSystem);
 
   protected:
     // Renderers
     std::unique_ptr<Rendering::ModelRenderer>             m_modelRenderer;
     std::unique_ptr<Rendering::SliceRenderer>             m_sliceRenderer;
     std::unique_ptr<Rendering::SpatialMeshRenderer>       m_meshRenderer;
+    std::unique_ptr<Rendering::VolumeRenderer>            m_volumeRenderer;
 
     // Event handlers
     std::unique_ptr<Input::SpatialInputHandler>           m_spatialInputHandler;
@@ -168,10 +167,10 @@ namespace HoloIntervention
     HolographicSpace^                                     m_holographicSpace;
 
     // SpatialLocator that is attached to the primary camera.
-    SpatialLocator^                                       m_locator;
+    Windows::Perception::Spatial::SpatialLocator^         m_locator;
 
     // A reference frame attached to the holographic camera.
-    SpatialLocatorAttachedFrameOfReference^               m_attachedReferenceFrame;
+    Windows::Perception::Spatial::SpatialLocatorAttachedFrameOfReference^ m_attachedReferenceFrame;
 
     // Event registration tokens.
     Windows::Foundation::EventRegistrationToken           m_cameraAddedToken;
@@ -180,7 +179,7 @@ namespace HoloIntervention
     uint64                                                m_trackedFrameReceivedToken;
 
     // Store the current state of locatability
-    SpatialLocatability                                   m_locatability;
+    Windows::Perception::Spatial::SpatialLocatability     m_locatability;
 
     // System pointers
     std::unique_ptr<System::SpatialSystem>                m_spatialSystem;

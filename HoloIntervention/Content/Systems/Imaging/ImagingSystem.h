@@ -60,7 +60,7 @@ namespace HoloIntervention
       void Process3DFrame(UWPOpenIGTLink::TrackedFrame^ frame);
 
     protected:
-      // Tokens
+      // Slice system
       uint32                    m_sliceToken = Rendering::SliceRenderer::INVALID_SLICE_INDEX;
     };
   }

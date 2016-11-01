@@ -50,6 +50,7 @@ namespace HoloIntervention
       XMFLOAT4X4 worldMatrix;
       XMFLOAT4   hologramColorFadeMultiplier;
     };
+    static_assert(sizeof(NotificationConstantBuffer) % 16 == 0, "Constant buffer must be a size of multiple 16.");
 
     class NotificationRenderer
     {
@@ -61,13 +62,13 @@ namespace HoloIntervention
       };
 
     public:
-      NotificationRenderer( const std::shared_ptr<DX::DeviceResources>& deviceResources );
+      NotificationRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources);
       ~NotificationRenderer();
 
-      void Update( NotificationConstantBuffer& buffer );
+      void Update(NotificationConstantBuffer& buffer);
 
       void Render();
-      void RenderText( const std::wstring& message );
+      void RenderText(const std::wstring& message);
 
       // D3D device related controls
       void CreateDeviceDependentResources();

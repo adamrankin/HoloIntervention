@@ -37,8 +37,8 @@ namespace HoloIntervention
     const uint32 NotificationRenderer::OFFSCREEN_RENDER_TARGET_WIDTH_PIXEL = 2048;
 
     //----------------------------------------------------------------------------
-    NotificationRenderer::NotificationRenderer( const std::shared_ptr<DX::DeviceResources>& deviceResources )
-      : m_deviceResources ( deviceResources )
+    NotificationRenderer::NotificationRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources)
+      : m_deviceResources(deviceResources)
     {
       CreateDeviceDependentResources();
     }
@@ -50,9 +50,9 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void NotificationRenderer::Update( NotificationConstantBuffer& buffer )
+    void NotificationRenderer::Update(NotificationConstantBuffer& buffer)
     {
-      if ( !m_loadingComplete )
+      if (!m_loadingComplete)
       {
         return;
       }
@@ -72,7 +72,7 @@ namespace HoloIntervention
     void NotificationRenderer::Render()
     {
       // Loading is asynchronous. Resources must be created before drawing can occur.
-      if ( !m_loadingComplete )
+      if (!m_loadingComplete)
       {
         return;
       }
@@ -80,49 +80,49 @@ namespace HoloIntervention
       const auto context = m_deviceResources->GetD3DDeviceContext();
 
       // Each vertex is one instance of the VertexPositionColor struct.
-      const UINT stride = sizeof( VertexPositionColorTex );
+      const UINT stride = sizeof(VertexPositionColorTex);
       const UINT offset = 0;
-      context->IASetVertexBuffers( 0, 1, m_vertexBuffer.GetAddressOf(), &stride, &offset );
-      context->IASetIndexBuffer( m_indexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0 );
-      context->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
-      context->IASetInputLayout( m_inputLayout.Get() );
+      context->IASetVertexBuffers(0, 1, m_vertexBuffer.GetAddressOf(), &stride, &offset);
+      context->IASetIndexBuffer(m_indexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
+      context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+      context->IASetInputLayout(m_inputLayout.Get());
 
       // Attach the vertex shader.
-      context->VSSetShader( m_vertexShader.Get(), nullptr, 0 );
+      context->VSSetShader(m_vertexShader.Get(), nullptr, 0);
       // Apply the model constant buffer to the vertex shader.
-      context->VSSetConstantBuffers( 0, 1, m_modelConstantBuffer.GetAddressOf() );
+      context->VSSetConstantBuffers(0, 1, m_modelConstantBuffer.GetAddressOf());
 
-      if ( !m_usingVprtShaders )
+      if (!m_usingVprtShaders)
       {
-        context->GSSetShader( m_geometryShader.Get(), nullptr, 0 );
+        context->GSSetShader(m_geometryShader.Get(), nullptr, 0);
       }
 
       // Attach the pixel shader.
-      context->PSSetShader( m_pixelShader.Get(), nullptr, 0 );
-      context->PSSetShaderResources( 0, 1, m_distanceFieldRenderer->GetTexture().GetAddressOf() );
-      context->PSSetSamplers( 0, 1, m_quadTextureSamplerState.GetAddressOf() );
+      context->PSSetShader(m_pixelShader.Get(), nullptr, 0);
+      context->PSSetShaderResources(0, 1, m_distanceFieldRenderer->GetTexture().GetAddressOf());
+      context->PSSetSamplers(0, 1, m_quadTextureSamplerState.GetAddressOf());
 
-      context->OMSetBlendState( m_blendState.Get(), nullptr, 0xffffffff );
+      context->OMSetBlendState(m_blendState.Get(), nullptr, 0xffffffff);
 
       // Draw the objects.
-      context->DrawIndexedInstanced( m_indexCount, 2, 0, 0, 0 );
+      context->DrawIndexedInstanced(m_indexCount, 2, 0, 0, 0);
 
-      context->OMSetBlendState( nullptr, nullptr, 0xffffffff );
+      context->OMSetBlendState(nullptr, nullptr, 0xffffffff);
     }
 
     //----------------------------------------------------------------------------
-    void NotificationRenderer::RenderText( const std::wstring& message )
+    void NotificationRenderer::RenderText(const std::wstring& message)
     {
       m_distanceFieldRenderer->ResetRenderCount();
-      m_textRenderer->RenderTextOffscreen( message );
-      m_distanceFieldRenderer->RenderDistanceField( m_textRenderer->GetTexture() );
+      m_textRenderer->RenderTextOffscreen(message);
+      m_distanceFieldRenderer->RenderDistanceField(m_textRenderer->GetTexture());
     }
 
     //----------------------------------------------------------------------------
     void NotificationRenderer::CreateDeviceDependentResources()
     {
-      m_textRenderer = std::make_unique<TextRenderer>( m_deviceResources, OFFSCREEN_RENDER_TARGET_WIDTH_PIXEL, OFFSCREEN_RENDER_TARGET_WIDTH_PIXEL );
-      m_distanceFieldRenderer = std::make_unique<DistanceFieldRenderer>( m_deviceResources, BLUR_TARGET_WIDTH_PIXEL, BLUR_TARGET_WIDTH_PIXEL );
+      m_textRenderer = std::make_unique<TextRenderer>(m_deviceResources, OFFSCREEN_RENDER_TARGET_WIDTH_PIXEL, OFFSCREEN_RENDER_TARGET_WIDTH_PIXEL);
+      m_distanceFieldRenderer = std::make_unique<DistanceFieldRenderer>(m_deviceResources, BLUR_TARGET_WIDTH_PIXEL, BLUR_TARGET_WIDTH_PIXEL);
 
       m_usingVprtShaders = m_deviceResources->GetDeviceSupportsVprt();
 
@@ -133,19 +133,19 @@ namespace HoloIntervention
                                           : L"ms-appx:///NotificationVertexShader.cso";
 
       // Load shaders asynchronously.
-      task<std::vector<byte>> loadVSTask = DX::ReadDataAsync( vertexShaderFileName );
-      task<std::vector<byte>> loadPSTask = DX::ReadDataAsync( L"ms-appx:///NotificationPixelShader.cso" );
+      task<std::vector<byte>> loadVSTask = DX::ReadDataAsync(vertexShaderFileName);
+      task<std::vector<byte>> loadPSTask = DX::ReadDataAsync(L"ms-appx:///NotificationPixelShader.cso");
 
       task<std::vector<byte>> loadGSTask;
-      if ( !m_usingVprtShaders )
+      if (!m_usingVprtShaders)
       {
         // Load the pass-through geometry shader.
         // position, color, texture, index
-        loadGSTask = DX::ReadDataAsync( L"ms-appx:///PCTIGeometryShader.cso" );
+        loadGSTask = DX::ReadDataAsync(L"ms-appx:///PCTIGeometryShader.cso");
       }
 
       // After the vertex shader file is loaded, create the shader and input layout.
-      task<void> createVSTask = loadVSTask.then( [this]( const std::vector<byte>& fileData )
+      task<void> createVSTask = loadVSTask.then([this](const std::vector<byte>& fileData)
       {
         DX::ThrowIfFailed(
           m_deviceResources->GetD3DDevice()->CreateVertexShader(
@@ -174,10 +174,10 @@ namespace HoloIntervention
             &m_inputLayout
           )
         );
-      } );
+      });
 
       // After the pixel shader file is loaded, create the shader and constant buffer.
-      task<void> createPSTask = loadPSTask.then( [this]( const std::vector<byte>& fileData )
+      task<void> createPSTask = loadPSTask.then([this](const std::vector<byte>& fileData)
       {
         DX::ThrowIfFailed(
           m_deviceResources->GetD3DDevice()->CreatePixelShader(
@@ -188,7 +188,7 @@ namespace HoloIntervention
           )
         );
 
-        const CD3D11_BUFFER_DESC constantBufferDesc( sizeof( NotificationConstantBuffer ), D3D11_BIND_CONSTANT_BUFFER );
+        const CD3D11_BUFFER_DESC constantBufferDesc(sizeof(NotificationConstantBuffer), D3D11_BIND_CONSTANT_BUFFER);
         DX::ThrowIfFailed(
           m_deviceResources->GetD3DDevice()->CreateBuffer(
             &constantBufferDesc,
@@ -196,13 +196,13 @@ namespace HoloIntervention
             &m_modelConstantBuffer
           )
         );
-      } );
+      });
 
       task<void> createGSTask;
-      if ( !m_usingVprtShaders )
+      if (!m_usingVprtShaders)
       {
         // After the geometry shader file is loaded, create the shader.
-        createGSTask = loadGSTask.then( [this]( const std::vector<byte>& fileData )
+        createGSTask = loadGSTask.then([this](const std::vector<byte>& fileData)
         {
           DX::ThrowIfFailed(
             m_deviceResources->GetD3DDevice()->CreateGeometryShader(
@@ -212,22 +212,22 @@ namespace HoloIntervention
               &m_geometryShader
             )
           );
-        } );
+        });
       }
 
       // Once all shaders are loaded, create the mesh.
-      task<void> shaderTaskGroup = m_usingVprtShaders ? ( createPSTask && createVSTask ) : ( createPSTask && createVSTask && createGSTask );
-      task<void> finishLoadingTask = shaderTaskGroup.then( [this]()
+      task<void> shaderTaskGroup = m_usingVprtShaders ? (createPSTask && createVSTask) : (createPSTask && createVSTask && createGSTask);
+      task<void> finishLoadingTask = shaderTaskGroup.then([this]()
       {
         // Windows Holographic is scaled in meters, so to draw the
         // quad at a comfortable size we made the quad width 0.2 m (20 cm).
         static const std::array<VertexPositionColorTex, 4> quadVertices =
         {
           {
-            { XMFLOAT3( -0.2f,  0.2f, 0.f ), XMFLOAT4( 1.0f, 1.0f, 1.0f, 1.0f ), XMFLOAT2( 0.f, 0.f ) },
-            { XMFLOAT3( 0.2f,  0.2f, 0.f ), XMFLOAT4( 1.0f, 1.0f, 1.0f, 1.0f ), XMFLOAT2( 1.f, 0.f ) },
-            { XMFLOAT3( 0.2f, -0.2f, 0.f ), XMFLOAT4( 1.0f, 1.0f, 1.0f, 1.0f ), XMFLOAT2( 1.f, 1.f ) },
-            { XMFLOAT3( -0.2f, -0.2f, 0.f ), XMFLOAT4( 1.0f, 1.0f, 1.0f, 1.0f ), XMFLOAT2( 0.f, 1.f ) },
+            { XMFLOAT3(-0.2f,  0.2f, 0.f), XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), XMFLOAT2(0.f, 0.f) },
+            { XMFLOAT3(0.2f,  0.2f, 0.f), XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), XMFLOAT2(1.f, 0.f) },
+            { XMFLOAT3(0.2f, -0.2f, 0.f), XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), XMFLOAT2(1.f, 1.f) },
+            { XMFLOAT3(-0.2f, -0.2f, 0.f), XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), XMFLOAT2(0.f, 1.f) },
           }
         };
 
@@ -235,7 +235,7 @@ namespace HoloIntervention
         vertexBufferData.pSysMem = quadVertices.data();
         vertexBufferData.SysMemPitch = 0;
         vertexBufferData.SysMemSlicePitch = 0;
-        const CD3D11_BUFFER_DESC vertexBufferDesc( sizeof( VertexPositionColorTex ) * quadVertices.size(), D3D11_BIND_VERTEX_BUFFER );
+        const CD3D11_BUFFER_DESC vertexBufferDesc(sizeof(VertexPositionColorTex) * quadVertices.size(), D3D11_BIND_VERTEX_BUFFER);
         DX::ThrowIfFailed(
           m_deviceResources->GetD3DDevice()->CreateBuffer(
             &vertexBufferDesc,
@@ -263,7 +263,7 @@ namespace HoloIntervention
         indexBufferData.pSysMem = quadIndices.data();
         indexBufferData.SysMemPitch = 0;
         indexBufferData.SysMemSlicePitch = 0;
-        const CD3D11_BUFFER_DESC indexBufferDesc( sizeof( unsigned short ) * quadIndices.size(), D3D11_BIND_INDEX_BUFFER );
+        const CD3D11_BUFFER_DESC indexBufferDesc(sizeof(unsigned short) * quadIndices.size(), D3D11_BIND_INDEX_BUFFER);
         DX::ThrowIfFailed(
           m_deviceResources->GetD3DDevice()->CreateBuffer(
             &indexBufferDesc,
@@ -273,7 +273,7 @@ namespace HoloIntervention
         );
 
         D3D11_SAMPLER_DESC desc;
-        ZeroMemory( &desc, sizeof( D3D11_SAMPLER_DESC ) );
+        ZeroMemory(&desc, sizeof(D3D11_SAMPLER_DESC));
         desc.Filter = D3D11_FILTER_ANISOTROPIC;
         desc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
         desc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
@@ -295,7 +295,7 @@ namespace HoloIntervention
         );
 
         D3D11_BLEND_DESC blendDesc;
-        ZeroMemory( &blendDesc, sizeof( D3D11_BLEND_DESC ) );
+        ZeroMemory(&blendDesc, sizeof(D3D11_BLEND_DESC));
         blendDesc.AlphaToCoverageEnable = FALSE;
         blendDesc.IndependentBlendEnable = FALSE;
         blendDesc.RenderTarget[0].BlendEnable = TRUE;
@@ -316,14 +316,13 @@ namespace HoloIntervention
 
         // After the assets are loaded, the quad is ready to be rendered.
         m_loadingComplete = true;
-      } );
+      });
     }
 
     //----------------------------------------------------------------------------
     void NotificationRenderer::ReleaseDeviceDependentResources()
     {
       m_loadingComplete = false;
-      m_usingVprtShaders = false;
 
       m_textRenderer = nullptr;
       m_distanceFieldRenderer = nullptr;

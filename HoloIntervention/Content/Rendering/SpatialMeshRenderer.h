@@ -71,7 +71,7 @@ namespace HoloIntervention
     protected:
       void InitObserver(SpatialCoordinateSystem^ coordinateSystem);
       void RequestAccessAsync(SpatialCoordinateSystem^ coordinateSystem);
-      task<void> AddOrUpdateSurfaceAsync(Platform::Guid id, Surfaces::SpatialSurfaceInfo^ newSurface);
+      Concurrency::task<void> AddOrUpdateSurfaceAsync(Platform::Guid id, Surfaces::SpatialSurfaceInfo^ newSurface);
       void OnSurfacesChanged(Surfaces::SpatialSurfaceObserver^ sender, Platform::Object^ args);
 
     protected:

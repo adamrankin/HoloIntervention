@@ -29,6 +29,23 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 namespace HoloIntervention
 {
+  namespace Rendering
+  {
+    class ModelRenderer;
+    class SliceRenderer;
+    class VolumeRenderer;
+  }
+
+  namespace Sound
+  {
+    class SoundManager;
+  }
+
+  namespace Network
+  {
+    class IGTLinkIF;
+  }
+
   namespace System
   {
     class GazeSystem;
@@ -70,6 +87,7 @@ namespace HoloIntervention
     // Provide app wide access to the renderers
     Rendering::ModelRenderer & GetModelRenderer();
     Rendering::SliceRenderer & GetSliceRenderer();
+    Rendering::VolumeRenderer & GetVolumeRenderer();
 
     // Global access to the current frame number
     uint64 GetCurrentFrameNumber() const;

@@ -59,7 +59,7 @@ namespace HoloIntervention
 
       /// Connect to the server specified by SetHostname() and SetPort()
       /// If connected to a server, disconnects first.
-      concurrency::task<bool> ConnectAsync(double timeoutSec = CONNECT_TIMEOUT_SEC, concurrency::task_options& options = concurrency::task_options());
+      Concurrency::task<bool> ConnectAsync(double timeoutSec = CONNECT_TIMEOUT_SEC, Concurrency::task_options& options = Concurrency::task_options());
 
       /// Disconnect from the server
       void Disconnect();
@@ -90,14 +90,14 @@ namespace HoloIntervention
       static std::shared_ptr<byte> GetSharedImagePtr(UWPOpenIGTLink::TrackedFrame^ frame);
 
     protected:
-      task<void> KeepAliveAsync();
+      Concurrency::task<void> KeepAliveAsync();
 
     protected:
       UWPOpenIGTLink::IGTLinkClient^            m_igtClient = ref new UWPOpenIGTLink::IGTLinkClient();
       ConnectionState                           m_connectionState = CONNECTION_STATE_UNKNOWN;
       std::mutex                                m_clientMutex;
-      task<void>*                               m_keepAliveTask = nullptr;
-      concurrency::cancellation_token_source    m_keepAliveTokenSource;
+      Concurrency::task<void>*                  m_keepAliveTask = nullptr;
+      Concurrency::cancellation_token_source    m_keepAliveTokenSource;
       bool                                      m_reconnectOnDrop = true;
 
       // Constants relating to IGT behavior

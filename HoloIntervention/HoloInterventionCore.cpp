@@ -44,6 +44,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "NotificationRenderer.h"
 #include "SliceRenderer.h"
 #include "SpatialMeshRenderer.h"
+#include "VolumeRenderer.h"
 
 // Network includes
 #include "IGTLinkIF.h"
@@ -102,6 +103,7 @@ namespace HoloIntervention
     // Initialize the system components
     m_modelRenderer = std::make_unique<Rendering::ModelRenderer>(m_deviceResources);
     m_sliceRenderer = std::make_unique<Rendering::SliceRenderer>(m_deviceResources);
+    m_volumeRenderer = std::make_unique<Rendering::VolumeRenderer>(m_deviceResources);
     m_meshRenderer = std::make_unique<Rendering::SpatialMeshRenderer>(m_deviceResources);
     m_soundManager = std::make_unique<Sound::SoundManager>();
 
@@ -392,6 +394,12 @@ namespace HoloIntervention
   Rendering::SliceRenderer& HoloInterventionCore::GetSliceRenderer()
   {
     return *m_sliceRenderer.get();
+  }
+
+  //----------------------------------------------------------------------------
+  Rendering::VolumeRenderer& HoloInterventionCore::GetVolumeRenderer()
+  {
+    return *m_volumeRenderer.get();
   }
 
   //----------------------------------------------------------------------------

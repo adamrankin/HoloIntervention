@@ -13,12 +13,13 @@
 #include "pch.h"
 #include "VideoFrameProcessor.h"
 
-using namespace Windows::Foundation;
+using namespace Concurrency;
 using namespace Windows::Foundation::Collections;
 using namespace Windows::Foundation::Numerics;
-using namespace Windows::Media::Capture;
+using namespace Windows::Foundation;
 using namespace Windows::Media::Capture::Frames;
-using namespace concurrency;
+using namespace Windows::Media::Capture;
+using namespace Windows::Media::Devices::Core;
 using namespace std::placeholders;
 
 namespace HoloIntervention
@@ -123,6 +124,12 @@ namespace HoloIntervention
         }
       });
       return task;
+    }
+
+    //----------------------------------------------------------------------------
+    CameraIntrinsics^ VideoFrameProcessor::TryGetCameraIntrinsics()
+    {
+      return m_mediaFrameSource->TryGetCameraIntrinsics(m_mediaFrameSource->CurrentFormat);
     }
 
     //----------------------------------------------------------------------------

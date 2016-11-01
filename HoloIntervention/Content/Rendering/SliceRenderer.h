@@ -40,13 +40,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 // DirectX includes
 #include <d3d11.h>
 
-using namespace Concurrency;
-using namespace DirectX;
-using namespace Microsoft::WRL;
-using namespace Windows::Foundation::Numerics;
-using namespace Windows::Storage::Streams;
-using namespace Windows::UI::Input::Spatial;
-
 namespace HoloIntervention
 {
   namespace Rendering
@@ -61,11 +54,11 @@ namespace HoloIntervention
       ~SliceRenderer();
 
       uint32 AddSlice();
-      uint32 AddSlice(std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, float4x4 embeddedImageTransform);
-      uint32 AddSlice(IBuffer^ imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, float4x4 embeddedImageTransform);
+      uint32 AddSlice(std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 embeddedImageTransform);
+      uint32 AddSlice(Windows::Storage::Streams::IBuffer^ imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 embeddedImageTransform);
       void RemoveSlice(uint32 sliceId);
 
-      void UpdateSlice(uint32 sliceId, std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, float4x4 embeddedImageTransform);
+      void UpdateSlice(uint32 sliceId, std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 embeddedImageTransform);
 
       void ShowSlice(uint32 sliceId);
       void HideSlice(uint32 sliceId);
@@ -73,19 +66,19 @@ namespace HoloIntervention
       void SetSliceHeadlocked(uint32 sliceId, bool headlocked);
 
       // Hard set of the slice pose, slice will jump to the given pose
-      void SetSlicePose(uint32 sliceId, const float4x4& pose);
+      void SetSlicePose(uint32 sliceId, const Windows::Foundation::Numerics::float4x4& pose);
 
       // For holographic system stabilization, the pose of a slice is needed
-      bool GetSlicePose(uint32 sliceId, float4x4& outPose);
+      bool GetSlicePose(uint32 sliceId, Windows::Foundation::Numerics::float4x4& outPose);
 
       // Set the target slice pose, system will smoothly animate the slice to that position
-      void SetDesiredSlicePose(uint32 sliceId, const float4x4& pose);
+      void SetDesiredSlicePose(uint32 sliceId, const Windows::Foundation::Numerics::float4x4& pose);
 
       // D3D device related controls
       void CreateDeviceDependentResources();
       void ReleaseDeviceDependentResources();
 
-      void Update(SpatialPointerPose^ pose, const DX::StepTimer& timer);
+      void Update(Windows::UI::Input::Spatial::SpatialPointerPose^ pose, const DX::StepTimer& timer);
       void Render();
 
       static const uint32_t INVALID_SLICE_INDEX = 0;
@@ -98,14 +91,14 @@ namespace HoloIntervention
       std::shared_ptr<DX::DeviceResources>                m_deviceResources;
 
       // Direct3D resources
-      ComPtr<ID3D11InputLayout>                           m_inputLayout;
-      ComPtr<ID3D11Buffer>                                m_indexBuffer;
-      ComPtr<ID3D11VertexShader>                          m_vertexShader;
-      ComPtr<ID3D11GeometryShader>                        m_geometryShader;
-      ComPtr<ID3D11PixelShader>                           m_pixelShader;
+      Microsoft::WRL::ComPtr<ID3D11InputLayout>           m_inputLayout;
+      Microsoft::WRL::ComPtr<ID3D11Buffer>                m_indexBuffer;
+      Microsoft::WRL::ComPtr<ID3D11VertexShader>          m_vertexShader;
+      Microsoft::WRL::ComPtr<ID3D11GeometryShader>        m_geometryShader;
+      Microsoft::WRL::ComPtr<ID3D11PixelShader>           m_pixelShader;
 
       // Direct3D resources for the texture.
-      ComPtr<ID3D11SamplerState>                          m_quadTextureSamplerState;
+      Microsoft::WRL::ComPtr<ID3D11SamplerState>          m_quadTextureSamplerState;
 
       // System resources for quad geometry.
       uint32                                              m_indexCount = 0;

@@ -54,14 +54,14 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Link>
-      <AdditionalDependencies>d2d1.lib;d3d11.lib;dxgi.lib;dwrite.lib;windowscodecs.lib;Mfreadwrite.lib;mfplat.lib;Mfuuid.lib;hrtfapo.lib;$(SolutionDir)DirectXTK\Bin\Windows10\$(Platform)\$(Configuration)\DirectXTK.lib;$(SolutionDir)OpenCV-bin\lib\$(Configuration)\opencv_core310d.lib;$(SolutionDir)OpenCV-bin\lib\$(Configuration)\opencv_imgproc310d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d2d1.lib;d3d11.lib;dxgi.lib;dwrite.lib;windowscodecs.lib;Mfreadwrite.lib;mfplat.lib;Mfuuid.lib;hrtfapo.lib;$(SolutionDir)DirectXTK\Bin\Windows10\$(Platform)\$(Configuration)\DirectXTK.lib;$(SolutionDir)OpenCV-bin\lib\$(Configuration)\opencv_core310d.lib;$(SolutionDir)OpenCV-bin\lib\$(Configuration)\opencv_imgproc310d.lib;$(SolutionDir)OpenCV-bin\lib\$(Configuration)\opencv_calib3d310d.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories); $(VCInstallDir)\lib\store; $(VCInstallDir)\lib</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>mincore.lib;kernel32.lib;ole32.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
     <ClCompile>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)MediaCapture;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink-bin;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink\Source\igtlutil;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink\Source;$(IntermediateOutputPath);$(SolutionDir)DirectXTK\Src;$(SolutionDir)DirectXTK\Inc;$(SolutionDir)$(Configuration)\$(ProjectName);$(ProjectDir)Content\Systems\Tool;$(ProjectDir)Content\Systems\Spatial;$(ProjectDir)Content\Systems\Notification;$(ProjectDir)Content\Systems\Imaging;$(ProjectDir)Content\Systems\Gaze;$(ProjectDir)Content\Systems\Registration;$(ProjectDir)Content\Systems;$(ProjectDir)Content\SpatialMapping;$(ProjectDir)Content\Capture;$(ProjectDir)Content\Network;$(ProjectDir)Content\Rendering\Shaders;$(ProjectDir)Content\Rendering\Shaders\Compiled;$(ProjectDir)Content\Rendering\DirectXTK;$(ProjectDir)Content\Rendering;$(ProjectDir)Content\Input;$(ProjectDir)Content\Sound;$(ProjectDir)Content;$(ProjectDir)Common;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content\Data;$(SolutionDir)DirectXTex\DirectXTex;$(SolutionDir)OpenCV-bin\install\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)MediaCapture;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink-bin;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink\Source\igtlutil;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink\Source;$(IntermediateOutputPath);$(SolutionDir)DirectXTK\Src;$(SolutionDir)DirectXTK\Inc;$(SolutionDir)$(Configuration)\$(ProjectName);$(ProjectDir)Content\Systems\Tool;$(ProjectDir)Content\Systems\Spatial;$(ProjectDir)Content\Systems\Notification;$(ProjectDir)Content\Systems\Imaging;$(ProjectDir)Content\Systems\Gaze;$(ProjectDir)Content\Systems\Registration;$(ProjectDir)Content\Systems;$(ProjectDir)Content\SpatialMapping;$(ProjectDir)Content\Capture;$(ProjectDir)Content\Network;$(ProjectDir)Content\Rendering\Volume;$(ProjectDir)Content\Rendering\Shaders;$(ProjectDir)Content\Rendering\Shaders\Compiled;$(ProjectDir)Content\Rendering\DirectXTK;$(ProjectDir)Content\Rendering;$(ProjectDir)Content\Input;$(ProjectDir)Content\Sound;$(ProjectDir)Content;$(ProjectDir)Common;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content\Data;$(SolutionDir)DirectXTex\DirectXTex;$(SolutionDir)OpenCV-bin\install\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
@@ -71,14 +71,14 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Link>
-      <AdditionalDependencies>d2d1.lib;d3d11.lib;dxgi.lib;dwrite.lib;windowscodecs.lib;Mfreadwrite.lib;mfplat.lib;Mfuuid.lib;hrtfapo.lib;$(SolutionDir)DirectXTK\Bin\Windows10\$(Platform)\$(Configuration)\DirectXTK.lib;$(SolutionDir)OpenCV-bin\lib\$(Configuration)\opencv_core310.lib;$(SolutionDir)OpenCV-bin\lib\$(Configuration)\opencv_imgproc310.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d2d1.lib;d3d11.lib;dxgi.lib;dwrite.lib;windowscodecs.lib;Mfreadwrite.lib;mfplat.lib;Mfuuid.lib;hrtfapo.lib;$(SolutionDir)DirectXTK\Bin\Windows10\$(Platform)\$(Configuration)\DirectXTK.lib;$(SolutionDir)OpenCV-bin\lib\$(Configuration)\opencv_core310.lib;$(SolutionDir)OpenCV-bin\lib\$(Configuration)\opencv_imgproc310.lib;$(SolutionDir)OpenCV-bin\lib\$(Configuration)\opencv_calib3d310.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories); $(VCInstallDir)\lib\store; $(VCInstallDir)\lib</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>mincore.lib;kernel32.lib;ole32.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
     <ClCompile>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)MediaCapture;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink-bin;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink\Source\igtlutil;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink\Source;$(IntermediateOutputPath);$(SolutionDir)DirectXTK\Src;$(SolutionDir)DirectXTK\Inc;$(SolutionDir)$(Configuration)\$(ProjectName);$(ProjectDir)Content\Systems\Tool;$(ProjectDir)Content\Systems\Spatial;$(ProjectDir)Content\Systems\Notification;$(ProjectDir)Content\Systems\Imaging;$(ProjectDir)Content\Systems\Gaze;$(ProjectDir)Content\Systems\Registration;$(ProjectDir)Content\Systems;$(ProjectDir)Content\SpatialMapping;$(ProjectDir)Content\Capture;$(ProjectDir)Content\Network;$(ProjectDir)Content\Rendering\Shaders;$(ProjectDir)Content\Rendering\Shaders\Compiled;$(ProjectDir)Content\Rendering\DirectXTK;$(ProjectDir)Content\Rendering;$(ProjectDir)Content\Input;$(ProjectDir)Content\Sound;$(ProjectDir)Content;$(ProjectDir)Common;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content\Data;$(SolutionDir)DirectXTex\DirectXTex;$(SolutionDir)OpenCV-bin\install\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)MediaCapture;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink-bin;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink\Source\igtlutil;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink\Source;$(IntermediateOutputPath);$(SolutionDir)DirectXTK\Src;$(SolutionDir)DirectXTK\Inc;$(SolutionDir)$(Configuration)\$(ProjectName);$(ProjectDir)Content\Systems\Tool;$(ProjectDir)Content\Systems\Spatial;$(ProjectDir)Content\Systems\Notification;$(ProjectDir)Content\Systems\Imaging;$(ProjectDir)Content\Systems\Gaze;$(ProjectDir)Content\Systems\Registration;$(ProjectDir)Content\Systems;$(ProjectDir)Content\SpatialMapping;$(ProjectDir)Content\Capture;$(ProjectDir)Content\Network;$(ProjectDir)Content\Rendering\Volume;$(ProjectDir)Content\Rendering\Shaders;$(ProjectDir)Content\Rendering\Shaders\Compiled;$(ProjectDir)Content\Rendering\DirectXTK;$(ProjectDir)Content\Rendering;$(ProjectDir)Content\Input;$(ProjectDir)Content\Sound;$(ProjectDir)Content;$(ProjectDir)Common;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content\Data;$(SolutionDir)DirectXTex\DirectXTex;$(SolutionDir)OpenCV-bin\install\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
@@ -117,6 +117,7 @@
     <ClInclude Include="Content\Rendering\SpatialMeshRenderer.h" />
     <ClInclude Include="Content\Rendering\SpatialMesh.h" />
     <ClInclude Include="Content\Rendering\TextRenderer.h" />
+    <ClInclude Include="Content\Rendering\Volume\VolumeRenderer.h" />
     <ClInclude Include="Content\Sound\AudioFileReader.h" />
     <ClInclude Include="Content\Sound\CardioidSound.h" />
     <ClInclude Include="Content\Sound\IVoiceInput.h" />
@@ -160,6 +161,7 @@
     <ClCompile Include="Content\Rendering\SpatialMeshRenderer.cpp" />
     <ClCompile Include="Content\Rendering\SpatialMesh.cpp" />
     <ClCompile Include="Content\Rendering\TextRenderer.cpp" />
+    <ClCompile Include="Content\Rendering\Volume\VolumeRenderer.cpp" />
     <ClCompile Include="Content\Sound\AudioFileReader.cpp" />
     <ClCompile Include="Content\Sound\CardioidSound.cpp" />
     <ClCompile Include="Content\Sound\OmnidirectionalSound.cpp" />
@@ -187,6 +189,9 @@
     <AppxManifest Include="Package.appxmanifest">
       <SubType>Designer</SubType>
     </AppxManifest>
+    <None Include="..\OpenCV-bin\bin\Debug\opencv_calib3d310d.dll">
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
+    </None>
     <None Include="..\OpenCV-bin\bin\Debug\opencv_core310d.dll">
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
     </None>
@@ -225,6 +230,9 @@
     </None>
     <None Include="..\OpenCV-bin\bin\Debug\opencv_videoio310d.dll">
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
+    </None>
+    <None Include="..\OpenCV-bin\bin\Release\opencv_calib3d310.dll">
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
     </None>
     <None Include="..\OpenCV-bin\bin\Release\opencv_core310.dll">
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>

@@ -35,6 +35,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "NotificationSystem.h"
 
 using namespace DirectX;
+using namespace Windows::Storage::Streams;
 
 namespace HoloIntervention
 {

@@ -116,6 +116,9 @@
     <ClCompile Include="Content\Systems\Registration\LandmarkRegistration.cpp">
       <Filter>Content\Systems\Registration\Camera</Filter>
     </ClCompile>
+    <ClCompile Include="Content\Rendering\Volume\VolumeRenderer.cpp">
+      <Filter>Content\Rendering\VolumeRenderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common\CameraResources.h">
@@ -244,6 +247,9 @@
     </ClInclude>
     <ClInclude Include="Content\Systems\Registration\LandmarkRegistration.h">
       <Filter>Content\Systems\Registration\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Rendering\Volume\VolumeRenderer.h">
+      <Filter>Content\Rendering\VolumeRenderer</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -552,6 +558,12 @@
     <None Include="..\OpenCVDependencies\vccorlib140.dll">
       <Filter>OpenCV\Release\Dependencies</Filter>
     </None>
+    <None Include="..\OpenCV-bin\bin\Debug\opencv_calib3d310d.dll">
+      <Filter>OpenCV\Debug</Filter>
+    </None>
+    <None Include="..\OpenCV-bin\bin\Release\opencv_calib3d310.dll">
+      <Filter>OpenCV\Release</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Content">
@@ -682,6 +694,15 @@
     </Filter>
     <Filter Include="OpenCV\Release\Dependencies">
       <UniqueIdentifier>{b5534685-e53e-4465-9808-187b66f4a64c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Rendering\VolumeRenderer">
+      <UniqueIdentifier>{d22f4c2b-7162-4cf5-848c-5bcc5d97f8ad}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Rendering\VolumeRenderer\Transfer Functions">
+      <UniqueIdentifier>{4b1ec331-0062-4861-a5f4-211658ef1db6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Rendering\VolumeRenderer\Shaders">
+      <UniqueIdentifier>{008c216f-e2c3-4c3f-8558-d63cac5e03db}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

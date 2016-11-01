@@ -87,46 +87,48 @@ namespace HoloIntervention
     protected:
       void ProcessAvailableFrames(Concurrency::cancellation_token token);
 
-      DetectedSphereWorldList ComputeTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame);
+      bool CameraRegistration::ComputeTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame, CameraRegistration::DetectedSphereWorldList& worldResults);
 
-      DetectedSphereWorldList ComputeCircleLocations(Microsoft::WRL::ComPtr<Windows::Foundation::IMemoryBufferByteAccess>& byteAccess,
-          Windows::Graphics::Imaging::BitmapBuffer^ buffer,
-          bool& initialized,
-          int32_t& height,
-          int32_t& width,
-          cv::Mat& hsv,
-          cv::Mat& redMat,
-          cv::Mat& redMatWrap,
-          cv::Mat& imageRGB,
-          std::array<cv::Mat, 5>& mask,
-          cv::Mat& cannyOutput,
-          std::mutex& cannyLock);
+      bool ComputeCircleLocations(Microsoft::WRL::ComPtr<Windows::Foundation::IMemoryBufferByteAccess>& byteAccess,
+                                  Windows::Graphics::Imaging::BitmapBuffer^ buffer,
+                                  bool& initialized,
+                                  int32_t& height,
+                                  int32_t& width,
+                                  cv::Mat& hsv,
+                                  cv::Mat& redMat,
+                                  cv::Mat& redMatWrap,
+                                  cv::Mat& imageRGB,
+                                  std::array<cv::Mat, 5>& mask,
+                                  cv::Mat& cannyOutput,
+                                  std::mutex& cannyLock,
+                                  DetectedSphereWorldList& cameraResults);
 
     protected:
       // Cached pointer to device resources.
-      std::shared_ptr<DX::DeviceResources>                    m_deviceResources;
-      std::mutex                                              m_processorLock;
-      std::shared_ptr<Capture::VideoFrameProcessor>           m_videoFrameProcessor = nullptr;
-      task<std::shared_ptr<Capture::VideoFrameProcessor>>*    m_createTask = nullptr;
+      std::shared_ptr<DX::DeviceResources>                              m_deviceResources;
+      std::mutex                                                        m_processorLock;
+      std::shared_ptr<Capture::VideoFrameProcessor>                     m_videoFrameProcessor = nullptr;
+      Concurrency::task<std::shared_ptr<Capture::VideoFrameProcessor>>* m_createTask = nullptr;
 
       // Camera
-      Windows::Perception::Spatial::SpatialCoordinateSystem^  m_worldCoordinateSystem = nullptr;
-      std::mutex                                              m_framesLock;
-      Windows::Media::Capture::Frames::MediaFrameReference^   m_currentFrame = nullptr;
-      Windows::Media::Capture::Frames::MediaFrameReference^   m_nextFrame = nullptr;
-      DetectionFrameList                                      m_cameraFrameResults;
-      std::vector<std::vector<cv::Point3f>>                   m_phantomFiducialCoords;
+      Windows::Perception::Spatial::SpatialCoordinateSystem^            m_worldCoordinateSystem = nullptr;
+      std::mutex                                                        m_framesLock;
+      Windows::Media::Capture::Frames::MediaFrameReference^             m_currentFrame = nullptr;
+      Windows::Media::Capture::Frames::MediaFrameReference^             m_nextFrame = nullptr;
+      DetectionFrameList                                                m_cameraFrameResults;
+      std::vector<cv::Point3f>                                          m_phantomFiducialCoords;
+      Windows::Media::Devices::Core::CameraIntrinsics^                  m_cameraIntrinsics = nullptr;
 
       // IGT link
-      UWPOpenIGTLink::TransformRepository^                    m_transformRepository = ref new UWPOpenIGTLink::TransformRepository();
-      double                                                  m_latestTimestamp = 0.0;
-      DetectionFrameList                                      m_trackerFrameResults;
+      UWPOpenIGTLink::TransformRepository^                              m_transformRepository = ref new UWPOpenIGTLink::TransformRepository();
+      double                                                            m_latestTimestamp = 0.0;
+      DetectionFrameList                                                m_trackerFrameResults;
 
-      Concurrency::task<void>*                                m_workerTask = nullptr;
-      Concurrency::cancellation_token_source                  m_tokenSource;
-      Windows::Foundation::Numerics::float4x4                 m_cameraToWorld = Windows::Foundation::Numerics::float4x4::identity();
+      Concurrency::task<void>*                                          m_workerTask = nullptr;
+      Concurrency::cancellation_token_source                            m_tokenSource;
+      Windows::Foundation::Numerics::float4x4                           m_cameraToWorld = Windows::Foundation::Numerics::float4x4::identity();
 
-      std::shared_ptr<LandmarkRegistration>                   m_landmarkRegistration = std::make_shared<LandmarkRegistration>();
+      std::shared_ptr<LandmarkRegistration>                             m_landmarkRegistration = std::make_shared<LandmarkRegistration>();
     };
   }
 }

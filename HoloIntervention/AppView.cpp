@@ -24,6 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "pch.h"
 #include "AppView.h"
+#include "HoloInterventionCore.h"
 
 // Windows includes
 #include <ppltasks.h>
@@ -204,6 +205,12 @@ namespace HoloIntervention
   Rendering::SliceRenderer& AppView::GetSliceRenderer()
   {
     return m_main->GetSliceRenderer();
+  }
+
+  //----------------------------------------------------------------------------
+  Rendering::VolumeRenderer& AppView::GetVolumeRenderer()
+  {
+    return m_main->GetVolumeRenderer();
   }
 
   //----------------------------------------------------------------------------
