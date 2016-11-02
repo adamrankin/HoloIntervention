@@ -180,8 +180,7 @@ namespace HoloIntervention
       cv::Mat l_redMatWrap;
       cv::Mat l_imageRGB;
       cv::Mat l_canny_output;
-      std::mutex l_cannyLock;
-      std::array<cv::Mat, 5> l_mask;
+      cv::Mat l_mask;
       bool l_initialized(false);
       int32_t l_height(0);
       int32_t l_width(0);
@@ -237,7 +236,7 @@ namespace HoloIntervention
               if (SUCCEEDED(reinterpret_cast<IUnknown*>(reference)->QueryInterface(IID_PPV_ARGS(&byteAccess))))
               {
                 DetectedSphereWorldList cameraResults;
-                if (!results.empty() && ComputeCircleLocations(byteAccess, buffer, l_initialized, l_height, l_width, l_hsv, l_redMat, l_redMatWrap, l_imageRGB, l_mask, l_canny_output, l_cannyLock, cameraResults))
+                if (!results.empty() && ComputeCircleLocations(byteAccess, buffer, l_initialized, l_height, l_width, l_hsv, l_redMat, l_redMatWrap, l_imageRGB, l_mask, l_canny_output, cameraResults))
                 {
                   m_cameraFrameResults.push_back(cameraResults);
                   m_trackerFrameResults.push_back(results);
@@ -262,9 +261,8 @@ namespace HoloIntervention
         cv::Mat& redMat,
         cv::Mat& redMatWrap,
         cv::Mat& imageRGB,
-        std::array<cv::Mat, 5>& mask,
+        cv::Mat& mask,
         cv::Mat& cannyOutput,
-        std::mutex& cannyLock,
         DetectedSphereWorldList& cameraResults)
     {
       assert(m_cameraIntrinsics != nullptr);
@@ -283,11 +281,7 @@ namespace HoloIntervention
         redMat = cv::Mat(desc.Height, desc.Width, CV_8UC3);
         redMatWrap = cv::Mat(desc.Height, desc.Width, CV_8UC3);
         imageRGB = cv::Mat(desc.Height, desc.Width, CV_8UC3);
-        mask[Red] = cv::Mat(desc.Height, desc.Width, CV_8UC3);
-        mask[Green] = cv::Mat(desc.Height, desc.Width, CV_8UC3);
-        mask[Blue] = cv::Mat(desc.Height, desc.Width, CV_8UC3);
-        mask[Yellow] = cv::Mat(desc.Height, desc.Width, CV_8UC3);
-        mask[Pink] = cv::Mat(desc.Height, desc.Width, CV_8UC3);
+        mask = cv::Mat(desc.Height, desc.Width, CV_8UC3);
         cannyOutput = cv::Mat(desc.Height, desc.Width, CV_8UC1);
 
         initialized = true;
@@ -301,124 +295,62 @@ namespace HoloIntervention
       // Convert BGRA image to HSV image
       cv::cvtColor(imageRGB, hsv, cv::COLOR_RGB2HSV);
 
-      // This order must match enum order above
-      std::array<task<cv::Mat*>, 5> maskTasks =
-      {
-        create_task([&]()
-        {
-          // In HSV, red wraps around, check 0-10, 170-180
-          // Filter everything except red - (0, 70, 50) -> (10, 255, 255) & (170, 70, 50) -> (180, 255, 255)
-          cv::inRange(hsv, cv::Scalar(0, 70, 50), cv::Scalar(10, 255, 255), redMat);
-          cv::inRange(hsv, cv::Scalar(170, 70, 50), cv::Scalar(180, 255, 255), redMatWrap);
-          cv::addWeighted(redMat, 1.0, redMatWrap, 1.0, 0.0, mask[Red]);
-          return &mask[Red];
-        }),
-        create_task([&]()
-        {
-          // Filter everything except blue
-          cv::inRange(hsv, cv::Scalar(100, 70, 50), cv::Scalar(120, 255, 255), mask[Blue]);
-          return &mask[Blue];
-        }),
-        create_task([&]()
-        {
-          // Filter everything except green
-          cv::inRange(hsv, cv::Scalar(65, 70, 50), cv::Scalar(85, 255, 255), mask[Green]);
-          return &mask[Green];
-        }),
-        create_task([&]()
-        {
-          // Filter everything except yellow
-          cv::inRange(hsv, cv::Scalar(15, 70, 50), cv::Scalar(35, 255, 255), mask[Yellow]);
-          return &mask[Yellow];
-        }),
-        create_task([&]()
-        {
-          // Filter everything except pink
-          cv::inRange(hsv, cv::Scalar(140, 70, 50), cv::Scalar(160, 255, 255), mask[Pink]);
-          return &mask[Pink];
-        })
-      };
+      // In HSV, red wraps around, check 0-10, 170-180
+      // Filter everything except red - (0, 70, 50) -> (10, 255, 255) & (170, 70, 50) -> (180, 255, 255)
+      cv::inRange(hsv, cv::Scalar(0, 70, 50), cv::Scalar(10, 255, 255), redMat);
+      cv::inRange(hsv, cv::Scalar(170, 70, 50), cv::Scalar(180, 255, 255), redMatWrap);
+      cv::addWeighted(redMat, 1.0, redMatWrap, 1.0, 0.0, mask);
 
-      std::array<task<void>, 5> resultTasks;
       DetectedSpherePixelList spheres;
-      std::mutex sphereLock;
-      for (int i = 0; i < 5; ++i)
+      std::vector<cv::Vec3f> circles;
+
+      // Create a Gaussian & median Blur Filter
+      cv::medianBlur(mask, mask, 5);
+      cv::GaussianBlur(mask, mask, cv::Size(9, 9), 2, 2);
+
+      // Apply the Hough Transform to find the circles
+      cv::HoughCircles(mask, circles, CV_HOUGH_GRADIENT, 2, mask.rows / 16, 255, 30);
+      if (circles.size() == 4)
       {
-        resultTasks[i] = maskTasks[i].then([this, i, &cannyOutput, &spheres, &sphereLock, &cannyLock](cv::Mat * mask) -> void
+        for (auto& circle : circles)
         {
-          std::vector<cv::Vec3f> circles;
+          spheres.push_back(cv::Point(cvRound(circle[0]), cvRound(circle[1])));
+        }
+      }
+      else
+      {
+        std::vector<std::vector<cv::Point>> contours;
+        std::vector<cv::Vec4i> hierarchy;
 
-          // Create a Gaussian & median Blur Filter
-          cv::medianBlur(*mask, *mask, 5);
-          cv::GaussianBlur(*mask, *mask, cv::Size(9, 9), 2, 2);
+        int thresh = 100;
+        int max_thresh = 255;
 
-          // Apply the Hough Transform to find the circles
-          cv::HoughCircles(*mask, circles, CV_HOUGH_GRADIENT, 2, mask->rows / 16, 255, 30);
-          if (!circles.empty())
-          {
-            cv::Point center(cvRound(circles[0][0]), cvRound(circles[0][1]));
+        // Blur the image
+        cv::medianBlur(mask, mask, 3);
 
-            std::lock_guard<std::mutex> guard(sphereLock);
-            spheres.push_back(DetectedSpherePixel((SphereColour)i, center));
-          }
-          else
-          {
-            std::vector<std::vector<cv::Point>> contours;
-            std::vector<cv::Vec4i> hierarchy;
+        // Detect edges using canny
+        cv::Canny(mask, cannyOutput, thresh, thresh * 2, 3);
 
-            int thresh = 100;
-            int max_thresh = 255;
+        // Find contours
+        cv::findContours(cannyOutput, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
 
-            // Blur the image
-            cv::medianBlur(*mask, *mask, 3);
+        /// Approximate contours to polygons + get bounding rects and circles
+        std::vector<std::vector<cv::Point> > contours_poly(contours.size());
+        std::vector<cv::Point2f>center(contours.size());
+        std::vector<float>radius(contours.size());
 
-            {
-              std::lock_guard<std::mutex> guard(cannyLock);
-
-              // Detect edges using canny
-              cv::Canny(*mask, cannyOutput, thresh, thresh * 2, 3);
-
-              // Find contours
-              cv::findContours(cannyOutput, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
-            }
-
-            /// Approximate contours to polygons + get bounding rects and circles
-            std::vector<std::vector<cv::Point> > contours_poly(contours.size());
-            std::vector<cv::Point2f>center(contours.size());
-            std::vector<float>radius(contours.size());
-
-            for (uint32_t j = 0; j < contours.size(); j++)
-            {
-              cv::approxPolyDP(cv::Mat(contours[j]), contours_poly[j], 3, true);        // Finds polygon
-              cv::minEnclosingCircle((cv::Mat)contours_poly[j], center[j], radius[j]);  // Finds circle
-            }
-
-            std::lock_guard<std::mutex> guard(sphereLock);
-            spheres.push_back(DetectedSpherePixel((SphereColour)i, center[0]));
-          }
-        });
+        for (uint32_t j = 0; j < contours.size(); j++)
+        {
+          cv::approxPolyDP(cv::Mat(contours[j]), contours_poly[j], 3, true);        // Finds polygon
+          cv::minEnclosingCircle((cv::Mat)contours_poly[j], center[j], radius[j]);  // Finds circle
+          spheres.push_back(DetectedSpherePixel(center[j]));
+        }
       }
 
-      auto joinTask = when_all(std::begin(resultTasks), std::end(resultTasks));
-      joinTask.wait();
-
-      if (spheres.size() != 5)
+      if (spheres.size() != 4)
       {
         // Must have correspondence between image points and object points
         return false;
-      }
-
-      // Sort found spheres by enum
-      //  Red, Blue, Green, Yellow, Pink
-      std::sort(spheres.begin(), spheres.end(), [](auto & left, auto & right)
-      {
-        return left.first < right.first;
-      });
-
-      std::vector<cv::Point2f> imagePoints;
-      for (auto& pair : spheres)
-      {
-        imagePoints.push_back(pair.second);
       }
 
       std::vector<float> distCoeffs;
@@ -444,7 +376,7 @@ namespace HoloIntervention
 
       std::vector<float> rvec;
       std::vector<float> tvec;
-      if (!cv::solvePnP(m_phantomFiducialCoords, imagePoints, intrinsic, distCoeffs, rvec, tvec))
+      if (!cv::solvePnP(m_phantomFiducialCoords, spheres, intrinsic, distCoeffs, rvec, tvec))
       {
         OutputDebugStringW(L"Unable to solve object pose.");
         return false;
@@ -475,7 +407,7 @@ namespace HoloIntervention
         cv::Mat3f pointMat(point);
         cv::Mat3f resultMat;
         cv::multiply(transform, pointMat, resultMat);
-        cameraResults.push_back(DetectedSphereWorld((SphereColour)i, cv::Point3f(resultMat.at<float>(0), resultMat.at<float>(1), resultMat.at<float>(2))));
+        cameraResults.push_back(cv::Point3f(resultMat.at<float>(0), resultMat.at<float>(1), resultMat.at<float>(2)));
         i++;
       }
 
@@ -490,67 +422,56 @@ namespace HoloIntervention
 
       // Calculate world position from transforms in tracked frame
       bool isValid(false);
-      float4x4 redToPhantomTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"RedSphere", L"Phantom"), &isValid);
-      float4x4 redToReferenceTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"RedSphere", L"Reference"), &isValid);
+      float4x4 red1ToPhantomTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"Red1Sphere", L"Phantom"), &isValid);
+      float4x4 red1ToReferenceTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"Red1Sphere", L"Reference"), &isValid);
       if (!isValid) {return false;}
 
-      float4x4 greenToPhantomTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"GreenSphere", L"Phantom"), &isValid);
-      float4x4 greenToReferenceTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"GreenSphere", L"Reference"), &isValid);
+      float4x4 red2ToPhantomTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"Red2Sphere", L"Phantom"), &isValid);
+      float4x4 red2ToReferenceTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"Red2Sphere", L"Reference"), &isValid);
 
-      float4x4 pinkToPhantomTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"PinkSphere", L"Phantom"), &isValid);
-      float4x4 pinkToReferenceTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"PinkSphere", L"Reference"), &isValid);
+      float4x4 red3ToPhantomTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"Red3Sphere", L"Phantom"), &isValid);
+      float4x4 red3ToReferenceTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"Red3Sphere", L"Reference"), &isValid);
 
-      float4x4 blueToPhantomTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"BlueSphere", L"Phantom"), &isValid);
-      float4x4 blueToReferenceTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"BlueSphere", L"Reference"), &isValid);
-
-      float4x4 yellowToPhantomTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"YellowSphere", L"Phantom"), &isValid);
-      float4x4 yellowToReferenceTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"YellowSphere", L"Reference"), &isValid);
+      float4x4 red4ToPhantomTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"Red4Sphere", L"Phantom"), &isValid);
+      float4x4 red4ToReferenceTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"Red4Sphere", L"Reference"), &isValid);
 
       float3 scale;
       quaternion quat;
       float3 translation;
-      bool result = decompose(transpose(redToReferenceTransform), &scale, &quat, &translation);
+      bool result = decompose(transpose(red1ToReferenceTransform), &scale, &quat, &translation);
       if (!result) { return result; }
-      worldResults.push_back(DetectedSphereWorld(Red, cv::Point3f(translation.x, translation.y, translation.z)));
+      worldResults.push_back(DetectedSphereWorld(translation.x, translation.y, translation.z));
 
-      result = decompose(transpose(greenToReferenceTransform), &scale, &quat, &translation);
+      result = decompose(transpose(red2ToReferenceTransform), &scale, &quat, &translation);
       if (!result) { return result; }
-      worldResults.push_back(DetectedSphereWorld(Green, cv::Point3f(translation.x, translation.y, translation.z)));
+      worldResults.push_back(DetectedSphereWorld(translation.x, translation.y, translation.z));
 
-      result = decompose(transpose(pinkToReferenceTransform), &scale, &quat, &translation);
+      result = decompose(transpose(red3ToReferenceTransform), &scale, &quat, &translation);
       if (!result) { return result; }
-      worldResults.push_back(DetectedSphereWorld(Pink, cv::Point3f(translation.x, translation.y, translation.z)));
+      worldResults.push_back(DetectedSphereWorld(translation.x, translation.y, translation.z));
 
-      result = decompose(transpose(blueToReferenceTransform), &scale, &quat, &translation);
+      result = decompose(transpose(red4ToReferenceTransform), &scale, &quat, &translation);
       if (!result) { return result; }
-      worldResults.push_back(DetectedSphereWorld(Blue, cv::Point3f(translation.x, translation.y, translation.z)));
-
-      result = decompose(transpose(yellowToReferenceTransform), &scale, &quat, &translation);
-      if (!result) { return result; }
-      worldResults.push_back(DetectedSphereWorld(Yellow, cv::Point3f(translation.x, translation.y, translation.z)));
+      worldResults.push_back(DetectedSphereWorld(translation.x, translation.y, translation.z));
 
       if (m_phantomFiducialCoords.empty())
       {
         // Phantom is rigid body, so only need to pull the values once
         // in order of enum
         std::vector<cv::Point3f> fiducialCoords;
-        result = decompose(transpose(redToPhantomTransform), &scale, &quat, &translation);
+        result = decompose(transpose(red1ToPhantomTransform), &scale, &quat, &translation);
         if (!result) { return result; }
         fiducialCoords.push_back(cv::Point3f(translation.x, translation.y, translation.z));
 
-        result = decompose(transpose(blueToPhantomTransform), &scale, &quat, &translation);
+        result = decompose(transpose(red2ToPhantomTransform), &scale, &quat, &translation);
         if (!result) { return result; }
         fiducialCoords.push_back(cv::Point3f(translation.x, translation.y, translation.z));
 
-        result = decompose(transpose(greenToPhantomTransform), &scale, &quat, &translation);
+        result = decompose(transpose(red3ToPhantomTransform), &scale, &quat, &translation);
         if (!result) { return result; }
         fiducialCoords.push_back(cv::Point3f(translation.x, translation.y, translation.z));
 
-        result = decompose(transpose(yellowToPhantomTransform), &scale, &quat, &translation);
-        if (!result) { return result; }
-        fiducialCoords.push_back(cv::Point3f(translation.x, translation.y, translation.z));
-
-        result = decompose(transpose(pinkToPhantomTransform), &scale, &quat, &translation);
+        result = decompose(transpose(red4ToPhantomTransform), &scale, &quat, &translation);
         if (!result) { return result; }
         fiducialCoords.push_back(cv::Point3f(translation.x, translation.y, translation.z));
 
@@ -559,6 +480,5 @@ namespace HoloIntervention
 
       return true;
     }
-
   }
 }

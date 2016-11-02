@@ -62,16 +62,8 @@ namespace HoloIntervention
       };
 
     public:
-      enum SphereColour
-      {
-        Red,
-        Blue,
-        Green,
-        Yellow,
-        Pink
-      };
-      typedef std::pair<SphereColour, cv::Point2f> DetectedSpherePixel;
-      typedef std::pair<SphereColour, cv::Point3f> DetectedSphereWorld;
+      typedef cv::Point2f DetectedSpherePixel;
+      typedef cv::Point3f DetectedSphereWorld;
       typedef std::vector<DetectedSpherePixel> DetectedSpherePixelList;
       typedef std::vector<DetectedSphereWorld> DetectedSphereWorldList;
       typedef std::vector<DetectedSphereWorldList> DetectionFrameList;
@@ -98,9 +90,8 @@ namespace HoloIntervention
                                   cv::Mat& redMat,
                                   cv::Mat& redMatWrap,
                                   cv::Mat& imageRGB,
-                                  std::array<cv::Mat, 5>& mask,
+                                  cv::Mat& mask,
                                   cv::Mat& cannyOutput,
-                                  std::mutex& cannyLock,
                                   DetectedSphereWorldList& cameraResults);
 
     protected:

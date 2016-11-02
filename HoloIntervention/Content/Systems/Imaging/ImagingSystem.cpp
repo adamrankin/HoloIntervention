@@ -36,6 +36,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 // System includes
 #include "NotificationSystem.h"
 
+// Rendering includes
+#include "SliceRenderer.h"
+#include "VolumeRenderer.h"
+
 using namespace Windows::Foundation::Numerics;
 using namespace Windows::UI::Input::Spatial;
 
@@ -106,6 +110,12 @@ namespace HoloIntervention
         }
         HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Slice is now in world-space.");
         HoloIntervention::instance()->GetSliceRenderer().SetSliceHeadlocked(m_sliceToken, false);
+      };
+
+      callbackMap[L"piecewise linear transfer function"] = [this](SpeechRecognitionResult ^ result)
+      {
+        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Using built-in piecewise linear transfer function.");
+        HoloIntervention::instance()->GetVolumeRenderer().SetTransferFunctionTypeAsync(Rendering::VolumeRenderer::TransferFunction_Piecewise_Linear);
       };
     }
 

@@ -117,6 +117,8 @@
     <ClInclude Include="Content\Rendering\SpatialMeshRenderer.h" />
     <ClInclude Include="Content\Rendering\SpatialMesh.h" />
     <ClInclude Include="Content\Rendering\TextRenderer.h" />
+    <ClInclude Include="Content\Rendering\Volume\ITransferFunction.h" />
+    <ClInclude Include="Content\Rendering\Volume\PiecewiseLinearTF.h" />
     <ClInclude Include="Content\Rendering\Volume\VolumeRenderer.h" />
     <ClInclude Include="Content\Sound\AudioFileReader.h" />
     <ClInclude Include="Content\Sound\CardioidSound.h" />
@@ -161,6 +163,7 @@
     <ClCompile Include="Content\Rendering\SpatialMeshRenderer.cpp" />
     <ClCompile Include="Content\Rendering\SpatialMesh.cpp" />
     <ClCompile Include="Content\Rendering\TextRenderer.cpp" />
+    <ClCompile Include="Content\Rendering\Volume\PiecewiseLinearTF.cpp" />
     <ClCompile Include="Content\Rendering\Volume\VolumeRenderer.cpp" />
     <ClCompile Include="Content\Sound\AudioFileReader.cpp" />
     <ClCompile Include="Content\Sound\CardioidSound.cpp" />

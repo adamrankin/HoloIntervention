@@ -23,6 +23,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
+// Local includes
+#include "PiecewiseLinearTF.h"
+
 namespace DX
 {
   class DeviceResources;
@@ -60,6 +63,8 @@ namespace HoloIntervention
       void Update(Windows::UI::Input::Spatial::SpatialPointerPose^ pose, const DX::StepTimer& timer);
       void Render();
 
+      Concurrency::task<void> SetTransferFunctionTypeAsync(TransferFunctionType type);
+
       // D3D device related controls
       Concurrency::task<void> CreateDeviceDependentResourcesAsync();
       void ReleaseDeviceDependentResources();
@@ -82,10 +87,12 @@ namespace HoloIntervention
       Microsoft::WRL::ComPtr<ID3D11Buffer>              m_modelConstantBuffer;
 
       uint32                                            m_indexCount = 0;
-      bool                                              m_loadingComplete = false;
+      std::atomic_bool                                  m_loadingComplete = false;
       bool                                              m_usingVprtShaders = false;
       uint32                                            m_nextUnusedId = 1; // start at 1
-      TransferFunctionType                              m_transferFunctionType = TransferFunction_Piecewise_Linear;
+      TransferFunctionType                              m_tfType = TransferFunction_Piecewise_Linear;
+      std::mutex                                        m_tfMutex;
+      ITransferFunction*                                m_transferFunction = new PiecewiseLinearTF();
     };
   }
 }

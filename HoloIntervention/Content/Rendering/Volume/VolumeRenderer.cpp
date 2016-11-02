@@ -47,6 +47,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     VolumeRenderer::~VolumeRenderer()
     {
+      delete m_transferFunction;
     }
 
     //----------------------------------------------------------------------------
@@ -82,6 +83,31 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    task<void> VolumeRenderer::SetTransferFunctionTypeAsync(TransferFunctionType type)
+    {
+      return create_task([this, type]()
+      {
+        std::lock_guard<std::mutex> guard(m_tfMutex);
+
+        delete m_transferFunction;
+        switch (type)
+        {
+        case VolumeRenderer::TransferFunction_Piecewise_Linear:
+        default:
+          m_tfType = VolumeRenderer::TransferFunction_Piecewise_Linear;
+          m_transferFunction = new PiecewiseLinearTF();
+          break;
+        }
+
+        m_transferFunction->Update();
+      }).then([this]()
+      {
+        ReleaseDeviceDependentResources();
+        return CreateDeviceDependentResourcesAsync();
+      });
+    }
+
+    //----------------------------------------------------------------------------
     task<void> VolumeRenderer::CreateDeviceDependentResourcesAsync()
     {
       // load shader code, compile depending on settings requested
@@ -92,15 +118,6 @@ namespace HoloIntervention
                                           : L"ms-appx:///VolumeRendererVertexShader.cso";
 
       task<std::vector<byte>> loadVSTask = DX::ReadDataAsync(vertexShaderFileName);
-
-      task<std::vector<byte>> loadTFTask;
-      switch (m_transferFunctionType)
-      {
-      case TransferFunction_Piecewise_Linear:
-        task<std::vector<byte>> loadTFTask = DX::ReadDataAsync(L"ms-appx:///PiecewiseLinearTransferFunction.cso");
-        break;
-      }
-
       task<std::vector<byte>> loadPSTask = DX::ReadDataAsync(L"ms-appx:///VolumeRendererPixelShader.cso");
       task<std::vector<byte>> loadGSTask;
       if (!m_usingVprtShaders)
@@ -110,13 +127,13 @@ namespace HoloIntervention
         loadGSTask = DX::ReadDataAsync(L"ms-appx:///PIGeometryShader.cso");
       }
 
-      task<void> createVSTask = (loadVSTask && loadTFTask).then([this, loadVSTask, loadTFTask](const std::vector<byte>& fileData)
       {
-        auto vsFileData = loadVSTask.get();
-        auto tfFileData = loadTFTask.get();
+        // set up transfer function gpu memory
+        std::lock_guard<std::mutex> guard(m_tfMutex);
+      }
 
-        // TODO : link both sets of bytecode?
-
+      task<void> createVSTask = loadVSTask.then([this](const std::vector<byte>& fileData)
+      {
         DX::ThrowIfFailed(
           m_deviceResources->GetD3DDevice()->CreateVertexShader(
             fileData.data(),
@@ -196,6 +213,12 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void VolumeRenderer::ReleaseDeviceDependentResources()
     {
+      {
+        std::lock_guard<std::mutex> guard(m_tfMutex);
+        delete m_transferFunction;
+        m_transferFunction = nullptr;
+      }
+
       ReleaseVertexResources();
 
       m_vertexShader.Reset();
