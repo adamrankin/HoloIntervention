@@ -219,6 +219,16 @@ namespace HoloIntervention
     {
       SpatialPointerPose^ pose = SpatialPointerPose::TryGetAtTimestamp(currentCoordinateSystem, prediction->Timestamp);
 
+      if (m_igtLinkIF->IsConnected())
+      {
+        if (m_igtLinkIF->GetLatestTrackedFrame(m_latestFrame, &m_latestTimestamp))
+        {
+          m_volumeRenderer->Update(m_latestFrame, m_timer);
+          m_imagingSystem->Update(m_latestFrame, m_timer);
+          m_toolSystem->Update(m_latestFrame, m_timer);
+        }
+      }
+
       m_spatialSystem->Update(currentCoordinateSystem);
 
       if (pose != nullptr)
@@ -232,15 +242,6 @@ namespace HoloIntervention
 
       m_meshRenderer->Update(vp, m_timer, currentCoordinateSystem);
       m_modelRenderer->Update(m_timer, vp);
-
-      if (m_igtLinkIF->IsConnected())
-      {
-        if (m_igtLinkIF->GetLatestTrackedFrame(m_latestFrame, &m_latestTimestamp))
-        {
-          m_imagingSystem->Update(m_latestFrame, m_timer);
-          m_toolSystem->Update(m_latestFrame, m_timer);
-        }
-      }
     });
 
     SetHolographicFocusPoint(prediction, holographicFrame, currentCoordinateSystem);

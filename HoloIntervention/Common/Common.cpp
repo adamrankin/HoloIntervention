@@ -25,36 +25,45 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "pch.h"
 #include "Common.h"
 
+using namespace Concurrency;
+using namespace Windows::Foundation::Numerics;
+
 namespace HoloIntervention
 {
   //----------------------------------------------------------------------------
-  task<void> complete_after( unsigned int timeoutMs )
+  task<void> complete_after(unsigned int timeoutMs)
   {
     // A task completion event that is set when a timer fires.
     task_completion_event<void> tce;
 
     // Create a non-repeating timer.
-    auto fire_once = new timer<int>( timeoutMs, 0, nullptr, false );
+    auto fire_once = new timer<int>(timeoutMs, 0, nullptr, false);
     // Create a call object that sets the completion event after the timer fires.
-    auto callback = new call<int>( [tce]( int )
+    auto callback = new call<int>([tce](int)
     {
       tce.set();
-    } );
+    });
 
     // Connect the timer to the callback and start the timer.
-    fire_once->link_target( callback );
+    fire_once->link_target(callback);
     fire_once->start();
 
     // Create a task that completes after the completion event is set.
-    task<void> event_set( tce );
+    task<void> event_set(tce);
 
     // Create a continuation task that cleans up resources and
     // and return that continuation task.
-    return event_set.then( [callback, fire_once]()
+    return event_set.then([callback, fire_once]()
     {
       delete callback;
       delete fire_once;
-    } );
+    });
+  }
+
+  //----------------------------------------------------------------------------
+  void MillimetersToMeters(float4x4& transform)
+  {
+    transform = transform * make_float4x4_scale(0.001f);
   }
 
   //----------------------------------------------------------------------------
@@ -63,5 +72,4 @@ namespace HoloIntervention
     short a = 1;
     return ((char*)&a)[0];
   }
-
 }

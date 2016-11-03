@@ -24,19 +24,19 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Per-pixel color data passed through to the pixel shader.
 struct PixelShaderInput
 {
-    min16float4 pos         : SV_POSITION;
-    min16float2 texCoord    : TEXCOORD1;
-    uint        rtvId       : SV_RenderTargetArrayIndex;
+  min16float4 pos : SV_POSITION;
+  min16float2 texCoord : TEXCOORD1;
+  uint rtvId : SV_RenderTargetArrayIndex;
 };
 
-Texture2D       tex             : t0;
-SamplerState    textureSampler  : s0;
+Texture2D tex : t0;
+SamplerState textureSampler : s0;
 
 // The pixel shader renders a color value sampled from a texture
 min16float4 main(PixelShaderInput input) : SV_TARGET
 {
     // Read both distance function values.
-    float4 textureValue = tex.Sample(textureSampler, input.texCoord);
+  float4 textureValue = tex.Sample(textureSampler, input.texCoord);
 
-    return min16float4(textureValue.x, textureValue.x, textureValue.x, 1.f);
+  return min16float4(textureValue.x, textureValue.x, textureValue.x, 1.h);
 }

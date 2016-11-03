@@ -31,11 +31,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <robuffer.h>
 #include <windows.h>
 
-using namespace Concurrency;
-using namespace Microsoft::WRL;
-using namespace Windows::Data::Xml::Dom;
-using namespace Windows::UI::Notifications;
-
 namespace HoloIntervention
 {
   //------------------------------------------------------------------------
@@ -47,67 +42,67 @@ namespace HoloIntervention
 
   //------------------------------------------------------------------------
   template <typename t = byte>
-  t * GetDataFromIBuffer(Windows::Storage::Streams::IBuffer ^ container)
+  t * GetDataFromIBuffer(Windows::Storage::Streams::IBuffer^ container)
   {
-	  if (container == nullptr)
-	  {
-		  return nullptr;
-	  }
+    if (container == nullptr)
+    {
+      return nullptr;
+    }
 
-	  unsigned int bufferLength = container->Length;
+    unsigned int bufferLength = container->Length;
 
-	  if (!(bufferLength > 0))
-	  {
-		  return nullptr;
-	  }
+    if (!(bufferLength > 0))
+    {
+      return nullptr;
+    }
 
-	  HRESULT hr = S_OK;
+    HRESULT hr = S_OK;
 
-	  ComPtr<IUnknown> pUnknown = reinterpret_cast<IUnknown*>(container);
-	  ComPtr<IBufferByteAccess> spByteAccess;
-	  hr = pUnknown.As(&spByteAccess);
-	  if (FAILED(hr))
-	  {
-		  return nullptr;
-	  }
+    Microsoft::WRL::ComPtr<IUnknown> pUnknown = reinterpret_cast<IUnknown*>(container);
+    Microsoft::WRL::ComPtr<IBufferByteAccess> spByteAccess;
+    hr = pUnknown.As(&spByteAccess);
+    if (FAILED(hr))
+    {
+      return nullptr;
+    }
 
-	  byte* pRawData = nullptr;
-	  hr = spByteAccess->Buffer(&pRawData);
-	  if (FAILED(hr))
-	  {
-		  return nullptr;
-	  }
+    byte* pRawData = nullptr;
+    hr = spByteAccess->Buffer(&pRawData);
+    if (FAILED(hr))
+    {
+      return nullptr;
+    }
 
-	  return reinterpret_cast<t*>(pRawData);
+    return reinterpret_cast<t*>(pRawData);
   }
 
   //------------------------------------------------------------------------
   template<typename Functor>
   void RunFunctionAfterDelay(uint32 delayMs, Functor function)
   {
-	  // Convert ms to 100-nanosecond
-	  int64 delay100ns = delayMs * 10'000;
+    // Convert ms to 100-nanosecond
+    int64 delay100ns = delayMs * 10000;
 
-	  TimeSpan ts;
-	  ts.Duration = 10'000'000;
-	  TimerElapsedHandler^ handler = ref new TimerElapsedHandler(function);
-	  ThreadPoolTimer^ timer = ThreadPoolTimer::CreateTimer(handler, ts);
+    TimeSpan ts;
+    ts.Duration = 10000000;
+    TimerElapsedHandler^ handler = ref new TimerElapsedHandler(function);
+    ThreadPoolTimer^ timer = ThreadPoolTimer::CreateTimer(handler, ts);
   }
 
   //------------------------------------------------------------------------
-  task<void> complete_after(unsigned int timeoutMs);
+  Concurrency::task<void> complete_after(unsigned int timeoutMs);
 
   //------------------------------------------------------------------------
   template<typename T>
-  task<T> cancel_after_timeout(task<T> t, cancellation_token_source cts, unsigned int timeoutMs)
+  Concurrency::task<T> cancel_after_timeout(Concurrency::task<T> t, Concurrency::cancellation_token_source cts, unsigned int timeoutMs)
   {
     // Create a task that returns true after the specified task completes.
-    task<bool> success_task = t.then([](T)
+    Concurrency::task<bool> success_task = t.then([](T)
     {
       return true;
     });
     // Create a task that returns false after the specified timeout.
-    task<bool> failure_task = complete_after(timeoutMs).then([]
+    Concurrency::task<bool> failure_task = complete_after(timeoutMs).then([]
     {
       return false;
     });
@@ -128,6 +123,9 @@ namespace HoloIntervention
       return t;
     });
   }
+
+  //----------------------------------------------------------------------------
+  void MillimetersToMeters(Windows::Foundation::Numerics::float4x4& transform);
 
   //----------------------------------------------------------------------------
   int IsLittleEndian();

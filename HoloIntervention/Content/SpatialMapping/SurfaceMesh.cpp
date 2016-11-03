@@ -194,8 +194,8 @@ namespace HoloIntervention
 
       Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> updatedVertexPositionsSRV;
       Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> updatedTriangleIndicesSRV;
-      DX::ThrowIfFailed(CreateBufferSRV(updatedVertexPositions, positions, updatedVertexPositionsSRV.GetAddressOf()));
-      DX::ThrowIfFailed(CreateBufferSRV(updatedTriangleIndices, indices, updatedTriangleIndicesSRV.GetAddressOf()));
+      DX::ThrowIfFailed(CreateBufferSRV(updatedVertexPositions, updatedVertexPositionsSRV.GetAddressOf()));
+      DX::ThrowIfFailed(CreateBufferSRV(updatedTriangleIndices, updatedTriangleIndicesSRV.GetAddressOf()));
 
       // Before updating the meshes, check to ensure that there wasn't a more recent update.
       {
@@ -315,10 +315,10 @@ namespace HoloIntervention
         return m_hasLastComputedHit;
       }
 
-      ID3D11ShaderResourceView* aRViews[2] = { m_vertexSRV.Get(), m_indexSRV.Get() };
+      ID3D11ShaderResourceView* shaderResourceViews[2] = { m_vertexSRV.Get(), m_indexSRV.Get() };
       // Send in the number of triangles as the number of thread groups to dispatch
       // triangleCount = m_indexCount/3
-      RunComputeShader(context, 2, aRViews, m_outputUAV.Get(), m_indexCount / 3, 1, 1);
+      RunComputeShader(context, 2, shaderResourceViews, m_outputUAV.Get(), m_indexCount / 3, 1, 1);
 
       context.CopyResource(m_readBackBuffer.Get(), m_outputBuffer.Get());
 
@@ -482,7 +482,6 @@ namespace HoloIntervention
 
     //--------------------------------------------------------------------------------------
     HRESULT SurfaceMesh::CreateBufferSRV(ComPtr<ID3D11Buffer> computeShaderBuffer,
-                                         SpatialSurfaceMeshBuffer^ buffer,
                                          ID3D11ShaderResourceView** ppSRVOut)
     {
       D3D11_BUFFER_DESC descBuf;

@@ -138,7 +138,6 @@ namespace HoloIntervention
                                    uint32 uCount);
 
       HRESULT CreateBufferSRV(ComPtr<ID3D11Buffer> computeShaderBuffer,
-                              SpatialSurfaceMeshBuffer^ buffer,
                               ID3D11ShaderResourceView** ppSRVOut);
 
       HRESULT CreateBufferUAV(ComPtr<ID3D11Buffer> computeShaderBuffer,

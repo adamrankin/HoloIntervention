@@ -23,6 +23,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
+// STL includes
+#include <atomic>
+
 namespace HoloIntervention
 {
   namespace Rendering
@@ -49,6 +52,7 @@ namespace HoloIntervention
     public:
       virtual ~ITransferFunction() {};
       virtual TransferFunctionLookup& GetTFLookupTable() { return m_transferFunction; };
+      virtual bool IsValid() const { return m_isValid; }
       virtual void Update() = 0;
 
     protected:
@@ -56,6 +60,7 @@ namespace HoloIntervention
 
     protected:
       TransferFunctionLookup m_transferFunction;
+      std::atomic_bool m_isValid = false;
     };
   }
 }

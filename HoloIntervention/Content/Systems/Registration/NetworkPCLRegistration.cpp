@@ -58,7 +58,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     NetworkPCLRegistration::NetworkPCLRegistration()
     {
-      create_task(Windows::ApplicationModel::Package::Current->InstalledLocation->GetFileAsync(L"Assets\\Data\\tool_configuration.xml")).then([this](task<StorageFile^> previousTask)
+      create_task(Windows::ApplicationModel::Package::Current->InstalledLocation->GetFileAsync(L"Assets\\Data\\configuration.xml")).then([this](task<StorageFile^> previousTask)
       {
         StorageFile^ file = nullptr;
         try
@@ -67,7 +67,7 @@ namespace HoloIntervention
         }
         catch (Platform::Exception^ e)
         {
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Unable to locate tool system configuration file.");
+          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Unable to locate system configuration file.");
         }
 
         XmlDocument^ doc = ref new XmlDocument();
@@ -80,7 +80,7 @@ namespace HoloIntervention
           }
           catch (Platform::Exception^ e)
           {
-            HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Tool system configuration file did not contain valid XML.");
+            HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"System configuration file did not contain valid XML.");
           }
 
           try

@@ -778,6 +778,18 @@
     <FxCompile Include="Content\Rendering\Shaders\PPNCIGeometryShader.hlsl">
       <Filter>Content\Rendering\Geometry Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="Content\Rendering\Volume\VolumeRendererVS.hlsl">
+      <Filter>Content\Rendering\VolumeRenderer\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Rendering\Volume\VolumeRendererPS.hlsl">
+      <Filter>Content\Rendering\VolumeRenderer\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Rendering\Volume\VolumeRendererVprtVS.hlsl">
+      <Filter>Content\Rendering\VolumeRenderer\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Rendering\Volume\PIGeometryShader.hlsl">
+      <Filter>Content\Rendering\Geometry Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest">
@@ -796,7 +808,7 @@
     </Media>
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="Assets\Data\tool_configuration.xml">
+    <Xml Include="Assets\Data\configuration.xml">
       <Filter>Assets\Data</Filter>
     </Xml>
   </ItemGroup>

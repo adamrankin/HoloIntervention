@@ -67,6 +67,7 @@ namespace HoloIntervention
       });
 
       m_nextUid++;
+      m_isValid = false;
       return m_nextUid - 1;
     }
 
@@ -95,6 +96,7 @@ namespace HoloIntervention
       {
         // handle special 0 case, reset to assumed 0,0
         m_controlPoints[0].second.y = 0.f;
+        m_isValid = false;
         return true;
       }
 
@@ -103,6 +105,7 @@ namespace HoloIntervention
         if (it->first == controlPointUid)
         {
           m_controlPoints.erase(it);
+          m_isValid = false;
           return true;
         }
       }
@@ -139,6 +142,8 @@ namespace HoloIntervention
           }
         }
       }
+
+      m_isValid = true;
     }
   }
 }

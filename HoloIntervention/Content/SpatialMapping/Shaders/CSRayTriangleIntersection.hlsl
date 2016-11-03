@@ -21,51 +21,51 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 ====================================================================*/
 
-cbuffer WorldConstantBuffer : register( b0 )
+cbuffer WorldConstantBuffer : register(b0)
 {
-  float4x4  meshToWorld;
+  float4x4 meshToWorld;
 };
 
-cbuffer RayConstantBuffer : register( b1 )
+cbuffer RayConstantBuffer : register(b1)
 {
-  float4    rayOrigin;
-  float4    rayDirection;
+  float4 rayOrigin;
+  float4 rayDirection;
 };
 
 struct VertexBufferType
 {
-  float4    vertex;
+  float4 vertex;
 };
 
 struct IndexBufferType
 {
-  uint      index;
+  uint index;
 };
 
 struct OutputBufferType
 {
-  float4    intersectionPoint;
-  float4    intersectionNormal;
-  float4    intersectionEdge;
-  bool      intersection;
+  float4 intersectionPoint;
+  float4 intersectionNormal;
+  float4 intersectionEdge;
+  bool intersection;
 };
 
-StructuredBuffer<VertexBufferType> meshBuffer : register( t0 );
-StructuredBuffer<IndexBufferType> indexBuffer : register( t1 );
-RWStructuredBuffer<OutputBufferType> resultBuffer : register( u0 );
+StructuredBuffer<VertexBufferType> meshBuffer : register(t0);
+StructuredBuffer<IndexBufferType> indexBuffer : register(t1);
+RWStructuredBuffer<OutputBufferType> resultBuffer : register(u0);
 
 #define EPSILON 0.000001
 
-[numthreads( 1, 1, 1 )]
-void main( uint3 DTid : SV_DispatchThreadID )
+[numthreads(1, 1, 1)]
+void main(uint3 DTid : SV_DispatchThreadID)
 {
   // Algorithm courtesy of https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
   // See:
   //    1. Möller T, Trumbore B. Fast, Minimum Storage Ray-triangle Intersection. J Graph Tools. 1997 Oct;2(1):21–28. 
 
-  float4 v0 = { meshBuffer[indexBuffer[( DTid.x * 3 )].index].vertex.x, meshBuffer[indexBuffer[( DTid.x * 3 )].index].vertex.y, meshBuffer[indexBuffer[( DTid.x * 3 )].index].vertex.z, 1 };
-  float4 v1 = { meshBuffer[indexBuffer[( DTid.x * 3 ) + 1].index].vertex.x, meshBuffer[indexBuffer[( DTid.x * 3 ) + 1].index].vertex.y, meshBuffer[indexBuffer[( DTid.x * 3 ) + 1].index].vertex.z, 1 };
-  float4 v2 = { meshBuffer[indexBuffer[( DTid.x * 3 ) + 2].index].vertex.x, meshBuffer[indexBuffer[( DTid.x * 3 ) + 2].index].vertex.y, meshBuffer[indexBuffer[( DTid.x * 3 ) + 2].index].vertex.z, 1 };
+  float4 v0 = {meshBuffer[indexBuffer[(DTid.x * 3)].index].vertex.x, meshBuffer[indexBuffer[(DTid.x * 3)].index].vertex.y, meshBuffer[indexBuffer[(DTid.x * 3)].index].vertex.z, 1};
+  float4 v1 = {meshBuffer[indexBuffer[(DTid.x * 3) + 1].index].vertex.x, meshBuffer[indexBuffer[(DTid.x * 3) + 1].index].vertex.y, meshBuffer[indexBuffer[(DTid.x * 3) + 1].index].vertex.z, 1};
+  float4 v2 = {meshBuffer[indexBuffer[(DTid.x * 3) + 2].index].vertex.x, meshBuffer[indexBuffer[(DTid.x * 3) + 2].index].vertex.y, meshBuffer[indexBuffer[(DTid.x * 3) + 2].index].vertex.z, 1};
 
   // Transform the vertex position into world space.
   v0 = mul(v0, meshToWorld);
@@ -77,13 +77,13 @@ void main( uint3 DTid : SV_DispatchThreadID )
   float3 e2 = v2.xyz - v0.xyz;
 
   //Begin calculating determinant - also used to calculate u parameter
-  float3 P = cross( rayDirection.xyz, e2 );
+  float3 P = cross(rayDirection.xyz, e2);
 
   //if determinant is near zero, ray lies in plane of triangle or ray is parallel to plane of triangle
-  float det = dot( e1, P );
+  float det = dot(e1, P);
 
   //NOT CULLING
-  if ( det > -EPSILON && det < EPSILON )
+  if(det > -EPSILON && det < EPSILON)
   {
     return;
   }
@@ -94,29 +94,29 @@ void main( uint3 DTid : SV_DispatchThreadID )
   float3 T = rayOrigin.xyz - v0.xyz;
 
   //Calculate u parameter and test bound
-  float u = dot( T, P ) * inv_det;
+  float u = dot(T, P) * inv_det;
 
   //The intersection lies outside of the triangle
-  if ( u < 0.f || u > 1.f )
+  if(u < 0.f || u > 1.f)
   {
     return;
   }
 
   //Prepare to test v parameter
-  float3 Q = cross( T, e1 );
+  float3 Q = cross(T, e1);
 
   //Calculate V parameter and test bound
-  float v = dot( rayDirection.xyz, Q ) * inv_det;
+  float v = dot(rayDirection.xyz, Q) * inv_det;
 
   //The intersection lies outside of the triangle
-  if ( v < 0.f || u + v  > 1.f )
+  if(v < 0.f || u + v > 1.f)
   {
     return;
   }
 
-  float t = dot( e2, Q ) * inv_det;
+  float t = dot(e2, Q) * inv_det;
 
-  if ( t > EPSILON )
+  if(t > EPSILON)
   {
     resultBuffer[0].intersection = true;
 

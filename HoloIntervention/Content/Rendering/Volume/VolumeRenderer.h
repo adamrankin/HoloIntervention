@@ -38,7 +38,9 @@ namespace HoloIntervention
   {
     struct VolumeConstantBuffer
     {
-      DirectX::XMFLOAT4X4 worldMatrix;
+      DirectX::XMFLOAT4X4   worldMatrix;
+      float                 lt_maximumXValue;
+      float                 padding[3];
     };
     static_assert((sizeof(VolumeConstantBuffer) % (sizeof(float) * 4)) == 0, "Model constant buffer size must be 16-byte aligned (16 bytes is the length of four floats).");
 
@@ -60,7 +62,7 @@ namespace HoloIntervention
       VolumeRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources);
       ~VolumeRenderer();
 
-      void Update(Windows::UI::Input::Spatial::SpatialPointerPose^ pose, const DX::StepTimer& timer);
+      void Update(UWPOpenIGTLink::TrackedFrame^ frame, const DX::StepTimer& timer);
       void Render();
 
       Concurrency::task<void> SetTransferFunctionTypeAsync(TransferFunctionType type);
@@ -73,6 +75,9 @@ namespace HoloIntervention
       void CreateVertexResources();
       void ReleaseVertexResources();
 
+      HRESULT CreateByteAddressBuffer(float* lookupTable, ID3D11Buffer** buffer);
+      HRESULT CreateByteAddressSRV(Microsoft::WRL::ComPtr<ID3D11Buffer> shaderBuffer, ID3D11ShaderResourceView** ppSRVOut);
+
     protected:
       // Cached pointer to device resources.
       std::shared_ptr<DX::DeviceResources>              m_deviceResources;
@@ -84,9 +89,24 @@ namespace HoloIntervention
       Microsoft::WRL::ComPtr<ID3D11VertexShader>        m_vertexShader;
       Microsoft::WRL::ComPtr<ID3D11GeometryShader>      m_geometryShader;
       Microsoft::WRL::ComPtr<ID3D11PixelShader>         m_pixelShader;
-      Microsoft::WRL::ComPtr<ID3D11Buffer>              m_modelConstantBuffer;
+      Microsoft::WRL::ComPtr<ID3D11Buffer>              m_volumeConstantBuffer;
+
+      Microsoft::WRL::ComPtr<ID3D11Texture3D>           m_imageVolume;
+      Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>  m_imageVolumeSRV;
+
+      Microsoft::WRL::ComPtr<ID3D11Buffer>              m_lookupTableBuffer;
+      Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>  m_lookupTableSRV;
+
+      std::wstring                                      m_fromCoordFrame = L"Image";
+      std::wstring                                      m_toCoordFrame = L"HMD";
+      UWPOpenIGTLink::TransformName^                    m_imageToHMDName = ref new UWPOpenIGTLink::TransformName(ref new Platform::String(m_fromCoordFrame.c_str()), ref new Platform::String(m_toCoordFrame.c_str()));
+      UWPOpenIGTLink::TransformRepository^              m_transformRepository = ref new UWPOpenIGTLink::TransformRepository();
+      UWPOpenIGTLink::TrackedFrame^                     m_frame = nullptr;
 
       uint32                                            m_indexCount = 0;
+      VolumeConstantBuffer                              m_constantBuffer;
+      std::atomic_bool                                  m_imageReady = false;
+      uint16                                            m_frameSize[3] = { 0, 0, 0 };
       std::atomic_bool                                  m_loadingComplete = false;
       bool                                              m_usingVprtShaders = false;
       uint32                                            m_nextUnusedId = 1; // start at 1
