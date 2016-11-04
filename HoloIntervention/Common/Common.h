@@ -128,5 +128,11 @@ namespace HoloIntervention
   void MillimetersToMeters(Windows::Foundation::Numerics::float4x4& transform);
 
   //----------------------------------------------------------------------------
+  Concurrency::task<void> InitializeTransformRepositoryAsync(UWPOpenIGTLink::TransformRepository^ transformRepository, Platform::String^ fileName);
+
+  //----------------------------------------------------------------------------
+  Concurrency::task<Windows::Data::Xml::Dom::XmlDocument^> GetXmlDocumentFromFileAsync(Platform::String^ fileName);
+
+  //----------------------------------------------------------------------------
   int IsLittleEndian();
 }

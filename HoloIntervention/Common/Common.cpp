@@ -23,10 +23,16 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "pch.h"
+#include "AppView.h"
 #include "Common.h"
 
+// System includes
+#include "NotificationSystem.h"
+
 using namespace Concurrency;
+using namespace Windows::Data::Xml::Dom;
 using namespace Windows::Foundation::Numerics;
+using namespace Windows::Storage;
 
 namespace HoloIntervention
 {
@@ -64,6 +70,80 @@ namespace HoloIntervention
   void MillimetersToMeters(float4x4& transform)
   {
     transform = transform * make_float4x4_scale(0.001f);
+  }
+
+  //----------------------------------------------------------------------------
+  task<void> InitializeTransformRepositoryAsync(UWPOpenIGTLink::TransformRepository^ transformRepository, Platform::String^ fileName)
+  {
+    return create_task(Windows::ApplicationModel::Package::Current->InstalledLocation->GetFileAsync(fileName)).then([transformRepository](task<StorageFile^> previousTask)
+    {
+      StorageFile^ file = nullptr;
+      try
+      {
+        file = previousTask.get();
+      }
+      catch (Platform::Exception^ e)
+      {
+        throw ref new Platform::Exception(STG_E_FILENOTFOUND, L"Unable to locate system configuration file.");
+      }
+
+      XmlDocument^ doc = ref new XmlDocument();
+      return create_task(doc->LoadFromFileAsync(file)).then([transformRepository](task<XmlDocument^> previousTask)
+      {
+        XmlDocument^ doc = nullptr;
+        try
+        {
+          doc = previousTask.get();
+        }
+        catch (Platform::Exception^ e)
+        {
+          throw ref new Platform::Exception(E_INVALIDARG, L"System configuration file did not contain valid XML.");
+        }
+
+        try
+        {
+          transformRepository->ReadConfiguration(doc);
+        }
+        catch (Platform::Exception^ e)
+        {
+          throw ref new Platform::Exception(E_INVALIDARG, L"Invalid layout in coordinate definitions configuration area.");
+        }
+      });
+    });
+  }
+
+  //----------------------------------------------------------------------------
+  Concurrency::task<Windows::Data::Xml::Dom::XmlDocument^> GetXmlDocumentFromFileAsync(Platform::String^ fileName)
+  {
+    return create_task(Windows::ApplicationModel::Package::Current->InstalledLocation->GetFileAsync(L"Assets\\Data\\configuration.xml")).then([](task<StorageFile^> previousTask)
+    {
+      StorageFile^ file = nullptr;
+      try
+      {
+        file = previousTask.get();
+      }
+      catch (Platform::Exception^ e)
+      {
+        throw ref new Platform::Exception(STG_E_FILENOTFOUND, L"Unable to locate system configuration file.");
+      }
+
+      XmlDocument^ doc = ref new XmlDocument();
+      return create_task(doc->LoadFromFileAsync(file)).then([](task<XmlDocument^> previousTask) -> XmlDocument^
+      {
+        XmlDocument^ doc = nullptr;
+        try
+        {
+          doc = previousTask.get();
+        }
+        catch (Platform::Exception^ e)
+        {
+          throw ref new Platform::Exception(E_INVALIDARG, L"System configuration file did not contain valid XML.");
+          return nullptr;
+        }
+
+        return doc;
+      });
+    });
   }
 
   //----------------------------------------------------------------------------

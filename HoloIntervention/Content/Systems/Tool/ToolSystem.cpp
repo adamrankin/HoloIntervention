@@ -26,6 +26,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "pch.h"
 #include "AppView.h"
+#include "Common.h"
 #include "ToolSystem.h"
 
 // Rendering includes
@@ -46,47 +47,25 @@ namespace HoloIntervention
     ToolSystem::ToolSystem()
       : m_transformRepository(ref new UWPOpenIGTLink::TransformRepository())
     {
-      ;
-      create_task(Windows::ApplicationModel::Package::Current->InstalledLocation->GetFileAsync(L"Assets\\Data\\configuration.xml")).then([this](task<StorageFile^> previousTask)
+      try
       {
-        StorageFile^ file = nullptr;
-        try
-        {
-          file = previousTask.get();
-        }
-        catch (Platform::Exception^ e)
-        {
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Unable to locate system configuration file.");
-        }
+        InitializeTransformRepositoryAsync(m_transformRepository, L"Assets\\Data\\configuration.xml");
+      }
+      catch (Platform::Exception^ e)
+      {
+        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(e->Message);
+      }
 
-        XmlDocument^ doc = ref new XmlDocument();
-        create_task(doc->LoadFromFileAsync(file)).then([this](task<XmlDocument^> previousTask)
+      try
+      {
+        GetXmlDocumentFromFileAsync(L"Assets\\Data\\configuration.xml").then([this](XmlDocument ^ doc)
         {
-          XmlDocument^ doc = nullptr;
-          try
-          {
-            doc = previousTask.get();
-          }
-          catch (Platform::Exception^ e)
-          {
-            HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"System configuration file did not contain valid XML.");
-          }
-
-          try
-          {
-            m_transformRepository->ReadConfiguration(doc);
-          }
-          catch (Platform::Exception^ e)
-          {
-            HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Invalid layout in coordinate definitions configuration area.");
-          }
-
-          InitAsync(doc).then([ = ]()
+          InitAsync(doc).then([this]()
           {
             // Ensure that ReferenceToWorld exists
             bool isValid;
             float4x4 transform;
-            UWPOpenIGTLink::TransformName^ trName = ref new UWPOpenIGTLink::TransformName(L"Reference", L"World");
+            UWPOpenIGTLink::TransformName^ trName = ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD");
             try
             {
               transform = m_transformRepository->GetTransform(trName, &isValid);
@@ -97,7 +76,11 @@ namespace HoloIntervention
             }
           });
         });
-      });
+      }
+      catch (Platform::Exception^ e)
+      {
+        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(e->Message);
+      }
     }
 
     //----------------------------------------------------------------------------

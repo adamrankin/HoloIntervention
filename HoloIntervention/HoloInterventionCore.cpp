@@ -203,13 +203,14 @@ namespace HoloIntervention
     SpatialCoordinateSystem^ currentCoordinateSystem = m_attachedReferenceFrame->GetStationaryCoordinateSystemAtTimestamp(prediction->Timestamp);
 
     DX::ViewProjection vp;
+    DX::CameraResources* cameraResources(nullptr);
     m_deviceResources->UseHolographicCameraResources<bool>(
-      [this, holographicFrame, prediction, currentCoordinateSystem, &vp](std::map<UINT32, std::unique_ptr<DX::CameraResources>>& cameraResourceMap)
+      [this, holographicFrame, prediction, currentCoordinateSystem, &vp, &cameraResources](std::map<UINT32, std::unique_ptr<DX::CameraResources>>& cameraResourceMap)
     {
       for (auto cameraPose : prediction->CameraPoses)
       {
-        DX::CameraResources* pCameraResources = cameraResourceMap[cameraPose->HolographicCamera->Id].get();
-        auto result = pCameraResources->UpdateViewProjectionBuffer(m_deviceResources, cameraPose, currentCoordinateSystem, vp);
+        cameraResources = cameraResourceMap[cameraPose->HolographicCamera->Id].get();
+        auto result = cameraResources->UpdateViewProjectionBuffer(m_deviceResources, cameraPose, currentCoordinateSystem, vp);
       }
       return true;
     });
@@ -223,7 +224,7 @@ namespace HoloIntervention
       {
         if (m_igtLinkIF->GetLatestTrackedFrame(m_latestFrame, &m_latestTimestamp))
         {
-          m_volumeRenderer->Update(m_latestFrame, m_timer);
+          m_volumeRenderer->Update(m_latestFrame, m_timer, cameraResources);
           m_imagingSystem->Update(m_latestFrame, m_timer);
           m_toolSystem->Update(m_latestFrame, m_timer);
         }
@@ -300,6 +301,7 @@ namespace HoloIntervention
           m_meshRenderer->Render();
           m_modelRenderer->Render();
           m_sliceRenderer->Render();
+          m_volumeRenderer->Render();
         }
 
         // Only render world-locked content when positional tracking is active.

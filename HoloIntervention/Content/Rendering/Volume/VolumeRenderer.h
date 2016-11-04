@@ -28,6 +28,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 namespace DX
 {
+  class CameraResources;
   class DeviceResources;
   class StepTimer;
 }
@@ -62,7 +63,7 @@ namespace HoloIntervention
       VolumeRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources);
       ~VolumeRenderer();
 
-      void Update(UWPOpenIGTLink::TrackedFrame^ frame, const DX::StepTimer& timer);
+      void Update(UWPOpenIGTLink::TrackedFrame^ frame, const DX::StepTimer& timer, DX::CameraResources* cameraResources);
       void Render();
 
       Concurrency::task<void> SetTransferFunctionTypeAsync(TransferFunctionType type);
@@ -74,9 +75,13 @@ namespace HoloIntervention
     protected:
       void CreateVertexResources();
       void ReleaseVertexResources();
+      void CreateVolumeResources(uint16* frameSize, UWPOpenIGTLink::TrackedFrame^ frame, std::shared_ptr<byte>& imagePtr, uint32 bytesPerPixel);
+      void UpdateGPUImageData(std::shared_ptr<byte>& imagePtr, uint16* frameSize, uint32 bytesPerPixel);
 
       HRESULT CreateByteAddressBuffer(float* lookupTable, ID3D11Buffer** buffer);
       HRESULT CreateByteAddressSRV(Microsoft::WRL::ComPtr<ID3D11Buffer> shaderBuffer, ID3D11ShaderResourceView** ppSRVOut);
+
+      void AnalyzeCameraResources(DX::CameraResources* cameraResources);
 
     protected:
       // Cached pointer to device resources.
@@ -86,12 +91,21 @@ namespace HoloIntervention
       Microsoft::WRL::ComPtr<ID3D11InputLayout>         m_inputLayout;
       Microsoft::WRL::ComPtr<ID3D11Buffer>              m_vertexBuffer;
       Microsoft::WRL::ComPtr<ID3D11Buffer>              m_indexBuffer;
-      Microsoft::WRL::ComPtr<ID3D11VertexShader>        m_vertexShader;
-      Microsoft::WRL::ComPtr<ID3D11GeometryShader>      m_geometryShader;
-      Microsoft::WRL::ComPtr<ID3D11PixelShader>         m_pixelShader;
+      Microsoft::WRL::ComPtr<ID3D11VertexShader>        m_volRenderVertexShader;
+      Microsoft::WRL::ComPtr<ID3D11GeometryShader>      m_volRenderGeometryShader;
+      Microsoft::WRL::ComPtr<ID3D11PixelShader>         m_volRenderPixelShader;
       Microsoft::WRL::ComPtr<ID3D11Buffer>              m_volumeConstantBuffer;
 
-      Microsoft::WRL::ComPtr<ID3D11Texture3D>           m_imageVolume;
+      // Left and right eye position calculation resources
+      Microsoft::WRL::ComPtr<ID3D11Texture2D>           m_frontPositionTexture[2];
+      Microsoft::WRL::ComPtr<ID3D11Texture2D>           m_backPositionTexture[2];
+      Microsoft::WRL::ComPtr<ID3D11RenderTargetView>    m_frontPositionRTV[2];
+      Microsoft::WRL::ComPtr<ID3D11RenderTargetView>    m_backPositionRTV[2];
+      Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>  m_frontPositionSRV[2];
+      Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>  m_backPositionSRV[2];
+
+      Microsoft::WRL::ComPtr<ID3D11Texture3D>           m_imageVolumeStaging;
+      Microsoft::WRL::ComPtr<ID3D11Texture3D>           m_imageVolumeShader;
       Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>  m_imageVolumeSRV;
 
       Microsoft::WRL::ComPtr<ID3D11Buffer>              m_lookupTableBuffer;
