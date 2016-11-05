@@ -51,7 +51,8 @@ namespace HoloIntervention
         {
           for (MediaFrameSourceInfo^ sourceInfo : sourceGroup->SourceInfos)
           {
-            if (sourceInfo->SourceKind == MediaFrameSourceKind::Color)
+            if (sourceInfo->MediaStreamType == MediaStreamType::VideoRecord
+                && sourceInfo->SourceKind == MediaFrameSourceKind::Color)
             {
               selectedSourceInfo = sourceInfo;
               break;
@@ -81,6 +82,7 @@ namespace HoloIntervention
         return create_task(mediaCapture->InitializeAsync(settings)).then([ = ]()
         {
           MediaFrameSource^ selectedSource = mediaCapture->FrameSources->Lookup(selectedSourceInfo->Id);
+          auto formats = selectedSource->SupportedFormats;
 
           return create_task(mediaCapture->CreateFrameReaderAsync(selectedSource)).then([ = ](MediaFrameReader ^ reader)
           {

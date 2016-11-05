@@ -105,7 +105,14 @@ namespace HoloIntervention
               else
               {
                 m_videoFrameProcessor = processor;
-                m_cameraIntrinsics = m_videoFrameProcessor->TryGetCameraIntrinsics();
+                try
+                {
+                  m_cameraIntrinsics = m_videoFrameProcessor->TryGetCameraIntrinsics();
+                }
+                catch (Platform::Exception^ e)
+                {
+                  OutputDebugStringW(e->Message->Data());
+                }
               }
             }).then([this]()
             {
@@ -113,6 +120,8 @@ namespace HoloIntervention
               {
                 HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Unable to retrieve camera intrinsics. Aborting.");
                 m_videoFrameProcessor = nullptr;
+                m_createTask = nullptr;
+                return;
               }
               std::lock_guard<std::mutex> guard(m_processorLock);
               m_videoFrameProcessor->StartAsync().then([this](MediaFrameReaderStartStatus status)
@@ -125,6 +134,7 @@ namespace HoloIntervention
                 {
                   HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Unable to start capturing.");
                 }
+                m_createTask = nullptr;
               });
             });
           }
@@ -166,6 +176,8 @@ namespace HoloIntervention
           std::lock_guard<std::mutex> guard(m_processorLock);
           m_videoFrameProcessor->StopAsync().then([this]()
           {
+            m_videoFrameProcessor = nullptr;
+            m_createTask = nullptr;
             HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Capturing stopped.");
           });
         }
