@@ -129,12 +129,6 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    CameraIntrinsics^ VideoFrameProcessor::TryGetCameraIntrinsics()
-    {
-      return m_mediaFrameSource->TryGetCameraIntrinsics(m_mediaFrameSource->CurrentFormat);
-    }
-
-    //----------------------------------------------------------------------------
     bool VideoFrameProcessor::IsStarted()
     {
       return m_recording;

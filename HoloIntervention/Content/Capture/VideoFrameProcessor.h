@@ -37,7 +37,6 @@ namespace HoloIntervention
 
       Concurrency::task<void> StopAsync();
       Concurrency::task<Windows::Media::Capture::Frames::MediaFrameReaderStartStatus> StartAsync();
-      Windows::Media::Devices::Core::CameraIntrinsics^ TryGetCameraIntrinsics();
 
       bool IsStarted();
 

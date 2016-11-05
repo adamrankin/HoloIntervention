@@ -77,12 +77,13 @@ namespace HoloIntervention
       virtual void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbacks);
 
     protected:
+      Concurrency::task<void> StopCameraAsync();
+      Concurrency::task<void> StartCameraAsync();
       void ProcessAvailableFrames(Concurrency::cancellation_token token);
-
       bool CameraRegistration::ComputeTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame, CameraRegistration::DetectedSpheresWorld& worldResults);
-
       bool ComputeCircleLocations(Microsoft::WRL::ComPtr<Windows::Foundation::IMemoryBufferByteAccess>& byteAccess,
                                   Windows::Graphics::Imaging::BitmapBuffer^ buffer,
+                                  Windows::Media::Capture::Frames::VideoMediaFrame^ videoFrame,
                                   bool& initialized,
                                   int32_t& height,
                                   int32_t& width,
@@ -106,14 +107,13 @@ namespace HoloIntervention
       std::mutex                                                        m_framesLock;
       Windows::Media::Capture::Frames::MediaFrameReference^             m_currentFrame = nullptr;
       Windows::Media::Capture::Frames::MediaFrameReference^             m_nextFrame = nullptr;
-      DetectionFrames                                                m_cameraFrameResults;
-      std::vector<cv::Point3f>                                          m_phantomFiducialCoords;
-      Windows::Media::Devices::Core::CameraIntrinsics^                  m_cameraIntrinsics = nullptr;
+      DetectionFrames                                                   m_cameraFrameResults;
 
       // IGT link
       UWPOpenIGTLink::TransformRepository^                              m_transformRepository = ref new UWPOpenIGTLink::TransformRepository();
       double                                                            m_latestTimestamp = 0.0;
-      DetectionFrames                                                m_trackerFrameResults;
+      DetectionFrames                                                   m_trackerFrameResults;
+      std::vector<cv::Point3f>                                          m_phantomFiducialCoords;
 
       Concurrency::task<void>*                                          m_workerTask = nullptr;
       Concurrency::cancellation_token_source                            m_tokenSource;

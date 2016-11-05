@@ -89,99 +89,90 @@ namespace HoloIntervention
     {
       callbackMap[L"start camera"] = [this](SpeechRecognitionResult ^ result)
       {
-        if (m_videoFrameProcessor == nullptr)
-        {
-          std::lock_guard<std::mutex> guard(m_processorLock);
-          if (m_createTask == nullptr)
-          {
-            m_createTask = &Capture::VideoFrameProcessor::CreateAsync();
-            m_createTask->then([this](std::shared_ptr<Capture::VideoFrameProcessor> processor)
-            {
-              std::lock_guard<std::mutex> guard(m_processorLock);
-              if (processor == nullptr)
-              {
-                HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Unable to initialize capture system.");
-              }
-              else
-              {
-                m_videoFrameProcessor = processor;
-                try
-                {
-                  m_cameraIntrinsics = m_videoFrameProcessor->TryGetCameraIntrinsics();
-                }
-                catch (Platform::Exception^ e)
-                {
-                  OutputDebugStringW(e->Message->Data());
-                }
-              }
-            }).then([this]()
-            {
-              if (m_cameraIntrinsics == nullptr)
-              {
-                HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Unable to retrieve camera intrinsics. Aborting.");
-                m_videoFrameProcessor = nullptr;
-                m_createTask = nullptr;
-                return;
-              }
-              std::lock_guard<std::mutex> guard(m_processorLock);
-              m_videoFrameProcessor->StartAsync().then([this](MediaFrameReaderStartStatus status)
-              {
-                if (status == MediaFrameReaderStartStatus::Success)
-                {
-                  HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Capturing...");
-                }
-                else
-                {
-                  HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Unable to start capturing.");
-                }
-                m_createTask = nullptr;
-              });
-            });
-          }
-        }
-        else
-        {
-          m_videoFrameProcessor->StartAsync().then([this](MediaFrameReaderStartStatus status)
-          {
-            if (status == MediaFrameReaderStartStatus::Success)
-            {
-              HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Capturing...");
-            }
-            else
-            {
-              HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Unable to start capturing.");
-            }
-          });
-        }
-
-        if (m_workerTask == nullptr)
-        {
-          m_tokenSource = cancellation_token_source();
-          auto token = m_tokenSource.get_token();
-          m_workerTask = &concurrency::create_task([this, token]()
-          {
-            ProcessAvailableFrames(token);
-          }).then([this]()
-          {
-            m_workerTask = nullptr;
-          });
-        }
+        StartCameraAsync();
+        return;
       };
 
       callbackMap[L"stop camera"] = [this](SpeechRecognitionResult ^ result)
       {
-        if (m_videoFrameProcessor != nullptr && m_videoFrameProcessor->IsStarted())
+        StopCameraAsync();
+
+      };
+    }
+
+    //----------------------------------------------------------------------------
+    task<void> CameraRegistration::StopCameraAsync()
+    {
+      if (m_videoFrameProcessor != nullptr && m_videoFrameProcessor->IsStarted())
+      {
+        m_tokenSource.cancel();
+        std::lock_guard<std::mutex> guard(m_processorLock);
+        return m_videoFrameProcessor->StopAsync().then([this]()
         {
-          m_tokenSource.cancel();
-          std::lock_guard<std::mutex> guard(m_processorLock);
-          m_videoFrameProcessor->StopAsync().then([this]()
+          m_videoFrameProcessor = nullptr;
+          m_createTask = nullptr;
+          m_cameraFrameResults.clear();
+          m_currentFrame = nullptr;
+          m_nextFrame = nullptr;
+          m_workerTask = nullptr;
+          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Capturing stopped.");
+        });
+      }
+      return create_task([]() {});
+    }
+
+    //----------------------------------------------------------------------------
+    task<void> CameraRegistration::StartCameraAsync()
+    {
+      return StopCameraAsync().then([this]()
+      {
+        std::lock_guard<std::mutex> guard(m_processorLock);
+        if (m_videoFrameProcessor == nullptr)
+        {
+          m_createTask = &Capture::VideoFrameProcessor::CreateAsync();
+          m_createTask->then([this](std::shared_ptr<Capture::VideoFrameProcessor> processor)
           {
-            m_videoFrameProcessor = nullptr;
-            m_createTask = nullptr;
-            HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Capturing stopped.");
+            std::lock_guard<std::mutex> guard(m_processorLock);
+            if (processor == nullptr)
+            {
+              HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Unable to initialize capture system.");
+            }
+            else
+            {
+              m_videoFrameProcessor = processor;
+            }
+          }).then([this]()
+          {
+            std::lock_guard<std::mutex> guard(m_processorLock);
+            return m_videoFrameProcessor->StartAsync().then([this](MediaFrameReaderStartStatus status)
+            {
+              if (status == MediaFrameReaderStartStatus::Success)
+              {
+                HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Capturing...");
+              }
+              else
+              {
+                HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Unable to start capturing.");
+              }
+              m_createTask = nullptr;
+            }).then([this](task<void> previousTask)
+            {
+              if (m_videoFrameProcessor != nullptr)
+              {
+                m_tokenSource = cancellation_token_source();
+                auto token = m_tokenSource.get_token();
+                m_workerTask = &concurrency::create_task([this, token]()
+                {
+                  ProcessAvailableFrames(token);
+                }).then([this]()
+                {
+                  m_workerTask = nullptr;
+                });
+              }
+            });
           });
         }
-      };
+      });
     }
 
     //----------------------------------------------------------------------------
@@ -201,10 +192,40 @@ namespace HoloIntervention
 
       while (!token.is_canceled())
       {
-        if (m_videoFrameProcessor == nullptr || !HoloIntervention::instance()->GetIGTLink().IsConnected())
+        if (m_videoFrameProcessor == nullptr) //|| !HoloIntervention::instance()->GetIGTLink().IsConnected())
         {
           std::this_thread::sleep_for(std::chrono::milliseconds(100));
           continue;
+        }
+
+        MediaFrameReference^ cameraFrame2(m_videoFrameProcessor->GetLatestFrame());
+        if (cameraFrame2 == nullptr)
+        {
+          std::this_thread::sleep_for(std::chrono::milliseconds(100));
+          continue;
+        }
+        if (VideoMediaFrame^ videoMediaFrame = cameraFrame2->VideoMediaFrame)
+        {
+          // Validate that the incoming frame format is compatible
+          if (videoMediaFrame->SoftwareBitmap)
+          {
+            auto buffer = videoMediaFrame->SoftwareBitmap->LockBuffer(BitmapBufferAccessMode::Read);
+            IMemoryBufferReference^ reference = buffer->CreateReference();
+
+            ComPtr<IMemoryBufferByteAccess> byteAccess;
+            if (SUCCEEDED(reinterpret_cast<IUnknown*>(reference)->QueryInterface(IID_PPV_ARGS(&byteAccess))))
+            {
+              DetectedSpheresWorld cameraResults;
+              if (ComputeCircleLocations(byteAccess, buffer, videoMediaFrame, l_initialized, l_height, l_width, l_hsv, l_redMat, l_redMatWrap, l_imageRGB, l_mask, l_canny_output, cameraResults))
+              {
+                m_cameraFrameResults.push_back(cameraResults);
+                //m_trackerFrameResults.push_back(results);
+              }
+            }
+
+            delete reference;
+            delete buffer;
+          }
         }
 
         UWPOpenIGTLink::TrackedFrame^ trackedFrame(nullptr);
@@ -234,7 +255,7 @@ namespace HoloIntervention
           }
 
           DetectedSpheresWorld results;
-          if (!ComputeTrackerFrameLocations(l_latestTrackedFrame, results)) {continue;}
+          if (!ComputeTrackerFrameLocations(l_latestTrackedFrame, results)) { continue; }
 
           if (VideoMediaFrame^ videoMediaFrame = l_latestCameraFrame->VideoMediaFrame)
           {
@@ -244,11 +265,11 @@ namespace HoloIntervention
               auto buffer = videoMediaFrame->SoftwareBitmap->LockBuffer(BitmapBufferAccessMode::Read);
               IMemoryBufferReference^ reference = buffer->CreateReference();
 
-              Microsoft::WRL::ComPtr<IMemoryBufferByteAccess> byteAccess;
+              ComPtr<IMemoryBufferByteAccess> byteAccess;
               if (SUCCEEDED(reinterpret_cast<IUnknown*>(reference)->QueryInterface(IID_PPV_ARGS(&byteAccess))))
               {
                 DetectedSpheresWorld cameraResults;
-                if (!results.empty() && ComputeCircleLocations(byteAccess, buffer, l_initialized, l_height, l_width, l_hsv, l_redMat, l_redMatWrap, l_imageRGB, l_mask, l_canny_output, cameraResults))
+                if (!results.empty() && ComputeCircleLocations(byteAccess, buffer, videoMediaFrame, l_initialized, l_height, l_width, l_hsv, l_redMat, l_redMatWrap, l_imageRGB, l_mask, l_canny_output, cameraResults))
                 {
                   m_cameraFrameResults.push_back(cameraResults);
                   m_trackerFrameResults.push_back(results);
@@ -264,8 +285,9 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool CameraRegistration::ComputeCircleLocations(Microsoft::WRL::ComPtr<Windows::Foundation::IMemoryBufferByteAccess>& byteAccess,
-        Windows::Graphics::Imaging::BitmapBuffer^ buffer,
+    bool CameraRegistration::ComputeCircleLocations(ComPtr<IMemoryBufferByteAccess>& byteAccess,
+        BitmapBuffer^ buffer,
+        VideoMediaFrame^ videoFrame,
         bool& initialized,
         int32_t& height,
         int32_t& width,
@@ -277,7 +299,18 @@ namespace HoloIntervention
         cv::Mat& cannyOutput,
         DetectedSpheresWorld& cameraResults)
     {
-      assert(m_cameraIntrinsics != nullptr);
+      try
+      {
+        if (videoFrame->CameraIntrinsics == nullptr)
+        {
+          OutputDebugStringW(L"Camera intrinsics not available. Cannot continue.");
+          return false;
+        }
+      }
+      catch (Platform::Exception^ e)
+      {
+        OutputDebugStringW(e->Message->Data());
+      }
 
       // Get a pointer to the pixel buffer
       byte* data;
@@ -351,18 +384,20 @@ namespace HoloIntervention
         return false;
       }
 
+      CameraIntrinsics^ cameraIntrinsics = videoFrame->CameraIntrinsics;
+
       std::vector<float> distCoeffs;
-      distCoeffs.push_back(m_cameraIntrinsics->RadialDistortion.x);
-      distCoeffs.push_back(m_cameraIntrinsics->RadialDistortion.y);
-      distCoeffs.push_back(m_cameraIntrinsics->TangentialDistortion.x);
-      distCoeffs.push_back(m_cameraIntrinsics->TangentialDistortion.y);
-      distCoeffs.push_back(m_cameraIntrinsics->RadialDistortion.z);
+      distCoeffs.push_back(cameraIntrinsics->RadialDistortion.x);
+      distCoeffs.push_back(cameraIntrinsics->RadialDistortion.y);
+      distCoeffs.push_back(cameraIntrinsics->TangentialDistortion.x);
+      distCoeffs.push_back(cameraIntrinsics->TangentialDistortion.y);
+      distCoeffs.push_back(cameraIntrinsics->RadialDistortion.z);
 
       cv::Matx33f intrinsic(cv::Matx33f::eye());
-      intrinsic(0, 0) = m_cameraIntrinsics->FocalLength.x;
-      intrinsic(0, 2) = m_cameraIntrinsics->PrincipalPoint.x;
-      intrinsic(1, 1) = m_cameraIntrinsics->FocalLength.y;
-      intrinsic(1, 2) = m_cameraIntrinsics->PrincipalPoint.y;
+      intrinsic(0, 0) = cameraIntrinsics->FocalLength.x;
+      intrinsic(0, 2) = cameraIntrinsics->PrincipalPoint.x;
+      intrinsic(1, 1) = cameraIntrinsics->FocalLength.y;
+      intrinsic(1, 2) = cameraIntrinsics->PrincipalPoint.y;
 
       std::vector<float> rvec;
       std::vector<float> tvec;
