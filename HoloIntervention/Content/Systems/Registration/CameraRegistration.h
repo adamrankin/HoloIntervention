@@ -64,9 +64,9 @@ namespace HoloIntervention
     public:
       typedef cv::Point2f DetectedSpherePixel;
       typedef cv::Point3f DetectedSphereWorld;
-      typedef std::vector<DetectedSpherePixel> DetectedSpherePixelList;
-      typedef std::vector<DetectedSphereWorld> DetectedSphereWorldList;
-      typedef std::vector<DetectedSphereWorldList> DetectionFrameList;
+      typedef std::vector<DetectedSpherePixel> DetectedSpheresPixel;
+      typedef std::vector<DetectedSphereWorld> DetectedSpheresWorld;
+      typedef std::vector<DetectedSpheresWorld> DetectionFrames;
 
     public:
       CameraRegistration(const std::shared_ptr<DX::DeviceResources>& deviceResources);
@@ -79,7 +79,7 @@ namespace HoloIntervention
     protected:
       void ProcessAvailableFrames(Concurrency::cancellation_token token);
 
-      bool CameraRegistration::ComputeTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame, CameraRegistration::DetectedSphereWorldList& worldResults);
+      bool CameraRegistration::ComputeTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame, CameraRegistration::DetectedSpheresWorld& worldResults);
 
       bool ComputeCircleLocations(Microsoft::WRL::ComPtr<Windows::Foundation::IMemoryBufferByteAccess>& byteAccess,
                                   Windows::Graphics::Imaging::BitmapBuffer^ buffer,
@@ -92,7 +92,7 @@ namespace HoloIntervention
                                   cv::Mat& imageRGB,
                                   cv::Mat& mask,
                                   cv::Mat& cannyOutput,
-                                  DetectedSphereWorldList& cameraResults);
+                                  DetectedSpheresWorld& cameraResults);
 
     protected:
       // Cached pointer to device resources.
@@ -106,20 +106,22 @@ namespace HoloIntervention
       std::mutex                                                        m_framesLock;
       Windows::Media::Capture::Frames::MediaFrameReference^             m_currentFrame = nullptr;
       Windows::Media::Capture::Frames::MediaFrameReference^             m_nextFrame = nullptr;
-      DetectionFrameList                                                m_cameraFrameResults;
+      DetectionFrames                                                m_cameraFrameResults;
       std::vector<cv::Point3f>                                          m_phantomFiducialCoords;
       Windows::Media::Devices::Core::CameraIntrinsics^                  m_cameraIntrinsics = nullptr;
 
       // IGT link
       UWPOpenIGTLink::TransformRepository^                              m_transformRepository = ref new UWPOpenIGTLink::TransformRepository();
       double                                                            m_latestTimestamp = 0.0;
-      DetectionFrameList                                                m_trackerFrameResults;
+      DetectionFrames                                                m_trackerFrameResults;
 
       Concurrency::task<void>*                                          m_workerTask = nullptr;
       Concurrency::cancellation_token_source                            m_tokenSource;
       Windows::Foundation::Numerics::float4x4                           m_cameraToWorld = Windows::Foundation::Numerics::float4x4::identity();
 
       std::shared_ptr<LandmarkRegistration>                             m_landmarkRegistration = std::make_shared<LandmarkRegistration>();
+
+      static const uint32                                               PHANTOM_SPHERE_COUNT = 5;
     };
   }
 }

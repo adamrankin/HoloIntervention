@@ -37,7 +37,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <ppltasks.h>
 #include <ppl.h>
 
-// stl includes
+// STL includes
 #include <algorithm>
 
 // Network includes
@@ -221,7 +221,7 @@ namespace HoloIntervention
             }
           }
 
-          DetectedSphereWorldList results;
+          DetectedSpheresWorld results;
           if (!ComputeTrackerFrameLocations(l_latestTrackedFrame, results)) {continue;}
 
           if (VideoMediaFrame^ videoMediaFrame = l_latestCameraFrame->VideoMediaFrame)
@@ -235,7 +235,7 @@ namespace HoloIntervention
               Microsoft::WRL::ComPtr<IMemoryBufferByteAccess> byteAccess;
               if (SUCCEEDED(reinterpret_cast<IUnknown*>(reference)->QueryInterface(IID_PPV_ARGS(&byteAccess))))
               {
-                DetectedSphereWorldList cameraResults;
+                DetectedSpheresWorld cameraResults;
                 if (!results.empty() && ComputeCircleLocations(byteAccess, buffer, l_initialized, l_height, l_width, l_hsv, l_redMat, l_redMatWrap, l_imageRGB, l_mask, l_canny_output, cameraResults))
                 {
                   m_cameraFrameResults.push_back(cameraResults);
@@ -263,7 +263,7 @@ namespace HoloIntervention
         cv::Mat& imageRGB,
         cv::Mat& mask,
         cv::Mat& cannyOutput,
-        DetectedSphereWorldList& cameraResults)
+        DetectedSpheresWorld& cameraResults)
     {
       assert(m_cameraIntrinsics != nullptr);
 
@@ -296,13 +296,12 @@ namespace HoloIntervention
       cv::cvtColor(imageRGB, hsv, cv::COLOR_RGB2HSV);
 
       // In HSV, red wraps around, check 0-10, 170-180
-      // Filter everything except red - (0, 70, 50) -> (10, 255, 255) & (170, 70, 50) -> (180, 255, 255)
       cv::inRange(hsv, cv::Scalar(0, 70, 50), cv::Scalar(10, 255, 255), redMat);
       cv::inRange(hsv, cv::Scalar(170, 70, 50), cv::Scalar(180, 255, 255), redMatWrap);
       cv::addWeighted(redMat, 1.0, redMatWrap, 1.0, 0.0, mask);
 
-      DetectedSpherePixelList spheres;
-      std::vector<cv::Vec3f> circles;
+      DetectedSpheresPixel spheres;
+      std::vector<cv::Mat> circles;
 
       // Create a Gaussian & median Blur Filter
       cv::medianBlur(mask, mask, 5);
@@ -310,46 +309,33 @@ namespace HoloIntervention
 
       // Apply the Hough Transform to find the circles
       cv::HoughCircles(mask, circles, CV_HOUGH_GRADIENT, 2, mask.rows / 16, 255, 30);
-      if (circles.size() == 4)
+
+      if (circles.size() == PHANTOM_SPHERE_COUNT)
       {
+        float radiusMean(0.f);
         for (auto& circle : circles)
         {
-          spheres.push_back(cv::Point(cvRound(circle[0]), cvRound(circle[1])));
+          radiusMean += circle.at<float>(2);
+        }
+        radiusMean /= circles.size();
+
+        for (auto& circle : circles)
+        {
+          // Ensure radius of circle falls within 10% of mean
+          if (circle.at<float>(2) / radiusMean < 0.9f || circle.at<float>(2) / radiusMean > 1.1f)
+          {
+            OutputDebugStringW(L"Circle detection failed. Irregular sized circle detected.");
+            return false;
+          }
+
+          // Outline circle and centroid
+          cv::Point2f centerHough(circle.at<float>(0), circle.at<float>(1));
+          spheres.push_back(centerHough);
         }
       }
       else
       {
-        std::vector<std::vector<cv::Point>> contours;
-        std::vector<cv::Vec4i> hierarchy;
-
-        int thresh = 100;
-        int max_thresh = 255;
-
-        // Blur the image
-        cv::medianBlur(mask, mask, 3);
-
-        // Detect edges using canny
-        cv::Canny(mask, cannyOutput, thresh, thresh * 2, 3);
-
-        // Find contours
-        cv::findContours(cannyOutput, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
-
-        /// Approximate contours to polygons + get bounding rects and circles
-        std::vector<std::vector<cv::Point> > contours_poly(contours.size());
-        std::vector<cv::Point2f>center(contours.size());
-        std::vector<float>radius(contours.size());
-
-        for (uint32_t j = 0; j < contours.size(); j++)
-        {
-          cv::approxPolyDP(cv::Mat(contours[j]), contours_poly[j], 3, true);        // Finds polygon
-          cv::minEnclosingCircle((cv::Mat)contours_poly[j], center[j], radius[j]);  // Finds circle
-          spheres.push_back(DetectedSpherePixel(center[j]));
-        }
-      }
-
-      if (spheres.size() != 4)
-      {
-        // Must have correspondence between image points and object points
+        OutputDebugStringW(L"Circle detection failed. Did not detect correct number of spheres.");
         return false;
       }
 
@@ -360,19 +346,11 @@ namespace HoloIntervention
       distCoeffs.push_back(m_cameraIntrinsics->TangentialDistortion.y);
       distCoeffs.push_back(m_cameraIntrinsics->RadialDistortion.z);
 
-      Windows::Foundation::Numerics::float4x4& mat = transpose(m_cameraIntrinsics->UndistortedProjectionTransform);
-      cv::Matx33f intrinsic;
-      intrinsic(0, 0) = mat.m11;
-      intrinsic(0, 1) = mat.m12;
-      intrinsic(0, 2) = mat.m13;
-
-      intrinsic(1, 0) = mat.m21;
-      intrinsic(1, 1) = mat.m22;
-      intrinsic(1, 2) = mat.m23;
-
-      intrinsic(2, 0) = mat.m31;
-      intrinsic(2, 1) = mat.m32;
-      intrinsic(2, 2) = mat.m33;
+      cv::Matx33f intrinsic(cv::Matx33f::eye());
+      intrinsic(0, 0) = m_cameraIntrinsics->FocalLength.x;
+      intrinsic(0, 2) = m_cameraIntrinsics->PrincipalPoint.x;
+      intrinsic(1, 1) = m_cameraIntrinsics->FocalLength.y;
+      intrinsic(1, 2) = m_cameraIntrinsics->PrincipalPoint.y;
 
       std::vector<float> rvec;
       std::vector<float> tvec;
@@ -416,7 +394,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool CameraRegistration::ComputeTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame, CameraRegistration::DetectedSphereWorldList& worldResults)
+    bool CameraRegistration::ComputeTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame, CameraRegistration::DetectedSpheresWorld& worldResults)
     {
       m_transformRepository->SetTransforms(trackedFrame);
 
@@ -435,6 +413,9 @@ namespace HoloIntervention
       float4x4 red4ToPhantomTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"Red4Sphere", L"Phantom"), &isValid);
       float4x4 red4ToReferenceTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"Red4Sphere", L"Reference"), &isValid);
 
+      float4x4 red5ToPhantomTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"Red5Sphere", L"Phantom"), &isValid);
+      float4x4 red5ToReferenceTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"Red5Sphere", L"Reference"), &isValid);
+
       float3 scale;
       quaternion quat;
       float3 translation;
@@ -451,6 +432,10 @@ namespace HoloIntervention
       worldResults.push_back(DetectedSphereWorld(translation.x, translation.y, translation.z));
 
       result = decompose(transpose(red4ToReferenceTransform), &scale, &quat, &translation);
+      if (!result) { return result; }
+      worldResults.push_back(DetectedSphereWorld(translation.x, translation.y, translation.z));
+
+      result = decompose(transpose(red5ToReferenceTransform), &scale, &quat, &translation);
       if (!result) { return result; }
       worldResults.push_back(DetectedSphereWorld(translation.x, translation.y, translation.z));
 
@@ -472,6 +457,10 @@ namespace HoloIntervention
         fiducialCoords.push_back(cv::Point3f(translation.x, translation.y, translation.z));
 
         result = decompose(transpose(red4ToPhantomTransform), &scale, &quat, &translation);
+        if (!result) { return result; }
+        fiducialCoords.push_back(cv::Point3f(translation.x, translation.y, translation.z));
+
+        result = decompose(transpose(red5ToPhantomTransform), &scale, &quat, &translation);
         if (!result) { return result; }
         fiducialCoords.push_back(cv::Point3f(translation.x, translation.y, translation.z));
 
