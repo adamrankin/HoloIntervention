@@ -81,9 +81,7 @@ namespace HoloIntervention
       Concurrency::task<void> StartCameraAsync();
       void ProcessAvailableFrames(Concurrency::cancellation_token token);
       bool CameraRegistration::ComputeTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame, CameraRegistration::DetectedSpheresWorld& worldResults);
-      bool ComputeCircleLocations(Microsoft::WRL::ComPtr<Windows::Foundation::IMemoryBufferByteAccess>& byteAccess,
-                                  Windows::Graphics::Imaging::BitmapBuffer^ buffer,
-                                  Windows::Media::Capture::Frames::VideoMediaFrame^ videoFrame,
+      bool ComputeCircleLocations(Windows::Media::Capture::Frames::VideoMediaFrame^ videoFrame,
                                   bool& initialized,
                                   int32_t& height,
                                   int32_t& width,

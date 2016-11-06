@@ -198,35 +198,24 @@ namespace HoloIntervention
           continue;
         }
 
+        // REMOVE ONCE WORKING
         MediaFrameReference^ cameraFrame2(m_videoFrameProcessor->GetLatestFrame());
         if (cameraFrame2 == nullptr)
         {
           std::this_thread::sleep_for(std::chrono::milliseconds(100));
           continue;
         }
-        if (VideoMediaFrame^ videoMediaFrame = cameraFrame2->VideoMediaFrame)
+        DetectedSpheresWorld cameraResults;
+        if (ComputeCircleLocations(cameraFrame2->VideoMediaFrame, l_initialized, l_height, l_width, l_hsv, l_redMat, l_redMatWrap, l_imageRGB, l_mask, l_canny_output, cameraResults))
         {
-          // Validate that the incoming frame format is compatible
-          if (videoMediaFrame->SoftwareBitmap)
-          {
-            auto buffer = videoMediaFrame->SoftwareBitmap->LockBuffer(BitmapBufferAccessMode::Read);
-            IMemoryBufferReference^ reference = buffer->CreateReference();
-
-            ComPtr<IMemoryBufferByteAccess> byteAccess;
-            if (SUCCEEDED(reinterpret_cast<IUnknown*>(reference)->QueryInterface(IID_PPV_ARGS(&byteAccess))))
-            {
-              DetectedSpheresWorld cameraResults;
-              if (ComputeCircleLocations(byteAccess, buffer, videoMediaFrame, l_initialized, l_height, l_width, l_hsv, l_redMat, l_redMatWrap, l_imageRGB, l_mask, l_canny_output, cameraResults))
-              {
-                m_cameraFrameResults.push_back(cameraResults);
-                //m_trackerFrameResults.push_back(results);
-              }
-            }
-
-            delete reference;
-            delete buffer;
-          }
+          m_cameraFrameResults.push_back(cameraResults);
         }
+        else
+        {
+          std::this_thread::sleep_for(std::chrono::milliseconds(100));
+          continue;
+        }
+        // END REMOVE ONCE WORKING
 
         UWPOpenIGTLink::TrackedFrame^ trackedFrame(nullptr);
         MediaFrameReference^ cameraFrame(m_videoFrameProcessor->GetLatestFrame());
@@ -255,39 +244,29 @@ namespace HoloIntervention
           }
 
           DetectedSpheresWorld results;
-          if (!ComputeTrackerFrameLocations(l_latestTrackedFrame, results)) { continue; }
-
-          if (VideoMediaFrame^ videoMediaFrame = l_latestCameraFrame->VideoMediaFrame)
+          if (!ComputeTrackerFrameLocations(l_latestTrackedFrame, results))
           {
-            // Validate that the incoming frame format is compatible
-            if (videoMediaFrame->SoftwareBitmap)
-            {
-              auto buffer = videoMediaFrame->SoftwareBitmap->LockBuffer(BitmapBufferAccessMode::Read);
-              IMemoryBufferReference^ reference = buffer->CreateReference();
-
-              ComPtr<IMemoryBufferByteAccess> byteAccess;
-              if (SUCCEEDED(reinterpret_cast<IUnknown*>(reference)->QueryInterface(IID_PPV_ARGS(&byteAccess))))
-              {
-                DetectedSpheresWorld cameraResults;
-                if (!results.empty() && ComputeCircleLocations(byteAccess, buffer, videoMediaFrame, l_initialized, l_height, l_width, l_hsv, l_redMat, l_redMatWrap, l_imageRGB, l_mask, l_canny_output, cameraResults))
-                {
-                  m_cameraFrameResults.push_back(cameraResults);
-                  m_trackerFrameResults.push_back(results);
-                }
-              }
-
-              delete reference;
-              delete buffer;
-            }
+            continue;
           }
+
+          DetectedSpheresWorld cameraResults;
+          if (!results.empty() && ComputeCircleLocations(l_latestCameraFrame->VideoMediaFrame, l_initialized, l_height, l_width, l_hsv, l_redMat, l_redMatWrap, l_imageRGB, l_mask, l_canny_output, cameraResults))
+          {
+            m_cameraFrameResults.push_back(cameraResults);
+            m_trackerFrameResults.push_back(results);
+          }
+        }
+        else
+        {
+          // No new frame
+          std::this_thread::sleep_for(std::chrono::milliseconds(100));
+          continue;
         }
       }
     }
 
     //----------------------------------------------------------------------------
-    bool CameraRegistration::ComputeCircleLocations(ComPtr<IMemoryBufferByteAccess>& byteAccess,
-        BitmapBuffer^ buffer,
-        VideoMediaFrame^ videoFrame,
+    bool CameraRegistration::ComputeCircleLocations(VideoMediaFrame^ videoFrame,
         bool& initialized,
         int32_t& height,
         int32_t& width,
@@ -299,145 +278,174 @@ namespace HoloIntervention
         cv::Mat& cannyOutput,
         DetectedSpheresWorld& cameraResults)
     {
+      if (m_phantomFiducialCoords.size() != PHANTOM_SPHERE_COUNT)
+      {
+        OutputDebugStringW(L"Phantom coordinates haven't been received. Can't determine 3D sphere coordinates.");
+        return false;
+      }
+
+      CameraIntrinsics^ cameraIntrinsics(nullptr);
       try
       {
-        if (videoFrame->CameraIntrinsics == nullptr)
+        if (videoFrame == nullptr || videoFrame->CameraIntrinsics == nullptr)
         {
           OutputDebugStringW(L"Camera intrinsics not available. Cannot continue.");
           return false;
         }
+        cameraIntrinsics = videoFrame->CameraIntrinsics;
       }
       catch (Platform::Exception^ e)
       {
         OutputDebugStringW(e->Message->Data());
       }
 
-      // Get a pointer to the pixel buffer
-      byte* data;
-      unsigned capacity;
-      byteAccess->GetBuffer(&data, &capacity);
-
-      // Get information about the BitmapBuffer
-      auto desc = buffer->GetPlaneDescription(0);
-
-      if (!initialized || height != desc.Height || width != desc.Width)
+      bool result(false);
+      // Validate that the incoming frame format is compatible
+      if (videoFrame->SoftwareBitmap)
       {
-        hsv = cv::Mat(desc.Height, desc.Width, CV_8UC3);
-        redMat = cv::Mat(desc.Height, desc.Width, CV_8UC3);
-        redMatWrap = cv::Mat(desc.Height, desc.Width, CV_8UC3);
-        imageRGB = cv::Mat(desc.Height, desc.Width, CV_8UC3);
-        mask = cv::Mat(desc.Height, desc.Width, CV_8UC3);
-        cannyOutput = cv::Mat(desc.Height, desc.Width, CV_8UC1);
+        ComPtr<IMemoryBufferByteAccess> byteAccess;
+        BitmapBuffer^ buffer = videoFrame->SoftwareBitmap->LockBuffer(BitmapBufferAccessMode::Read);
+        IMemoryBufferReference^ reference = buffer->CreateReference();
 
-        initialized = true;
-        height = desc.Height;
-        width = desc.Width;
-      }
-
-      cv::Mat imageYUV(height + height / 2, width, CV_8UC1, (void*)data);
-      cv::cvtColor(imageYUV, imageRGB, CV_YUV2RGB_NV12, 3);
-
-      // Convert BGRA image to HSV image
-      cv::cvtColor(imageRGB, hsv, cv::COLOR_RGB2HSV);
-
-      // In HSV, red wraps around, check 0-10, 170-180
-      cv::inRange(hsv, cv::Scalar(0, 70, 50), cv::Scalar(10, 255, 255), redMat);
-      cv::inRange(hsv, cv::Scalar(170, 70, 50), cv::Scalar(180, 255, 255), redMatWrap);
-      cv::addWeighted(redMat, 1.0, redMatWrap, 1.0, 0.0, mask);
-
-      DetectedSpheresPixel spheres;
-      std::vector<cv::Mat> circles;
-
-      // Create a Gaussian & median Blur Filter
-      cv::medianBlur(mask, mask, 5);
-      cv::GaussianBlur(mask, mask, cv::Size(9, 9), 2, 2);
-
-      // Apply the Hough Transform to find the circles
-      cv::HoughCircles(mask, circles, CV_HOUGH_GRADIENT, 2, mask.rows / 16, 255, 30);
-
-      if (circles.size() == PHANTOM_SPHERE_COUNT)
-      {
-        float radiusMean(0.f);
-        for (auto& circle : circles)
+        if (SUCCEEDED(reinterpret_cast<IUnknown*>(reference)->QueryInterface(IID_PPV_ARGS(&byteAccess))))
         {
-          radiusMean += circle.at<float>(2);
-        }
-        radiusMean /= circles.size();
+          // Get a pointer to the pixel buffer
+          byte* data;
+          unsigned capacity;
+          byteAccess->GetBuffer(&data, &capacity);
 
-        for (auto& circle : circles)
-        {
-          // Ensure radius of circle falls within 10% of mean
-          if (circle.at<float>(2) / radiusMean < 0.9f || circle.at<float>(2) / radiusMean > 1.1f)
+          // Get information about the BitmapBuffer
+          auto desc = buffer->GetPlaneDescription(0);
+
+          if (!initialized || height != desc.Height || width != desc.Width)
           {
-            OutputDebugStringW(L"Circle detection failed. Irregular sized circle detected.");
-            return false;
+            initialized = true;
+            height = desc.Height;
+            width = desc.Width;
           }
 
-          // Outline circle and centroid
-          cv::Point2f centerHough(circle.at<float>(0), circle.at<float>(1));
-          spheres.push_back(centerHough);
+          cv::Mat imageYUV(height + height / 2, width, CV_8UC1, (void*)data);
+          cv::cvtColor(imageYUV, imageRGB, cv::COLOR_YUV2RGB_NV12, 3);
+
+          // Convert BGRA image to HSV image
+          cv::cvtColor(imageRGB, hsv, cv::COLOR_RGB2HSV);
+
+          // TODO : there is a way to do this in a single call, optimize
+          // In HSV, red wraps around, check 0-10, 170-180
+          cv::inRange(hsv, cv::Scalar(0, 70, 50), cv::Scalar(10, 255, 255), redMat);
+          cv::inRange(hsv, cv::Scalar(170, 70, 50), cv::Scalar(180, 255, 255), redMatWrap);
+          cv::addWeighted(redMat, 1.0, redMatWrap, 1.0, 0.0, mask);
+
+          DetectedSpheresPixel spheres;
+          std::vector<cv::Vec3f> circles;
+
+          // Create a Gaussian & median Blur Filter
+          cv::medianBlur(mask, mask, 5);
+          cv::GaussianBlur(mask, mask, cv::Size(9, 9), 2, 2);
+
+          // Apply the Hough Transform to find the circles
+          try
+          {
+            cv::HoughCircles(mask, circles, CV_HOUGH_GRADIENT, 2, mask.rows / 16, 255, 30, 30, 60);
+          }
+          catch (const cv::Exception& e)
+          {
+            OutputDebugStringA(e.msg.c_str());
+            result = false;
+            goto done;
+          }
+
+          if (circles.size() == PHANTOM_SPHERE_COUNT)
+          {
+            float radiusMean(0.f);
+            for (auto& circle : circles)
+            {
+              radiusMean += circle[2];
+            }
+            radiusMean /= circles.size();
+
+            for (auto& circle : circles)
+            {
+              // Ensure radius of circle falls within 10% of mean
+              if (circle[2] / radiusMean < 0.9f || circle[2] / radiusMean > 1.1f)
+              {
+                OutputDebugStringW(L"Circle detection failed. Irregular sized circle detected.");
+                result = false;
+                goto done;
+              }
+
+              // Outline circle and centroid
+              cv::Point2f centerHough(circle[0], circle[1]);
+              spheres.push_back(centerHough);
+            }
+          }
+          else
+          {
+            OutputDebugStringW(L"Circle detection failed. Did not detect correct number of spheres.");
+            result = false;
+            goto done;
+          }
+
+          std::vector<float> distCoeffs;
+          distCoeffs.push_back(cameraIntrinsics->RadialDistortion.x);
+          distCoeffs.push_back(cameraIntrinsics->RadialDistortion.y);
+          distCoeffs.push_back(cameraIntrinsics->TangentialDistortion.x);
+          distCoeffs.push_back(cameraIntrinsics->TangentialDistortion.y);
+          distCoeffs.push_back(cameraIntrinsics->RadialDistortion.z);
+
+          cv::Matx33f intrinsic(cv::Matx33f::eye());
+          intrinsic(0, 0) = cameraIntrinsics->FocalLength.x;
+          intrinsic(0, 2) = cameraIntrinsics->PrincipalPoint.x;
+          intrinsic(1, 1) = cameraIntrinsics->FocalLength.y;
+          intrinsic(1, 2) = cameraIntrinsics->PrincipalPoint.y;
+
+          std::vector<float> rvec;
+          std::vector<float> tvec;
+          if (!cv::solvePnP(m_phantomFiducialCoords, spheres, intrinsic, distCoeffs, rvec, tvec))
+          {
+            OutputDebugStringW(L"Unable to solve object pose.");
+            result = false;
+            goto done;
+          }
+          cv::Matx33f rotation;
+          cv::Rodrigues(rvec, rotation);
+
+          cv::Matx44f transform(cv::Matx44f::eye()); //identity
+          transform(0, 0) = rotation(0, 0);
+          transform(0, 1) = rotation(0, 1);
+          transform(0, 2) = rotation(0, 2);
+
+          transform(1, 0) = rotation(1, 0);
+          transform(1, 1) = rotation(1, 1);
+          transform(1, 2) = rotation(1, 2);
+
+          transform(2, 0) = rotation(2, 0);
+          transform(2, 1) = rotation(2, 1);
+          transform(2, 2) = rotation(2, 2);
+          transform(0, 3) = tvec[0];
+          transform(1, 3) = tvec[1];
+          transform(2, 3) = tvec[2];
+
+          cameraResults.clear();
+          int i = 0;
+          for (auto& point : m_phantomFiducialCoords)
+          {
+            cv::Mat3f pointMat(point);
+            cv::Mat3f resultMat;
+            cv::multiply(transform, pointMat, resultMat);
+            cameraResults.push_back(cv::Point3f(resultMat.at<float>(0), resultMat.at<float>(1), resultMat.at<float>(2)));
+            i++;
+          }
+
+          // TODO : debug
+          result = true;
         }
-      }
-      else
-      {
-        OutputDebugStringW(L"Circle detection failed. Did not detect correct number of spheres.");
-        return false;
+done:
+        delete buffer;
+        delete reference;
       }
 
-      CameraIntrinsics^ cameraIntrinsics = videoFrame->CameraIntrinsics;
-
-      std::vector<float> distCoeffs;
-      distCoeffs.push_back(cameraIntrinsics->RadialDistortion.x);
-      distCoeffs.push_back(cameraIntrinsics->RadialDistortion.y);
-      distCoeffs.push_back(cameraIntrinsics->TangentialDistortion.x);
-      distCoeffs.push_back(cameraIntrinsics->TangentialDistortion.y);
-      distCoeffs.push_back(cameraIntrinsics->RadialDistortion.z);
-
-      cv::Matx33f intrinsic(cv::Matx33f::eye());
-      intrinsic(0, 0) = cameraIntrinsics->FocalLength.x;
-      intrinsic(0, 2) = cameraIntrinsics->PrincipalPoint.x;
-      intrinsic(1, 1) = cameraIntrinsics->FocalLength.y;
-      intrinsic(1, 2) = cameraIntrinsics->PrincipalPoint.y;
-
-      std::vector<float> rvec;
-      std::vector<float> tvec;
-      if (!cv::solvePnP(m_phantomFiducialCoords, spheres, intrinsic, distCoeffs, rvec, tvec))
-      {
-        OutputDebugStringW(L"Unable to solve object pose.");
-        return false;
-      }
-      cv::Matx33f rotation;
-      cv::Rodrigues(rvec, rotation);
-
-      cv::Matx44f transform(cv::Matx44f::eye()); //identity
-      transform(0, 0) = rotation(0, 0);
-      transform(0, 1) = rotation(0, 1);
-      transform(0, 2) = rotation(0, 2);
-
-      transform(1, 0) = rotation(1, 0);
-      transform(1, 1) = rotation(1, 1);
-      transform(1, 2) = rotation(1, 2);
-
-      transform(2, 0) = rotation(2, 0);
-      transform(2, 1) = rotation(2, 1);
-      transform(2, 2) = rotation(2, 2);
-      transform(0, 3) = tvec[0];
-      transform(1, 3) = tvec[1];
-      transform(2, 3) = tvec[2];
-
-      cameraResults.clear();
-      int i = 0;
-      for (auto& point : m_phantomFiducialCoords)
-      {
-        cv::Mat3f pointMat(point);
-        cv::Mat3f resultMat;
-        cv::multiply(transform, pointMat, resultMat);
-        cameraResults.push_back(cv::Point3f(resultMat.at<float>(0), resultMat.at<float>(1), resultMat.at<float>(2)));
-        i++;
-      }
-
-      // TODO : debug
-      return true;
+      return result;
     }
 
     //----------------------------------------------------------------------------
