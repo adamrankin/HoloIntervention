@@ -21,51 +21,15 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 ====================================================================*/
 
-cbuffer VolumeConstantBuffer : register(b0)
-{
-  float4x4 worldPose;
-  float maximumXValue;
-  float padding[3];
-};
-
-cbuffer ViewProjectionConstantBuffer : register(b1)
-{
-  float4 cameraPosition;
-  float4 lightPosition;
-  float4x4 viewProjection[2];
-};
-
-struct VertexShaderInput
-{
-  min16float3 Position : POSITION0;
-  uint instId : SV_InstanceID;
-};
-
-struct VertexShaderOutput
+struct PixelShaderInput
 {
   min16float4 Position : SV_POSITION;
   min16float3 texC : TEXCOORD0;
   min16float4 pos : TEXCOORD1;
-  uint viewId : TEXCOORD5; // SV_InstanceID % 2
+  uint rtvId : SV_RenderTargetArrayIndex;
 };
 
-// Simple shader to do vertex processing on the GPU.
-VertexShaderOutput main(VertexShaderInput input)
+float4 main(PixelShaderInput input) : SV_TARGET
 {
-  VertexShaderOutput output;
-  float4 pos = float4(input.Position, 1.0f);
-
-  int idx = input.instId % 2;
-
-  pos = mul(pos, worldPose);
-  pos = mul(pos, viewProjection[idx]);
-  output.Position = min16float4(pos);
-  output.texC = input.Position;
-  output.pos = output.Position;
-
-  // Set the instance ID. The pass-through geometry shader will set the
-  // render target array index to whatever value is set here.
-  output.viewId = idx;
-
-  return output;
+  return float4(input.texC, 1.0f);
 }

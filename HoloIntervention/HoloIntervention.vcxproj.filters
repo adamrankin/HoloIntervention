@@ -787,8 +787,11 @@
     <FxCompile Include="Content\Rendering\Volume\VolumeRendererVprtVS.hlsl">
       <Filter>Content\Rendering\VolumeRenderer\Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Content\Rendering\Volume\PIGeometryShader.hlsl">
+    <FxCompile Include="Content\Rendering\Shaders\PT0T1IGeometryShader.hlsl">
       <Filter>Content\Rendering\Geometry Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Rendering\Volume\FaceAnalysisPS.hlsl">
+      <Filter>Content\Rendering\VolumeRenderer\Shaders</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>

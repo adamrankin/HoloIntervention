@@ -28,12 +28,12 @@ using namespace Windows::Perception::Spatial;
 namespace DX
 {
   //----------------------------------------------------------------------------
-  CameraResources::CameraResources( HolographicCamera^ camera )
-    : m_holographicCamera( camera )
-    , m_isStereo( camera->IsStereo )
-    , m_d3dRenderTargetSize( camera->RenderTargetSize )
+  CameraResources::CameraResources(HolographicCamera^ camera)
+    : m_holographicCamera(camera)
+    , m_isStereo(camera->IsStereo)
+    , m_d3dRenderTargetSize(camera->RenderTargetSize)
   {
-    m_d3dViewport = CD3D11_VIEWPORT( 0.f, 0.f, m_d3dRenderTargetSize.Width, m_d3dRenderTargetSize.Height );
+    m_d3dViewport = CD3D11_VIEWPORT(0.f, 0.f, m_d3dRenderTargetSize.Width, m_d3dRenderTargetSize.Height);
   };
 
   //----------------------------------------------------------------------------
@@ -44,97 +44,59 @@ namespace DX
   {
     const auto device = pDeviceResources->GetD3DDevice();
 
-    // Get the WinRT object representing the holographic camera's back buffer.
     IDirect3DSurface^ surface = cameraParameters->Direct3D11BackBuffer;
 
-    // Get a DXGI interface for the holographic camera's back buffer.
-    // Holographic cameras do not provide the DXGI swap chain, which is owned
-    // by the system. The Direct3D back buffer resource is provided using WinRT
-    // interop APIs.
     ComPtr<ID3D11Resource> resource;
-    ThrowIfFailed(
-      GetDXGIInterfaceFromObject( surface, IID_PPV_ARGS( &resource ) )
-    );
+    DX::ThrowIfFailed(GetDXGIInterfaceFromObject(surface, IID_PPV_ARGS(&resource)));
 
-    // Get a Direct3D interface for the holographic camera's back buffer.
     ComPtr<ID3D11Texture2D> cameraBackBuffer;
-    ThrowIfFailed(
-      resource.As( &cameraBackBuffer )
-    );
+    DX::ThrowIfFailed(resource.As(&cameraBackBuffer));
 
-    // Determine if the back buffer has changed. If so, ensure that the render target view
-    // is for the current back buffer.
-    if ( m_d3dBackBuffer.Get() != cameraBackBuffer.Get() )
+    if (m_d3dBackBuffer.Get() != cameraBackBuffer.Get())
     {
-      // This can change every frame as the system moves to the next buffer in the
-      // swap chain. This mode of operation will occur when certain rendering modes
-      // are activated.
       m_d3dBackBuffer = cameraBackBuffer;
 
-      // Create a render target view of the back buffer.
-      // Creating this resource is inexpensive, and is better than keeping track of
-      // the back buffers in order to pre-allocate render target views for each one.
-      DX::ThrowIfFailed(
-        device->CreateRenderTargetView( m_d3dBackBuffer.Get(), nullptr, &m_d3dRenderTargetView )
-      );
+      DX::ThrowIfFailed(device->CreateRenderTargetView(m_d3dBackBuffer.Get(), nullptr, &m_d3dRenderTargetView));
 
-      // Get the DXGI format for the back buffer.
-      // This information can be accessed by the app using CameraResources::GetBackBufferDXGIFormat().
       D3D11_TEXTURE2D_DESC backBufferDesc;
-      m_d3dBackBuffer->GetDesc( &backBufferDesc );
+      m_d3dBackBuffer->GetDesc(&backBufferDesc);
       m_dxgiFormat = backBufferDesc.Format;
 
-      // Check for render target size changes.
       Windows::Foundation::Size currentSize = m_holographicCamera->RenderTargetSize;
-      if ( m_d3dRenderTargetSize != currentSize )
+      if (m_d3dRenderTargetSize != currentSize)
       {
-        // Set render target size.
         m_d3dRenderTargetSize = currentSize;
-
-        // A new depth stencil view is also needed.
         m_d3dDepthStencilView.Reset();
       }
     }
 
     // Refresh depth stencil resources, if needed.
-    if ( m_d3dDepthStencilView == nullptr )
+    if (m_d3dDepthStencilView == nullptr)
     {
-      // Create a depth stencil view for use with 3D rendering if needed.
-      CD3D11_TEXTURE2D_DESC depthStencilDesc(
-        DXGI_FORMAT_D16_UNORM,
-        static_cast<UINT>( m_d3dRenderTargetSize.Width ),
-        static_cast<UINT>( m_d3dRenderTargetSize.Height ),
-        m_isStereo ? 2 : 1, // Create two textures when rendering in stereo.
-        1, // Use a single mipmap level.
-        D3D11_BIND_DEPTH_STENCIL
-      );
+      CD3D11_TEXTURE2D_DESC depthStencilDesc(DXGI_FORMAT_D16_UNORM, static_cast<UINT>(m_d3dRenderTargetSize.Width), static_cast<UINT>(m_d3dRenderTargetSize.Height),
+                                             m_isStereo ? 2 : 1, // Create two textures when rendering in stereo.
+                                             1, // Use a single mipmap level.
+                                             D3D11_BIND_DEPTH_STENCIL
+                                            );
 
       ComPtr<ID3D11Texture2D> depthStencil;
-      DX::ThrowIfFailed(
-        device->CreateTexture2D( &depthStencilDesc, nullptr, &depthStencil )
-      );
+      DX::ThrowIfFailed(device->CreateTexture2D(&depthStencilDesc, nullptr, &depthStencil));
 
-      CD3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc(
-        m_isStereo ? D3D11_DSV_DIMENSION_TEXTURE2DARRAY : D3D11_DSV_DIMENSION_TEXTURE2D
-      );
-      DX::ThrowIfFailed(
-        device->CreateDepthStencilView( depthStencil.Get(), &depthStencilViewDesc, &m_d3dDepthStencilView )
-      );
+      CD3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc(m_isStereo ? D3D11_DSV_DIMENSION_TEXTURE2DARRAY : D3D11_DSV_DIMENSION_TEXTURE2D);
+      DX::ThrowIfFailed(device->CreateDepthStencilView(depthStencil.Get(), &depthStencilViewDesc, &m_d3dDepthStencilView));
     }
 
     // Create the constant buffer, if needed.
-    if ( m_viewProjectionConstantBuffer == nullptr )
+    if (m_viewProjectionConstantBuffer == nullptr)
     {
       // Create a constant buffer to store view and projection matrices for the camera.
-      CD3D11_BUFFER_DESC constantBufferDesc( sizeof( ViewProjectionConstantBuffer ), D3D11_BIND_CONSTANT_BUFFER );
-      DX::ThrowIfFailed(
-        device->CreateBuffer( &constantBufferDesc, nullptr, &m_viewProjectionConstantBuffer )
-      );
+      CD3D11_BUFFER_DESC constantBufferDesc(sizeof(ViewProjectionConstantBuffer), D3D11_BIND_CONSTANT_BUFFER);
+      DX::ThrowIfFailed(device->CreateBuffer(&constantBufferDesc, nullptr, &m_viewProjectionConstantBuffer));
     }
   }
 
   //----------------------------------------------------------------------------
-  void CameraResources::ReleaseResourcesForBackBuffer( DX::DeviceResources* pDeviceResources )
+  void CameraResources::ReleaseResourcesForBackBuffer(DX::DeviceResources* pDeviceResources)
   {
     const auto context = pDeviceResources->GetD3DDeviceContext();
 
@@ -147,7 +109,7 @@ namespace DX
     // Ensure system references to the back buffer are released by clearing the render
     // target from the graphics pipeline state, and then flushing the Direct3D context.
     ID3D11RenderTargetView* nullViews[D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT] = { nullptr };
-    context->OMSetRenderTargets( ARRAYSIZE( nullViews ), nullViews, nullptr );
+    context->OMSetRenderTargets(ARRAYSIZE(nullViews), nullViews, nullptr);
     context->Flush();
   }
 
@@ -160,14 +122,14 @@ namespace DX
   )
   {
     // The system changes the viewport on a per-frame basis for system optimizations.
-    m_d3dViewport = CD3D11_VIEWPORT( cameraPose->Viewport.Left, cameraPose->Viewport.Top, cameraPose->Viewport.Width, cameraPose->Viewport.Height );
+    m_d3dViewport = CD3D11_VIEWPORT(cameraPose->Viewport.Left, cameraPose->Viewport.Top, cameraPose->Viewport.Width, cameraPose->Viewport.Height);
 
     // The projection transform for each frame is provided by the HolographicCameraPose.
     HolographicStereoTransform cameraProjectionTransform = cameraPose->ProjectionTransform;
 
     // Get a container object with the view and projection matrices for the given
     // pose in the given coordinate system.
-    Platform::IBox<HolographicStereoTransform>^ viewTransformContainer = cameraPose->TryGetViewTransform( coordinateSystem );
+    Platform::IBox<HolographicStereoTransform>^ viewTransformContainer = cameraPose->TryGetViewTransform(coordinateSystem);
 
     // If TryGetViewTransform returns a null pointer, that means the pose and coordinate
     // system cannot be understood relative to one another; content cannot be rendered
@@ -177,39 +139,39 @@ namespace DX
     // content that is not world-locked instead.
     ViewProjectionConstantBuffer viewProjectionConstantBufferData;
     bool viewTransformAcquired = viewTransformContainer != nullptr;
-    if ( viewTransformAcquired )
+    if (viewTransformAcquired)
     {
       // Otherwise, the set of view transforms can be retrieved.
       HolographicStereoTransform viewCoordinateSystemTransform = viewTransformContainer->Value;
 
-      XMStoreFloat4x4( &vp.view[0], XMLoadFloat4x4( &viewCoordinateSystemTransform.Left ) );
-      XMStoreFloat4x4( &vp.view[1], XMLoadFloat4x4( &viewCoordinateSystemTransform.Right ) );
+      XMStoreFloat4x4(&vp.view[0], XMLoadFloat4x4(&viewCoordinateSystemTransform.Left));
+      XMStoreFloat4x4(&vp.view[1], XMLoadFloat4x4(&viewCoordinateSystemTransform.Right));
 
-      XMStoreFloat4x4( &vp.projection[0], XMLoadFloat4x4( &cameraProjectionTransform.Left ) );
-      XMStoreFloat4x4( &vp.projection[1], XMLoadFloat4x4( &cameraProjectionTransform.Right ) );
+      XMStoreFloat4x4(&vp.projection[0], XMLoadFloat4x4(&cameraProjectionTransform.Left));
+      XMStoreFloat4x4(&vp.projection[1], XMLoadFloat4x4(&cameraProjectionTransform.Right));
 
       // Update the view matrices. Holographic cameras (such as Microsoft HoloLens) are
       // constantly moving relative to the world. The view matrices need to be updated
       // every frame.
       XMStoreFloat4x4(
         &viewProjectionConstantBufferData.viewProjection[0],
-        XMMatrixTranspose( XMLoadFloat4x4( &viewCoordinateSystemTransform.Left ) * XMLoadFloat4x4( &cameraProjectionTransform.Left ) )
+        XMMatrixTranspose(XMLoadFloat4x4(&viewCoordinateSystemTransform.Left) * XMLoadFloat4x4(&cameraProjectionTransform.Left))
       );
       XMStoreFloat4x4(
         &viewProjectionConstantBufferData.viewProjection[1],
-        XMMatrixTranspose( XMLoadFloat4x4( &viewCoordinateSystemTransform.Right ) * XMLoadFloat4x4( &cameraProjectionTransform.Right ) )
+        XMMatrixTranspose(XMLoadFloat4x4(&viewCoordinateSystemTransform.Right) * XMLoadFloat4x4(&cameraProjectionTransform.Right))
       );
 
       float4x4 viewInverse;
-      bool invertible = Windows::Foundation::Numerics::invert( viewCoordinateSystemTransform.Left, &viewInverse );
-      if ( invertible )
+      bool invertible = Windows::Foundation::Numerics::invert(viewCoordinateSystemTransform.Left, &viewInverse);
+      if (invertible)
       {
         // For the purposes of this app, use the camera position as a light source.
-        float4 cameraPosition = float4( viewInverse.m41, viewInverse.m42, viewInverse.m43, 0.f );
-        float4 lightPosition = cameraPosition + float4( 0.f, 0.25f, 0.f, 0.f );
+        float4 cameraPosition = float4(viewInverse.m41, viewInverse.m42, viewInverse.m43, 0.f);
+        float4 lightPosition = cameraPosition + float4(0.f, 0.25f, 0.f, 0.f);
 
-        XMStoreFloat4( &viewProjectionConstantBufferData.cameraPosition, DirectX::XMLoadFloat4( &cameraPosition ) );
-        XMStoreFloat4( &viewProjectionConstantBufferData.lightPosition, DirectX::XMLoadFloat4( &lightPosition ) );
+        XMStoreFloat4(&viewProjectionConstantBufferData.cameraPosition, DirectX::XMLoadFloat4(&cameraPosition));
+        XMStoreFloat4(&viewProjectionConstantBufferData.lightPosition, DirectX::XMLoadFloat4(&lightPosition));
       }
     }
 
@@ -217,7 +179,7 @@ namespace DX
     const auto context = deviceResources->GetD3DDeviceContext();
 
     // Loading is asynchronous. Resources must be created before they can be updated.
-    if ( context == nullptr || m_viewProjectionConstantBuffer == nullptr || !viewTransformAcquired )
+    if (context == nullptr || m_viewProjectionConstantBuffer == nullptr || !viewTransformAcquired)
     {
       m_framePending = false;
       return false;
@@ -250,13 +212,13 @@ namespace DX
     // Loading is asynchronous. Resources must be created before they can be updated.
     // Cameras can also be added asynchronously, in which case they must be initialized
     // before they can be used.
-    if ( context == nullptr || m_viewProjectionConstantBuffer == nullptr || m_framePending == false )
+    if (context == nullptr || m_viewProjectionConstantBuffer == nullptr || m_framePending == false)
     {
       return false;
     }
 
     // Set the viewport for this camera.
-    context->RSSetViewports( 1, &m_d3dViewport );
+    context->RSSetViewports(1, &m_d3dViewport);
 
     // Send the constant buffer to the vertex shader.
     context->VSSetConstantBuffers(

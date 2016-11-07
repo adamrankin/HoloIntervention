@@ -39,6 +39,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "IGTLinkIF.h"
 
 // DirectX includes
+#include <d3d11_3.h>
 #include <DirectXMath.h>
 #include <DirectXTex.h>
 
@@ -113,17 +114,18 @@ namespace HoloIntervention
         return;
       }
       m_frame = frame;
+      m_cameraResources = cameraResources;
 
       auto context = m_deviceResources->GetD3DDeviceContext();
       auto device = m_deviceResources->GetD3DDevice();
 
-      AnalyzeCameraResources(cameraResources);
+      AnalyzeCameraResourcesAndAllocate();
 
       std::shared_ptr<byte> imagePtr = Network::IGTLinkIF::GetSharedImagePtr(frame);
       uint32 bytesPerPixel = BitsPerPixel((DXGI_FORMAT)frame->PixelFormat) / 8;
       uint16 frameSize[3] = { frame->FrameSize->GetAt(0), frame->FrameSize->GetAt(1), frame->FrameSize->GetAt(2) };
 
-      if (!m_imageReady && frameSize[2] > 1)
+      if (!m_volumeReady && frameSize[2] > 1)
       {
         CreateVolumeResources(frameSize, frame, imagePtr, bytesPerPixel);
       }
@@ -156,7 +158,7 @@ namespace HoloIntervention
 
       UpdateGPUImageData(imagePtr, frameSize, bytesPerPixel);
 
-      context->CopyResource(m_imageVolumeShader.Get(), m_imageVolumeStaging.Get());
+      context->CopyResource(m_volumeTexture.Get(), m_volumeStagingTexture.Get());
     }
 
     //----------------------------------------------------------------------------
@@ -166,7 +168,7 @@ namespace HoloIntervention
 
       // Map image resource and update data
       D3D11_MAPPED_SUBRESOURCE mappedResource;
-      context->Map(m_imageVolumeStaging.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+      context->Map(m_volumeStagingTexture.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
       byte* imageData = imagePtr.get();
       byte* mappedData = reinterpret_cast<byte*>(mappedResource.pData);
       for (uint32 j = 0; j < m_frameSize[2]; ++j)
@@ -179,7 +181,7 @@ namespace HoloIntervention
         }
         mappedData += mappedResource.DepthPitch;
       }
-      context->Unmap(m_imageVolumeStaging.Get(), 0);
+      context->Unmap(m_volumeStagingTexture.Get(), 0);
     }
 
     //----------------------------------------------------------------------------
@@ -196,25 +198,25 @@ namespace HoloIntervention
       imgData.pSysMem = imagePtr.get();
       imgData.SysMemPitch = frameSize[0] * bytesPerPixel;
       imgData.SysMemSlicePitch = frameSize[0] * frameSize[1] * bytesPerPixel;
-      DX::ThrowIfFailed(device->CreateTexture3D(&textureDesc, &imgData, m_imageVolumeStaging.GetAddressOf()));
+      DX::ThrowIfFailed(device->CreateTexture3D(&textureDesc, &imgData, m_volumeStagingTexture.GetAddressOf()));
 
       // Create the texture that will be used by the shader to access the current volume to be rendered
       textureDesc = CD3D11_TEXTURE3D_DESC((DXGI_FORMAT)frame->PixelFormat, frameSize[0], frameSize[1], frameSize[2]);
-      DX::ThrowIfFailed(device->CreateTexture3D(&textureDesc, &imgData, m_imageVolumeShader.GetAddressOf()));
-      DX::ThrowIfFailed(device->CreateShaderResourceView(m_imageVolumeShader.Get(), nullptr, m_imageVolumeSRV.GetAddressOf()));
+      DX::ThrowIfFailed(device->CreateTexture3D(&textureDesc, &imgData, m_volumeTexture.GetAddressOf()));
+      DX::ThrowIfFailed(device->CreateShaderResourceView(m_volumeTexture.Get(), nullptr, m_volumeSRV.GetAddressOf()));
 
-      m_imageReady = true;
+      m_volumeReady = true;
     }
 
     //----------------------------------------------------------------------------
     void VolumeRenderer::Render()
     {
-      if (!m_loadingComplete || !m_imageReady)
+      if (!m_loadingComplete || !m_volumeReady)
       {
         return;
       }
 
-      const auto context = m_deviceResources->GetD3DDeviceContext();
+      ID3D11DeviceContext3* context = m_deviceResources->GetD3DDeviceContext();
 
       const UINT stride = sizeof(VertexPosition);
       const UINT offset = 0;
@@ -222,20 +224,40 @@ namespace HoloIntervention
       context->IASetIndexBuffer(m_indexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
       context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
       context->IASetInputLayout(m_inputLayout.Get());
+
+      // Cache render target
+      ID3D11RenderTargetView* hololensRenderTargetView;
+      ID3D11DepthStencilView* hololensStencilView;
+      context->OMGetRenderTargets(1, &hololensRenderTargetView, &hololensStencilView);
+
+      // Render pass to render cube position textures used for quick ray calculation
+      ID3D11RenderTargetView* targets[1] = { m_frontPositionRTV.Get() };
+      context->OMSetRenderTargets(1, targets, nullptr);
       context->VSSetShader(m_volRenderVertexShader.Get(), nullptr, 0);
       context->VSSetConstantBuffers(0, 1, m_volumeConstantBuffer.GetAddressOf());
-
       if (!m_usingVprtShaders)
       {
         context->GSSetShader(m_volRenderGeometryShader.Get(), nullptr, 0);
       }
+      context->PSSetShader(m_faceCalcPixelShader.Get(), nullptr, 0);
+      context->DrawIndexedInstanced(m_indexCount, 2, 0, 0, 0);
 
-      // Set the shaders resources
-      ID3D11ShaderResourceView* shaderResourceViews[2] = { m_lookupTableSRV.Get(), m_imageVolumeSRV.Get() };
-      context->PSSetShaderResources(0, 2, shaderResourceViews);
+      // Set raster state to cull front faces, and perform second pass
+      context->RSSetState(m_cullFrontRasterState.Get());
+      targets[0] = m_backPositionRTV.Get();
+      context->OMSetRenderTargets(1, targets, nullptr);
+      context->DrawIndexedInstanced(m_indexCount, 2, 0, 0, 0);
+
+      // Clean up after rendering to textures
+      context->RSSetState(nullptr);
+
+      // Now perform the actual volume render
+      targets[0] = hololensRenderTargetView;
+      context->OMSetRenderTargets(1, targets, hololensStencilView);
+      ID3D11ShaderResourceView* shaderResourceViews[4] = { m_lookupTableSRV.Get(), m_volumeSRV.Get(), m_frontPositionSRV.Get(), m_backPositionSRV.Get() };
+      context->PSSetShaderResources(0, 4, shaderResourceViews);
       context->PSSetConstantBuffers(0, 1, m_volumeConstantBuffer.GetAddressOf());
       context->PSSetShader(m_volRenderPixelShader.Get(), nullptr, 0);
-
       context->DrawIndexedInstanced(m_indexCount, 2, 0, 0, 0);
 
       // Clear values
@@ -282,10 +304,14 @@ namespace HoloIntervention
       task<std::vector<byte>> loadGSTask;
       if (!m_usingVprtShaders)
       {
-        // Load the pass-through geometry shader.
-        // position, index
-        loadGSTask = DX::ReadDataAsync(L"ms-appx:///PIGeometryShader.cso");
+        loadGSTask = DX::ReadDataAsync(L"ms-appx:///PT0T1IGeometryShader.cso");
       }
+
+      task<std::vector<byte>> loadFacePSTask = DX::ReadDataAsync(L"ms-appx:///FaceAnalysisPS.cso");
+
+      CD3D11_RASTERIZER_DESC rasterDesc;
+      rasterDesc.CullMode = D3D11_CULL_FRONT;
+      DX::ThrowIfFailed(device->CreateRasterizerState(&rasterDesc, m_cullFrontRasterState.GetAddressOf()));
 
       {
         // set up transfer function GPU memory
@@ -306,18 +332,15 @@ namespace HoloIntervention
       task<void> createVSTask = loadVSTask.then([this, device](const std::vector<byte>& fileData)
       {
         DX::ThrowIfFailed(device->CreateVertexShader(fileData.data(), fileData.size(), nullptr, &m_volRenderVertexShader));
-
-        constexpr std::array<D3D11_INPUT_ELEMENT_DESC, 3> vertexDesc =
+        constexpr std::array<D3D11_INPUT_ELEMENT_DESC, 1> vertexDesc =
         {
           {
             { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0,  0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
           }
         };
-
         DX::ThrowIfFailed(device->CreateInputLayout(vertexDesc.data(), vertexDesc.size(), fileData.data(), fileData.size(), &m_inputLayout));
       });
 
-      // After the pixel shader file is loaded, create the shader and constant buffer.
       task<void> createPSTask = loadPSTask.then([this, device](const std::vector<byte>& fileData)
       {
         DX::ThrowIfFailed(device->CreatePixelShader(fileData.data(), fileData.size(), nullptr, &m_volRenderPixelShader));
@@ -333,8 +356,13 @@ namespace HoloIntervention
         CD3D11_BUFFER_DESC constantBufferDesc(sizeof(VolumeConstantBuffer), D3D11_BIND_CONSTANT_BUFFER);
         DX::ThrowIfFailed(device->CreateBuffer(&constantBufferDesc, &resData, &m_volumeConstantBuffer));
       });
+      task<void> createFacePSTask = loadFacePSTask.then([this, device](const std::vector<byte>& fileData)
+      {
+        DX::ThrowIfFailed(device->CreatePixelShader(fileData.data(), fileData.size(), nullptr, &m_faceCalcPixelShader));
+      });
 
       task<void> createGSTask;
+      task<void> createFaceGSTask;
       if (!m_usingVprtShaders)
       {
         // After the geometry shader file is loaded, create the shader.
@@ -345,7 +373,10 @@ namespace HoloIntervention
       }
 
       // Once all shaders are loaded, create the mesh.
-      task<void> shaderTaskGroup = m_usingVprtShaders ? (createPSTask && createVSTask) : (createPSTask && createVSTask && createGSTask);
+      task<void> shaderTaskGroup = m_usingVprtShaders
+                                   ? (createPSTask && createVSTask && createFacePSTask)
+                                   : (createPSTask && createVSTask && createGSTask && createFacePSTask);
+
       task<void> finishLoadingTask = shaderTaskGroup.then([this]()
       {
         CreateVertexResources();
@@ -359,18 +390,15 @@ namespace HoloIntervention
     {
       ReleaseVertexResources();
 
-      m_frontPositionTexture[0].Reset();
-      m_frontPositionTexture[1].Reset();
-      m_backPositionTexture[0].Reset();
-      m_backPositionTexture[1].Reset();
-      m_frontPositionRTV[0].Reset();
-      m_frontPositionRTV[1].Reset();
-      m_backPositionRTV[0].Reset();
-      m_backPositionRTV[1].Reset();
-      m_frontPositionSRV[0].Reset();
-      m_frontPositionSRV[1].Reset();
-      m_backPositionSRV[0].Reset();
-      m_backPositionSRV[1].Reset();
+      m_faceCalcReady = false;
+      m_frontPositionTextureArray.Reset();
+      m_backPositionTextureArray.Reset();
+      m_frontPositionRTV.Reset();;
+      m_backPositionRTV.Reset();
+      m_frontPositionSRV.Reset();
+      m_backPositionSRV.Reset();
+      m_cullFrontRasterState.Reset();
+      m_faceCalcPixelShader.Reset();
 
       m_lookupTableSRV.Reset();
       m_lookupTableBuffer.Reset();
@@ -484,27 +512,27 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void VolumeRenderer::AnalyzeCameraResources(DX::CameraResources* cameraResources)
+    void VolumeRenderer::AnalyzeCameraResourcesAndAllocate()
     {
       const auto device = m_deviceResources->GetD3DDevice();
 
-      const auto size = cameraResources->GetRenderTargetSize();
+      if (m_cameraResources == nullptr)
+      {
+        return;
+      }
 
-      CD3D11_TEXTURE2D_DESC textureDesc(cameraResources->GetBackBufferDXGIFormat(), static_cast<UINT>(size.Width), static_cast<UINT>(size.Height), 0, 0, D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET);
-      m_deviceResources->GetD3DDevice()->CreateTexture2D(&textureDesc, nullptr, &m_frontPositionTexture[0]);
-      m_deviceResources->GetD3DDevice()->CreateTexture2D(&textureDesc, nullptr, &m_frontPositionTexture[1]);
-      m_deviceResources->GetD3DDevice()->CreateTexture2D(&textureDesc, nullptr, &m_backPositionTexture[0]);
-      m_deviceResources->GetD3DDevice()->CreateTexture2D(&textureDesc, nullptr, &m_backPositionTexture[1]);
+      const auto size = m_cameraResources->GetRenderTargetSize();
 
-      m_deviceResources->GetD3DDevice()->CreateShaderResourceView(m_frontPositionTexture[0].Get(), nullptr, m_frontPositionSRV[0].GetAddressOf());
-      m_deviceResources->GetD3DDevice()->CreateShaderResourceView(m_frontPositionTexture[1].Get(), nullptr, m_frontPositionSRV[1].GetAddressOf());
-      m_deviceResources->GetD3DDevice()->CreateShaderResourceView(m_backPositionTexture[0].Get(), nullptr, m_backPositionSRV[0].GetAddressOf());
-      m_deviceResources->GetD3DDevice()->CreateShaderResourceView(m_backPositionTexture[1].Get(), nullptr, m_backPositionSRV[1].GetAddressOf());
+      CD3D11_TEXTURE2D_DESC textureDesc(DXGI_FORMAT_R8G8B8A8_UNORM, static_cast<UINT>(size.Width), static_cast<UINT>(size.Height), 2, 0, D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET);
+      m_deviceResources->GetD3DDevice()->CreateTexture2D(&textureDesc, nullptr, &m_frontPositionTextureArray);
+      m_deviceResources->GetD3DDevice()->CreateTexture2D(&textureDesc, nullptr, &m_backPositionTextureArray);
 
-      m_deviceResources->GetD3DDevice()->CreateRenderTargetView(m_frontPositionTexture[0].Get(), nullptr, m_frontPositionRTV[0].GetAddressOf());
-      m_deviceResources->GetD3DDevice()->CreateRenderTargetView(m_frontPositionTexture[1].Get(), nullptr, m_frontPositionRTV[1].GetAddressOf());
-      m_deviceResources->GetD3DDevice()->CreateRenderTargetView(m_backPositionTexture[0].Get(), nullptr, m_backPositionRTV[0].GetAddressOf());
-      m_deviceResources->GetD3DDevice()->CreateRenderTargetView(m_backPositionTexture[1].Get(), nullptr, m_backPositionRTV[1].GetAddressOf());
+      m_deviceResources->GetD3DDevice()->CreateShaderResourceView(m_frontPositionTextureArray.Get(), nullptr, m_frontPositionSRV.GetAddressOf());
+      m_deviceResources->GetD3DDevice()->CreateShaderResourceView(m_backPositionTextureArray.Get(), nullptr, m_backPositionSRV.GetAddressOf());
+      m_deviceResources->GetD3DDevice()->CreateRenderTargetView(m_frontPositionTextureArray.Get(), nullptr, m_frontPositionRTV.GetAddressOf());
+      m_deviceResources->GetD3DDevice()->CreateRenderTargetView(m_backPositionTextureArray.Get(), nullptr, m_backPositionRTV.GetAddressOf());
+
+      m_faceCalcReady = true;
     }
   }
 }

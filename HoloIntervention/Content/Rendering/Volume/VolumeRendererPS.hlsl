@@ -21,7 +21,6 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 ====================================================================*/
 
-// A constant buffer that stores the model transform.
 cbuffer VolumeConstantBuffer : register(b0)
 {
   float4x4 worldPose;
@@ -29,18 +28,68 @@ cbuffer VolumeConstantBuffer : register(b0)
   float padding[3];
 };
 
-ByteAddressBuffer lookupTable : register(t0);
-Texture3D<float> image : t1;
-
-// Per-pixel color data passed through to the pixel shader.
 struct PixelShaderInput
 {
-  min16float4 pos : SV_POSITION;
+  min16float4 Position : SV_POSITION;
+  min16float3 texC : TEXCOORD0;
+  min16float4 pos : TEXCOORD1;
   uint rtvId : SV_RenderTargetArrayIndex;
 };
 
-// The pixel shader renders a color value sampled from a texture
-min16float4 main(PixelShaderInput input) : SV_TARGET
+ByteAddressBuffer lookupTable : register(t0);
+Texture3D<float> image : t1;
+Texture2DArray frontPositionTexture : t2;
+Texture2DArray backPositionTexture : t3;
+
+
+float4 main(PixelShaderInput input) : SV_TARGET
 {
-  return min16float4(0.h, 0.h, 0.h, 1.h);
+  // calculate projective texture coordinates
+	// used to project the front and back position textures onto the cube
+  float2 texC = input.pos.xy /= input.pos.w;
+  texC.x = 0.5f * texC.x + 0.5f;
+  texC.y = -0.5f * texC.y + 0.5f;
+	
+  float3 front = tex2D(FrontS, texC).xyz;
+  float3 back = tex2D(BackS, texC).xyz;
+    
+  float3 dir = normalize(back - front);
+  float4 pos = float4(front, 0);
+    
+  float4 dst = float4(0, 0, 0, 0);
+  float4 src = 0;
+    
+  float value = 0;
+	
+  float3 Step = dir * StepSize;
+    
+  for(int i = 0; i < Iterations; i++)
+  {
+    pos.w = 0;
+    value = tex3Dlod(image, pos).r;
+				
+    src = (float4)value;
+    src.a *= .1f; //reduce the alpha to have a more transparent result
+					  //this needs to be adjusted based on the step size
+					  //i.e. the more steps we take, the faster the alpha will grow	
+			
+		//Front to back blending
+		// dst.rgb = dst.rgb + (1 - dst.a) * src.a * src.rgb
+		// dst.a   = dst.a   + (1 - dst.a) * src.a		
+    src.rgb *= src.a;
+    dst = (1.0f - dst.a) * src + dst;
+		
+		//break from the loop when alpha gets high enough
+    if(dst.a >= .95f)
+      break;
+		
+		//advance the current position
+    pos.xyz += Step;
+		
+		//break if the position is greater than <1, 1, 1>
+    if(pos.x > 1.0f || pos.y > 1.0f || pos.z > 1.0f)
+      break;
+  }
+    
+  return dst;
 }

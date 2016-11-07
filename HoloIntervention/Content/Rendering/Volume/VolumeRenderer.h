@@ -81,13 +81,14 @@ namespace HoloIntervention
       HRESULT CreateByteAddressBuffer(float* lookupTable, ID3D11Buffer** buffer);
       HRESULT CreateByteAddressSRV(Microsoft::WRL::ComPtr<ID3D11Buffer> shaderBuffer, ID3D11ShaderResourceView** ppSRVOut);
 
-      void AnalyzeCameraResources(DX::CameraResources* cameraResources);
+      void AnalyzeCameraResourcesAndAllocate();
 
     protected:
-      // Cached pointer to device resources.
-      std::shared_ptr<DX::DeviceResources>              m_deviceResources;
+      // Cached pointer to device and camera resources.
+      std::shared_ptr<DX::DeviceResources>              m_deviceResources = nullptr;
+      DX::CameraResources*                              m_cameraResources = nullptr;
 
-      // Direct3D resources for quad geometry.
+      // Direct3D resources for volume rendering
       Microsoft::WRL::ComPtr<ID3D11InputLayout>         m_inputLayout;
       Microsoft::WRL::ComPtr<ID3D11Buffer>              m_vertexBuffer;
       Microsoft::WRL::ComPtr<ID3D11Buffer>              m_indexBuffer;
@@ -95,37 +96,45 @@ namespace HoloIntervention
       Microsoft::WRL::ComPtr<ID3D11GeometryShader>      m_volRenderGeometryShader;
       Microsoft::WRL::ComPtr<ID3D11PixelShader>         m_volRenderPixelShader;
       Microsoft::WRL::ComPtr<ID3D11Buffer>              m_volumeConstantBuffer;
+      Microsoft::WRL::ComPtr<ID3D11Texture3D>           m_volumeStagingTexture;
+      Microsoft::WRL::ComPtr<ID3D11Texture3D>           m_volumeTexture;
+      Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>  m_volumeSRV;
 
-      // Left and right eye position calculation resources
-      Microsoft::WRL::ComPtr<ID3D11Texture2D>           m_frontPositionTexture[2];
-      Microsoft::WRL::ComPtr<ID3D11Texture2D>           m_backPositionTexture[2];
-      Microsoft::WRL::ComPtr<ID3D11RenderTargetView>    m_frontPositionRTV[2];
-      Microsoft::WRL::ComPtr<ID3D11RenderTargetView>    m_backPositionRTV[2];
-      Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>  m_frontPositionSRV[2];
-      Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>  m_backPositionSRV[2];
+      // D3D resources for left and right eye position calculation
+      Microsoft::WRL::ComPtr<ID3D11PixelShader>         m_faceCalcPixelShader;
+      Microsoft::WRL::ComPtr<ID3D11Texture2D>           m_frontPositionTextureArray;
+      Microsoft::WRL::ComPtr<ID3D11Texture2D>           m_backPositionTextureArray;
+      Microsoft::WRL::ComPtr<ID3D11RenderTargetView>    m_frontPositionRTV;
+      Microsoft::WRL::ComPtr<ID3D11RenderTargetView>    m_backPositionRTV;
+      Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>  m_frontPositionSRV;
+      Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>  m_backPositionSRV;
+      Microsoft::WRL::ComPtr<ID3D11RasterizerState>     m_cullFrontRasterState;
 
-      Microsoft::WRL::ComPtr<ID3D11Texture3D>           m_imageVolumeStaging;
-      Microsoft::WRL::ComPtr<ID3D11Texture3D>           m_imageVolumeShader;
-      Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>  m_imageVolumeSRV;
-
+      // Transfer function GPU resources
       Microsoft::WRL::ComPtr<ID3D11Buffer>              m_lookupTableBuffer;
       Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>  m_lookupTableSRV;
 
+      // IGT frame resources
       std::wstring                                      m_fromCoordFrame = L"Image";
       std::wstring                                      m_toCoordFrame = L"HMD";
       UWPOpenIGTLink::TransformName^                    m_imageToHMDName = ref new UWPOpenIGTLink::TransformName(ref new Platform::String(m_fromCoordFrame.c_str()), ref new Platform::String(m_toCoordFrame.c_str()));
       UWPOpenIGTLink::TransformRepository^              m_transformRepository = ref new UWPOpenIGTLink::TransformRepository();
       UWPOpenIGTLink::TrackedFrame^                     m_frame = nullptr;
 
+      // CPU resources for volume rendering
       uint32                                            m_indexCount = 0;
       VolumeConstantBuffer                              m_constantBuffer;
-      std::atomic_bool                                  m_imageReady = false;
       uint16                                            m_frameSize[3] = { 0, 0, 0 };
+
+      // State flags
+      std::atomic_bool                                  m_volumeReady = false;
+      std::atomic_bool                                  m_faceCalcReady = false;
       std::atomic_bool                                  m_loadingComplete = false;
-      bool                                              m_usingVprtShaders = false;
-      uint32                                            m_nextUnusedId = 1; // start at 1
-      TransferFunctionType                              m_tfType = TransferFunction_Piecewise_Linear;
+      std::atomic_bool                                  m_usingVprtShaders = false;
+
+      // Transfer function CPU resources
       std::mutex                                        m_tfMutex;
+      TransferFunctionType                              m_tfType = TransferFunction_Piecewise_Linear;
       ITransferFunction*                                m_transferFunction = new PiecewiseLinearTF();
     };
   }

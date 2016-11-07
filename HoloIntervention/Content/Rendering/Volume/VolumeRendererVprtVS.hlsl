@@ -1,21 +1,33 @@
-//*********************************************************
-//
-// Copyright (c) Microsoft. All rights reserved.
-// This code is licensed under the MIT License (MIT).
-// THIS CODE IS PROVIDED *AS IS* WITHOUT WARRANTY OF
-// ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING ANY
-// IMPLIED WARRANTIES OF FITNESS FOR A PARTICULAR
-// PURPOSE, MERCHANTABILITY, OR NON-INFRINGEMENT.
-//
-//*********************************************************
+/*====================================================================
+Copyright(c) 2016 Adam Rankin
 
-// A constant buffer that stores the model transform.
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files(the "Software"),
+to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and / or sell copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following conditions :
+
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL
+THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
+====================================================================*/
+
 cbuffer VolumeConstantBuffer : register(b0)
 {
   float4x4 worldPose;
+  float maximumXValue;
+  float padding[3];
 };
 
-// A constant buffer that stores each set of view and projection matrices in column-major format.
 cbuffer ViewProjectionConstantBuffer : register(b1)
 {
   float4 cameraPosition;
@@ -23,32 +35,32 @@ cbuffer ViewProjectionConstantBuffer : register(b1)
   float4x4 viewProjection[2];
 };
 
-// Per-vertex data used as input to the vertex shader.
 struct VertexShaderInput
 {
-  min16float3 pos : POSITION0;
+  min16float3 Position : POSITION0;
   uint instId : SV_InstanceID;
 };
 
-// Per-vertex data passed to the geometry shader.
-// Note that the render target array index is set here in the vertex shader.
 struct VertexShaderOutput
 {
-  min16float4 pos : SV_POSITION;
+  min16float4 Position : SV_POSITION;
+  min16float3 texC : TEXCOORD0;
+  min16float4 pos : TEXCOORD1;
   uint rtvId : SV_RenderTargetArrayIndex; // SV_InstanceID % 2
 };
 
-// Simple shader to do vertex processing on the GPU.
 VertexShaderOutput main(VertexShaderInput input)
 {
   VertexShaderOutput output;
-  float4 pos = float4(input.pos, 1.0f);
+  float4 pos = float4(input.Position, 1.0f);
 
   int idx = input.instId % 2;
 
   pos = mul(pos, worldPose);
   pos = mul(pos, viewProjection[idx]);
-  output.pos = min16float4(pos);
+  output.Position = min16float4(pos);
+  output.texC = input.Position;
+  output.pos = output.Position;
 
   // Set the render target array index.
   output.rtvId = idx;

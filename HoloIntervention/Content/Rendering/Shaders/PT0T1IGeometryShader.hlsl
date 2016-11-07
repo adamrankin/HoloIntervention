@@ -9,18 +9,21 @@
 //
 //*********************************************************
 
-// Per-vertex data from the vertex shader.
+//Per-vertex data from the vertex shader.
 struct GeometryShaderInput
 {
-  min16float4 pos : SV_POSITION;
-  uint instId : TEXCOORD5;
+  min16float4 PositionPS  : SV_Position;
+  min16float3 TexCoord0   : TEXCOORD0;
+  min16float4 TexCoord1   : TEXCOORD1;
+  uint instId             : TEXCOORD5;  // SV_InstanceID % 2
 };
 
-// Per-vertex data passed to the rasterizer.
 struct GeometryShaderOutput
 {
-  min16float4 pos : SV_POSITION;
-  uint rtvId : SV_RenderTargetArrayIndex;
+  min16float4 pos         : SV_POSITION;
+  min16float3 TexCoord0   : TEXCOORD0;
+  min16float4 TexCoord1   : TEXCOORD1;
+  uint rtvId              : SV_RenderTargetArrayIndex;
 };
 
 // This geometry shader is a pass-through that leaves the geometry unmodified 
@@ -28,12 +31,14 @@ struct GeometryShaderOutput
 [maxvertexcount(3)]
 void main(triangle GeometryShaderInput input[3], inout TriangleStream<GeometryShaderOutput> outStream)
 {
-  GeometryShaderOutput output;
-  [unroll(3)]
-  for(int i = 0; i < 3; ++i)
-  {
-    output.pos = input[i].pos;
-    output.rtvId = input[i].instId;
-    outStream.Append(output);
-  }
+    GeometryShaderOutput output;
+    [unroll(3)]
+    for (int i = 0; i < 3; ++i)
+    {
+        output.pos   = input[i].PositionPS;
+        output.TexCoord0 = input[i].TexCoord0;
+        output.TexCoord1 = input[i].TexCoord1;
+        output.rtvId = input[i].instId;
+        outStream.Append(output);
+    }
 }
