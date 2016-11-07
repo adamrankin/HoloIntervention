@@ -44,6 +44,7 @@ Texture2DArray backPositionTexture : t3;
 
 float4 main(PixelShaderInput input) : SV_TARGET
 {
+    /*
   // calculate projective texture coordinates
 	// used to project the front and back position textures onto the cube
   float2 texC = input.pos.xy /= input.pos.w;
@@ -55,10 +56,10 @@ float4 main(PixelShaderInput input) : SV_TARGET
     
   float3 dir = normalize(back - front);
   float4 pos = float4(front, 0);
-    
+    */
   float4 dst = float4(0, 0, 0, 0);
   float4 src = 0;
-    
+    /*
   float value = 0;
 	
   float3 Step = dir * StepSize;
@@ -90,6 +91,6 @@ float4 main(PixelShaderInput input) : SV_TARGET
     if(pos.x > 1.0f || pos.y > 1.0f || pos.z > 1.0f)
       break;
   }
-    
+    */
   return dst;
 }
