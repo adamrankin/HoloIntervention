@@ -148,7 +148,7 @@ namespace HoloIntervention
       {
         return;
       }
-      MillimetersToMeters(transform);
+
       {
         std::lock_guard<std::mutex> guard(m_tfMutex);
         m_constantBuffer.lt_maximumXValue = m_transferFunction->GetTFLookupTable().MaximumXValue;

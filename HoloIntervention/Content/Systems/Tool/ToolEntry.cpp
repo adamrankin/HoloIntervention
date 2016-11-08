@@ -82,8 +82,6 @@ namespace HoloIntervention
         return;
       }
 
-      // transform is in units mm, world is in units m
-      MillimetersToMeters(transform);
       m_modelEntry->SetWorld(transform);
     }
 

@@ -537,41 +537,41 @@
     <None Include="..\OpenCV-bin\bin\Release\opencv_videoio310.dll">
       <Filter>OpenCV\Release</Filter>
     </None>
-    <None Include="..\OpenCVDependencies\msvcp140d.dll">
-      <Filter>OpenCV\Debug\Dependencies</Filter>
-    </None>
-    <None Include="..\OpenCVDependencies\concrt140d.dll">
-      <Filter>OpenCV\Debug\Dependencies</Filter>
-    </None>
-    <None Include="..\OpenCVDependencies\ucrtbased.dll">
-      <Filter>OpenCV\Debug\Dependencies</Filter>
-    </None>
-    <None Include="..\OpenCVDependencies\vccorlib140d.dll">
-      <Filter>OpenCV\Debug\Dependencies</Filter>
-    </None>
-    <None Include="..\OpenCVDependencies\vcruntime140d.dll">
-      <Filter>OpenCV\Debug\Dependencies</Filter>
-    </None>
-    <None Include="..\OpenCVDependencies\vcruntime140.dll">
-      <Filter>OpenCV\Release\Dependencies</Filter>
-    </None>
-    <None Include="..\OpenCVDependencies\concrt140.dll">
-      <Filter>OpenCV\Release\Dependencies</Filter>
-    </None>
-    <None Include="..\OpenCVDependencies\msvcp140.dll">
-      <Filter>OpenCV\Release\Dependencies</Filter>
-    </None>
-    <None Include="..\OpenCVDependencies\ucrtbase.dll">
-      <Filter>OpenCV\Release\Dependencies</Filter>
-    </None>
-    <None Include="..\OpenCVDependencies\vccorlib140.dll">
-      <Filter>OpenCV\Release\Dependencies</Filter>
-    </None>
     <None Include="..\OpenCV-bin\bin\Debug\opencv_calib3d310d.dll">
       <Filter>OpenCV\Debug</Filter>
     </None>
     <None Include="..\OpenCV-bin\bin\Release\opencv_calib3d310.dll">
       <Filter>OpenCV\Release</Filter>
+    </None>
+    <None Include="..\DllDependencies\vcruntime140d.dll">
+      <Filter>OpenCV\Debug\Dependencies</Filter>
+    </None>
+    <None Include="..\DllDependencies\concrt140d.dll">
+      <Filter>OpenCV\Debug\Dependencies</Filter>
+    </None>
+    <None Include="..\DllDependencies\msvcp140d.dll">
+      <Filter>OpenCV\Debug\Dependencies</Filter>
+    </None>
+    <None Include="..\DllDependencies\ucrtbased.dll">
+      <Filter>OpenCV\Debug\Dependencies</Filter>
+    </None>
+    <None Include="..\DllDependencies\vccorlib140d.dll">
+      <Filter>OpenCV\Debug\Dependencies</Filter>
+    </None>
+    <None Include="..\DllDependencies\vcruntime140.dll">
+      <Filter>OpenCV\Release\Dependencies</Filter>
+    </None>
+    <None Include="..\DllDependencies\concrt140.dll">
+      <Filter>OpenCV\Release\Dependencies</Filter>
+    </None>
+    <None Include="..\DllDependencies\msvcp140.dll">
+      <Filter>OpenCV\Release\Dependencies</Filter>
+    </None>
+    <None Include="..\DllDependencies\ucrtbase.dll">
+      <Filter>OpenCV\Release\Dependencies</Filter>
+    </None>
+    <None Include="..\DllDependencies\vccorlib140.dll">
+      <Filter>OpenCV\Release\Dependencies</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -814,5 +814,8 @@
     <Xml Include="Assets\Data\configuration.xml">
       <Filter>Assets\Data</Filter>
     </Xml>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="Backlog.txt" />
   </ItemGroup>
 </Project>

@@ -1,0 +1,9 @@
+Major implementation details remaining:
+
+Staging texture for 2D slice renderer
+Networking performance increase
+Volume rendering
+Registration
+Loading screen
+App running indicator
+Voice feedback
