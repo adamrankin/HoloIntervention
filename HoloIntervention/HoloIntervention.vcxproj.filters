@@ -552,9 +552,6 @@
     <None Include="..\DllDependencies\msvcp140d.dll">
       <Filter>OpenCV\Debug\Dependencies</Filter>
     </None>
-    <None Include="..\DllDependencies\ucrtbased.dll">
-      <Filter>OpenCV\Debug\Dependencies</Filter>
-    </None>
     <None Include="..\DllDependencies\vccorlib140d.dll">
       <Filter>OpenCV\Debug\Dependencies</Filter>
     </None>

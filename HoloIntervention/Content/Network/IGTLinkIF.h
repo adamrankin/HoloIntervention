@@ -47,6 +47,7 @@ namespace HoloIntervention
       CONNECTION_STATE_UNKNOWN,
       CONNECTION_STATE_CONNECTING,
       CONNECTION_STATE_CONNECTION_LOST,
+      CONNECTION_STATE_DISCONNECTING,
       CONNECTION_STATE_DISCONNECTED,
       CONNECTION_STATE_CONNECTED
     };
@@ -62,7 +63,7 @@ namespace HoloIntervention
       Concurrency::task<bool> ConnectAsync(double timeoutSec = CONNECT_TIMEOUT_SEC, Concurrency::task_options& options = Concurrency::task_options());
 
       /// Disconnect from the server
-      void Disconnect();
+      Concurrency::task<void> DisconnectAsync();
 
       /// Accessor to connected state
       bool IsConnected();

@@ -75,11 +75,13 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void IGTLinkIF::Disconnect()
+    task<void> IGTLinkIF::DisconnectAsync()
     {
-      m_connectionState = CONNECTION_STATE_DISCONNECTED;
-      std::lock_guard<std::mutex> guard(m_clientMutex);
-      m_igtClient->Disconnect();
+      m_connectionState = CONNECTION_STATE_DISCONNECTING;
+      return create_task(m_igtClient->DisconnectAsync()).then([this]()
+      {
+        m_connectionState = CONNECTION_STATE_DISCONNECTED;
+      });
     }
 
     //----------------------------------------------------------------------------
@@ -168,8 +170,10 @@ namespace HoloIntervention
           m_keepAliveTask = nullptr;
         }
 
-        Disconnect();
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Disconnected.");
+        DisconnectAsync().then([this]()
+        {
+          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Disconnected.");
+        });
       };
     }
 
@@ -202,55 +206,57 @@ namespace HoloIntervention
             }
             if (!result)
             {
-              m_connectionState = CONNECTION_STATE_CONNECTION_LOST;
-              m_igtClient->Disconnect();
-              if (m_reconnectOnDrop)
+              create_task(m_igtClient->DisconnectAsync()).then([this]()
               {
-                uint32_t retryCount(0);
-                while (m_connectionState != CONNECTION_STATE_CONNECTED && retryCount < RECONNECT_RETRY_COUNT)
+                m_connectionState = CONNECTION_STATE_CONNECTION_LOST;
+                if (m_reconnectOnDrop)
                 {
-                  // Either it's up and running and it can connect right away, or it's down and will never connect
-                  auto connectTask = ConnectAsync(0.1, task_options(task_continuation_context::use_arbitrary())).then([this, &retryCount](task<bool> previousTask)
+                  uint32_t retryCount(0);
+                  while (m_connectionState != CONNECTION_STATE_CONNECTED && retryCount < RECONNECT_RETRY_COUNT)
                   {
-                    bool result = previousTask.get();
-
-                    if (!result)
+                    // Either it's up and running and it can connect right away, or it's down and will never connect
+                    auto connectTask = ConnectAsync(0.1, task_options(task_continuation_context::use_arbitrary())).then([this, &retryCount](task<bool> previousTask)
                     {
-                      std::this_thread::sleep_for(std::chrono::milliseconds(RECONNECT_RETRY_DELAY_MSEC));
-                      retryCount++;
-                    }
-                  }, task_continuation_context::use_arbitrary());
+                      bool result = previousTask.get();
 
-                  try
-                  {
-                    connectTask.wait();
+                      if (!result)
+                      {
+                        std::this_thread::sleep_for(std::chrono::milliseconds(RECONNECT_RETRY_DELAY_MSEC));
+                        retryCount++;
+                      }
+                    }, task_continuation_context::use_arbitrary());
+
+                    try
+                    {
+                      connectTask.wait();
+                    }
+                    catch (const std::exception& e)
+                    {
+                      OutputDebugStringA(e.what());
+                    }
+                    catch (Platform::Exception^ e)
+                    {
+                      OutputDebugStringW(e->Message->Data());
+                    }
                   }
-                  catch (const std::exception& e)
+
+                  if (m_connectionState != CONNECTION_STATE_CONNECTED)
                   {
-                    OutputDebugStringA(e.what());
-                  }
-                  catch (Platform::Exception^ e)
-                  {
-                    OutputDebugStringW(e->Message->Data());
+                    m_keepAliveTokenSource.cancel();
+                    m_keepAliveTask = nullptr;
+                    HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Connection lost. Check server.");
+                    return;
                   }
                 }
-
-                if (m_connectionState != CONNECTION_STATE_CONNECTED)
+                else
                 {
+                  // Don't reconnect on drop
                   m_keepAliveTokenSource.cancel();
                   m_keepAliveTask = nullptr;
                   HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Connection lost. Check server.");
                   return;
                 }
-              }
-              else
-              {
-                // Don't reconnect on drop
-                m_keepAliveTokenSource.cancel();
-                m_keepAliveTask = nullptr;
-                HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Connection lost. Check server.");
-                return;
-              }
+              });
             }
           }
           else
