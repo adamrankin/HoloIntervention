@@ -63,7 +63,7 @@ namespace HoloIntervention
       Concurrency::task<bool> ConnectAsync(double timeoutSec = CONNECT_TIMEOUT_SEC, Concurrency::task_options& options = Concurrency::task_options());
 
       /// Disconnect from the server
-      Concurrency::task<void> DisconnectAsync();
+      void Disconnect();
 
       /// Accessor to connected state
       bool IsConnected();
@@ -78,10 +78,10 @@ namespace HoloIntervention
       void SetPort(int32 port);
 
       /// Retrieve the latest tracked frame
-      bool GetLatestTrackedFrame(UWPOpenIGTLink::TrackedFrame^& frame, double* latestTimestamp = nullptr);
+      bool GetTrackedFrame(UWPOpenIGTLink::TrackedFrame^& frame, double* latestTimestamp = nullptr);
 
       /// Retrieve the latest command
-      bool GetLatestCommand(UWPOpenIGTLink::Command^& cmd, double* latestTimestamp = nullptr);
+      bool GetCommand(UWPOpenIGTLink::Command^& cmd, double* latestTimestamp = nullptr);
 
       /// IVoiceInput functions
       void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap);

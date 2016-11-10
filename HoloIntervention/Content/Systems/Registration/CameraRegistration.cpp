@@ -219,7 +219,7 @@ namespace HoloIntervention
 
         UWPOpenIGTLink::TrackedFrame^ trackedFrame(nullptr);
         MediaFrameReference^ cameraFrame(m_videoFrameProcessor->GetLatestFrame());
-        if (HoloIntervention::instance()->GetIGTLink().GetLatestTrackedFrame(l_latestTrackedFrame, &m_latestTimestamp) &&
+        if (HoloIntervention::instance()->GetIGTLink().GetTrackedFrame(l_latestTrackedFrame, &m_latestTimestamp) &&
             l_latestTrackedFrame != trackedFrame &&
             cameraFrame != nullptr &&
             cameraFrame != l_latestCameraFrame)

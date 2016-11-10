@@ -113,13 +113,17 @@ namespace HoloIntervention
         // nothing to do!
         return;
       }
+
       m_frame = frame;
-      m_cameraResources = cameraResources;
+
+      if (m_cameraResources != cameraResources)
+      {
+        m_cameraResources = cameraResources;
+        CreateCameraResources();
+      }
 
       auto context = m_deviceResources->GetD3DDeviceContext();
       auto device = m_deviceResources->GetD3DDevice();
-
-      AnalyzeCameraResourcesAndAllocate();
 
       std::shared_ptr<byte> imagePtr = Network::IGTLinkIF::GetSharedImagePtr(frame);
       uint32 bytesPerPixel = BitsPerPixel((DXGI_FORMAT)frame->PixelFormat) / 8;
@@ -389,19 +393,13 @@ namespace HoloIntervention
     void VolumeRenderer::ReleaseDeviceDependentResources()
     {
       ReleaseVertexResources();
-
-      m_faceCalcReady = false;
-      m_frontPositionTextureArray.Reset();
-      m_backPositionTextureArray.Reset();
-      m_frontPositionRTV.Reset();;
-      m_backPositionRTV.Reset();
-      m_frontPositionSRV.Reset();
-      m_backPositionSRV.Reset();
-      m_cullFrontRasterState.Reset();
-      m_faceCalcPixelShader.Reset();
+      ReleaseCameraResources();
 
       m_lookupTableSRV.Reset();
       m_lookupTableBuffer.Reset();
+
+      m_cullFrontRasterState.Reset();
+      m_faceCalcPixelShader.Reset();
 
       m_volRenderVertexShader.Reset();
       m_inputLayout.Reset();
@@ -512,7 +510,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void VolumeRenderer::AnalyzeCameraResourcesAndAllocate()
+    void VolumeRenderer::CreateCameraResources()
     {
       const auto device = m_deviceResources->GetD3DDevice();
 
@@ -534,5 +532,18 @@ namespace HoloIntervention
 
       m_faceCalcReady = true;
     }
+
+    //----------------------------------------------------------------------------
+    void VolumeRenderer::ReleaseCameraResources()
+    {
+      m_faceCalcReady = false;
+      m_frontPositionTextureArray.Reset();
+      m_backPositionTextureArray.Reset();
+      m_frontPositionRTV.Reset();;
+      m_backPositionRTV.Reset();
+      m_frontPositionSRV.Reset();
+      m_backPositionSRV.Reset();
+    }
+
   }
 }

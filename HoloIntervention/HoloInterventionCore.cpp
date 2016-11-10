@@ -120,7 +120,7 @@ namespace HoloIntervention
     m_imagingSystem = std::make_unique<System::ImagingSystem>();
 
     // TODO : remove temp code
-    m_igtLinkIF->SetHostname(L"192.168.1.180");
+    m_igtLinkIF->SetHostname(L"192.168.0.101");
 
     try
     {
@@ -222,9 +222,9 @@ namespace HoloIntervention
 
       if (m_igtLinkIF->IsConnected())
       {
-        if (m_igtLinkIF->GetLatestTrackedFrame(m_latestFrame, &m_latestTimestamp))
+        if (m_igtLinkIF->GetTrackedFrame(m_latestFrame, &m_latestTimestamp))
         {
-          m_volumeRenderer->Update(m_latestFrame, m_timer, cameraResources);
+          //m_volumeRenderer->Update(m_latestFrame, m_timer, cameraResources);
           m_imagingSystem->Update(m_latestFrame, m_timer);
           m_toolSystem->Update(m_latestFrame, m_timer);
         }
@@ -301,7 +301,7 @@ namespace HoloIntervention
           m_meshRenderer->Render();
           m_modelRenderer->Render();
           m_sliceRenderer->Render();
-          m_volumeRenderer->Render();
+          //m_volumeRenderer->Render();
         }
 
         // Only render world-locked content when positional tracking is active.

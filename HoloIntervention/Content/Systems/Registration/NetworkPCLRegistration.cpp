@@ -112,7 +112,7 @@ namespace HoloIntervention
       // Point collection logic
       if (m_collectingPoints && HoloIntervention::instance()->GetIGTLink().IsConnected())
       {
-        if (HoloIntervention::instance()->GetIGTLink().GetLatestTrackedFrame(m_trackedFrame, &m_latestTimestamp))
+        if (HoloIntervention::instance()->GetIGTLink().GetTrackedFrame(m_trackedFrame, &m_latestTimestamp))
         {
           m_transformRepository->SetTransforms(m_trackedFrame);
           bool isValid;

@@ -75,13 +75,13 @@ namespace HoloIntervention
     protected:
       void CreateVertexResources();
       void ReleaseVertexResources();
+      void CreateCameraResources();
+      void ReleaseCameraResources();
       void CreateVolumeResources(uint16* frameSize, UWPOpenIGTLink::TrackedFrame^ frame, std::shared_ptr<byte>& imagePtr, uint32 bytesPerPixel);
       void UpdateGPUImageData(std::shared_ptr<byte>& imagePtr, uint16* frameSize, uint32 bytesPerPixel);
 
       HRESULT CreateByteAddressBuffer(float* lookupTable, ID3D11Buffer** buffer);
       HRESULT CreateByteAddressSRV(Microsoft::WRL::ComPtr<ID3D11Buffer> shaderBuffer, ID3D11ShaderResourceView** ppSRVOut);
-
-      void AnalyzeCameraResourcesAndAllocate();
 
     protected:
       // Cached pointer to device and camera resources.
