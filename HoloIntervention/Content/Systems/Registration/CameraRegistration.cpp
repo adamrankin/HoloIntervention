@@ -192,39 +192,19 @@ namespace HoloIntervention
 
       while (!token.is_canceled())
       {
-        if (m_videoFrameProcessor == nullptr) //|| !HoloIntervention::instance()->GetIGTLink().IsConnected())
+        if (m_videoFrameProcessor == nullptr || !HoloIntervention::instance()->GetIGTLink().IsConnected())
         {
           std::this_thread::sleep_for(std::chrono::milliseconds(100));
           continue;
         }
-
-        // REMOVE ONCE WORKING
-        MediaFrameReference^ cameraFrame2(m_videoFrameProcessor->GetLatestFrame());
-        if (cameraFrame2 == nullptr)
-        {
-          std::this_thread::sleep_for(std::chrono::milliseconds(100));
-          continue;
-        }
-        DetectedSpheresWorld cameraResults;
-        if (ComputeCircleLocations(cameraFrame2->VideoMediaFrame, l_initialized, l_height, l_width, l_hsv, l_redMat, l_redMatWrap, l_imageRGB, l_mask, l_canny_output, cameraResults))
-        {
-          m_cameraFrameResults.push_back(cameraResults);
-        }
-        else
-        {
-          std::this_thread::sleep_for(std::chrono::milliseconds(100));
-          continue;
-        }
-        // END REMOVE ONCE WORKING
 
         UWPOpenIGTLink::TrackedFrame^ trackedFrame(nullptr);
         MediaFrameReference^ cameraFrame(m_videoFrameProcessor->GetLatestFrame());
         if (HoloIntervention::instance()->GetIGTLink().GetTrackedFrame(l_latestTrackedFrame, &m_latestTimestamp) &&
-            l_latestTrackedFrame != trackedFrame &&
             cameraFrame != nullptr &&
             cameraFrame != l_latestCameraFrame)
         {
-          l_latestTrackedFrame = trackedFrame;
+          m_latestTimestamp = l_latestTrackedFrame->Timestamp;
           l_latestCameraFrame = cameraFrame;
           if (m_worldCoordinateSystem != nullptr && l_latestCameraFrame->CoordinateSystem != nullptr)
           {

@@ -145,7 +145,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ImagingSystem::Process3DFrame(UWPOpenIGTLink::TrackedFrame^ frame)
     {
-      throw std::logic_error("The method or operation is not implemented.");
+      OutputDebugStringA("Process3DFrame : The method or operation is not implemented.");
     }
   }
 }
