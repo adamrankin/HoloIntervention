@@ -109,9 +109,11 @@ namespace HoloIntervention
 
       // IGT link
       UWPOpenIGTLink::TransformRepository^                              m_transformRepository = ref new UWPOpenIGTLink::TransformRepository();
+      std::atomic_bool                                                  m_transformsAvailable = false;
       double                                                            m_latestTimestamp = 0.0;
       DetectionFrames                                                   m_trackerFrameResults;
       std::vector<cv::Point3f>                                          m_phantomFiducialCoords;
+      std::array<UWPOpenIGTLink::TransformName^, 5>                     m_sphereCoordinateNames;
 
       Concurrency::task<void>*                                          m_workerTask = nullptr;
       Concurrency::cancellation_token_source                            m_tokenSource;

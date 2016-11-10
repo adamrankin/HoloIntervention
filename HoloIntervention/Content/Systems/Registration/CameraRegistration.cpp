@@ -25,6 +25,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "pch.h"
 #include "AppView.h"
 #include "CameraRegistration.h"
+#include "Common.h"
 #include "VideoFrameProcessor.h"
 
 // Common includes
@@ -69,7 +70,23 @@ namespace HoloIntervention
     CameraRegistration::CameraRegistration(const std::shared_ptr<DX::DeviceResources>& deviceResources)
       : m_deviceResources(deviceResources)
     {
+      try
+      {
+        InitializeTransformRepositoryAsync(m_transformRepository, L"Assets\\Data\\configuration.xml").then([this]()
+        {
+          m_transformsAvailable = true;
+        });
+      }
+      catch (Platform::Exception^ e)
+      {
+        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(e->Message);
+      }
 
+      m_sphereCoordinateNames[0] = ref new UWPOpenIGTLink::TransformName(L"RedSphere1", L"Reference");
+      m_sphereCoordinateNames[1] = ref new UWPOpenIGTLink::TransformName(L"RedSphere2", L"Reference");
+      m_sphereCoordinateNames[2] = ref new UWPOpenIGTLink::TransformName(L"RedSphere3", L"Reference");
+      m_sphereCoordinateNames[3] = ref new UWPOpenIGTLink::TransformName(L"RedSphere4", L"Reference");
+      m_sphereCoordinateNames[4] = ref new UWPOpenIGTLink::TransformName(L"RedSphere5", L"Reference");
     }
 
     //----------------------------------------------------------------------------
@@ -189,6 +206,12 @@ namespace HoloIntervention
       int32_t l_width(0);
       UWPOpenIGTLink::TrackedFrame^ l_latestTrackedFrame(nullptr);
       MediaFrameReference^ l_latestCameraFrame(nullptr);
+
+      if (!m_transformsAvailable)
+      {
+        OutputDebugStringA("Unable to process frames. Transform repository was not properly initialized.");
+        return;
+      }
 
       while (!token.is_canceled())
       {
@@ -349,7 +372,6 @@ namespace HoloIntervention
               // Ensure radius of circle falls within 10% of mean
               if (circle[2] / radiusMean < 0.9f || circle[2] / radiusMean > 1.1f)
               {
-                OutputDebugStringW(L"Circle detection failed. Irregular sized circle detected.");
                 result = false;
                 goto done;
               }
@@ -361,17 +383,16 @@ namespace HoloIntervention
           }
           else
           {
-            OutputDebugStringW(L"Circle detection failed. Did not detect correct number of spheres.");
             result = false;
             goto done;
           }
 
-          std::vector<float> distCoeffs;
-          distCoeffs.push_back(cameraIntrinsics->RadialDistortion.x);
-          distCoeffs.push_back(cameraIntrinsics->RadialDistortion.y);
-          distCoeffs.push_back(cameraIntrinsics->TangentialDistortion.x);
-          distCoeffs.push_back(cameraIntrinsics->TangentialDistortion.y);
-          distCoeffs.push_back(cameraIntrinsics->RadialDistortion.z);
+          cv::Mat distCoeffs(5, 1, cv::DataType<float>::type);
+          distCoeffs.at<float>(0) = cameraIntrinsics->RadialDistortion.x;
+          distCoeffs.at<float>(1) = cameraIntrinsics->RadialDistortion.y;
+          distCoeffs.at<float>(2) = cameraIntrinsics->TangentialDistortion.x;
+          distCoeffs.at<float>(3) = cameraIntrinsics->TangentialDistortion.y;
+          distCoeffs.at<float>(4) = cameraIntrinsics->RadialDistortion.z;
 
           cv::Matx33f intrinsic(cv::Matx33f::eye());
           intrinsic(0, 0) = cameraIntrinsics->FocalLength.x;
@@ -379,45 +400,46 @@ namespace HoloIntervention
           intrinsic(1, 1) = cameraIntrinsics->FocalLength.y;
           intrinsic(1, 2) = cameraIntrinsics->PrincipalPoint.y;
 
-          std::vector<float> rvec;
-          std::vector<float> tvec;
-          if (!cv::solvePnP(m_phantomFiducialCoords, spheres, intrinsic, distCoeffs, rvec, tvec))
+          cv::Mat rvec(3, 1, distCoeffs.type());
+          cv::Mat tvec(3, 1, distCoeffs.type());
+          try
           {
-            OutputDebugStringW(L"Unable to solve object pose.");
+            if (!cv::solvePnP(m_phantomFiducialCoords, spheres, intrinsic, distCoeffs, rvec, tvec))
+            {
+              OutputDebugStringW(L"Unable to solve object pose.");
+              result = false;
+              goto done;
+            }
+          }
+          catch (const cv::Exception& e)
+          {
+            OutputDebugStringA(e.msg.c_str());
             result = false;
             goto done;
           }
-          cv::Matx33f rotation;
+          cv::Mat rotation(3, 3, distCoeffs.type());
           cv::Rodrigues(rvec, rotation);
 
-          cv::Matx44f transform(cv::Matx44f::eye()); //identity
-          transform(0, 0) = rotation(0, 0);
-          transform(0, 1) = rotation(0, 1);
-          transform(0, 2) = rotation(0, 2);
-
-          transform(1, 0) = rotation(1, 0);
-          transform(1, 1) = rotation(1, 1);
-          transform(1, 2) = rotation(1, 2);
-
-          transform(2, 0) = rotation(2, 0);
-          transform(2, 1) = rotation(2, 1);
-          transform(2, 2) = rotation(2, 2);
-          transform(0, 3) = tvec[0];
-          transform(1, 3) = tvec[1];
-          transform(2, 3) = tvec[2];
+          cv::Mat transform(4, 4, distCoeffs.type());
+          transform(cv::Range(0, 3), cv::Range(0, 3)) = rotation * 1;
+          transform(cv::Range(0, 3), cv::Range(3, 4)) = tvec * 1;
+          float* p = transform.ptr<float>(3);
+          p[0] = p[1] = p[2] = 0;
+          p[3] = 1;
 
           cameraResults.clear();
-          int i = 0;
-          for (auto& point : m_phantomFiducialCoords)
+          try
           {
-            cv::Mat3f pointMat(point);
-            cv::Mat3f resultMat;
-            cv::multiply(transform, pointMat, resultMat);
-            cameraResults.push_back(cv::Point3f(resultMat.at<float>(0), resultMat.at<float>(1), resultMat.at<float>(2)));
-            i++;
+            cv::transform(m_phantomFiducialCoords, cameraResults, transform);
+          }
+          catch (const cv::Exception& e)
+          {
+            OutputDebugStringA(e.msg);
+            result = false;
+            goto done;
           }
 
-          // TODO : debug
+
           result = true;
         }
 done:
@@ -435,21 +457,13 @@ done:
 
       // Calculate world position from transforms in tracked frame
       bool isValid(false);
-      float4x4 red1ToPhantomTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"Red1Sphere", L"Phantom"), &isValid);
-      float4x4 red1ToReferenceTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"Red1Sphere", L"Reference"), &isValid);
+      float4x4 red1ToReferenceTransform = m_transformRepository->GetTransform(m_sphereCoordinateNames[0], &isValid);
       if (!isValid) {return false;}
 
-      float4x4 red2ToPhantomTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"Red2Sphere", L"Phantom"), &isValid);
-      float4x4 red2ToReferenceTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"Red2Sphere", L"Reference"), &isValid);
-
-      float4x4 red3ToPhantomTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"Red3Sphere", L"Phantom"), &isValid);
-      float4x4 red3ToReferenceTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"Red3Sphere", L"Reference"), &isValid);
-
-      float4x4 red4ToPhantomTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"Red4Sphere", L"Phantom"), &isValid);
-      float4x4 red4ToReferenceTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"Red4Sphere", L"Reference"), &isValid);
-
-      float4x4 red5ToPhantomTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"Red5Sphere", L"Phantom"), &isValid);
-      float4x4 red5ToReferenceTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"Red5Sphere", L"Reference"), &isValid);
+      float4x4 red2ToReferenceTransform = m_transformRepository->GetTransform(m_sphereCoordinateNames[1], &isValid);
+      float4x4 red3ToReferenceTransform = m_transformRepository->GetTransform(m_sphereCoordinateNames[2], &isValid);
+      float4x4 red4ToReferenceTransform = m_transformRepository->GetTransform(m_sphereCoordinateNames[3], &isValid);
+      float4x4 red5ToReferenceTransform = m_transformRepository->GetTransform(m_sphereCoordinateNames[4], &isValid);
 
       float3 scale;
       quaternion quat;
@@ -479,22 +493,27 @@ done:
         // Phantom is rigid body, so only need to pull the values once
         // in order of enum
         std::vector<cv::Point3f> fiducialCoords;
+        float4x4 red1ToPhantomTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"RedSphere1", L"Phantom"), &isValid);
         result = decompose(transpose(red1ToPhantomTransform), &scale, &quat, &translation);
         if (!result) { return result; }
         fiducialCoords.push_back(cv::Point3f(translation.x, translation.y, translation.z));
 
+        float4x4 red2ToPhantomTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"RedSphere2", L"Phantom"), &isValid);
         result = decompose(transpose(red2ToPhantomTransform), &scale, &quat, &translation);
         if (!result) { return result; }
         fiducialCoords.push_back(cv::Point3f(translation.x, translation.y, translation.z));
 
+        float4x4 red3ToPhantomTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"RedSphere3", L"Phantom"), &isValid);
         result = decompose(transpose(red3ToPhantomTransform), &scale, &quat, &translation);
         if (!result) { return result; }
         fiducialCoords.push_back(cv::Point3f(translation.x, translation.y, translation.z));
 
+        float4x4 red4ToPhantomTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"RedSphere4", L"Phantom"), &isValid);
         result = decompose(transpose(red4ToPhantomTransform), &scale, &quat, &translation);
         if (!result) { return result; }
         fiducialCoords.push_back(cv::Point3f(translation.x, translation.y, translation.z));
 
+        float4x4 red5ToPhantomTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"RedSphere5", L"Phantom"), &isValid);
         result = decompose(transpose(red5ToPhantomTransform), &scale, &quat, &translation);
         if (!result) { return result; }
         fiducialCoords.push_back(cv::Point3f(translation.x, translation.y, translation.z));

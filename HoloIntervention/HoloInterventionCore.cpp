@@ -120,7 +120,7 @@ namespace HoloIntervention
     m_imagingSystem = std::make_unique<System::ImagingSystem>();
 
     // TODO : remove temp code
-    m_igtLinkIF->SetHostname(L"192.168.0.101");
+    m_igtLinkIF->SetHostname(L"192.168.0.100");
 
     try
     {
