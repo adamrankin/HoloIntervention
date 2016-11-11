@@ -25,6 +25,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // STL includes
 #include <atomic>
+#include <WindowsNumerics.h>
 
 namespace HoloIntervention
 {
@@ -49,16 +50,96 @@ namespace HoloIntervention
 
     class ITransferFunction
     {
+      typedef std::pair<uint32, Windows::Foundation::Numerics::float2> ControlPoint;
+      typedef std::vector<ControlPoint> ControlPointList;
+
     public:
       virtual ~ITransferFunction() {};
-      virtual TransferFunctionLookup& GetTFLookupTable() { return m_transferFunction; };
-      virtual bool IsValid() const { return m_isValid; }
+      virtual TransferFunctionLookup& GetTFLookupTable()
+      {
+        return m_transferFunction;
+      };
+      virtual bool IsValid() const
+      {
+        return m_isValid;
+      }
       virtual void Update() = 0;
 
-    protected:
-      ITransferFunction() {};
+      virtual uint32 AddControlPoint(float x, float y)
+      {
+        if (x == 0.f)
+        {
+          // special case, replace assumed 0,0
+          m_controlPoints[0].second.y = y;
+          return m_controlPoints[0].first;
+        }
+
+        for (auto& point : m_controlPoints)
+        {
+          if (point.second.x == x)
+          {
+            throw new std::exception("X value control point already exists.");
+          }
+        }
+
+        m_controlPoints.push_back(ControlPoint(m_nextUid, Windows::Foundation::Numerics::float2(x, y)));
+        std::sort(m_controlPoints.begin(), m_controlPoints.end(), [](auto & left, auto & right)
+        {
+          return left.first < right.first;
+        });
+
+        m_nextUid++;
+        m_isValid = false;
+        return m_nextUid - 1;
+      }
+
+      virtual uint32 AddControlPoint(const Windows::Foundation::Numerics::float2& point)
+      {
+        return AddControlPoint(point.x, point.y);
+      }
+
+      virtual uint32 AddControlPoint(float point[2])
+      {
+        return AddControlPoint(point[0], point[1]);
+      }
+
+      virtual uint32 AddControlPoint(const std::array<float, 2>& point)
+      {
+        return AddControlPoint(point[0], point[1]);
+      }
+
+      virtual bool RemoveControlPoint(uint32 controlPointUid)
+      {
+        if (m_controlPoints[0].first == controlPointUid)
+        {
+          // handle special 0 case, reset to assumed 0,0
+          m_controlPoints[0].second.y = 0.f;
+          m_isValid = false;
+          return true;
+        }
+
+        for (ControlPointList::iterator it = m_controlPoints.begin(); it != m_controlPoints.end(); it++)
+        {
+          if (it->first == controlPointUid)
+          {
+            m_controlPoints.erase(it);
+            m_isValid = false;
+            return true;
+          }
+        }
+
+        return false;
+      }
 
     protected:
+      ITransferFunction()
+      {
+        m_controlPoints.push_back(ControlPoint(m_nextUid++, Windows::Foundation::Numerics::float2(0.f, 0.f)));
+      };
+
+    protected:
+      uint32_t          m_nextUid = 0;
+      ControlPointList  m_controlPoints;
       TransferFunctionLookup m_transferFunction;
       std::atomic_bool m_isValid = false;
     };

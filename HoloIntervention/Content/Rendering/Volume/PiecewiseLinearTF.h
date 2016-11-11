@@ -32,26 +32,12 @@ namespace HoloIntervention
   {
     class PiecewiseLinearTF : public ITransferFunction
     {
-      typedef std::pair<uint32, Windows::Foundation::Numerics::float2> ControlPoint;
-      typedef std::vector<ControlPoint> ControlPointList;
-
     public:
       PiecewiseLinearTF();
       virtual ~PiecewiseLinearTF();
 
-      // Piecewise Linear functions
-      uint32 AddControlPoint(float x, float y);
-      uint32 AddControlPoint(const Windows::Foundation::Numerics::float2& point);
-      uint32 AddControlPoint(float point[2]);
-      uint32 AddControlPoint(const std::array<float, 2>& point);
-      bool RemoveControlPoint(uint32 controlPointUid);
-
       // ITransferFunction functions
       virtual void Update();
-
-    protected:
-      uint32_t          m_nextUid = 0;
-      ControlPointList  m_controlPoints;
     };
   }
 }

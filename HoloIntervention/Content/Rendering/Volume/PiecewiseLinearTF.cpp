@@ -34,83 +34,11 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     PiecewiseLinearTF::PiecewiseLinearTF()
     {
-      m_controlPoints.push_back(ControlPoint(m_nextUid++, float2(0.f, 0.f)));
     }
 
     //----------------------------------------------------------------------------
     PiecewiseLinearTF::~PiecewiseLinearTF()
     {
-    }
-
-    //----------------------------------------------------------------------------
-    uint32 PiecewiseLinearTF::AddControlPoint(float x, float y)
-    {
-      if (x == 0.f)
-      {
-        // special case, replace assumed 0,0
-        m_controlPoints[0].second.y = y;
-        return m_controlPoints[0].first;
-      }
-
-      for (auto& point : m_controlPoints)
-      {
-        if (point.second.x == x)
-        {
-          throw new std::exception("X value control point already exists.");
-        }
-      }
-
-      m_controlPoints.push_back(ControlPoint(m_nextUid, float2(x, y)));
-      std::sort(m_controlPoints.begin(), m_controlPoints.end(), [](auto & left, auto & right)
-      {
-        return left.first < right.first;
-      });
-
-      m_nextUid++;
-      m_isValid = false;
-      return m_nextUid - 1;
-    }
-
-    //----------------------------------------------------------------------------
-    uint32 PiecewiseLinearTF::AddControlPoint(const float2& point)
-    {
-      return AddControlPoint(point.x, point.y);
-    }
-
-    //----------------------------------------------------------------------------
-    uint32 PiecewiseLinearTF::AddControlPoint(float point[2])
-    {
-      return AddControlPoint(point[0], point[1]);
-    }
-
-    //----------------------------------------------------------------------------
-    uint32 PiecewiseLinearTF::AddControlPoint(const std::array<float, 2>& point)
-    {
-      return AddControlPoint(point[0], point[1]);
-    }
-
-    //----------------------------------------------------------------------------
-    bool PiecewiseLinearTF::RemoveControlPoint(uint32 controlPointUid)
-    {
-      if (m_controlPoints[0].first == controlPointUid)
-      {
-        // handle special 0 case, reset to assumed 0,0
-        m_controlPoints[0].second.y = 0.f;
-        m_isValid = false;
-        return true;
-      }
-
-      for (ControlPointList::iterator it = m_controlPoints.begin(); it != m_controlPoints.end(); it++)
-      {
-        if (it->first == controlPointUid)
-        {
-          m_controlPoints.erase(it);
-          m_isValid = false;
-          return true;
-        }
-      }
-
-      return false;
     }
 
     //----------------------------------------------------------------------------
