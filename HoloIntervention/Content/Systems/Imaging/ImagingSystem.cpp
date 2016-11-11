@@ -115,7 +115,10 @@ namespace HoloIntervention
       callbackMap[L"piecewise linear transfer function"] = [this](SpeechRecognitionResult ^ result)
       {
         HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Using built-in piecewise linear transfer function.");
-        HoloIntervention::instance()->GetVolumeRenderer().SetTransferFunctionTypeAsync(Rendering::VolumeRenderer::TransferFunction_Piecewise_Linear);
+        std::vector<float2> points;
+        points.push_back(float2(0.f, 0.f));
+        points.push_back(float2(255.f, 1.f));
+        HoloIntervention::instance()->GetVolumeRenderer().SetTransferFunctionTypeAsync(Rendering::VolumeRenderer::TransferFunction_Piecewise_Linear, points);
       };
     }
 
@@ -145,7 +148,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ImagingSystem::Process3DFrame(UWPOpenIGTLink::TrackedFrame^ frame)
     {
-      OutputDebugStringA("Process3DFrame : The method or operation is not implemented.");
+
     }
   }
 }

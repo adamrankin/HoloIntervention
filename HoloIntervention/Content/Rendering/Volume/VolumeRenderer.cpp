@@ -67,6 +67,17 @@ namespace HoloIntervention
         HoloIntervention::instance()->GetNotificationSystem().QueueMessage(e->Message);
       }
 
+      std::vector<float2> points;
+      points.push_back(float2(0.f, 0.f));
+      points.push_back(float2(255.f, 1.f));
+      SetTransferFunctionTypeAsync(TransferFunction_Piecewise_Linear, points).then([this]()
+      {
+        std::lock_guard<std::mutex> guard(m_tfMutex);
+      }).then([this]()
+      {
+        return CreateDeviceDependentResourcesAsync();
+      });
+
       try
       {
         GetXmlDocumentFromFileAsync(L"Assets\\Data\\configuration.xml").then([this](XmlDocument ^ doc)
@@ -108,7 +119,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void VolumeRenderer::Update(UWPOpenIGTLink::TrackedFrame^ frame, const DX::StepTimer& timer, DX::CameraResources* cameraResources)
     {
-      if (frame == m_frame)
+      if (frame == m_frame || !m_loadingComplete)
       {
         // nothing to do!
         return;
@@ -197,7 +208,7 @@ namespace HoloIntervention
 
       // Create a staging texture that will be used to copy data from the CPU to the GPU,
       // the staging texture will then copy to the render texture
-      CD3D11_TEXTURE3D_DESC textureDesc((DXGI_FORMAT)frame->PixelFormat, frameSize[0], frameSize[1], frameSize[2], 0, 0, D3D11_USAGE_STAGING, D3D11_CPU_ACCESS_WRITE | D3D11_CPU_ACCESS_READ);
+      CD3D11_TEXTURE3D_DESC textureDesc((DXGI_FORMAT)frame->PixelFormat, frameSize[0], frameSize[1], frameSize[2], 1, 0, D3D11_USAGE_STAGING, D3D11_CPU_ACCESS_WRITE | D3D11_CPU_ACCESS_READ);
       D3D11_SUBRESOURCE_DATA imgData;
       imgData.pSysMem = imagePtr.get();
       imgData.SysMemPitch = frameSize[0] * bytesPerPixel;
@@ -205,7 +216,7 @@ namespace HoloIntervention
       DX::ThrowIfFailed(device->CreateTexture3D(&textureDesc, &imgData, m_volumeStagingTexture.GetAddressOf()));
 
       // Create the texture that will be used by the shader to access the current volume to be rendered
-      textureDesc = CD3D11_TEXTURE3D_DESC((DXGI_FORMAT)frame->PixelFormat, frameSize[0], frameSize[1], frameSize[2]);
+      textureDesc = CD3D11_TEXTURE3D_DESC((DXGI_FORMAT)frame->PixelFormat, frameSize[0], frameSize[1], frameSize[2], 1);
       DX::ThrowIfFailed(device->CreateTexture3D(&textureDesc, &imgData, m_volumeTexture.GetAddressOf()));
       DX::ThrowIfFailed(device->CreateShaderResourceView(m_volumeTexture.Get(), nullptr, m_volumeSRV.GetAddressOf()));
 
@@ -271,9 +282,9 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<void> VolumeRenderer::SetTransferFunctionTypeAsync(TransferFunctionType type)
+    task<void> VolumeRenderer::SetTransferFunctionTypeAsync(TransferFunctionType type, const std::vector<float2>& controlPoints)
     {
-      return create_task([this, type]()
+      return create_task([this, type, controlPoints]()
       {
         std::lock_guard<std::mutex> guard(m_tfMutex);
 
@@ -287,11 +298,16 @@ namespace HoloIntervention
           break;
         }
 
+        for (auto& point : controlPoints)
+        {
+          m_transferFunction->AddControlPoint(point);
+        }
+
         m_transferFunction->Update();
       }).then([this]()
       {
-        ReleaseDeviceDependentResources();
-        return CreateDeviceDependentResourcesAsync();
+        ReleaseTFResources();
+        return CreateTFResources();
       });
     }
 
@@ -314,24 +330,9 @@ namespace HoloIntervention
       task<std::vector<byte>> loadFacePSTask = DX::ReadDataAsync(L"ms-appx:///FaceAnalysisPS.cso");
 
       CD3D11_RASTERIZER_DESC rasterDesc;
+      rasterDesc.FillMode = D3D11_FILL_SOLID;
       rasterDesc.CullMode = D3D11_CULL_FRONT;
       DX::ThrowIfFailed(device->CreateRasterizerState(&rasterDesc, m_cullFrontRasterState.GetAddressOf()));
-
-      {
-        // set up transfer function GPU memory
-        std::lock_guard<std::mutex> guard(m_tfMutex);
-
-        if (!m_transferFunction->IsValid())
-        {
-          throw new std::exception("Transfer function table not valid.");
-        }
-
-        // Set up GPU memory
-        DX::ThrowIfFailed(CreateByteAddressBuffer(m_transferFunction->GetTFLookupTable().LookupTable, m_lookupTableBuffer.GetAddressOf()));
-
-        // Set up SRV
-        DX::ThrowIfFailed(CreateByteAddressSRV(m_lookupTableBuffer, m_lookupTableSRV.GetAddressOf()));
-      }
 
       task<void> createVSTask = loadVSTask.then([this, device](const std::vector<byte>& fileData)
       {
@@ -384,6 +385,7 @@ namespace HoloIntervention
       task<void> finishLoadingTask = shaderTaskGroup.then([this]()
       {
         CreateVertexResources();
+        CreateTFResources();
       });
 
       return finishLoadingTask;
@@ -394,13 +396,10 @@ namespace HoloIntervention
     {
       ReleaseVertexResources();
       ReleaseCameraResources();
-
-      m_lookupTableSRV.Reset();
-      m_lookupTableBuffer.Reset();
+      ReleaseTFResources();
 
       m_cullFrontRasterState.Reset();
       m_faceCalcPixelShader.Reset();
-
       m_volRenderVertexShader.Reset();
       m_inputLayout.Reset();
       m_volRenderPixelShader.Reset();
@@ -479,37 +478,6 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    HRESULT VolumeRenderer::CreateByteAddressBuffer(float* lookupTable, ID3D11Buffer** buffer)
-    {
-      D3D11_BUFFER_DESC desc;
-      ZeroMemory(&desc, sizeof(desc));
-      desc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
-      desc.ByteWidth = sizeof(float) * TransferFunctionLookup::TRANSFER_FUNCTION_TABLE_SIZE;
-      desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_ALLOW_RAW_VIEWS;
-      desc.StructureByteStride = sizeof(float);
-
-      D3D11_SUBRESOURCE_DATA bufferBytes = { lookupTable, 0, 0 };
-      return m_deviceResources->GetD3DDevice()->CreateBuffer(&desc, &bufferBytes, buffer);
-    }
-
-    //----------------------------------------------------------------------------
-    HRESULT VolumeRenderer::CreateByteAddressSRV(Microsoft::WRL::ComPtr<ID3D11Buffer> shaderBuffer, ID3D11ShaderResourceView** ppSRVOut)
-    {
-      D3D11_BUFFER_DESC descBuf;
-      ZeroMemory(&descBuf, sizeof(descBuf));
-      shaderBuffer->GetDesc(&descBuf);
-
-      D3D11_SHADER_RESOURCE_VIEW_DESC desc;
-      ZeroMemory(&desc, sizeof(desc));
-      desc.ViewDimension = D3D11_SRV_DIMENSION_BUFFEREX;
-      desc.BufferEx.FirstElement = 0;
-      desc.Format = DXGI_FORMAT_UNKNOWN;
-      desc.BufferEx.NumElements = descBuf.ByteWidth / descBuf.StructureByteStride;
-
-      return m_deviceResources->GetD3DDevice()->CreateShaderResourceView(shaderBuffer.Get(), &desc, ppSRVOut);
-    }
-
-    //----------------------------------------------------------------------------
     void VolumeRenderer::CreateCameraResources()
     {
       const auto device = m_deviceResources->GetD3DDevice();
@@ -545,5 +513,49 @@ namespace HoloIntervention
       m_backPositionSRV.Reset();
     }
 
+    //----------------------------------------------------------------------------
+    void VolumeRenderer::CreateTFResources()
+    {
+      // set up transfer function GPU memory
+      std::lock_guard<std::mutex> guard(m_tfMutex);
+
+      if (m_transferFunction == nullptr)
+      {
+        return;
+      }
+
+      if (!m_transferFunction->IsValid())
+      {
+        throw new std::exception("Transfer function table not valid.");
+      }
+
+      // Set up GPU memory
+      D3D11_BUFFER_DESC desc;
+      ZeroMemory(&desc, sizeof(desc));
+      desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+      desc.ByteWidth = sizeof(float) * TransferFunctionLookup::TRANSFER_FUNCTION_TABLE_SIZE;
+      desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_ALLOW_RAW_VIEWS;
+      desc.StructureByteStride = sizeof(float);
+
+      D3D11_SUBRESOURCE_DATA bufferBytes = { m_transferFunction->GetTFLookupTable().LookupTable, 0, 0 };
+      DX::ThrowIfFailed(m_deviceResources->GetD3DDevice()->CreateBuffer(&desc, &bufferBytes, m_lookupTableBuffer.GetAddressOf()));
+
+      D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
+      ZeroMemory(&srvDesc, sizeof(srvDesc));
+      srvDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFEREX;
+      srvDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+      srvDesc.BufferEx.FirstElement = 0;
+      srvDesc.BufferEx.NumElements = TransferFunctionLookup::TRANSFER_FUNCTION_TABLE_SIZE;
+      srvDesc.BufferEx.Flags = D3D11_BUFFEREX_SRV_FLAG_RAW;
+
+      DX::ThrowIfFailed(m_deviceResources->GetD3DDevice()->CreateShaderResourceView(m_lookupTableBuffer.Get(), &srvDesc, m_lookupTableSRV.GetAddressOf()));
+    }
+
+    //----------------------------------------------------------------------------
+    void VolumeRenderer::ReleaseTFResources()
+    {
+      m_lookupTableSRV.Reset();
+      m_lookupTableBuffer.Reset();
+    }
   }
 }
