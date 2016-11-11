@@ -161,8 +161,6 @@ namespace HoloIntervention
       context->UpdateSubresource(m_volumeConstantBuffer.Get(), 0, nullptr, &m_constantBuffer, 0, 0);
 
       UpdateGPUImageData(imagePtr, frameSize, bytesPerPixel);
-
-      context->CopyResource(m_volumeTexture.Get(), m_volumeStagingTexture.Get());
     }
 
     //----------------------------------------------------------------------------
@@ -172,7 +170,7 @@ namespace HoloIntervention
 
       // Map image resource and update data
       D3D11_MAPPED_SUBRESOURCE mappedResource;
-      context->Map(m_volumeStagingTexture.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+      context->Map(m_volumeStagingTexture.Get(), 0, D3D11_MAP_READ_WRITE, 0, &mappedResource);
       byte* imageData = imagePtr.get();
       byte* mappedData = reinterpret_cast<byte*>(mappedResource.pData);
       for (uint32 j = 0; j < m_frameSize[2]; ++j)
@@ -186,6 +184,8 @@ namespace HoloIntervention
         mappedData += mappedResource.DepthPitch;
       }
       context->Unmap(m_volumeStagingTexture.Get(), 0);
+
+      context->CopyResource(m_volumeTexture.Get(), m_volumeStagingTexture.Get());
     }
 
     //----------------------------------------------------------------------------
@@ -197,7 +197,7 @@ namespace HoloIntervention
 
       // Create a staging texture that will be used to copy data from the CPU to the GPU,
       // the staging texture will then copy to the render texture
-      CD3D11_TEXTURE3D_DESC textureDesc((DXGI_FORMAT)frame->PixelFormat, frameSize[0], frameSize[1], frameSize[2], 0, 0, D3D11_USAGE_STAGING, D3D11_CPU_ACCESS_WRITE);
+      CD3D11_TEXTURE3D_DESC textureDesc((DXGI_FORMAT)frame->PixelFormat, frameSize[0], frameSize[1], frameSize[2], 0, 0, D3D11_USAGE_STAGING, D3D11_CPU_ACCESS_WRITE | D3D11_CPU_ACCESS_READ);
       D3D11_SUBRESOURCE_DATA imgData;
       imgData.pSysMem = imagePtr.get();
       imgData.SysMemPitch = frameSize[0] * bytesPerPixel;
