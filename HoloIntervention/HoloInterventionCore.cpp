@@ -225,7 +225,7 @@ namespace HoloIntervention
         if (m_igtLinkIF->GetTrackedFrame(m_latestFrame, &m_latestTimestamp))
         {
           m_latestTimestamp = m_latestFrame->Timestamp;
-          //m_volumeRenderer->Update(m_latestFrame, m_timer, cameraResources);
+          m_volumeRenderer->Update(m_latestFrame, m_timer, cameraResources);
           m_imagingSystem->Update(m_latestFrame, m_timer);
           m_toolSystem->Update(m_latestFrame, m_timer);
         }
@@ -247,7 +247,6 @@ namespace HoloIntervention
     });
 
     SetHolographicFocusPoint(prediction, holographicFrame, currentCoordinateSystem);
-
 
     return holographicFrame;
   }
@@ -302,7 +301,7 @@ namespace HoloIntervention
           m_meshRenderer->Render();
           m_modelRenderer->Render();
           m_sliceRenderer->Render();
-          //m_volumeRenderer->Render();
+          m_volumeRenderer->Render();
         }
 
         // Only render world-locked content when positional tracking is active.

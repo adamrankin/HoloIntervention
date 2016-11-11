@@ -41,7 +41,6 @@ Texture3D<float> image : t1;
 Texture2DArray frontPositionTexture : t2;
 Texture2DArray backPositionTexture : t3;
 
-
 float4 main(PixelShaderInput input) : SV_TARGET
 {
     /*

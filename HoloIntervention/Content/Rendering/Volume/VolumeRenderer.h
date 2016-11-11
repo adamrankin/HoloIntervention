@@ -55,6 +55,7 @@ namespace HoloIntervention
     public:
       enum TransferFunctionType
       {
+        TransferFunction_Unknown,
         TransferFunction_Piecewise_Linear,
       };
       static const uint32_t INVALID_VOLUME_INDEX = 0;
@@ -66,7 +67,7 @@ namespace HoloIntervention
       void Update(UWPOpenIGTLink::TrackedFrame^ frame, const DX::StepTimer& timer, DX::CameraResources* cameraResources);
       void Render();
 
-      Concurrency::task<void> SetTransferFunctionTypeAsync(TransferFunctionType type);
+      Concurrency::task<void> SetTransferFunctionTypeAsync(TransferFunctionType type, const std::vector<Windows::Foundation::Numerics::float2>& controlPoints);
 
       // D3D device related controls
       Concurrency::task<void> CreateDeviceDependentResourcesAsync();
@@ -77,11 +78,11 @@ namespace HoloIntervention
       void ReleaseVertexResources();
       void CreateCameraResources();
       void ReleaseCameraResources();
+      void CreateTFResources();
+      void ReleaseTFResources();
+
       void CreateVolumeResources(uint16* frameSize, UWPOpenIGTLink::TrackedFrame^ frame, std::shared_ptr<byte>& imagePtr, uint32 bytesPerPixel);
       void UpdateGPUImageData(std::shared_ptr<byte>& imagePtr, uint16* frameSize, uint32 bytesPerPixel);
-
-      HRESULT CreateByteAddressBuffer(float* lookupTable, ID3D11Buffer** buffer);
-      HRESULT CreateByteAddressSRV(Microsoft::WRL::ComPtr<ID3D11Buffer> shaderBuffer, ID3D11ShaderResourceView** ppSRVOut);
 
     protected:
       // Cached pointer to device and camera resources.
@@ -134,8 +135,8 @@ namespace HoloIntervention
 
       // Transfer function CPU resources
       std::mutex                                        m_tfMutex;
-      TransferFunctionType                              m_tfType = TransferFunction_Piecewise_Linear;
-      ITransferFunction*                                m_transferFunction = new PiecewiseLinearTF();
+      TransferFunctionType                              m_tfType = TransferFunction_Unknown;
+      ITransferFunction*                                m_transferFunction = nullptr;
     };
   }
 }
