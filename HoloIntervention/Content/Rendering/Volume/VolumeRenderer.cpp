@@ -33,6 +33,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "DirectXHelper.h"
 
 // System includes
+#include "RegistrationSystem.h"
 #include "NotificationSystem.h"
 
 // Network includes
@@ -70,13 +71,7 @@ namespace HoloIntervention
       std::vector<float2> points;
       points.push_back(float2(0.f, 0.f));
       points.push_back(float2(255.f, 1.f));
-      SetTransferFunctionTypeAsync(TransferFunction_Piecewise_Linear, points).then([this]()
-      {
-        std::lock_guard<std::mutex> guard(m_tfMutex);
-      }).then([this]()
-      {
-        return CreateDeviceDependentResourcesAsync();
-      });
+      SetTransferFunctionTypeAsync(TransferFunction_Piecewise_Linear, points);
 
       try
       {
@@ -119,12 +114,11 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void VolumeRenderer::Update(UWPOpenIGTLink::TrackedFrame^ frame, const DX::StepTimer& timer, DX::CameraResources* cameraResources)
     {
-      if (frame == m_frame || !m_loadingComplete)
+      if (frame == m_frame || !m_loadingComplete || !m_tfResourcesReady)
       {
         // nothing to do!
         return;
       }
-
       m_frame = frame;
 
       if (m_cameraResources != cameraResources)
@@ -137,23 +131,26 @@ namespace HoloIntervention
       auto device = m_deviceResources->GetD3DDevice();
 
       std::shared_ptr<byte> imagePtr = Network::IGTLinkIF::GetSharedImagePtr(frame);
-      uint32 bytesPerPixel = BitsPerPixel((DXGI_FORMAT)frame->PixelFormat) / 8;
       uint16 frameSize[3] = { frame->FrameSize->GetAt(0), frame->FrameSize->GetAt(1), frame->FrameSize->GetAt(2) };
 
       if (!m_volumeReady && frameSize[2] > 1)
       {
-        CreateVolumeResources(frameSize, frame, imagePtr, bytesPerPixel);
+        ReleaseVolumeResources();
+        CreateVolumeResources();
+      }
+      else if (frameSize[0] != m_frameSize[0] || frameSize[1] != m_frameSize[1] || m_frameSize[2] != frameSize[2])
+      {
+        ReleaseVolumeResources();
+        CreateVolumeResources();
       }
       else if (frameSize[2] < 2)
       {
         // No depth, nothing to volume render
         return;
       }
-      else if (frameSize[0] != m_frameSize[0] || frameSize[1] != m_frameSize[1] || m_frameSize[2] != frameSize[2])
+      else
       {
-        // Has the frame size changed? We don't support this.
-        OutputDebugStringW(L"Frame size received does not match expected frame size.");
-        return;
+        UpdateGPUImageData();
       }
 
       m_transformRepository->SetTransforms(m_frame);
@@ -164,20 +161,20 @@ namespace HoloIntervention
         return;
       }
 
-      {
-        std::lock_guard<std::mutex> guard(m_tfMutex);
-        m_constantBuffer.lt_maximumXValue = m_transferFunction->GetTFLookupTable().MaximumXValue;
-      }
+      // TODO : multiply into constant buffer entry
+      float4x4 referenceToHMD = HoloIntervention::instance()->GetRegistrationSystem().GetReferenceToHMD();
+
       XMStoreFloat4x4(&m_constantBuffer.worldMatrix, XMLoadFloat4x4(&transform));
       context->UpdateSubresource(m_volumeConstantBuffer.Get(), 0, nullptr, &m_constantBuffer, 0, 0);
-
-      UpdateGPUImageData(imagePtr, frameSize, bytesPerPixel);
     }
 
     //----------------------------------------------------------------------------
-    void VolumeRenderer::UpdateGPUImageData(std::shared_ptr<byte>& imagePtr, uint16* frameSize, uint32 bytesPerPixel)
+    void VolumeRenderer::UpdateGPUImageData()
     {
       const auto context = m_deviceResources->GetD3DDeviceContext();
+
+      auto bytesPerPixel = BitsPerPixel((DXGI_FORMAT)m_frame->PixelFormat) / 8;
+      auto imagePtr = Network::IGTLinkIF::GetSharedImagePtr(m_frame);
 
       // Map image resource and update data
       D3D11_MAPPED_SUBRESOURCE mappedResource;
@@ -188,11 +185,12 @@ namespace HoloIntervention
       {
         for (uint32 i = 0; i < m_frameSize[1]; ++i)
         {
-          memcpy(mappedData, imageData, frameSize[0] * bytesPerPixel);
+          memcpy(mappedData, imageData, m_frameSize[0] * bytesPerPixel);
           mappedData += mappedResource.RowPitch;
-          imageData += frameSize[0] * bytesPerPixel;
+          imageData += m_frameSize[0] * bytesPerPixel;
         }
         mappedData += mappedResource.DepthPitch;
+        // TODO : does imageData need to be advanced? I don't think so...
       }
       context->Unmap(m_volumeStagingTexture.Get(), 0);
 
@@ -200,23 +198,32 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void VolumeRenderer::CreateVolumeResources(uint16* frameSize, UWPOpenIGTLink::TrackedFrame^ frame, std::shared_ptr<byte>& imagePtr, uint32 bytesPerPixel)
+    void VolumeRenderer::CreateVolumeResources()
     {
       const auto device = m_deviceResources->GetD3DDevice();
 
-      memcpy(m_frameSize, frameSize, sizeof(uint16) * 3);
+      if (m_frame == nullptr)
+      {
+        return;
+      }
+
+      m_frameSize[0] = m_frame->FrameSize->GetAt(0);
+      m_frameSize[1] = m_frame->FrameSize->GetAt(1);
+      m_frameSize[2] = m_frame->FrameSize->GetAt(2);
+
+      auto bytesPerPixel = BitsPerPixel((DXGI_FORMAT)m_frame->PixelFormat) / 8;
 
       // Create a staging texture that will be used to copy data from the CPU to the GPU,
       // the staging texture will then copy to the render texture
-      CD3D11_TEXTURE3D_DESC textureDesc((DXGI_FORMAT)frame->PixelFormat, frameSize[0], frameSize[1], frameSize[2], 1, 0, D3D11_USAGE_STAGING, D3D11_CPU_ACCESS_WRITE | D3D11_CPU_ACCESS_READ);
+      CD3D11_TEXTURE3D_DESC textureDesc((DXGI_FORMAT)m_frame->PixelFormat, m_frameSize[0], m_frameSize[1], m_frameSize[2], 1, 0, D3D11_USAGE_STAGING, D3D11_CPU_ACCESS_WRITE | D3D11_CPU_ACCESS_READ);
       D3D11_SUBRESOURCE_DATA imgData;
-      imgData.pSysMem = imagePtr.get();
-      imgData.SysMemPitch = frameSize[0] * bytesPerPixel;
-      imgData.SysMemSlicePitch = frameSize[0] * frameSize[1] * bytesPerPixel;
+      imgData.pSysMem = Network::IGTLinkIF::GetSharedImagePtr(m_frame).get();
+      imgData.SysMemPitch = m_frameSize[0] * bytesPerPixel;
+      imgData.SysMemSlicePitch = m_frameSize[0] * m_frameSize[1] * bytesPerPixel;
       DX::ThrowIfFailed(device->CreateTexture3D(&textureDesc, &imgData, m_volumeStagingTexture.GetAddressOf()));
 
       // Create the texture that will be used by the shader to access the current volume to be rendered
-      textureDesc = CD3D11_TEXTURE3D_DESC((DXGI_FORMAT)frame->PixelFormat, frameSize[0], frameSize[1], frameSize[2], 1);
+      textureDesc = CD3D11_TEXTURE3D_DESC((DXGI_FORMAT)m_frame->PixelFormat, m_frameSize[0], m_frameSize[1], m_frameSize[2], 1);
       DX::ThrowIfFailed(device->CreateTexture3D(&textureDesc, &imgData, m_volumeTexture.GetAddressOf()));
       DX::ThrowIfFailed(device->CreateShaderResourceView(m_volumeTexture.Get(), nullptr, m_volumeSRV.GetAddressOf()));
 
@@ -224,9 +231,18 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    void VolumeRenderer::ReleaseVolumeResources()
+    {
+      m_volumeReady = false;
+      m_volumeStagingTexture.Reset();
+      m_volumeTexture.Reset();
+      m_volumeSRV.Reset();
+    }
+
+    //----------------------------------------------------------------------------
     void VolumeRenderer::Render()
     {
-      if (!m_loadingComplete || !m_volumeReady)
+      if (!m_loadingComplete || !m_volumeReady || !m_tfResourcesReady)
       {
         return;
       }
@@ -306,8 +322,9 @@ namespace HoloIntervention
         m_transferFunction->Update();
       }).then([this]()
       {
+        std::lock_guard<std::mutex> guard(m_tfMutex);
         ReleaseTFResources();
-        return CreateTFResources();
+        CreateTFResources();
       });
     }
 
@@ -318,6 +335,19 @@ namespace HoloIntervention
       m_usingVprtShaders = m_deviceResources->GetDeviceSupportsVprt();
 
       const auto device = m_deviceResources->GetD3DDevice();
+
+      if (m_tfType != TransferFunction_Unknown)
+      {
+        std::lock_guard<std::mutex> guard(m_tfMutex);
+        ReleaseTFResources();
+        CreateTFResources();
+      }
+
+      if (m_frame != nullptr)
+      {
+        ReleaseVolumeResources();
+        CreateVolumeResources();
+      }
 
       task<std::vector<byte>> loadVSTask = DX::ReadDataAsync(m_usingVprtShaders ? L"ms-appx:///VolumeRendererVprtVS.cso" : L"ms-appx:///VolumeRendererVS.cso");
       task<std::vector<byte>> loadPSTask = DX::ReadDataAsync(L"ms-appx:///VolumeRendererPS.cso");
@@ -385,7 +415,6 @@ namespace HoloIntervention
       task<void> finishLoadingTask = shaderTaskGroup.then([this]()
       {
         CreateVertexResources();
-        CreateTFResources();
       });
 
       return finishLoadingTask;
@@ -516,9 +545,6 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void VolumeRenderer::CreateTFResources()
     {
-      // set up transfer function GPU memory
-      std::lock_guard<std::mutex> guard(m_tfMutex);
-
       if (m_transferFunction == nullptr)
       {
         return;
@@ -528,6 +554,9 @@ namespace HoloIntervention
       {
         throw new std::exception("Transfer function table not valid.");
       }
+
+      m_transferFunction->Update();
+      m_constantBuffer.lt_maximumXValue = m_transferFunction->GetTFLookupTable().MaximumXValue;
 
       // Set up GPU memory
       D3D11_BUFFER_DESC desc;
@@ -549,11 +578,14 @@ namespace HoloIntervention
       srvDesc.BufferEx.Flags = D3D11_BUFFEREX_SRV_FLAG_RAW;
 
       DX::ThrowIfFailed(m_deviceResources->GetD3DDevice()->CreateShaderResourceView(m_lookupTableBuffer.Get(), &srvDesc, m_lookupTableSRV.GetAddressOf()));
+
+      m_tfResourcesReady = true;
     }
 
     //----------------------------------------------------------------------------
     void VolumeRenderer::ReleaseTFResources()
     {
+      m_tfResourcesReady = false;
       m_lookupTableSRV.Reset();
       m_lookupTableBuffer.Reset();
     }

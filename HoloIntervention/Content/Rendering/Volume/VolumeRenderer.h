@@ -81,8 +81,9 @@ namespace HoloIntervention
       void CreateTFResources();
       void ReleaseTFResources();
 
-      void CreateVolumeResources(uint16* frameSize, UWPOpenIGTLink::TrackedFrame^ frame, std::shared_ptr<byte>& imagePtr, uint32 bytesPerPixel);
-      void UpdateGPUImageData(std::shared_ptr<byte>& imagePtr, uint16* frameSize, uint32 bytesPerPixel);
+      void CreateVolumeResources();
+      void ReleaseVolumeResources();
+      void UpdateGPUImageData();
 
     protected:
       // Cached pointer to device and camera resources.
@@ -114,6 +115,7 @@ namespace HoloIntervention
       // Transfer function GPU resources
       Microsoft::WRL::ComPtr<ID3D11Buffer>              m_lookupTableBuffer;
       Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>  m_lookupTableSRV;
+      std::atomic_bool                                  m_tfResourcesReady = false;
 
       // IGT frame resources
       std::wstring                                      m_fromCoordFrame = L"Image";

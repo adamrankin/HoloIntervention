@@ -76,11 +76,13 @@ namespace HoloIntervention
 
       virtual void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbacks);
 
+      Windows::Foundation::Numerics::float4x4 GetReferenceToHMD() const;
+
     protected:
       Concurrency::task<void> StopCameraAsync();
       Concurrency::task<void> StartCameraAsync();
       void ProcessAvailableFrames(Concurrency::cancellation_token token);
-      bool CameraRegistration::ComputeTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame, CameraRegistration::DetectedSpheresWorld& worldResults);
+      bool CameraRegistration::RetrieveTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame, CameraRegistration::DetectedSpheresWorld& worldResults);
       bool ComputeCircleLocations(Windows::Media::Capture::Frames::VideoMediaFrame^ videoFrame,
                                   bool& initialized,
                                   int32_t& height,
@@ -111,17 +113,20 @@ namespace HoloIntervention
       UWPOpenIGTLink::TransformRepository^                              m_transformRepository = ref new UWPOpenIGTLink::TransformRepository();
       std::atomic_bool                                                  m_transformsAvailable = false;
       double                                                            m_latestTimestamp = 0.0;
-      DetectionFrames                                                   m_trackerFrameResults;
+      DetectionFrames                                                   m_referenceFrameResults;
       std::vector<cv::Point3f>                                          m_phantomFiducialCoords;
       std::array<UWPOpenIGTLink::TransformName^, 5>                     m_sphereCoordinateNames;
 
       Concurrency::task<void>*                                          m_workerTask = nullptr;
       Concurrency::cancellation_token_source                            m_tokenSource;
-      Windows::Foundation::Numerics::float4x4                           m_cameraToWorld = Windows::Foundation::Numerics::float4x4::identity();
+      Windows::Foundation::Numerics::float4x4                           m_cameraToHMD = Windows::Foundation::Numerics::float4x4::identity();
+      Windows::Foundation::Numerics::float4x4                           m_referenceToHMD = Windows::Foundation::Numerics::float4x4::identity();
+
 
       std::shared_ptr<LandmarkRegistration>                             m_landmarkRegistration = std::make_shared<LandmarkRegistration>();
 
       static const uint32                                               PHANTOM_SPHERE_COUNT = 5;
+      static const uint32                                               NUMBER_OF_FRAMES_FOR_CALIBRATION = 30;
     };
   }
 }

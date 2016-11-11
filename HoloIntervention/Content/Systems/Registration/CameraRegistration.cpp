@@ -113,8 +113,13 @@ namespace HoloIntervention
       callbackMap[L"stop camera"] = [this](SpeechRecognitionResult ^ result)
       {
         StopCameraAsync();
-
       };
+    }
+
+    //----------------------------------------------------------------------------
+    Windows::Foundation::Numerics::float4x4 CameraRegistration::GetReferenceToHMD() const
+    {
+      return m_referenceToHMD;
     }
 
     //----------------------------------------------------------------------------
@@ -236,7 +241,7 @@ namespace HoloIntervention
               Platform::IBox<float4x4>^ transformBox = l_latestCameraFrame->CoordinateSystem->TryGetTransformTo(m_worldCoordinateSystem);
               if (transformBox != nullptr)
               {
-                m_cameraToWorld = transformBox->Value;
+                m_cameraToHMD = transformBox->Value;
               }
             }
             catch (Platform::Exception^ e)
@@ -246,24 +251,83 @@ namespace HoloIntervention
             }
           }
 
-          DetectedSpheresWorld results;
-          if (!ComputeTrackerFrameLocations(l_latestTrackedFrame, results))
+          DetectedSpheresWorld referenceResults;
+          if (!RetrieveTrackerFrameLocations(l_latestTrackedFrame, referenceResults))
           {
             continue;
           }
 
           DetectedSpheresWorld cameraResults;
-          if (!results.empty() && ComputeCircleLocations(l_latestCameraFrame->VideoMediaFrame, l_initialized, l_height, l_width, l_hsv, l_redMat, l_redMatWrap, l_imageRGB, l_mask, l_canny_output, cameraResults))
+          if (!referenceResults.empty() && ComputeCircleLocations(l_latestCameraFrame->VideoMediaFrame, l_initialized, l_height, l_width, l_hsv, l_redMat, l_redMatWrap, l_imageRGB, l_mask, l_canny_output, cameraResults))
           {
             m_cameraFrameResults.push_back(cameraResults);
-            m_trackerFrameResults.push_back(results);
+            m_referenceFrameResults.push_back(referenceResults);
+            HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Acquired " + m_cameraFrameResults.size().ToString() + L" frames.");
           }
         }
         else
         {
           // No new frame
           std::this_thread::sleep_for(std::chrono::milliseconds(100));
-          continue;
+        }
+
+        if (m_cameraFrameResults.size() == NUMBER_OF_FRAMES_FOR_CALIBRATION)
+        {
+          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Calculating registration...");
+          DetectedSpheresWorld referenceResults;
+          DetectedSpheresWorld cameraResults;
+          for (auto& frame : m_referenceFrameResults)
+          {
+            for (auto& sphereWorld : frame)
+            {
+              referenceResults.push_back(sphereWorld);
+            }
+          }
+          for (auto& frame : m_cameraFrameResults)
+          {
+            for (auto& sphereWorld : frame)
+            {
+              cameraResults.push_back(sphereWorld);
+            }
+          }
+          m_landmarkRegistration->SetSourceLandmarks(referenceResults);
+          m_landmarkRegistration->SetTargetLandmarks(cameraResults);
+
+          std::atomic_bool calcFinished(false);
+          bool resultValid(false);
+          m_landmarkRegistration->CalculateTransformationAsync().then([this, &calcFinished, &resultValid](float4x4 referenceToCamera)
+          {
+            if (referenceToCamera == float4x4::identity())
+            {
+              resultValid = false;
+            }
+            else
+            {
+              resultValid = true;
+              m_referenceToHMD = m_cameraToHMD * referenceToCamera;
+            }
+            calcFinished = true;
+          });
+
+          while (!calcFinished)
+          {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+          }
+
+          if (!resultValid)
+          {
+            m_referenceToHMD = float4x4::identity();
+            HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Registration failed. Please repeat process.");
+            StopCameraAsync();
+          }
+          else
+          {
+            HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Registration complete.");
+            StopCameraAsync();
+          }
+
+          m_cameraFrameResults.clear();
+          m_referenceFrameResults.clear();
         }
       }
     }
@@ -387,6 +451,14 @@ namespace HoloIntervention
             goto done;
           }
 
+          {
+            std::stringstream ss;
+            ss << spheres;
+            OutputDebugStringA("spheres: ");
+            OutputDebugStringA(ss.str().c_str());
+            OutputDebugStringA("\n");
+          }
+
           cv::Mat distCoeffs(5, 1, cv::DataType<float>::type);
           distCoeffs.at<float>(0) = cameraIntrinsics->RadialDistortion.x;
           distCoeffs.at<float>(1) = cameraIntrinsics->RadialDistortion.y;
@@ -394,11 +466,27 @@ namespace HoloIntervention
           distCoeffs.at<float>(3) = cameraIntrinsics->TangentialDistortion.y;
           distCoeffs.at<float>(4) = cameraIntrinsics->RadialDistortion.z;
 
+          {
+            std::stringstream ss;
+            ss << distCoeffs;
+            OutputDebugStringA("dist coeffs: ");
+            OutputDebugStringA(ss.str().c_str());
+            OutputDebugStringA("\n");
+          }
+
           cv::Matx33f intrinsic(cv::Matx33f::eye());
           intrinsic(0, 0) = cameraIntrinsics->FocalLength.x;
           intrinsic(0, 2) = cameraIntrinsics->PrincipalPoint.x;
           intrinsic(1, 1) = cameraIntrinsics->FocalLength.y;
           intrinsic(1, 2) = cameraIntrinsics->PrincipalPoint.y;
+
+          {
+            std::stringstream ss;
+            ss << intrinsic;
+            OutputDebugStringA("intrinsic: ");
+            OutputDebugStringA(ss.str().c_str());
+            OutputDebugStringA("\n");
+          }
 
           cv::Mat rvec(3, 1, distCoeffs.type());
           cv::Mat tvec(3, 1, distCoeffs.type());
@@ -417,28 +505,86 @@ namespace HoloIntervention
             result = false;
             goto done;
           }
+
+          {
+            std::stringstream ss;
+            ss << tvec;
+            OutputDebugStringA("tvec: ");
+            OutputDebugStringA(ss.str().c_str());
+            OutputDebugStringA("\n");
+          }
+
+          {
+            std::stringstream ss;
+            ss << rvec;
+            OutputDebugStringA("rvec: ");
+            OutputDebugStringA(ss.str().c_str());
+            OutputDebugStringA("\n");
+          }
+
           cv::Mat rotation(3, 3, distCoeffs.type());
           cv::Rodrigues(rvec, rotation);
 
-          cv::Mat transform(4, 4, distCoeffs.type());
-          transform(cv::Range(0, 3), cv::Range(0, 3)) = rotation * 1;
-          transform(cv::Range(0, 3), cv::Range(3, 4)) = tvec * 1;
-          float* p = transform.ptr<float>(3);
-          p[0] = p[1] = p[2] = 0;
-          p[3] = 1;
+          {
+            std::stringstream ss;
+            ss << rotation;
+            OutputDebugStringA("rotation: ");
+            OutputDebugStringA(ss.str().c_str());
+            OutputDebugStringA("\n");
+          }
+
+          cv::Mat transform = cv::Mat::eye(4, 4, distCoeffs.type());
+          auto transformData = (float*)transform.data;
+          auto rotationData = (float*)rotation.data;
+          for (int i = 0; i < 3; ++i)
+          {
+            transformData[4 * i] = rotationData[3 * i];
+            transformData[(4 * i) + 1] = rotationData[(3 * i) + 1];
+            transformData[(4 * i) + 2] = rotationData[(3 * i) + 2];
+          }
+          auto translationData = (float*)tvec.data;
+          for (int i = 0; i < 3; ++i)
+          {
+            transformData[(4 * i) + 3] = transformData[i];
+          }
+
+          {
+            std::stringstream ss;
+            ss << transform;
+            OutputDebugStringA("transform: ");
+            OutputDebugStringA(ss.str().c_str());
+            OutputDebugStringA("\n");
+          }
 
           cameraResults.clear();
-          try
+          cv::Mat phantomPoint = cv::Mat::eye(4, 1, distCoeffs.type());
+          auto phantomPointData = (float*)phantomPoint.data;
+          cv::Mat resultPoint = cv::Mat::eye(4, 1, distCoeffs.type());
+          auto resultPointData = (float*)resultPoint.data;
+          for (auto& point : m_phantomFiducialCoords)
           {
-            cv::transform(m_phantomFiducialCoords, cameraResults, transform);
-          }
-          catch (const cv::Exception& e)
-          {
-            OutputDebugStringA(e.msg);
-            result = false;
-            goto done;
-          }
+            phantomPointData[0] = point.x;
+            phantomPointData[1] = point.y;
+            phantomPointData[2] = point.z;
+            phantomPointData[3] = 1.f;
+            {
+              std::stringstream ss;
+              ss << phantomPoint;
+              OutputDebugStringA("phantom point: ");
+              OutputDebugStringA(ss.str().c_str());
+              OutputDebugStringA("\n");
+            }
+            resultPoint = transform * phantomPoint;
 
+            {
+              std::stringstream ss;
+              ss << resultPoint;
+              OutputDebugStringA("result point: ");
+              OutputDebugStringA(ss.str().c_str());
+              OutputDebugStringA("\n");
+            }
+            cameraResults.push_back(cv::Point3f(resultPointData[0], resultPointData[1], resultPointData[2]));
+          }
 
           result = true;
         }
@@ -451,7 +597,7 @@ done:
     }
 
     //----------------------------------------------------------------------------
-    bool CameraRegistration::ComputeTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame, CameraRegistration::DetectedSpheresWorld& worldResults)
+    bool CameraRegistration::RetrieveTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame, CameraRegistration::DetectedSpheresWorld& worldResults)
     {
       m_transformRepository->SetTransforms(trackedFrame);
 

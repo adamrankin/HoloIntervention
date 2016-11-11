@@ -91,8 +91,6 @@ namespace HoloIntervention
             m_regAnchorModel->SetVisible(true);
           }
 
-          m_networkPCLRegistration->SetSpatialMesh(HoloIntervention::instance()->GetSpatialSystem().GetLastHitMesh());
-
           HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Anchor created.");
         }
       }
@@ -110,7 +108,6 @@ namespace HoloIntervention
         }
       }
 
-      m_networkPCLRegistration->Update(coordinateSystem);
       m_cameraRegistration->Update(coordinateSystem);
     }
 
@@ -130,7 +127,6 @@ namespace HoloIntervention
     void RegistrationSystem::RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap)
     {
       m_cameraRegistration->RegisterVoiceCallbacks(callbackMap);
-      m_networkPCLRegistration->RegisterVoiceCallbacks(callbackMap);
 
       callbackMap[L"drop anchor"] = [this](SpeechRecognitionResult ^ result)
       {
@@ -151,9 +147,9 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    float4x4 RegistrationSystem::GetRegistrationResult()
+    float4x4 RegistrationSystem::GetReferenceToHMD()
     {
-      return m_registrationResult;
+      return m_cameraRegistration->GetReferenceToHMD();
     }
   }
 }

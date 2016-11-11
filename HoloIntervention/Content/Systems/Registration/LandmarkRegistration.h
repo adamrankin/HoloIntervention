@@ -23,11 +23,14 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-// stl includes
+// STL includes
 #include <vector>
 
 // WinRt includes
 #include <ppltasks.h>
+
+// OpenCV includes
+#include <opencv2/core.hpp>
 
 namespace HoloIntervention
 {
@@ -37,12 +40,15 @@ namespace HoloIntervention
     {
     public:
       typedef std::vector<Windows::Foundation::Numerics::float3> LandmarkList;
+      typedef std::vector<cv::Point3f> LandmarkListCv;
 
       LandmarkRegistration();
       ~LandmarkRegistration();
 
       void SetSourceLandmarks(const LandmarkList& landmarks);
       void SetTargetLandmarks(const LandmarkList& landmarks);
+      void SetSourceLandmarks(const LandmarkListCv& landmarks);
+      void SetTargetLandmarks(const LandmarkListCv& landmarks);
 
       Concurrency::task<Windows::Foundation::Numerics::float4x4> CalculateTransformationAsync();
 

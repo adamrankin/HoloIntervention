@@ -37,6 +37,7 @@ namespace HoloIntervention
   {
     namespace
     {
+      //----------------------------------------------------------------------------
       inline void perpendiculars(const float x[3], float y[3], float z[3], float theta)
       {
         int dx, dy, dz;
@@ -126,9 +127,29 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    void LandmarkRegistration::SetSourceLandmarks(const LandmarkListCv& landmarks)
+    {
+      m_sourceLandmarks.clear();
+      for (auto& point : landmarks)
+      {
+        m_sourceLandmarks.push_back(float3(point.x, point.y, point.z));
+      }
+    }
+
+    //----------------------------------------------------------------------------
     void LandmarkRegistration::SetTargetLandmarks(const LandmarkList& landmarks)
     {
       m_targetLandmarks = landmarks;
+    }
+
+    //----------------------------------------------------------------------------
+    void LandmarkRegistration::SetTargetLandmarks(const LandmarkListCv& landmarks)
+    {
+      m_targetLandmarks.clear();
+      for (auto& point : landmarks)
+      {
+        m_targetLandmarks.push_back(float3(point.x, point.y, point.z));
+      }
     }
 
     //----------------------------------------------------------------------------
@@ -140,7 +161,8 @@ namespace HoloIntervention
 
         if (m_sourceLandmarks.empty() || m_targetLandmarks.empty())
         {
-          return calibrationMatrix;
+          OutputDebugStringA("Cannot compute registration. Landmark lists are invalid.");
+          return float4x4::identity();
         }
 
         // Derived from vtkLandmarkTransform available at
@@ -149,8 +171,8 @@ namespace HoloIntervention
         const uint32_t numberOfPoints = m_sourceLandmarks.size();
         if (numberOfPoints != m_targetLandmarks.size())
         {
-          OutputDebugStringA("CalculateTransformationAsync: Source and Target Landmarks contain a different number of points");
-          return calibrationMatrix;
+          OutputDebugStringA("Cannot compute registration. Landmark lists differ in size.");
+          return float4x4::identity();
         }
 
         // -- find the centroid of each set --
@@ -336,6 +358,5 @@ namespace HoloIntervention
         return transpose(calibrationMatrix);
       });
     }
-
   }
 }

@@ -36,11 +36,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "CameraRegistration.h"
 #include "NetworkPCLRegistration.h"
 
-using namespace Concurrency;
-using namespace Windows::Foundation::Numerics;
-using namespace Windows::Perception::Spatial;
-using namespace Windows::UI::Input::Spatial;
-
 namespace HoloIntervention
 {
   namespace Rendering
@@ -56,13 +51,13 @@ namespace HoloIntervention
       RegistrationSystem(const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer);
       ~RegistrationSystem();
 
-      void Update(SpatialCoordinateSystem^ coordinateSystem, SpatialPointerPose^ headPose);
+      void Update(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem, Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
 
-      task<void> LoadAppStateAsync();
+      Concurrency::task<void> LoadAppStateAsync();
 
       virtual void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbacks);
 
-      float4x4 GetRegistrationResult();
+      Windows::Foundation::Numerics::float4x4 GetReferenceToHMD();
 
     protected:
       // Cached references
@@ -76,10 +71,6 @@ namespace HoloIntervention
 
       // Registration methods
       std::shared_ptr<CameraRegistration>             m_cameraRegistration;
-      std::shared_ptr<NetworkPCLRegistration>         m_networkPCLRegistration = std::make_shared<NetworkPCLRegistration>();
-
-      // Result variables
-      float4x4                                        m_registrationResult = float4x4::identity();
 
       // Constants
       static Platform::String^                        ANCHOR_NAME;
