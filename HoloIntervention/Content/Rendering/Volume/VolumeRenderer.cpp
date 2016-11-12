@@ -68,6 +68,8 @@ namespace HoloIntervention
         HoloIntervention::instance()->GetNotificationSystem().QueueMessage(e->Message);
       }
 
+      CreateDeviceDependentResourcesAsync();
+
       std::vector<float2> points;
       points.push_back(float2(0.f, 0.f));
       points.push_back(float2(255.f, 1.f));
@@ -130,7 +132,6 @@ namespace HoloIntervention
       auto context = m_deviceResources->GetD3DDeviceContext();
       auto device = m_deviceResources->GetD3DDevice();
 
-      std::shared_ptr<byte> imagePtr = Network::IGTLinkIF::GetSharedImagePtr(frame);
       uint16 frameSize[3] = { frame->FrameSize->GetAt(0), frame->FrameSize->GetAt(1), frame->FrameSize->GetAt(2) };
 
       if (!m_volumeReady && frameSize[2] > 1)
@@ -227,6 +228,23 @@ namespace HoloIntervention
       DX::ThrowIfFailed(device->CreateTexture3D(&textureDesc, &imgData, m_volumeTexture.GetAddressOf()));
       DX::ThrowIfFailed(device->CreateShaderResourceView(m_volumeTexture.Get(), nullptr, m_volumeSRV.GetAddressOf()));
 
+      //compute the step size and number of iterations to use
+      //the step size for each component needs to be a ratio of the largest component
+      float maxSize = std::max(m_frameSize[0], std::max(m_frameSize[1], m_frameSize[2]));
+      float3 stepSize = float3(1.0f / (m_frameSize[0] * (maxSize / m_frameSize[0])),
+        1.0f / (m_frameSize[1] * (maxSize / m_frameSize[1])),
+        1.0f / (m_frameSize[2] * (maxSize / m_frameSize[2])));
+
+      m_constantBuffer.stepSize = stepSize * m_stepScale;
+      m_constantBuffer.numIterations = (uint32)(maxSize * (1.0f / m_stepScale) * 2.0f);
+
+      //calculate the scale factor
+      //volumes are not always perfect cubes. so we need to scale our cube
+      //by the sizes of the volume. Also, scalar data is not always sampled
+      //at equidistant steps. So we also need to scale the cube model by mRatios.
+      float3 sizes = float3(m_frameSize[0], m_frameSize[1], m_frameSize[2]);
+      m_constantBuffer.scaleFactor = float3(1.f, 1.f, 1.f) / ((float3(1.f, 1.f, 1.f) * maxSize) / (sizes * m_ratios));
+
       m_volumeReady = true;
     }
 
@@ -292,9 +310,8 @@ namespace HoloIntervention
       context->DrawIndexedInstanced(m_indexCount, 2, 0, 0, 0);
 
       // Clear values
-      ID3D11ShaderResourceView* ppSRVnullptr[2] = { nullptr, nullptr };
-      context->PSSetShaderResources(0, 2, ppSRVnullptr);
-      context->PSSetConstantBuffers(0, 1, nullptr);
+      ID3D11ShaderResourceView* ppSRVnullptr[4] = { nullptr, nullptr, nullptr, nullptr };
+      context->PSSetShaderResources(0, 4, ppSRVnullptr);
     }
 
     //----------------------------------------------------------------------------

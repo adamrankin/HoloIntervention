@@ -108,6 +108,8 @@ namespace HoloIntervention
       context->DrawIndexedInstanced(m_indexCount, 2, 0, 0, 0);
 
       context->OMSetBlendState(nullptr, nullptr, 0xffffffff);
+      ID3D11ShaderResourceView* ppSRVnullptr[1] = { nullptr };
+      context->PSSetShaderResources(0, 1, ppSRVnullptr);
     }
 
     //----------------------------------------------------------------------------

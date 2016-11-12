@@ -23,9 +23,11 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 cbuffer VolumeConstantBuffer : register(b0)
 {
-  float4x4 worldPose;
-  float maximumXValue;
-  float padding[3];
+  float4x4 c_worldPose;
+  float c_maximumXValue;
+  float3 c_stepSize;
+  uint c_numIterations;
+  float3 c_scaleFactor;
 };
 
 cbuffer ViewProjectionConstantBuffer : register(b1)
@@ -44,25 +46,23 @@ struct VertexShaderInput
 struct VertexShaderOutput
 {
   min16float4 Position : SV_POSITION;
-  min16float3 texC : TEXCOORD0;
-  min16float4 pos : TEXCOORD1;
+  min16float3 texC : TEXCOORD0;           // Sent to FaceAnalysisPS
+  min16float4 pos : TEXCOORD1;            // Send to VolumeRendererPS
   uint rtvId : SV_RenderTargetArrayIndex; // SV_InstanceID % 2
 };
 
 VertexShaderOutput main(VertexShaderInput input)
 {
   VertexShaderOutput output;
-  float4 pos = float4(input.Position, 1.0f);
+  float4 pos = float4(input.Position * c_scaleFactor, 1.0f);
 
   int idx = input.instId % 2;
 
-  pos = mul(pos, worldPose);
+  pos = mul(pos, c_worldPose);
   pos = mul(pos, viewProjection[idx]);
   output.Position = min16float4(pos);
   output.texC = input.Position;
   output.pos = output.Position;
-
-  // Set the render target array index.
   output.rtvId = idx;
 
   return output;
