@@ -304,7 +304,7 @@ namespace HoloIntervention
             else
             {
               resultValid = true;
-              m_referenceToHMD = m_cameraToHMD * referenceToCamera;
+              m_referenceToHMD = transpose(m_cameraToHMD) * referenceToCamera;
             }
             calcFinished = true;
           });
