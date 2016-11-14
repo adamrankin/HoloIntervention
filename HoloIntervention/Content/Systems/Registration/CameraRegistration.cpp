@@ -451,14 +451,6 @@ namespace HoloIntervention
             goto done;
           }
 
-          {
-            std::stringstream ss;
-            ss << spheres;
-            OutputDebugStringA("spheres: ");
-            OutputDebugStringA(ss.str().c_str());
-            OutputDebugStringA("\n");
-          }
-
           cv::Mat distCoeffs(5, 1, cv::DataType<float>::type);
           distCoeffs.at<float>(0) = cameraIntrinsics->RadialDistortion.x;
           distCoeffs.at<float>(1) = cameraIntrinsics->RadialDistortion.y;
@@ -466,27 +458,11 @@ namespace HoloIntervention
           distCoeffs.at<float>(3) = cameraIntrinsics->TangentialDistortion.y;
           distCoeffs.at<float>(4) = cameraIntrinsics->RadialDistortion.z;
 
-          {
-            std::stringstream ss;
-            ss << distCoeffs;
-            OutputDebugStringA("dist coeffs: ");
-            OutputDebugStringA(ss.str().c_str());
-            OutputDebugStringA("\n");
-          }
-
           cv::Matx33f intrinsic(cv::Matx33f::eye());
           intrinsic(0, 0) = cameraIntrinsics->FocalLength.x;
           intrinsic(0, 2) = cameraIntrinsics->PrincipalPoint.x;
           intrinsic(1, 1) = cameraIntrinsics->FocalLength.y;
           intrinsic(1, 2) = cameraIntrinsics->PrincipalPoint.y;
-
-          {
-            std::stringstream ss;
-            ss << intrinsic;
-            OutputDebugStringA("intrinsic: ");
-            OutputDebugStringA(ss.str().c_str());
-            OutputDebugStringA("\n");
-          }
 
           cv::Mat rvec(3, 1, distCoeffs.type());
           cv::Mat tvec(3, 1, distCoeffs.type());
@@ -506,32 +482,8 @@ namespace HoloIntervention
             goto done;
           }
 
-          {
-            std::stringstream ss;
-            ss << tvec;
-            OutputDebugStringA("tvec: ");
-            OutputDebugStringA(ss.str().c_str());
-            OutputDebugStringA("\n");
-          }
-
-          {
-            std::stringstream ss;
-            ss << rvec;
-            OutputDebugStringA("rvec: ");
-            OutputDebugStringA(ss.str().c_str());
-            OutputDebugStringA("\n");
-          }
-
           cv::Mat rotation(3, 3, distCoeffs.type());
           cv::Rodrigues(rvec, rotation);
-
-          {
-            std::stringstream ss;
-            ss << rotation;
-            OutputDebugStringA("rotation: ");
-            OutputDebugStringA(ss.str().c_str());
-            OutputDebugStringA("\n");
-          }
 
           cv::Mat transform = cv::Mat::eye(4, 4, distCoeffs.type());
           auto transformData = (float*)transform.data;
@@ -548,42 +500,16 @@ namespace HoloIntervention
             transformData[(4 * i) + 3] = transformData[i];
           }
 
-          {
-            std::stringstream ss;
-            ss << transform;
-            OutputDebugStringA("transform: ");
-            OutputDebugStringA(ss.str().c_str());
-            OutputDebugStringA("\n");
-          }
-
           cameraResults.clear();
-          cv::Mat phantomPoint = cv::Mat::eye(4, 1, distCoeffs.type());
-          auto phantomPointData = (float*)phantomPoint.data;
-          cv::Mat resultPoint = cv::Mat::eye(4, 1, distCoeffs.type());
-          auto resultPointData = (float*)resultPoint.data;
-          for (auto& point : m_phantomFiducialCoords)
+          try
           {
-            phantomPointData[0] = point.x;
-            phantomPointData[1] = point.y;
-            phantomPointData[2] = point.z;
-            phantomPointData[3] = 1.f;
-            {
-              std::stringstream ss;
-              ss << phantomPoint;
-              OutputDebugStringA("phantom point: ");
-              OutputDebugStringA(ss.str().c_str());
-              OutputDebugStringA("\n");
-            }
-            resultPoint = transform * phantomPoint;
-
-            {
-              std::stringstream ss;
-              ss << resultPoint;
-              OutputDebugStringA("result point: ");
-              OutputDebugStringA(ss.str().c_str());
-              OutputDebugStringA("\n");
-            }
-            cameraResults.push_back(cv::Point3f(resultPointData[0], resultPointData[1], resultPointData[2]));
+            cv::transform(m_phantomFiducialCoords, cameraResults, transform);
+          }
+          catch (const cv::Exception& e)
+          {
+            OutputDebugStringA(e.msg.c_str());
+            result = false;
+            goto done;
           }
 
           result = true;
@@ -611,57 +537,44 @@ done:
       float4x4 red4ToReferenceTransform = m_transformRepository->GetTransform(m_sphereCoordinateNames[3], &isValid);
       float4x4 red5ToReferenceTransform = m_transformRepository->GetTransform(m_sphereCoordinateNames[4], &isValid);
 
-      float3 scale;
-      quaternion quat;
-      float3 translation;
-      bool result = decompose(transpose(red1ToReferenceTransform), &scale, &quat, &translation);
-      if (!result) { return result; }
+      float4 origin = { 0.f, 0.f, 0.f, 1.f };
+      float4 translation = transform(origin, red1ToReferenceTransform);
       worldResults.push_back(DetectedSphereWorld(translation.x, translation.y, translation.z));
 
-      result = decompose(transpose(red2ToReferenceTransform), &scale, &quat, &translation);
-      if (!result) { return result; }
+      translation = transform(origin, red2ToReferenceTransform);
       worldResults.push_back(DetectedSphereWorld(translation.x, translation.y, translation.z));
 
-      result = decompose(transpose(red3ToReferenceTransform), &scale, &quat, &translation);
-      if (!result) { return result; }
+      translation = transform(origin, red3ToReferenceTransform);
       worldResults.push_back(DetectedSphereWorld(translation.x, translation.y, translation.z));
 
-      result = decompose(transpose(red4ToReferenceTransform), &scale, &quat, &translation);
-      if (!result) { return result; }
+      translation = transform(origin, red4ToReferenceTransform);
       worldResults.push_back(DetectedSphereWorld(translation.x, translation.y, translation.z));
 
-      result = decompose(transpose(red5ToReferenceTransform), &scale, &quat, &translation);
-      if (!result) { return result; }
+      translation = transform(origin, red5ToReferenceTransform);
       worldResults.push_back(DetectedSphereWorld(translation.x, translation.y, translation.z));
 
       if (m_phantomFiducialCoords.empty())
       {
         // Phantom is rigid body, so only need to pull the values once
-        // in order of enum
         std::vector<cv::Point3f> fiducialCoords;
         float4x4 red1ToPhantomTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"RedSphere1", L"Phantom"), &isValid);
-        result = decompose(transpose(red1ToPhantomTransform), &scale, &quat, &translation);
-        if (!result) { return result; }
+        translation = transform(origin, red1ToPhantomTransform);
         fiducialCoords.push_back(cv::Point3f(translation.x, translation.y, translation.z));
 
         float4x4 red2ToPhantomTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"RedSphere2", L"Phantom"), &isValid);
-        result = decompose(transpose(red2ToPhantomTransform), &scale, &quat, &translation);
-        if (!result) { return result; }
+        translation = transform(origin, red2ToPhantomTransform);
         fiducialCoords.push_back(cv::Point3f(translation.x, translation.y, translation.z));
 
         float4x4 red3ToPhantomTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"RedSphere3", L"Phantom"), &isValid);
-        result = decompose(transpose(red3ToPhantomTransform), &scale, &quat, &translation);
-        if (!result) { return result; }
+        translation = transform(origin, red3ToPhantomTransform);
         fiducialCoords.push_back(cv::Point3f(translation.x, translation.y, translation.z));
 
         float4x4 red4ToPhantomTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"RedSphere4", L"Phantom"), &isValid);
-        result = decompose(transpose(red4ToPhantomTransform), &scale, &quat, &translation);
-        if (!result) { return result; }
+        translation = transform(origin, red4ToPhantomTransform);
         fiducialCoords.push_back(cv::Point3f(translation.x, translation.y, translation.z));
 
         float4x4 red5ToPhantomTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"RedSphere5", L"Phantom"), &isValid);
-        result = decompose(transpose(red5ToPhantomTransform), &scale, &quat, &translation);
-        if (!result) { return result; }
+        translation = transform(origin, red5ToPhantomTransform);
         fiducialCoords.push_back(cv::Point3f(translation.x, translation.y, translation.z));
 
         m_phantomFiducialCoords = fiducialCoords;
