@@ -263,7 +263,7 @@ namespace HoloIntervention
           {
             m_cameraFrameResults.push_back(cameraResults);
             m_referenceFrameResults.push_back(referenceResults);
-            HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Acquired " + m_cameraFrameResults.size().ToString() + L" frames.");
+            HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Acquired " + m_cameraFrameResults.size().ToString() + L" frame" + (m_cameraFrameResults.size() > 1 ? L"s" : L"") + L".",  0.5);
           }
         }
         else
