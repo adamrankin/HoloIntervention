@@ -232,8 +232,8 @@ namespace HoloIntervention
       //the step size for each component needs to be a ratio of the largest component
       float maxSize = std::max(m_frameSize[0], std::max(m_frameSize[1], m_frameSize[2]));
       float3 stepSize = float3(1.0f / (m_frameSize[0] * (maxSize / m_frameSize[0])),
-        1.0f / (m_frameSize[1] * (maxSize / m_frameSize[1])),
-        1.0f / (m_frameSize[2] * (maxSize / m_frameSize[2])));
+                               1.0f / (m_frameSize[1] * (maxSize / m_frameSize[1])),
+                               1.0f / (m_frameSize[2] * (maxSize / m_frameSize[2])));
 
       m_constantBuffer.stepSize = stepSize * m_stepScale;
       m_constantBuffer.numIterations = (uint32)(maxSize * (1.0f / m_stepScale) * 2.0f);

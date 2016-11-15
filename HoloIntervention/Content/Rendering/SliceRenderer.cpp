@@ -365,6 +365,9 @@ namespace HoloIntervention
       {
         sliceEntry->Render(m_indexCount);
       }
+
+      ID3D11SamplerState* ppNullptr[1] = { nullptr };
+      context->PSSetSamplers(0, 1, ppNullptr);
     }
 
     //----------------------------------------------------------------------------

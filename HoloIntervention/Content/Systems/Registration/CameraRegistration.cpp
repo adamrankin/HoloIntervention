@@ -443,12 +443,12 @@ namespace HoloIntervention
             goto done;
           }
 
-          cv::Mat distCoeffs(5, 1, cv::DataType<float>::type);
-          distCoeffs.at<float>(0) = cameraIntrinsics->RadialDistortion.x;
-          distCoeffs.at<float>(1) = cameraIntrinsics->RadialDistortion.y;
-          distCoeffs.at<float>(2) = cameraIntrinsics->TangentialDistortion.x;
-          distCoeffs.at<float>(3) = cameraIntrinsics->TangentialDistortion.y;
-          distCoeffs.at<float>(4) = cameraIntrinsics->RadialDistortion.z;
+          std::vector<float> distCoeffs;
+          distCoeffs.push_back(cameraIntrinsics->RadialDistortion.x);
+          distCoeffs.push_back(cameraIntrinsics->RadialDistortion.y);
+          distCoeffs.push_back(cameraIntrinsics->TangentialDistortion.x);
+          distCoeffs.push_back(cameraIntrinsics->TangentialDistortion.y);
+          distCoeffs.push_back(cameraIntrinsics->RadialDistortion.z);
 
           cv::Matx33f intrinsic(cv::Matx33f::eye());
           intrinsic(0, 0) = cameraIntrinsics->FocalLength.x;
@@ -456,35 +456,24 @@ namespace HoloIntervention
           intrinsic(1, 1) = cameraIntrinsics->FocalLength.y;
           intrinsic(1, 2) = cameraIntrinsics->PrincipalPoint.y;
 
-          cv::Mat rvec(3, 1, distCoeffs.type());
-          cv::Mat tvec(3, 1, distCoeffs.type());
+          cv::Mat rvec(3, 1, cv::DataType<float>::type);
+          cv::Mat tvec(3, 1, rvec.type());
           if (!cv::solvePnP(m_phantomFiducialCoords, spheres, intrinsic, distCoeffs, rvec, tvec, false, cv::SOLVEPNP_EPNP))
           {
             result = false;
             goto done;
           }
 
-          cv::Mat rotation(3, 3, distCoeffs.type());
+          cv::Mat rotation(3, 3, rvec.type());
           cv::Rodrigues(rvec, rotation);
 
-          cv::Mat modelToCameraTransform = cv::Mat::eye(4, 4, distCoeffs.type());
+          cv::Mat modelToCameraTransform = cv::Mat::eye(4, 4, rvec.type());
           rotation.copyTo(modelToCameraTransform(cv::Rect(0, 0, 3, 3)));
           tvec.copyTo(modelToCameraTransform(cv::Rect(3, 0, 1, 3)));
-          /*
-          auto transformData = (float*)modelToCameraTransform.data;
-          auto rotationData = (float*)rotation.data;
-          for (int i = 0; i < 3; ++i)
-          {
-            transformData[4 * i] = rotationData[3 * i];
-            transformData[(4 * i) + 1] = rotationData[(3 * i) + 1];
-            transformData[(4 * i) + 2] = rotationData[(3 * i) + 2];
-          }
-          auto translationData = (float*)tvec.data;
-          for (int i = 0; i < 3; ++i)
-          {
-            transformData[(4 * i) + 3] = transformData[i];
-          }
-          */
+
+          std::stringstream ss;
+          ss << modelToCameraTransform;
+          OutputDebugStringA(ss.str().c_str());
 
           std::vector<cv::Vec4f> cameraPointsHomogenous(m_phantomFiducialCoords.size());
           std::vector<cv::Vec4f> modelPointsHomogenous;
