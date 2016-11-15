@@ -76,6 +76,7 @@ namespace HoloIntervention
 
       virtual void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbacks);
 
+      bool HasRegistration() const;
       Windows::Foundation::Numerics::float4x4 GetReferenceToHMD() const;
 
     protected:
@@ -121,6 +122,7 @@ namespace HoloIntervention
       Concurrency::cancellation_token_source                            m_tokenSource;
       Windows::Foundation::Numerics::float4x4                           m_cameraToHMD = Windows::Foundation::Numerics::float4x4::identity();    // column-major order
       Windows::Foundation::Numerics::float4x4                           m_referenceToHMD = Windows::Foundation::Numerics::float4x4::identity(); // row-major order
+      std::atomic_bool                                                  m_hasRegistration = false;
 
 
       std::shared_ptr<LandmarkRegistration>                             m_landmarkRegistration = std::make_shared<LandmarkRegistration>();

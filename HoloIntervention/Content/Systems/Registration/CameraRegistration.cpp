@@ -117,6 +117,12 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    bool CameraRegistration::HasRegistration() const
+    {
+      return m_hasRegistration;
+    }
+
+    //----------------------------------------------------------------------------
     Windows::Foundation::Numerics::float4x4 CameraRegistration::GetReferenceToHMD() const
     {
       return m_referenceToHMD;
@@ -128,12 +134,18 @@ namespace HoloIntervention
       if (m_videoFrameProcessor != nullptr && m_videoFrameProcessor->IsStarted())
       {
         m_tokenSource.cancel();
-        std::lock_guard<std::mutex> guard(m_processorLock);
+        std::lock_guard<std::mutex> frameGuard(m_framesLock);
+        std::lock_guard<std::mutex> processorGuard(m_processorLock);
         return m_videoFrameProcessor->StopAsync().then([this]()
         {
           m_videoFrameProcessor = nullptr;
           m_createTask = nullptr;
           m_cameraFrameResults.clear();
+          m_referenceFrameResults.clear();
+          m_phantomFiducialCoords.clear();
+          m_transformsAvailable = false;
+          m_latestTimestamp = 0.0;
+          m_tokenSource = cancellation_token_source();
           m_currentFrame = nullptr;
           m_nextFrame = nullptr;
           m_workerTask = nullptr;
@@ -304,6 +316,7 @@ namespace HoloIntervention
             }
             else
             {
+              m_hasRegistration = true;
               resultValid = true;
               m_referenceToHMD = transpose(m_cameraToHMD) * referenceToCamera;
             }
@@ -317,7 +330,6 @@ namespace HoloIntervention
 
           if (!resultValid)
           {
-            m_referenceToHMD = float4x4::identity();
             HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Registration failed. Please repeat process.");
             StopCameraAsync();
           }

@@ -33,6 +33,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "ModelRenderer.h"
 
 // System includes
+#include "RegistrationSystem.h"
 #include "NotificationSystem.h"
 
 using namespace Concurrency;
@@ -60,21 +61,7 @@ namespace HoloIntervention
       {
         GetXmlDocumentFromFileAsync(L"Assets\\Data\\configuration.xml").then([this](XmlDocument ^ doc)
         {
-          InitAsync(doc).then([this]()
-          {
-            // Ensure that ReferenceToWorld exists
-            bool isValid;
-            float4x4 transform;
-            UWPOpenIGTLink::TransformName^ trName = ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD");
-            try
-            {
-              transform = m_transformRepository->GetTransform(trName, &isValid);
-            }
-            catch (Platform::Exception^ e)
-            {
-              m_transformRepository->SetTransform(trName, &float4x4::identity(), true);
-            }
-          });
+          return InitAsync(doc);
         });
       }
       catch (Platform::Exception^ e)
@@ -118,6 +105,10 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ToolSystem::Update(UWPOpenIGTLink::TrackedFrame^ frame, const DX::StepTimer& timer)
     {
+      // Update the transform repository with the latest registration
+      float4x4 referenceToHMD = HoloIntervention::instance()->GetRegistrationSystem().GetReferenceToHMD();
+      m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD"), &referenceToHMD, true);
+
       m_transformRepository->SetTransforms(frame);
 
       for (auto entry : m_toolEntries)

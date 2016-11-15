@@ -52,8 +52,8 @@ namespace HoloIntervention
       concurrency::task<void> InitAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
 
     protected:
-      std::vector<std::shared_ptr<Tools::ToolEntry>>   m_toolEntries;
-      UWPOpenIGTLink::TransformRepository^      m_transformRepository;
+      std::vector<std::shared_ptr<Tools::ToolEntry>>    m_toolEntries;
+      UWPOpenIGTLink::TransformRepository^              m_transformRepository;
     };
   }
 }
