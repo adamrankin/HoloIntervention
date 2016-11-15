@@ -21,18 +21,19 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 ====================================================================*/
 
-#include "pch.h"
-
 // Local includes
-#include "Common.h"
-#include "DirectXHelper.h"
-#include "SpatialSurfaceCollection.h"
-#include "StepTimer.h"
+#include "pch.h"
 #include "SurfaceMesh.h"
+#include "SpatialSurfaceCollection.h"
+
+// Common includes
+#include "Common.h"
+#include "DeviceResources.h"
+#include "DirectXHelper.h"
+#include "StepTimer.h"
 
 // WinRT includes
 #include <ppltasks.h>
-#include <WindowsNumerics.h>
 
 // DirectX includes
 #include <d3dcompiler.h>
@@ -40,6 +41,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 using namespace Concurrency;
 using namespace DirectX;
+using namespace Microsoft::WRL;
 using namespace Windows::Perception::Spatial;
 using namespace Windows::Perception::Spatial::Surfaces;
 using namespace Windows::Foundation::Numerics;
@@ -79,7 +81,6 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    // Spatial Mapping surface meshes each have a transform. This transform is updated every frame.
     void SurfaceMesh::Update(DX::StepTimer const& timer, SpatialCoordinateSystem^ baseCoordinateSystem)
     {
       if (baseCoordinateSystem == nullptr)
@@ -89,8 +90,8 @@ namespace HoloIntervention
 
       if (m_surfaceMesh == nullptr)
       {
-        // Not yet ready.
         m_isActive = false;
+        return;
       }
 
       if (m_updateNeeded)
@@ -104,29 +105,22 @@ namespace HoloIntervention
 
         if (m_updateReady)
         {
-          // Surface mesh resources are created off-thread so that they don't affect rendering latency.
-          // When a new update is ready, we should begin using the updated vertex position, normal, and
-          // index buffers.
           SwapVertexBuffers();
           m_updateReady = false;
         }
       }
 
-      // If the surface is active this frame, we need to update its transform.
       XMMATRIX transform;
       if (m_isActive && m_surfaceMesh->CoordinateSystem != nullptr)
       {
         auto tryTransform = m_surfaceMesh->CoordinateSystem->TryGetTransformTo(baseCoordinateSystem);
         if (tryTransform != nullptr)
         {
-          // If the transform can be acquired, this spatial mesh is valid right now
           transform = XMLoadFloat4x4(&tryTransform->Value);
           m_lastActiveTime = static_cast<float>(timer.GetTotalSeconds());
         }
         else
         {
-          // If the transform is not acquired, the spatial mesh is not valid right now
-          // because its location cannot be correlated to the current space.
           m_isActive = false;
         }
       }
@@ -141,27 +135,16 @@ namespace HoloIntervention
         return;
       }
 
-      // Set up a transform from surface mesh space, to world space.
+      // TODO : verify trygettransformto returns column-major
       XMMATRIX scaleTransform = XMMatrixScalingFromVector(XMLoadFloat3(&m_surfaceMesh->VertexPositionScale));
-      XMStoreFloat4x4(
-        &m_meshToWorldTransform,
-        XMMatrixTranspose(scaleTransform * transform)
-      );
+      XMStoreFloat4x4(&m_meshToWorldTransform, scaleTransform * transform);
 
-      // Surface meshes come with normals, which are also transformed from surface mesh space, to world space.
       XMMATRIX normalTransform = transform;
-      // Normals are not translated, so we remove the translation component here.
       normalTransform.r[3] = XMVectorSet(0.f, 0.f, 0.f, XMVectorGetW(normalTransform.r[3]));
-      XMStoreFloat4x4(
-        &m_normalToWorldTransform,
-        XMMatrixTranspose(normalTransform)
-      );
+      XMStoreFloat4x4(&m_normalToWorldTransform, normalTransform);
 
       if (!m_loadingComplete)
       {
-        // If loading is not yet complete, we cannot actually update the graphics resources.
-        // This return is intentionally placed after the surface mesh updates so that this
-        // code may be copied and re-used for CPU-based processing of surface data.
         CreateDeviceDependentResources();
         return;
       }
@@ -198,30 +181,27 @@ namespace HoloIntervention
       DX::ThrowIfFailed(CreateBufferSRV(updatedTriangleIndices, updatedTriangleIndicesSRV.GetAddressOf()));
 
       // Before updating the meshes, check to ensure that there wasn't a more recent update.
+      std::lock_guard<std::mutex> lock(m_meshResourcesMutex);
+
+      auto meshUpdateTime = m_surfaceMesh->SurfaceInfo->UpdateTime;
+      if (meshUpdateTime.UniversalTime > m_lastUpdateTime.UniversalTime)
       {
-        std::lock_guard<std::mutex> lock(m_meshResourcesMutex);
+        // Here, we use ComPtr.Swap() to avoid unnecessary overhead from ref counting.
+        m_updatedVertexPositions.Swap(updatedVertexPositions);
+        m_updatedTriangleIndices.Swap(updatedTriangleIndices);
 
-        auto meshUpdateTime = m_surfaceMesh->SurfaceInfo->UpdateTime;
-        if (meshUpdateTime.UniversalTime > m_lastUpdateTime.UniversalTime)
-        {
-          // Prepare to swap in the new meshes.
-          // Here, we use ComPtr.Swap() to avoid unnecessary overhead from ref counting.
-          m_updatedVertexPositions.Swap(updatedVertexPositions);
-          m_updatedTriangleIndices.Swap(updatedTriangleIndices);
+        m_updatedVertexSRV.Swap(updatedVertexPositionsSRV);
+        m_updatedIndicesSRV.Swap(updatedTriangleIndicesSRV);
 
-          m_updatedVertexSRV.Swap(updatedVertexPositionsSRV);
-          m_updatedIndicesSRV.Swap(updatedTriangleIndicesSRV);
+        // Cache properties for the buffers we will now use.
+        m_updatedMeshProperties.vertexStride = m_surfaceMesh->VertexPositions->Stride;
+        m_updatedMeshProperties.indexCount = m_surfaceMesh->TriangleIndices->ElementCount;
+        m_updatedMeshProperties.indexFormat = static_cast<DXGI_FORMAT>(m_surfaceMesh->TriangleIndices->Format);
 
-          // Cache properties for the buffers we will now use.
-          m_updatedMeshProperties.vertexStride = m_surfaceMesh->VertexPositions->Stride;
-          m_updatedMeshProperties.indexCount = m_surfaceMesh->TriangleIndices->ElementCount;
-          m_updatedMeshProperties.indexFormat = static_cast<DXGI_FORMAT>(m_surfaceMesh->TriangleIndices->Format);
-
-          // Send a signal to the render loop indicating that new resources are available to use.
-          m_updateReady = true;
-          m_lastUpdateTime = meshUpdateTime;
-          m_vertexLoadingComplete = true;
-        }
+        // Send a signal to the render loop indicating that new resources are available to use.
+        m_updateReady = true;
+        m_lastUpdateTime = meshUpdateTime;
+        m_vertexLoadingComplete = true;
       }
     }
 
@@ -302,7 +282,7 @@ namespace HoloIntervention
       }
 
       WorldConstantBuffer buffer;
-      buffer.meshToWorld = m_meshToWorldTransform;
+      XMStoreFloat4x4(&buffer.meshToWorld, XMLoadFloat4x4(&m_meshToWorldTransform));
       context.UpdateSubresource(m_meshConstantBuffer.Get(), 0, nullptr, &buffer, 0, 0);
       context.CSSetConstantBuffers(0, 1, m_meshConstantBuffer.GetAddressOf());
 
@@ -349,13 +329,13 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    const bool& SurfaceMesh::GetIsActive() const
+    bool SurfaceMesh::GetIsActive() const
     {
       return m_isActive;
     }
 
     //----------------------------------------------------------------------------
-    const float& SurfaceMesh::GetLastActiveTime() const
+    float SurfaceMesh::GetLastActiveTime() const
     {
       return m_lastActiveTime;
     }
@@ -402,7 +382,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    DirectX::XMFLOAT4X4 SurfaceMesh::GetMeshToWorldTransform()
+    float4x4 SurfaceMesh::GetMeshToWorldTransform()
     {
       return m_meshToWorldTransform;
     }
@@ -421,11 +401,12 @@ namespace HoloIntervention
 
       if (bounds != nullptr)
       {
-        XMMATRIX rotation = XMMatrixTranspose(XMLoadFloat4x4(&make_float4x4_from_quaternion(bounds->Value.Orientation)));
+        // TODO : is this right?
+        XMMATRIX rotation = XMLoadFloat4x4(&make_float4x4_from_quaternion(bounds->Value.Orientation));
         XMMATRIX scale = XMLoadFloat4x4(&make_float4x4_scale(2 * bounds->Value.Extents));
-        XMMATRIX translation = XMMatrixTranspose(XMLoadFloat4x4(&make_float4x4_translation(bounds->Value.Center)));
+        XMMATRIX translation = XMLoadFloat4x4(&make_float4x4_translation(bounds->Value.Center));
         XMVECTOR determinant;
-        XMStoreFloat4x4(&m_worldToBoxTransform, XMMatrixInverse(&determinant, XMMatrixMultiply(translation, XMMatrixMultiply(rotation, scale))));
+        XMStoreFloat4x4(&m_worldToBoxTransform, XMMatrixInverse(&determinant, XMMatrixMultiply(scale, XMMatrixMultiply(rotation, translation))));
 
         if (determinant.m128_f32[0] == 0.f &&
             determinant.m128_f32[1] == 0.f &&
@@ -481,8 +462,7 @@ namespace HoloIntervention
     }
 
     //--------------------------------------------------------------------------------------
-    HRESULT SurfaceMesh::CreateBufferSRV(ComPtr<ID3D11Buffer> computeShaderBuffer,
-                                         ID3D11ShaderResourceView** ppSRVOut)
+    HRESULT SurfaceMesh::CreateBufferSRV(ComPtr<ID3D11Buffer> computeShaderBuffer, ID3D11ShaderResourceView** ppSRVOut)
     {
       D3D11_BUFFER_DESC descBuf;
       ZeroMemory(&descBuf, sizeof(descBuf));
@@ -499,8 +479,7 @@ namespace HoloIntervention
     }
 
     //--------------------------------------------------------------------------------------
-    HRESULT SurfaceMesh::CreateBufferUAV(ComPtr<ID3D11Buffer> computeShaderBuffer,
-                                         ID3D11UnorderedAccessView** ppUAVOut)
+    HRESULT SurfaceMesh::CreateBufferUAV(ComPtr<ID3D11Buffer> computeShaderBuffer, ID3D11UnorderedAccessView** ppUAVOut)
     {
       D3D11_BUFFER_DESC descBuf;
       ZeroMemory(&descBuf, sizeof(descBuf));
@@ -519,7 +498,6 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     HRESULT SurfaceMesh::CreateConstantBuffer()
     {
-      // Create the Const Buffer
       D3D11_BUFFER_DESC constant_buffer_desc;
       ZeroMemory(&constant_buffer_desc, sizeof(constant_buffer_desc));
       constant_buffer_desc.ByteWidth = sizeof(WorldConstantBuffer);
@@ -537,12 +515,7 @@ namespace HoloIntervention
     }
 
     //--------------------------------------------------------------------------------------
-    void SurfaceMesh::RunComputeShader(ID3D11DeviceContext& context,
-                                       uint32 nNumViews, ID3D11ShaderResourceView** pShaderResourceViews,
-                                       ID3D11UnorderedAccessView* pUnorderedAccessView,
-                                       uint32 xThreadGroups,
-                                       uint32 yThreadGroups,
-                                       uint32 zThreadGroups)
+    void SurfaceMesh::RunComputeShader(ID3D11DeviceContext& context, uint32 nNumViews, ID3D11ShaderResourceView** pShaderResourceViews, ID3D11UnorderedAccessView* pUnorderedAccessView, uint32 xThreadGroups, uint32 yThreadGroups, uint32 zThreadGroups)
     {
       if (!m_vertexLoadingComplete)
       {
@@ -552,11 +525,8 @@ namespace HoloIntervention
       output.intersection = false;
       context.UpdateSubresource(m_outputBuffer.Get(), 0, nullptr, &output, 0, 0);
 
-      // Set the shaders resources
       context.CSSetShaderResources(0, nNumViews, pShaderResourceViews);
       context.CSSetUnorderedAccessViews(0, 1, &pUnorderedAccessView, nullptr);
-
-      // The total number of thread groups creates is x*y*z, the number of threads in a thread group is determined by numthreads(i,j,k) in the shader code
       context.Dispatch(xThreadGroups, yThreadGroups, zThreadGroups);
 
       ID3D11UnorderedAccessView* ppUAViewnullptr[1] = { nullptr };
@@ -567,20 +537,15 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool SurfaceMesh::TestRayOBBIntersection(SpatialCoordinateSystem^ desiredCoordinateSystem,
-        uint64_t frameNumber,
-        const float3& rayOrigin,
-        const float3& rayDirection)
+    bool SurfaceMesh::TestRayOBBIntersection(SpatialCoordinateSystem^ desiredCoordinateSystem, uint64_t frameNumber, const float3& rayOrigin, const float3& rayDirection)
     {
       if (m_lastFrameNumberComputed != 0 && frameNumber < m_lastFrameNumberComputed + NUMBER_OF_FRAMES_BEFORE_RECOMPUTE)
       {
-        // Asked before the threshold for recompute has happened, returned cached value
         return m_hasLastComputedHit;
       }
 
       if (m_surfaceMesh->SurfaceInfo == nullptr)
       {
-        // Can't tell, so have to run the compute shader to verify
         return true;
       }
       else
@@ -589,11 +554,9 @@ namespace HoloIntervention
 
         if (bounds == nullptr || !m_worldToBoxTransformComputed)
         {
-          // Can't tell, so have to run the compute shader to verify
           return true;
         }
 
-        // Use inverse world to transform ray, then compare against unit AABB (cent 0,0,0 ext 1,1,1)
         XMVECTOR rayBox = XMVector3Transform(XMLoadFloat3(&rayOrigin), XMLoadFloat4x4(&m_worldToBoxTransform));
         XMVECTOR rayDirBox = XMVector3Transform(XMLoadFloat3(&rayDirection), XMLoadFloat4x4(&m_worldToBoxTransform));
 

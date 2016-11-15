@@ -102,12 +102,7 @@ namespace HoloIntervention
 
       // System resources for quad geometry.
       uint32                                              m_indexCount = 0;
-
-      // Variables used with the rendering loop.
-      bool                                                m_loadingComplete = false;
-
-      // If the current D3D Device supports VPRT, we can avoid using a geometry
-      // shader just to set the render target array index.
+      std::atomic_bool                                    m_loadingComplete = false;
       bool                                                m_usingVprtShaders = false;
 
       // Lock protection when accessing image list

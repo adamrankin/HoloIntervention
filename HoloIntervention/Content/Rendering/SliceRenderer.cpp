@@ -24,18 +24,23 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "pch.h"
 #include "AppView.h"
-#include "Common.h"
-#include "DirectXHelper.h"
 #include "SliceRenderer.h"
 
-// STD includes
+// Common includes
+#include "Common.h"
+#include "DirectXHelper.h"
+
+// STL includes
 #include <sstream>
 
 // System includes
 #include "NotificationSystem.h"
 
+using namespace Concurrency;
 using namespace DirectX;
+using namespace Windows::Foundation::Numerics;
 using namespace Windows::Storage::Streams;
+using namespace Windows::UI::Input::Spatial;
 
 namespace HoloIntervention
 {
@@ -76,9 +81,11 @@ namespace HoloIntervention
     {
       std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources);
       entry->m_id = m_nextUnusedSliceId;
-      DirectX::XMFLOAT4X4 mat;
-      XMStoreFloat4x4(&mat, XMMatrixTranspose(DirectX::XMLoadFloat4x4(&embeddedImageTransform)));
-      entry->m_constantBuffer.worldMatrix = entry->m_desiredPose = entry->m_currentPose = entry->m_lastPose = mat;
+
+      // TODO : apply registration to embedded image transform
+      XMStoreFloat4x4(&entry->m_constantBuffer.worldMatrix, DirectX::XMLoadFloat4x4(&embeddedImageTransform));
+      entry->m_desiredPose = entry->m_currentPose = entry->m_lastPose = embeddedImageTransform;
+
       entry->SetImageData(imageData, width, height, pixelFormat);
       entry->m_showing = true;
 
@@ -94,9 +101,11 @@ namespace HoloIntervention
     {
       std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources);
       entry->m_id = m_nextUnusedSliceId;
-      DirectX::XMFLOAT4X4 mat;
-      XMStoreFloat4x4(&mat, DirectX::XMLoadFloat4x4(&embeddedImageTransform));
-      entry->m_constantBuffer.worldMatrix = entry->m_desiredPose = entry->m_currentPose = entry->m_lastPose = mat;
+
+      // TODO : apply registration to embedded image transform
+      XMStoreFloat4x4(&entry->m_constantBuffer.worldMatrix, DirectX::XMLoadFloat4x4(&embeddedImageTransform));
+      entry->m_desiredPose = entry->m_currentPose = entry->m_lastPose = embeddedImageTransform;
+
       std::shared_ptr<byte> imDataPtr(new byte[imageData->Length], std::default_delete<byte[]>());
       memcpy(imDataPtr.get(), HoloIntervention::GetDataFromIBuffer(imageData), imageData->Length * sizeof(byte));
       entry->SetImageData(imDataPtr, width, height, pixelFormat);
@@ -116,7 +125,6 @@ namespace HoloIntervention
       std::shared_ptr<SliceEntry> slice;
       if (FindSlice(sliceId, slice))
       {
-        slice->ReleaseDeviceDependentResources();
         for (auto sliceIter = m_slices.begin(); sliceIter != m_slices.end(); ++sliceIter)
         {
           if ((*sliceIter)->m_id == sliceId)
@@ -132,13 +140,12 @@ namespace HoloIntervention
     void SliceRenderer::UpdateSlice(uint32 sliceId, std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, float4x4 embeddedImageTransform)
     {
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
-      std::shared_ptr<SliceEntry> slice;
-      if (FindSlice(sliceId, slice))
+      std::shared_ptr<SliceEntry> entry;
+      if (FindSlice(sliceId, entry))
       {
-        DirectX::XMFLOAT4X4 mat;
-        XMStoreFloat4x4(&mat, XMMatrixTranspose(DirectX::XMLoadFloat4x4(&embeddedImageTransform)));
-        slice->SetDesiredPose(mat);
-        slice->SetImageData(imageData, width, height, pixelFormat);
+        // TODO : apply registration to embedded image transform
+        entry->SetDesiredPose(embeddedImageTransform);
+        entry->SetImageData(imageData, width, height, pixelFormat);
       }
     }
 
@@ -146,10 +153,10 @@ namespace HoloIntervention
     void SliceRenderer::ShowSlice(uint32 sliceId)
     {
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
-      std::shared_ptr<SliceEntry> slice;
-      if (FindSlice(sliceId, slice))
+      std::shared_ptr<SliceEntry> entry;
+      if (FindSlice(sliceId, entry))
       {
-        slice->m_showing = true;
+        entry->m_showing = true;
       }
     }
 
@@ -157,10 +164,10 @@ namespace HoloIntervention
     void SliceRenderer::HideSlice(uint32 sliceId)
     {
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
-      std::shared_ptr<SliceEntry> slice;
-      if (FindSlice(sliceId, slice))
+      std::shared_ptr<SliceEntry> entry;
+      if (FindSlice(sliceId, entry))
       {
-        slice->m_showing = false;
+        entry->m_showing = false;
       }
     }
 
@@ -168,10 +175,10 @@ namespace HoloIntervention
     void SliceRenderer::SetSliceVisible(uint32 sliceId, bool show)
     {
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
-      std::shared_ptr<SliceEntry> slice;
-      if (FindSlice(sliceId, slice))
+      std::shared_ptr<SliceEntry> entry;
+      if (FindSlice(sliceId, entry))
       {
-        slice->m_showing = show;
+        entry->m_showing = show;
       }
     }
 
@@ -179,10 +186,10 @@ namespace HoloIntervention
     void SliceRenderer::SetSliceHeadlocked(uint32 sliceId, bool headlocked)
     {
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
-      std::shared_ptr<SliceEntry> slice;
-      if (FindSlice(sliceId, slice))
+      std::shared_ptr<SliceEntry> entry;
+      if (FindSlice(sliceId, entry))
       {
-        slice->SetHeadlocked(headlocked);
+        entry->SetHeadlocked(headlocked);
       }
     }
 
@@ -190,12 +197,10 @@ namespace HoloIntervention
     void SliceRenderer::SetSlicePose(uint32 sliceId, const float4x4& pose)
     {
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
-      std::shared_ptr<SliceEntry> slice;
-      if (FindSlice(sliceId, slice))
+      std::shared_ptr<SliceEntry> entry;
+      if (FindSlice(sliceId, entry))
       {
-        DirectX::XMFLOAT4X4 mat;
-        XMStoreFloat4x4(&mat, XMMatrixTranspose(DirectX::XMLoadFloat4x4(&pose)));
-        slice->m_currentPose = slice->m_desiredPose = slice->m_lastPose = mat;
+        entry->m_currentPose = entry->m_desiredPose = entry->m_lastPose = pose;
       }
     }
 
@@ -203,10 +208,10 @@ namespace HoloIntervention
     bool SliceRenderer::GetSlicePose(uint32 sliceId, float4x4& outPose)
     {
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
-      std::shared_ptr<SliceEntry> slice;
-      if (FindSlice(sliceId, slice))
+      std::shared_ptr<SliceEntry> entry;
+      if (FindSlice(sliceId, entry))
       {
-        DirectX::XMStoreFloat4x4(&outPose, XMMatrixTranspose(XMLoadFloat4x4(&slice->m_currentPose)));
+        outPose = entry->m_currentPose;
         return true;
       }
 
@@ -217,46 +222,32 @@ namespace HoloIntervention
     void SliceRenderer::SetDesiredSlicePose(uint32 sliceId, const float4x4& pose)
     {
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
-      std::shared_ptr<SliceEntry> slice;
-      if (FindSlice(sliceId, slice))
+      std::shared_ptr<SliceEntry> entry;
+      if (FindSlice(sliceId, entry))
       {
-        DirectX::XMFLOAT4X4 mat;
-        XMStoreFloat4x4(&mat, XMMatrixTranspose(DirectX::XMLoadFloat4x4(&pose)));
-        slice->SetDesiredPose(mat);
+        entry->SetDesiredPose(pose);
       }
     }
 
     //----------------------------------------------------------------------------
     void SliceRenderer::CreateDeviceDependentResources()
     {
-      // Lock the slices so we create resources for exactly what we have currently
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
 
       m_usingVprtShaders = m_deviceResources->GetDeviceSupportsVprt();
 
-      // Load shaders asynchronously.
       task<std::vector<byte>> loadVSTask = DX::ReadDataAsync(m_usingVprtShaders ? L"ms-appx:///SliceVprtVertexShader.cso" : L"ms-appx:///SliceVertexShader.cso");
       task<std::vector<byte>> loadPSTask = DX::ReadDataAsync(L"ms-appx:///SlicePixelShader.cso");
 
       task<std::vector<byte>> loadGSTask;
       if (!m_usingVprtShaders)
       {
-        // Load the pass-through geometry shader.
-        // position, color, texture, index
         loadGSTask = DX::ReadDataAsync(L"ms-appx:///PTIGeometryShader.cso");
       }
 
-      // After the vertex shader file is loaded, create the shader and input layout.
       task<void> createVSTask = loadVSTask.then([this](const std::vector<byte>& fileData)
       {
-        DX::ThrowIfFailed(
-          m_deviceResources->GetD3DDevice()->CreateVertexShader(
-            fileData.data(),
-            fileData.size(),
-            nullptr,
-            &m_vertexShader
-          )
-        );
+        DX::ThrowIfFailed(m_deviceResources->GetD3DDevice()->CreateVertexShader(fileData.data(), fileData.size(), nullptr, &m_vertexShader));
 
         constexpr std::array<D3D11_INPUT_ELEMENT_DESC, 2> vertexDesc =
         {
@@ -266,48 +257,23 @@ namespace HoloIntervention
           }
         };
 
-        DX::ThrowIfFailed(
-          m_deviceResources->GetD3DDevice()->CreateInputLayout(
-            vertexDesc.data(),
-            vertexDesc.size(),
-            fileData.data(),
-            fileData.size(),
-            &m_inputLayout
-          )
-        );
+        DX::ThrowIfFailed(m_deviceResources->GetD3DDevice()->CreateInputLayout(vertexDesc.data(), vertexDesc.size(), fileData.data(), fileData.size(), &m_inputLayout));
       });
 
-      // After the pixel shader file is loaded, create the shader and constant buffer.
       task<void> createPSTask = loadPSTask.then([this](const std::vector<byte>& fileData)
       {
-        DX::ThrowIfFailed(
-          m_deviceResources->GetD3DDevice()->CreatePixelShader(
-            fileData.data(),
-            fileData.size(),
-            nullptr,
-            &m_pixelShader
-          )
-        );
+        DX::ThrowIfFailed(m_deviceResources->GetD3DDevice()->CreatePixelShader(fileData.data(), fileData.size(), nullptr, &m_pixelShader));
       });
 
       task<void> createGSTask;
       if (!m_usingVprtShaders)
       {
-        // After the geometry shader file is loaded, create the shader.
         createGSTask = loadGSTask.then([this](const std::vector<byte>& fileData)
         {
-          DX::ThrowIfFailed(
-            m_deviceResources->GetD3DDevice()->CreateGeometryShader(
-              fileData.data(),
-              fileData.size(),
-              nullptr,
-              &m_geometryShader
-            )
-          );
+          DX::ThrowIfFailed(m_deviceResources->GetD3DDevice()->CreateGeometryShader(fileData.data(), fileData.size(), nullptr, &m_geometryShader));
         });
       }
 
-      // Once all shaders are loaded, create the mesh.
       task<void> shaderTaskGroup = m_usingVprtShaders ? (createPSTask && createVSTask) : (createPSTask && createVSTask && createGSTask);
       task<void> finishLoadingTask = shaderTaskGroup.then([this]()
       {
@@ -331,43 +297,17 @@ namespace HoloIntervention
         indexBufferData.SysMemPitch = 0;
         indexBufferData.SysMemSlicePitch = 0;
         const CD3D11_BUFFER_DESC indexBufferDesc(sizeof(unsigned short) * quadIndices.size(), D3D11_BIND_INDEX_BUFFER);
-        DX::ThrowIfFailed(
-          m_deviceResources->GetD3DDevice()->CreateBuffer(
-            &indexBufferDesc,
-            &indexBufferData,
-            &m_indexBuffer
-          )
-        );
+        DX::ThrowIfFailed(m_deviceResources->GetD3DDevice()->CreateBuffer(&indexBufferDesc, &indexBufferData, &m_indexBuffer));
 
-        D3D11_SAMPLER_DESC desc;
-        ZeroMemory(&desc, sizeof(D3D11_SAMPLER_DESC));
-        desc.Filter = D3D11_FILTER_ANISOTROPIC;
-        desc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-        desc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-        desc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-        desc.MaxAnisotropy = 3;
-        desc.MinLOD = 0;
-        desc.MaxLOD = 3;
-        desc.MipLODBias = 0.f;
-        desc.BorderColor[0] = 0.f;
-        desc.BorderColor[1] = 0.f;
-        desc.BorderColor[2] = 0.f;
-        desc.BorderColor[3] = 0.f;
-        desc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-
-        DX::ThrowIfFailed(
-          m_deviceResources->GetD3DDevice()->CreateSamplerState(
-            &desc,
-            &m_quadTextureSamplerState
-          )
-        );
+        float borderColour[4] = { 0.f, 0.f, 0.f, 0.f };
+        CD3D11_SAMPLER_DESC desc(D3D11_FILTER_ANISOTROPIC, D3D11_TEXTURE_ADDRESS_CLAMP, D3D11_TEXTURE_ADDRESS_CLAMP, D3D11_TEXTURE_ADDRESS_CLAMP, 0.f, 3, D3D11_COMPARISON_NEVER, borderColour, 0, 3);
+        DX::ThrowIfFailed(m_deviceResources->GetD3DDevice()->CreateSamplerState(&desc, &m_quadTextureSamplerState));
 
         for (auto slice : m_slices)
         {
           slice->CreateDeviceDependentResources();
         }
 
-        // After the assets are loaded, the quad is ready to be rendered.
         m_loadingComplete = true;
       });
     }
@@ -412,22 +352,15 @@ namespace HoloIntervention
       context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
       context->IASetInputLayout(m_inputLayout.Get());
 
-      // Attach the vertex shader.
-      context->VSSetShader(
-        m_vertexShader.Get(),
-        nullptr,
-        0
-      );
-
+      context->VSSetShader(m_vertexShader.Get(), nullptr, 0);
       if (!m_usingVprtShaders)
       {
         context->GSSetShader(m_geometryShader.Get(), nullptr, 0);
       }
-
-      // Attach the pixel shader.
       context->PSSetShader(m_pixelShader.Get(), nullptr, 0);
       context->PSSetSamplers(0, 1, m_quadTextureSamplerState.GetAddressOf());
 
+      // TODO : implement instance rendering (instance of instance?)
       for (auto sliceEntry : m_slices)
       {
         sliceEntry->Render(m_indexCount);
