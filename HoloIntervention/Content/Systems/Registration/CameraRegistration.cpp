@@ -246,7 +246,8 @@ namespace HoloIntervention
             }
             catch (Platform::Exception^ e)
             {
-              OutputDebugStringW(L"Cannot retrieve camera to world transformation.");
+              OutputDebugStringW(L"Cannot retrieve camera to world transformation.\n");
+              OutputDebugStringW(e->Message->Data());
               continue;
             }
           }
@@ -411,16 +412,7 @@ namespace HoloIntervention
           cv::GaussianBlur(mask, mask, cv::Size(9, 9), 2, 2);
 
           // Apply the Hough Transform to find the circles
-          try
-          {
-            cv::HoughCircles(mask, circles, CV_HOUGH_GRADIENT, 2, mask.rows / 16, 255, 30, 30, 60);
-          }
-          catch (const cv::Exception& e)
-          {
-            OutputDebugStringA(e.msg.c_str());
-            result = false;
-            goto done;
-          }
+          cv::HoughCircles(mask, circles, CV_HOUGH_GRADIENT, 2, mask.rows / 16, 255, 30, 30, 60);
 
           if (circles.size() == PHANTOM_SPHERE_COUNT)
           {
@@ -466,18 +458,8 @@ namespace HoloIntervention
 
           cv::Mat rvec(3, 1, distCoeffs.type());
           cv::Mat tvec(3, 1, distCoeffs.type());
-          try
+          if (!cv::solvePnP(m_phantomFiducialCoords, spheres, intrinsic, distCoeffs, rvec, tvec, false, cv::SOLVEPNP_EPNP))
           {
-            if (!cv::solvePnP(m_phantomFiducialCoords, spheres, intrinsic, distCoeffs, rvec, tvec))
-            {
-              OutputDebugStringW(L"Unable to solve object pose.");
-              result = false;
-              goto done;
-            }
-          }
-          catch (const cv::Exception& e)
-          {
-            OutputDebugStringA(e.msg.c_str());
             result = false;
             goto done;
           }
@@ -485,8 +467,11 @@ namespace HoloIntervention
           cv::Mat rotation(3, 3, distCoeffs.type());
           cv::Rodrigues(rvec, rotation);
 
-          cv::Mat transform = cv::Mat::eye(4, 4, distCoeffs.type());
-          auto transformData = (float*)transform.data;
+          cv::Mat modelToCameraTransform = cv::Mat::eye(4, 4, distCoeffs.type());
+          rotation.copyTo(modelToCameraTransform(cv::Rect(0, 0, 3, 3)));
+          tvec.copyTo(modelToCameraTransform(cv::Rect(3, 0, 1, 3)));
+          /*
+          auto transformData = (float*)modelToCameraTransform.data;
           auto rotationData = (float*)rotation.data;
           for (int i = 0; i < 3; ++i)
           {
@@ -499,19 +484,20 @@ namespace HoloIntervention
           {
             transformData[(4 * i) + 3] = transformData[i];
           }
+          */
 
-          std::vector<cv::Vec4f> resultPoints(m_phantomFiducialCoords.size());
-          std::vector<cv::Vec4f> phantomCoordsHomogenous;
-          for (auto& point : m_phantomFiducialCoords)
+          std::vector<cv::Vec4f> cameraPointsHomogenous(m_phantomFiducialCoords.size());
+          std::vector<cv::Vec4f> modelPointsHomogenous;
+          for (auto& cameraPoint : m_phantomFiducialCoords)
           {
-            phantomCoordsHomogenous.push_back(cv::Vec4f(point.x, point.y, point.z, 1.f));
+            modelPointsHomogenous.push_back(cv::Vec4f(cameraPoint.x, cameraPoint.y, cameraPoint.z, 1.f));
           }
-          cv::transform(phantomCoordsHomogenous, resultPoints, transform);
+          cv::transform(modelPointsHomogenous, cameraPointsHomogenous, modelToCameraTransform);
 
           cameraResults.clear();
-          for (auto& point : resultPoints)
+          for (auto& cameraPoint : cameraPointsHomogenous)
           {
-            cameraResults.push_back(DetectedSphereWorld(point[0], point[1], point[2]));
+            cameraResults.push_back(DetectedSphereWorld(cameraPoint[0], cameraPoint[1], cameraPoint[2]));
           }
 
           result = true;

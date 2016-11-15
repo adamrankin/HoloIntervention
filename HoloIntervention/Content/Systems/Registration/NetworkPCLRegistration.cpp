@@ -46,8 +46,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 // DirectXTex includes
 #include <DirectXTex.h>
 
+using namespace DirectX;
 using namespace Windows::Data::Xml::Dom;
 using namespace Windows::Networking;
+using namespace Windows::Perception::Spatial::Surfaces;
 using namespace Windows::Storage::Streams;
 using namespace Windows::Storage;
 
@@ -241,7 +243,7 @@ namespace HoloIntervention
 
         DataWriter^ writer = ref new DataWriter(m_networkPCLSocket->OutputStream);
         SpatialSurfaceMesh^ mesh = m_spatialMesh->GetSurfaceMesh();
-        XMFLOAT4X4& meshToWorld = m_spatialMesh->GetMeshToWorldTransform();
+        float4x4 meshToWorld = m_spatialMesh->GetMeshToWorldTransform();
 
         auto bodySize = mesh->TriangleIndices->ElementCount * sizeof(float) * 3 + m_points.size() * sizeof(float) * 3;
 

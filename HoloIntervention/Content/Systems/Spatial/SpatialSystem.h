@@ -29,11 +29,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 // WinRT includes
 #include <ppltasks.h>
 
-using namespace Concurrency;
-using namespace Windows::Perception::Spatial::Surfaces;
-using namespace Windows::Perception::Spatial;
-using namespace Windows::UI::Input::Spatial;
-
 namespace DX
 {
   class StepTimer;
@@ -59,37 +54,37 @@ namespace HoloIntervention
       SpatialSystem(const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer);
       ~SpatialSystem();
 
-      void Update(SpatialCoordinateSystem^ coordinateSystem);
+      void Update(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem);
 
       void CreateDeviceDependentResources();
       void ReleaseDeviceDependentResources();
 
       // Handle surface change events.
-      void OnSurfacesChanged(SpatialSurfaceObserver^ sender, Platform::Object^ args);
+      void OnSurfacesChanged(Windows::Perception::Spatial::Surfaces::SpatialSurfaceObserver^ sender, Platform::Object^ args);
 
       // Positions the Spatial Mapping surface observer at the origin of the given coordinate system.
-      void UpdateSurfaceObserverPosition(SpatialCoordinateSystem^ coordinateSystem);
+      void UpdateSurfaceObserverPosition(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem);
 
       // Perform a ray cast to determine if the ray hits any stored mesh
       bool TestRayIntersection(SpatialCoordinateSystem^ desiredCoordinateSystem,
-                               const float3 rayOrigin,
-                               const float3 rayDirection,
-                               float3& outHitPosition,
-                               float3& outHitNormal,
-                               float3& outHitEdge);
-      bool GetLastHitPosition(_Out_ float3& position, _In_ bool considerOldHits = false);
-      bool GetLastHitNormal(_Out_ float3& normal, _In_ bool considerOldHits = false);
+                               const Windows::Foundation::Numerics::float3 rayOrigin,
+                               const Windows::Foundation::Numerics::float3 rayDirection,
+                               Windows::Foundation::Numerics::float3& outHitPosition,
+                               Windows::Foundation::Numerics::float3& outHitNormal,
+                               Windows::Foundation::Numerics::float3& outHitEdge);
+      bool GetLastHitPosition(_Out_ Windows::Foundation::Numerics::float3& position, _In_ bool considerOldHits = false);
+      bool GetLastHitNormal(_Out_ Windows::Foundation::Numerics::float3& normal, _In_ bool considerOldHits = false);
       std::shared_ptr<Spatial::SurfaceMesh> GetLastHitMesh();
       Platform::Guid GetLastHitMeshGuid();
 
       // Initializes the Spatial Mapping surface observer.
-      void InitializeSurfaceObserver(SpatialCoordinateSystem^ coordinateSystem);
+      void InitializeSurfaceObserver(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem);
 
       // Handle saving and loading of app state owned by AppMain.
-      task<void> SaveAppStateAsync();
-      task<void> LoadAppStateAsync();
+      Concurrency::task<void> SaveAppStateAsync();
+      Concurrency::task<void> LoadAppStateAsync();
 
-      bool DropAnchorAtIntersectionHit(Platform::String^ anchorName, SpatialCoordinateSystem^ coordinateSystem, SpatialPointerPose^ headPose);
+      bool DropAnchorAtIntersectionHit(Platform::String^ anchorName, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem, Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
       size_t RemoveAnchor(Platform::String^ anchorName);
       SpatialAnchor^ GetAnchor(Platform::String^ anchorName);
       bool HasAnchor(Platform::String^ anchorName);
@@ -98,30 +93,30 @@ namespace HoloIntervention
       virtual void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap);
 
     protected:
-      void OnRawCoordinateSystemAdjusted(SpatialAnchor^ sender, SpatialAnchorRawCoordinateSystemAdjustedEventArgs^ args);
+      void OnRawCoordinateSystemAdjusted(Windows::Perception::Spatial::SpatialAnchor^ sender, Windows::Perception::Spatial::SpatialAnchorRawCoordinateSystemAdjustedEventArgs^ args);
 
     protected:
       // Event registration tokens.
-      Windows::Foundation::EventRegistrationToken                       m_surfaceObserverEventToken;
+      Windows::Foundation::EventRegistrationToken                         m_surfaceObserverEventToken;
 
       // Keep a reference to the device resources
-      std::shared_ptr<DX::DeviceResources>                              m_deviceResources;
-      DX::StepTimer&                                                    m_stepTimer;
+      std::shared_ptr<DX::DeviceResources>                                m_deviceResources;
+      DX::StepTimer&                                                      m_stepTimer;
 
       // Anchor interaction variables
-      std::mutex                                                        m_anchorMutex;
+      std::mutex                                                          m_anchorMutex;
 
       // Obtains spatial mapping data from the device in real time.
-      SpatialSurfaceObserver^                                           m_surfaceObserver;
-      SpatialSurfaceMeshOptions^                                        m_surfaceMeshOptions;
+      Windows::Perception::Spatial::Surfaces::SpatialSurfaceObserver^     m_surfaceObserver;
+      Windows::Perception::Spatial::Surfaces::SpatialSurfaceMeshOptions^  m_surfaceMeshOptions;
 
       // A data handler for surface meshes.
-      std::unique_ptr<Spatial::SpatialSurfaceCollection>                m_surfaceCollection;
+      std::unique_ptr<Spatial::SpatialSurfaceCollection>                  m_surfaceCollection;
 
       // List of spatial anchors
-      std::map<Platform::String^, SpatialAnchor^>                       m_spatialAnchors;
+      std::map<Platform::String^, SpatialAnchor^>                         m_spatialAnchors;
 
-      static const uint32                                               INIT_SURFACE_RETRY_DELAY_MS;
+      static const uint32                                                 INIT_SURFACE_RETRY_DELAY_MS;
     };
   }
 }

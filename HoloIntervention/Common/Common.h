@@ -59,7 +59,7 @@ namespace HoloIntervention
     HRESULT hr = S_OK;
 
     Microsoft::WRL::ComPtr<IUnknown> pUnknown = reinterpret_cast<IUnknown*>(container);
-    Microsoft::WRL::ComPtr<IBufferByteAccess> spByteAccess;
+    Microsoft::WRL::ComPtr<Windows::Storage::Streams::IBufferByteAccess> spByteAccess;
     hr = pUnknown.As(&spByteAccess);
     if (FAILED(hr))
     {
