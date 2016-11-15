@@ -433,8 +433,8 @@ namespace HoloIntervention
 
             for (auto& circle : circles)
             {
-              // Ensure radius of circle falls within 10% of mean
-              if (circle[2] / radiusMean < 0.9f || circle[2] / radiusMean > 1.1f)
+              // Ensure radius of circle falls within 15% of mean
+              if (circle[2] / radiusMean < 0.85f || circle[2] / radiusMean > 1.15f)
               {
                 result = false;
                 goto done;
@@ -500,16 +500,18 @@ namespace HoloIntervention
             transformData[(4 * i) + 3] = transformData[i];
           }
 
-          cameraResults.clear();
-          try
+          std::vector<cv::Vec4f> resultPoints(m_phantomFiducialCoords.size());
+          std::vector<cv::Vec4f> phantomCoordsHomogenous;
+          for (auto& point : m_phantomFiducialCoords)
           {
-            cv::transform(m_phantomFiducialCoords, cameraResults, transform);
+            phantomCoordsHomogenous.push_back(cv::Vec4f(point.x, point.y, point.z, 1.f));
           }
-          catch (const cv::Exception& e)
+          cv::transform(phantomCoordsHomogenous, resultPoints, transform);
+
+          cameraResults.clear();
+          for (auto& point : resultPoints)
           {
-            OutputDebugStringA(e.msg.c_str());
-            result = false;
-            goto done;
+            cameraResults.push_back(DetectedSphereWorld(point[0], point[1], point[2]));
           }
 
           result = true;
@@ -556,28 +558,25 @@ done:
       if (m_phantomFiducialCoords.empty())
       {
         // Phantom is rigid body, so only need to pull the values once
-        std::vector<cv::Point3f> fiducialCoords;
         float4x4 red1ToPhantomTransform = transpose(m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"RedSphere1", L"Phantom"), &isValid));
         translation = transform(origin, red1ToPhantomTransform);
-        fiducialCoords.push_back(cv::Point3f(translation.x, translation.y, translation.z));
+        m_phantomFiducialCoords.push_back(cv::Point3f(translation.x, translation.y, translation.z));
 
         float4x4 red2ToPhantomTransform = transpose(m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"RedSphere2", L"Phantom"), &isValid));
         translation = transform(origin, red2ToPhantomTransform);
-        fiducialCoords.push_back(cv::Point3f(translation.x, translation.y, translation.z));
+        m_phantomFiducialCoords.push_back(cv::Point3f(translation.x, translation.y, translation.z));
 
         float4x4 red3ToPhantomTransform = transpose(m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"RedSphere3", L"Phantom"), &isValid));
         translation = transform(origin, red3ToPhantomTransform);
-        fiducialCoords.push_back(cv::Point3f(translation.x, translation.y, translation.z));
+        m_phantomFiducialCoords.push_back(cv::Point3f(translation.x, translation.y, translation.z));
 
         float4x4 red4ToPhantomTransform = transpose(m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"RedSphere4", L"Phantom"), &isValid));
         translation = transform(origin, red4ToPhantomTransform);
-        fiducialCoords.push_back(cv::Point3f(translation.x, translation.y, translation.z));
+        m_phantomFiducialCoords.push_back(cv::Point3f(translation.x, translation.y, translation.z));
 
         float4x4 red5ToPhantomTransform = transpose(m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"RedSphere5", L"Phantom"), &isValid));
         translation = transform(origin, red5ToPhantomTransform);
-        fiducialCoords.push_back(cv::Point3f(translation.x, translation.y, translation.z));
-
-        m_phantomFiducialCoords = fiducialCoords;
+        m_phantomFiducialCoords.push_back(cv::Point3f(translation.x, translation.y, translation.z));
       }
 
       return true;
