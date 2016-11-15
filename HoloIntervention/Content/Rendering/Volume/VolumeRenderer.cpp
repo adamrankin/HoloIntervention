@@ -154,16 +154,16 @@ namespace HoloIntervention
         UpdateGPUImageData();
       }
 
+      // Retrieve the current registration from reference to HMD
       m_transformRepository->SetTransforms(m_frame);
+      float4x4 referenceToHMD = HoloIntervention::instance()->GetRegistrationSystem().GetReferenceToHMD();
+      m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD"), &referenceToHMD, true);
       bool isValid;
       float4x4 transform = m_transformRepository->GetTransform(m_imageToHMDName, &isValid);
       if (!isValid)
       {
         return;
       }
-
-      // TODO : multiply into constant buffer entry
-      float4x4 referenceToHMD = HoloIntervention::instance()->GetRegistrationSystem().GetReferenceToHMD();
 
       XMStoreFloat4x4(&m_constantBuffer.worldMatrix, XMLoadFloat4x4(&transform));
       context->UpdateSubresource(m_volumeConstantBuffer.Get(), 0, nullptr, &m_constantBuffer, 0, 0);
@@ -245,12 +245,8 @@ namespace HoloIntervention
       float3 sizes = float3(m_frameSize[0], m_frameSize[1], m_frameSize[2]);
       m_constantBuffer.scaleFactor = float3(1.f, 1.f, 1.f) / ((float3(1.f, 1.f, 1.f) * maxSize) / (sizes * m_ratios));
 
-      CD3D11_SAMPLER_DESC desc;
-      desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-      desc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
-      desc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
-      desc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
-      desc.BorderColor[0] = desc.BorderColor[1] = desc.BorderColor[2] = desc.BorderColor[3] = 0.f;
+      float borderColour[4] = { 0.f, 0.f, 0.f, 0.f };
+      CD3D11_SAMPLER_DESC desc(D3D11_FILTER_MIN_MAG_MIP_LINEAR, D3D11_TEXTURE_ADDRESS_BORDER, D3D11_TEXTURE_ADDRESS_BORDER, D3D11_TEXTURE_ADDRESS_BORDER, 0.f, 3, D3D11_COMPARISON_NEVER, borderColour, 0, 3);
       DX::ThrowIfFailed(device->CreateSamplerState(&desc, m_samplerState.GetAddressOf()));
 
       m_volumeReady = true;
