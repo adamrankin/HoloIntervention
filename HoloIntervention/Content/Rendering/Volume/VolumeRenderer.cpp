@@ -226,7 +226,8 @@ namespace HoloIntervention
       // Create the texture that will be used by the shader to access the current volume to be rendered
       textureDesc = CD3D11_TEXTURE3D_DESC((DXGI_FORMAT)m_frame->PixelFormat, m_frameSize[0], m_frameSize[1], m_frameSize[2], 1);
       DX::ThrowIfFailed(device->CreateTexture3D(&textureDesc, &imgData, m_volumeTexture.GetAddressOf()));
-      DX::ThrowIfFailed(device->CreateShaderResourceView(m_volumeTexture.Get(), nullptr, m_volumeSRV.GetAddressOf()));
+      CD3D11_SHADER_RESOURCE_VIEW_DESC srvDesc(m_volumeTexture.Get(), (DXGI_FORMAT)m_frame->PixelFormat);
+      DX::ThrowIfFailed(device->CreateShaderResourceView(m_volumeTexture.Get(), &srvDesc, m_volumeSRV.GetAddressOf()));
 
       //compute the step size and number of iterations to use
       //the step size for each component needs to be a ratio of the largest component
@@ -595,14 +596,7 @@ namespace HoloIntervention
       D3D11_SUBRESOURCE_DATA bufferBytes = { m_transferFunction->GetTFLookupTable().LookupTable, 0, 0 };
       DX::ThrowIfFailed(m_deviceResources->GetD3DDevice()->CreateBuffer(&desc, &bufferBytes, m_lookupTableBuffer.GetAddressOf()));
 
-      D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
-      ZeroMemory(&srvDesc, sizeof(srvDesc));
-      srvDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFEREX;
-      srvDesc.Format = DXGI_FORMAT_R32_TYPELESS;
-      srvDesc.BufferEx.FirstElement = 0;
-      srvDesc.BufferEx.NumElements = TransferFunctionLookup::TRANSFER_FUNCTION_TABLE_SIZE;
-      srvDesc.BufferEx.Flags = D3D11_BUFFEREX_SRV_FLAG_RAW;
-
+      CD3D11_SHADER_RESOURCE_VIEW_DESC srvDesc(m_lookupTableBuffer.Get(), DXGI_FORMAT_R32_TYPELESS, 0, TransferFunctionLookup::TRANSFER_FUNCTION_TABLE_SIZE, D3D11_BUFFEREX_SRV_FLAG_RAW);
       DX::ThrowIfFailed(m_deviceResources->GetD3DDevice()->CreateShaderResourceView(m_lookupTableBuffer.Get(), &srvDesc, m_lookupTableSRV.GetAddressOf()));
 
       m_tfResourcesReady = true;
