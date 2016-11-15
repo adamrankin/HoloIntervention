@@ -529,13 +529,13 @@ done:
 
       // Calculate world position from transforms in tracked frame
       bool isValid(false);
-      float4x4 red1ToReferenceTransform = m_transformRepository->GetTransform(m_sphereCoordinateNames[0], &isValid);
+      float4x4 red1ToReferenceTransform = transpose(m_transformRepository->GetTransform(m_sphereCoordinateNames[0], &isValid));
       if (!isValid) {return false;}
 
-      float4x4 red2ToReferenceTransform = m_transformRepository->GetTransform(m_sphereCoordinateNames[1], &isValid);
-      float4x4 red3ToReferenceTransform = m_transformRepository->GetTransform(m_sphereCoordinateNames[2], &isValid);
-      float4x4 red4ToReferenceTransform = m_transformRepository->GetTransform(m_sphereCoordinateNames[3], &isValid);
-      float4x4 red5ToReferenceTransform = m_transformRepository->GetTransform(m_sphereCoordinateNames[4], &isValid);
+      float4x4 red2ToReferenceTransform = transpose(m_transformRepository->GetTransform(m_sphereCoordinateNames[1], &isValid));
+      float4x4 red3ToReferenceTransform = transpose(m_transformRepository->GetTransform(m_sphereCoordinateNames[2], &isValid));
+      float4x4 red4ToReferenceTransform = transpose(m_transformRepository->GetTransform(m_sphereCoordinateNames[3], &isValid));
+      float4x4 red5ToReferenceTransform = transpose(m_transformRepository->GetTransform(m_sphereCoordinateNames[4], &isValid));
 
       float4 origin = { 0.f, 0.f, 0.f, 1.f };
       float4 translation = transform(origin, red1ToReferenceTransform);
@@ -557,23 +557,23 @@ done:
       {
         // Phantom is rigid body, so only need to pull the values once
         std::vector<cv::Point3f> fiducialCoords;
-        float4x4 red1ToPhantomTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"RedSphere1", L"Phantom"), &isValid);
+        float4x4 red1ToPhantomTransform = transpose(m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"RedSphere1", L"Phantom"), &isValid));
         translation = transform(origin, red1ToPhantomTransform);
         fiducialCoords.push_back(cv::Point3f(translation.x, translation.y, translation.z));
 
-        float4x4 red2ToPhantomTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"RedSphere2", L"Phantom"), &isValid);
+        float4x4 red2ToPhantomTransform = transpose(m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"RedSphere2", L"Phantom"), &isValid));
         translation = transform(origin, red2ToPhantomTransform);
         fiducialCoords.push_back(cv::Point3f(translation.x, translation.y, translation.z));
 
-        float4x4 red3ToPhantomTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"RedSphere3", L"Phantom"), &isValid);
+        float4x4 red3ToPhantomTransform = transpose(m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"RedSphere3", L"Phantom"), &isValid));
         translation = transform(origin, red3ToPhantomTransform);
         fiducialCoords.push_back(cv::Point3f(translation.x, translation.y, translation.z));
 
-        float4x4 red4ToPhantomTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"RedSphere4", L"Phantom"), &isValid);
+        float4x4 red4ToPhantomTransform = transpose(m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"RedSphere4", L"Phantom"), &isValid));
         translation = transform(origin, red4ToPhantomTransform);
         fiducialCoords.push_back(cv::Point3f(translation.x, translation.y, translation.z));
 
-        float4x4 red5ToPhantomTransform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"RedSphere5", L"Phantom"), &isValid);
+        float4x4 red5ToPhantomTransform = transpose(m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"RedSphere5", L"Phantom"), &isValid));
         translation = transform(origin, red5ToPhantomTransform);
         fiducialCoords.push_back(cv::Point3f(translation.x, translation.y, translation.z));
 
