@@ -549,10 +549,12 @@ namespace HoloIntervention
       m_deviceResources->GetD3DDevice()->CreateTexture2D(&textureDesc, nullptr, &m_frontPositionTextureArray);
       m_deviceResources->GetD3DDevice()->CreateTexture2D(&textureDesc, nullptr, &m_backPositionTextureArray);
 
-      m_deviceResources->GetD3DDevice()->CreateShaderResourceView(m_frontPositionTextureArray.Get(), nullptr, m_frontPositionSRV.GetAddressOf());
-      m_deviceResources->GetD3DDevice()->CreateShaderResourceView(m_backPositionTextureArray.Get(), nullptr, m_backPositionSRV.GetAddressOf());
-      m_deviceResources->GetD3DDevice()->CreateRenderTargetView(m_frontPositionTextureArray.Get(), nullptr, m_frontPositionRTV.GetAddressOf());
-      m_deviceResources->GetD3DDevice()->CreateRenderTargetView(m_backPositionTextureArray.Get(), nullptr, m_backPositionRTV.GetAddressOf());
+      CD3D11_SHADER_RESOURCE_VIEW_DESC srvDesc(m_frontPositionTextureArray.Get(), D3D11_SRV_DIMENSION_TEXTURE2DARRAY);
+      m_deviceResources->GetD3DDevice()->CreateShaderResourceView(m_frontPositionTextureArray.Get(), &srvDesc, m_frontPositionSRV.GetAddressOf());
+      m_deviceResources->GetD3DDevice()->CreateShaderResourceView(m_backPositionTextureArray.Get(), &srvDesc, m_backPositionSRV.GetAddressOf());
+      CD3D11_RENDER_TARGET_VIEW_DESC rendDesc(m_frontPositionTextureArray.Get(), D3D11_RTV_DIMENSION_TEXTURE2DARRAY);
+      m_deviceResources->GetD3DDevice()->CreateRenderTargetView(m_frontPositionTextureArray.Get(), &rendDesc, m_frontPositionRTV.GetAddressOf());
+      m_deviceResources->GetD3DDevice()->CreateRenderTargetView(m_backPositionTextureArray.Get(), &rendDesc, m_backPositionRTV.GetAddressOf());
 
       m_faceCalcReady = true;
     }

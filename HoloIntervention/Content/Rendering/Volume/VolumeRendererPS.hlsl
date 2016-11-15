@@ -41,10 +41,10 @@ struct PixelShaderInput
 // Must match ITransferFunction::TRANSFER_FUNCTION_TABLE_SIZE
 #define TRANSFER_FUNCTION_TABLE_SIZE 1024
 
-ByteAddressBuffer lookupTable : t0;
-Texture3D volumeTexture : t1;
-Texture2DArray frontPositionTextures : t2;
-Texture2DArray backPositionTextures : t3;
+ByteAddressBuffer lookupTable : register(t0);
+Texture3D volumeTexture : register(t1);
+Texture2DArray frontPositionTextures : register(t2);
+Texture2DArray backPositionTextures : register(t3);
 
 SamplerState Sampler : s0;
 
