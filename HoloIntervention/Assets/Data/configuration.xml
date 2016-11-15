@@ -5,16 +5,6 @@
     <Tool Model="needle" Transform="StylusTipToHMD"/>
   </Tools>
   <CoordinateDefinitions>
-    <Transform From="Reference" 
-               To="HMD"
-               Matrix="
-               1 0 0 0
-               0 1 0 0
-               0 0 1 0
-               0 0 0 1"
-               Date="2011.12.06 17:57:00" 
-               Error="0.0"
-               Persistent="true"/>
     <Transform From="StylusTip" To="Stylus"
           Matrix="
         0.99969	0	0.0249041	1.98332

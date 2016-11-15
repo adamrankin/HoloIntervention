@@ -72,8 +72,11 @@ namespace HoloIntervention
       float4x4 transform;
       try
       {
-        transform = m_transformRepository->GetTransform(m_coordinateFrame, &isValid);
+        transform = transpose(m_transformRepository->GetTransform(m_coordinateFrame, &isValid));
         m_modelEntry->RenderDefault();
+
+        // Transforms are retrieved in row-major
+        m_modelEntry->SetWorld(transform);
       }
       catch (Platform::Exception^ e)
       {
@@ -81,8 +84,6 @@ namespace HoloIntervention
         m_modelEntry->RenderGreyscale();
         return;
       }
-
-      m_modelEntry->SetWorld(transform);
     }
 
     //----------------------------------------------------------------------------

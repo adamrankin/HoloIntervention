@@ -24,6 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "pch.h"
 #include "AppView.h"
+#include "Common.h"
 #include "RegistrationSystem.h"
 
 // Rendering includes
@@ -41,6 +42,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "NotificationSystem.h"
 
 using namespace Concurrency;
+using namespace Windows::Data::Xml::Dom;
 using namespace Windows::Foundation::Numerics;
 using namespace Windows::Perception::Spatial;
 
@@ -68,6 +70,22 @@ namespace HoloIntervention
         return;
       }
       m_regAnchorModel->SetVisible(false);
+
+      auto repo = ref new UWPOpenIGTLink::TransformRepository();
+      auto trName = ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD");
+      InitializeTransformRepositoryAsync(repo, L"Assets\\Data\\configuration.xml").then([this, repo, trName]()
+      {
+        try
+        {
+          bool isValid;
+          m_cachedRegistrationTransform = repo->GetTransform(trName, &isValid);
+        }
+        catch (Platform::Exception^ e)
+        {
+          return;
+        }
+      });
+
     }
 
     //----------------------------------------------------------------------------
@@ -149,7 +167,12 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float4x4 RegistrationSystem::GetReferenceToHMD()
     {
-      return m_cameraRegistration->GetReferenceToHMD();
+      if (m_cameraRegistration->HasRegistration())
+      {
+        m_cachedRegistrationTransform = m_cameraRegistration->GetReferenceToHMD();
+      }
+
+      return m_cachedRegistrationTransform;
     }
   }
 }
