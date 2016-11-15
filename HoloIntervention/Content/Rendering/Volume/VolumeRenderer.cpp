@@ -245,6 +245,14 @@ namespace HoloIntervention
       float3 sizes = float3(m_frameSize[0], m_frameSize[1], m_frameSize[2]);
       m_constantBuffer.scaleFactor = float3(1.f, 1.f, 1.f) / ((float3(1.f, 1.f, 1.f) * maxSize) / (sizes * m_ratios));
 
+      CD3D11_SAMPLER_DESC desc;
+      desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+      desc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
+      desc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
+      desc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
+      desc.BorderColor[0] = desc.BorderColor[1] = desc.BorderColor[2] = desc.BorderColor[3] = 0.f;
+      DX::ThrowIfFailed(device->CreateSamplerState(&desc, m_samplerState.GetAddressOf()));
+
       m_volumeReady = true;
     }
 
@@ -255,6 +263,7 @@ namespace HoloIntervention
       m_volumeStagingTexture.Reset();
       m_volumeTexture.Reset();
       m_volumeSRV.Reset();
+      m_samplerState.Reset();
     }
 
     //----------------------------------------------------------------------------
@@ -265,7 +274,7 @@ namespace HoloIntervention
         return;
       }
 
-      ID3D11DeviceContext3* context = m_deviceResources->GetD3DDeviceContext();
+      auto context = m_deviceResources->GetD3DDeviceContext();
 
       const UINT stride = sizeof(VertexPosition);
       const UINT offset = 0;
@@ -305,6 +314,8 @@ namespace HoloIntervention
       context->OMSetRenderTargets(1, targets, hololensStencilView);
       ID3D11ShaderResourceView* shaderResourceViews[4] = { m_lookupTableSRV.Get(), m_volumeSRV.Get(), m_frontPositionSRV.Get(), m_backPositionSRV.Get() };
       context->PSSetShaderResources(0, 4, shaderResourceViews);
+      ID3D11SamplerState* samplerStates[1] = { m_samplerState.Get() };
+      context->PSSetSamplers(0, 1, samplerStates);
       context->PSSetConstantBuffers(0, 1, m_volumeConstantBuffer.GetAddressOf());
       context->PSSetShader(m_volRenderPixelShader.Get(), nullptr, 0);
       context->DrawIndexedInstanced(m_indexCount, 2, 0, 0, 0);
@@ -312,6 +323,8 @@ namespace HoloIntervention
       // Clear values
       ID3D11ShaderResourceView* ppSRVnullptr[4] = { nullptr, nullptr, nullptr, nullptr };
       context->PSSetShaderResources(0, 4, ppSRVnullptr);
+      ID3D11SamplerState* ppSamplerStatesnullptr[1] = { nullptr };
+      context->PSSetSamplers(0, 1, ppSamplerStatesnullptr);
     }
 
     //----------------------------------------------------------------------------

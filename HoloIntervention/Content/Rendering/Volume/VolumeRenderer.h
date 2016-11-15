@@ -103,6 +103,7 @@ namespace HoloIntervention
       Microsoft::WRL::ComPtr<ID3D11Texture3D>           m_volumeStagingTexture;
       Microsoft::WRL::ComPtr<ID3D11Texture3D>           m_volumeTexture;
       Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>  m_volumeSRV;
+      Microsoft::WRL::ComPtr<ID3D11SamplerState>        m_samplerState;
 
       // D3D resources for left and right eye position calculation
       Microsoft::WRL::ComPtr<ID3D11PixelShader>         m_faceCalcPixelShader;

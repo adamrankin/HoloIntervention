@@ -38,47 +38,26 @@ struct PixelShaderInput
   uint				rtvId : SV_RenderTargetArrayIndex;
 };
 
-#define TRANSFER_FUNCTION_TABLE_SIZE 1024 // must match ITransferFunction::TRANSFER_FUNCTION_TABLE_SIZE
-ByteAddressBuffer lookupTable : register(t0);
-Texture3D volumeTexture : register(t1);
-Texture2DArray frontPositionTextures : register(t2);
-Texture2DArray backPositionTextures : register(t3);
+// Must match ITransferFunction::TRANSFER_FUNCTION_TABLE_SIZE
+#define TRANSFER_FUNCTION_TABLE_SIZE 1024
 
-SamplerState FrontSampler
-{
-	Filter = MIN_MAG_MIP_LINEAR;
-	AddressU = Border; // border sampling in U
-	AddressV = Border; // border sampling in V
-	BorderColor = float4(0, 0, 0, 0); // outside of border should be black
-};
+ByteAddressBuffer lookupTable : t0;
+Texture3D volumeTexture : t1;
+Texture2DArray frontPositionTextures : t2;
+Texture2DArray backPositionTextures : t3;
 
-SamplerState BackSampler
-{
-	Filter = MIN_MAG_MIP_LINEAR;
-	AddressU = Border; // border sampling in U
-	AddressV = Border; // border sampling in V
-	BorderColor = float4(0, 0, 0, 0); // outside of border should be black
-};
-
-SamplerState VolumeSampler
-{
-	Filter = MIN_MAG_MIP_LINEAR;
-	AddressU = Border; // border sampling in U
-	AddressV = Border; // border sampling in V
-	AddressW = Border;
-	BorderColor = float4(0, 0, 0, 0); // outside of border should be black
-};
+SamplerState Sampler : s0;
 
 float4 main(PixelShaderInput input) : SV_TARGET
 {
-  // calculate projective texture coordinates
+  // Calculate projective texture coordinates
 	// used to project the front and back position textures onto the cube
   float2 texC = input.pos.xy /= input.pos.w;
   texC.x = 0.5f * texC.x + 0.5f;
   texC.y = -0.5f * texC.y + 0.5f;
 	
-	float3 front = frontPositionTextures.Sample(FrontSampler, float3(texC, input.rtvId)).xyz;
-	float3 back = backPositionTextures.Sample(BackSampler, float3(texC, input.rtvId)).xyz;
+  float3 front = frontPositionTextures.Sample(Sampler, float3(texC, input.rtvId)).xyz;
+  float3 back = backPositionTextures.Sample(Sampler, float3(texC, input.rtvId)).xyz;
     
   float3 dir = normalize(back - front);
   float3 pos = front;
@@ -89,25 +68,25 @@ float4 main(PixelShaderInput input) : SV_TARGET
   [loop]
   for (uint i = 0; i < c_numIterations; i++)
   {
-		src = volumeTexture.SampleLevel(VolumeSampler, pos, 0.f);
-    src.a *= .1f; //reduce the alpha to have a more transparent result
-									//this needs to be adjusted based on the step size
-									//i.e. the more steps we take, the faster the alpha will grow	
+    src = volumeTexture.SampleLevel(Sampler, pos, 0.f);
+    src.a *= .1f; // Reduce the alpha to have a more transparent result
+									//  this needs to be adjusted based on the step size
+									//  i.e. the more steps we take, the faster the alpha will grow	
 
-		//Front to back blending
-		// dst.rgb = dst.rgb + (1 - dst.a) * src.a * src.rgb
-		// dst.a   = dst.a   + (1 - dst.a) * src.a		
+		// Front to back blending
+		//  dst.rgb = dst.rgb + (1 - dst.a) * src.a * src.rgb
+		//  dst.a   = dst.a   + (1 - dst.a) * src.a		
     src.rgb *= src.a;
     dst += (1.0f - dst.a) * src;
 		
-		//break from the loop when alpha gets high enough
+		// Break from the loop when alpha gets high enough
     if(dst.a >= .95f)
       break;
 		
-		//advance the current position
+		// Advance the current position
     pos.xyz += step;
 		
-		//break if the position is greater than <1, 1, 1>
+		// Break if the position is greater than <1, 1, 1>
     if(pos.x > 1.0f || pos.y > 1.0f || pos.z > 1.0f)
       break;
   }
