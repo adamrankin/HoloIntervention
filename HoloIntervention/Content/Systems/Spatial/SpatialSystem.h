@@ -93,9 +93,6 @@ namespace HoloIntervention
       virtual void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap);
 
     protected:
-      void OnRawCoordinateSystemAdjusted(Windows::Perception::Spatial::SpatialAnchor^ sender, Windows::Perception::Spatial::SpatialAnchorRawCoordinateSystemAdjustedEventArgs^ args);
-
-    protected:
       // Event registration tokens.
       Windows::Foundation::EventRegistrationToken                         m_surfaceObserverEventToken;
 

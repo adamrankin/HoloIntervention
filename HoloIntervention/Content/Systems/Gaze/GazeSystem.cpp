@@ -69,7 +69,6 @@ namespace HoloIntervention
     {
       const float& deltaTime = static_cast<float>(timer.GetElapsedSeconds());
 
-      // TODO : add future kalman filtering to smooth cursor position
       if (IsCursorEnabled())
       {
         float3 outHitPosition;

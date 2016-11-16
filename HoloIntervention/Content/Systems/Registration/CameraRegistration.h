@@ -51,7 +51,7 @@ namespace HoloIntervention
 {
   namespace System
   {
-    class CameraRegistration : public Sound::IVoiceInput
+    class CameraRegistration
     {
       enum State
       {
@@ -72,16 +72,18 @@ namespace HoloIntervention
       CameraRegistration(const std::shared_ptr<DX::DeviceResources>& deviceResources);
       ~CameraRegistration();
 
-      void Update(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem);
+      void Update();
+      Concurrency::task<bool> StopCameraAsync();
+      Concurrency::task<bool> StartCameraAsync();
 
-      virtual void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbacks);
+      Windows::Perception::Spatial::SpatialAnchor^ GetWorldAnchor();
+      void SetWorldAnchor(Windows::Perception::Spatial::SpatialAnchor^ worldAnchor);
+      void ApplyWorldAnchorRawCoordinateSystemAdjusted(const Windows::Foundation::Numerics::float4x4& adjustment);
 
       bool HasRegistration() const;
-      Windows::Foundation::Numerics::float4x4 GetReferenceToHMD() const;
+      Windows::Foundation::Numerics::float4x4 GetTrackerToWorldAnchor() const;
 
     protected:
-      Concurrency::task<void> StopCameraAsync();
-      Concurrency::task<void> StartCameraAsync();
       void ProcessAvailableFrames(Concurrency::cancellation_token token);
       bool CameraRegistration::RetrieveTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame, CameraRegistration::DetectedSpheresWorld& worldResults);
       bool ComputeCircleLocations(Windows::Media::Capture::Frames::VideoMediaFrame^ videoFrame,
@@ -95,6 +97,7 @@ namespace HoloIntervention
                                   cv::Mat& mask,
                                   cv::Mat& cannyOutput,
                                   DetectedSpheresWorld& cameraResults);
+      void OnAnchorRawCoordinateSystemAdjusted(Windows::Perception::Spatial::SpatialAnchor^ anchor, Windows::Perception::Spatial::SpatialAnchorRawCoordinateSystemAdjustedEventArgs^ args);
 
     protected:
       // Cached pointer to device resources.
@@ -102,26 +105,27 @@ namespace HoloIntervention
       std::mutex                                                        m_processorLock;
       std::shared_ptr<Capture::VideoFrameProcessor>                     m_videoFrameProcessor = nullptr;
       Concurrency::task<std::shared_ptr<Capture::VideoFrameProcessor>>* m_createTask = nullptr;
+      std::mutex                                                        m_anchorMutex;
+      Windows::Perception::Spatial::SpatialAnchor^                      m_worldAnchor = nullptr;
 
       // Camera
-      Windows::Perception::Spatial::SpatialCoordinateSystem^            m_worldCoordinateSystem = nullptr;
+      Windows::Foundation::EventRegistrationToken                       m_anchorUpdatedToken;
       std::mutex                                                        m_framesLock;
       Windows::Media::Capture::Frames::MediaFrameReference^             m_currentFrame = nullptr;
       Windows::Media::Capture::Frames::MediaFrameReference^             m_nextFrame = nullptr;
-      DetectionFrames                                                   m_cameraFrameResults;
+      DetectionFrames                                                   m_rawWorldAnchorResults;
 
       // IGT link
       UWPOpenIGTLink::TransformRepository^                              m_transformRepository = ref new UWPOpenIGTLink::TransformRepository();
       std::atomic_bool                                                  m_transformsAvailable = false;
       double                                                            m_latestTimestamp = 0.0;
-      DetectionFrames                                                   m_referenceFrameResults;
+      DetectionFrames                                                   m_trackerFrameResults;
       std::vector<cv::Point3f>                                          m_phantomFiducialCoords;
       std::array<UWPOpenIGTLink::TransformName^, 5>                     m_sphereCoordinateNames;
 
       Concurrency::task<void>*                                          m_workerTask = nullptr;
       Concurrency::cancellation_token_source                            m_tokenSource;
-      Windows::Foundation::Numerics::float4x4                           m_cameraToHMD = Windows::Foundation::Numerics::float4x4::identity();    // column-major order
-      Windows::Foundation::Numerics::float4x4                           m_referenceToHMD = Windows::Foundation::Numerics::float4x4::identity(); // row-major order
+      Windows::Foundation::Numerics::float4x4                           m_trackerToWorldAnchor = Windows::Foundation::Numerics::float4x4::identity(); // row-major order
       std::atomic_bool                                                  m_hasRegistration = false;
 
 

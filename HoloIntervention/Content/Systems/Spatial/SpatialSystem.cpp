@@ -366,18 +366,16 @@ namespace HoloIntervention
         return false;
       }
 
-      XMVECTOR iVec = XMLoadFloat3(&outHitEdge);
-      XMVECTOR jVec = XMLoadFloat3(&outHitNormal);
-      XMVECTOR kVec = XMVector3Cross(iVec, jVec);
-      float4x4 mat(iVec.m128_f32[0], jVec.m128_f32[0], kVec.m128_f32[0], 0.f,
-                   iVec.m128_f32[1], jVec.m128_f32[1], kVec.m128_f32[1], 0.f,
-                   iVec.m128_f32[2], jVec.m128_f32[2], kVec.m128_f32[2], 0.f,
-                   0.f, 0.f, 0.f, 1.f);
-      XMVECTOR quat = XMQuaternionRotationMatrix(XMLoadFloat4x4(&mat));
-      quaternion orientation;
-      XMStoreQuaternion(&orientation, quat);
-
-      SpatialAnchor^ anchor = SpatialAnchor::TryCreateRelativeTo(coordinateSystem, outHitPosition, orientation);
+      float4x4 anchorMatrix = make_float4x4_world(outHitPosition, outHitEdge, -outHitNormal);
+      quaternion rotation;
+      float3 translation;
+      float3 scale;
+      if (!decompose(anchorMatrix, &scale, &rotation, &translation))
+      {
+        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Unable to determine coordinate system of anchor. Please try again.");
+        return false;
+      }
+      SpatialAnchor^ anchor = SpatialAnchor::TryCreateRelativeTo(coordinateSystem, translation, rotation);
 
       if (anchor == nullptr)
       {
@@ -387,11 +385,6 @@ namespace HoloIntervention
 
       std::lock_guard<std::mutex> lock(m_anchorMutex);
       m_spatialAnchors[anchorName] = anchor;
-
-      anchor->RawCoordinateSystemAdjusted +=
-        ref new Windows::Foundation::TypedEventHandler<SpatialAnchor^, SpatialAnchorRawCoordinateSystemAdjustedEventArgs^>(
-          std::bind(&SpatialSystem::OnRawCoordinateSystemAdjusted, this, std::placeholders::_1, std::placeholders::_2)
-        );
 
       HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Anchor " + anchorName + L" created.");
 
@@ -426,15 +419,6 @@ namespace HoloIntervention
     void SpatialSystem::RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap)
     {
 
-    }
-
-    //----------------------------------------------------------------------------
-    void SpatialSystem::OnRawCoordinateSystemAdjusted(SpatialAnchor^ sender, SpatialAnchorRawCoordinateSystemAdjustedEventArgs^ args)
-    {
-      if (m_spatialAnchors.find(L"Registration") != m_spatialAnchors.end() && m_spatialAnchors[L"Registration"] == sender)
-      {
-        // TODO : tag the registration as no longer valid?
-      }
     }
   }
 }

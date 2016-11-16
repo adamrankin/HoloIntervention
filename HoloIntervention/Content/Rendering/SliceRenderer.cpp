@@ -35,6 +35,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // System includes
 #include "NotificationSystem.h"
+#include "RegistrationSystem.h"
 
 using namespace Concurrency;
 using namespace DirectX;
@@ -77,14 +78,15 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    uint32 SliceRenderer::AddSlice(std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, float4x4 embeddedImageTransform)
+    uint32 SliceRenderer::AddSlice(std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, float4x4 imageToTrackerTransform, SpatialCoordinateSystem^ coordSystem)
     {
       std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources);
       entry->m_id = m_nextUnusedSliceId;
 
-      // TODO : apply registration to embedded image transform
-      XMStoreFloat4x4(&entry->m_constantBuffer.worldMatrix, DirectX::XMLoadFloat4x4(&embeddedImageTransform));
-      entry->m_desiredPose = entry->m_currentPose = entry->m_lastPose = embeddedImageTransform;
+      float4x4 trackerToHMD = HoloIntervention::instance()->GetRegistrationSystem().GetTrackerToCoordinateSystemTransformation(coordSystem);
+      float4x4 imageToHMD = imageToTrackerTransform * trackerToHMD;
+      XMStoreFloat4x4(&entry->m_constantBuffer.worldMatrix, DirectX::XMLoadFloat4x4(&imageToHMD));
+      entry->m_desiredPose = entry->m_currentPose = entry->m_lastPose = imageToHMD;
 
       entry->SetImageData(imageData, width, height, pixelFormat);
       entry->m_showing = true;
@@ -97,14 +99,15 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    uint32 SliceRenderer::AddSlice(IBuffer^ imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, float4x4 embeddedImageTransform)
+    uint32 SliceRenderer::AddSlice(IBuffer^ imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, float4x4 imageToTrackerTransform, SpatialCoordinateSystem^ coordSystem)
     {
       std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources);
       entry->m_id = m_nextUnusedSliceId;
 
-      // TODO : apply registration to embedded image transform
-      XMStoreFloat4x4(&entry->m_constantBuffer.worldMatrix, DirectX::XMLoadFloat4x4(&embeddedImageTransform));
-      entry->m_desiredPose = entry->m_currentPose = entry->m_lastPose = embeddedImageTransform;
+      float4x4 trackerToHMD = HoloIntervention::instance()->GetRegistrationSystem().GetTrackerToCoordinateSystemTransformation(coordSystem);
+      float4x4 imageToHMD = imageToTrackerTransform * trackerToHMD;
+      XMStoreFloat4x4(&entry->m_constantBuffer.worldMatrix, DirectX::XMLoadFloat4x4(&imageToHMD));
+      entry->m_desiredPose = entry->m_currentPose = entry->m_lastPose = imageToHMD;
 
       std::shared_ptr<byte> imDataPtr(new byte[imageData->Length], std::default_delete<byte[]>());
       memcpy(imDataPtr.get(), HoloIntervention::GetDataFromIBuffer(imageData), imageData->Length * sizeof(byte));
@@ -137,14 +140,15 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SliceRenderer::UpdateSlice(uint32 sliceId, std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, float4x4 embeddedImageTransform)
+    void SliceRenderer::UpdateSlice(uint32 sliceId, std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, float4x4 imageToTrackerTransform, SpatialCoordinateSystem^ coordSystem)
     {
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
       std::shared_ptr<SliceEntry> entry;
       if (FindSlice(sliceId, entry))
       {
-        // TODO : apply registration to embedded image transform
-        entry->SetDesiredPose(embeddedImageTransform);
+        float4x4 trackerToHMD = HoloIntervention::instance()->GetRegistrationSystem().GetTrackerToCoordinateSystemTransformation(coordSystem);
+        float4x4 imageToHMD = imageToTrackerTransform * trackerToHMD;
+        entry->SetDesiredPose(imageToHMD);
         entry->SetImageData(imageData, width, height, pixelFormat);
       }
     }
@@ -205,17 +209,18 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool SliceRenderer::GetSlicePose(uint32 sliceId, float4x4& outPose)
+    float4x4 SliceRenderer::GetSlicePose(uint32 sliceId) const
     {
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
       std::shared_ptr<SliceEntry> entry;
       if (FindSlice(sliceId, entry))
       {
-        outPose = entry->m_currentPose;
-        return true;
+        return entry->m_currentPose;
       }
 
-      return false;
+      std::stringstream ss;
+      ss << "Unable to locate slice with id: " << sliceId;
+      throw std::exception(ss.str().c_str());
     }
 
     //----------------------------------------------------------------------------
@@ -227,6 +232,21 @@ namespace HoloIntervention
       {
         entry->SetDesiredPose(pose);
       }
+    }
+
+    //----------------------------------------------------------------------------
+    float3 SliceRenderer::GetSliceVelocity(uint32 sliceId) const
+    {
+      std::lock_guard<std::mutex> guard(m_sliceMapMutex);
+      std::shared_ptr<SliceEntry> entry;
+      if (FindSlice(sliceId, entry))
+      {
+        return entry->GetSliceVelocity();
+      }
+
+      std::stringstream ss;
+      ss << "Unable to locate slice with id: " << sliceId;
+      throw std::exception(ss.str().c_str());
     }
 
     //----------------------------------------------------------------------------
@@ -371,7 +391,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool SliceRenderer::FindSlice(uint32 sliceId, std::shared_ptr<SliceEntry>& sliceEntry)
+    bool SliceRenderer::FindSlice(uint32 sliceId, std::shared_ptr<SliceEntry>& sliceEntry) const
     {
       for (auto slice : m_slices)
       {

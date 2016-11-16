@@ -54,25 +54,21 @@ namespace HoloIntervention
       ~SliceRenderer();
 
       uint32 AddSlice();
-      uint32 AddSlice(std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 embeddedImageTransform);
-      uint32 AddSlice(Windows::Storage::Streams::IBuffer^ imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 embeddedImageTransform);
+      uint32 AddSlice(std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 imageToTrackerTransform, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);
+      uint32 AddSlice(Windows::Storage::Streams::IBuffer^ imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 imageToTrackerTransform, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);
       void RemoveSlice(uint32 sliceId);
 
-      void UpdateSlice(uint32 sliceId, std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 embeddedImageTransform);
+      void UpdateSlice(uint32 sliceId, std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 imageToTrackerTransform, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);
 
       void ShowSlice(uint32 sliceId);
       void HideSlice(uint32 sliceId);
       void SetSliceVisible(uint32 sliceId, bool show);
       void SetSliceHeadlocked(uint32 sliceId, bool headlocked);
 
-      // Hard set of the slice pose, slice will jump to the given pose
       void SetSlicePose(uint32 sliceId, const Windows::Foundation::Numerics::float4x4& pose);
-
-      // For holographic system stabilization, the pose of a slice is needed
-      bool GetSlicePose(uint32 sliceId, Windows::Foundation::Numerics::float4x4& outPose);
-
-      // Set the target slice pose, system will smoothly animate the slice to that position
+      Windows::Foundation::Numerics::float4x4 GetSlicePose(uint32 sliceId) const;
       void SetDesiredSlicePose(uint32 sliceId, const Windows::Foundation::Numerics::float4x4& pose);
+      Windows::Foundation::Numerics::float3 GetSliceVelocity(uint32 sliceId) const;
 
       // D3D device related controls
       void CreateDeviceDependentResources();
@@ -84,7 +80,7 @@ namespace HoloIntervention
       static const uint32_t INVALID_SLICE_INDEX = 0;
 
     protected:
-      bool FindSlice(uint32 sliceId, std::shared_ptr<SliceEntry>& sliceEntry);
+      bool FindSlice(uint32 sliceId, std::shared_ptr<SliceEntry>& sliceEntry) const;
 
     protected:
       // Cached pointer to device resources.
@@ -106,7 +102,7 @@ namespace HoloIntervention
       bool                                                m_usingVprtShaders = false;
 
       // Lock protection when accessing image list
-      std::mutex                                          m_sliceMapMutex;
+      mutable std::mutex                                  m_sliceMapMutex;
       SliceList                                           m_slices;
       uint32                                              m_nextUnusedSliceId = 1; // start at 1, 0 is considered invalid
     };

@@ -48,34 +48,38 @@ namespace HoloIntervention
     class RegistrationSystem : public Sound::IVoiceInput
     {
     public:
-      RegistrationSystem(const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer);
+      RegistrationSystem(const std::shared_ptr<DX::DeviceResources>& deviceResources);
       ~RegistrationSystem();
 
-      void Update(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem, Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
+      void Update(DX::StepTimer& timer, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem, Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
 
       Concurrency::task<void> LoadAppStateAsync();
 
       virtual void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbacks);
 
-      Windows::Foundation::Numerics::float4x4 GetReferenceToHMD();
+      Windows::Foundation::Numerics::float4x4 GetTrackerToCoordinateSystemTransformation(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem);
 
     protected:
       // Cached references
       std::shared_ptr<DX::DeviceResources>            m_deviceResources;
-      DX::StepTimer&                                  m_stepTimer;
 
       // Anchor variables
-      bool                                            m_regAnchorRequested = false;
+      std::atomic_bool                                m_registrationActive = false;
+      std::atomic_bool                                m_regAnchorRequested = false;
       uint64_t                                        m_regAnchorModelId = 0;
       std::shared_ptr<Rendering::ModelEntry>          m_regAnchorModel = nullptr;
+      Windows::Foundation::Numerics::float4x4         m_anchorModelCurrentWorld = Windows::Foundation::Numerics::float4x4::identity();
+      Windows::Foundation::Numerics::float4x4         m_anchorModelDesiredWorld = Windows::Foundation::Numerics::float4x4::identity();
+      float                                           m_lerpTimer = 0.f;
 
       // Registration methods
       std::shared_ptr<CameraRegistration>             m_cameraRegistration;
       Windows::Foundation::Numerics::float4x4         m_cachedRegistrationTransform = Windows::Foundation::Numerics::float4x4::identity();
 
       // Constants
-      static Platform::String^                        ANCHOR_NAME;
-      static const std::wstring                       ANCHOR_MODEL_FILENAME;
+      static Platform::String^                        REGISTRATION_ANCHOR_NAME;
+      static const std::wstring                       REGISTRATION_ANCHOR_MODEL_FILENAME;
+      static const float                              REGISTRATION_ANCHOR_MODEL_LERP_RATE;
     };
   }
 }

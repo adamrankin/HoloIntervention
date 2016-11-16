@@ -26,6 +26,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "AppView.h"
 #include "HoloInterventionCore.h"
 
+// Common includes
+#include "DeviceResources.h"
+
 // Windows includes
 #include <ppltasks.h>
 

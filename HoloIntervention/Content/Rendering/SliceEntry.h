@@ -59,7 +59,7 @@ namespace HoloIntervention
       std::shared_ptr<byte> GetImageData() const;
 
       void SetDesiredPose(const Windows::Foundation::Numerics::float4x4& matrix);
-
+      Windows::Foundation::Numerics::float3 GetSliceVelocity() const;
       void SetHeadlocked(bool headLocked);
 
       // D3D device related controls
@@ -72,6 +72,7 @@ namespace HoloIntervention
       Windows::Foundation::Numerics::float4x4             m_desiredPose = Windows::Foundation::Numerics::float4x4::identity();
       Windows::Foundation::Numerics::float4x4             m_currentPose = Windows::Foundation::Numerics::float4x4::identity();
       Windows::Foundation::Numerics::float4x4             m_lastPose = Windows::Foundation::Numerics::float4x4::identity();
+      Windows::Foundation::Numerics::float3               m_velocity = { 0.f, 0.f, 0.f };
       DXGI_FORMAT                                         m_pixelFormat = DXGI_FORMAT_UNKNOWN;
 
     protected:

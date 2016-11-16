@@ -66,7 +66,7 @@ namespace HoloIntervention
       VolumeRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources);
       ~VolumeRenderer();
 
-      void Update(UWPOpenIGTLink::TrackedFrame^ frame, const DX::StepTimer& timer, DX::CameraResources* cameraResources);
+      void Update(UWPOpenIGTLink::TrackedFrame^ frame, const DX::StepTimer& timer, DX::CameraResources* cameraResources, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);
       void Render();
 
       Concurrency::task<void> SetTransferFunctionTypeAsync(TransferFunctionType type, const std::vector<Windows::Foundation::Numerics::float2>& controlPoints);

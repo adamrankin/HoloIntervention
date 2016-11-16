@@ -116,7 +116,7 @@ namespace HoloIntervention
     // Model renderer must come before the following systems
     m_gazeSystem = std::make_unique<System::GazeSystem>();
     m_toolSystem = std::make_unique<System::ToolSystem>();
-    m_registrationSystem = std::make_unique<System::RegistrationSystem>(m_deviceResources, m_timer);
+    m_registrationSystem = std::make_unique<System::RegistrationSystem>(m_deviceResources);
     m_imagingSystem = std::make_unique<System::ImagingSystem>();
 
     // TODO : remove temp code
@@ -225,9 +225,10 @@ namespace HoloIntervention
         if (m_igtLinkIF->GetTrackedFrame(m_latestFrame, &m_latestTimestamp))
         {
           m_latestTimestamp = m_latestFrame->Timestamp;
-          m_volumeRenderer->Update(m_latestFrame, m_timer, cameraResources);
-          m_imagingSystem->Update(m_latestFrame, m_timer);
-          m_toolSystem->Update(m_latestFrame, m_timer);
+          // TODO : extract system logic from volume renderer and move to imaging system
+          m_volumeRenderer->Update(m_latestFrame, m_timer, cameraResources, currentCoordinateSystem);
+          m_imagingSystem->Update(m_latestFrame, m_timer, currentCoordinateSystem);
+          m_toolSystem->Update(m_latestFrame, m_timer, currentCoordinateSystem);
         }
       }
 
@@ -235,7 +236,7 @@ namespace HoloIntervention
 
       if (pose != nullptr)
       {
-        m_registrationSystem->Update(currentCoordinateSystem, pose);
+        m_registrationSystem->Update(m_timer, currentCoordinateSystem, pose);
         m_gazeSystem->Update(m_timer, currentCoordinateSystem, pose);
         m_soundManager->Update(m_timer, currentCoordinateSystem);
         m_sliceRenderer->Update(pose, m_timer);
@@ -517,19 +518,29 @@ namespace HoloIntervention
       }
       else if (m_imagingSystem->HasSlice())
       {
-        float4x4 mat = m_imagingSystem->GetSlicePose();
+        float4x4 mat;
+        try
+        {
+          mat = m_imagingSystem->GetSlicePose();
+        }
+        catch (const std::exception&) { break; }
 
-        SimpleMath::Matrix matrix;
-        XMStoreFloat4x4(&matrix, XMMatrixTranspose(XMLoadFloat4x4(&mat)));
-        SimpleMath::Vector3 translation;
-        SimpleMath::Vector3 scale;
-        SimpleMath::Quaternion rotation;
-        matrix.Decompose(scale, rotation, translation);
+        float3 translation;
+        float3 scale;
+        quaternion rotation;
+        decompose(mat, &scale, &rotation, &translation);
 
         focusPointPosition = { translation.x, translation.y, translation.z };
         focusPointNormal = (focusPointPosition == float3(0.f)) ? float3(0.f, 0.f, 1.f) : -normalize(focusPointPosition);
-        // TODO : store velocity of slice for stabilization?
-        focusPointVelocity = float3(0.f);
+        try
+        {
+          focusPointVelocity = m_imagingSystem->GetSliceVelocity();
+        }
+        catch (const std::exception&)
+        {
+          focusPointVelocity = { 0.f, 0.f, 0.f };
+        }
+
       }
       else if (m_gazeSystem->IsCursorEnabled() && m_gazeSystem->GetHitNormal() != float3::zero())
       {

@@ -24,8 +24,11 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "pch.h"
 #include "AppView.h"
-#include "Common.h"
 #include "RegistrationSystem.h"
+
+// Common includes
+#include "Common.h"
+#include "StepTimer.h"
 
 // Rendering includes
 #include "ModelRenderer.h"
@@ -50,16 +53,16 @@ namespace HoloIntervention
 {
   namespace System
   {
-    Platform::String^ RegistrationSystem::ANCHOR_NAME = ref new Platform::String(L"Registration");
-    const std::wstring RegistrationSystem::ANCHOR_MODEL_FILENAME = L"Assets/Models/anchor.cmo";
+    Platform::String^ RegistrationSystem::REGISTRATION_ANCHOR_NAME = ref new Platform::String(L"Registration");
+    const std::wstring RegistrationSystem::REGISTRATION_ANCHOR_MODEL_FILENAME = L"Assets/Models/anchor.cmo";
+    const float RegistrationSystem::REGISTRATION_ANCHOR_MODEL_LERP_RATE = 4.f;
 
     //----------------------------------------------------------------------------
-    RegistrationSystem::RegistrationSystem(const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer)
+    RegistrationSystem::RegistrationSystem(const std::shared_ptr<DX::DeviceResources>& deviceResources)
       : m_deviceResources(deviceResources)
-      , m_stepTimer(stepTimer)
       , m_cameraRegistration(std::make_shared<CameraRegistration>(deviceResources))
     {
-      m_regAnchorModelId = HoloIntervention::instance()->GetModelRenderer().AddModel(ANCHOR_MODEL_FILENAME);
+      m_regAnchorModelId = HoloIntervention::instance()->GetModelRenderer().AddModel(REGISTRATION_ANCHOR_MODEL_FILENAME);
       if (m_regAnchorModelId != Rendering::INVALID_MODEL_ENTRY)
       {
         m_regAnchorModel = HoloIntervention::instance()->GetModelRenderer().GetModel(m_regAnchorModelId);
@@ -96,37 +99,47 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void RegistrationSystem::Update(SpatialCoordinateSystem^ coordinateSystem, SpatialPointerPose^ headPose)
+    void RegistrationSystem::Update(DX::StepTimer& timer, SpatialCoordinateSystem^ coordinateSystem, SpatialPointerPose^ headPose)
     {
       // Anchor placement logic
       if (m_regAnchorRequested)
       {
-        if (HoloIntervention::instance()->GetSpatialSystem().DropAnchorAtIntersectionHit(ANCHOR_NAME, coordinateSystem, headPose))
+        if (HoloIntervention::instance()->GetSpatialSystem().DropAnchorAtIntersectionHit(REGISTRATION_ANCHOR_NAME, coordinateSystem, headPose))
         {
-          m_regAnchorRequested = false;
           if (m_regAnchorModel != nullptr)
           {
             m_regAnchorModel->SetVisible(true);
+            auto anchor = HoloIntervention::instance()->GetSpatialSystem().GetAnchor(REGISTRATION_ANCHOR_NAME);
+            m_cameraRegistration->SetWorldAnchor(anchor);
           }
 
           HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Anchor created.");
         }
+        m_regAnchorRequested = false;
       }
 
-      // Anchor position update logic
+      // Anchor model position update logic
       if (HoloIntervention::instance()->GetSpatialSystem().HasAnchor(L"Registration"))
       {
-        auto transformContainer = HoloIntervention::instance()->GetSpatialSystem().GetAnchor(ANCHOR_NAME)->CoordinateSystem->TryGetTransformTo(coordinateSystem);
+        auto transformContainer = HoloIntervention::instance()->GetSpatialSystem().GetAnchor(REGISTRATION_ANCHOR_NAME)->CoordinateSystem->TryGetTransformTo(coordinateSystem);
         if (transformContainer != nullptr)
         {
-          float4x4 anchorToWorld = transformContainer->Value;
+          m_anchorModelDesiredWorld = transformContainer->Value;
+
+          const float& deltaTime = static_cast<float>(timer.GetElapsedSeconds());
+
+          // Use linear interpolation to smooth the pose over time
+          float4x4 smoothedPose = lerp(m_anchorModelCurrentWorld, m_anchorModelDesiredWorld, deltaTime * REGISTRATION_ANCHOR_MODEL_LERP_RATE);
+
+          // This will be used as the translation component of the hologram's model transform.
+          m_anchorModelCurrentWorld = smoothedPose;
 
           // Coordinate system has orientation and position
-          m_regAnchorModel->SetWorld(anchorToWorld);
+          m_regAnchorModel->SetWorld(m_anchorModelCurrentWorld);
         }
       }
 
-      m_cameraRegistration->Update(coordinateSystem);
+      m_cameraRegistration->Update();
     }
 
     //----------------------------------------------------------------------------
@@ -134,7 +147,7 @@ namespace HoloIntervention
     {
       return create_task([ = ]()
       {
-        if (HoloIntervention::instance()->GetSpatialSystem().HasAnchor(ANCHOR_NAME))
+        if (HoloIntervention::instance()->GetSpatialSystem().HasAnchor(REGISTRATION_ANCHOR_NAME))
         {
           m_regAnchorModel->SetVisible(true);
         }
@@ -144,8 +157,6 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void RegistrationSystem::RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap)
     {
-      m_cameraRegistration->RegisterVoiceCallbacks(callbackMap);
-
       callbackMap[L"drop anchor"] = [this](SpeechRecognitionResult ^ result)
       {
         m_regAnchorRequested = true;
@@ -157,22 +168,62 @@ namespace HoloIntervention
         {
           m_regAnchorModel->SetVisible(false);
         }
-        if (HoloIntervention::instance()->GetSpatialSystem().RemoveAnchor(ANCHOR_NAME) == 1)
+        if (HoloIntervention::instance()->GetSpatialSystem().RemoveAnchor(REGISTRATION_ANCHOR_NAME) == 1)
         {
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Anchor \"" + ANCHOR_NAME + "\" removed.");
+          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Anchor \"" + REGISTRATION_ANCHOR_NAME + "\" removed.");
         }
+      };
+
+      callbackMap[L"start registration"] = [this](SpeechRecognitionResult ^ result)
+      {
+        if (m_registrationActive)
+        {
+          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Registration already running.");
+          return;
+        }
+
+        if (m_cameraRegistration->GetWorldAnchor() == nullptr)
+        {
+          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Anchor required. Please place an anchor with 'drop anchor'.");
+          return;
+        }
+
+        m_cameraRegistration->StartCameraAsync().then([this](bool result)
+        {
+          if (!result)
+          {
+            return;
+          }
+          m_registrationActive = true;
+        });
+      };
+
+      callbackMap[L"stop registration"] = [this](SpeechRecognitionResult ^ result)
+      {
+        m_cameraRegistration->StopCameraAsync().then([this](bool result)
+        {
+          if (result)
+          {
+            m_registrationActive = false;
+          }
+        });
       };
     }
 
     //----------------------------------------------------------------------------
-    float4x4 RegistrationSystem::GetReferenceToHMD()
+    float4x4 RegistrationSystem::GetTrackerToCoordinateSystemTransformation(SpatialCoordinateSystem^ requestedCoordinateSystem)
     {
-      if (m_cameraRegistration->HasRegistration())
+      auto worldAnchor = m_cameraRegistration->GetWorldAnchor();
+      auto trackerToWorldAnchor = m_cameraRegistration->GetTrackerToWorldAnchor();
+      try
       {
-        m_cachedRegistrationTransform = m_cameraRegistration->GetReferenceToHMD();
+        Platform::IBox<float4x4>^ worldAnchorToRequested = worldAnchor->CoordinateSystem->TryGetTransformTo(requestedCoordinateSystem);
+        return trackerToWorldAnchor * worldAnchorToRequested->Value;
       }
-
-      return m_cachedRegistrationTransform;
+      catch (Platform::Exception^ e)
+      {
+        throw new std::exception("Unable to relate world anchor to requested coordinate system.");
+      }
     }
   }
 }

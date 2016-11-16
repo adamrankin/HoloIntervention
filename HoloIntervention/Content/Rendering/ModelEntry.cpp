@@ -25,13 +25,14 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "pch.h"
 #include "ModelEntry.h"
 
+// Common includes
+#include <DeviceResources.h>
+#include <StepTimer.h>
+
 // DirectXTK includes
 #include <DirectXHelper.h>
 #include <Effects.h>
 #include <InstancedEffects.h>
-
-// Windows includes
-#include <ppltasks.h>
 
 // std includes
 #include <algorithm>
@@ -115,13 +116,10 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ModelEntry::Render()
     {
-      // Loading is asynchronous. Resources must be created before drawing can occur.
       if (!m_loadingComplete || !m_visible)
       {
         return;
       }
-
-      // TODO : check to see if the model is in front of the camera...
 
       const auto context = m_deviceResources->GetD3DDeviceContext();
 

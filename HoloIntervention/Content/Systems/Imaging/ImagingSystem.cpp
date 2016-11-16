@@ -58,17 +58,17 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ImagingSystem::Update(UWPOpenIGTLink::TrackedFrame^ frame, const DX::StepTimer& timer)
+    void ImagingSystem::Update(UWPOpenIGTLink::TrackedFrame^ frame, const DX::StepTimer& timer, SpatialCoordinateSystem^ coordSystem)
     {
       if (frame->HasImage())
       {
         if (frame->FrameSize->GetAt(2) == 1)
         {
-          Process2DFrame(frame);
+          Process2DFrame(frame, coordSystem);
         }
         else if (frame->FrameSize->GetAt(2) > 1)
         {
-          Process3DFrame(frame);
+          Process3DFrame(frame, coordSystem);
         }
       }
     }
@@ -82,9 +82,27 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float4x4 ImagingSystem::GetSlicePose() const
     {
-      float4x4 mat(float4x4::identity());
-      HoloIntervention::instance()->GetSliceRenderer().GetSlicePose(m_sliceToken, mat);
-      return mat;
+      try
+      {
+        return HoloIntervention::instance()->GetSliceRenderer().GetSlicePose(m_sliceToken);
+      }
+      catch (const std::exception&)
+      {
+        throw std::exception("Unable to retrieve slice pose.");
+      }
+    }
+
+    //----------------------------------------------------------------------------
+    float3 ImagingSystem::GetSliceVelocity() const
+    {
+      try
+      {
+        return HoloIntervention::instance()->GetSliceRenderer().GetSliceVelocity(m_sliceToken);
+      }
+      catch (const std::exception&)
+      {
+        throw std::exception("Unable to retrieve slice velocity.");
+      }
     }
 
     //----------------------------------------------------------------------------
@@ -123,7 +141,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ImagingSystem::Process2DFrame(UWPOpenIGTLink::TrackedFrame^ frame)
+    void ImagingSystem::Process2DFrame(UWPOpenIGTLink::TrackedFrame^ frame, SpatialCoordinateSystem^ coordSystem)
     {
       if (m_sliceToken == Rendering::SliceRenderer::INVALID_SLICE_INDEX)
       {
@@ -132,7 +150,8 @@ namespace HoloIntervention
                        frame->FrameSize->GetAt(0),
                        frame->FrameSize->GetAt(1),
                        (DXGI_FORMAT)frame->PixelFormat,
-                       frame->EmbeddedImageTransform);
+                       transpose(frame->EmbeddedImageTransform),
+                       coordSystem);
       }
       else
       {
@@ -141,12 +160,13 @@ namespace HoloIntervention
             frame->Width,
             frame->Height,
             (DXGI_FORMAT)frame->PixelFormat,
-            frame->EmbeddedImageTransform);
+            transpose(frame->EmbeddedImageTransform),
+            coordSystem);
       }
     }
 
     //----------------------------------------------------------------------------
-    void ImagingSystem::Process3DFrame(UWPOpenIGTLink::TrackedFrame^ frame)
+    void ImagingSystem::Process3DFrame(UWPOpenIGTLink::TrackedFrame^ frame, SpatialCoordinateSystem^ coordSystem)
     {
 
     }

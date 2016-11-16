@@ -93,6 +93,13 @@ namespace HoloIntervention
       float3 currentTranslation;
       decompose(m_currentPose, &currentScale, &currentRotation, &currentTranslation);
 
+      float3 lastScale;
+      quaternion lastRotation;
+      float3 lastTranslation;
+      decompose(m_currentPose, &lastScale, &lastRotation, &lastTranslation);
+
+      const float3 deltaPosition = currentTranslation - lastTranslation; // meters
+      m_velocity = deltaPosition * (1.f / deltaTime); // meters per second
       m_lastPose = m_currentPose;
 
       // Calculate new smoothed currentPose
@@ -201,6 +208,12 @@ namespace HoloIntervention
     void SliceEntry::SetDesiredPose(const Windows::Foundation::Numerics::float4x4& matrix)
     {
       m_desiredPose = matrix;
+    }
+
+    //----------------------------------------------------------------------------
+    float3 SliceEntry::GetSliceVelocity() const
+    {
+      return m_velocity;
     }
 
     //----------------------------------------------------------------------------

@@ -24,10 +24,11 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
-#include "DeviceResources.h"
 #include "InstancedEffectFactory.h"
 #include "InstancedEffects.h"
-#include "StepTimer.h"
+
+// Common includes
+#include "CameraResources.h"
 
 // DirectXTK includes
 #include <CommonStates.h>
@@ -35,9 +36,11 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <Model.h>
 #include <SimpleMath.h>
 
-using namespace Microsoft::WRL;
-using namespace Windows::Foundation::Numerics;
-using namespace Windows::UI::Input::Spatial;
+namespace DX
+{
+  class DeviceResources;
+  class StepTimer;
+}
 
 namespace HoloIntervention
 {
@@ -69,7 +72,7 @@ namespace HoloIntervention
       bool IsVisible() const;
 
       // Model pose control
-      void SetWorld(const float4x4& world);
+      void SetWorld(const Windows::Foundation::Numerics::float4x4& world);
 
       // Accessors
       uint64 GetId() const;
@@ -95,19 +98,19 @@ namespace HoloIntervention
       std::unique_ptr<DirectX::InstancedEffectFactory>    m_effectFactory = nullptr;
       std::shared_ptr<DirectX::Model>                     m_model = nullptr;
       std::wstring                                        m_assetLocation;
-      DirectX::XMFLOAT3                                   m_defaultColour;
+      Windows::Foundation::Numerics::float3               m_defaultColour;
 
       // Cached eye view projection to pass to IEffect system
       DX::ViewProjection                                  m_viewProjection;
-      float4x4                                            m_worldMatrix = float4x4::identity();
+      Windows::Foundation::Numerics::float4x4             m_worldMatrix = Windows::Foundation::Numerics::float4x4::identity();
 
       // Model related behavior
-      bool                                                m_visible = false;
+      std::atomic_bool                                    m_visible = false;
       uint64                                              m_id = INVALID_MODEL_ENTRY;
       ModelRenderingState                                 m_renderingState = RENDERING_DEFAULT;
 
       // Variables used with the rendering loop.
-      bool                                                m_loadingComplete = false;
+      std::atomic_bool                                    m_loadingComplete = false;
     };
   }
 }

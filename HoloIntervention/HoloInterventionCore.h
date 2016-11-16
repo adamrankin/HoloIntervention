@@ -23,8 +23,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-// Local includes
+// Common includes
 #include "StepTimer.h"
+#include "DeviceResources.h"
 
 // std includes
 #include <vector>
@@ -33,11 +34,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <collection.h>
 
 // Forward declarations
-namespace DX
-{
-  class DeviceResources;
-}
-
 namespace HoloIntervention
 {
   namespace System

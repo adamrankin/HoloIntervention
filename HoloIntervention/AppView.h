@@ -24,8 +24,12 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
-#include "DeviceResources.h"
 #include "HoloInterventionCore.h"
+
+namespace DX
+{
+  class DeviceResources;
+}
 
 namespace HoloIntervention
 {

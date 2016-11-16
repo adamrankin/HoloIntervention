@@ -96,24 +96,9 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void CameraRegistration::Update(SpatialCoordinateSystem^ coordinateSystem)
+    void CameraRegistration::Update()
     {
-      m_worldCoordinateSystem = coordinateSystem;
-    }
-
-    //----------------------------------------------------------------------------
-    void CameraRegistration::RegisterVoiceCallbacks(Sound::VoiceInputCallbackMap& callbackMap)
-    {
-      callbackMap[L"start camera"] = [this](SpeechRecognitionResult ^ result)
-      {
-        StartCameraAsync();
-        return;
-      };
-
-      callbackMap[L"stop camera"] = [this](SpeechRecognitionResult ^ result)
-      {
-        StopCameraAsync();
-      };
+      // Nothing to do, all processing is asynchronous
     }
 
     //----------------------------------------------------------------------------
@@ -123,25 +108,22 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    Windows::Foundation::Numerics::float4x4 CameraRegistration::GetReferenceToHMD() const
+    Windows::Foundation::Numerics::float4x4 CameraRegistration::GetTrackerToWorldAnchor() const
     {
-      return m_referenceToHMD;
+      return m_trackerToWorldAnchor;
     }
 
     //----------------------------------------------------------------------------
-    task<void> CameraRegistration::StopCameraAsync()
+    task<bool> CameraRegistration::StopCameraAsync()
     {
       if (m_videoFrameProcessor != nullptr && m_videoFrameProcessor->IsStarted())
       {
         m_tokenSource.cancel();
-        std::lock_guard<std::mutex> frameGuard(m_framesLock);
         std::lock_guard<std::mutex> processorGuard(m_processorLock);
-        return m_videoFrameProcessor->StopAsync().then([this]()
+        return m_videoFrameProcessor->StopAsync().then([this]() -> bool
         {
           m_videoFrameProcessor = nullptr;
           m_createTask = nullptr;
-          m_cameraFrameResults.clear();
-          m_referenceFrameResults.clear();
           m_phantomFiducialCoords.clear();
           m_transformsAvailable = false;
           m_latestTimestamp = 0.0;
@@ -150,21 +132,26 @@ namespace HoloIntervention
           m_nextFrame = nullptr;
           m_workerTask = nullptr;
           HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Capturing stopped.");
+          return true;
         });
       }
-      return create_task([]() {});
+      return create_task([]() {return true; });
     }
 
     //----------------------------------------------------------------------------
-    task<void> CameraRegistration::StartCameraAsync()
+    task<bool> CameraRegistration::StartCameraAsync()
     {
-      return StopCameraAsync().then([this]()
+      std::lock_guard<std::mutex> frameGuard(m_framesLock);
+      m_rawWorldAnchorResults.clear();
+      m_trackerFrameResults.clear();
+
+      return StopCameraAsync().then([this](bool result)
       {
         std::lock_guard<std::mutex> guard(m_processorLock);
         if (m_videoFrameProcessor == nullptr)
         {
           m_createTask = &Capture::VideoFrameProcessor::CreateAsync();
-          m_createTask->then([this](std::shared_ptr<Capture::VideoFrameProcessor> processor)
+          return m_createTask->then([this](std::shared_ptr<Capture::VideoFrameProcessor> processor)
           {
             std::lock_guard<std::mutex> guard(m_processorLock);
             if (processor == nullptr)
@@ -202,11 +189,64 @@ namespace HoloIntervention
                 {
                   m_workerTask = nullptr;
                 });
+                return true;
               }
+              return false;
             });
           });
         }
+        else
+        {
+          return m_videoFrameProcessor->StartAsync().then([this](MediaFrameReaderStartStatus status) -> bool
+          {
+            return status == MediaFrameReaderStartStatus::Success;
+          });
+        }
       });
+    }
+
+    //----------------------------------------------------------------------------
+    Windows::Perception::Spatial::SpatialAnchor^ CameraRegistration::GetWorldAnchor()
+    {
+      std::lock_guard<std::mutex> guard(m_anchorMutex);
+      return m_worldAnchor;
+    }
+
+    //----------------------------------------------------------------------------
+    void CameraRegistration::SetWorldAnchor(Windows::Perception::Spatial::SpatialAnchor^ worldAnchor)
+    {
+      std::lock_guard<std::mutex> guard(m_anchorMutex);
+      if (m_workerTask != nullptr)
+      {
+        // World anchor changed during registration, invalidate the registration session.
+        StopCameraAsync().then([this](bool result)
+        {
+          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"World anchor changed during registration. Aborting... please restart.");
+          return;
+        });
+      }
+
+      if (m_hasRegistration && m_worldAnchor != nullptr)
+      {
+        try
+        {
+          auto worldAnchorToNewAnchorBox = m_worldAnchor->CoordinateSystem->TryGetTransformTo(worldAnchor->CoordinateSystem);
+          // If possible, update the registration to be referential to the new world anchor
+          m_trackerToWorldAnchor = m_trackerToWorldAnchor * worldAnchorToNewAnchorBox->Value;
+        }
+        catch (Platform::Exception^ e) {}
+      }
+
+      if (m_worldAnchor != worldAnchor && m_worldAnchor != nullptr)
+      {
+        m_worldAnchor->RawCoordinateSystemAdjusted -= m_anchorUpdatedToken;
+      }
+
+      m_worldAnchor = worldAnchor;
+      // Register for RawCoordinateSystemAdjusted event so that we can update the registration as needed
+      m_anchorUpdatedToken = m_worldAnchor->RawCoordinateSystemAdjusted +=
+                               ref new Windows::Foundation::TypedEventHandler<SpatialAnchor^, SpatialAnchorRawCoordinateSystemAdjustedEventArgs^>(
+                                 std::bind(&CameraRegistration::OnAnchorRawCoordinateSystemAdjusted, this, std::placeholders::_1, std::placeholders::_2));
     }
 
     //----------------------------------------------------------------------------
@@ -238,44 +278,62 @@ namespace HoloIntervention
           continue;
         }
 
+        std::lock_guard<std::mutex> frameGuard(m_framesLock);
         UWPOpenIGTLink::TrackedFrame^ trackedFrame(nullptr);
         MediaFrameReference^ cameraFrame(m_videoFrameProcessor->GetLatestFrame());
         if (HoloIntervention::instance()->GetIGTLink().GetTrackedFrame(l_latestTrackedFrame, &m_latestTimestamp) &&
             cameraFrame != nullptr &&
             cameraFrame != l_latestCameraFrame)
         {
+          float4x4 cameraToRawWorldAnchor = float4x4::identity();
+
           m_latestTimestamp = l_latestTrackedFrame->Timestamp;
           l_latestCameraFrame = cameraFrame;
-          if (m_worldCoordinateSystem != nullptr && l_latestCameraFrame->CoordinateSystem != nullptr)
+          if (l_latestCameraFrame->CoordinateSystem != nullptr)
           {
+            std::lock_guard<std::mutex> guard(m_anchorMutex);
+            Platform::IBox<float4x4>^ cameraToRawWorldAnchorBox;
             try
             {
-              Platform::IBox<float4x4>^ transformBox = l_latestCameraFrame->CoordinateSystem->TryGetTransformTo(m_worldCoordinateSystem);
-              if (transformBox != nullptr)
-              {
-                m_cameraToHMD = transformBox->Value;
-              }
+              cameraToRawWorldAnchorBox = l_latestCameraFrame->CoordinateSystem->TryGetTransformTo(m_worldAnchor->RawCoordinateSystem);
             }
             catch (Platform::Exception^ e)
             {
-              OutputDebugStringW(L"Cannot retrieve camera to world transformation.\n");
-              OutputDebugStringW(e->Message->Data());
+              OutputDebugStringW((L"Exception: " + e->Message)->Data());
               continue;
+            }
+            if (cameraToRawWorldAnchorBox != nullptr)
+            {
+              cameraToRawWorldAnchor = cameraToRawWorldAnchorBox->Value;
             }
           }
 
-          DetectedSpheresWorld referenceResults;
-          if (!RetrieveTrackerFrameLocations(l_latestTrackedFrame, referenceResults))
+          if (cameraToRawWorldAnchor == float4x4::identity())
+          {
+            continue;
+          }
+
+          DetectedSpheresWorld trackerResults;
+          if (!RetrieveTrackerFrameLocations(l_latestTrackedFrame, trackerResults))
           {
             continue;
           }
 
           DetectedSpheresWorld cameraResults;
-          if (!referenceResults.empty() && ComputeCircleLocations(l_latestCameraFrame->VideoMediaFrame, l_initialized, l_height, l_width, l_hsv, l_redMat, l_redMatWrap, l_imageRGB, l_mask, l_canny_output, cameraResults))
+          if (!trackerResults.empty() && ComputeCircleLocations(l_latestCameraFrame->VideoMediaFrame, l_initialized, l_height, l_width, l_hsv, l_redMat, l_redMatWrap, l_imageRGB, l_mask, l_canny_output, cameraResults))
           {
-            m_cameraFrameResults.push_back(cameraResults);
-            m_referenceFrameResults.push_back(referenceResults);
-            HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Acquired " + m_cameraFrameResults.size().ToString() + L" frame" + (m_cameraFrameResults.size() > 1 ? L"s" : L"") + L".",  0.5);
+            // Results are in camera view coordinate system, transform to world anchor coordinate system
+            std::vector<cv::Point3f> worldAnchorResults;
+            for (auto& cameraPoint : cameraResults)
+            {
+              float3 cameraPointNumerics(cameraPoint.x, cameraPoint.y, cameraPoint.z);
+              float3 point = transform(cameraPointNumerics, cameraToRawWorldAnchor);
+              worldAnchorResults.push_back(cv::Point3f(point.x, point.y, point.z));
+            }
+
+            m_rawWorldAnchorResults.push_back(worldAnchorResults);
+            m_trackerFrameResults.push_back(trackerResults);
+            HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Acquired " + m_rawWorldAnchorResults.size().ToString() + L" frame" + (m_rawWorldAnchorResults.size() > 1 ? L"s" : L"") + L".",  0.5);
           }
         }
         else
@@ -284,33 +342,33 @@ namespace HoloIntervention
           std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
 
-        if (m_cameraFrameResults.size() == NUMBER_OF_FRAMES_FOR_CALIBRATION)
+        if (m_rawWorldAnchorResults.size() == NUMBER_OF_FRAMES_FOR_CALIBRATION)
         {
           HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Calculating registration...");
-          DetectedSpheresWorld referenceResults;
-          DetectedSpheresWorld cameraResults;
-          for (auto& frame : m_referenceFrameResults)
+          DetectedSpheresWorld trackerResults;
+          DetectedSpheresWorld worldAnchorResults;
+          for (auto& frame : m_trackerFrameResults)
           {
             for (auto& sphereWorld : frame)
             {
-              referenceResults.push_back(sphereWorld);
+              trackerResults.push_back(sphereWorld);
             }
           }
-          for (auto& frame : m_cameraFrameResults)
+          for (auto& frame : m_rawWorldAnchorResults)
           {
             for (auto& sphereWorld : frame)
             {
-              cameraResults.push_back(sphereWorld);
+              worldAnchorResults.push_back(sphereWorld);
             }
           }
-          m_landmarkRegistration->SetSourceLandmarks(referenceResults);
-          m_landmarkRegistration->SetTargetLandmarks(cameraResults);
+          m_landmarkRegistration->SetSourceLandmarks(trackerResults);
+          m_landmarkRegistration->SetTargetLandmarks(worldAnchorResults);
 
           std::atomic_bool calcFinished(false);
           bool resultValid(false);
-          m_landmarkRegistration->CalculateTransformationAsync().then([this, &calcFinished, &resultValid](float4x4 referenceToCamera)
+          m_landmarkRegistration->CalculateTransformationAsync().then([this, &calcFinished, &resultValid](float4x4 trackerToWorldAnchor)
           {
-            if (referenceToCamera == float4x4::identity())
+            if (trackerToWorldAnchor == float4x4::identity())
             {
               resultValid = false;
             }
@@ -318,7 +376,7 @@ namespace HoloIntervention
             {
               m_hasRegistration = true;
               resultValid = true;
-              m_referenceToHMD = transpose(m_cameraToHMD) * referenceToCamera;
+              m_trackerToWorldAnchor = trackerToWorldAnchor;
             }
             calcFinished = true;
           });
@@ -339,8 +397,8 @@ namespace HoloIntervention
             StopCameraAsync();
           }
 
-          m_cameraFrameResults.clear();
-          m_referenceFrameResults.clear();
+          m_rawWorldAnchorResults.clear();
+          m_trackerFrameResults.clear();
         }
       }
     }
@@ -377,6 +435,7 @@ namespace HoloIntervention
       catch (Platform::Exception^ e)
       {
         OutputDebugStringW(e->Message->Data());
+        return false;
       }
 
       bool result(false);
@@ -567,6 +626,32 @@ done:
       }
 
       return true;
+    }
+
+    //----------------------------------------------------------------------------
+    void CameraRegistration::OnAnchorRawCoordinateSystemAdjusted(Windows::Perception::Spatial::SpatialAnchor^ anchor, Windows::Perception::Spatial::SpatialAnchorRawCoordinateSystemAdjustedEventArgs^ args)
+    {
+      if (m_hasRegistration)
+      {
+        m_trackerToWorldAnchor = m_trackerToWorldAnchor * args->OldRawCoordinateSystemToNewRawCoordinateSystemTransform;
+      }
+
+      if (m_workerTask != nullptr)
+      {
+        // Registration is active, apply this to all m_rawWorldAnchorResults results, to adjust raw anchor coordinate system that they depend on
+        std::lock_guard<std::mutex> frameGuard(m_framesLock);
+        for (auto& frame : m_rawWorldAnchorResults)
+        {
+          for (auto& point : frame)
+          {
+            float3 pointNumerics(point.x, point.y, point.z);
+            pointNumerics = transform(pointNumerics, args->OldRawCoordinateSystemToNewRawCoordinateSystemTransform);
+            point.x = pointNumerics.x;
+            point.y = pointNumerics.y;
+            point.z = pointNumerics.z;
+          }
+        }
+      }
     }
   }
 }

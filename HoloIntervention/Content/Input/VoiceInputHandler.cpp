@@ -55,34 +55,34 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     VoiceInputHandler::~VoiceInputHandler()
     {
-      if ( m_speechBeingDetected )
+      if (m_speechBeingDetected)
       {
         m_speechRecognizer->ContinuousRecognitionSession->ResultGenerated -= m_speechDetectedEventToken;
-        auto stopTask = create_task( m_speechRecognizer->ContinuousRecognitionSession->StopAsync() );
+        auto stopTask = create_task(m_speechRecognizer->ContinuousRecognitionSession->StopAsync());
         stopTask.wait();
       }
     }
 
     //----------------------------------------------------------------------------
-    task<bool> VoiceInputHandler::CompileCallbacks( HoloIntervention::Sound::VoiceInputCallbackMap& callbacks )
+    task<bool> VoiceInputHandler::CompileCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbacks)
     {
       Platform::Collections::Vector<Platform::String^ >^ speechCommandList = ref new Platform::Collections::Vector<Platform::String^ >();
-      for ( auto entry : callbacks )
+      for (auto entry : callbacks)
       {
-        speechCommandList->Append( ref new Platform::String( std::get<0>( entry ).c_str() ) );
+        speechCommandList->Append(ref new Platform::String(std::get<0>(entry).c_str()));
       }
 
-      SpeechRecognitionListConstraint^ spConstraint = ref new SpeechRecognitionListConstraint( speechCommandList );
+      SpeechRecognitionListConstraint^ spConstraint = ref new SpeechRecognitionListConstraint(speechCommandList);
       m_speechRecognizer->Constraints->Clear();
-      m_speechRecognizer->Constraints->Append( spConstraint );
+      m_speechRecognizer->Constraints->Append(spConstraint);
 
-      return create_task( m_speechRecognizer->CompileConstraintsAsync() ).then( [this]( SpeechRecognitionCompilationResult ^ compilationResult )
+      return create_task(m_speechRecognizer->CompileConstraintsAsync()).then([this](SpeechRecognitionCompilationResult ^ compilationResult)
       {
-        if ( compilationResult->Status == SpeechRecognitionResultStatus::Success )
+        if (compilationResult->Status == SpeechRecognitionResultStatus::Success)
         {
           m_speechDetectedEventToken = m_speechRecognizer->ContinuousRecognitionSession->ResultGenerated +=
                                          ref new TypedEventHandler<SpeechContinuousRecognitionSession^, SpeechContinuousRecognitionResultGeneratedEventArgs^>(
-                                           std::bind( &VoiceInputHandler::OnResultGenerated, this, std::placeholders::_1, std::placeholders::_2 )
+                                           std::bind(&VoiceInputHandler::OnResultGenerated, this, std::placeholders::_1, std::placeholders::_2)
                                          );
           m_speechRecognizer->ContinuousRecognitionSession->StartAsync();
           m_speechBeingDetected = true;
@@ -90,36 +90,35 @@ namespace HoloIntervention
         else
         {
           // Handle errors here.
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Unable to compile speech patterns." );
+          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Unable to compile speech patterns.");
         }
-      } ).then( [this, callbacks]()
+      }).then([this, callbacks]()
       {
-        if ( m_speechBeingDetected )
+        if (m_speechBeingDetected)
         {
-          // TODO : compare given commands that have callback functions defined vs. list of commands supported
           m_callbacks = callbacks;
           return true;
         }
         else
         {
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage( L"Cannot start speech recognition." );
+          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Cannot start speech recognition.");
           return false;
         }
-      } );
+      });
     }
 
     //----------------------------------------------------------------------------
-    void VoiceInputHandler::OnResultGenerated( SpeechContinuousRecognitionSession^ sender, SpeechContinuousRecognitionResultGeneratedEventArgs^ args )
+    void VoiceInputHandler::OnResultGenerated(SpeechContinuousRecognitionSession^ sender, SpeechContinuousRecognitionResultGeneratedEventArgs^ args)
     {
-      if ( args->Result->RawConfidence > MINIMUM_CONFIDENCE_FOR_DETECTION )
+      if (args->Result->RawConfidence > MINIMUM_CONFIDENCE_FOR_DETECTION)
       {
-        HoloIntervention::instance()->GetSoundManager().PlayOmniSoundOnce( L"input_ok" );
+        HoloIntervention::instance()->GetSoundManager().PlayOmniSoundOnce(L"input_ok");
 
         // Search the map for the detected command, if matched, call the function
-        auto iterator = m_callbacks.find( args->Result->Text->Data() );
-        if ( iterator != m_callbacks.end() )
+        auto iterator = m_callbacks.find(args->Result->Text->Data());
+        if (iterator != m_callbacks.end())
         {
-          iterator->second( args->Result );
+          iterator->second(args->Result);
         }
       }
     }

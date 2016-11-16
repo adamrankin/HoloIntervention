@@ -29,9 +29,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Rendering includes
 #include "SliceRenderer.h"
 
-using namespace Windows::Foundation::Numerics;
-using namespace Windows::UI::Input::Spatial;
-
 namespace DX
 {
   class StepTimer;
@@ -47,21 +44,22 @@ namespace HoloIntervention
       ImagingSystem();
       ~ImagingSystem();
 
-      void Update(UWPOpenIGTLink::TrackedFrame^ frame, const DX::StepTimer& timer);
+      void Update(UWPOpenIGTLink::TrackedFrame^ frame, const DX::StepTimer& timer, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);
 
       bool HasSlice() const;
-      float4x4 GetSlicePose() const;
+      Windows::Foundation::Numerics::float4x4 GetSlicePose() const;
+      Windows::Foundation::Numerics::float3 GetSliceVelocity() const;
 
       // IVoiceInput functions
       virtual void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap);
 
     protected:
-      void Process2DFrame(UWPOpenIGTLink::TrackedFrame^ frame);
-      void Process3DFrame(UWPOpenIGTLink::TrackedFrame^ frame);
+      void Process2DFrame(UWPOpenIGTLink::TrackedFrame^ frame, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);
+      void Process3DFrame(UWPOpenIGTLink::TrackedFrame^ frame, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);
 
     protected:
       // Slice system
-      uint32                    m_sliceToken = Rendering::SliceRenderer::INVALID_SLICE_INDEX;
+      uint32 m_sliceToken = Rendering::SliceRenderer::INVALID_SLICE_INDEX;
     };
   }
 }

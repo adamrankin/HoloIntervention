@@ -37,8 +37,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "NotificationSystem.h"
 
 using namespace Concurrency;
-using namespace Windows::Storage;
 using namespace Windows::Data::Xml::Dom;
+using namespace Windows::Perception::Spatial;
+using namespace Windows::Storage;
 
 namespace HoloIntervention
 {
@@ -103,11 +104,11 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ToolSystem::Update(UWPOpenIGTLink::TrackedFrame^ frame, const DX::StepTimer& timer)
+    void ToolSystem::Update(UWPOpenIGTLink::TrackedFrame^ frame, const DX::StepTimer& timer, SpatialCoordinateSystem^ coordSystem)
     {
       // Update the transform repository with the latest registration
-      float4x4 referenceToHMD = HoloIntervention::instance()->GetRegistrationSystem().GetReferenceToHMD();
-      m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD"), &referenceToHMD, true);
+      float4x4 trackerToHMD = HoloIntervention::instance()->GetRegistrationSystem().GetTrackerToCoordinateSystemTransformation(coordSystem);
+      m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD"), &trackerToHMD, true);
 
       m_transformRepository->SetTransforms(frame);
 

@@ -46,14 +46,14 @@ namespace HoloIntervention
       GazeSystem();
       ~GazeSystem();
 
-      void Update(const DX::StepTimer& timer, SpatialCoordinateSystem^ currentCoordinateSystem, SpatialPointerPose^ headPose);
+      void Update(const DX::StepTimer& timer, Windows::Perception::Spatial::SpatialCoordinateSystem^ currentCoordinateSystem, Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
 
       void EnableCursor(bool enable);
       bool IsCursorEnabled();
 
-      const float3& GetHitPosition() const;
-      const float3& GetHitNormal() const;
-      float3 GetHitVelocity() const;
+      const Windows::Foundation::Numerics::float3& GetHitPosition() const;
+      const Windows::Foundation::Numerics::float3& GetHitNormal() const;
+      Windows::Foundation::Numerics::float3 GetHitVelocity() const;
 
       // IVoiceInput functions
       virtual void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap);
@@ -65,14 +65,14 @@ namespace HoloIntervention
       std::shared_ptr<Rendering::ModelEntry>    m_modelEntry;
       uint64                                    m_modelToken;
       bool                                      m_systemEnabled;
-      float3                                    m_goalHitPosition;
-      float3                                    m_goalHitNormal;
-      float3                                    m_goalHitEdge;
-      float3                                    m_currentPosition = { 0.f, 0.f, 0.f };
-      float3                                    m_currentNormal = { 0.f, 0.f, 0.f };
-      float3                                    m_currentEdge = { 0.f, 0.f, 0.f };
-      float3                                    m_lastPosition = { 0.f, 0.f, 0.f };
-      float3                                    m_velocity = { 0.f, 0.f, 0.f };
+      Windows::Foundation::Numerics::float3     m_goalHitPosition;
+      Windows::Foundation::Numerics::float3     m_goalHitNormal;
+      Windows::Foundation::Numerics::float3     m_goalHitEdge;
+      Windows::Foundation::Numerics::float3     m_currentPosition = { 0.f, 0.f, 0.f };
+      Windows::Foundation::Numerics::float3     m_currentNormal = { 0.f, 0.f, 0.f };
+      Windows::Foundation::Numerics::float3     m_currentEdge = { 0.f, 0.f, 0.f };
+      Windows::Foundation::Numerics::float3     m_lastPosition = { 0.f, 0.f, 0.f };
+      Windows::Foundation::Numerics::float3     m_velocity = { 0.f, 0.f, 0.f };
 
       static const std::wstring GAZE_CURSOR_ASSET_LOCATION;
       static const uint32 FRAMES_UNTIL_HIT_EXPIRES;
