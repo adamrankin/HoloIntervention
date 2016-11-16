@@ -29,7 +29,7 @@ struct PixelShaderInput
   uint rtvId : SV_RenderTargetArrayIndex;
 };
 
-Texture2D tex : t0;
+Texture2D tex : register(t0);
 SamplerState textureSampler : s0;
 
 // The pixel shader renders a color value sampled from a texture

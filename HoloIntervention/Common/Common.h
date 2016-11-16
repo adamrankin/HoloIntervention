@@ -124,6 +124,10 @@ namespace HoloIntervention
     });
   }
 
+  std::ostream& operator<<(std::ostream& out, const Windows::Foundation::Numerics::float4x4& matrix);
+  std::ostream& operator<<(std::ostream& out, const Windows::Foundation::Numerics::float4& vec);
+  std::ostream& operator<<(std::ostream& out, const Windows::Foundation::Numerics::float3& vec);
+  std::ostream& operator<<(std::ostream& out, const Windows::Foundation::Numerics::float2& vec);
   Concurrency::task<void> InitializeTransformRepositoryAsync(UWPOpenIGTLink::TransformRepository^ transformRepository, Platform::String^ fileName);
   Concurrency::task<Windows::Data::Xml::Dom::XmlDocument^> GetXmlDocumentFromFileAsync(Platform::String^ fileName);
 

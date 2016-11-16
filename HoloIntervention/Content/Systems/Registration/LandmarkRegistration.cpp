@@ -258,19 +258,27 @@ namespace HoloIntervention
         N[1][3] = N[3][1] = M[2][0] + M[0][2];
         N[2][3] = N[3][2] = M[1][2] + M[2][1];
 
-        cv::Mat N_mat(4, 4, CV_32FC1, N);
-        cv::Mat eigenvalues, eigenvectors;
+        cv::Mat N_mat(4, 4, CV_32FC1);
+        float* mat_data = (float*)N_mat.data;
+        for (int i = 0; i < 4; ++i)
+        {
+          for (int j = 0; j < 4; ++j)
+          {
+            mat_data[(i * 4) + j] = Ndata[i][j];
+          }
+        }
+
+        std::vector<float> eigenvalues;
+        cv::Mat eigenvectors;
         cv::eigen(N_mat, eigenvalues, eigenvectors);
 
         // the eigenvector with the largest eigenvalue is the quaternion we want
-        // (they are sorted in decreasing order for us by JacobiN)
-        // TODO : confirm
         float w;
         float3 xProd;
 
         // first: if points are collinear, choose the quaternion that
         // results in the smallest rotation.
-        if (eigenvalues.at<float>(0) == eigenvalues.at<float>(1) || numberOfPoints == 2)
+        if (eigenvalues[0] == eigenvalues[1] || numberOfPoints == 2)
         {
           float3 ds = m_sourceLandmarks[1] - m_sourceLandmarks[0];
           float3 dt = m_targetLandmarks[1] - m_targetLandmarks[0];
@@ -340,7 +348,7 @@ namespace HoloIntervention
         calibrationMatrix.m23 = 2.f * (-wx + yz);
         calibrationMatrix.m33 = ww - xx - yy + zz;
 
-        // add in the scale factor
+        // compensate for scale factor
         calibrationMatrix = calibrationMatrix* scale;
 
         // the translation is given by the difference in the transformed source

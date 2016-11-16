@@ -73,6 +73,37 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
+  std::ostream& operator<<(std::ostream& out, const Windows::Foundation::Numerics::float4x4& matrix)
+  {
+    out << matrix.m11 << " " << matrix.m12 << " " << matrix.m13 << " " << matrix.m14 << std::endl
+        << matrix.m21 << " " << matrix.m22 << " " << matrix.m23 << " " << matrix.m24 << std::endl
+        << matrix.m31 << " " << matrix.m32 << " " << matrix.m33 << " " << matrix.m34 << std::endl
+        << matrix.m41 << " " << matrix.m42 << " " << matrix.m43 << " " << matrix.m44;
+    return out;
+  }
+
+  //----------------------------------------------------------------------------
+  std::ostream& operator<<(std::ostream& out, const Windows::Foundation::Numerics::float4& vec)
+  {
+    out << vec.x << " " << vec.y << " " << vec.z << " " << vec.w;
+    return out;
+  }
+
+  //----------------------------------------------------------------------------
+  std::ostream& operator<<(std::ostream& out, const Windows::Foundation::Numerics::float3& vec)
+  {
+    out << vec.x << " " << vec.y << " " << vec.z;
+    return out;
+  }
+
+  //----------------------------------------------------------------------------
+  std::ostream& operator<<(std::ostream& out, const Windows::Foundation::Numerics::float2& vec)
+  {
+    out << vec.x << " " << vec.y;
+    return out;
+  }
+
+  //----------------------------------------------------------------------------
   task<void> InitializeTransformRepositoryAsync(UWPOpenIGTLink::TransformRepository^ transformRepository, Platform::String^ fileName)
   {
     return create_task(Windows::ApplicationModel::Package::Current->InstalledLocation->GetFileAsync(fileName)).then([transformRepository](task<StorageFile^> previousTask)
