@@ -50,6 +50,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <opencv2/imgproc.hpp>
 #include <opencv2/calib3d.hpp>
 
+// Unnecessary, but eliminates intellisense errors
+#include <WindowsNumerics.h>
+
 #ifndef SUCCEEDED
 #define SUCCEEDED(hr) (((HRESULT)(hr)) >= 0)
 #endif
@@ -392,7 +395,7 @@ namespace HoloIntervention
             {
               for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
               {
-                m_sphereToAnchorPoses[i] = make_float4x4_world(float3(worldAnchorResults[i].x, worldAnchorResults[i].y, worldAnchorResults[i].z), float3(1.f, 0.f, 0.f), float3(0.f, 1.f, 0.f));
+                m_sphereToAnchorPoses[i] = make_float4x4_translation(float3(worldAnchorResults[i].x, worldAnchorResults[i].y, worldAnchorResults[i].z));
               }
             }
 
