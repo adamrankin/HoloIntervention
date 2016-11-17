@@ -67,6 +67,8 @@ namespace HoloIntervention
 {
   namespace System
   {
+    const float CameraRegistration::VISUALIZATION_SPHERE_RADIUS = 0.03f;
+
     //----------------------------------------------------------------------------
     CameraRegistration::CameraRegistration(const std::shared_ptr<DX::DeviceResources>& deviceResources)
       : m_deviceResources(deviceResources)
@@ -118,7 +120,7 @@ namespace HoloIntervention
           {
             return;
           }
-          entry->SetDesiredWorldPose(m_sphereToAnchorPoses[i]*anchorToRequested);
+          entry->SetDesiredWorldPose(m_sphereToAnchorPoses[i] * anchorToRequested);
         }
       }
     }
@@ -248,7 +250,9 @@ namespace HoloIntervention
       {
         for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
         {
-          m_spherePrimitiveIds[i] = HoloIntervention::instance()->GetModelRenderer().AddGeometricPrimitive(std::move(DirectX::InstancedGeometricPrimitive::CreateSphere(m_deviceResources->GetD3DDeviceContext(), 1.f, 30)));
+          m_spherePrimitiveIds[i] = HoloIntervention::instance()->GetModelRenderer().AddGeometricPrimitive(
+            std::move(DirectX::InstancedGeometricPrimitive::CreateSphere(m_deviceResources->GetD3DDeviceContext(), VISUALIZATION_SPHERE_RADIUS, 30))
+          );
           auto entry = HoloIntervention::instance()->GetModelRenderer().GetPrimitive(m_spherePrimitiveIds[i]);
           entry->SetVisible(true);
           entry->SetColour(float3(0.803921640f, 0.360784322f, 0.360784322f));
@@ -388,7 +392,7 @@ namespace HoloIntervention
             {
               for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
               {
-                m_sphereToAnchorPoses[i] = make_float4x4_scale(0.3f) * make_float4x4_world(float3(worldAnchorResults[i].x, worldAnchorResults[i].y, worldAnchorResults[i].z), float3(1.f, 0.f, 0.f), float3(0.f, 1.f, 0.f));
+                m_sphereToAnchorPoses[i] = make_float4x4_world(float3(worldAnchorResults[i].x, worldAnchorResults[i].y, worldAnchorResults[i].z), float3(1.f, 0.f, 0.f), float3(0.f, 1.f, 0.f));
               }
             }
 

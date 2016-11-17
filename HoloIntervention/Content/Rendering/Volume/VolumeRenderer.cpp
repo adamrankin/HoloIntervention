@@ -121,6 +121,13 @@ namespace HoloIntervention
         // nothing to do!
         return;
       }
+
+      // Frame sanity check
+      if (frame->ImageData == nullptr || frame->FrameSize->GetAt(0) == 0 || frame->FrameSize->GetAt(1) == 0 || frame->FrameSize->GetAt(2) == 0 )
+      {
+        return;
+      }
+
       m_frame = frame;
 
       if (m_cameraResources != cameraResources)
