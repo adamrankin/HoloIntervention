@@ -109,8 +109,8 @@ namespace HoloIntervention
           if (m_regAnchorModel != nullptr)
           {
             m_regAnchorModel->SetVisible(true);
-            auto anchor = HoloIntervention::instance()->GetSpatialSystem().GetAnchor(REGISTRATION_ANCHOR_NAME);
-            m_cameraRegistration->SetWorldAnchor(anchor);
+            m_regAnchor = HoloIntervention::instance()->GetSpatialSystem().GetAnchor(REGISTRATION_ANCHOR_NAME);
+            m_cameraRegistration->SetWorldAnchor(m_regAnchor);
           }
 
           HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Anchor created.");
@@ -118,10 +118,11 @@ namespace HoloIntervention
         m_regAnchorRequested = false;
       }
 
+      Platform::IBox<float4x4>^ transformContainer;
       // Anchor model position update logic
-      if (HoloIntervention::instance()->GetSpatialSystem().HasAnchor(L"Registration"))
+      if (m_regAnchor != nullptr)
       {
-        auto transformContainer = HoloIntervention::instance()->GetSpatialSystem().GetAnchor(REGISTRATION_ANCHOR_NAME)->CoordinateSystem->TryGetTransformTo(coordinateSystem);
+        transformContainer = m_regAnchor->CoordinateSystem->TryGetTransformTo(coordinateSystem);
         if (transformContainer != nullptr)
         {
           m_anchorModelDesiredWorld = transformContainer->Value;
@@ -139,7 +140,7 @@ namespace HoloIntervention
         }
       }
 
-      m_cameraRegistration->Update(coordinateSystem);
+      m_cameraRegistration->Update(transformContainer);
     }
 
     //----------------------------------------------------------------------------
@@ -149,6 +150,7 @@ namespace HoloIntervention
       {
         if (HoloIntervention::instance()->GetSpatialSystem().HasAnchor(REGISTRATION_ANCHOR_NAME))
         {
+          m_regAnchor = HoloIntervention::instance()->GetSpatialSystem().GetAnchor(REGISTRATION_ANCHOR_NAME);
           m_regAnchorModel->SetVisible(true);
         }
       });
@@ -209,13 +211,13 @@ namespace HoloIntervention
         });
       };
 
-      callbackMap[L"enable spheres"] = [this](SpeechRecognitionResult^ result)
+      callbackMap[L"enable spheres"] = [this](SpeechRecognitionResult ^ result)
       {
         m_cameraRegistration->SetVisualization(true);
         HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Sphere visualization enabled.");
       };
 
-      callbackMap[L"disable spheres"] = [this](SpeechRecognitionResult^ result)
+      callbackMap[L"disable spheres"] = [this](SpeechRecognitionResult ^ result)
       {
         m_cameraRegistration->SetVisualization(false);
         HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Sphere visualization disabled.");

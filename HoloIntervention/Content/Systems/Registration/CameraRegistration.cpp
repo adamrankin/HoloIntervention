@@ -99,28 +99,20 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void CameraRegistration::Update(SpatialCoordinateSystem^ coordSystem)
+    void CameraRegistration::Update(Platform::IBox<Windows::Foundation::Numerics::float4x4>^ worldAnchorToRequestedBox)
     {
+      if (worldAnchorToRequestedBox == nullptr)
+      {
+        return;
+      }
+
       if (m_visualizationEnabled && m_spherePrimitiveIds[0] != Rendering::INVALID_ENTRY)
       {
         for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
         {
           auto entry = HoloIntervention::instance()->GetModelRenderer().GetPrimitive(m_spherePrimitiveIds[i]);
-          float4x4 anchorToRequested;
-          try
-          {
-            auto anchorToRequestedBox = m_worldAnchor->CoordinateSystem->TryGetTransformTo(coordSystem);
-            if (anchorToRequestedBox == nullptr)
-            {
-              return;
-            }
-            anchorToRequested = anchorToRequestedBox->Value;
-          }
-          catch (Platform::Exception^ e)
-          {
-            return;
-          }
-          entry->SetDesiredWorldPose(m_sphereToAnchorPoses[i] * anchorToRequested);
+          float4x4 anchorToRequested = worldAnchorToRequestedBox->Value;
+          entry->SetDesiredWorldPose(m_sphereToAnchor[i] * anchorToRequested);
         }
       }
     }
@@ -251,8 +243,8 @@ namespace HoloIntervention
         for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
         {
           m_spherePrimitiveIds[i] = HoloIntervention::instance()->GetModelRenderer().AddGeometricPrimitive(
-            std::move(DirectX::InstancedGeometricPrimitive::CreateSphere(m_deviceResources->GetD3DDeviceContext(), VISUALIZATION_SPHERE_RADIUS, 30))
-          );
+                                      std::move(DirectX::InstancedGeometricPrimitive::CreateSphere(m_deviceResources->GetD3DDeviceContext(), VISUALIZATION_SPHERE_RADIUS, 30))
+                                    );
           auto entry = HoloIntervention::instance()->GetModelRenderer().GetPrimitive(m_spherePrimitiveIds[i]);
           entry->SetVisible(true);
           entry->SetColour(float3(0.803921640f, 0.360784322f, 0.360784322f));
@@ -392,7 +384,7 @@ namespace HoloIntervention
             {
               for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
               {
-                m_sphereToAnchorPoses[i] = make_float4x4_world(float3(worldAnchorResults[i].x, worldAnchorResults[i].y, worldAnchorResults[i].z), float3(1.f, 0.f, 0.f), float3(0.f, 1.f, 0.f));
+                m_sphereToAnchor[i] = make_float4x4_world(float3(worldAnchorResults[i].x, worldAnchorResults[i].y, worldAnchorResults[i].z), float3(1.f, 0.f, 0.f), float3(0.f, 1.f, 0.f));
               }
             }
 
@@ -713,7 +705,7 @@ done:
           }
         }
       }
-      for (auto& pose : m_sphereToAnchorPoses)
+      for (auto& pose : m_sphereToAnchor)
       {
         pose = pose * args->OldRawCoordinateSystemToNewRawCoordinateSystemTransform;
       }
