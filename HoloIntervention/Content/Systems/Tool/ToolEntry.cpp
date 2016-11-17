@@ -91,7 +91,7 @@ namespace HoloIntervention
     {
       if (m_modelEntry == nullptr)
       {
-        return Rendering::INVALID_MODEL_ENTRY;
+        return Rendering::INVALID_ENTRY;
       }
       return m_modelEntry->GetId();
     }
@@ -100,7 +100,7 @@ namespace HoloIntervention
     void ToolEntry::CreateModel(const std::wstring& modelName)
     {
       uint64 modelToken = HoloIntervention::instance()->GetModelRenderer().AddModel(L"Assets\\Models\\Tools\\" + modelName + L".cmo");
-      if (modelToken == Rendering::INVALID_MODEL_ENTRY)
+      if (modelToken == Rendering::INVALID_ENTRY)
       {
         std::wstring error(L"Unable to create model with name: ");
         error += modelName;

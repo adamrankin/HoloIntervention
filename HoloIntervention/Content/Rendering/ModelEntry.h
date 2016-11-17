@@ -28,6 +28,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "InstancedEffects.h"
 
 // Common includes
+#include "Common.h"
 #include "CameraResources.h"
 
 // DirectXTK includes
@@ -46,8 +47,6 @@ namespace HoloIntervention
 {
   namespace Rendering
   {
-    static const uint64 INVALID_MODEL_ENTRY = 0;
-
     enum ModelRenderingState
     {
       RENDERING_DEFAULT,
@@ -93,7 +92,7 @@ namespace HoloIntervention
       // Cached pointer to device resources.
       std::shared_ptr<DX::DeviceResources>                m_deviceResources = nullptr;
 
-      // DirectXTK resources for the cursor model
+      // DirectXTK resources
       std::unique_ptr<DirectX::CommonStates>              m_states = nullptr;
       std::unique_ptr<DirectX::InstancedEffectFactory>    m_effectFactory = nullptr;
       std::shared_ptr<DirectX::Model>                     m_model = nullptr;
@@ -106,7 +105,7 @@ namespace HoloIntervention
 
       // Model related behavior
       std::atomic_bool                                    m_visible = false;
-      uint64                                              m_id = INVALID_MODEL_ENTRY;
+      uint64                                              m_id = INVALID_ENTRY;
       ModelRenderingState                                 m_renderingState = RENDERING_DEFAULT;
 
       // Variables used with the rendering loop.

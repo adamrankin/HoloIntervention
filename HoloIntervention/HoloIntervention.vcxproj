@@ -112,6 +112,7 @@
     <ClInclude Include="Content\Rendering\ModelEntry.h" />
     <ClInclude Include="Content\Rendering\ModelRenderer.h" />
     <ClInclude Include="Content\Rendering\NotificationRenderer.h" />
+    <ClInclude Include="Content\Rendering\PrimitiveEntry.h" />
     <ClInclude Include="Content\Rendering\SliceEntry.h" />
     <ClInclude Include="Content\Rendering\SliceRenderer.h" />
     <ClInclude Include="Content\Rendering\SpatialMeshRenderer.h" />
@@ -158,6 +159,7 @@
     <ClCompile Include="Content\Rendering\ModelEntry.cpp" />
     <ClCompile Include="Content\Rendering\ModelRenderer.cpp" />
     <ClCompile Include="Content\Rendering\NotificationRenderer.cpp" />
+    <ClCompile Include="Content\Rendering\PrimitiveEntry.cpp" />
     <ClCompile Include="Content\Rendering\SliceEntry.cpp" />
     <ClCompile Include="Content\Rendering\SliceRenderer.cpp" />
     <ClCompile Include="Content\Rendering\SpatialMeshRenderer.cpp" />

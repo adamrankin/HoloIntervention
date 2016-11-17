@@ -24,13 +24,19 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
-#include "DeviceResources.h"
 #include "ModelEntry.h"
-#include "StepTimer.h"
+#include "PrimitiveEntry.h"
 
-using namespace Windows::Foundation;
-using namespace Windows::UI::Input::Spatial;
-using namespace Windows::Foundation::Numerics;
+namespace DX
+{
+  class DeviceResources;
+  class StepTimer;
+}
+
+namespace DirectX
+{
+  class InstancedGeometricPrimitive;
+}
 
 namespace HoloIntervention
 {
@@ -39,23 +45,30 @@ namespace HoloIntervention
     class ModelRenderer
     {
       typedef std::list<std::shared_ptr<ModelEntry>> ModelList;
+      typedef std::list<std::shared_ptr<PrimitiveEntry>> PrimitiveList;
+
     public:
-      ModelRenderer( const std::shared_ptr<DX::DeviceResources>& deviceResources );
+      ModelRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources);
       ~ModelRenderer();
 
       // D3D resources
       void CreateDeviceDependentResources();
       void ReleaseDeviceDependentResources();
 
-      void Update( const DX::StepTimer& timer, const DX::ViewProjection& vp );
+      void Update(const DX::StepTimer& timer, const DX::ViewProjection& vp);
       void Render();
 
-      uint64 AddModel( const std::wstring& assetLocation );
-      void RemoveModel( uint64 modelId );
-      std::shared_ptr<ModelEntry> GetModel( uint64 modelId ) const;
+      uint64 AddModel(const std::wstring& assetLocation);
+      void RemoveModel(uint64 modelId);
+      std::shared_ptr<ModelEntry> GetModel(uint64 modelId) const;
+
+      uint64 AddGeometricPrimitive(std::unique_ptr<DirectX::InstancedGeometricPrimitive> primitive);
+      void RemovePrimitive(uint64 primitiveId);
+      std::shared_ptr<PrimitiveEntry> GetPrimitive(uint64 primitiveId) const;
 
     protected:
-      bool FindModel( uint64 modelId, std::shared_ptr<ModelEntry>& modelEntry ) const;
+      bool FindModel(uint64 modelId, std::shared_ptr<ModelEntry>& modelEntry) const;
+      bool FindPrimitive(uint64 entryId, std::shared_ptr<PrimitiveEntry>& entry) const;
 
     protected:
       // Cached pointer to device resources.
@@ -64,7 +77,9 @@ namespace HoloIntervention
       // Lock protection when accessing image list
       std::mutex                                      m_modelListMutex;
       ModelList                                       m_models;
-      uint64                                          m_nextUnusedModelId = 1; // start at 1, 0 (INVALID_MODEL_ENTRY) is considered invalid
+      std::mutex                                      m_primitiveListMutex;
+      PrimitiveList                                   m_primitives;
+      uint64                                          m_nextUnusedId = 1; // start at 1, 0 (INVALID_ENTRY) is considered invalid
     };
   }
 }

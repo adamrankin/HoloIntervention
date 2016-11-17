@@ -35,7 +35,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 // OpenCV includes
 #include <opencv2/core.hpp>
 
-// stl includes
+// STL includes
 #include <future>
 #include <memory>
 
@@ -45,6 +45,11 @@ OTHER DEALINGS IN THE SOFTWARE.
 namespace DX
 {
   class DeviceResources;
+}
+
+namespace DirectX
+{
+  class InstancedGeometricPrimitive;
 }
 
 namespace HoloIntervention
@@ -72,67 +77,65 @@ namespace HoloIntervention
       CameraRegistration(const std::shared_ptr<DX::DeviceResources>& deviceResources);
       ~CameraRegistration();
 
-      void Update();
+      void Update(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);
       Concurrency::task<bool> StopCameraAsync();
       Concurrency::task<bool> StartCameraAsync();
+      void SetVisualization(bool enabled);
 
       Windows::Perception::Spatial::SpatialAnchor^ GetWorldAnchor();
       void SetWorldAnchor(Windows::Perception::Spatial::SpatialAnchor^ worldAnchor);
-      void ApplyWorldAnchorRawCoordinateSystemAdjusted(const Windows::Foundation::Numerics::float4x4& adjustment);
 
       bool HasRegistration() const;
-      Windows::Foundation::Numerics::float4x4 GetTrackerToWorldAnchor() const;
+      Windows::Foundation::Numerics::float4x4 GetTrackerToWorldAnchorTransformation() const;
 
     protected:
       void ProcessAvailableFrames(Concurrency::cancellation_token token);
       bool CameraRegistration::RetrieveTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame, CameraRegistration::DetectedSpheresWorld& worldResults);
-      bool ComputeCircleLocations(Windows::Media::Capture::Frames::VideoMediaFrame^ videoFrame,
-                                  bool& initialized,
-                                  int32_t& height,
-                                  int32_t& width,
-                                  cv::Mat& hsv,
-                                  cv::Mat& redMat,
-                                  cv::Mat& redMatWrap,
-                                  cv::Mat& imageRGB,
-                                  cv::Mat& mask,
-                                  cv::Mat& cannyOutput,
-                                  DetectedSpheresWorld& cameraResults);
+      bool ComputeCircleLocations(Windows::Media::Capture::Frames::VideoMediaFrame^ videoFrame, bool& initialized, int32_t& height, int32_t& width,
+                                  cv::Mat& hsv, cv::Mat& redMat, cv::Mat& redMatWrap, cv::Mat& imageRGB, cv::Mat& mask, cv::Mat& cannyOutput, DetectedSpheresWorld& cameraResults);
       void OnAnchorRawCoordinateSystemAdjusted(Windows::Perception::Spatial::SpatialAnchor^ anchor, Windows::Perception::Spatial::SpatialAnchorRawCoordinateSystemAdjustedEventArgs^ args);
 
     protected:
       // Cached pointer to device resources.
-      std::shared_ptr<DX::DeviceResources>                              m_deviceResources;
-      std::mutex                                                        m_processorLock;
-      std::shared_ptr<Capture::VideoFrameProcessor>                     m_videoFrameProcessor = nullptr;
-      Concurrency::task<std::shared_ptr<Capture::VideoFrameProcessor>>* m_createTask = nullptr;
-      std::mutex                                                        m_anchorMutex;
-      Windows::Perception::Spatial::SpatialAnchor^                      m_worldAnchor = nullptr;
+      std::shared_ptr<DX::DeviceResources>                                  m_deviceResources;
+      std::mutex                                                            m_processorLock;
+      std::shared_ptr<Capture::VideoFrameProcessor>                         m_videoFrameProcessor = nullptr;
+      Concurrency::task<std::shared_ptr<Capture::VideoFrameProcessor>>*     m_createTask = nullptr;
+
+      // Anchor resources
+      std::mutex                                                            m_anchorMutex;
+      Windows::Perception::Spatial::SpatialAnchor^                          m_worldAnchor = nullptr;
+
+      // Visualization resources
+      std::atomic_bool                                                      m_visualizationEnabled = false;
+      std::array<uint64, 5>                                                 m_spherePrimitiveIds = { 0 };
+      std::array<Windows::Foundation::Numerics::float4x4, 5>                m_sphereToAnchorPoses;
 
       // Camera
-      Windows::Foundation::EventRegistrationToken                       m_anchorUpdatedToken;
-      std::mutex                                                        m_framesLock;
-      Windows::Media::Capture::Frames::MediaFrameReference^             m_currentFrame = nullptr;
-      Windows::Media::Capture::Frames::MediaFrameReference^             m_nextFrame = nullptr;
-      DetectionFrames                                                   m_rawWorldAnchorResults;
+      Windows::Foundation::EventRegistrationToken                           m_anchorUpdatedToken;
+      std::mutex                                                            m_framesLock;
+      Windows::Media::Capture::Frames::MediaFrameReference^                 m_currentFrame = nullptr;
+      Windows::Media::Capture::Frames::MediaFrameReference^                 m_nextFrame = nullptr;
+      DetectionFrames                                                       m_rawWorldAnchorResults;
 
       // IGT link
-      UWPOpenIGTLink::TransformRepository^                              m_transformRepository = ref new UWPOpenIGTLink::TransformRepository();
-      std::atomic_bool                                                  m_transformsAvailable = false;
-      double                                                            m_latestTimestamp = 0.0;
-      DetectionFrames                                                   m_trackerFrameResults;
-      std::vector<cv::Point3f>                                          m_phantomFiducialCoords;
-      std::array<UWPOpenIGTLink::TransformName^, 5>                     m_sphereCoordinateNames;
+      UWPOpenIGTLink::TransformRepository^                                  m_transformRepository = ref new UWPOpenIGTLink::TransformRepository();
+      std::atomic_bool                                                      m_transformsAvailable = false;
+      double                                                                m_latestTimestamp = 0.0;
+      DetectionFrames                                                       m_trackerFrameResults;
+      std::vector<cv::Point3f>                                              m_phantomFiducialCoords;
+      std::array<UWPOpenIGTLink::TransformName^, 5>                         m_sphereCoordinateNames;
 
-      Concurrency::task<void>*                                          m_workerTask = nullptr;
-      Concurrency::cancellation_token_source                            m_tokenSource;
-      Windows::Foundation::Numerics::float4x4                           m_trackerToWorldAnchor = Windows::Foundation::Numerics::float4x4::identity(); // row-major order
-      std::atomic_bool                                                  m_hasRegistration = false;
+      // State variables
+      Concurrency::task<void>*                                              m_workerTask = nullptr;
+      Concurrency::cancellation_token_source                                m_tokenSource;
+      std::atomic_bool                                                      m_hasRegistration = false;
 
+      Windows::Foundation::Numerics::float4x4                               m_trackerToWorldAnchor = Windows::Foundation::Numerics::float4x4::identity(); // row-major order
+      std::shared_ptr<LandmarkRegistration>                                 m_landmarkRegistration = std::make_shared<LandmarkRegistration>();
 
-      std::shared_ptr<LandmarkRegistration>                             m_landmarkRegistration = std::make_shared<LandmarkRegistration>();
-
-      static const uint32                                               PHANTOM_SPHERE_COUNT = 5;
-      static const uint32                                               NUMBER_OF_FRAMES_FOR_CALIBRATION = 30;
+      static const uint32                                                   PHANTOM_SPHERE_COUNT = 5;
+      static const uint32                                                   NUMBER_OF_FRAMES_FOR_CALIBRATION = 30;
     };
   }
 }

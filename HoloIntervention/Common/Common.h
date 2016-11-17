@@ -33,6 +33,11 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 namespace HoloIntervention
 {
+  namespace Rendering
+  {
+    static const uint64 INVALID_ENTRY = 0;
+  }
+
   //------------------------------------------------------------------------
   template<class T>
   const T& clamp(const T& x, const T& upper, const T& lower)

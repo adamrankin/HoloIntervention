@@ -63,7 +63,7 @@ namespace HoloIntervention
       , m_cameraRegistration(std::make_shared<CameraRegistration>(deviceResources))
     {
       m_regAnchorModelId = HoloIntervention::instance()->GetModelRenderer().AddModel(REGISTRATION_ANCHOR_MODEL_FILENAME);
-      if (m_regAnchorModelId != Rendering::INVALID_MODEL_ENTRY)
+      if (m_regAnchorModelId != Rendering::INVALID_ENTRY)
       {
         m_regAnchorModel = HoloIntervention::instance()->GetModelRenderer().GetModel(m_regAnchorModelId);
       }
@@ -139,7 +139,7 @@ namespace HoloIntervention
         }
       }
 
-      m_cameraRegistration->Update();
+      m_cameraRegistration->Update(coordinateSystem);
     }
 
     //----------------------------------------------------------------------------
@@ -214,7 +214,7 @@ namespace HoloIntervention
     float4x4 RegistrationSystem::GetTrackerToCoordinateSystemTransformation(SpatialCoordinateSystem^ requestedCoordinateSystem)
     {
       auto worldAnchor = m_cameraRegistration->GetWorldAnchor();
-      auto trackerToWorldAnchor = m_cameraRegistration->GetTrackerToWorldAnchor();
+      auto trackerToWorldAnchor = m_cameraRegistration->GetTrackerToWorldAnchorTransformation();
       try
       {
         Platform::IBox<float4x4>^ worldAnchorToRequested = worldAnchor->CoordinateSystem->TryGetTransformTo(requestedCoordinateSystem);
@@ -222,7 +222,7 @@ namespace HoloIntervention
       }
       catch (Platform::Exception^ e)
       {
-        throw new std::exception("Unable to relate world anchor to requested coordinate system.");
+        throw std::exception("Unable to relate world anchor to requested coordinate system.");
       }
     }
   }

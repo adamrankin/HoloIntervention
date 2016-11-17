@@ -25,17 +25,18 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "pch.h"
 #include "AppView.h"
 #include "CameraRegistration.h"
-#include "Common.h"
+#include "InstancedGeometricPrimitive.h"
 #include "VideoFrameProcessor.h"
 
 // Common includes
+#include "Common.h"
 #include "DeviceResources.h"
 
 // System includes
 #include "NotificationSystem.h"
+#include "ModelRenderer.h"
 
 // WinRT includes
-#include <ppltasks.h>
 #include <ppl.h>
 
 // STL includes
@@ -96,9 +97,26 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void CameraRegistration::Update()
+    void CameraRegistration::Update(SpatialCoordinateSystem^ coordSystem)
     {
-      // Nothing to do, all processing is asynchronous
+      if (m_visualizationEnabled)
+      {
+        for (int i = 0; i < 5; ++i)
+        {
+          auto entry = HoloIntervention::instance()->GetModelRenderer().GetPrimitive(m_spherePrimitiveIds[i]);
+          float4x4 anchorToRequested;
+          try
+          {
+            auto anchorToRequestedBox = m_worldAnchor->CoordinateSystem->TryGetTransformTo(coordSystem);
+            anchorToRequestedBox = anchorToRequestedBox->Value;
+          }
+          catch (Platform::Exception^ e)
+          {
+            return;
+          }
+          entry->SetDesiredWorldPose(m_sphereToAnchorPoses[i]*anchorToRequested);
+        }
+      }
     }
 
     //----------------------------------------------------------------------------
@@ -108,7 +126,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    Windows::Foundation::Numerics::float4x4 CameraRegistration::GetTrackerToWorldAnchor() const
+    Windows::Foundation::Numerics::float4x4 CameraRegistration::GetTrackerToWorldAnchorTransformation() const
     {
       return m_trackerToWorldAnchor;
     }
@@ -135,7 +153,7 @@ namespace HoloIntervention
           return true;
         });
       }
-      return create_task([]() {return true; });
+      return create_task([]() {return true;});
     }
 
     //----------------------------------------------------------------------------
@@ -203,6 +221,34 @@ namespace HoloIntervention
           });
         }
       });
+    }
+
+    //----------------------------------------------------------------------------
+    void CameraRegistration::SetVisualization(bool enabled)
+    {
+      if (!enabled)
+      {
+        for (auto& sphereId : m_spherePrimitiveIds)
+        {
+          if (sphereId != Rendering::INVALID_ENTRY)
+          {
+            auto entry = HoloIntervention::instance()->GetModelRenderer().GetPrimitive(sphereId);
+            entry->SetVisible(false);
+          }
+        }
+        m_visualizationEnabled = false;
+        return;
+      }
+
+      if (m_visualizationEnabled && m_spherePrimitiveIds[0] == Rendering::INVALID_ENTRY)
+      {
+        for (int i = 0; i < 5; ++i)
+        {
+          m_spherePrimitiveIds[i] = HoloIntervention::instance()->GetModelRenderer().AddGeometricPrimitive(std::move(DirectX::InstancedGeometricPrimitive::CreateSphere(m_deviceResources->GetD3DDeviceContext(), 1.f, 30)));
+          auto entry = HoloIntervention::instance()->GetModelRenderer().GetPrimitive(m_spherePrimitiveIds[i]);
+          entry->SetVisible(true);
+        }
+      }
     }
 
     //----------------------------------------------------------------------------
@@ -329,6 +375,15 @@ namespace HoloIntervention
               float3 cameraPointNumerics(cameraPoint.x, cameraPoint.y, cameraPoint.z);
               float3 point = transform(cameraPointNumerics, cameraToRawWorldAnchor);
               worldAnchorResults.push_back(cv::Point3f(point.x, point.y, point.z));
+            }
+
+            // If visualizing, update the latest known poses of the spheres
+            if (m_visualizationEnabled && worldAnchorResults.size() == PHANTOM_SPHERE_COUNT)
+            {
+              for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
+              {
+                m_sphereToAnchorPoses[i] = make_float4x4_world(float3(worldAnchorResults[i].x, worldAnchorResults[i].y, worldAnchorResults[i].z), float3(1.f, 0.f, 0.f), float3(0.f, 1.f, 0.f));
+              }
             }
 
             m_rawWorldAnchorResults.push_back(worldAnchorResults);
@@ -651,6 +706,10 @@ done:
             point.z = pointNumerics.z;
           }
         }
+      }
+      for (auto& pose : m_sphereToAnchorPoses)
+      {
+        pose = pose * args->OldRawCoordinateSystemToNewRawCoordinateSystemTransform;
       }
     }
   }

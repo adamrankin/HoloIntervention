@@ -122,6 +122,9 @@
     <ClCompile Include="Content\Rendering\Volume\PiecewiseLinearTF.cpp">
       <Filter>Content\Rendering\VolumeRenderer\Transfer Functions</Filter>
     </ClCompile>
+    <ClCompile Include="Content\Rendering\PrimitiveEntry.cpp">
+      <Filter>Content\Rendering\ModelRenderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common\CameraResources.h">
@@ -259,6 +262,9 @@
     </ClInclude>
     <ClInclude Include="Content\Rendering\Volume\ITransferFunction.h">
       <Filter>Content\Rendering\VolumeRenderer\Transfer Functions</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Rendering\PrimitiveEntry.h">
+      <Filter>Content\Rendering\ModelRenderer</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -42,8 +42,8 @@ namespace HoloIntervention
   {
     //----------------------------------------------------------------------------
     // Loads vertex and pixel shaders from files and instantiates the cube geometry.
-    ModelRenderer::ModelRenderer( const std::shared_ptr<DX::DeviceResources>& deviceResources )
-      : m_deviceResources( deviceResources )
+    ModelRenderer::ModelRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources)
+      : m_deviceResources(deviceResources)
     {
       CreateDeviceDependentResources();
     }
@@ -55,61 +55,72 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ModelRenderer::Update( const DX::StepTimer& timer, const DX::ViewProjection& vp )
+    void ModelRenderer::Update(const DX::StepTimer& timer, const DX::ViewProjection& vp)
     {
-      for ( auto model : m_models )
+      for (auto& model : m_models)
       {
-        model->Update( timer, vp );
+        model->Update(timer, vp);
+      }
+      for (auto& primitive : m_primitives)
+      {
+        primitive->Update(timer, vp);
       }
     }
 
     //----------------------------------------------------------------------------
     void ModelRenderer::Render()
     {
-      for ( auto model : m_models )
+      for (auto& model : m_models)
       {
-        if ( model->IsVisible() )
+        if (model->IsVisible())
         {
           model->Render();
+        }
+      }
+      for (auto& primitive : m_primitives)
+      {
+        if (primitive->IsVisible())
+        {
+          primitive->Render();
         }
       }
     }
 
     //----------------------------------------------------------------------------
-    uint64 ModelRenderer::AddModel( const std::wstring& assetLocation )
+    uint64 ModelRenderer::AddModel(const std::wstring& assetLocation)
     {
-      std::shared_ptr<ModelEntry> entry = std::make_shared<ModelEntry>( m_deviceResources, assetLocation );
-      entry->SetId( m_nextUnusedModelId );
-      entry->SetVisible( true );
+      std::shared_ptr<ModelEntry> entry = std::make_shared<ModelEntry>(m_deviceResources, assetLocation);
+      entry->SetId(m_nextUnusedId);
+      entry->SetVisible(true);
 
-      std::lock_guard<std::mutex> guard( m_modelListMutex );
-      m_models.push_back( entry );
+      std::lock_guard<std::mutex> guard(m_modelListMutex);
+      m_models.push_back(entry);
 
-      m_nextUnusedModelId++;
-      return m_nextUnusedModelId - 1;
+      m_nextUnusedId++;
+      return m_nextUnusedId - 1;
     }
 
     //----------------------------------------------------------------------------
-    void ModelRenderer::RemoveModel( uint64 modelId )
+    void ModelRenderer::RemoveModel(uint64 modelId)
     {
-      std::lock_guard<std::mutex> guard( m_modelListMutex );
+      std::lock_guard<std::mutex> guard(m_modelListMutex);
       std::shared_ptr<ModelEntry> model;
 
-      for ( auto modelIter = m_models.begin(); modelIter != m_models.end(); ++modelIter )
+      for (auto modelIter = m_models.begin(); modelIter != m_models.end(); ++modelIter)
       {
-        if ( ( *modelIter )->GetId() == modelId )
+        if ((*modelIter)->GetId() == modelId)
         {
-          m_models.erase( modelIter );
+          m_models.erase(modelIter);
           return;
         }
       }
     }
 
     //----------------------------------------------------------------------------
-    std::shared_ptr<ModelEntry> ModelRenderer::GetModel( uint64 modelId ) const
+    std::shared_ptr<ModelEntry> ModelRenderer::GetModel(uint64 modelId) const
     {
       std::shared_ptr<ModelEntry> entry;
-      if ( FindModel( modelId, entry ) )
+      if (FindModel(modelId, entry))
       {
         return entry;
       }
@@ -117,11 +128,52 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool ModelRenderer::FindModel( uint64 modelId, std::shared_ptr<ModelEntry>& modelEntry ) const
+    uint64 ModelRenderer::AddGeometricPrimitive(std::unique_ptr<DirectX::InstancedGeometricPrimitive> primitive)
     {
-      for ( auto model : m_models )
+      std::shared_ptr<PrimitiveEntry> entry = std::make_shared<PrimitiveEntry>(m_deviceResources, std::move(primitive));
+      entry->SetId(m_nextUnusedId);
+      entry->SetVisible(true);
+
+      std::lock_guard<std::mutex> guard(m_primitiveListMutex);
+      m_primitives.push_back(entry);
+
+      m_nextUnusedId++;
+      return m_nextUnusedId - 1;
+    }
+
+    //----------------------------------------------------------------------------
+    void ModelRenderer::RemovePrimitive(uint64 primitiveId)
+    {
+      std::lock_guard<std::mutex> guard(m_primitiveListMutex);
+      std::shared_ptr<PrimitiveEntry> primitive;
+
+      for (auto primIter = m_primitives.begin(); primIter != m_primitives.end(); ++primIter)
       {
-        if ( model->GetId() == modelId )
+        if ((*primIter)->GetId() == primitiveId)
+        {
+          m_primitives.erase(primIter);
+          return;
+        }
+      }
+    }
+
+    //----------------------------------------------------------------------------
+    std::shared_ptr<PrimitiveEntry> ModelRenderer::GetPrimitive(uint64 primitiveId) const
+    {
+      std::shared_ptr<PrimitiveEntry> entry;
+      if (FindPrimitive(primitiveId, entry))
+      {
+        return entry;
+      }
+      return nullptr;
+    }
+
+    //----------------------------------------------------------------------------
+    bool ModelRenderer::FindModel(uint64 modelId, std::shared_ptr<ModelEntry>& modelEntry) const
+    {
+      for (auto model : m_models)
+      {
+        if (model->GetId() == modelId)
         {
           modelEntry = model;
           return true;
@@ -132,9 +184,24 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    bool ModelRenderer::FindPrimitive(uint64 primitiveId, std::shared_ptr<PrimitiveEntry>& entry) const
+    {
+      for (auto primitive : m_primitives)
+      {
+        if (primitive->GetId() == primitiveId)
+        {
+          entry = primitive;
+          return true;
+        }
+      }
+
+      return false;
+    }
+
+    //----------------------------------------------------------------------------
     void ModelRenderer::CreateDeviceDependentResources()
     {
-      for ( auto model : m_models )
+      for (auto model : m_models)
       {
         model->CreateDeviceDependentResources();
       }
@@ -143,7 +210,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ModelRenderer::ReleaseDeviceDependentResources()
     {
-      for ( auto model : m_models )
+      for (auto model : m_models)
       {
         model->ReleaseDeviceDependentResources();
       }
