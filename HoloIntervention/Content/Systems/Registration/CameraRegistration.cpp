@@ -99,16 +99,20 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void CameraRegistration::Update(SpatialCoordinateSystem^ coordSystem)
     {
-      if (m_visualizationEnabled)
+      if (m_visualizationEnabled && m_spherePrimitiveIds[0] != Rendering::INVALID_ENTRY)
       {
-        for (int i = 0; i < 5; ++i)
+        for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
         {
           auto entry = HoloIntervention::instance()->GetModelRenderer().GetPrimitive(m_spherePrimitiveIds[i]);
           float4x4 anchorToRequested;
           try
           {
             auto anchorToRequestedBox = m_worldAnchor->CoordinateSystem->TryGetTransformTo(coordSystem);
-            anchorToRequestedBox = anchorToRequestedBox->Value;
+            if (anchorToRequestedBox == nullptr)
+            {
+              return;
+            }
+            anchorToRequested = anchorToRequestedBox->Value;
           }
           catch (Platform::Exception^ e)
           {
@@ -240,14 +244,16 @@ namespace HoloIntervention
         return;
       }
 
-      if (m_visualizationEnabled && m_spherePrimitiveIds[0] == Rendering::INVALID_ENTRY)
+      if (enabled && m_spherePrimitiveIds[0] == Rendering::INVALID_ENTRY)
       {
-        for (int i = 0; i < 5; ++i)
+        for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
         {
           m_spherePrimitiveIds[i] = HoloIntervention::instance()->GetModelRenderer().AddGeometricPrimitive(std::move(DirectX::InstancedGeometricPrimitive::CreateSphere(m_deviceResources->GetD3DDeviceContext(), 1.f, 30)));
           auto entry = HoloIntervention::instance()->GetModelRenderer().GetPrimitive(m_spherePrimitiveIds[i]);
           entry->SetVisible(true);
+          entry->SetColour(float3(0.803921640f, 0.360784322f, 0.360784322f));
         }
+        m_visualizationEnabled = true;
       }
     }
 
@@ -382,7 +388,7 @@ namespace HoloIntervention
             {
               for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
               {
-                m_sphereToAnchorPoses[i] = make_float4x4_world(float3(worldAnchorResults[i].x, worldAnchorResults[i].y, worldAnchorResults[i].z), float3(1.f, 0.f, 0.f), float3(0.f, 1.f, 0.f));
+                m_sphereToAnchorPoses[i] = make_float4x4_scale(0.3f) * make_float4x4_world(float3(worldAnchorResults[i].x, worldAnchorResults[i].y, worldAnchorResults[i].z), float3(1.f, 0.f, 0.f), float3(0.f, 1.f, 0.f));
               }
             }
 
@@ -597,15 +603,11 @@ namespace HoloIntervention
           rotation.copyTo(modelToCameraTransform(cv::Rect(0, 0, 3, 3)));
           tvec.copyTo(modelToCameraTransform(cv::Rect(3, 0, 1, 3)));
 
-          std::stringstream ss;
-          ss << modelToCameraTransform;
-          OutputDebugStringA(ss.str().c_str());
-
           std::vector<cv::Vec4f> cameraPointsHomogenous(m_phantomFiducialCoords.size());
           std::vector<cv::Vec4f> modelPointsHomogenous;
-          for (auto& cameraPoint : m_phantomFiducialCoords)
+          for (auto& modelPoint : m_phantomFiducialCoords)
           {
-            modelPointsHomogenous.push_back(cv::Vec4f(cameraPoint.x, cameraPoint.y, cameraPoint.z, 1.f));
+            modelPointsHomogenous.push_back(cv::Vec4f(modelPoint.x, modelPoint.y, modelPoint.z, 1.f));
           }
           cv::transform(modelPointsHomogenous, cameraPointsHomogenous, modelToCameraTransform);
 

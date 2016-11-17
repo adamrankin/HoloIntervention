@@ -208,16 +208,37 @@ namespace HoloIntervention
           }
         });
       };
+
+      callbackMap[L"enable spheres"] = [this](SpeechRecognitionResult^ result)
+      {
+        m_cameraRegistration->SetVisualization(true);
+        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Sphere visualization enabled.");
+      };
+
+      callbackMap[L"disable spheres"] = [this](SpeechRecognitionResult^ result)
+      {
+        m_cameraRegistration->SetVisualization(false);
+        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Sphere visualization disabled.");
+      };
     }
 
     //----------------------------------------------------------------------------
     float4x4 RegistrationSystem::GetTrackerToCoordinateSystemTransformation(SpatialCoordinateSystem^ requestedCoordinateSystem)
     {
       auto worldAnchor = m_cameraRegistration->GetWorldAnchor();
+      if (worldAnchor == nullptr)
+      {
+        return float4x4::identity();
+      }
+
       auto trackerToWorldAnchor = m_cameraRegistration->GetTrackerToWorldAnchorTransformation();
       try
       {
         Platform::IBox<float4x4>^ worldAnchorToRequested = worldAnchor->CoordinateSystem->TryGetTransformTo(requestedCoordinateSystem);
+        if (worldAnchorToRequested == nullptr)
+        {
+          return float4x4::identity();
+        }
         return trackerToWorldAnchor * worldAnchorToRequested->Value;
       }
       catch (Platform::Exception^ e)

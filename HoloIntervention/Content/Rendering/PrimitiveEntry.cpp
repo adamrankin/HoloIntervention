@@ -76,7 +76,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void PrimitiveEntry::SetVisible(bool enable)
     {
-      m_visible = false;
+      m_visible = enable;
     }
 
     //----------------------------------------------------------------------------
