@@ -405,14 +405,14 @@ namespace HoloIntervention
             continue;
           }
 
-          float4x4 modelToCameraTransform;
-          if (!trackerResults.empty() && ComputeModelToCameraTransform(l_latestCameraFrame->VideoMediaFrame, l_initialized, l_height, l_width, l_hsv, l_redMat, l_redMatWrap, l_imageRGB, l_mask, l_canny_output, modelToCameraTransform))
+          float4x4 phantomToCameraTransform;
+          if (!trackerResults.empty() && ComputePhantomToCameraTransform(l_latestCameraFrame->VideoMediaFrame, l_initialized, l_height, l_width, l_hsv, l_redMat, l_redMatWrap, l_imageRGB, l_mask, l_canny_output, phantomToCameraTransform))
           {
             // Transform points in model space to anchor space
             VecFloat3 worldAnchorResults;
             for (auto& phantomFiducial : m_phantomFiducialCoords)
             {
-              float4 point = transform(phantomFiducial, modelToCameraTransform * cameraToRawWorldAnchor);
+              float4 point = transform(phantomFiducial, phantomToCameraTransform * cameraToRawWorldAnchor);
               worldAnchorResults.push_back(float3(point.x, point.y, point.z));
             }
 
@@ -498,7 +498,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool CameraRegistration::ComputeModelToCameraTransform(VideoMediaFrame^ videoFrame,
+    bool CameraRegistration::ComputePhantomToCameraTransform(VideoMediaFrame^ videoFrame,
         bool& initialized,
         int32_t& height,
         int32_t& width,
@@ -508,7 +508,7 @@ namespace HoloIntervention
         cv::Mat& imageRGB,
         cv::Mat& mask,
         cv::Mat& cannyOutput,
-        float4x4& modelToCameraTransform)
+        float4x4& phantomToCameraTransform)
     {
       if (m_phantomFiducialCoords.size() != PHANTOM_SPHERE_COUNT)
       {
@@ -636,16 +636,13 @@ namespace HoloIntervention
           cv::Mat rotation(3, 3, CV_32F);
           cv::Rodrigues(rvec, rotation);
 
-          cv::Mat modelToCameraTransformCv = cv::Mat::eye(4, 4, CV_32F);
-          rotation.copyTo(modelToCameraTransformCv(cv::Rect(0, 0, 3, 3)));
-          tvec.copyTo(modelToCameraTransformCv(cv::Rect(3, 0, 1, 3)));
+          cv::Mat phantomToCameraTransformCv = cv::Mat::eye(4, 4, CV_32F);
+          rotation.copyTo(phantomToCameraTransformCv(cv::Rect(0, 0, 3, 3)));
+          tvec.copyTo(phantomToCameraTransformCv(cv::Rect(3, 0, 1, 3)));
 
-
-
-          modelToCameraTransform.m11 = modelToCameraTransformCv.at<float>(0, 0);
-          XMStoreFloat4x4(&modelToCameraTransform, XMLoadFloat4x4(&XMFLOAT4X4((float*)modelToCameraTransformCv.data)));
+          XMStoreFloat4x4(&phantomToCameraTransform, XMLoadFloat4x4(&XMFLOAT4X4((float*)phantomToCameraTransformCv.data)));
           // Output is in column-major format
-          modelToCameraTransform = transpose(modelToCameraTransform);
+          phantomToCameraTransform = transpose(phantomToCameraTransform);
           result = true;
         }
 done:
