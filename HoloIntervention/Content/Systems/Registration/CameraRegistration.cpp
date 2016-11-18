@@ -69,7 +69,7 @@ using namespace Windows::Perception::Spatial;
 namespace
 {
   //----------------------------------------------------------------------------
-  bool ExtractPhantomFiducial(HoloIntervention::System::CameraRegistration::DetectedSpheresWorld& phantomFiducialCoords, UWPOpenIGTLink::TransformRepository^ transformRepository, Platform::String^ from, Platform::String^ to)
+  bool ExtractPhantomFiducial(HoloIntervention::System::CameraRegistration::VecFloat4& phantomFiducialCoords, UWPOpenIGTLink::TransformRepository^ transformRepository, Platform::String^ from, Platform::String^ to)
   {
     bool isValid;
     float4 origin = { 0.f, 0.f, 0.f, 1.f };
@@ -83,7 +83,7 @@ namespace
       return false;
     }
     float4 translation = transform(origin, transformation);
-    phantomFiducialCoords.push_back(HoloIntervention::System::CameraRegistration::DetectedSphereWorld(translation.x, translation.y, translation.z));
+    phantomFiducialCoords.push_back(translation);
 
     return true;
   }
@@ -388,22 +388,21 @@ namespace HoloIntervention
             continue;
           }
 
-          DetectedSpheresWorld trackerResults;
+          VecFloat3 trackerResults;
           if (!RetrieveTrackerFrameLocations(l_latestTrackedFrame, trackerResults))
           {
             continue;
           }
 
-          DetectedSpheresWorld cameraResults;
-          if (!trackerResults.empty() && ComputeCircleLocations(l_latestCameraFrame->VideoMediaFrame, l_initialized, l_height, l_width, l_hsv, l_redMat, l_redMatWrap, l_imageRGB, l_mask, l_canny_output, cameraResults))
+          float4x4 modelToCameraTransform;
+          if (!trackerResults.empty() && ComputeModelToCameraTransform(l_latestCameraFrame->VideoMediaFrame, l_initialized, l_height, l_width, l_hsv, l_redMat, l_redMatWrap, l_imageRGB, l_mask, l_canny_output, modelToCameraTransform))
           {
-            // Results are in camera view coordinate system, transform to world anchor coordinate system
-            std::vector<cv::Point3f> worldAnchorResults;
-            for (auto& cameraPoint : cameraResults)
+            // Transform points in model space to anchor space
+            VecFloat3 worldAnchorResults;
+            for (auto& phantomFiducial : m_phantomFiducialCoords)
             {
-              float3 cameraPointNumerics(cameraPoint.x, cameraPoint.y, cameraPoint.z);
-              float3 point = transform(cameraPointNumerics, cameraToRawWorldAnchor);
-              worldAnchorResults.push_back(cv::Point3f(point.x, point.y, point.z));
+              float4 point = transform(phantomFiducial, modelToCameraTransform * cameraToRawWorldAnchor);
+              worldAnchorResults.push_back(float3(point.x, point.y, point.z));
             }
 
             // If visualizing, update the latest known poses of the spheres
@@ -429,8 +428,8 @@ namespace HoloIntervention
         if (m_rawWorldAnchorResults.size() == NUMBER_OF_FRAMES_FOR_CALIBRATION)
         {
           HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Calculating registration...");
-          DetectedSpheresWorld trackerResults;
-          DetectedSpheresWorld worldAnchorResults;
+          VecFloat3 trackerResults;
+          VecFloat3 worldAnchorResults;
           for (auto& frame : m_trackerFrameResults)
           {
             for (auto& sphereWorld : frame)
@@ -488,7 +487,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool CameraRegistration::ComputeCircleLocations(VideoMediaFrame^ videoFrame,
+    bool CameraRegistration::ComputeModelToCameraTransform(VideoMediaFrame^ videoFrame,
         bool& initialized,
         int32_t& height,
         int32_t& width,
@@ -498,7 +497,7 @@ namespace HoloIntervention
         cv::Mat& imageRGB,
         cv::Mat& mask,
         cv::Mat& cannyOutput,
-        DetectedSpheresWorld& cameraResults)
+        float4x4& modelToCameraTransform)
     {
       if (m_phantomFiducialCoords.size() != PHANTOM_SPHERE_COUNT)
       {
@@ -559,7 +558,7 @@ namespace HoloIntervention
           cv::inRange(hsv, cv::Scalar(170, 70, 50), cv::Scalar(180, 255, 255), redMatWrap);
           cv::addWeighted(redMat, 1.0, redMatWrap, 1.0, 0.0, mask);
 
-          DetectedSpheresPixel circleCentersPixel;
+          std::vector<cv::Point2f> circleCentersPixel;
           std::vector<cv::Vec3f> circles;
 
           // Create a Gaussian & median Blur Filter
@@ -621,24 +620,30 @@ namespace HoloIntervention
           cv::Mat rotation(3, 3, rvec.type());
           cv::Rodrigues(rvec, rotation);
 
-          cv::Mat modelToCameraTransform = cv::Mat::eye(4, 4, rvec.type());
-          rotation.copyTo(modelToCameraTransform(cv::Rect(0, 0, 3, 3)));
-          tvec.copyTo(modelToCameraTransform(cv::Rect(3, 0, 1, 3)));
+          // Copy row-by-row
+          float* rotationData = (float*)rotation.data;
+          float* translationData = (float*)tvec.data;
+          modelToCameraTransform.m11 = rotationData[0];
+          modelToCameraTransform.m12 = rotationData[1];
+          modelToCameraTransform.m13 = rotationData[2];
+          modelToCameraTransform.m14 = translationData[0];
 
-          std::vector<cv::Vec4f> cameraPointsHomogenous(m_phantomFiducialCoords.size());
-          std::vector<cv::Vec4f> modelPointsHomogenous;
-          for (auto& modelPoint : m_phantomFiducialCoords)
-          {
-            modelPointsHomogenous.push_back(cv::Vec4f(modelPoint.x, modelPoint.y, modelPoint.z, 1.f));
-          }
-          cv::transform(modelPointsHomogenous, cameraPointsHomogenous, modelToCameraTransform);
+          modelToCameraTransform.m21 = rotationData[3];
+          modelToCameraTransform.m22 = rotationData[4];
+          modelToCameraTransform.m23 = rotationData[5];
+          modelToCameraTransform.m24 = translationData[1];
 
-          cameraResults.clear();
-          for (auto& cameraPoint : cameraPointsHomogenous)
-          {
-            cameraResults.push_back(DetectedSphereWorld(cameraPoint[0], cameraPoint[1], cameraPoint[2]));
-          }
+          modelToCameraTransform.m31 = rotationData[6];
+          modelToCameraTransform.m32 = rotationData[7];
+          modelToCameraTransform.m33 = rotationData[8];
+          modelToCameraTransform.m34 = translationData[2];
 
+          modelToCameraTransform.m41 = 0.f;
+          modelToCameraTransform.m42 = 0.f;
+          modelToCameraTransform.m43 = 0.f;
+          modelToCameraTransform.m44 = 1.f;
+          // Output is in column-major format
+          modelToCameraTransform = transpose(modelToCameraTransform);
           result = true;
         }
 done:
@@ -650,7 +655,7 @@ done:
     }
 
     //----------------------------------------------------------------------------
-    bool CameraRegistration::RetrieveTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame, CameraRegistration::DetectedSpheresWorld& worldResults)
+    bool CameraRegistration::RetrieveTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame, CameraRegistration::VecFloat3& worldResults)
     {
       m_transformRepository->SetTransforms(trackedFrame);
 
@@ -679,19 +684,19 @@ done:
 
       float4 origin = { 0.f, 0.f, 0.f, 1.f };
       float4 translation = transform(origin, red1ToReferenceTransform);
-      worldResults.push_back(DetectedSphereWorld(translation.x, translation.y, translation.z));
+      worldResults.push_back(float3(translation.x, translation.y, translation.z));
 
       translation = transform(origin, red2ToReferenceTransform);
-      worldResults.push_back(DetectedSphereWorld(translation.x, translation.y, translation.z));
+      worldResults.push_back(float3(translation.x, translation.y, translation.z));
 
       translation = transform(origin, red3ToReferenceTransform);
-      worldResults.push_back(DetectedSphereWorld(translation.x, translation.y, translation.z));
+      worldResults.push_back(float3(translation.x, translation.y, translation.z));
 
       translation = transform(origin, red4ToReferenceTransform);
-      worldResults.push_back(DetectedSphereWorld(translation.x, translation.y, translation.z));
+      worldResults.push_back(float3(translation.x, translation.y, translation.z));
 
       translation = transform(origin, red5ToReferenceTransform);
-      worldResults.push_back(DetectedSphereWorld(translation.x, translation.y, translation.z));
+      worldResults.push_back(float3(translation.x, translation.y, translation.z));
 
       // Phantom is rigid body, so only need to pull the values once
       if (m_phantomFiducialCoords.empty())

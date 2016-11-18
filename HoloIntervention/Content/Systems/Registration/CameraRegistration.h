@@ -67,11 +67,10 @@ namespace HoloIntervention
       };
 
     public:
-      typedef cv::Point2f DetectedSpherePixel;
-      typedef cv::Point3f DetectedSphereWorld;
-      typedef std::vector<DetectedSpherePixel> DetectedSpheresPixel;
-      typedef std::vector<DetectedSphereWorld> DetectedSpheresWorld;
-      typedef std::vector<DetectedSpheresWorld> DetectionFrames;
+      typedef std::vector<Windows::Foundation::Numerics::float2> VecFloat2;
+      typedef std::vector<Windows::Foundation::Numerics::float3> VecFloat3;
+      typedef std::vector<Windows::Foundation::Numerics::float4> VecFloat4;
+      typedef std::vector<VecFloat3> DetectionFrames;
 
     public:
       CameraRegistration(const std::shared_ptr<DX::DeviceResources>& deviceResources);
@@ -90,10 +89,10 @@ namespace HoloIntervention
 
     protected:
       void ProcessAvailableFrames(Concurrency::cancellation_token token);
-      bool CameraRegistration::RetrieveTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame, CameraRegistration::DetectedSpheresWorld& worldResults);
+      bool CameraRegistration::RetrieveTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame, VecFloat3& worldResults);
 
-      bool ComputeCircleLocations(Windows::Media::Capture::Frames::VideoMediaFrame^ videoFrame, bool& initialized, int32_t& height, int32_t& width,
-                                  cv::Mat& hsv, cv::Mat& redMat, cv::Mat& redMatWrap, cv::Mat& imageRGB, cv::Mat& mask, cv::Mat& cannyOutput, DetectedSpheresWorld& cameraResults);
+      bool ComputeModelToCameraTransform(Windows::Media::Capture::Frames::VideoMediaFrame^ videoFrame, bool& initialized, int32_t& height, int32_t& width,
+                                         cv::Mat& hsv, cv::Mat& redMat, cv::Mat& redMatWrap, cv::Mat& imageRGB, cv::Mat& mask, cv::Mat& cannyOutput, Windows::Foundation::Numerics::float4x4& modelToCameraTransform);
       void OnAnchorRawCoordinateSystemAdjusted(Windows::Perception::Spatial::SpatialAnchor^ anchor, Windows::Perception::Spatial::SpatialAnchorRawCoordinateSystemAdjustedEventArgs^ args);
 
     protected:
@@ -124,7 +123,7 @@ namespace HoloIntervention
       std::atomic_bool                                                      m_transformsAvailable = false;
       double                                                                m_latestTimestamp = 0.0;
       DetectionFrames                                                       m_trackerFrameResults;
-      DetectedSpheresWorld                                                  m_phantomFiducialCoords;
+      VecFloat4                                                             m_phantomFiducialCoords;
       std::array<UWPOpenIGTLink::TransformName^, 5>                         m_sphereCoordinateNames;
 
       // State variables
