@@ -129,18 +129,13 @@ namespace HoloIntervention
 
           const float& deltaTime = static_cast<float>(timer.GetElapsedSeconds());
 
-          // Use linear interpolation to smooth the pose over time
           float4x4 smoothedPose = lerp(m_anchorModelCurrentWorld, m_anchorModelDesiredWorld, deltaTime * REGISTRATION_ANCHOR_MODEL_LERP_RATE);
-
-          // This will be used as the translation component of the hologram's model transform.
           m_anchorModelCurrentWorld = smoothedPose;
-
-          // Coordinate system has orientation and position
           m_regAnchorModel->SetWorld(m_anchorModelCurrentWorld);
         }
       }
 
-      m_cameraRegistration->Update(transformContainer);
+      m_cameraRegistration->Update(coordinateSystem, transformContainer);
     }
 
     //----------------------------------------------------------------------------

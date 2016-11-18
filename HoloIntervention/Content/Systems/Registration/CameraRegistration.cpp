@@ -66,6 +66,29 @@ using namespace Windows::Media::Devices::Core;
 using namespace Windows::Media::MediaProperties;
 using namespace Windows::Perception::Spatial;
 
+namespace
+{
+  //----------------------------------------------------------------------------
+  bool ExtractPhantomFiducial(HoloIntervention::System::CameraRegistration::DetectedSpheresWorld& phantomFiducialCoords, UWPOpenIGTLink::TransformRepository^ transformRepository, Platform::String^ from, Platform::String^ to)
+  {
+    bool isValid;
+    float4 origin = { 0.f, 0.f, 0.f, 1.f };
+    float4x4 transformation;
+    try
+    {
+      transformation = transpose(transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(from, to), &isValid));
+    }
+    catch (Platform::Exception^ e)
+    {
+      return false;
+    }
+    float4 translation = transform(origin, transformation);
+    phantomFiducialCoords.push_back(HoloIntervention::System::CameraRegistration::DetectedSphereWorld(translation.x, translation.y, translation.z));
+
+    return true;
+  }
+}
+
 namespace HoloIntervention
 {
   namespace System
@@ -102,8 +125,10 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void CameraRegistration::Update(Platform::IBox<Windows::Foundation::Numerics::float4x4>^ worldAnchorToRequestedBox)
+    void CameraRegistration::Update(SpatialCoordinateSystem^ coordSystem, Platform::IBox<Windows::Foundation::Numerics::float4x4>^ worldAnchorToRequestedBox)
     {
+      m_coordSystem = coordSystem;
+
       if (worldAnchorToRequestedBox == nullptr)
       {
         return;
@@ -114,8 +139,8 @@ namespace HoloIntervention
         for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
         {
           auto entry = HoloIntervention::instance()->GetModelRenderer().GetPrimitive(m_spherePrimitiveIds[i]);
-          float4x4 anchorToRequested = worldAnchorToRequestedBox->Value;
-          entry->SetDesiredWorldPose(m_sphereToAnchor[i] * anchorToRequested);
+          //float4x4 anchorToRequested = worldAnchorToRequestedBox->Value;
+          entry->SetDesiredWorldPose(m_sphereToCoordSystem[i]);
         }
       }
     }
@@ -382,12 +407,32 @@ namespace HoloIntervention
               worldAnchorResults.push_back(cv::Point3f(point.x, point.y, point.z));
             }
 
+            for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
+            {
+              auto cameraPoint = cameraResults[i];
+              try
+              {
+                auto cameraToRequestedBox = l_latestCameraFrame->CoordinateSystem->TryGetTransformTo(m_coordSystem);
+                if (cameraToRequestedBox == nullptr)
+                {
+                  continue;
+                }
+                float3 cameraPointNumerics(cameraPoint.x, cameraPoint.y, cameraPoint.z);
+                float3 point = transform(cameraPointNumerics, cameraToRequestedBox->Value);
+                m_sphereToCoordSystem[i] = make_float4x4_translation(point.x, point.y, point.z);
+              }
+              catch (Platform::Exception^ e)
+              {
+                continue;
+              }
+            }
+
             // If visualizing, update the latest known poses of the spheres
             if (m_visualizationEnabled && worldAnchorResults.size() == PHANTOM_SPHERE_COUNT)
             {
               for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
               {
-                m_sphereToAnchorPoses[i] = make_float4x4_translation(float3(worldAnchorResults[i].x, worldAnchorResults[i].y, worldAnchorResults[i].z));
+                m_sphereToAnchor[i] = make_float4x4_translation(worldAnchorResults[i].x, worldAnchorResults[i].y, worldAnchorResults[i].z);
               }
             }
 
@@ -535,7 +580,7 @@ namespace HoloIntervention
           cv::inRange(hsv, cv::Scalar(170, 70, 50), cv::Scalar(180, 255, 255), redMatWrap);
           cv::addWeighted(redMat, 1.0, redMatWrap, 1.0, 0.0, mask);
 
-          DetectedSpheresPixel spheres;
+          DetectedSpheresPixel circleCentersPixel;
           std::vector<cv::Vec3f> circles;
 
           // Create a Gaussian & median Blur Filter
@@ -563,13 +608,12 @@ namespace HoloIntervention
                 goto done;
               }
 
-              // Outline circle and centroid
-              cv::Point2f centerHough(circle[0], circle[1]);
-              spheres.push_back(centerHough);
+              circleCentersPixel.push_back(cv::Point2f(circle[0], circle[1]));
             }
           }
           else
           {
+            // TODO : is it possible to make our code more robust by identifying 5 circles that make sense? pixel center distances? radii? etc...
             result = false;
             goto done;
           }
@@ -589,7 +633,7 @@ namespace HoloIntervention
 
           cv::Mat rvec(3, 1, cv::DataType<float>::type);
           cv::Mat tvec(3, 1, rvec.type());
-          if (!cv::solvePnP(m_phantomFiducialCoords, spheres, intrinsic, distCoeffs, rvec, tvec, false, cv::SOLVEPNP_EPNP))
+          if (!cv::solvePnP(m_phantomFiducialCoords, circleCentersPixel, intrinsic, distCoeffs, rvec, tvec, false, cv::SOLVEPNP_EPNP))
           {
             result = false;
             goto done;
@@ -631,15 +675,28 @@ done:
     {
       m_transformRepository->SetTransforms(trackedFrame);
 
-      // Calculate world position from transforms in tracked frame
-      bool isValid(false);
-      float4x4 red1ToReferenceTransform = transpose(m_transformRepository->GetTransform(m_sphereCoordinateNames[0], &isValid));
-      if (!isValid) {return false;}
+      float4x4 red1ToReferenceTransform;
+      float4x4 red2ToReferenceTransform;
+      float4x4 red3ToReferenceTransform;
+      float4x4 red4ToReferenceTransform;
+      float4x4 red5ToReferenceTransform;
 
-      float4x4 red2ToReferenceTransform = transpose(m_transformRepository->GetTransform(m_sphereCoordinateNames[1], &isValid));
-      float4x4 red3ToReferenceTransform = transpose(m_transformRepository->GetTransform(m_sphereCoordinateNames[2], &isValid));
-      float4x4 red4ToReferenceTransform = transpose(m_transformRepository->GetTransform(m_sphereCoordinateNames[3], &isValid));
-      float4x4 red5ToReferenceTransform = transpose(m_transformRepository->GetTransform(m_sphereCoordinateNames[4], &isValid));
+      // Calculate world position from transforms in tracked frame
+      try
+      {
+        bool isValid(false);
+        float4x4 red1ToReferenceTransform = transpose(m_transformRepository->GetTransform(m_sphereCoordinateNames[0], &isValid));
+        if (!isValid) { return false; }
+
+        float4x4 red2ToReferenceTransform = transpose(m_transformRepository->GetTransform(m_sphereCoordinateNames[1], &isValid));
+        float4x4 red3ToReferenceTransform = transpose(m_transformRepository->GetTransform(m_sphereCoordinateNames[2], &isValid));
+        float4x4 red4ToReferenceTransform = transpose(m_transformRepository->GetTransform(m_sphereCoordinateNames[3], &isValid));
+        float4x4 red5ToReferenceTransform = transpose(m_transformRepository->GetTransform(m_sphereCoordinateNames[4], &isValid));
+      }
+      catch (Platform::Exception^ e)
+      {
+        return false;
+      }
 
       float4 origin = { 0.f, 0.f, 0.f, 1.f };
       float4 translation = transform(origin, red1ToReferenceTransform);
@@ -657,28 +714,40 @@ done:
       translation = transform(origin, red5ToReferenceTransform);
       worldResults.push_back(DetectedSphereWorld(translation.x, translation.y, translation.z));
 
+      // Phantom is rigid body, so only need to pull the values once
       if (m_phantomFiducialCoords.empty())
       {
-        // Phantom is rigid body, so only need to pull the values once
-        float4x4 red1ToPhantomTransform = transpose(m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"RedSphere1", L"Phantom"), &isValid));
-        translation = transform(origin, red1ToPhantomTransform);
-        m_phantomFiducialCoords.push_back(cv::Point3f(translation.x, translation.y, translation.z));
+        bool hasError(false);
+        if (!ExtractPhantomFiducial(m_phantomFiducialCoords, m_transformRepository, L"RedSphere1", L"Phantom"))
+        {
+          hasError = true;
+        }
 
-        float4x4 red2ToPhantomTransform = transpose(m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"RedSphere2", L"Phantom"), &isValid));
-        translation = transform(origin, red2ToPhantomTransform);
-        m_phantomFiducialCoords.push_back(cv::Point3f(translation.x, translation.y, translation.z));
+        if (!ExtractPhantomFiducial(m_phantomFiducialCoords, m_transformRepository, L"RedSphere2", L"Phantom"))
+        {
+          hasError = true;
+        }
 
-        float4x4 red3ToPhantomTransform = transpose(m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"RedSphere3", L"Phantom"), &isValid));
-        translation = transform(origin, red3ToPhantomTransform);
-        m_phantomFiducialCoords.push_back(cv::Point3f(translation.x, translation.y, translation.z));
+        if (!ExtractPhantomFiducial(m_phantomFiducialCoords, m_transformRepository, L"RedSphere3", L"Phantom"))
+        {
+          hasError = true;
+        }
 
-        float4x4 red4ToPhantomTransform = transpose(m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"RedSphere4", L"Phantom"), &isValid));
-        translation = transform(origin, red4ToPhantomTransform);
-        m_phantomFiducialCoords.push_back(cv::Point3f(translation.x, translation.y, translation.z));
+        if (!ExtractPhantomFiducial(m_phantomFiducialCoords, m_transformRepository, L"RedSphere4", L"Phantom"))
+        {
+          hasError = true;
+        }
 
-        float4x4 red5ToPhantomTransform = transpose(m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"RedSphere5", L"Phantom"), &isValid));
-        translation = transform(origin, red5ToPhantomTransform);
-        m_phantomFiducialCoords.push_back(cv::Point3f(translation.x, translation.y, translation.z));
+        if (!ExtractPhantomFiducial(m_phantomFiducialCoords, m_transformRepository, L"RedSphere5", L"Phantom"))
+        {
+          hasError = true;
+        }
+
+        if (hasError)
+        {
+          // Extraction failed, try again next frame
+          m_phantomFiducialCoords.clear();
+        }
       }
 
       return true;
