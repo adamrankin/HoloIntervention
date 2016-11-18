@@ -58,6 +58,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #endif
 
 using namespace Concurrency;
+using namespace DirectX;
 using namespace Windows::Foundation::Numerics;
 using namespace Windows::Foundation;
 using namespace Windows::Graphics::Imaging;
@@ -226,7 +227,17 @@ namespace HoloIntervention
                 auto token = m_tokenSource.get_token();
                 m_workerTask = &concurrency::create_task([this, token]()
                 {
-                  ProcessAvailableFrames(token);
+                  try
+                  {
+                    ProcessAvailableFrames(token);
+                  }
+                  catch (const std::exception& e)
+                  {
+                    HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Registration failed. Please retry.");
+                    OutputDebugStringA(e.what());
+                    m_tokenSource.cancel();
+                    return;
+                  }
                 }).then([this]()
                 {
                   m_workerTask = nullptr;
@@ -609,39 +620,30 @@ namespace HoloIntervention
           intrinsic(1, 1) = cameraIntrinsics->FocalLength.y;
           intrinsic(1, 2) = cameraIntrinsics->PrincipalPoint.y;
 
-          cv::Mat rvec(3, 1, cv::DataType<float>::type);
-          cv::Mat tvec(3, 1, rvec.type());
-          if (!cv::solvePnP(m_phantomFiducialCoords, circleCentersPixel, intrinsic, distCoeffs, rvec, tvec, false, cv::SOLVEPNP_EPNP))
+          cv::Mat rvec(3, 1, CV_32F);
+          cv::Mat tvec(3, 1, CV_32F);
+          std::vector<cv::Point3f> phantomFiducialsCv;
+          for (auto& fid : m_phantomFiducialCoords)
+          {
+            phantomFiducialsCv.push_back(cv::Point3f(fid.x, fid.y, fid.z));
+          }
+          if (!cv::solvePnP(phantomFiducialsCv, circleCentersPixel, intrinsic, distCoeffs, rvec, tvec, false, cv::SOLVEPNP_EPNP))
           {
             result = false;
             goto done;
           }
 
-          cv::Mat rotation(3, 3, rvec.type());
+          cv::Mat rotation(3, 3, CV_32F);
           cv::Rodrigues(rvec, rotation);
 
-          // Copy row-by-row
-          float* rotationData = (float*)rotation.data;
-          float* translationData = (float*)tvec.data;
-          modelToCameraTransform.m11 = rotationData[0];
-          modelToCameraTransform.m12 = rotationData[1];
-          modelToCameraTransform.m13 = rotationData[2];
-          modelToCameraTransform.m14 = translationData[0];
+          cv::Mat modelToCameraTransformCv = cv::Mat::eye(4, 4, CV_32F);
+          rotation.copyTo(modelToCameraTransformCv(cv::Rect(0, 0, 3, 3)));
+          tvec.copyTo(modelToCameraTransformCv(cv::Rect(3, 0, 1, 3)));
 
-          modelToCameraTransform.m21 = rotationData[3];
-          modelToCameraTransform.m22 = rotationData[4];
-          modelToCameraTransform.m23 = rotationData[5];
-          modelToCameraTransform.m24 = translationData[1];
 
-          modelToCameraTransform.m31 = rotationData[6];
-          modelToCameraTransform.m32 = rotationData[7];
-          modelToCameraTransform.m33 = rotationData[8];
-          modelToCameraTransform.m34 = translationData[2];
 
-          modelToCameraTransform.m41 = 0.f;
-          modelToCameraTransform.m42 = 0.f;
-          modelToCameraTransform.m43 = 0.f;
-          modelToCameraTransform.m44 = 1.f;
+          modelToCameraTransform.m11 = modelToCameraTransformCv.at<float>(0, 0);
+          XMStoreFloat4x4(&modelToCameraTransform, XMLoadFloat4x4(&XMFLOAT4X4((float*)modelToCameraTransformCv.data)));
           // Output is in column-major format
           modelToCameraTransform = transpose(modelToCameraTransform);
           result = true;
