@@ -126,22 +126,44 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void CameraRegistration::Update(Platform::IBox<Windows::Foundation::Numerics::float4x4>^ worldAnchorToRequestedBox)
+    void CameraRegistration::Update(SpatialCoordinateSystem^ coordSystem, Platform::IBox<Windows::Foundation::Numerics::float4x4>^ worldAnchorToRequestedBox)
     {
+      MediaFrameReference^ cameraFrame(m_videoFrameProcessor->GetLatestFrame());
+
+      float4x4 cameraToHead(float4x4::identity());
+      if (cameraFrame != nullptr && cameraFrame->CoordinateSystem != nullptr)
+      {
+        std::lock_guard<std::mutex> guard(m_anchorMutex);
+        Platform::IBox<float4x4>^ cameraToHeadBox;
+        try
+        {
+          cameraToHeadBox = cameraFrame->CoordinateSystem->TryGetTransformTo(coordSystem);
+        }
+        catch (Platform::Exception^ e) {}
+        if (cameraToHeadBox != nullptr)
+        {
+          cameraToHead = cameraToHeadBox->Value;
+        }
+      }
+
+      if (cameraToHead != float4x4::identity())
+      {
+        if (m_visualizationEnabled && m_spherePrimitiveIds[0] != Rendering::INVALID_ENTRY)
+        {
+          for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
+          {
+            auto entry = HoloIntervention::instance()->GetModelRenderer().GetPrimitive(m_spherePrimitiveIds[i]);
+            float4x4 anchorToRequested = worldAnchorToRequestedBox->Value;
+            entry->SetDesiredWorldPose(m_sphereToCamera[i] * cameraToHead);
+          }
+        }
+      }
+
       if (worldAnchorToRequestedBox == nullptr)
       {
         return;
       }
 
-      if (m_visualizationEnabled && m_spherePrimitiveIds[0] != Rendering::INVALID_ENTRY)
-      {
-        for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
-        {
-          auto entry = HoloIntervention::instance()->GetModelRenderer().GetPrimitive(m_spherePrimitiveIds[i]);
-          float4x4 anchorToRequested = worldAnchorToRequestedBox->Value;
-          entry->SetDesiredWorldPose(m_sphereToAnchor[i]*anchorToRequested);
-        }
-      }
     }
 
     //----------------------------------------------------------------------------
@@ -421,7 +443,7 @@ namespace HoloIntervention
             {
               for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
               {
-                m_sphereToAnchor[i] = make_float4x4_translation(worldAnchorResults[i].x, worldAnchorResults[i].y, worldAnchorResults[i].z);
+                m_sphereToCamera[i] = make_float4x4_translation(-float3(m_phantomFiducialCoords[i].x, m_phantomFiducialCoords[i].y, m_phantomFiducialCoords[i].z)) * phantomToCameraTransform;
               }
             }
 
@@ -760,7 +782,7 @@ done:
           }
         }
       }
-      for (auto& pose : m_sphereToAnchor)
+      for (auto& pose : m_sphereToCamera)
       {
         pose = pose * args->OldRawCoordinateSystemToNewRawCoordinateSystemTransform;
       }
