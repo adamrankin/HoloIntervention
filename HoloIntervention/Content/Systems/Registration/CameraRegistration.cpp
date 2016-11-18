@@ -125,10 +125,8 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void CameraRegistration::Update(SpatialCoordinateSystem^ coordSystem, Platform::IBox<Windows::Foundation::Numerics::float4x4>^ worldAnchorToRequestedBox)
+    void CameraRegistration::Update(Platform::IBox<Windows::Foundation::Numerics::float4x4>^ worldAnchorToRequestedBox)
     {
-      m_coordSystem = coordSystem;
-
       if (worldAnchorToRequestedBox == nullptr)
       {
         return;
@@ -139,8 +137,8 @@ namespace HoloIntervention
         for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
         {
           auto entry = HoloIntervention::instance()->GetModelRenderer().GetPrimitive(m_spherePrimitiveIds[i]);
-          //float4x4 anchorToRequested = worldAnchorToRequestedBox->Value;
-          entry->SetDesiredWorldPose(m_sphereToCoordSystem[i]);
+          float4x4 anchorToRequested = worldAnchorToRequestedBox->Value;
+          entry->SetDesiredWorldPose(m_sphereToAnchor[i]*anchorToRequested);
         }
       }
     }
@@ -276,6 +274,7 @@ namespace HoloIntervention
           auto entry = HoloIntervention::instance()->GetModelRenderer().GetPrimitive(m_spherePrimitiveIds[i]);
           entry->SetVisible(true);
           entry->SetColour(float3(0.803921640f, 0.360784322f, 0.360784322f));
+          entry->SetDesiredWorldPose(float4x4::identity());
         }
         m_visualizationEnabled = true;
       }
@@ -405,26 +404,6 @@ namespace HoloIntervention
               float3 cameraPointNumerics(cameraPoint.x, cameraPoint.y, cameraPoint.z);
               float3 point = transform(cameraPointNumerics, cameraToRawWorldAnchor);
               worldAnchorResults.push_back(cv::Point3f(point.x, point.y, point.z));
-            }
-
-            for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
-            {
-              auto cameraPoint = cameraResults[i];
-              try
-              {
-                auto cameraToRequestedBox = l_latestCameraFrame->CoordinateSystem->TryGetTransformTo(m_coordSystem);
-                if (cameraToRequestedBox == nullptr)
-                {
-                  continue;
-                }
-                float3 cameraPointNumerics(cameraPoint.x, cameraPoint.y, cameraPoint.z);
-                float3 point = transform(cameraPointNumerics, cameraToRequestedBox->Value);
-                m_sphereToCoordSystem[i] = make_float4x4_translation(point.x, point.y, point.z);
-              }
-              catch (Platform::Exception^ e)
-              {
-                continue;
-              }
             }
 
             // If visualizing, update the latest known poses of the spheres

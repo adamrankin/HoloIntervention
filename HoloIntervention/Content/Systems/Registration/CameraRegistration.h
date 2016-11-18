@@ -77,7 +77,7 @@ namespace HoloIntervention
       CameraRegistration(const std::shared_ptr<DX::DeviceResources>& deviceResources);
       ~CameraRegistration();
 
-      void Update(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem, Platform::IBox<Windows::Foundation::Numerics::float4x4>^ worldAnchorToRequestedBox);
+      void Update(Platform::IBox<Windows::Foundation::Numerics::float4x4>^ worldAnchorToRequestedBox);
       Concurrency::task<bool> StopCameraAsync();
       Concurrency::task<bool> StartCameraAsync();
       void SetVisualization(bool enabled);
@@ -134,10 +134,6 @@ namespace HoloIntervention
 
       Windows::Foundation::Numerics::float4x4                               m_trackerToWorldAnchor = Windows::Foundation::Numerics::float4x4::identity(); // row-major order
       std::shared_ptr<LandmarkRegistration>                                 m_landmarkRegistration = std::make_shared<LandmarkRegistration>();
-
-      // temp
-      Windows::Perception::Spatial::SpatialCoordinateSystem^                m_coordSystem = nullptr;
-      std::array<Windows::Foundation::Numerics::float4x4, 5>                m_sphereToCoordSystem;
 
       static const uint32                                                   PHANTOM_SPHERE_COUNT = 5;
       static const uint32                                                   NUMBER_OF_FRAMES_FOR_CALIBRATION = 30;

@@ -135,7 +135,7 @@ namespace HoloIntervention
         }
       }
 
-      m_cameraRegistration->Update(coordinateSystem, transformContainer);
+      m_cameraRegistration->Update(transformContainer);
     }
 
     //----------------------------------------------------------------------------
@@ -157,6 +157,10 @@ namespace HoloIntervention
       callbackMap[L"drop anchor"] = [this](SpeechRecognitionResult ^ result)
       {
         m_regAnchorRequested = true;
+        if (m_registrationActive)
+        {
+          m_registrationActive = false;
+        }
       };
 
       callbackMap[L"remove anchor"] = [this](SpeechRecognitionResult ^ result)
