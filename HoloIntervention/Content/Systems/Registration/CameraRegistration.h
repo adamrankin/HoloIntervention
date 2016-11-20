@@ -116,13 +116,13 @@ namespace HoloIntervention
       std::mutex                                                            m_framesLock;
       Windows::Media::Capture::Frames::MediaFrameReference^                 m_currentFrame = nullptr;
       Windows::Media::Capture::Frames::MediaFrameReference^                 m_nextFrame = nullptr;
-      DetectionFrames                                                       m_rawWorldAnchorResults;
+      DetectionFrames                                                       m_sphereInAnchorResults;
 
       // IGT link
       UWPOpenIGTLink::TransformRepository^                                  m_transformRepository = ref new UWPOpenIGTLink::TransformRepository();
       std::atomic_bool                                                      m_transformsAvailable = false;
       double                                                                m_latestTimestamp = 0.0;
-      DetectionFrames                                                       m_trackerFrameResults;
+      DetectionFrames                                                       m_sphereInTrackerResults;
       VecFloat4                                                             m_phantomFiducialCoords;
       std::array<UWPOpenIGTLink::TransformName^, 5>                         m_sphereCoordinateNames;
 
@@ -135,7 +135,7 @@ namespace HoloIntervention
       std::shared_ptr<LandmarkRegistration>                                 m_landmarkRegistration = std::make_shared<LandmarkRegistration>();
 
       static const uint32                                                   PHANTOM_SPHERE_COUNT = 5;
-      static const uint32                                                   NUMBER_OF_FRAMES_FOR_CALIBRATION = 30;
+      static const uint32                                                   NUMBER_OF_FRAMES_FOR_CALIBRATION = 90;
       static const float                                                    VISUALIZATION_SPHERE_RADIUS;
     };
   }

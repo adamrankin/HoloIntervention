@@ -188,8 +188,8 @@ namespace HoloIntervention
     task<bool> CameraRegistration::StartCameraAsync()
     {
       std::lock_guard<std::mutex> frameGuard(m_framesLock);
-      m_rawWorldAnchorResults.clear();
-      m_trackerFrameResults.clear();
+      m_sphereInAnchorResults.clear();
+      m_sphereInTrackerResults.clear();
 
       return StopCameraAsync().then([this](bool result)
       {
@@ -402,35 +402,33 @@ namespace HoloIntervention
             continue;
           }
 
-          VecFloat3 trackerResults;
-          if (!RetrieveTrackerFrameLocations(l_latestTrackedFrame, trackerResults))
+          VecFloat3 sphereInTrackerResults;
+          if (!RetrieveTrackerFrameLocations(l_latestTrackedFrame, sphereInTrackerResults))
           {
             continue;
           }
 
           float4x4 phantomToCameraTransform;
-          if (!trackerResults.empty() && ComputePhantomToCameraTransform(l_latestCameraFrame->VideoMediaFrame, l_initialized, l_height, l_width, l_hsv, l_redMat, l_redMatWrap, l_imageRGB, l_mask, l_canny_output, phantomToCameraTransform))
+          if (!sphereInTrackerResults.empty() && ComputePhantomToCameraTransform(l_latestCameraFrame->VideoMediaFrame, l_initialized, l_height, l_width, l_hsv, l_redMat, l_redMatWrap, l_imageRGB, l_mask, l_canny_output, phantomToCameraTransform))
           {
             // Transform points in model space to anchor space
-            VecFloat3 worldAnchorResults;
-            for (auto& phantomFiducial : m_phantomFiducialCoords)
+            VecFloat3 sphereInAnchorResults;
+            int i = 0;
+            for (auto& sphere : m_phantomFiducialCoords)
             {
-              float4 point = transform(phantomFiducial, phantomToCameraTransform * cameraToRawWorldAnchor);
-              worldAnchorResults.push_back(float3(point.x, point.y, point.z));
-            }
-
-            // If visualizing, update the latest known poses of the spheres
-            if (m_visualizationEnabled && worldAnchorResults.size() == PHANTOM_SPHERE_COUNT)
-            {
-              for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
+              float4 spherePointInAnchor = transform(sphere, phantomToCameraTransform * cameraToRawWorldAnchor);
+              sphereInAnchorResults.push_back(float3(spherePointInAnchor.x, spherePointInAnchor.y, spherePointInAnchor.z));
+              if (m_visualizationEnabled)
               {
-                m_sphereToAnchor[i] = make_float4x4_translation(-float3(m_phantomFiducialCoords[i].x, m_phantomFiducialCoords[i].y, m_phantomFiducialCoords[i].z)) * phantomToCameraTransform;
+                // If visualizing, update the latest known poses of the spheres
+                m_sphereToAnchor[i] = make_float4x4_translation(-float3(sphereInAnchorResults[i].x, sphereInAnchorResults[i].y, sphereInAnchorResults[i].z));
+                i++;
               }
             }
 
-            m_rawWorldAnchorResults.push_back(worldAnchorResults);
-            m_trackerFrameResults.push_back(trackerResults);
-            HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Acquired " + m_rawWorldAnchorResults.size().ToString() + L" frame" + (m_rawWorldAnchorResults.size() > 1 ? L"s" : L"") + L".",  0.5);
+            m_sphereInAnchorResults.push_back(sphereInAnchorResults);
+            m_sphereInTrackerResults.push_back(sphereInTrackerResults);
+            HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Acquired " + m_sphereInAnchorResults.size().ToString() + L"/" + NUMBER_OF_FRAMES_FOR_CALIBRATION.ToString() + " frames.",  0.5);
           }
         }
         else
@@ -439,19 +437,19 @@ namespace HoloIntervention
           std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
 
-        if (m_rawWorldAnchorResults.size() == NUMBER_OF_FRAMES_FOR_CALIBRATION)
+        if (m_sphereInAnchorResults.size() == NUMBER_OF_FRAMES_FOR_CALIBRATION)
         {
           HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Calculating registration...");
           VecFloat3 trackerResults;
           VecFloat3 worldAnchorResults;
-          for (auto& frame : m_trackerFrameResults)
+          for (auto& frame : m_sphereInTrackerResults)
           {
             for (auto& sphereWorld : frame)
             {
               trackerResults.push_back(sphereWorld);
             }
           }
-          for (auto& frame : m_rawWorldAnchorResults)
+          for (auto& frame : m_sphereInAnchorResults)
           {
             for (auto& sphereWorld : frame)
             {
@@ -494,8 +492,8 @@ namespace HoloIntervention
             StopCameraAsync();
           }
 
-          m_rawWorldAnchorResults.clear();
-          m_trackerFrameResults.clear();
+          m_sphereInAnchorResults.clear();
+          m_sphereInTrackerResults.clear();
         }
       }
     }
@@ -643,11 +641,19 @@ namespace HoloIntervention
           rotation.copyTo(phantomToCameraTransformCv(cv::Rect(0, 0, 3, 3)));
           tvec.copyTo(phantomToCameraTransformCv(cv::Rect(3, 0, 1, 3)));
 
+          std::vector<cv::Vec4f> cameraPointsHomogenous(m_phantomFiducialCoords.size());
+          std::vector<cv::Vec4f> modelPointsHomogenous;
+          for (auto& modelPoint : m_phantomFiducialCoords)
+          {
+            modelPointsHomogenous.push_back(cv::Vec4f(modelPoint.x, modelPoint.y, modelPoint.z, 1.f));
+          }
+          cv::transform(modelPointsHomogenous, cameraPointsHomogenous, phantomToCameraTransformCv);
+
           XMStoreFloat4x4(&phantomToCameraTransform, XMLoadFloat4x4(&XMFLOAT4X4((float*)phantomToCameraTransformCv.data)));
-          float4x4 cvToD3D = float4x4::identity();
-          cvToD3D.m22 = -1.f; // invert y axis
-          cvToD3D.m33 = -1.f; // invert z axis
-          phantomToCameraTransform = transpose(phantomToCameraTransform * cvToD3D); // Output is in column-major format, opencv produces row-major
+          float4x4 cvToD3D = float4x4::identity(); // rotate 180 about x axis
+          cvToD3D.m22 = -1.f;
+          cvToD3D.m33 = -1.f;
+          phantomToCameraTransform = transpose(phantomToCameraTransform*cvToD3D); // Output is in column-major format, opencv produces row-major
           result = true;
         }
 done:
@@ -756,7 +762,7 @@ done:
       {
         // Registration is active, apply this to all m_rawWorldAnchorResults results, to adjust raw anchor coordinate system that they depend on
         std::lock_guard<std::mutex> frameGuard(m_framesLock);
-        for (auto& frame : m_rawWorldAnchorResults)
+        for (auto& frame : m_sphereInAnchorResults)
         {
           for (auto& point : frame)
           {
