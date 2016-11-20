@@ -126,44 +126,22 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void CameraRegistration::Update(SpatialCoordinateSystem^ coordSystem, Platform::IBox<Windows::Foundation::Numerics::float4x4>^ worldAnchorToRequestedBox)
+    void CameraRegistration::Update(Platform::IBox<Windows::Foundation::Numerics::float4x4>^ worldAnchorToRequestedBox)
     {
-      MediaFrameReference^ cameraFrame(m_videoFrameProcessor->GetLatestFrame());
-
-      float4x4 cameraToHead(float4x4::identity());
-      if (cameraFrame != nullptr && cameraFrame->CoordinateSystem != nullptr)
-      {
-        std::lock_guard<std::mutex> guard(m_anchorMutex);
-        Platform::IBox<float4x4>^ cameraToHeadBox;
-        try
-        {
-          cameraToHeadBox = cameraFrame->CoordinateSystem->TryGetTransformTo(coordSystem);
-        }
-        catch (Platform::Exception^ e) {}
-        if (cameraToHeadBox != nullptr)
-        {
-          cameraToHead = cameraToHeadBox->Value;
-        }
-      }
-
-      if (cameraToHead != float4x4::identity())
-      {
-        if (m_visualizationEnabled && m_spherePrimitiveIds[0] != Rendering::INVALID_ENTRY)
-        {
-          for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
-          {
-            auto entry = HoloIntervention::instance()->GetModelRenderer().GetPrimitive(m_spherePrimitiveIds[i]);
-            float4x4 anchorToRequested = worldAnchorToRequestedBox->Value;
-            entry->SetDesiredWorldPose(m_sphereToCamera[i] * cameraToHead);
-          }
-        }
-      }
-
       if (worldAnchorToRequestedBox == nullptr)
       {
         return;
       }
 
+      if (m_visualizationEnabled && m_spherePrimitiveIds[0] != Rendering::INVALID_ENTRY)
+      {
+        for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
+        {
+          auto entry = HoloIntervention::instance()->GetModelRenderer().GetPrimitive(m_spherePrimitiveIds[i]);
+          float4x4 anchorToRequested = worldAnchorToRequestedBox->Value;
+          entry->SetDesiredWorldPose(m_sphereToAnchor[i] * anchorToRequested);
+        }
+      }
     }
 
     //----------------------------------------------------------------------------
@@ -200,7 +178,10 @@ namespace HoloIntervention
           return true;
         });
       }
-      return create_task([]() {return true;});
+      return create_task([]()
+      {
+        return true;
+      });
     }
 
     //----------------------------------------------------------------------------
@@ -443,7 +424,7 @@ namespace HoloIntervention
             {
               for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
               {
-                m_sphereToCamera[i] = make_float4x4_translation(-float3(m_phantomFiducialCoords[i].x, m_phantomFiducialCoords[i].y, m_phantomFiducialCoords[i].z)) * phantomToCameraTransform;
+                m_sphereToAnchor[i] = make_float4x4_translation(-float3(m_phantomFiducialCoords[i].x, m_phantomFiducialCoords[i].y, m_phantomFiducialCoords[i].z)) * phantomToCameraTransform;
               }
             }
 
@@ -663,8 +644,10 @@ namespace HoloIntervention
           tvec.copyTo(phantomToCameraTransformCv(cv::Rect(3, 0, 1, 3)));
 
           XMStoreFloat4x4(&phantomToCameraTransform, XMLoadFloat4x4(&XMFLOAT4X4((float*)phantomToCameraTransformCv.data)));
-          // Output is in column-major format
-          phantomToCameraTransform = transpose(phantomToCameraTransform);
+          float4x4 cvToD3D = float4x4::identity();
+          cvToD3D.m22 = -1.f; // invert y axis
+          cvToD3D.m33 = -1.f; // invert z axis
+          phantomToCameraTransform = transpose(phantomToCameraTransform * cvToD3D); // Output is in column-major format, opencv produces row-major
           result = true;
         }
 done:
@@ -691,7 +674,10 @@ done:
       {
         bool isValid(false);
         float4x4 red1ToReferenceTransform = transpose(m_transformRepository->GetTransform(m_sphereCoordinateNames[0], &isValid));
-        if (!isValid) { return false; }
+        if (!isValid)
+        {
+          return false;
+        }
 
         float4x4 red2ToReferenceTransform = transpose(m_transformRepository->GetTransform(m_sphereCoordinateNames[1], &isValid));
         float4x4 red3ToReferenceTransform = transpose(m_transformRepository->GetTransform(m_sphereCoordinateNames[2], &isValid));
@@ -782,7 +768,7 @@ done:
           }
         }
       }
-      for (auto& pose : m_sphereToCamera)
+      for (auto& pose : m_sphereToAnchor)
       {
         pose = pose * args->OldRawCoordinateSystemToNewRawCoordinateSystemTransform;
       }

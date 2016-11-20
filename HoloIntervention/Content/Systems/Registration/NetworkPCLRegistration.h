@@ -29,10 +29,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 // WinRT includes
 #include <ppltasks.h>
 
-using namespace Concurrency;
-using namespace Windows::Foundation::Numerics;
-using namespace Windows::Networking::Sockets;
-
 namespace NetworkPCL
 {
   enum PCLMessageType
@@ -71,41 +67,41 @@ namespace HoloIntervention
       NetworkPCLRegistration();
       ~NetworkPCLRegistration();
 
-      void Update(SpatialCoordinateSystem^ coordinateSystem);
+      void Update(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem);
 
       void StartCollectingPoints();
       void EndCollectingPoints();
 
       void SetSpatialMesh(std::shared_ptr<Spatial::SurfaceMesh> mesh);
 
-      float4x4 GetRegistrationResult();
+      Windows::Foundation::Numerics::float4x4 GetRegistrationResult();
 
       virtual void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbacks);
 
     protected:
       // Send the collected points and mesh data to the NetworkPCL interface
-      task<bool> SendRegistrationDataAsync();
-      task<void> DataReceiverAsync();
+      Concurrency::task<bool> SendRegistrationDataAsync();
+      Concurrency::task<void> DataReceiverAsync();
 
     protected:
       // NetworkPCL related variables
-      StreamSocket^                                   m_networkPCLSocket = ref new StreamSocket();
-      bool                                            m_connected = false;
+      Windows::Networking::Sockets::StreamSocket^     m_networkPCLSocket = ref new Windows::Networking::Sockets::StreamSocket();
+      std::atomic_bool                                m_connected = false;
       NetworkPCL::PCLMessageHeader                    m_nextHeader;
-      cancellation_token_source                       m_tokenSource;
-      task<void>*                                     m_receiverTask = nullptr;
+      Concurrency::cancellation_token_source          m_tokenSource;
+      Concurrency::task<void>*                        m_receiverTask = nullptr;
 
       // Point collection behavior variables
-      bool                                            m_collectingPoints = false;
+      std::atomic_bool                                m_collectingPoints = false;
       UWPOpenIGTLink::TrackedFrame^                   m_trackedFrame = ref new UWPOpenIGTLink::TrackedFrame();
       UWPOpenIGTLink::TransformRepository^            m_transformRepository = ref new UWPOpenIGTLink::TransformRepository();
       UWPOpenIGTLink::TransformName^                  m_stylusTipToReferenceName = ref new UWPOpenIGTLink::TransformName(L"StylusTip", L"Reference");
       double                                          m_latestTimestamp = 0;
-      std::vector<float3>                             m_points;
+      std::vector<Windows::Foundation::Numerics::float3> m_points;
       std::shared_ptr<Spatial::SurfaceMesh>           m_spatialMesh = nullptr;
 
-      bool                                            m_registrationResultReceived = false;
-      float4x4                                        m_registrationResult = float4x4::identity();
+      std::atomic_bool                                m_registrationResultReceived = false;
+      Windows::Foundation::Numerics::float4x4         m_registrationResult = Windows::Foundation::Numerics::float4x4::identity();
     };
   }
 }

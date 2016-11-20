@@ -121,27 +121,14 @@ namespace DX
     DX::ViewProjection& vp
   )
   {
-    // The system changes the viewport on a per-frame basis for system optimizations.
     m_d3dViewport = CD3D11_VIEWPORT(cameraPose->Viewport.Left, cameraPose->Viewport.Top, cameraPose->Viewport.Width, cameraPose->Viewport.Height);
-
-    // The projection transform for each frame is provided by the HolographicCameraPose.
     HolographicStereoTransform cameraProjectionTransform = cameraPose->ProjectionTransform;
-
-    // Get a container object with the view and projection matrices for the given
-    // pose in the given coordinate system.
     Platform::IBox<HolographicStereoTransform>^ viewTransformContainer = cameraPose->TryGetViewTransform(coordinateSystem);
 
-    // If TryGetViewTransform returns a null pointer, that means the pose and coordinate
-    // system cannot be understood relative to one another; content cannot be rendered
-    // in this coordinate system for the duration of the current frame.
-    // This usually means that positional tracking is not active for the current frame, in
-    // which case it is possible to use a SpatialLocatorAttachedFrameOfReference to render
-    // content that is not world-locked instead.
     ViewProjectionConstantBuffer viewProjectionConstantBufferData;
     bool viewTransformAcquired = viewTransformContainer != nullptr;
     if (viewTransformAcquired)
     {
-      // Otherwise, the set of view transforms can be retrieved.
       HolographicStereoTransform viewCoordinateSystemTransform = viewTransformContainer->Value;
 
       XMStoreFloat4x4(&vp.view[0], XMLoadFloat4x4(&viewCoordinateSystemTransform.Left));
@@ -150,17 +137,8 @@ namespace DX
       XMStoreFloat4x4(&vp.projection[0], XMLoadFloat4x4(&cameraProjectionTransform.Left));
       XMStoreFloat4x4(&vp.projection[1], XMLoadFloat4x4(&cameraProjectionTransform.Right));
 
-      // Update the view matrices. Holographic cameras (such as Microsoft HoloLens) are
-      // constantly moving relative to the world. The view matrices need to be updated
-      // every frame.
-      XMStoreFloat4x4(
-        &viewProjectionConstantBufferData.viewProjection[0],
-        XMMatrixTranspose(XMLoadFloat4x4(&viewCoordinateSystemTransform.Left) * XMLoadFloat4x4(&cameraProjectionTransform.Left))
-      );
-      XMStoreFloat4x4(
-        &viewProjectionConstantBufferData.viewProjection[1],
-        XMMatrixTranspose(XMLoadFloat4x4(&viewCoordinateSystemTransform.Right) * XMLoadFloat4x4(&cameraProjectionTransform.Right))
-      );
+      XMStoreFloat4x4(&viewProjectionConstantBufferData.viewProjection[0], XMMatrixTranspose(XMLoadFloat4x4(&viewCoordinateSystemTransform.Left) * XMLoadFloat4x4(&cameraProjectionTransform.Left)));
+      XMStoreFloat4x4(&viewProjectionConstantBufferData.viewProjection[1], XMMatrixTranspose(XMLoadFloat4x4(&viewCoordinateSystemTransform.Right) * XMLoadFloat4x4(&cameraProjectionTransform.Right)));
 
       float4x4 viewInverse;
       bool invertible = Windows::Foundation::Numerics::invert(viewCoordinateSystemTransform.Left, &viewInverse);
@@ -175,10 +153,8 @@ namespace DX
       }
     }
 
-    // Use the D3D device context to update Direct3D device-based resources.
     const auto context = deviceResources->GetD3DDeviceContext();
 
-    // Loading is asynchronous. Resources must be created before they can be updated.
     if (context == nullptr || m_viewProjectionConstantBuffer == nullptr || !viewTransformAcquired)
     {
       m_framePending = false;
@@ -186,16 +162,7 @@ namespace DX
     }
     else
     {
-      // Update the view and projection matrices.
-      context->UpdateSubresource(
-        m_viewProjectionConstantBuffer.Get(),
-        0,
-        nullptr,
-        &viewProjectionConstantBufferData,
-        0,
-        0
-      );
-
+      context->UpdateSubresource(m_viewProjectionConstantBuffer.Get(), 0, nullptr, &viewProjectionConstantBufferData, 0, 0);
       m_framePending = true;
       return true;
     }
@@ -206,33 +173,17 @@ namespace DX
     std::shared_ptr<DX::DeviceResources> deviceResources
   )
   {
-    // This method uses Direct3D device-based resources.
     const auto context = deviceResources->GetD3DDeviceContext();
 
-    // Loading is asynchronous. Resources must be created before they can be updated.
-    // Cameras can also be added asynchronously, in which case they must be initialized
-    // before they can be used.
     if (context == nullptr || m_viewProjectionConstantBuffer == nullptr || m_framePending == false)
     {
       return false;
     }
 
-    // Set the viewport for this camera.
     context->RSSetViewports(1, &m_d3dViewport);
 
-    // Send the constant buffer to the vertex shader.
-    context->VSSetConstantBuffers(
-      1,
-      1,
-      m_viewProjectionConstantBuffer.GetAddressOf()
-    );
-
-    // Send the constant buffer to the pixel shader.
-    context->PSSetConstantBuffers(
-      1,
-      1,
-      m_viewProjectionConstantBuffer.GetAddressOf()
-    );
+    context->VSSetConstantBuffers(1, 1, m_viewProjectionConstantBuffer.GetAddressOf());
+    context->PSSetConstantBuffers(1, 1, m_viewProjectionConstantBuffer.GetAddressOf());
 
     m_framePending = false;
 

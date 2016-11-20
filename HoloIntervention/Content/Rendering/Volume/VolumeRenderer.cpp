@@ -48,8 +48,9 @@ using namespace Concurrency;
 using namespace DirectX;
 using namespace Windows::Data::Xml::Dom;
 using namespace Windows::Foundation::Numerics;
-using namespace Windows::UI::Input::Spatial;
+using namespace Windows::Perception::Spatial;
 using namespace Windows::Storage;
+using namespace Windows::UI::Input::Spatial;
 
 namespace HoloIntervention
 {
@@ -123,7 +124,7 @@ namespace HoloIntervention
       }
 
       // Frame sanity check
-      if (frame->ImageData == nullptr || frame->FrameSize->GetAt(0) == 0 || frame->FrameSize->GetAt(1) == 0 || frame->FrameSize->GetAt(2) == 0 )
+      if (frame->ImageData == nullptr || frame->FrameSize->GetAt(0) == 0 || frame->FrameSize->GetAt(1) == 0 || frame->FrameSize->GetAt(2) == 0)
       {
         return;
       }

@@ -135,7 +135,7 @@ namespace HoloIntervention
         }
       }
 
-      m_cameraRegistration->Update(coordinateSystem, transformContainer);
+      m_cameraRegistration->Update(transformContainer);
     }
 
     //----------------------------------------------------------------------------

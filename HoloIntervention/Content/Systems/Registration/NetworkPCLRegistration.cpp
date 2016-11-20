@@ -50,6 +50,7 @@ using namespace DirectX;
 using namespace Windows::Data::Xml::Dom;
 using namespace Windows::Networking;
 using namespace Windows::Perception::Spatial::Surfaces;
+using namespace Windows::Perception::Spatial;
 using namespace Windows::Storage::Streams;
 using namespace Windows::Storage;
 

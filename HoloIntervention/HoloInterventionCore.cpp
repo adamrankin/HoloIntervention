@@ -162,7 +162,7 @@ namespace HoloIntervention
     SpatialCoordinateSystem^ currentCoordinateSystem = m_attachedReferenceFrame->GetStationaryCoordinateSystemAtTimestamp(holographicFrame->CurrentPrediction->Timestamp);
     SpatialPointerPose^ pose = SpatialPointerPose::TryGetAtTimestamp(currentCoordinateSystem, holographicFrame->CurrentPrediction->Timestamp);
     m_notificationSystem->Initialize(pose);
-    m_spatialSystem->InitializeSurfaceObserver(m_attachedReferenceFrame->GetStationaryCoordinateSystemAtTimestamp(holographicFrame->CurrentPrediction->Timestamp));
+    m_spatialSystem->InitializeSurfaceObserver(currentCoordinateSystem);
   }
 
   //----------------------------------------------------------------------------
@@ -523,7 +523,10 @@ namespace HoloIntervention
         {
           mat = m_imagingSystem->GetSlicePose();
         }
-        catch (const std::exception&) { break; }
+        catch (const std::exception&)
+        {
+          break;
+        }
 
         float3 translation;
         float3 scale;

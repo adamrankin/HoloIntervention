@@ -41,6 +41,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <WindowsNumerics.h>
 
 using namespace Windows::Foundation::Numerics;
+using namespace Windows::Perception::Spatial;
 
 namespace HoloIntervention
 {

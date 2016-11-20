@@ -160,7 +160,7 @@ namespace HoloIntervention
     DX::StepTimer                                         m_timer;
 
     // Represents the holographic space around the user.
-    HolographicSpace^                                     m_holographicSpace;
+    Windows::Graphics::Holographic::HolographicSpace^     m_holographicSpace;
 
     // SpatialLocator that is attached to the primary camera.
     Windows::Perception::Spatial::SpatialLocator^         m_locator;

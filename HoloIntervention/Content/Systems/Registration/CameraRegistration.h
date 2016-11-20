@@ -76,7 +76,7 @@ namespace HoloIntervention
       CameraRegistration(const std::shared_ptr<DX::DeviceResources>& deviceResources);
       ~CameraRegistration();
 
-      void Update(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem, Platform::IBox<Windows::Foundation::Numerics::float4x4>^ worldAnchorToRequestedBox);
+      void Update(Platform::IBox<Windows::Foundation::Numerics::float4x4>^ worldAnchorToRequestedBox);
       Concurrency::task<bool> StopCameraAsync();
       Concurrency::task<bool> StartCameraAsync();
       void SetVisualization(bool enabled);
@@ -109,7 +109,7 @@ namespace HoloIntervention
       // Visualization resources
       std::atomic_bool                                                      m_visualizationEnabled = false;
       std::array<uint64, 5>                                                 m_spherePrimitiveIds = { 0 };
-      std::array<Windows::Foundation::Numerics::float4x4, 5>                m_sphereToCamera;
+      std::array<Windows::Foundation::Numerics::float4x4, 5>                m_sphereToAnchor;
 
       // Camera
       Windows::Foundation::EventRegistrationToken                           m_anchorUpdatedToken;

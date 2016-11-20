@@ -66,7 +66,7 @@ namespace HoloIntervention
       void UpdateSurfaceObserverPosition(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem);
 
       // Perform a ray cast to determine if the ray hits any stored mesh
-      bool TestRayIntersection(SpatialCoordinateSystem^ desiredCoordinateSystem,
+      bool TestRayIntersection(Windows::Perception::Spatial::SpatialCoordinateSystem^ desiredCoordinateSystem,
                                const Windows::Foundation::Numerics::float3 rayOrigin,
                                const Windows::Foundation::Numerics::float3 rayDirection,
                                Windows::Foundation::Numerics::float3& outHitPosition,
@@ -86,7 +86,7 @@ namespace HoloIntervention
 
       bool DropAnchorAtIntersectionHit(Platform::String^ anchorName, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem, Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
       size_t RemoveAnchor(Platform::String^ anchorName);
-      SpatialAnchor^ GetAnchor(Platform::String^ anchorName);
+      Windows::Perception::Spatial::SpatialAnchor^ GetAnchor(Platform::String^ anchorName);
       bool HasAnchor(Platform::String^ anchorName);
 
       // IVoiceInput functions
@@ -94,26 +94,26 @@ namespace HoloIntervention
 
     protected:
       // Event registration tokens.
-      Windows::Foundation::EventRegistrationToken                         m_surfaceObserverEventToken;
+      Windows::Foundation::EventRegistrationToken                               m_surfaceObserverEventToken;
 
       // Keep a reference to the device resources
-      std::shared_ptr<DX::DeviceResources>                                m_deviceResources;
-      DX::StepTimer&                                                      m_stepTimer;
+      std::shared_ptr<DX::DeviceResources>                                      m_deviceResources;
+      DX::StepTimer&                                                            m_stepTimer;
 
       // Anchor interaction variables
-      std::mutex                                                          m_anchorMutex;
+      std::mutex                                                                m_anchorMutex;
 
       // Obtains spatial mapping data from the device in real time.
-      Windows::Perception::Spatial::Surfaces::SpatialSurfaceObserver^     m_surfaceObserver;
-      Windows::Perception::Spatial::Surfaces::SpatialSurfaceMeshOptions^  m_surfaceMeshOptions;
+      Windows::Perception::Spatial::Surfaces::SpatialSurfaceObserver^           m_surfaceObserver;
+      Windows::Perception::Spatial::Surfaces::SpatialSurfaceMeshOptions^        m_surfaceMeshOptions;
 
       // A data handler for surface meshes.
-      std::unique_ptr<Spatial::SpatialSurfaceCollection>                  m_surfaceCollection;
+      std::unique_ptr<Spatial::SpatialSurfaceCollection>                        m_surfaceCollection;
 
       // List of spatial anchors
-      std::map<Platform::String^, SpatialAnchor^>                         m_spatialAnchors;
+      std::map<Platform::String^, Windows::Perception::Spatial::SpatialAnchor^> m_spatialAnchors;
 
-      static const uint32                                                 INIT_SURFACE_RETRY_DELAY_MS;
+      static const uint32                                                       INIT_SURFACE_RETRY_DELAY_MS;
     };
   }
 }

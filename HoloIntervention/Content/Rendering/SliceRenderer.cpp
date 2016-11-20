@@ -40,6 +40,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 using namespace Concurrency;
 using namespace DirectX;
 using namespace Windows::Foundation::Numerics;
+using namespace Windows::Perception::Spatial;
 using namespace Windows::Storage::Streams;
 using namespace Windows::UI::Input::Spatial;
 

@@ -41,6 +41,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "VolumeRenderer.h"
 
 using namespace Windows::Foundation::Numerics;
+using namespace Windows::Perception::Spatial;
 using namespace Windows::UI::Input::Spatial;
 
 namespace HoloIntervention
