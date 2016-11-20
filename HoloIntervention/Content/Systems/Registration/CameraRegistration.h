@@ -70,13 +70,14 @@ namespace HoloIntervention
       typedef std::vector<Windows::Foundation::Numerics::float2> VecFloat2;
       typedef std::vector<Windows::Foundation::Numerics::float3> VecFloat3;
       typedef std::vector<Windows::Foundation::Numerics::float4> VecFloat4;
+      typedef std::vector<Windows::Foundation::Numerics::float4x4> VecFloat4x4;
       typedef std::vector<VecFloat3> DetectionFrames;
 
     public:
       CameraRegistration(const std::shared_ptr<DX::DeviceResources>& deviceResources);
       ~CameraRegistration();
 
-      void Update(Platform::IBox<Windows::Foundation::Numerics::float4x4>^ worldAnchorToRequestedBox);
+      void Update(Platform::IBox<Windows::Foundation::Numerics::float4x4>^ anchorToRequestedBox);
       Concurrency::task<bool> StopCameraAsync();
       Concurrency::task<bool> StartCameraAsync();
       void SetVisualization(bool enabled);
@@ -89,7 +90,10 @@ namespace HoloIntervention
 
     protected:
       void ProcessAvailableFrames(Concurrency::cancellation_token token);
-      bool CameraRegistration::RetrieveTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame, VecFloat3& worldResults);
+
+      void PerformLandmarkRegistration();
+
+      bool CameraRegistration::RetrieveTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame, VecFloat3& outSphereInReferenceResults, std::array<Windows::Foundation::Numerics::float4x4, 5>& outSphereToPhantomPose);
 
       bool ComputePhantomToCameraTransform(Windows::Media::Capture::Frames::VideoMediaFrame^ videoFrame, bool& initialized, int32_t& height, int32_t& width,
                                            cv::Mat& hsv, cv::Mat& redMat, cv::Mat& redMatWrap, cv::Mat& imageRGB, cv::Mat& mask, cv::Mat& cannyOutput, Windows::Foundation::Numerics::float4x4& modelToCameraTransform);
@@ -109,7 +113,7 @@ namespace HoloIntervention
       // Visualization resources
       std::atomic_bool                                                      m_visualizationEnabled = false;
       std::array<uint64, 5>                                                 m_spherePrimitiveIds = { 0 };
-      std::array<Windows::Foundation::Numerics::float4x4, 5>                m_sphereToAnchor;
+      std::array<Windows::Foundation::Numerics::float4x4, 5>                m_sphereToAnchorPoses;
 
       // Camera
       Windows::Foundation::EventRegistrationToken                           m_anchorUpdatedToken;
@@ -123,7 +127,8 @@ namespace HoloIntervention
       std::atomic_bool                                                      m_transformsAvailable = false;
       double                                                                m_latestTimestamp = 0.0;
       DetectionFrames                                                       m_sphereInTrackerResults;
-      VecFloat4                                                             m_phantomFiducialCoords;
+      std::array<Windows::Foundation::Numerics::float4x4, 5>                m_sphereToPhantomPoses;
+      std::atomic_bool                                                      m_hasSpherePoses = false;
       std::array<UWPOpenIGTLink::TransformName^, 5>                         m_sphereCoordinateNames;
 
       // State variables

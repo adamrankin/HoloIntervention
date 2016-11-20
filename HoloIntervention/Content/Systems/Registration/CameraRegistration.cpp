@@ -70,21 +70,19 @@ using namespace Windows::Perception::Spatial;
 namespace
 {
   //----------------------------------------------------------------------------
-  bool ExtractPhantomFiducial(HoloIntervention::System::CameraRegistration::VecFloat4& phantomFiducialCoords, UWPOpenIGTLink::TransformRepository^ transformRepository, Platform::String^ from, Platform::String^ to)
+  bool ExtractPhantomToFiducialPose(float4x4& phantomFiducialPose, UWPOpenIGTLink::TransformRepository^ transformRepository, Platform::String^ from, Platform::String^ to)
   {
     bool isValid;
     float4 origin = { 0.f, 0.f, 0.f, 1.f };
-    float4x4 transformation;
+    float4x4 transformation = float4x4::identity();
     try
     {
-      transformation = transpose(transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(from, to), &isValid));
+      phantomFiducialPose = transpose(transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(from, to), &isValid));
     }
     catch (Platform::Exception^ e)
     {
       return false;
     }
-    float4 translation = transform(origin, transformation);
-    phantomFiducialCoords.push_back(translation);
 
     return true;
   }
@@ -126,20 +124,21 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void CameraRegistration::Update(Platform::IBox<Windows::Foundation::Numerics::float4x4>^ worldAnchorToRequestedBox)
+    void CameraRegistration::Update(Platform::IBox<Windows::Foundation::Numerics::float4x4>^ anchorToRequestedBox)
     {
-      if (worldAnchorToRequestedBox == nullptr)
+      if (anchorToRequestedBox == nullptr)
       {
         return;
       }
 
-      if (m_visualizationEnabled && m_spherePrimitiveIds[0] != Rendering::INVALID_ENTRY)
+      if (m_visualizationEnabled && m_spherePrimitiveIds[0] != Rendering::INVALID_ENTRY && m_sphereInAnchorResults.size() > 0)
       {
+        // Only do this if we've enabled visualization, the sphere primitives have been created, and we've analyzed at least 1 frame
         for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
         {
           auto entry = HoloIntervention::instance()->GetModelRenderer().GetPrimitive(m_spherePrimitiveIds[i]);
-          float4x4 anchorToRequested = worldAnchorToRequestedBox->Value;
-          entry->SetDesiredWorldPose(m_sphereToAnchor[i] * anchorToRequested);
+          float4x4 anchorToRequested = anchorToRequestedBox->Value;
+          entry->SetDesiredWorldPose(m_sphereToAnchorPoses[i] * anchorToRequested);
         }
       }
     }
@@ -167,7 +166,6 @@ namespace HoloIntervention
         {
           m_videoFrameProcessor = nullptr;
           m_createTask = nullptr;
-          m_phantomFiducialCoords.clear();
           m_transformsAvailable = false;
           m_latestTimestamp = 0.0;
           m_tokenSource = cancellation_token_source();
@@ -403,7 +401,8 @@ namespace HoloIntervention
           }
 
           VecFloat3 sphereInTrackerResults;
-          if (!RetrieveTrackerFrameLocations(l_latestTrackedFrame, sphereInTrackerResults))
+          std::array<float4x4, 5> sphereToPhantomPose;
+          if (!RetrieveTrackerFrameLocations(l_latestTrackedFrame, sphereInTrackerResults, sphereToPhantomPose))
           {
             continue;
           }
@@ -414,14 +413,15 @@ namespace HoloIntervention
             // Transform points in model space to anchor space
             VecFloat3 sphereInAnchorResults;
             int i = 0;
-            for (auto& sphere : m_phantomFiducialCoords)
+            for (auto& sphereToPhantom : m_sphereToPhantomPoses)
             {
-              float4 spherePointInAnchor = transform(sphere, phantomToCameraTransform * cameraToRawWorldAnchor);
-              sphereInAnchorResults.push_back(float3(spherePointInAnchor.x, spherePointInAnchor.y, spherePointInAnchor.z));
+              float4x4 sphereToAnchorPose = sphereToPhantom * phantomToCameraTransform * cameraToRawWorldAnchor;
+              float3 sphereOriginInAnchorSpace = transform(float3(0.f, 0.f, 0.f), sphereToAnchorPose);
+              sphereInAnchorResults.push_back(float3(sphereOriginInAnchorSpace.x, sphereOriginInAnchorSpace.y, sphereOriginInAnchorSpace.z));
               if (m_visualizationEnabled)
               {
                 // If visualizing, update the latest known poses of the spheres
-                m_sphereToAnchor[i] = make_float4x4_translation(-float3(sphereInAnchorResults[i].x, sphereInAnchorResults[i].y, sphereInAnchorResults[i].z));
+                m_sphereToAnchorPoses[i] = sphereToAnchorPose;
                 i++;
               }
             }
@@ -430,72 +430,79 @@ namespace HoloIntervention
             m_sphereInTrackerResults.push_back(sphereInTrackerResults);
             HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Acquired " + m_sphereInAnchorResults.size().ToString() + L"/" + NUMBER_OF_FRAMES_FOR_CALIBRATION.ToString() + " frames.",  0.5);
           }
+
+          // If we've acquired enough frames, perform the registration
+          if (m_sphereInAnchorResults.size() == NUMBER_OF_FRAMES_FOR_CALIBRATION)
+          {
+            PerformLandmarkRegistration();
+          }
         }
         else
         {
           // No new frame
           std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
+      }
+    }
 
-        if (m_sphereInAnchorResults.size() == NUMBER_OF_FRAMES_FOR_CALIBRATION)
+    //----------------------------------------------------------------------------
+    void CameraRegistration::PerformLandmarkRegistration()
+    {
+      HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Calculating registration...");
+      VecFloat3 sphereInTrackerResults;
+      VecFloat3 sphereInAnchorResults;
+      for (auto& frame : m_sphereInTrackerResults)
+      {
+        for (auto& sphereWorld : frame)
         {
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Calculating registration...");
-          VecFloat3 trackerResults;
-          VecFloat3 worldAnchorResults;
-          for (auto& frame : m_sphereInTrackerResults)
-          {
-            for (auto& sphereWorld : frame)
-            {
-              trackerResults.push_back(sphereWorld);
-            }
-          }
-          for (auto& frame : m_sphereInAnchorResults)
-          {
-            for (auto& sphereWorld : frame)
-            {
-              worldAnchorResults.push_back(sphereWorld);
-            }
-          }
-          m_landmarkRegistration->SetSourceLandmarks(trackerResults);
-          m_landmarkRegistration->SetTargetLandmarks(worldAnchorResults);
-
-          std::atomic_bool calcFinished(false);
-          bool resultValid(false);
-          m_landmarkRegistration->CalculateTransformationAsync().then([this, &calcFinished, &resultValid](float4x4 trackerToWorldAnchor)
-          {
-            if (trackerToWorldAnchor == float4x4::identity())
-            {
-              resultValid = false;
-            }
-            else
-            {
-              m_hasRegistration = true;
-              resultValid = true;
-              m_trackerToWorldAnchor = trackerToWorldAnchor;
-            }
-            calcFinished = true;
-          });
-
-          while (!calcFinished)
-          {
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-          }
-
-          if (!resultValid)
-          {
-            HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Registration failed. Please repeat process.");
-            StopCameraAsync();
-          }
-          else
-          {
-            HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Registration complete.");
-            StopCameraAsync();
-          }
-
-          m_sphereInAnchorResults.clear();
-          m_sphereInTrackerResults.clear();
+          sphereInTrackerResults.push_back(sphereWorld);
         }
       }
+      for (auto& frame : m_sphereInAnchorResults)
+      {
+        for (auto& sphereWorld : frame)
+        {
+          sphereInAnchorResults.push_back(sphereWorld);
+        }
+      }
+      m_landmarkRegistration->SetSourceLandmarks(sphereInTrackerResults);
+      m_landmarkRegistration->SetTargetLandmarks(sphereInAnchorResults);
+
+      std::atomic_bool calcFinished(false);
+      bool resultValid(false);
+      m_landmarkRegistration->CalculateTransformationAsync().then([this, &calcFinished, &resultValid](float4x4 trackerToAnchorTransformation)
+      {
+        if (trackerToAnchorTransformation == float4x4::identity())
+        {
+          resultValid = false;
+        }
+        else
+        {
+          m_hasRegistration = true;
+          resultValid = true;
+          m_trackerToWorldAnchor = trackerToAnchorTransformation;
+        }
+        calcFinished = true;
+      });
+
+      while (!calcFinished)
+      {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      }
+
+      if (!resultValid)
+      {
+        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Registration failed. Please repeat process.");
+        StopCameraAsync();
+      }
+      else
+      {
+        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Registration complete.");
+        StopCameraAsync();
+      }
+
+      m_sphereInAnchorResults.clear();
+      m_sphereInTrackerResults.clear();
     }
 
     //----------------------------------------------------------------------------
@@ -511,7 +518,7 @@ namespace HoloIntervention
         cv::Mat& cannyOutput,
         float4x4& phantomToCameraTransform)
     {
-      if (m_phantomFiducialCoords.size() != PHANTOM_SPHERE_COUNT)
+      if (m_sphereToPhantomPoses.size() != PHANTOM_SPHERE_COUNT)
       {
         OutputDebugStringW(L"Phantom coordinates haven't been received. Can't determine 3D sphere coordinates.");
         return false;
@@ -624,9 +631,11 @@ namespace HoloIntervention
           cv::Mat rvec(3, 1, CV_32F);
           cv::Mat tvec(3, 1, CV_32F);
           std::vector<cv::Point3f> phantomFiducialsCv;
-          for (auto& fid : m_phantomFiducialCoords)
+          float3 origin(0.f, 0.f, 0.f);
+          for (auto& pose : m_sphereToPhantomPoses)
           {
-            phantomFiducialsCv.push_back(cv::Point3f(fid.x, fid.y, fid.z));
+            float3 point = transform(origin, pose);
+            phantomFiducialsCv.push_back(cv::Point3f(point.x, point.y, point.z));
           }
           if (!cv::solvePnP(phantomFiducialsCv, circleCentersPixel, intrinsic, distCoeffs, rvec, tvec, false, cv::SOLVEPNP_EPNP))
           {
@@ -641,19 +650,14 @@ namespace HoloIntervention
           rotation.copyTo(phantomToCameraTransformCv(cv::Rect(0, 0, 3, 3)));
           tvec.copyTo(phantomToCameraTransformCv(cv::Rect(3, 0, 1, 3)));
 
-          std::vector<cv::Vec4f> cameraPointsHomogenous(m_phantomFiducialCoords.size());
-          std::vector<cv::Vec4f> modelPointsHomogenous;
-          for (auto& modelPoint : m_phantomFiducialCoords)
-          {
-            modelPointsHomogenous.push_back(cv::Vec4f(modelPoint.x, modelPoint.y, modelPoint.z, 1.f));
-          }
-          cv::transform(modelPointsHomogenous, cameraPointsHomogenous, phantomToCameraTransformCv);
-
           XMStoreFloat4x4(&phantomToCameraTransform, XMLoadFloat4x4(&XMFLOAT4X4((float*)phantomToCameraTransformCv.data)));
-          float4x4 cvToD3D = float4x4::identity(); // rotate 180 about x axis
+
+          // OpenCV -> +x right, +y down, +z away (RHS)
+          // HoloLens -> +x right, +y up, +z towards (RHS)
+          float4x4 cvToD3D = float4x4::identity();
           cvToD3D.m22 = -1.f;
           cvToD3D.m33 = -1.f;
-          phantomToCameraTransform = transpose(phantomToCameraTransform*cvToD3D); // Output is in column-major format, opencv produces row-major
+          phantomToCameraTransform = transpose(phantomToCameraTransform) * cvToD3D; // Output is in column-major format, OpenCV produces row-major
           result = true;
         }
 done:
@@ -665,7 +669,7 @@ done:
     }
 
     //----------------------------------------------------------------------------
-    bool CameraRegistration::RetrieveTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame, CameraRegistration::VecFloat3& worldResults)
+    bool CameraRegistration::RetrieveTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame, CameraRegistration::VecFloat3& outSphereInReferenceResults, std::array<float4x4, 5>& outSphereToPhantomPose)
     {
       m_transformRepository->SetTransforms(trackedFrame);
 
@@ -697,53 +701,52 @@ done:
 
       float4 origin = { 0.f, 0.f, 0.f, 1.f };
       float4 translation = transform(origin, red1ToReferenceTransform);
-      worldResults.push_back(float3(translation.x, translation.y, translation.z));
+      outSphereInReferenceResults.push_back(float3(translation.x, translation.y, translation.z));
 
       translation = transform(origin, red2ToReferenceTransform);
-      worldResults.push_back(float3(translation.x, translation.y, translation.z));
+      outSphereInReferenceResults.push_back(float3(translation.x, translation.y, translation.z));
 
       translation = transform(origin, red3ToReferenceTransform);
-      worldResults.push_back(float3(translation.x, translation.y, translation.z));
+      outSphereInReferenceResults.push_back(float3(translation.x, translation.y, translation.z));
 
       translation = transform(origin, red4ToReferenceTransform);
-      worldResults.push_back(float3(translation.x, translation.y, translation.z));
+      outSphereInReferenceResults.push_back(float3(translation.x, translation.y, translation.z));
 
       translation = transform(origin, red5ToReferenceTransform);
-      worldResults.push_back(float3(translation.x, translation.y, translation.z));
+      outSphereInReferenceResults.push_back(float3(translation.x, translation.y, translation.z));
 
       // Phantom is rigid body, so only need to pull the values once
-      if (m_phantomFiducialCoords.empty())
+      if (!m_hasSpherePoses)
       {
         bool hasError(false);
-        if (!ExtractPhantomFiducial(m_phantomFiducialCoords, m_transformRepository, L"RedSphere1", L"Phantom"))
+        if (!ExtractPhantomToFiducialPose(m_sphereToPhantomPoses[0], m_transformRepository, L"RedSphere1", L"Phantom"))
         {
           hasError = true;
         }
 
-        if (!ExtractPhantomFiducial(m_phantomFiducialCoords, m_transformRepository, L"RedSphere2", L"Phantom"))
+        if (!ExtractPhantomToFiducialPose(m_sphereToPhantomPoses[1], m_transformRepository, L"RedSphere2", L"Phantom"))
         {
           hasError = true;
         }
 
-        if (!ExtractPhantomFiducial(m_phantomFiducialCoords, m_transformRepository, L"RedSphere3", L"Phantom"))
+        if (!ExtractPhantomToFiducialPose(m_sphereToPhantomPoses[2], m_transformRepository, L"RedSphere3", L"Phantom"))
         {
           hasError = true;
         }
 
-        if (!ExtractPhantomFiducial(m_phantomFiducialCoords, m_transformRepository, L"RedSphere4", L"Phantom"))
+        if (!ExtractPhantomToFiducialPose(m_sphereToPhantomPoses[3], m_transformRepository, L"RedSphere4", L"Phantom"))
         {
           hasError = true;
         }
 
-        if (!ExtractPhantomFiducial(m_phantomFiducialCoords, m_transformRepository, L"RedSphere5", L"Phantom"))
+        if (!ExtractPhantomToFiducialPose(m_sphereToPhantomPoses[4], m_transformRepository, L"RedSphere5", L"Phantom"))
         {
           hasError = true;
         }
 
-        if (hasError)
+        if (!hasError)
         {
-          // Extraction failed, try again next frame
-          m_phantomFiducialCoords.clear();
+          m_hasSpherePoses = true;
         }
       }
 
@@ -774,7 +777,7 @@ done:
           }
         }
       }
-      for (auto& pose : m_sphereToAnchor)
+      for (auto& pose : m_sphereToAnchorPoses)
       {
         pose = pose * args->OldRawCoordinateSystemToNewRawCoordinateSystemTransform;
       }
