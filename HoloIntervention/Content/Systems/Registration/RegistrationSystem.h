@@ -69,8 +69,8 @@ namespace HoloIntervention
       uint64_t                                        m_regAnchorModelId = 0;
       std::shared_ptr<Rendering::ModelEntry>          m_regAnchorModel = nullptr;
       Windows::Perception::Spatial::SpatialAnchor^    m_regAnchor = nullptr;
-      Windows::Foundation::Numerics::float4x4         m_anchorModelCurrentWorld = Windows::Foundation::Numerics::float4x4::identity();
-      Windows::Foundation::Numerics::float4x4         m_anchorModelDesiredWorld = Windows::Foundation::Numerics::float4x4::identity();
+      Windows::Foundation::Numerics::float4x4         m_anchorToCurrentWorld = Windows::Foundation::Numerics::float4x4::identity();
+      Windows::Foundation::Numerics::float4x4         m_anchorToDesiredWorld = Windows::Foundation::Numerics::float4x4::identity();
       float                                           m_lerpTimer = 0.f;
 
       // Registration methods
