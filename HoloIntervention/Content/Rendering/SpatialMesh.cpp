@@ -22,6 +22,7 @@
 #include <WindowsNumerics.h>
 
 using namespace DirectX;
+using namespace Microsoft::WRL;
 using namespace Windows::Foundation::Numerics;
 using namespace Windows::Perception::Spatial::Surfaces;
 using namespace Windows::Perception::Spatial;
@@ -269,19 +270,19 @@ namespace HoloIntervention
         // for now, and then swapped into the active slot next time the render loop is ready to draw.
 
         // First, we acquire the raw data buffers.
-        Windows::Storage::Streams::IBuffer^ positions = m_surfaceMesh->VertexPositions->Data;
-        Windows::Storage::Streams::IBuffer^ normals = m_surfaceMesh->VertexNormals->Data;
-        Windows::Storage::Streams::IBuffer^ indices = m_surfaceMesh->TriangleIndices->Data;
+        IBuffer^ positions = m_surfaceMesh->VertexPositions->Data;
+        IBuffer^ normals = m_surfaceMesh->VertexNormals->Data;
+        IBuffer^ indices = m_surfaceMesh->TriangleIndices->Data;
 
         // Then, we create Direct3D device buffers with the mesh data provided by HoloLens.
-        Microsoft::WRL::ComPtr<ID3D11Buffer> updatedVertexPositions;
-        Microsoft::WRL::ComPtr<ID3D11Buffer> updatedVertexNormals;
-        Microsoft::WRL::ComPtr<ID3D11Buffer> updatedTriangleIndices;
+        ComPtr<ID3D11Buffer> updatedVertexPositions;
+        ComPtr<ID3D11Buffer> updatedVertexNormals;
+        ComPtr<ID3D11Buffer> updatedTriangleIndices;
         CreateDirectXBuffer( *device, D3D11_BIND_VERTEX_BUFFER, positions, updatedVertexPositions.GetAddressOf() );
         CreateDirectXBuffer( *device, D3D11_BIND_VERTEX_BUFFER, normals, updatedVertexNormals.GetAddressOf() );
         CreateDirectXBuffer( *device, D3D11_BIND_INDEX_BUFFER, indices, updatedTriangleIndices.GetAddressOf() );
 
-        m_boundingBox = DirectX::InstancedGeometricPrimitive::CreateCube( m_deviceResources->GetD3DDeviceContext(), 1.f );
+        m_boundingBox = InstancedGeometricPrimitive::CreateCube( m_deviceResources->GetD3DDeviceContext(), 1.f );
 
         // Before updating the meshes, check to ensure that there wasn't a more recent update.
         {

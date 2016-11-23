@@ -5,3 +5,4 @@ Registration
 Loading screen
 App running indicator
 Voice feedback
+UI for IP setting

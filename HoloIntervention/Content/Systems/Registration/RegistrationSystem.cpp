@@ -125,13 +125,13 @@ namespace HoloIntervention
         transformContainer = m_regAnchor->CoordinateSystem->TryGetTransformTo(coordinateSystem);
         if (transformContainer != nullptr)
         {
-          m_anchorModelDesiredWorld = transformContainer->Value;
+          m_anchorToDesiredWorld = transformContainer->Value;
 
           const float& deltaTime = static_cast<float>(timer.GetElapsedSeconds());
 
-          float4x4 smoothedPose = lerp(m_anchorModelCurrentWorld, m_anchorModelDesiredWorld, deltaTime * REGISTRATION_ANCHOR_MODEL_LERP_RATE);
-          m_anchorModelCurrentWorld = smoothedPose;
-          m_regAnchorModel->SetWorld(m_anchorModelCurrentWorld);
+          float4x4 smoothedPose = lerp(m_anchorToCurrentWorld, m_anchorToDesiredWorld, deltaTime * REGISTRATION_ANCHOR_MODEL_LERP_RATE);
+          m_anchorToCurrentWorld = smoothedPose;
+          m_regAnchorModel->SetWorld(m_anchorToCurrentWorld);
         }
       }
 
