@@ -637,7 +637,16 @@ namespace HoloIntervention
             float3 point = transform(origin, pose);
             phantomFiducialsCv.push_back(cv::Point3f(point.x, point.y, point.z));
           }
+
+          // Initialize iterative method with a EPnP approach
           if (!cv::solvePnP(phantomFiducialsCv, circleCentersPixel, intrinsic, distCoeffs, rvec, tvec, false, cv::SOLVEPNP_EPNP))
+          {
+            result = false;
+            goto done;
+          }
+
+          // Now use iterative technique to refine results
+          if (!cv::solvePnP(phantomFiducialsCv, circleCentersPixel, intrinsic, distCoeffs, rvec, tvec, true))
           {
             result = false;
             goto done;
