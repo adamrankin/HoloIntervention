@@ -638,9 +638,8 @@ namespace HoloIntervention
             phantomFiducialsCv.push_back(cv::Point3f(pose.m41, pose.m42, pose.m43));
           }
 
-          // TODO : determine correspondence
-          // circles has x, y, radius
-          SortCorrespondence(phantomFiducialsCv, circles);
+          // Circles has x, y, radius
+          SortCorrespondence(hsv, phantomFiducialsCv, circles);
 
           // Initialize iterative method with a EPnP approach
           if (m_sphereInAnchorResults.empty())
@@ -685,7 +684,7 @@ done:
     }
 
     //----------------------------------------------------------------------------
-    bool CameraRegistration::RetrieveTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame, CameraRegistration::VecFloat3& outSphereInReferenceResults, std::array<float4x4, 5>& outSphereToPhantomPose)
+    bool CameraRegistration::RetrieveTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame, CameraRegistration::VecFloat3& outSphereInReferenceResults, std::array<float4x4, 4>& outSphereToPhantomPose)
     {
       m_transformRepository->SetTransforms(trackedFrame);
 
@@ -790,9 +789,48 @@ done:
     }
 
     //----------------------------------------------------------------------------
-    void CameraRegistration::SortCorrespondence(std::vector<cv::Point3f>& inOutPhantomFiducialsCv, const std::vector<cv::Vec3f>& inCircles)
+    void CameraRegistration::SortCorrespondence(cv::Mat& image, std::vector<cv::Point3f>& inOutPhantomFiducialsCv, const std::vector<cv::Vec3f>& inCircles)
     {
+      const float TWO_PI = 6.28318530718f;
+      const uint32 NUMBER_OF_PATCHES = 24;
+      const float TANGENT_MM_COUNT = 3.75f; // Check patches of 4mm x 10mm
+      const float RADIAL_MM_COUNT = 10.f;
+      const float SPHERE_RADIUS_MM = 15.f;
+      for (auto& circle : inCircles)
+      {
+        // given a circle, calculate radial patches, compute histogram, determine if profile of any patches match expected parameters
+        float mmToPixel = SPHERE_RADIUS_MM / circle[2];
+        for (uint32 currentPatchIndex = 0; currentPatchIndex < NUMBER_OF_PATCHES; ++currentPatchIndex)
+        {
+          float3 patchMeanColour(0.f, 0.f, 0.f);
+          uint32 pixelCount(0);
 
+          float2 radialVector(cos(TWO_PI * currentPatchIndex / NUMBER_OF_PATCHES), sin(TWO_PI * currentPatchIndex / NUMBER_OF_PATCHES));
+          float2 tangentVector(radialVector.y, radialVector.x);
+          float2 radialOriginPixel = radialVector * (SPHERE_RADIUS_MM + 0.25f) * mmToPixel; // Grab a point just outside the circle in image space
+
+          for (float i = 0.f; i < TANGENT_MM_COUNT / 2 * mmToPixel; ++i)
+          {
+            for (float j = 0.f; j < RADIAL_MM_COUNT * mmToPixel; ++j)
+            {
+              float2 currentPixelLocation = radialOriginPixel + tangentVector * i + radialVector * j;
+              auto pixel1 = image.at<cv::Vec3b>(floor(currentPixelLocation.x), floor(currentPixelLocation.y));
+              auto pixel2 = image.at<cv::Vec3b>(ceil(currentPixelLocation.x), floor(currentPixelLocation.y));
+              auto pixel3 = image.at<cv::Vec3b>(floor(currentPixelLocation.x), ceil(currentPixelLocation.y));
+              auto pixel4 = image.at<cv::Vec3b>(ceil(currentPixelLocation.x), ceil(currentPixelLocation.y));
+              // TODO .at is quite slow, recode for direct array access
+              pixelCount++;
+            }
+            for (float j = 0.f; j < RADIAL_MM_COUNT * mmToPixel; ++j)
+            {
+              float2 currentPixelLocation = radialOriginPixel - tangentVector * i + radialVector * j;
+
+              pixelCount++;
+            }
+          }
+        }
+
+      }
     }
   }
 }
