@@ -114,7 +114,6 @@ namespace HoloIntervention
       m_sphereCoordinateNames[1] = ref new UWPOpenIGTLink::TransformName(L"RedSphere2", L"Reference");
       m_sphereCoordinateNames[2] = ref new UWPOpenIGTLink::TransformName(L"RedSphere3", L"Reference");
       m_sphereCoordinateNames[3] = ref new UWPOpenIGTLink::TransformName(L"RedSphere4", L"Reference");
-      m_sphereCoordinateNames[4] = ref new UWPOpenIGTLink::TransformName(L"RedSphere5", L"Reference");
     }
 
     //----------------------------------------------------------------------------
@@ -345,6 +344,8 @@ namespace HoloIntervention
       cv::Mat l_imageRGB;
       cv::Mat l_canny_output;
       cv::Mat l_mask;
+      cv::Mat l_rvec(3, 1, CV_32F);
+      cv::Mat l_tvec(3, 1, CV_32F);
       bool l_initialized(false);
       int32_t l_height(0);
       int32_t l_width(0);
@@ -401,14 +402,14 @@ namespace HoloIntervention
           }
 
           VecFloat3 sphereInTrackerResults;
-          std::array<float4x4, 5> sphereToPhantomPose;
+          std::array<float4x4, 4> sphereToPhantomPose;
           if (!RetrieveTrackerFrameLocations(l_latestTrackedFrame, sphereInTrackerResults, sphereToPhantomPose))
           {
             continue;
           }
 
           float4x4 phantomToCameraTransform;
-          if (!sphereInTrackerResults.empty() && ComputePhantomToCameraTransform(l_latestCameraFrame->VideoMediaFrame, l_initialized, l_height, l_width, l_hsv, l_redMat, l_redMatWrap, l_imageRGB, l_mask, l_canny_output, phantomToCameraTransform))
+          if (!sphereInTrackerResults.empty() && ComputePhantomToCameraTransform(l_latestCameraFrame->VideoMediaFrame, l_initialized, l_height, l_width, l_hsv, l_redMat, l_redMatWrap, l_imageRGB, l_mask, l_rvec, l_tvec, l_canny_output, phantomToCameraTransform))
           {
             // Transform points in model space to anchor space
             VecFloat3 sphereInAnchorResults;
@@ -515,6 +516,8 @@ namespace HoloIntervention
         cv::Mat& redMatWrap,
         cv::Mat& imageRGB,
         cv::Mat& mask,
+        cv::Mat& rvec,
+        cv::Mat& tvec,
         cv::Mat& cannyOutput,
         float4x4& phantomToCameraTransform)
     {
@@ -628,21 +631,25 @@ namespace HoloIntervention
           intrinsic(1, 1) = cameraIntrinsics->FocalLength.y;
           intrinsic(1, 2) = cameraIntrinsics->PrincipalPoint.y;
 
-          cv::Mat rvec(3, 1, CV_32F);
-          cv::Mat tvec(3, 1, CV_32F);
           std::vector<cv::Point3f> phantomFiducialsCv;
           float3 origin(0.f, 0.f, 0.f);
           for (auto& pose : m_sphereToPhantomPoses)
           {
-            float3 point = transform(origin, pose);
-            phantomFiducialsCv.push_back(cv::Point3f(point.x, point.y, point.z));
+            phantomFiducialsCv.push_back(cv::Point3f(pose.m41, pose.m42, pose.m43));
           }
 
+          // TODO : determine correspondence
+          // circles has x, y, radius
+          SortCorrespondence(phantomFiducialsCv, circles);
+
           // Initialize iterative method with a EPnP approach
-          if (!cv::solvePnP(phantomFiducialsCv, circleCentersPixel, intrinsic, distCoeffs, rvec, tvec, false, cv::SOLVEPNP_EPNP))
+          if (m_sphereInAnchorResults.empty())
           {
-            result = false;
-            goto done;
+            if (!cv::solvePnP(phantomFiducialsCv, circleCentersPixel, intrinsic, distCoeffs, rvec, tvec, false, cv::SOLVEPNP_EPNP))
+            {
+              result = false;
+              goto done;
+            }
           }
 
           // Now use iterative technique to refine results
@@ -686,7 +693,6 @@ done:
       float4x4 red2ToReferenceTransform;
       float4x4 red3ToReferenceTransform;
       float4x4 red4ToReferenceTransform;
-      float4x4 red5ToReferenceTransform;
 
       // Calculate world position from transforms in tracked frame
       try
@@ -701,7 +707,6 @@ done:
         float4x4 red2ToReferenceTransform = transpose(m_transformRepository->GetTransform(m_sphereCoordinateNames[1], &isValid));
         float4x4 red3ToReferenceTransform = transpose(m_transformRepository->GetTransform(m_sphereCoordinateNames[2], &isValid));
         float4x4 red4ToReferenceTransform = transpose(m_transformRepository->GetTransform(m_sphereCoordinateNames[3], &isValid));
-        float4x4 red5ToReferenceTransform = transpose(m_transformRepository->GetTransform(m_sphereCoordinateNames[4], &isValid));
       }
       catch (Platform::Exception^ e)
       {
@@ -719,9 +724,6 @@ done:
       outSphereInReferenceResults.push_back(float3(translation.x, translation.y, translation.z));
 
       translation = transform(origin, red4ToReferenceTransform);
-      outSphereInReferenceResults.push_back(float3(translation.x, translation.y, translation.z));
-
-      translation = transform(origin, red5ToReferenceTransform);
       outSphereInReferenceResults.push_back(float3(translation.x, translation.y, translation.z));
 
       // Phantom is rigid body, so only need to pull the values once
@@ -744,11 +746,6 @@ done:
         }
 
         if (!ExtractPhantomToFiducialPose(m_sphereToPhantomPoses[3], m_transformRepository, L"RedSphere4", L"Phantom"))
-        {
-          hasError = true;
-        }
-
-        if (!ExtractPhantomToFiducialPose(m_sphereToPhantomPoses[4], m_transformRepository, L"RedSphere5", L"Phantom"))
         {
           hasError = true;
         }
@@ -790,6 +787,12 @@ done:
       {
         pose = pose * args->OldRawCoordinateSystemToNewRawCoordinateSystemTransform;
       }
+    }
+
+    //----------------------------------------------------------------------------
+    void CameraRegistration::SortCorrespondence(std::vector<cv::Point3f>& inOutPhantomFiducialsCv, const std::vector<cv::Vec3f>& inCircles)
+    {
+
     }
   }
 }

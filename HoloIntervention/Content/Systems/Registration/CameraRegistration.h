@@ -93,11 +93,13 @@ namespace HoloIntervention
 
       void PerformLandmarkRegistration();
 
-      bool CameraRegistration::RetrieveTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame, VecFloat3& outSphereInReferenceResults, std::array<Windows::Foundation::Numerics::float4x4, 5>& outSphereToPhantomPose);
+      bool CameraRegistration::RetrieveTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame, VecFloat3& outSphereInReferenceResults, std::array<Windows::Foundation::Numerics::float4x4, 4>& outSphereToPhantomPose);
 
       bool ComputePhantomToCameraTransform(Windows::Media::Capture::Frames::VideoMediaFrame^ videoFrame, bool& initialized, int32_t& height, int32_t& width,
-                                           cv::Mat& hsv, cv::Mat& redMat, cv::Mat& redMatWrap, cv::Mat& imageRGB, cv::Mat& mask, cv::Mat& cannyOutput, Windows::Foundation::Numerics::float4x4& modelToCameraTransform);
+                                           cv::Mat& hsv, cv::Mat& redMat, cv::Mat& redMatWrap, cv::Mat& imageRGB, cv::Mat& mask, cv::Mat& rvec,
+                                           cv::Mat& tvec, cv::Mat& cannyOutput, Windows::Foundation::Numerics::float4x4& modelToCameraTransform);
       void OnAnchorRawCoordinateSystemAdjusted(Windows::Perception::Spatial::SpatialAnchor^ anchor, Windows::Perception::Spatial::SpatialAnchorRawCoordinateSystemAdjustedEventArgs^ args);
+      void SortCorrespondence(std::vector<cv::Point3f>& inOutPhantomFiducialsCv, const std::vector<cv::Vec3f>& inCircles);
 
     protected:
       // Cached pointer to device resources.
@@ -112,8 +114,8 @@ namespace HoloIntervention
 
       // Visualization resources
       std::atomic_bool                                                      m_visualizationEnabled = false;
-      std::array<uint64, 5>                                                 m_spherePrimitiveIds = { 0 };
-      std::array<Windows::Foundation::Numerics::float4x4, 5>                m_sphereToAnchorPoses;
+      std::array<uint64, 4>                                                 m_spherePrimitiveIds = { 0 };
+      std::array<Windows::Foundation::Numerics::float4x4, 4>                m_sphereToAnchorPoses;
 
       // Camera
       Windows::Foundation::EventRegistrationToken                           m_anchorUpdatedToken;
@@ -127,9 +129,9 @@ namespace HoloIntervention
       std::atomic_bool                                                      m_transformsAvailable = false;
       double                                                                m_latestTimestamp = 0.0;
       DetectionFrames                                                       m_sphereInTrackerResults;
-      std::array<Windows::Foundation::Numerics::float4x4, 5>                m_sphereToPhantomPoses;
+      std::array<Windows::Foundation::Numerics::float4x4, 4>                m_sphereToPhantomPoses;
       std::atomic_bool                                                      m_hasSpherePoses = false;
-      std::array<UWPOpenIGTLink::TransformName^, 5>                         m_sphereCoordinateNames;
+      std::array<UWPOpenIGTLink::TransformName^, 4>                         m_sphereCoordinateNames;
 
       // State variables
       Concurrency::task<void>*                                              m_workerTask = nullptr;
@@ -139,7 +141,7 @@ namespace HoloIntervention
       Windows::Foundation::Numerics::float4x4                               m_trackerToWorldAnchor = Windows::Foundation::Numerics::float4x4::identity(); // row-major order
       std::shared_ptr<LandmarkRegistration>                                 m_landmarkRegistration = std::make_shared<LandmarkRegistration>();
 
-      static const uint32                                                   PHANTOM_SPHERE_COUNT = 5;
+      static const uint32                                                   PHANTOM_SPHERE_COUNT = 4;
       static const uint32                                                   NUMBER_OF_FRAMES_FOR_CALIBRATION = 90;
       static const float                                                    VISUALIZATION_SPHERE_RADIUS;
     };
