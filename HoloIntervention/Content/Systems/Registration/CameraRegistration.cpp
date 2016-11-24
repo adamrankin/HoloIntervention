@@ -796,41 +796,110 @@ done:
       const float TANGENT_MM_COUNT = 3.75f; // Check patches of 4mm x 10mm
       const float RADIAL_MM_COUNT = 10.f;
       const float SPHERE_RADIUS_MM = 15.f;
+
+      byte* imageData = (byte*)image.data;
+
+      std::array<std::array<uint32, 255>, PHANTOM_SPHERE_COUNT> histograms;
+      uint32 circleIndex(0);
       for (auto& circle : inCircles)
       {
+        uint32 blueCount(0);
+        uint32 whiteCount(0);
+        uint32 greenCount(0);
+
         // given a circle, calculate radial patches, compute histogram, determine if profile of any patches match expected parameters
         float mmToPixel = SPHERE_RADIUS_MM / circle[2];
         for (uint32 currentPatchIndex = 0; currentPatchIndex < NUMBER_OF_PATCHES; ++currentPatchIndex)
         {
-          float3 patchMeanColour(0.f, 0.f, 0.f);
-          uint32 pixelCount(0);
-
           float2 radialVector(cos(TWO_PI * currentPatchIndex / NUMBER_OF_PATCHES), sin(TWO_PI * currentPatchIndex / NUMBER_OF_PATCHES));
           float2 tangentVector(radialVector.y, radialVector.x);
           float2 radialOriginPixel = radialVector * (SPHERE_RADIUS_MM + 0.25f) * mmToPixel; // Grab a point just outside the circle in image space
 
-          for (float i = 0.f; i < TANGENT_MM_COUNT / 2 * mmToPixel; ++i)
-          {
-            for (float j = 0.f; j < RADIAL_MM_COUNT * mmToPixel; ++j)
-            {
-              float2 currentPixelLocation = radialOriginPixel + tangentVector * i + radialVector * j;
-              auto pixel1 = image.at<cv::Vec3b>(floor(currentPixelLocation.x), floor(currentPixelLocation.y));
-              auto pixel2 = image.at<cv::Vec3b>(ceil(currentPixelLocation.x), floor(currentPixelLocation.y));
-              auto pixel3 = image.at<cv::Vec3b>(floor(currentPixelLocation.x), ceil(currentPixelLocation.y));
-              auto pixel4 = image.at<cv::Vec3b>(ceil(currentPixelLocation.x), ceil(currentPixelLocation.y));
-              // TODO .at is quite slow, recode for direct array access
-              pixelCount++;
-            }
-            for (float j = 0.f; j < RADIAL_MM_COUNT * mmToPixel; ++j)
-            {
-              float2 currentPixelLocation = radialOriginPixel - tangentVector * i + radialVector * j;
+          std::array<uint8, 3> patchMeanColour = CalculatePatchMeanHSV(TANGENT_MM_COUNT, RADIAL_MM_COUNT, mmToPixel, radialOriginPixel, tangentVector, radialVector,
+                                                 imageData, image.step, histograms[circleIndex]);
 
-              pixelCount++;
-            }
-          }
+          // Is this patch a fairly solid colour, or noisy?
+          uint32 totalPointCount(TANGENT_MM_COUNT * mmToPixel * RADIAL_MM_COUNT * mmToPixel);
+
+          // Is this mean close to any of our expected means?
         }
 
+        // Patches have been scanned, let's see if this sphere's configuration matches any expected pattern
+        circleIndex++;
       }
+    }
+
+    //----------------------------------------------------------------------------
+    std::array<uint8, 3> CameraRegistration::CalculatePatchMeanHSV(const float TANGENT_MM_COUNT, const float RADIAL_MM_COUNT, float mmToPixel,
+        const float2& radialOriginPixel, const float2& tangentVector, const float2& radialVector, byte* imageData, const cv::MatStep& step,
+        std::array<uint32, 255>& histogram)
+    {
+      std::array<uint8, 3> patchMeanColour = { 0, 0, 0 };
+      uint32 pixelCount(0);
+
+      for (float i = 0.f; i < TANGENT_MM_COUNT / 2 * mmToPixel; ++i)
+      {
+        for (float j = 0.f; j < RADIAL_MM_COUNT * mmToPixel; ++j)
+        {
+          // addr(M_{i,j}) = M.data + M.step[0]*i + M.step[1]*j
+          float2 currentPixelLocation = radialOriginPixel + tangentVector * i + radialVector * j;
+          uint32 finalPixelValue = CalculatePixelValue(currentPixelLocation, imageData, step);
+          uint8 hue = finalPixelValue >> 16;
+          uint8 saturation = finalPixelValue >> 8;
+          uint8 value = finalPixelValue;
+
+          histogram[hue]++; // histogram of hue only
+          patchMeanColour[0] += hue;
+          patchMeanColour[1] += saturation;
+          patchMeanColour[2] += value;
+          pixelCount++;
+        }
+        for (float j = 0.f; j < RADIAL_MM_COUNT * mmToPixel; ++j)
+        {
+          float2 currentPixelLocation = radialOriginPixel - tangentVector * i + radialVector * j;
+          uint32 finalPixelValue = CalculatePixelValue(currentPixelLocation, imageData, step);
+          uint32 hue = finalPixelValue >> 16;
+          uint32 saturation = finalPixelValue >> 8;
+          uint32 value = finalPixelValue;
+
+          histogram[hue]++; // histogram of hue only
+          patchMeanColour[0] += hue;
+          patchMeanColour[1] += saturation;
+          patchMeanColour[2] += value;
+          pixelCount++;
+        }
+      }
+
+      patchMeanColour[0] = patchMeanColour[0] / pixelCount;
+      patchMeanColour[1] = patchMeanColour[1] / pixelCount;
+      patchMeanColour[2] = patchMeanColour[2] / pixelCount;
+      return patchMeanColour;
+    }
+
+    //----------------------------------------------------------------------------
+    uint32 CameraRegistration::CalculatePixelValue(const float2& currentPixelLocation, byte* imageData, const cv::MatStep& step)
+    {
+      // cast = floor, cast + 1 = ceil, x/y guaranteed positive
+      byte* lowerLeftPixel = &imageData[step[0] * (int)currentPixelLocation.x + step[1] * (int)currentPixelLocation.y];
+      byte* lowerRightPixel = &imageData[step[0] * (int)(currentPixelLocation.x + 1.f) + step[1] * (int)currentPixelLocation.y];
+      byte* upperLeftPixel = &imageData[step[0] * (int)currentPixelLocation.x + step[1] * (int)(currentPixelLocation.y + 1.f)];
+      byte* upperRightPixel = &imageData[step[0] * (int)(currentPixelLocation.x + 1.f) + step[1] * (int)(currentPixelLocation.y + 1.f)];
+      float ratio[2] = { fmodf(currentPixelLocation.x, 1.f), fmodf(currentPixelLocation.y, 1.f) };
+
+      byte horizontalBlend[2][3] = { {
+          ratio[0]* lowerLeftPixel[0] + (1.f - ratio[0])* lowerRightPixel[0],
+          ratio[0]* lowerLeftPixel[1] + (1.f - ratio[0])* lowerRightPixel[1],
+          ratio[0]* lowerLeftPixel[2] + (1.f - ratio[0])* lowerRightPixel[2]
+        },
+        {
+          ratio[0]* upperLeftPixel[0] + (1.f - ratio[0])* upperRightPixel[0],
+          ratio[0]* upperLeftPixel[1] + (1.f - ratio[0])* upperRightPixel[1],
+          ratio[0]* upperLeftPixel[2] + (1.f - ratio[0])* upperRightPixel[2]
+        }
+      };
+
+      return (byte)(ratio[1] * horizontalBlend[0][0] + (1.f - ratio[1]) * horizontalBlend[1][0]) << 16 | (byte)(ratio[1] * horizontalBlend[0][1] + (1.f - ratio[1]) * horizontalBlend[1][1]) << 8 |
+             (byte)(ratio[1] * horizontalBlend[0][2] + (1.f - ratio[1]) * horizontalBlend[1][2]);
     }
   }
 }

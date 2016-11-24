@@ -98,6 +98,10 @@ namespace HoloIntervention
                                            cv::Mat& tvec, cv::Mat& cannyOutput, Windows::Foundation::Numerics::float4x4& modelToCameraTransform);
       void OnAnchorRawCoordinateSystemAdjusted(Windows::Perception::Spatial::SpatialAnchor^ anchor, Windows::Perception::Spatial::SpatialAnchorRawCoordinateSystemAdjustedEventArgs^ args);
       void SortCorrespondence(cv::Mat& image, std::vector<cv::Point3f>& inOutPhantomFiducialsCv, const std::vector<cv::Vec3f>& inCircles);
+      inline uint32 CalculatePixelValue(const Windows::Foundation::Numerics::float2& currentPixelLocation, byte* imageData, const cv::MatStep& step);
+      std::array<uint8, 3> CalculatePatchMeanHSV(const float TANGENT_MM_COUNT, const float RADIAL_MM_COUNT, float mmToPixel,
+          const Windows::Foundation::Numerics::float2& radialOriginPixel, const Windows::Foundation::Numerics::float2& tangentVector, const Windows::Foundation::Numerics::float2& radialVector,
+          byte* imageData, const cv::MatStep& step, std::array<uint32, 255>& histograms);
 
     protected:
       // Cached pointer to device resources.
