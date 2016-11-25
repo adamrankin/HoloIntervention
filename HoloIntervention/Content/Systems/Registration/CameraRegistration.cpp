@@ -796,10 +796,13 @@ done:
       const float TANGENT_MM_COUNT = 3.75f; // Check patches of 4mm x 10mm
       const float RADIAL_MM_COUNT = 10.f;
       const float SPHERE_RADIUS_MM = 15.f;
+      const float MEAN_DISTRIBUTION_RATIO_THRESHOLD = 0.95f;
+      const uint8 FIVE_PCT_PIXEL_RANGE = 16;
 
       byte* imageData = (byte*)image.data;
 
-      std::array<std::array<uint32, 255>, PHANTOM_SPHERE_COUNT> histograms;
+      std::array<std::array<std::array<uint32, 255>, 3>, PHANTOM_SPHERE_COUNT> hsvHistograms;
+
       uint32 circleIndex(0);
       for (auto& circle : inCircles)
       {
@@ -815,13 +818,38 @@ done:
           float2 tangentVector(radialVector.y, radialVector.x);
           float2 radialOriginPixel = radialVector * (SPHERE_RADIUS_MM + 0.25f) * mmToPixel; // Grab a point just outside the circle in image space
 
-          std::array<uint8, 3> patchMeanColour = CalculatePatchMeanHSV(TANGENT_MM_COUNT, RADIAL_MM_COUNT, mmToPixel, radialOriginPixel, tangentVector, radialVector,
-                                                 imageData, image.step, histograms[circleIndex]);
+          CalculatePatchHistogramHSV(TANGENT_MM_COUNT, RADIAL_MM_COUNT, mmToPixel, radialOriginPixel, tangentVector, radialVector,
+                                     imageData, image.step, hsvHistograms[circleIndex]);
 
-          // Is this patch a fairly solid colour, or noisy?
-          uint32 totalPointCount(TANGENT_MM_COUNT * mmToPixel * RADIAL_MM_COUNT * mmToPixel);
+          uint32 totalPixelCount(TANGENT_MM_COUNT * mmToPixel * RADIAL_MM_COUNT * mmToPixel);
 
-          // Is this mean close to any of our expected means?
+          // Blue hue, 100-120 ish, tuning needed
+          // Green hue, 45-65 ish, tuning needed
+
+          // Determine if patch is white
+          // low sat, high value
+          uint32 lowSatPixelCount(0);
+          for (int i = 0; i < FIVE_PCT_PIXEL_RANGE; ++i)
+          {
+            lowSatPixelCount += hsvHistograms[circleIndex][1][i];
+          }
+          float lowSatRatio = (1.f * lowSatPixelCount) / totalPixelCount;
+          if (lowSatRatio > 0.9f)
+          {
+            uint32 highValPixelCount(0);
+            for (int i = 0; i < FIVE_PCT_PIXEL_RANGE; ++i)
+            {
+              highValPixelCount += hsvHistograms[circleIndex][2][255 - i];
+            }
+            float highValRatio = (1.f * highValPixelCount) / totalPixelCount;
+            if (highValRatio > 0.9f)
+            {
+              whiteCount++;
+            }
+          }
+
+          // Determine if patch is blue
+          //cv::inRange(hsv, cv::Scalar(100, 70, 50), cv::Scalar(120, 255, 255), redMat);
         }
 
         // Patches have been scanned, let's see if this sphere's configuration matches any expected pattern
@@ -830,9 +858,9 @@ done:
     }
 
     //----------------------------------------------------------------------------
-    std::array<uint8, 3> CameraRegistration::CalculatePatchMeanHSV(const float TANGENT_MM_COUNT, const float RADIAL_MM_COUNT, float mmToPixel,
+    void CameraRegistration::CalculatePatchHistogramHSV(const float TANGENT_MM_COUNT, const float RADIAL_MM_COUNT, float mmToPixel,
         const float2& radialOriginPixel, const float2& tangentVector, const float2& radialVector, byte* imageData, const cv::MatStep& step,
-        std::array<uint32, 255>& histogram)
+        std::array<std::array<uint32, 255>, 3>& hsvHistogram)
     {
       std::array<uint8, 3> patchMeanColour = { 0, 0, 0 };
       uint32 pixelCount(0);
@@ -848,7 +876,9 @@ done:
           uint8 saturation = finalPixelValue >> 8;
           uint8 value = finalPixelValue;
 
-          histogram[hue]++; // histogram of hue only
+          hsvHistogram[0][hue]++;
+          hsvHistogram[1][saturation]++;
+          hsvHistogram[2][value]++;
           patchMeanColour[0] += hue;
           patchMeanColour[1] += saturation;
           patchMeanColour[2] += value;
@@ -858,11 +888,13 @@ done:
         {
           float2 currentPixelLocation = radialOriginPixel - tangentVector * i + radialVector * j;
           uint32 finalPixelValue = CalculatePixelValue(currentPixelLocation, imageData, step);
-          uint32 hue = finalPixelValue >> 16;
-          uint32 saturation = finalPixelValue >> 8;
-          uint32 value = finalPixelValue;
+          uint8 hue = finalPixelValue >> 16;
+          uint8 saturation = finalPixelValue >> 8;
+          uint8 value = finalPixelValue;
 
-          histogram[hue]++; // histogram of hue only
+          hsvHistogram[0][hue]++;
+          hsvHistogram[1][saturation]++;
+          hsvHistogram[2][value]++;
           patchMeanColour[0] += hue;
           patchMeanColour[1] += saturation;
           patchMeanColour[2] += value;
