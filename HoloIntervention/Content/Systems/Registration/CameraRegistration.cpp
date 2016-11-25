@@ -793,119 +793,111 @@ done:
     {
       const float TWO_PI = 6.28318530718f;
       const uint32 NUMBER_OF_PATCHES = 24;
-      const float TANGENT_MM_COUNT = 3.75f; // Check patches of 4mm x 10mm
-      const float RADIAL_MM_COUNT = 10.f;
       const float SPHERE_RADIUS_MM = 15.f;
       const float MEAN_DISTRIBUTION_RATIO_THRESHOLD = 0.95f;
-      const uint8 FIVE_PCT_PIXEL_RANGE = 16;
+      const float FIFTH_PERCENTILE_FACTOR = 0.0627f;
+      const float TANGENT_MM_COUNT = 5; // The number of mm to check on either side of the line connecting two circles
 
       byte* imageData = (byte*)image.data;
 
-      std::array<std::array<std::array<uint32, 255>, 3>, PHANTOM_SPHERE_COUNT> hsvHistograms;
+      typedef std::pair<cv::Vec3f, cv::Vec3f> Line;
+      std::vector<Line> lines;
+      // Build the list of patches to check
+      lines.push_back(Line(inCircles[0], inCircles[1]));
+      lines.push_back(Line(inCircles[0], inCircles[2]));
+      lines.push_back(Line(inCircles[0], inCircles[3]));
+      lines.push_back(Line(inCircles[1], inCircles[2]));
+      lines.push_back(Line(inCircles[1], inCircles[3]));
+      lines.push_back(Line(inCircles[2], inCircles[3]));
 
-      uint32 circleIndex(0);
-      for (auto& circle : inCircles)
+      for (auto& line : lines)
       {
-        uint32 blueCount(0);
-        uint32 whiteCount(0);
-        uint32 greenCount(0);
-
         // given a circle, calculate radial patches, compute histogram, determine if profile of any patches match expected parameters
-        float mmToPixel = SPHERE_RADIUS_MM / circle[2];
-        for (uint32 currentPatchIndex = 0; currentPatchIndex < NUMBER_OF_PATCHES; ++currentPatchIndex)
-        {
-          float2 radialVector(cos(TWO_PI * currentPatchIndex / NUMBER_OF_PATCHES), sin(TWO_PI * currentPatchIndex / NUMBER_OF_PATCHES));
-          float2 tangentVector(radialVector.y, radialVector.x);
-          float2 radialOriginPixel = radialVector * (SPHERE_RADIUS_MM + 0.25f) * mmToPixel; // Grab a point just outside the circle in image space
+        float startMmToPixel = SPHERE_RADIUS_MM / line.first[2];
+        float endMmToPixel = SPHERE_RADIUS_MM / line.first[2];
 
-          CalculatePatchHistogramHSV(TANGENT_MM_COUNT, RADIAL_MM_COUNT, mmToPixel, radialOriginPixel, tangentVector, radialVector,
-                                     imageData, image.step, hsvHistograms[circleIndex]);
+        float2 startCenter(line.first[0], line.first[1]);
+        float2 endCenter(line.second[0], line.second[1]);
+        float2 atVector(endCenter - startCenter);
+        atVector = normalize(atVector);
+        float2 tangentVector(atVector.y, atVector.x);
+        float2 startPixel = startCenter + atVector * (SPHERE_RADIUS_MM + 0.25f) * startMmToPixel;
+        float2 endPixel = endCenter - atVector * (SPHERE_RADIUS_MM + 0.25f) * endMmToPixel;
 
-          uint32 totalPixelCount(TANGENT_MM_COUNT * mmToPixel * RADIAL_MM_COUNT * mmToPixel);
+        uint32 patchPixelCount(0);
+        HsvHistogram histogram;
+        CalculatePatchHistogramHSV(startPixel, endPixel, atVector, tangentVector, TANGENT_MM_COUNT * (startMmToPixel < endMmToPixel ? startMmToPixel : endMmToPixel),
+                                   imageData, image.step, histogram, patchPixelCount);
 
-          // Blue hue, 100-120 ish, tuning needed
-          // Green hue, 45-65 ish, tuning needed
+        // Blue hue, 100-120, tuning needed
+        uint8 blueHue[2] = { 100, 120 };
+        IsPatchColour(blueHue, 70, 50, FIFTH_PERCENTILE_FACTOR, histogram, patchPixelCount);
+        // Green hue, 45-65, tuning needed
+        uint8 greenHue[2] = { 45, 65 };
+        IsPatchColour(greenHue, 70, 50, FIFTH_PERCENTILE_FACTOR, histogram, patchPixelCount);
+        // Yellow hue, 17-37, tuning needed
+        uint8 yelloHue[2] = { 17, 37 };
+        IsPatchColour(yelloHue, 70, 50, FIFTH_PERCENTILE_FACTOR, histogram, patchPixelCount);
 
-          // Determine if patch is white
-          // low sat, high value
-          uint32 lowSatPixelCount(0);
-          for (int i = 0; i < FIVE_PCT_PIXEL_RANGE; ++i)
-          {
-            lowSatPixelCount += hsvHistograms[circleIndex][1][i];
-          }
-          float lowSatRatio = (1.f * lowSatPixelCount) / totalPixelCount;
-          if (lowSatRatio > 0.9f)
-          {
-            uint32 highValPixelCount(0);
-            for (int i = 0; i < FIVE_PCT_PIXEL_RANGE; ++i)
-            {
-              highValPixelCount += hsvHistograms[circleIndex][2][255 - i];
-            }
-            float highValRatio = (1.f * highValPixelCount) / totalPixelCount;
-            if (highValRatio > 0.9f)
-            {
-              whiteCount++;
-            }
-          }
-
-          // Determine if patch is blue
-          //cv::inRange(hsv, cv::Scalar(100, 70, 50), cv::Scalar(120, 255, 255), redMat);
-        }
-
-        // Patches have been scanned, let's see if this sphere's configuration matches any expected pattern
-        circleIndex++;
+        // Line has been scanned, what did we learn?
       }
     }
 
     //----------------------------------------------------------------------------
-    void CameraRegistration::CalculatePatchHistogramHSV(const float TANGENT_MM_COUNT, const float RADIAL_MM_COUNT, float mmToPixel,
-        const float2& radialOriginPixel, const float2& tangentVector, const float2& radialVector, byte* imageData, const cv::MatStep& step,
-        std::array<std::array<uint32, 255>, 3>& hsvHistogram)
+    bool CameraRegistration::IsPatchColour(const uint8 hueRange[2], const uint8 saturationMin, const uint8 valueMin, const float percentileFactor, const HsvHistogram& hsvHistogram, const uint32 totalPixelCount)
     {
-      std::array<uint8, 3> patchMeanColour = { 0, 0, 0 };
-      uint32 pixelCount(0);
+      // mean sat > ?
+      // mean val > ?
+      // hue mean between hueRange[0]-hueRange[1]
 
-      for (float i = 0.f; i < TANGENT_MM_COUNT / 2 * mmToPixel; ++i)
+      return true;
+    }
+
+    //----------------------------------------------------------------------------
+    void CameraRegistration::CalculatePatchHistogramHSV(const Windows::Foundation::Numerics::float2& startPixel,
+        const Windows::Foundation::Numerics::float2& endPixel,
+        const Windows::Foundation::Numerics::float2& atVector,
+        const Windows::Foundation::Numerics::float2& tangentVector, const float tangentPixelCount,
+        byte* imageData, const cv::MatStep& step, HsvHistogram& outHSVHistogram, uint32& outPixelCount)
+    {
+      outPixelCount = 0;
+      auto atLength = length(endPixel - startPixel);
+
+      for (float i = 0.f; i < tangentPixelCount / 2; ++i)
       {
-        for (float j = 0.f; j < RADIAL_MM_COUNT * mmToPixel; ++j)
+        for (float j = 0.f; j < atLength; ++j)
         {
           // addr(M_{i,j}) = M.data + M.step[0]*i + M.step[1]*j
-          float2 currentPixelLocation = radialOriginPixel + tangentVector * i + radialVector * j;
+          float2 currentPixelLocation = startPixel + tangentVector * i + atVector * j;
           uint32 finalPixelValue = CalculatePixelValue(currentPixelLocation, imageData, step);
           uint8 hue = finalPixelValue >> 16;
           uint8 saturation = finalPixelValue >> 8;
           uint8 value = finalPixelValue;
 
-          hsvHistogram[0][hue]++;
-          hsvHistogram[1][saturation]++;
-          hsvHistogram[2][value]++;
-          patchMeanColour[0] += hue;
-          patchMeanColour[1] += saturation;
-          patchMeanColour[2] += value;
-          pixelCount++;
+          outHSVHistogram.hue[hue]++;
+          outHSVHistogram.saturation[saturation]++;
+          outHSVHistogram.value[value]++;
+          outPixelCount++;
         }
-        for (float j = 0.f; j < RADIAL_MM_COUNT * mmToPixel; ++j)
-        {
-          float2 currentPixelLocation = radialOriginPixel - tangentVector * i + radialVector * j;
-          uint32 finalPixelValue = CalculatePixelValue(currentPixelLocation, imageData, step);
-          uint8 hue = finalPixelValue >> 16;
-          uint8 saturation = finalPixelValue >> 8;
-          uint8 value = finalPixelValue;
 
-          hsvHistogram[0][hue]++;
-          hsvHistogram[1][saturation]++;
-          hsvHistogram[2][value]++;
-          patchMeanColour[0] += hue;
-          patchMeanColour[1] += saturation;
-          patchMeanColour[2] += value;
-          pixelCount++;
+        // Don't double count the center line
+        if (i != 0.f)
+        {
+          for (float j = 0.f; j < atLength; ++j)
+          {
+            float2 currentPixelLocation = startPixel - tangentVector * i + atVector * j;
+            uint32 finalPixelValue = CalculatePixelValue(currentPixelLocation, imageData, step);
+            uint8 hue = finalPixelValue >> 16;
+            uint8 saturation = finalPixelValue >> 8;
+            uint8 value = finalPixelValue;
+
+            outHSVHistogram.hue[hue]++;
+            outHSVHistogram.saturation[saturation]++;
+            outHSVHistogram.value[value]++;
+            outPixelCount++;
+          }
         }
       }
-
-      patchMeanColour[0] = patchMeanColour[0] / pixelCount;
-      patchMeanColour[1] = patchMeanColour[1] / pixelCount;
-      patchMeanColour[2] = patchMeanColour[2] / pixelCount;
-      return patchMeanColour;
     }
 
     //----------------------------------------------------------------------------
@@ -919,14 +911,14 @@ done:
       float ratio[2] = { fmodf(currentPixelLocation.x, 1.f), fmodf(currentPixelLocation.y, 1.f) };
 
       byte horizontalBlend[2][3] = { {
-          ratio[0]* lowerLeftPixel[0] + (1.f - ratio[0])* lowerRightPixel[0],
-          ratio[0]* lowerLeftPixel[1] + (1.f - ratio[0])* lowerRightPixel[1],
-          ratio[0]* lowerLeftPixel[2] + (1.f - ratio[0])* lowerRightPixel[2]
+          (byte)(ratio[0]* lowerLeftPixel[0] + (1.f - ratio[0])* lowerRightPixel[0]),
+          (byte)(ratio[0]* lowerLeftPixel[1] + (1.f - ratio[0])* lowerRightPixel[1]),
+          (byte)(ratio[0]* lowerLeftPixel[2] + (1.f - ratio[0])* lowerRightPixel[2])
         },
         {
-          ratio[0]* upperLeftPixel[0] + (1.f - ratio[0])* upperRightPixel[0],
-          ratio[0]* upperLeftPixel[1] + (1.f - ratio[0])* upperRightPixel[1],
-          ratio[0]* upperLeftPixel[2] + (1.f - ratio[0])* upperRightPixel[2]
+          (byte)(ratio[0] * upperLeftPixel[0] + (1.f - ratio[0])* upperRightPixel[0]),
+          (byte)(ratio[0] * upperLeftPixel[1] + (1.f - ratio[0])* upperRightPixel[1]),
+          (byte)(ratio[0] * upperLeftPixel[2] + (1.f - ratio[0])* upperRightPixel[2])
         }
       };
 

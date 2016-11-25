@@ -66,6 +66,13 @@ namespace HoloIntervention
         Recording,
       };
 
+      struct HsvHistogram
+      {
+        std::array<uint32, 180> hue;
+        std::array<uint32, 100> saturation;
+        std::array<uint32, 100> value;
+      };
+
     public:
       typedef std::vector<Windows::Foundation::Numerics::float2> VecFloat2;
       typedef std::vector<Windows::Foundation::Numerics::float3> VecFloat3;
@@ -98,10 +105,13 @@ namespace HoloIntervention
                                            cv::Mat& tvec, cv::Mat& cannyOutput, Windows::Foundation::Numerics::float4x4& modelToCameraTransform);
       void OnAnchorRawCoordinateSystemAdjusted(Windows::Perception::Spatial::SpatialAnchor^ anchor, Windows::Perception::Spatial::SpatialAnchorRawCoordinateSystemAdjustedEventArgs^ args);
       void SortCorrespondence(cv::Mat& image, std::vector<cv::Point3f>& inOutPhantomFiducialsCv, const std::vector<cv::Vec3f>& inCircles);
+      inline void CalculatePatchHistogramHSV(const Windows::Foundation::Numerics::float2& startPixel,
+                                             const Windows::Foundation::Numerics::float2& endPixel,
+                                             const Windows::Foundation::Numerics::float2& atVector,
+                                             const Windows::Foundation::Numerics::float2& tangentVector, const float tangentPixelCount,
+                                             byte* imageData, const cv::MatStep& step, HsvHistogram& outHSVHistogram, uint32& outPixelCount);
       inline uint32 CalculatePixelValue(const Windows::Foundation::Numerics::float2& currentPixelLocation, byte* imageData, const cv::MatStep& step);
-      void CalculatePatchHistogramHSV(const float TANGENT_MM_COUNT, const float RADIAL_MM_COUNT, float mmToPixel,
-                                      const Windows::Foundation::Numerics::float2& radialOriginPixel, const Windows::Foundation::Numerics::float2& tangentVector, const Windows::Foundation::Numerics::float2& radialVector,
-                                      byte* imageData, const cv::MatStep& step, std::array<std::array<uint32, 255>, 3>& hsvHistogram);
+      inline bool IsPatchColour(const uint8 hueRange[2], const uint8 saturationMin, const uint8 valueMin, const float percentileFactor, const HsvHistogram& hsvHistogram, const uint32 totalPixelCount);
 
     protected:
       // Cached pointer to device resources.
@@ -112,7 +122,7 @@ namespace HoloIntervention
 
       // Anchor resources
       std::mutex                                                            m_anchorMutex;
-      Windows::Perception::Spatial::SpatialAnchor^                          m_worldAnchor = nullptr;
+      Windows::Perception::Spatial::SpatialAnchor^                           m_worldAnchor = nullptr;
 
       // Visualization resources
       std::atomic_bool                                                      m_visualizationEnabled = false;
@@ -122,12 +132,12 @@ namespace HoloIntervention
       // Camera
       Windows::Foundation::EventRegistrationToken                           m_anchorUpdatedToken;
       std::mutex                                                            m_framesLock;
-      Windows::Media::Capture::Frames::MediaFrameReference^                 m_currentFrame = nullptr;
-      Windows::Media::Capture::Frames::MediaFrameReference^                 m_nextFrame = nullptr;
+      Windows::Media::Capture::Frames::MediaFrameReference^                  m_currentFrame = nullptr;
+      Windows::Media::Capture::Frames::MediaFrameReference^                  m_nextFrame = nullptr;
       DetectionFrames                                                       m_sphereInAnchorResults;
 
       // IGT link
-      UWPOpenIGTLink::TransformRepository^                                  m_transformRepository = ref new UWPOpenIGTLink::TransformRepository();
+      UWPOpenIGTLink::TransformRepository^                                   m_transformRepository = ref new UWPOpenIGTLink::TransformRepository();
       std::atomic_bool                                                      m_transformsAvailable = false;
       double                                                                m_latestTimestamp = 0.0;
       DetectionFrames                                                       m_sphereInTrackerResults;
