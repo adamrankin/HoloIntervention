@@ -826,27 +826,49 @@ done:
 
         HsvHistogram histogram;
         std::array<uint32, 3> hsvMeans;
+        uint32 pixelCount(0);
         CalculatePatchHistogramHSV(startPixel, endPixel, atVector, tangentVector, TANGENT_MM_COUNT * (startMmToPixel < endMmToPixel ? startMmToPixel : endMmToPixel),
-                                   imageData, image.step, histogram, hsvMeans);
+                                   imageData, image.step, histogram, hsvMeans, pixelCount);
 
         // Blue hue, 100-120, tuning needed
         uint8 blueHue[2] = { 100, 120 };
-        IsPatchColour(blueHue, 70, 50, hsvMeans);
+        IsPatchColour(blueHue, 70, 50, hsvMeans, histogram, pixelCount, FIFTH_PERCENTILE_FACTOR, MEAN_DISTRIBUTION_RATIO_THRESHOLD);
         // Green hue, 45-65, tuning needed
         uint8 greenHue[2] = { 45, 65 };
-        IsPatchColour(greenHue, 70, 50, hsvMeans);
+        IsPatchColour(greenHue, 70, 50, hsvMeans, histogram, pixelCount, FIFTH_PERCENTILE_FACTOR, MEAN_DISTRIBUTION_RATIO_THRESHOLD);
         // Yellow hue, 17-37, tuning needed
         uint8 yelloHue[2] = { 17, 37 };
-        IsPatchColour(yelloHue, 70, 50, hsvMeans);
+        IsPatchColour(yelloHue, 70, 50, hsvMeans, histogram, pixelCount, FIFTH_PERCENTILE_FACTOR, MEAN_DISTRIBUTION_RATIO_THRESHOLD);
 
         // Line has been scanned, what did we learn?
       }
     }
 
     //----------------------------------------------------------------------------
-    bool CameraRegistration::IsPatchColour(const uint8 hueRange[2], const uint8 saturationMin, const uint8 valueMin, const std::array<uint32, 3>& hsvMeans)
+    bool CameraRegistration::IsPatchColour(const uint8 hueRange[2], const uint8 saturationMin, const uint8 valueMin,
+                                           const std::array<uint32, 3>& hsvMeans, const HsvHistogram& histogram,
+                                           const uint32 pixelCount, const float percentileFactor, const float distributionRatio)
     {
-      return hsvMeans[1] > saturationMin && hsvMeans[2] > valueMin && hueRange[0] < hsvMeans[0] && hueRange[1] > hsvMeans[0];
+      const uint32 HUE_MAX = 180;
+
+      bool basicCheck = hsvMeans[0] >= hueRange[0] && hueRange[1] >= hsvMeans[0] && // does hue fall within requested range
+                        hsvMeans[1] >= saturationMin &&                             // does saturation fall above or equal to requested minimum
+                        hsvMeans[2] >= valueMin;                                    // does value fall above or equal to requested minimum
+
+      if (!basicCheck)
+      {
+        return false;
+      }
+
+      // Now examine histogram around mean hue to see if the distribution is concentrated about the mean
+      uint32 hueCountSum(0);
+      uint32 hueRangeHalf = (uint32)(HUE_MAX * percentileFactor);
+      for (uint32 i = hsvMeans[0] - hueRangeHalf; i < hsvMeans[0] + hueRangeHalf; ++i)
+      {
+        // ensure i is wrapped to 0-HUE_MAX
+        hueCountSum += histogram.hue[(i + HUE_MAX) % HUE_MAX];
+      }
+      return (1.f * hueCountSum / pixelCount) > distributionRatio;
     }
 
     //----------------------------------------------------------------------------
@@ -855,9 +877,9 @@ done:
         const Windows::Foundation::Numerics::float2& atVector,
         const Windows::Foundation::Numerics::float2& tangentVector, const float tangentPixelCount,
         byte* imageData, const cv::MatStep& step, HsvHistogram& outHSVHistogram,
-        std::array<uint32, 3>& hsvMeans)
+        std::array<uint32, 3>& hsvMeans, uint32& outPixelCount)
     {
-      uint32 pixelCount = 0;
+      outPixelCount = 0;
       auto atLength = length(endPixel - startPixel);
       float2 huePolarMean(0.f, 0.f);
       float meanSaturation(0.f);
@@ -869,11 +891,10 @@ done:
         for (float j = 0.f; j < atLength; ++j)
         {
           // addr(M_{i,j}) = M.data + M.step[0]*i + M.step[1]*j
-          float2 currentPixelLocation = startPixel + tangentVector * i + atVector * j;
-          uint32 finalPixelValue = CalculatePixelValue(currentPixelLocation, imageData, step);
-          uint8 hue = finalPixelValue >> 16;
-          uint8 saturation = finalPixelValue >> 8;
-          uint8 value = finalPixelValue;
+          uint32 compositePixelValue = CalculatePixelValue(startPixel + tangentVector * i + atVector * j, imageData, step);
+          uint8 hue = compositePixelValue >> 16;
+          uint8 saturation = compositePixelValue >> 8;
+          uint8 value = compositePixelValue;
 
           huePolarMean.x += cosf(hue / 90.f * PI);
           huePolarMean.y += sinf(hue / 90.f * PI);
@@ -883,7 +904,7 @@ done:
           outHSVHistogram.hue[hue]++;
           outHSVHistogram.saturation[saturation]++;
           outHSVHistogram.value[value]++;
-          pixelCount++;
+          outPixelCount++;
         }
 
         // Don't double count the center line
@@ -891,11 +912,10 @@ done:
         {
           for (float j = 0.f; j < atLength; ++j)
           {
-            float2 currentPixelLocation = startPixel - tangentVector * i + atVector * j;
-            uint32 finalPixelValue = CalculatePixelValue(currentPixelLocation, imageData, step);
-            uint8 hue = finalPixelValue >> 16;
-            uint8 saturation = finalPixelValue >> 8;
-            uint8 value = finalPixelValue;
+            uint32 compositePixelValue = CalculatePixelValue(startPixel - tangentVector * i + atVector * j, imageData, step);
+            uint8 hue = compositePixelValue >> 16;
+            uint8 saturation = compositePixelValue >> 8;
+            uint8 value = compositePixelValue;
 
             huePolarMean.x += cosf(2.f * hue / 180.f * PI);
             huePolarMean.y += sinf(2.f * hue / 180.f * PI);
@@ -905,14 +925,14 @@ done:
             outHSVHistogram.hue[hue]++;
             outHSVHistogram.saturation[saturation]++;
             outHSVHistogram.value[value]++;
-            pixelCount++;
+            outPixelCount++;
           }
         }
       }
 
-      hsvMeans[0] = (uint32)(atan2f(huePolarMean.y / pixelCount, huePolarMean.x / pixelCount) * 90 / PI);
-      hsvMeans[1] = (uint32)(meanSaturation / pixelCount);
-      hsvMeans[2] = (uint32)(meanValue / pixelCount);
+      hsvMeans[0] = (uint32)(atan2f(huePolarMean.y / outPixelCount, huePolarMean.x / outPixelCount) * 90 / PI);
+      hsvMeans[1] = (uint32)(meanSaturation / outPixelCount);
+      hsvMeans[2] = (uint32)(meanValue / outPixelCount);
     }
 
     //----------------------------------------------------------------------------
