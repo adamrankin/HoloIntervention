@@ -109,9 +109,10 @@ namespace HoloIntervention
                                              const Windows::Foundation::Numerics::float2& endPixel,
                                              const Windows::Foundation::Numerics::float2& atVector,
                                              const Windows::Foundation::Numerics::float2& tangentVector, const float tangentPixelCount,
-                                             byte* imageData, const cv::MatStep& step, HsvHistogram& outHSVHistogram, uint32& outPixelCount);
+                                             byte* imageData, const cv::MatStep& step, HsvHistogram& outHSVHistogram,
+                                             std::array<uint32, 3>& hsvMeans);
       inline uint32 CalculatePixelValue(const Windows::Foundation::Numerics::float2& currentPixelLocation, byte* imageData, const cv::MatStep& step);
-      inline bool IsPatchColour(const uint8 hueRange[2], const uint8 saturationMin, const uint8 valueMin, const float percentileFactor, const HsvHistogram& hsvHistogram, const uint32 totalPixelCount);
+      inline bool IsPatchColour(const uint8 hueRange[2], const uint8 saturationMin, const uint8 valueMin, const std::array<uint32, 3>& hsvMeans);
 
     protected:
       // Cached pointer to device resources.
