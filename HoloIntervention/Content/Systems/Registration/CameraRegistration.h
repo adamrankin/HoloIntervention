@@ -70,9 +70,9 @@ namespace HoloIntervention
 
       struct HsvHistogram
       {
-        std::array<uint32, 180> hue;
-        std::array<uint32, 100> saturation;
-        std::array<uint32, 100> value;
+        std::array<uint32, 180> hue = { 0 };
+        std::array<uint32, 256> saturation = { 0 };
+        std::array<uint32, 256> value = { 0 };
       };
 
     public:

@@ -639,7 +639,11 @@ namespace HoloIntervention
           }
 
           // Circles has x, y, radius
-          SortCorrespondence(hsv, phantomFiducialsCv, circles);
+          if(!SortCorrespondence(hsv, phantomFiducialsCv, circles))
+          {
+            result = false;
+            goto done;
+          }
 
           // Initialize iterative method with a EPnP approach
           if (m_sphereInAnchorResults.empty())
@@ -791,8 +795,6 @@ done:
     //----------------------------------------------------------------------------
     bool CameraRegistration::SortCorrespondence(cv::Mat& image, std::vector<cv::Point3f>& inOutPhantomFiducialsCv, const std::vector<cv::Vec3f>& inCircles)
     {
-      const float TWO_PI = 6.28318530718f;
-      const uint32 NUMBER_OF_PATCHES = 24;
       const float SPHERE_RADIUS_MM = 15.f;
       const float MEAN_DISTRIBUTION_RATIO_THRESHOLD = 0.95f;
       const float FIFTH_PERCENTILE_FACTOR = 0.0627f;
@@ -825,8 +827,8 @@ done:
         // Given a pair of circles, compute histogram of patch that lies between, determine if profile of patch matches expected parameters
         auto firstCircle = inCircles[line.first];
         auto secondCircle = inCircles[line.second];
-        float startMmToPixel = SPHERE_RADIUS_MM / firstCircle[2];
-        float endMmToPixel = SPHERE_RADIUS_MM / firstCircle[2];
+        float startMmToPixel = firstCircle[2] / SPHERE_RADIUS_MM;
+        float endMmToPixel = secondCircle[2] / SPHERE_RADIUS_MM;
 
         float2 startCenter(firstCircle[0], firstCircle[1]);
         float2 endCenter(secondCircle[0], secondCircle[1]);
@@ -963,7 +965,6 @@ done:
       {
         for (float j = 0.f; j < atLength; ++j)
         {
-          // addr(M_{i,j}) = M.data + M.step[0]*i + M.step[1]*j
           uint32 compositePixelValue = CalculatePixelValue(startPixel + tangentVector * i + atVector * j, imageData, step);
           uint8 hue = compositePixelValue >> 16;
           uint8 saturation = compositePixelValue >> 8;
@@ -1011,27 +1012,29 @@ done:
     //----------------------------------------------------------------------------
     uint32 CameraRegistration::CalculatePixelValue(const float2& currentPixelLocation, byte* imageData, const cv::MatStep& step)
     {
+      //// addr(M_{i,j}) = M.data + M.step[0]*row + M.step[1]*col
       // cast = floor, cast + 1 = ceil, x/y guaranteed positive
-      byte* lowerLeftPixel = &imageData[step[0] * (int)currentPixelLocation.x + step[1] * (int)currentPixelLocation.y];
-      byte* lowerRightPixel = &imageData[step[0] * (int)(currentPixelLocation.x + 1.f) + step[1] * (int)currentPixelLocation.y];
-      byte* upperLeftPixel = &imageData[step[0] * (int)currentPixelLocation.x + step[1] * (int)(currentPixelLocation.y + 1.f)];
-      byte* upperRightPixel = &imageData[step[0] * (int)(currentPixelLocation.x + 1.f) + step[1] * (int)(currentPixelLocation.y + 1.f)];
+      byte* lowerLeftPixel = &imageData[step[0] * (int)(currentPixelLocation.y + 1.f) + step[1] * (int)currentPixelLocation.x];
+      byte* lowerRightPixel = &imageData[step[0] * (int)(currentPixelLocation.y + 1.f) + step[1] * (int)(currentPixelLocation.x + 1.f)];
+      byte* upperLeftPixel = &imageData[step[0] * (int)currentPixelLocation.y + step[1] * (int)currentPixelLocation.x];
+      byte* upperRightPixel = &imageData[step[0] * (int)currentPixelLocation.y + step[1] * (int)(currentPixelLocation.x + 1.f)];
       float ratio[2] = { fmodf(currentPixelLocation.x, 1.f), fmodf(currentPixelLocation.y, 1.f) };
 
       byte horizontalBlend[2][3] = { {
-          (byte)(ratio[0]* lowerLeftPixel[0] + (1.f - ratio[0])* lowerRightPixel[0]),
-          (byte)(ratio[0]* lowerLeftPixel[1] + (1.f - ratio[0])* lowerRightPixel[1]),
-          (byte)(ratio[0]* lowerLeftPixel[2] + (1.f - ratio[0])* lowerRightPixel[2])
+          (byte)((1.f - ratio[0])* lowerLeftPixel[0] + ratio[0] * lowerRightPixel[0]),
+          (byte)((1.f - ratio[0])* lowerLeftPixel[1] + ratio[0] * lowerRightPixel[1]),
+          (byte)((1.f - ratio[0])* lowerLeftPixel[2] + ratio[0] * lowerRightPixel[2])
         },
         {
-          (byte)(ratio[0] * upperLeftPixel[0] + (1.f - ratio[0])* upperRightPixel[0]),
-          (byte)(ratio[0] * upperLeftPixel[1] + (1.f - ratio[0])* upperRightPixel[1]),
-          (byte)(ratio[0] * upperLeftPixel[2] + (1.f - ratio[0])* upperRightPixel[2])
+          (byte)((1.f - ratio[0]) * upperLeftPixel[0] + ratio[0] * upperRightPixel[0]),
+          (byte)((1.f - ratio[0]) * upperLeftPixel[1] + ratio[0] * upperRightPixel[1]),
+          (byte)((1.f - ratio[0]) * upperLeftPixel[2] + ratio[0] * upperRightPixel[2])
         }
       };
 
-      return (byte)(ratio[1] * horizontalBlend[0][0] + (1.f - ratio[1]) * horizontalBlend[1][0]) << 16 | (byte)(ratio[1] * horizontalBlend[0][1] + (1.f - ratio[1]) * horizontalBlend[1][1]) << 8 |
-             (byte)(ratio[1] * horizontalBlend[0][2] + (1.f - ratio[1]) * horizontalBlend[1][2]);
+      return (byte)(ratio[1] * horizontalBlend[0][0] + (1.f - ratio[1]) * horizontalBlend[1][0]) << 16 |
+        (byte)(ratio[1] * horizontalBlend[0][1] + (1.f - ratio[1]) * horizontalBlend[1][1]) << 8 |
+        (byte)(ratio[1] * horizontalBlend[0][2] + (1.f - ratio[1]) * horizontalBlend[1][2]);
     }
 
     //----------------------------------------------------------------------------
