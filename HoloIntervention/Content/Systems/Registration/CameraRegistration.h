@@ -58,6 +58,8 @@ namespace HoloIntervention
   {
     class CameraRegistration
     {
+      typedef std::vector<uint32> ColourToCircleList;
+
       enum State
       {
         Stopped,
@@ -104,7 +106,7 @@ namespace HoloIntervention
                                            cv::Mat& hsv, cv::Mat& redMat, cv::Mat& redMatWrap, cv::Mat& imageRGB, cv::Mat& mask, cv::Mat& rvec,
                                            cv::Mat& tvec, cv::Mat& cannyOutput, Windows::Foundation::Numerics::float4x4& modelToCameraTransform);
       void OnAnchorRawCoordinateSystemAdjusted(Windows::Perception::Spatial::SpatialAnchor^ anchor, Windows::Perception::Spatial::SpatialAnchorRawCoordinateSystemAdjustedEventArgs^ args);
-      void SortCorrespondence(cv::Mat& image, std::vector<cv::Point3f>& inOutPhantomFiducialsCv, const std::vector<cv::Vec3f>& inCircles);
+      bool SortCorrespondence(cv::Mat& image, std::vector<cv::Point3f>& inOutPhantomFiducialsCv, const std::vector<cv::Vec3f>& inCircles);
       inline void CalculatePatchHistogramHSV(const Windows::Foundation::Numerics::float2& startPixel,
                                              const Windows::Foundation::Numerics::float2& endPixel,
                                              const Windows::Foundation::Numerics::float2& atVector,
@@ -114,6 +116,7 @@ namespace HoloIntervention
       inline uint32 CalculatePixelValue(const Windows::Foundation::Numerics::float2& currentPixelLocation, byte* imageData, const cv::MatStep& step);
       inline bool IsPatchColour(const uint8 hueRange[2], const uint8 saturationMin, const uint8 valueMin, const std::array<uint32, 3>& hsvMeans, const HsvHistogram& histogram,
                                 const uint32 pixelCount, const float percentileFactor, const float distributionRatio);
+      inline void RemoveResultFromList(ColourToCircleList& circleLinkResult, int32 centerSphereIndex);
 
     protected:
       // Cached pointer to device resources.

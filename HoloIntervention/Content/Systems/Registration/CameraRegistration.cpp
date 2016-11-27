@@ -789,7 +789,7 @@ done:
     }
 
     //----------------------------------------------------------------------------
-    void CameraRegistration::SortCorrespondence(cv::Mat& image, std::vector<cv::Point3f>& inOutPhantomFiducialsCv, const std::vector<cv::Vec3f>& inCircles)
+    bool CameraRegistration::SortCorrespondence(cv::Mat& image, std::vector<cv::Point3f>& inOutPhantomFiducialsCv, const std::vector<cv::Vec3f>& inCircles)
     {
       const float TWO_PI = 6.28318530718f;
       const uint32 NUMBER_OF_PATCHES = 24;
@@ -800,24 +800,36 @@ done:
 
       byte* imageData = (byte*)image.data;
 
-      typedef std::pair<cv::Vec3f, cv::Vec3f> Line;
-      std::vector<Line> lines;
       // Build the list of patches to check
-      lines.push_back(Line(inCircles[0], inCircles[1]));
-      lines.push_back(Line(inCircles[0], inCircles[2]));
-      lines.push_back(Line(inCircles[0], inCircles[3]));
-      lines.push_back(Line(inCircles[1], inCircles[2]));
-      lines.push_back(Line(inCircles[1], inCircles[3]));
-      lines.push_back(Line(inCircles[2], inCircles[3]));
+      typedef std::pair<uint32, uint32> Line; // indices into inCircles
+      std::vector<Line> lines;
+      lines.push_back(Line(0, 2));
+      lines.push_back(Line(0, 3));
+      lines.push_back(Line(1, 2));
+      lines.push_back(Line(1, 3));
+      lines.push_back(Line(2, 3));
+      lines.push_back(Line(0, 1));
+
+      enum Colours
+      {
+        green_link = 0,
+        blue_link,
+        yellow_link,
+        colour_count
+      };
+
+      std::array<ColourToCircleList, colour_count> circleLinkResults;
 
       for (auto& line : lines)
       {
-        // given a circle, calculate radial patches, compute histogram, determine if profile of any patches match expected parameters
-        float startMmToPixel = SPHERE_RADIUS_MM / line.first[2];
-        float endMmToPixel = SPHERE_RADIUS_MM / line.first[2];
+        // Given a pair of circles, compute histogram of patch that lies between, determine if profile of patch matches expected parameters
+        auto firstCircle = inCircles[line.first];
+        auto secondCircle = inCircles[line.second];
+        float startMmToPixel = SPHERE_RADIUS_MM / firstCircle[2];
+        float endMmToPixel = SPHERE_RADIUS_MM / firstCircle[2];
 
-        float2 startCenter(line.first[0], line.first[1]);
-        float2 endCenter(line.second[0], line.second[1]);
+        float2 startCenter(firstCircle[0], firstCircle[1]);
+        float2 endCenter(secondCircle[0], secondCircle[1]);
         float2 atVector(endCenter - startCenter);
         atVector = normalize(atVector);
         float2 tangentVector(atVector.y, atVector.x);
@@ -832,16 +844,77 @@ done:
 
         // Blue hue, 100-120, tuning needed
         uint8 blueHue[2] = { 100, 120 };
-        IsPatchColour(blueHue, 70, 50, hsvMeans, histogram, pixelCount, FIFTH_PERCENTILE_FACTOR, MEAN_DISTRIBUTION_RATIO_THRESHOLD);
+        if (IsPatchColour(blueHue, 70, 50, hsvMeans, histogram, pixelCount, FIFTH_PERCENTILE_FACTOR, MEAN_DISTRIBUTION_RATIO_THRESHOLD))
+        {
+          circleLinkResults[blue_link].push_back(line.first);
+          circleLinkResults[blue_link].push_back(line.second);
+        }
+
         // Green hue, 45-65, tuning needed
         uint8 greenHue[2] = { 45, 65 };
-        IsPatchColour(greenHue, 70, 50, hsvMeans, histogram, pixelCount, FIFTH_PERCENTILE_FACTOR, MEAN_DISTRIBUTION_RATIO_THRESHOLD);
+        if (IsPatchColour(greenHue, 70, 50, hsvMeans, histogram, pixelCount, FIFTH_PERCENTILE_FACTOR, MEAN_DISTRIBUTION_RATIO_THRESHOLD))
+        {
+          circleLinkResults[green_link].push_back(line.first);
+          circleLinkResults[green_link].push_back(line.second);
+        }
+
         // Yellow hue, 17-37, tuning needed
         uint8 yelloHue[2] = { 17, 37 };
-        IsPatchColour(yelloHue, 70, 50, hsvMeans, histogram, pixelCount, FIFTH_PERCENTILE_FACTOR, MEAN_DISTRIBUTION_RATIO_THRESHOLD);
-
-        // Line has been scanned, what did we learn?
+        if (IsPatchColour(yelloHue, 70, 50, hsvMeans, histogram, pixelCount, FIFTH_PERCENTILE_FACTOR, MEAN_DISTRIBUTION_RATIO_THRESHOLD))
+        {
+          circleLinkResults[yellow_link].push_back(line.first);
+          circleLinkResults[yellow_link].push_back(line.second);
+        }
       }
+
+      // Basic quick sanity check
+      if (circleLinkResults[blue_link].size() != 2 || circleLinkResults[green_link].size() != 2 || circleLinkResults[yellow_link].size() != 2)
+      {
+        OutputDebugStringA("Detected lists differ in size.\n");
+        return false;
+      }
+
+      // If this is a successful detection, there will be one and only one index common to all three colours
+      int32 centerSphereIndex(-1);
+
+      for (auto& circleIndex : circleLinkResults[blue_link])
+      {
+        if (circleIndex != circleLinkResults[green_link][0] && circleIndex != circleLinkResults[green_link][1])
+        {
+          continue;
+        }
+        if (circleIndex != circleLinkResults[yellow_link][0] && circleIndex != circleLinkResults[yellow_link][1])
+        {
+          continue;
+        }
+        centerSphereIndex = circleIndex;
+        break;
+      }
+
+      if (centerSphereIndex == -1)
+      {
+        OutputDebugStringA("No index common to all lists.\n");
+        return false;
+      }
+
+      // Find it, remove it from the other lists, and the values remaining in those lists are the index of the other circles
+      RemoveResultFromList(circleLinkResults[blue_link], centerSphereIndex);
+      RemoveResultFromList(circleLinkResults[green_link], centerSphereIndex);
+      RemoveResultFromList(circleLinkResults[yellow_link], centerSphereIndex);
+
+      // inOutPhantomFiducialsCv come in order 0, 1, 2, 3
+      // centerSphereIndex must become 1
+      // green must become 0
+      // yellow must become 2
+      // blue must become 3
+      std::vector<cv::Point3f> output;
+      output.push_back(inOutPhantomFiducialsCv[circleLinkResults[green_link][0]]);
+      output.push_back(inOutPhantomFiducialsCv[centerSphereIndex]);
+      output.push_back(inOutPhantomFiducialsCv[circleLinkResults[yellow_link][0]]);
+      output.push_back(inOutPhantomFiducialsCv[circleLinkResults[blue_link][0]]);
+      inOutPhantomFiducialsCv = output;
+
+      return true;
     }
 
     //----------------------------------------------------------------------------
@@ -959,6 +1032,19 @@ done:
 
       return (byte)(ratio[1] * horizontalBlend[0][0] + (1.f - ratio[1]) * horizontalBlend[1][0]) << 16 | (byte)(ratio[1] * horizontalBlend[0][1] + (1.f - ratio[1]) * horizontalBlend[1][1]) << 8 |
              (byte)(ratio[1] * horizontalBlend[0][2] + (1.f - ratio[1]) * horizontalBlend[1][2]);
+    }
+
+    //----------------------------------------------------------------------------
+    void CameraRegistration::RemoveResultFromList(ColourToCircleList& circleLinkResult, int32 centerSphereIndex)
+    {
+      if (circleLinkResult[0] == centerSphereIndex)
+      {
+        circleLinkResult.erase(circleLinkResult.begin());
+      }
+      else
+      {
+        circleLinkResult.pop_back();
+      }
     }
   }
 }
