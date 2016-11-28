@@ -672,6 +672,11 @@ namespace HoloIntervention
           cvToD3D.m22 = -1.f;
           cvToD3D.m33 = -1.f;
           phantomToCameraTransform = transpose(phantomToCameraTransform) * cvToD3D; // Output is in column-major format, OpenCV produces row-major
+
+          std::stringstream ss1;
+          ss1 << "phantomToCamera: " << phantomToCameraTransform << std::endl;
+          OutputDebugStringA(ss1.str().c_str());
+
           result = true;
         }
 done:
@@ -973,7 +978,7 @@ done:
 
       std::vector<cv::Point3f> output;
       output.push_back(greenCircle);
-      output.push_back(inCircles[centerSphereIndex]);
+      output.push_back(centerCircle);
       output.push_back(yellowCircle);
       output.push_back(blueCircle);
       inOutPhantomFiducialsCv = output;
