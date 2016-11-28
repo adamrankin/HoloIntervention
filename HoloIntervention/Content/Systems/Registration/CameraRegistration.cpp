@@ -581,7 +581,7 @@ namespace HoloIntervention
           cv::addWeighted(redMat, 1.0, redMatWrap, 1.0, 0.0, mask);
 
           std::vector<cv::Point2f> circleCentersPixel;
-          std::vector<cv::Vec3f> circles;
+          std::vector<cv::Point3f> circles;
 
           // Create a Gaussian & median Blur Filter
           cv::medianBlur(mask, mask, 5);
@@ -595,20 +595,20 @@ namespace HoloIntervention
             float radiusMean(0.f);
             for (auto& circle : circles)
             {
-              radiusMean += circle[2];
+              radiusMean += circle.z;
             }
             radiusMean /= circles.size();
 
             for (auto& circle : circles)
             {
               // Ensure radius of circle falls within 15% of mean
-              if (circle[2] / radiusMean < 0.85f || circle[2] / radiusMean > 1.15f)
+              if (circle.z / radiusMean < 0.85f || circle.z / radiusMean > 1.15f)
               {
                 result = false;
                 goto done;
               }
 
-              circleCentersPixel.push_back(cv::Point2f(circle[0], circle[1]));
+              circleCentersPixel.push_back(cv::Point2f(circle.x, circle.y));
             }
           }
           else
@@ -788,7 +788,7 @@ done:
     }
 
     //----------------------------------------------------------------------------
-    bool CameraRegistration::SortCorrespondence(cv::Mat& image, std::vector<cv::Point3f>& inOutPhantomFiducialsCv, const std::vector<cv::Vec3f>& inCircles)
+    bool CameraRegistration::SortCorrespondence(cv::Mat& image, std::vector<cv::Point3f>& inOutPhantomFiducialsCv, const std::vector<cv::Point3f>& inCircles)
     {
       const float SPHERE_RADIUS_MM = 15.f;
       const float MEAN_DISTRIBUTION_RATIO_THRESHOLD = 0.90f;
@@ -822,11 +822,11 @@ done:
         // Given a pair of circles, compute histogram of patch that lies between, determine if profile of patch matches expected parameters
         auto firstCircle = inCircles[line.first];
         auto secondCircle = inCircles[line.second];
-        float startMmToPixel = firstCircle[2] / SPHERE_RADIUS_MM;
-        float endMmToPixel = secondCircle[2] / SPHERE_RADIUS_MM;
+        float startMmToPixel = firstCircle.z / SPHERE_RADIUS_MM;
+        float endMmToPixel = secondCircle.z / SPHERE_RADIUS_MM;
 
-        float2 startCenter(firstCircle[0], firstCircle[1]);
-        float2 endCenter(secondCircle[0], secondCircle[1]);
+        float2 startCenter(firstCircle.x, firstCircle.y);
+        float2 endCenter(secondCircle.x, secondCircle.y);
         float2 atVector(endCenter - startCenter);
         atVector = normalize(atVector);
         float2 tangentVector(atVector.y, atVector.x);
@@ -864,25 +864,44 @@ done:
         }
       }
 
-      // Basic quick sanity check
-      if (circleLinkResults[blue_link].size() != 2 || circleLinkResults[green_link].size() != 2 || circleLinkResults[yellow_link].size() != 2)
+      // If any pair of links has size 2, we can deduce the results
+      auto& blueLinks = circleLinkResults[blue_link];
+      auto& greenLinks = circleLinkResults[green_link];
+      auto& yellowLinks = circleLinkResults[yellow_link];
+      if (!((blueLinks.size() == 2 && greenLinks.size() == 2) ||
+            (blueLinks.size() == 2 && yellowLinks.size() == 2) ||
+            (greenLinks.size() == 2 && yellowLinks.size() == 2)))
       {
+        // No pair of 2, cannot deduce pattern
         std::stringstream ss;
-        ss << "Detected lists differ in size. Blue: " << circleLinkResults[blue_link].size() << ", green: " << circleLinkResults[green_link].size() << ", yellow: " << circleLinkResults[yellow_link].size() << "." << std::endl;
+        ss << "Unable to deduce pattern. No 2 sets of detected links available. Blue: " << circleLinkResults[blue_link].size() << ", green: " << circleLinkResults[green_link].size() << ", yellow: " << circleLinkResults[yellow_link].size() << "." << std::endl;
         OutputDebugStringA(ss.str().c_str());
-        return false;
       }
 
-      // If this is a successful detection, there will be one and only one index common to all three colours
-      int32 centerSphereIndex(-1);
-
-      for (auto& circleIndex : circleLinkResults[blue_link])
+      // Determine valid pair
+      std::vector<uint32>* listA(nullptr);
+      std::vector<uint32>* listB(nullptr);
+      if (blueLinks.size() == 2 && yellowLinks.size() == 2)
       {
-        if (circleIndex != circleLinkResults[green_link][0] && circleIndex != circleLinkResults[green_link][1])
-        {
-          continue;
-        }
-        if (circleIndex != circleLinkResults[yellow_link][0] && circleIndex != circleLinkResults[yellow_link][1])
+        listA = &blueLinks;
+        listB = &yellowLinks;
+      }
+      else if (blueLinks.size() == 2 && greenLinks.size() == 2)
+      {
+        listA = &blueLinks;
+        listB = &greenLinks;
+      }
+      else
+      {
+        listA = &greenLinks;
+        listB = &yellowLinks;
+      }
+
+      // If this is a successful detection, there will be one and only one index common to all listA and listB
+      int32 centerSphereIndex(-1);
+      for (auto& circleIndex : *listA)
+      {
+        if (circleIndex != (*listB)[0] && circleIndex != (*listB)[1])
         {
           continue;
         }
@@ -897,20 +916,59 @@ done:
       }
 
       // Find it, remove it from the other lists, and the values remaining in those lists are the index of the other circles
-      RemoveResultFromList(circleLinkResults[blue_link], centerSphereIndex);
-      RemoveResultFromList(circleLinkResults[green_link], centerSphereIndex);
-      RemoveResultFromList(circleLinkResults[yellow_link], centerSphereIndex);
+      RemoveResultFromList(*listA, centerSphereIndex);
+      RemoveResultFromList(*listB, centerSphereIndex);
 
-      // inOutPhantomFiducialsCv come in order 0, 1, 2, 3
-      // centerSphereIndex must become 1
-      // green must become 0
-      // yellow must become 2
-      // blue must become 3
+      // Now we know one, and two others (based on which colour of list they're in)
+      cv::Point3f greenCircle(0.f, 0.f, -1.f);
+      cv::Point3f centerCircle = inCircles[centerSphereIndex];
+      cv::Point3f yellowCircle(0.f, 0.f, -1.f);
+      cv::Point3f blueCircle(0.f, 0.f, -1.f);
+      std::vector<uint32> remainingColours = { 0, 2, 3 }; // 0 = green, 2 = yellow, 3 = blue
+      std::vector<uint32> remainingIndicies = { 0, 1, 2, 3 };
+
+      remainingIndicies.erase(std::find(remainingIndicies.begin(), remainingIndicies.end(), centerSphereIndex));
+
+      if (listA == &greenLinks || listB == &greenLinks)
+      {
+        greenCircle = inCircles[greenLinks[0]];
+        remainingIndicies.erase(std::find(remainingIndicies.begin(), remainingIndicies.end(), greenLinks[0]));
+        remainingColours.erase(std::find(remainingColours.begin(), remainingColours.end(), 0));
+      }
+      if (listA == &blueLinks || listB == &blueLinks)
+      {
+        blueCircle = inCircles[blueLinks[0]];
+        remainingIndicies.erase(std::find(remainingIndicies.begin(), remainingIndicies.end(), blueLinks[0]));
+        remainingColours.erase(std::find(remainingColours.begin(), remainingColours.end(), 3));
+      }
+      if (listA == &yellowLinks || listB == &yellowLinks)
+      {
+        yellowCircle = inCircles[yellowLinks[0]];
+        remainingIndicies.erase(std::find(remainingIndicies.begin(), remainingIndicies.end(), yellowLinks[0]));
+        remainingColours.erase(std::find(remainingColours.begin(), remainingColours.end(), 2));
+      }
+
+      // One remaining circle has not yet been set, it's index (as per remaining colours above) remains
+      assert(remainingColours.size() == 1);
+
+      if (remainingColours[0] == 0)
+      {
+        greenCircle = inCircles[remainingIndicies[0]];
+      }
+      else if (remainingColours[0] == 2)
+      {
+        yellowCircle = inCircles[remainingIndicies[0]];
+      }
+      else
+      {
+        blueCircle = inCircles[remainingIndicies[0]];
+      }
+
       std::vector<cv::Point3f> output;
-      output.push_back(inOutPhantomFiducialsCv[circleLinkResults[green_link][0]]);
-      output.push_back(inOutPhantomFiducialsCv[centerSphereIndex]);
-      output.push_back(inOutPhantomFiducialsCv[circleLinkResults[yellow_link][0]]);
-      output.push_back(inOutPhantomFiducialsCv[circleLinkResults[blue_link][0]]);
+      output.push_back(greenCircle);
+      output.push_back(inCircles[centerSphereIndex]);
+      output.push_back(yellowCircle);
+      output.push_back(blueCircle);
       inOutPhantomFiducialsCv = output;
 
       std::stringstream ss;
