@@ -960,13 +960,26 @@ done:
       // Fill the last remaining index with the last remaining colour
       output[remainingIndicies[0]] = inOutPhantomFiducialsCv[remainingColours[0]];
 
-      inOutPhantomFiducialsCv = output;
+
+      {
+        std::stringstream ss;
+        ss << "pixel centers unsorted: " << inCircles[0] << ", " << inCircles[1] << ", " << inCircles[2] << ", " << inCircles[3] << std::endl;
+        OutputDebugStringA(ss.str().c_str());
+      }
 
       {
         std::stringstream ss;
         ss << "fiducial centers: " << output[0] << ", " << output[1] << ", " << output[2] << ", " << output[3] << std::endl;
         OutputDebugStringA(ss.str().c_str());
       }
+
+      {
+        std::stringstream ss;
+        ss << "fiducial centers unsorted: " << inOutPhantomFiducialsCv[0] << ", " << inOutPhantomFiducialsCv[1] << ", " << inOutPhantomFiducialsCv[2] << ", " << inOutPhantomFiducialsCv[3] << std::endl;
+        OutputDebugStringA(ss.str().c_str());
+      }
+
+      inOutPhantomFiducialsCv = output;
 
       return true;
     }
