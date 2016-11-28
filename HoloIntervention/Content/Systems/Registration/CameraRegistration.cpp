@@ -672,6 +672,11 @@ namespace HoloIntervention
           cvToD3D.m22 = -1.f;
           cvToD3D.m33 = -1.f;
           phantomToCameraTransform = transpose(phantomToCameraTransform) * cvToD3D; // Output is in column-major format, OpenCV produces row-major
+
+          std::stringstream ss1;
+          ss1 << "phantomToCamera: " << phantomToCameraTransform << std::endl;
+          OutputDebugStringA(ss1.str().c_str());
+
           result = true;
         }
 done:
