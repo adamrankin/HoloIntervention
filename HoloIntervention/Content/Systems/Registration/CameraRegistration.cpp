@@ -921,7 +921,7 @@ done:
 
       // Now we know one, and two others (based on which colour of list they're in)
       cv::Point3f greenCircle(0.f, 0.f, -1.f);
-      cv::Point3f centerCircle = inCircles[centerSphereIndex];
+      cv::Point3f centerCircle = inOutPhantomFiducialsCv[centerSphereIndex];
       cv::Point3f yellowCircle(0.f, 0.f, -1.f);
       cv::Point3f blueCircle(0.f, 0.f, -1.f);
       std::vector<uint32> remainingColours = { 0, 2, 3 }; // 0 = green, 2 = yellow, 3 = blue
@@ -931,19 +931,19 @@ done:
 
       if (listA == &greenLinks || listB == &greenLinks)
       {
-        greenCircle = inCircles[greenLinks[0]];
+        greenCircle = inOutPhantomFiducialsCv[greenLinks[0]];
         remainingIndicies.erase(std::find(remainingIndicies.begin(), remainingIndicies.end(), greenLinks[0]));
         remainingColours.erase(std::find(remainingColours.begin(), remainingColours.end(), 0));
       }
       if (listA == &blueLinks || listB == &blueLinks)
       {
-        blueCircle = inCircles[blueLinks[0]];
+        blueCircle = inOutPhantomFiducialsCv[blueLinks[0]];
         remainingIndicies.erase(std::find(remainingIndicies.begin(), remainingIndicies.end(), blueLinks[0]));
         remainingColours.erase(std::find(remainingColours.begin(), remainingColours.end(), 3));
       }
       if (listA == &yellowLinks || listB == &yellowLinks)
       {
-        yellowCircle = inCircles[yellowLinks[0]];
+        yellowCircle = inOutPhantomFiducialsCv[yellowLinks[0]];
         remainingIndicies.erase(std::find(remainingIndicies.begin(), remainingIndicies.end(), yellowLinks[0]));
         remainingColours.erase(std::find(remainingColours.begin(), remainingColours.end(), 2));
       }
@@ -953,15 +953,15 @@ done:
 
       if (remainingColours[0] == 0)
       {
-        greenCircle = inCircles[remainingIndicies[0]];
+        greenCircle = inOutPhantomFiducialsCv[remainingIndicies[0]];
       }
       else if (remainingColours[0] == 2)
       {
-        yellowCircle = inCircles[remainingIndicies[0]];
+        yellowCircle = inOutPhantomFiducialsCv[remainingIndicies[0]];
       }
       else
       {
-        blueCircle = inCircles[remainingIndicies[0]];
+        blueCircle = inOutPhantomFiducialsCv[remainingIndicies[0]];
       }
 
       std::vector<cv::Point3f> output;
