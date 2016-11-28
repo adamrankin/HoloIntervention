@@ -613,7 +613,7 @@ namespace HoloIntervention
           }
           else
           {
-            // TODO : is it possible to make our code more robust by identifying 5 circles that make sense? pixel center distances? radii? etc...
+            // TODO : is it possible to make our code more robust by identifying 4 circles that make sense? pixel center distances? radii? etc...
             result = false;
             goto done;
           }
@@ -645,18 +645,8 @@ namespace HoloIntervention
             goto done;
           }
 
-          // Initialize iterative method with a EPnP approach
-          if (m_sphereInAnchorResults.empty())
-          {
-            if (!cv::solvePnP(phantomFiducialsCv, circleCentersPixel, intrinsic, distCoeffs, rvec, tvec, false, cv::SOLVEPNP_EPNP))
-            {
-              result = false;
-              goto done;
-            }
-          }
-
-          // Now use iterative technique to refine results
-          if (!cv::solvePnP(phantomFiducialsCv, circleCentersPixel, intrinsic, distCoeffs, rvec, tvec, true))
+          // Use iterative technique to refine results
+          if (!cv::solvePnP(phantomFiducialsCv, circleCentersPixel, intrinsic, distCoeffs, rvec, tvec, false))
           {
             result = false;
             goto done;
@@ -796,7 +786,7 @@ done:
     bool CameraRegistration::SortCorrespondence(cv::Mat& image, std::vector<cv::Point3f>& inOutPhantomFiducialsCv, const std::vector<cv::Vec3f>& inCircles)
     {
       const float SPHERE_RADIUS_MM = 15.f;
-      const float MEAN_DISTRIBUTION_RATIO_THRESHOLD = 0.95f;
+      const float MEAN_DISTRIBUTION_RATIO_THRESHOLD = 0.90f;
       const float FIFTH_PERCENTILE_FACTOR = 0.0627f;
       const float TANGENT_MM_COUNT = 5; // The number of mm to check on either side of the line connecting two circles
 
@@ -853,8 +843,8 @@ done:
         }
 
         // Green hue, 45-65, tuning needed
-        uint8 greenHue[2] = { 45, 65 };
-        if (IsPatchColour(greenHue, 70, 50, hsvMeans, histogram, pixelCount, FIFTH_PERCENTILE_FACTOR, MEAN_DISTRIBUTION_RATIO_THRESHOLD))
+        uint8 greenHue[2] = { 50, 70 };
+        if (IsPatchColour(greenHue, 70, 40, hsvMeans, histogram, pixelCount, FIFTH_PERCENTILE_FACTOR, MEAN_DISTRIBUTION_RATIO_THRESHOLD))
         {
           circleLinkResults[green_link].push_back(line.first);
           circleLinkResults[green_link].push_back(line.second);
@@ -872,7 +862,9 @@ done:
       // Basic quick sanity check
       if (circleLinkResults[blue_link].size() != 2 || circleLinkResults[green_link].size() != 2 || circleLinkResults[yellow_link].size() != 2)
       {
-        OutputDebugStringA("Detected lists differ in size.\n");
+        std::stringstream ss;
+        ss << "Detected lists differ in size. Blue: " << circleLinkResults[blue_link].size() << ", green: " << circleLinkResults[green_link].size() << ", yellow: " << circleLinkResults[yellow_link].size() << "." << std::endl;
+        OutputDebugStringA(ss.str().c_str());
         return false;
       }
 
@@ -991,8 +983,8 @@ done:
             uint8 saturation = compositePixelValue >> 8;
             uint8 value = compositePixelValue;
 
-            huePolarMean.x += cosf(2.f * hue / 180.f * PI);
-            huePolarMean.y += sinf(2.f * hue / 180.f * PI);
+            huePolarMean.x += cosf(hue / 90.f * PI);
+            huePolarMean.y += sinf(hue / 90.f * PI);
             meanSaturation += saturation;
             meanValue += value;
 
@@ -1004,7 +996,12 @@ done:
         }
       }
 
-      hsvMeans[0] = (uint32)(atan2f(huePolarMean.y / outPixelCount, huePolarMean.x / outPixelCount) * 90 / PI);
+      float hue = atan2f(huePolarMean.y / outPixelCount, huePolarMean.x / outPixelCount) * 90 / PI;
+      if (hue < 0.f)
+      {
+        hue += 180.f;
+      }
+      hsvMeans[0] = (uint32)(hue);
       hsvMeans[1] = (uint32)(meanSaturation / outPixelCount);
       hsvMeans[2] = (uint32)(meanValue / outPixelCount);
     }
