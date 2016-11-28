@@ -965,14 +965,17 @@ done:
 
       if (remainingColours[0] == 0)
       {
+        debugGreenCenter = inCircles[remainingIndicies[0]];
         greenCircle = inOutPhantomFiducialsCv[remainingIndicies[0]];
       }
       else if (remainingColours[0] == 2)
       {
+        debugYellowCenter = inCircles[remainingIndicies[0]];
         yellowCircle = inOutPhantomFiducialsCv[remainingIndicies[0]];
       }
       else
       {
+        debugBlueCenter = inCircles[remainingIndicies[0]];
         blueCircle = inOutPhantomFiducialsCv[remainingIndicies[0]];
       }
 
@@ -981,7 +984,6 @@ done:
       output.push_back(centerCircle);
       output.push_back(yellowCircle);
       output.push_back(blueCircle);
-      inOutPhantomFiducialsCv = output;
 
       {
         std::stringstream ss;
@@ -991,9 +993,23 @@ done:
 
       {
         std::stringstream ss;
+        ss << "pixel centers unsorted: " << inCircles[0] << ", " << inCircles[1] << ", " << inCircles[2] << ", " << inCircles[3] << std::endl;
+        OutputDebugStringA(ss.str().c_str());
+      }
+
+      {
+        std::stringstream ss;
         ss << "fiducial centers: " << output[0] << ", " << output[1] << ", " << output[2] << ", " << output[3] << std::endl;
         OutputDebugStringA(ss.str().c_str());
       }
+
+      {
+        std::stringstream ss;
+        ss << "fiducial centers unsorted: " << inOutPhantomFiducialsCv[0] << ", " << inOutPhantomFiducialsCv[1] << ", " << inOutPhantomFiducialsCv[2] << ", " << inOutPhantomFiducialsCv[3] << std::endl;
+        OutputDebugStringA(ss.str().c_str());
+      }
+
+      inOutPhantomFiducialsCv = output;
 
       return true;
     }
