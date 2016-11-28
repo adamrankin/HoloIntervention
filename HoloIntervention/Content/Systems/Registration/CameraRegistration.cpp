@@ -639,7 +639,7 @@ namespace HoloIntervention
           }
 
           // Circles has x, y, radius
-          if(!SortCorrespondence(hsv, phantomFiducialsCv, circles))
+          if (!SortCorrespondence(hsv, phantomFiducialsCv, circles))
           {
             result = false;
             goto done;
@@ -651,6 +651,11 @@ namespace HoloIntervention
             result = false;
             goto done;
           }
+
+          std::stringstream ss;
+          ss << "rvec: " << rvec << std::endl;
+          ss << "tvec: " << tvec << std::endl;
+          OutputDebugStringA(ss.str().c_str());
 
           cv::Mat rotation(3, 3, CV_32F);
           cv::Rodrigues(rvec, rotation);
@@ -908,6 +913,10 @@ done:
       output.push_back(inOutPhantomFiducialsCv[circleLinkResults[blue_link][0]]);
       inOutPhantomFiducialsCv = output;
 
+      std::stringstream ss;
+      ss << "centers: " << output[0] << ", " << output[1] << ", " << output[2] << ", " << output[3] << std::endl;
+      OutputDebugStringA(ss.str().c_str());
+
       return true;
     }
 
@@ -1030,8 +1039,8 @@ done:
       };
 
       return (byte)(ratio[1] * horizontalBlend[0][0] + (1.f - ratio[1]) * horizontalBlend[1][0]) << 16 |
-        (byte)(ratio[1] * horizontalBlend[0][1] + (1.f - ratio[1]) * horizontalBlend[1][1]) << 8 |
-        (byte)(ratio[1] * horizontalBlend[0][2] + (1.f - ratio[1]) * horizontalBlend[1][2]);
+             (byte)(ratio[1] * horizontalBlend[0][1] + (1.f - ratio[1]) * horizontalBlend[1][1]) << 8 |
+             (byte)(ratio[1] * horizontalBlend[0][2] + (1.f - ratio[1]) * horizontalBlend[1][2]);
     }
 
     //----------------------------------------------------------------------------
