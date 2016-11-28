@@ -924,6 +924,10 @@ done:
       cv::Point3f centerCircle = inOutPhantomFiducialsCv[centerSphereIndex];
       cv::Point3f yellowCircle(0.f, 0.f, -1.f);
       cv::Point3f blueCircle(0.f, 0.f, -1.f);
+      cv::Point3f debugGreenCenter;
+      cv::Point3f debugCenterCenter;
+      cv::Point3f debugYellowCenter;
+      cv::Point3f debugBlueCenter;
       std::vector<uint32> remainingColours = { 0, 2, 3 }; // 0 = green, 2 = yellow, 3 = blue
       std::vector<uint32> remainingIndicies = { 0, 1, 2, 3 };
 
@@ -931,18 +935,21 @@ done:
 
       if (listA == &greenLinks || listB == &greenLinks)
       {
+        debugGreenCenter = inCircles[greenLinks[0]];
         greenCircle = inOutPhantomFiducialsCv[greenLinks[0]];
         remainingIndicies.erase(std::find(remainingIndicies.begin(), remainingIndicies.end(), greenLinks[0]));
         remainingColours.erase(std::find(remainingColours.begin(), remainingColours.end(), 0));
       }
       if (listA == &blueLinks || listB == &blueLinks)
       {
+        debugBlueCenter = inCircles[blueLinks[0]];
         blueCircle = inOutPhantomFiducialsCv[blueLinks[0]];
         remainingIndicies.erase(std::find(remainingIndicies.begin(), remainingIndicies.end(), blueLinks[0]));
         remainingColours.erase(std::find(remainingColours.begin(), remainingColours.end(), 3));
       }
       if (listA == &yellowLinks || listB == &yellowLinks)
       {
+        debugYellowCenter = inCircles[yellowLinks[0]];
         yellowCircle = inOutPhantomFiducialsCv[yellowLinks[0]];
         remainingIndicies.erase(std::find(remainingIndicies.begin(), remainingIndicies.end(), yellowLinks[0]));
         remainingColours.erase(std::find(remainingColours.begin(), remainingColours.end(), 2));
@@ -971,9 +978,17 @@ done:
       output.push_back(blueCircle);
       inOutPhantomFiducialsCv = output;
 
-      std::stringstream ss;
-      ss << "centers: " << output[0] << ", " << output[1] << ", " << output[2] << ", " << output[3] << std::endl;
-      OutputDebugStringA(ss.str().c_str());
+      {
+        std::stringstream ss;
+        ss << "pixel centers: " << debugGreenCenter << ", " << inCircles[centerSphereIndex] << ", " << debugYellowCenter << ", " << debugBlueCenter << std::endl;
+        OutputDebugStringA(ss.str().c_str());
+      }
+
+      {
+        std::stringstream ss;
+        ss << "fiducial centers: " << output[0] << ", " << output[1] << ", " << output[2] << ", " << output[3] << std::endl;
+        OutputDebugStringA(ss.str().c_str());
+      }
 
       return true;
     }
