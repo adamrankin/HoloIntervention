@@ -645,17 +645,22 @@ namespace HoloIntervention
             goto done;
           }
 
+          if (m_sphereInAnchorResults.size() == 0)
+          {
+            // Initialize rvec and tvec with a reasonable guess
+            if (!cv::solvePnP(phantomFiducialsCv, circleCentersPixel, intrinsic, distCoeffs, rvec, tvec, false, cv::SOLVEPNP_DLS))
+            {
+              result = false;
+              goto done;
+            }
+          }
+
           // Use iterative technique to refine results
-          if (!cv::solvePnP(phantomFiducialsCv, circleCentersPixel, intrinsic, distCoeffs, rvec, tvec, false))
+          if (!cv::solvePnP(phantomFiducialsCv, circleCentersPixel, intrinsic, distCoeffs, rvec, tvec, true))
           {
             result = false;
             goto done;
           }
-
-          std::stringstream ss;
-          ss << "rvec: " << rvec << std::endl;
-          ss << "tvec: " << tvec << std::endl;
-          OutputDebugStringA(ss.str().c_str());
 
           cv::Mat rotation(3, 3, CV_32F);
           cv::Rodrigues(rvec, rotation);
@@ -673,9 +678,9 @@ namespace HoloIntervention
           cvToD3D.m33 = -1.f;
           phantomToCameraTransform = transpose(phantomToCameraTransform) * cvToD3D; // Output is in column-major format, OpenCV produces row-major
 
-          std::stringstream ss1;
-          ss1 << "phantomToCamera: " << phantomToCameraTransform << std::endl;
-          OutputDebugStringA(ss1.str().c_str());
+          std::stringstream ss;
+          ss << "phantomToCamera: " << phantomToCameraTransform << std::endl;
+          OutputDebugStringA(ss.str().c_str());
 
           result = true;
         }
@@ -925,8 +930,7 @@ done:
       RemoveResultFromList(*listB, centerSphereIndex);
 
       // Now we know one, and two others (based on which colour of list they're in)
-      std::vector<cv::Point3f> output;
-      output.reserve(4);
+      std::vector<cv::Point3f> output(4);
 
       output[centerSphereIndex] = inOutPhantomFiducialsCv[1];
 
@@ -970,12 +974,6 @@ done:
       {
         std::stringstream ss;
         ss << "fiducial centers: " << output[0] << ", " << output[1] << ", " << output[2] << ", " << output[3] << std::endl;
-        OutputDebugStringA(ss.str().c_str());
-      }
-
-      {
-        std::stringstream ss;
-        ss << "fiducial centers unsorted: " << inOutPhantomFiducialsCv[0] << ", " << inOutPhantomFiducialsCv[1] << ", " << inOutPhantomFiducialsCv[2] << ", " << inOutPhantomFiducialsCv[3] << std::endl;
         OutputDebugStringA(ss.str().c_str());
       }
 
