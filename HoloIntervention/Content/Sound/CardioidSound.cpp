@@ -9,6 +9,7 @@
 //
 //*********************************************************
 
+// Local includes
 #include "pch.h"
 #include "CardioidSound.h"
 
@@ -22,14 +23,15 @@
 #include <wrl.h>
 
 using namespace Microsoft::WRL;
+using namespace Windows::Foundation::Numerics;
 
 namespace HoloIntervention
 {
   namespace Sound
   {
     //----------------------------------------------------------------------------
-    CardioidSound::CardioidSound( AudioFileReader& audioFile )
-      : m_audioFile( audioFile )
+    CardioidSound::CardioidSound(AudioFileReader& audioFile)
+      : m_audioFile(audioFile)
     {
 
     }
@@ -45,14 +47,14 @@ namespace HoloIntervention
 
     //----------------------------------------------------------------------------
     _Use_decl_annotations_
-    HRESULT CardioidSound::Initialize( ComPtr<IXAudio2> xaudio2, IXAudio2SubmixVoice* parentVoice, const float3& position, const float3& pitchYawRoll )
+    HRESULT CardioidSound::Initialize(ComPtr<IXAudio2> xaudio2, IXAudio2SubmixVoice* parentVoice, const float3& position, const float3& pitchYawRoll)
     {
-      if ( m_hrtfParams )
+      if (m_hrtfParams)
       {
         m_hrtfParams = nullptr;
       }
 
-      m_callBack = std::make_shared<VoiceCallback<CardioidSound>>( *this );
+      m_callBack = std::make_shared<VoiceCallback<CardioidSound>>(*this);
 
       // Cardioid directivity configuration
       HrtfDirectivityCardioid cardioid;
@@ -67,34 +69,34 @@ namespace HoloIntervention
 
       // CreateHrtfApo will fail with E_NOTIMPL on unsupported platforms.
       ComPtr<IXAPO> xapo;
-      auto hr = CreateHrtfApo( &apoInit, &xapo );
+      auto hr = CreateHrtfApo(&apoInit, &xapo);
 
-      if ( FAILED( hr ) )
+      if (FAILED(hr))
       {
-        throw Platform::Exception::CreateException( hr );
+        throw Platform::Exception::CreateException(hr);
       }
 
-      hr = xapo.As( &m_hrtfParams );
+      hr = xapo.As(&m_hrtfParams);
 
-      if ( FAILED( hr ) )
+      if (FAILED(hr))
       {
-        throw Platform::Exception::CreateException( hr );
+        throw Platform::Exception::CreateException(hr);
       }
       // Set the initial environment.
       // Environment settings configure the "distance cues" used to compute the early and late reverberations.
-      hr = m_hrtfParams->SetEnvironment( m_environment );
+      hr = m_hrtfParams->SetEnvironment(m_environment);
 
-      if ( FAILED( hr ) )
+      if (FAILED(hr))
       {
-        throw Platform::Exception::CreateException( hr );
+        throw Platform::Exception::CreateException(hr);
       }
 
       // Create a source voice to accept audio data in the specified format.
-      hr = xaudio2->CreateSourceVoice( &m_sourceVoice, m_audioFile.GetFormat(), 0, XAUDIO2_DEFAULT_FREQ_RATIO, m_callBack.get() );
+      hr = xaudio2->CreateSourceVoice(&m_sourceVoice, m_audioFile.GetFormat(), 0, XAUDIO2_DEFAULT_FREQ_RATIO, m_callBack.get());
 
-      if ( FAILED( hr ) )
+      if (FAILED(hr))
       {
-        throw Platform::Exception::CreateException( hr );
+        throw Platform::Exception::CreateException(hr);
       }
 
       // Create a submix voice that will host the xAPO.
@@ -114,11 +116,11 @@ namespace HoloIntervention
       sends.pSends = &sendDesc;
 
       // HRTF APO expects mono 48kHz input, so we configure the submix voice for that format.
-      hr = xaudio2->CreateSubmixVoice( &m_submixVoice, 1, 48000, 0, 0, &sends, nullptr );
+      hr = xaudio2->CreateSubmixVoice(&m_submixVoice, 1, 48000, 0, 0, &sends, nullptr);
 
-      if ( FAILED( hr ) )
+      if (FAILED(hr))
       {
-        throw Platform::Exception::CreateException( hr );
+        throw Platform::Exception::CreateException(hr);
       }
 
       // Route the source voice to the submix voice.
@@ -129,13 +131,13 @@ namespace HoloIntervention
       sendDesc.pOutputVoice = m_submixVoice;
       sends.SendCount = 1;
       sends.pSends = &sendDesc;
-      hr = m_sourceVoice->SetOutputVoices( &sends );
+      hr = m_sourceVoice->SetOutputVoices(&sends);
 
-      SetSourcePose( position, pitchYawRoll );
+      SetSourcePose(position, pitchYawRoll);
 
-      if ( FAILED( hr ) )
+      if (FAILED(hr))
       {
-        throw Platform::Exception::CreateException( hr );
+        throw Platform::Exception::CreateException(hr);
       }
       else
       {
@@ -150,12 +152,12 @@ namespace HoloIntervention
     HRESULT CardioidSound::Start()
     {
       XAUDIO2_BUFFER buffer{};
-      buffer.AudioBytes = static_cast<UINT32>( m_audioFile.GetSize() );
+      buffer.AudioBytes = static_cast<UINT32>(m_audioFile.GetSize());
       buffer.pAudioData = m_audioFile.GetData();
       buffer.LoopCount = XAUDIO2_LOOP_INFINITE;
-      auto hr = m_sourceVoice->SubmitSourceBuffer( &buffer );
+      auto hr = m_sourceVoice->SubmitSourceBuffer(&buffer);
 
-      if ( SUCCEEDED( hr ) )
+      if (SUCCEEDED(hr))
       {
         m_isFinished = false;
         return m_sourceVoice->Start();
@@ -169,14 +171,14 @@ namespace HoloIntervention
     HRESULT CardioidSound::StartOnce()
     {
       XAUDIO2_BUFFER buffer{};
-      buffer.AudioBytes = static_cast<UINT32>( m_audioFile.GetSize() );
+      buffer.AudioBytes = static_cast<UINT32>(m_audioFile.GetSize());
       buffer.pAudioData = m_audioFile.GetData();
       buffer.LoopBegin = XAUDIO2_NO_LOOP_REGION;
       buffer.LoopLength = 0;
       buffer.LoopCount = 0;
-      auto hr = m_sourceVoice->SubmitSourceBuffer( &buffer );
+      auto hr = m_sourceVoice->SubmitSourceBuffer(&buffer);
 
-      if ( SUCCEEDED( hr ) )
+      if (SUCCEEDED(hr))
       {
         m_isFinished = false;
         return m_sourceVoice->Start();
@@ -194,10 +196,10 @@ namespace HoloIntervention
 
     //----------------------------------------------------------------------------
     _Use_decl_annotations_
-    HRESULT CardioidSound::SetEnvironment( HrtfEnvironment environment )
+    HRESULT CardioidSound::SetEnvironment(HrtfEnvironment environment)
     {
       // Environment can be changed at any time.
-      return m_hrtfParams->SetEnvironment( environment );
+      return m_hrtfParams->SetEnvironment(environment);
     }
 
     //----------------------------------------------------------------------------
@@ -209,14 +211,14 @@ namespace HoloIntervention
 
     //----------------------------------------------------------------------------
     _Use_decl_annotations_
-    void CardioidSound::SetSourcePose( const float3& position, const float3& pitchYawRoll )
+    void CardioidSound::SetSourcePose(const float3& position, const float3& pitchYawRoll)
     {
       m_sourcePosition = position;
       auto hrtf_position = HrtfPosition{ position.x, position.y, position.z };
-      m_hrtfParams->SetSourcePosition( &hrtf_position );
+      m_hrtfParams->SetSourcePosition(&hrtf_position);
 
-      auto sourceOrientation = OrientationFromAngles( pitchYawRoll.x, pitchYawRoll.y, pitchYawRoll.z );
-      m_hrtfParams->SetSourceOrientation( &sourceOrientation );
+      auto sourceOrientation = OrientationFromAngles(pitchYawRoll.x, pitchYawRoll.y, pitchYawRoll.z);
+      m_hrtfParams->SetSourceOrientation(&sourceOrientation);
     }
 
     //----------------------------------------------------------------------------
@@ -241,18 +243,18 @@ namespace HoloIntervention
 
     //----------------------------------------------------------------------------
     _Use_decl_annotations_
-    void CardioidSound::Update( DX::StepTimer& timer )
+    void CardioidSound::Update(DX::StepTimer& timer)
     {
-      if ( !m_resourcesLoaded || m_isFinished )
+      if (!m_resourcesLoaded || m_isFinished)
       {
         return;
       }
 
-      const float timeElapsed = static_cast<float>( timer.GetTotalSeconds() );
+      const float timeElapsed = static_cast<float>(timer.GetTotalSeconds());
 
       XAUDIO2_VOICE_STATE state;
-      m_sourceVoice->GetState( &state );
-      if ( state.BuffersQueued == 0 )
+      m_sourceVoice->GetState(&state);
+      if (state.BuffersQueued == 0)
       {
         m_isFinished = true;
       }
@@ -260,14 +262,14 @@ namespace HoloIntervention
 
     //----------------------------------------------------------------------------
     _Use_decl_annotations_
-    HrtfOrientation CardioidSound::OrientationFromAngles( float pitch, float yaw, float roll )
+    HrtfOrientation CardioidSound::OrientationFromAngles(float pitch, float yaw, float roll)
     {
       // Negate all angles for right handed coordinate system.
       DirectX::XMFLOAT3 angles{ -pitch, -yaw, -roll };
-      DirectX::XMVECTOR vector = DirectX::XMLoadFloat3( &angles );
-      DirectX::XMMATRIX rm = DirectX::XMMatrixRotationRollPitchYawFromVector( vector );
+      DirectX::XMVECTOR vector = DirectX::XMLoadFloat3(&angles);
+      DirectX::XMMATRIX rm = DirectX::XMMatrixRotationRollPitchYawFromVector(vector);
       DirectX::XMFLOAT3X3 rm33{};
-      DirectX::XMStoreFloat3x3( &rm33, rm );
+      DirectX::XMStoreFloat3x3(&rm33, rm);
       return HrtfOrientation{ rm33._11, rm33._12, rm33._13, rm33._21, rm33._22, rm33._23, rm33._31, rm33._32, rm33._33 };
     }
   }

@@ -11,11 +11,8 @@
 
 #pragma once
 
-// WinRT includes
-#include <ppltasks.h>
-
-// stl includes
-#include <shared_mutex>
+// STL includes
+#include <mutex>
 
 namespace HoloIntervention
 {

@@ -35,7 +35,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <CommonStates.h>
 #include <Effects.h>
 #include <Model.h>
-#include <SimpleMath.h>
 
 namespace DX
 {

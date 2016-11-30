@@ -31,19 +31,22 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "DeviceResources.h"
 #include "StepTimer.h"
 
+using namespace DirectX;
 using namespace Windows::Foundation::Numerics;
+using namespace Windows::UI::Input::Spatial;
 
 namespace HoloIntervention
 {
   namespace System
   {
-    const double NotificationSystem::MAXIMUM_REQUESTED_DURATION_SEC = 10.0;
+    const XMFLOAT4 NotificationSystem::HIDDEN_ALPHA_VALUE = XMFLOAT4(0.f, 0.f, 0.f, 0.f);
+    const XMFLOAT4 NotificationSystem::SHOWING_ALPHA_VALUE = XMFLOAT4(1.f, 1.f, 1.f, 1.f);
     const double NotificationSystem::DEFAULT_NOTIFICATION_DURATION_SEC = 1.5;
-    const DirectX::XMFLOAT4 NotificationSystem::SHOWING_ALPHA_VALUE = XMFLOAT4(1.f, 1.f, 1.f, 1.f);
-    const DirectX::XMFLOAT4 NotificationSystem::HIDDEN_ALPHA_VALUE = XMFLOAT4(0.f, 0.f, 0.f, 0.f);
-    const Windows::Foundation::Numerics::float3 NotificationSystem::NOTIFICATION_SCREEN_OFFSET = float3(0.f, -0.11f, 0.f);
-    const float NotificationSystem::NOTIFICATION_DISTANCE_OFFSET = 2.0f;
+    const double NotificationSystem::MAXIMUM_REQUESTED_DURATION_SEC = 10.0;
     const float NotificationSystem::LERP_RATE = 4.0;
+    const float NotificationSystem::MAX_FADE_TIME = 1.f;
+    const float NotificationSystem::NOTIFICATION_DISTANCE_OFFSET = 2.0f;
+    const float3 NotificationSystem::NOTIFICATION_SCREEN_OFFSET = float3(0.f, -0.11f, 0.f);
 
     //----------------------------------------------------------------------------
     NotificationSystem::NotificationSystem(const std::shared_ptr<DX::DeviceResources>& deviceResources)
@@ -125,7 +128,7 @@ namespace HoloIntervention
         m_position = pointerPose->Head->Position + (float3(NOTIFICATION_DISTANCE_OFFSET) * (pointerPose->Head->ForwardDirection + NOTIFICATION_SCREEN_OFFSET));
 
         m_animationState = FADING_IN;
-        m_fadeTime = c_maxFadeTime;
+        m_fadeTime = MAX_FADE_TIME;
 
         GrabNextMessage();
       }
@@ -144,7 +147,7 @@ namespace HoloIntervention
         else
         {
           m_animationState = FADING_OUT;
-          m_fadeTime = c_maxFadeTime;
+          m_fadeTime = MAX_FADE_TIME;
         }
       }
       else if (m_animationState == FADING_IN)
@@ -164,7 +167,7 @@ namespace HoloIntervention
           GrabNextMessage();
 
           m_animationState = FADING_IN;
-          m_fadeTime = c_maxFadeTime - m_fadeTime; // reverse the fade
+          m_fadeTime = MAX_FADE_TIME - m_fadeTime; // reverse the fade
         }
 
         if (!IsFading())
@@ -190,11 +193,13 @@ namespace HoloIntervention
     void NotificationSystem::CreateDeviceDependentResources()
     {
       m_notificationRenderer->CreateDeviceDependentResources();
+      m_componentReady = true;
     }
 
     //----------------------------------------------------------------------------
     void NotificationSystem::ReleaseDeviceDependentResources()
     {
+      m_componentReady = false;
       m_notificationRenderer->ReleaseDeviceDependentResources();
     }
 
@@ -208,12 +213,12 @@ namespace HoloIntervention
         // Fade the quad in, or out.
         if (m_animationState == FADING_IN)
         {
-          const float fadeLerp = 1.f - (m_fadeTime / c_maxFadeTime);
+          const float fadeLerp = 1.f - (m_fadeTime / MAX_FADE_TIME);
           m_constantBuffer.hologramColorFadeMultiplier = XMFLOAT4(fadeLerp, fadeLerp, fadeLerp, 1.f);
         }
         else
         {
-          const float fadeLerp = (m_fadeTime / c_maxFadeTime);
+          const float fadeLerp = (m_fadeTime / MAX_FADE_TIME);
           m_constantBuffer.hologramColorFadeMultiplier = XMFLOAT4(fadeLerp, fadeLerp, fadeLerp, 1.f);
         }
         m_fadeTime -= deltaTime;

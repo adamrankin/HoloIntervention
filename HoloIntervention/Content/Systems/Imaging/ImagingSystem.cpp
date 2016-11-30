@@ -43,6 +43,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 using namespace Windows::Foundation::Numerics;
 using namespace Windows::Perception::Spatial;
 using namespace Windows::UI::Input::Spatial;
+using namespace Windows::Media::SpeechRecognition;
 
 namespace HoloIntervention
 {
@@ -51,11 +52,13 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     ImagingSystem::ImagingSystem()
     {
+      m_componentReady = true;
     }
 
     //----------------------------------------------------------------------------
     ImagingSystem::~ImagingSystem()
     {
+      m_componentReady = false;
     }
 
     //----------------------------------------------------------------------------

@@ -28,7 +28,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Common includes
 #include "Common.h"
+#include "DeviceResources.h"
 #include "DirectXHelper.h"
+#include "StepTimer.h"
 
 // STL includes
 #include <sstream>
@@ -36,6 +38,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 // System includes
 #include "NotificationSystem.h"
 #include "RegistrationSystem.h"
+
+// Unnecessary, but eliminates intellisense errors
+#include <WindowsNumerics.h>
 
 using namespace Concurrency;
 using namespace DirectX;
@@ -329,13 +334,14 @@ namespace HoloIntervention
           slice->CreateDeviceDependentResources();
         }
 
-        m_loadingComplete = true;
+        m_componentReady = true;
       });
     }
 
     //----------------------------------------------------------------------------
     void SliceRenderer::ReleaseDeviceDependentResources()
     {
+      m_componentReady = false;
       m_inputLayout.Reset();
       m_indexBuffer.Reset();
       m_vertexShader.Reset();
@@ -360,7 +366,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void SliceRenderer::Render()
     {
-      if (!m_loadingComplete)
+      if (!m_componentReady)
       {
         return;
       }

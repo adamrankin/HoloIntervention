@@ -117,7 +117,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void VolumeRenderer::Update(UWPOpenIGTLink::TrackedFrame^ frame, const DX::StepTimer& timer, DX::CameraResources* cameraResources, SpatialCoordinateSystem^ coordSystem)
     {
-      if (frame == m_frame || !m_loadingComplete || !m_tfResourcesReady)
+      if (frame == m_frame || !m_componentReady || !m_tfResourcesReady)
       {
         // nothing to do!
         return;
@@ -274,7 +274,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void VolumeRenderer::Render()
     {
-      if (!m_loadingComplete || !m_volumeReady || !m_tfResourcesReady)
+      if (!m_componentReady || !m_volumeReady || !m_tfResourcesReady)
       {
         return;
       }
@@ -529,13 +529,13 @@ namespace HoloIntervention
       const CD3D11_BUFFER_DESC indexBufferDesc(sizeof(cubeIndices), D3D11_BIND_INDEX_BUFFER);
       DX::ThrowIfFailed(device->CreateBuffer(&indexBufferDesc, &indexBufferData, &m_indexBuffer));
 
-      m_loadingComplete = true;
+      m_componentReady = true;
     }
 
     //----------------------------------------------------------------------------
     void VolumeRenderer::ReleaseVertexResources()
     {
-      m_loadingComplete = false;
+      m_componentReady = false;
 
       m_indexBuffer.Reset();
       m_vertexBuffer.Reset();

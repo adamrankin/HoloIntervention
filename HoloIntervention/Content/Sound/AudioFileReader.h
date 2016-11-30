@@ -10,13 +10,13 @@
 //*********************************************************
 #pragma once
 
+// Windows includes
 #include <concrt.h>
 #include <mmreg.h>
 #include <wtypes.h>
-#include <vector>
-#include <ppltasks.h>
 
-using namespace Concurrency;
+// STL includes
+#include <vector>
 
 namespace HoloIntervention
 {
@@ -27,7 +27,7 @@ namespace HoloIntervention
     {
     public:
       virtual ~AudioFileReader() {}
-      task<HRESULT> InitializeAsync( _In_ const std::wstring& filename );
+      Concurrency::task<HRESULT> InitializeAsync(_In_ const std::wstring& filename);
 
       const WAVEFORMATEX* GetFormat() const
       {

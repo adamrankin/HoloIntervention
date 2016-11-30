@@ -21,12 +21,14 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 ====================================================================*/
 
-#include "pch.h"
-
 // Local includes
+#include "pch.h"
 #include "AppView.h"
-#include "DirectXHelper.h"
 #include "SpatialSurfaceCollection.h"
+
+// Common includes
+#include "DeviceResources.h"
+#include "DirectXHelper.h"
 #include "StepTimer.h"
 
 // System includes
@@ -40,6 +42,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <sstream>
 
 using namespace Concurrency;
+using namespace DirectX;
 using namespace DX;
 using namespace Platform;
 using namespace Windows::Foundation::Collections;

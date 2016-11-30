@@ -23,32 +23,40 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
+// Local includes
+#include "IEngineComponent.h"
+#include "IVoiceInput.h"
+
+// STL includes
+#include <functional>
+#include <map>
+#include <string>
+
 namespace HoloIntervention
 {
   namespace Input
   {
-    class SpatialInputHandler
+    class VoiceInput : public IEngineComponent
     {
     public:
-      SpatialInputHandler();
-      ~SpatialInputHandler();
+      VoiceInput();
+      ~VoiceInput();
 
-      Windows::UI::Input::Spatial::SpatialInteractionSourceState^ CheckForPressedInput();
+      void EnableVoiceAnalysis(bool enable);
+      bool IsVoiceEnabled() const;
 
-    private:
-      // Interaction event handler.
-      void OnSourcePressed( Windows::UI::Input::Spatial::SpatialInteractionManager^ sender,
-                            Windows::UI::Input::Spatial::SpatialInteractionSourceEventArgs^ args );
+      Concurrency::task<bool> CompileCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbacks);
 
-      // API objects used to process gesture input, and generate gesture events.
-      Windows::UI::Input::Spatial::SpatialInteractionManager^ m_interactionManager;
+    protected:
+      void OnResultGenerated(Windows::Media::SpeechRecognition::SpeechContinuousRecognitionSession^ sender, Windows::Media::SpeechRecognition::SpeechContinuousRecognitionResultGeneratedEventArgs^ args);
 
-      // Event registration token.
-      Windows::Foundation::EventRegistrationToken m_sourcePressedEventToken;
-      Windows::Foundation::EventRegistrationToken m_sourceDetectedEventToken;
+    protected:
+      std::atomic_bool                                      m_speechBeingDetected = false;
+      Windows::Media::SpeechRecognition::SpeechRecognizer^  m_speechRecognizer = nullptr;
+      HoloIntervention::Sound::VoiceInputCallbackMap        m_callbacks;
+      Windows::Foundation::EventRegistrationToken           m_speechDetectedEventToken;
 
-      // Used to indicate that a Pressed input event was received this frame.
-      Windows::UI::Input::Spatial::SpatialInteractionSourceState^ m_sourceState = nullptr;
+      const float                                           MINIMUM_CONFIDENCE_FOR_DETECTION = 0.4f; // [0,1]
     };
   }
 }

@@ -50,10 +50,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "IGTLinkIF.h"
 
 // Input includes
-#include "SpatialInputHandler.h"
-#include "VoiceInputHandler.h"
+#include "SpatialInput.h"
+#include "VoiceInput.h"
 
-// std includes
+// STL includes
 #include <string>
 
 // Windows includes
@@ -108,8 +108,8 @@ namespace HoloIntervention
     m_soundManager = std::make_unique<Sound::SoundManager>();
 
     m_notificationSystem = std::make_unique<System::NotificationSystem>(m_deviceResources);
-    m_spatialInputHandler = std::make_unique<Input::SpatialInputHandler>();
-    m_voiceInputHandler = std::make_unique<Input::VoiceInputHandler>();
+    m_spatialInputHandler = std::make_unique<Input::SpatialInput>();
+    m_voiceInputHandler = std::make_unique<Input::VoiceInput>();
     m_spatialSystem = std::make_unique<System::SpatialSystem>(m_deviceResources, m_timer);
     m_igtLinkIF = std::make_unique<Network::IGTLinkIF>();
 
@@ -137,23 +137,14 @@ namespace HoloIntervention
     // Use the default SpatialLocator to track the motion of the device.
     m_locator = SpatialLocator::GetDefault();
 
-    m_locatabilityChangedToken =
-      m_locator->LocatabilityChanged +=
-        ref new Windows::Foundation::TypedEventHandler<SpatialLocator^, Object^>(
-          std::bind(&HoloInterventionCore::OnLocatabilityChanged, this, std::placeholders::_1, std::placeholders::_2)
-        );
+    m_locatabilityChangedToken = m_locator->LocatabilityChanged +=
+                                   ref new Windows::Foundation::TypedEventHandler<SpatialLocator^, Object^>(std::bind(&HoloInterventionCore::OnLocatabilityChanged, this, std::placeholders::_1, std::placeholders::_2));
 
-    m_cameraAddedToken =
-      m_holographicSpace->CameraAdded +=
-        ref new Windows::Foundation::TypedEventHandler<HolographicSpace^, HolographicSpaceCameraAddedEventArgs^>(
-          std::bind(&HoloInterventionCore::OnCameraAdded, this, std::placeholders::_1, std::placeholders::_2)
-        );
+    m_cameraAddedToken = m_holographicSpace->CameraAdded +=
+                           ref new Windows::Foundation::TypedEventHandler<HolographicSpace^, HolographicSpaceCameraAddedEventArgs^>(std::bind(&HoloInterventionCore::OnCameraAdded, this, std::placeholders::_1, std::placeholders::_2));
 
-    m_cameraRemovedToken =
-      m_holographicSpace->CameraRemoved +=
-        ref new Windows::Foundation::TypedEventHandler<HolographicSpace^, HolographicSpaceCameraRemovedEventArgs^>(
-          std::bind(&HoloInterventionCore::OnCameraRemoved, this, std::placeholders::_1, std::placeholders::_2)
-        );
+    m_cameraRemovedToken = m_holographicSpace->CameraRemoved +=
+                             ref new Windows::Foundation::TypedEventHandler<HolographicSpace^, HolographicSpaceCameraRemovedEventArgs^>(std::bind(&HoloInterventionCore::OnCameraRemoved, this, std::placeholders::_1, std::placeholders::_2));
 
     m_attachedReferenceFrame = m_locator->CreateAttachedFrameOfReferenceAtCurrentHeading();
 
@@ -170,8 +161,6 @@ namespace HoloIntervention
   {
     if (m_holographicSpace != nullptr)
     {
-      // Clear previous event registrations.
-
       if (m_cameraAddedToken.Value != 0)
       {
         m_holographicSpace->CameraAdded -= m_cameraAddedToken;
@@ -204,8 +193,7 @@ namespace HoloIntervention
 
     DX::ViewProjection vp;
     DX::CameraResources* cameraResources(nullptr);
-    m_deviceResources->UseHolographicCameraResources<bool>(
-      [this, holographicFrame, prediction, currentCoordinateSystem, &vp, &cameraResources](std::map<UINT32, std::unique_ptr<DX::CameraResources>>& cameraResourceMap)
+    m_deviceResources->UseHolographicCameraResources<bool>([this, holographicFrame, prediction, currentCoordinateSystem, &vp, &cameraResources](std::map<UINT32, std::unique_ptr<DX::CameraResources>>& cameraResourceMap)
     {
       for (auto cameraPose : prediction->CameraPoses)
       {
@@ -214,6 +202,11 @@ namespace HoloIntervention
       }
       return true;
     });
+
+    if (m_engineReady && !m_voiceInputHandler->IsVoiceEnabled())
+    {
+      m_voiceInputHandler->EnableVoiceAnalysis(true);
+    }
 
     // Time-based updates
     m_timer.Tick([&]()
@@ -267,8 +260,6 @@ namespace HoloIntervention
     return m_deviceResources->UseHolographicCameraResources<bool>(
              [this, holographicFrame](std::map<UINT32, std::unique_ptr<DX::CameraResources>>& cameraResourceMap) -> bool
     {
-      // Up-to-date frame predictions enhance the effectiveness of image stabilization and
-      // allow more accurate positioning of holograms.
       holographicFrame->UpdateCurrentPrediction();
       HolographicFramePrediction^ prediction = holographicFrame->CurrentPrediction;
 
@@ -281,7 +272,6 @@ namespace HoloIntervention
         // This represents the device-based resources for a HolographicCamera.
         DX::CameraResources* pCameraResources = cameraResourceMap[cameraPose->HolographicCamera->Id].get();
 
-        // Get the device context.
         const auto context = m_deviceResources->GetD3DDeviceContext();
         const auto depthStencilView = pCameraResources->GetDepthStencilView();
 
@@ -289,7 +279,6 @@ namespace HoloIntervention
         ID3D11RenderTargetView* const targets[1] = { pCameraResources->GetBackBufferRenderTargetView() };
         context->OMSetRenderTargets(1, targets, depthStencilView);
 
-        // Clear the back buffer and depth stencil view.
         context->ClearRenderTargetView(targets[0], DirectX::Colors::Transparent);
         context->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
@@ -305,7 +294,6 @@ namespace HoloIntervention
           m_volumeRenderer->Render();
         }
 
-        // Only render world-locked content when positional tracking is active.
         if (m_notificationSystem->IsShowingNotification())
         {
           m_notificationSystem->GetRenderer()->Render();

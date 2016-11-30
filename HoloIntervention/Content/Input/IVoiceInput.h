@@ -23,44 +23,17 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-// Local includes
-#include "IEngineComponent.h"
-#include "IVoiceInput.h"
-
-// Rendering includes
-#include "SliceRenderer.h"
-
-namespace DX
-{
-  class StepTimer;
-}
-
 namespace HoloIntervention
 {
-  namespace System
+  namespace Sound
   {
-    class ImagingSystem : public Sound::IVoiceInput, public IEngineComponent
+    typedef std::map<std::wstring, std::function<void(Windows::Media::SpeechRecognition::SpeechRecognitionResult^ result)>> VoiceInputCallbackMap;
+
+    class IVoiceInput
     {
     public:
-      ImagingSystem();
-      ~ImagingSystem();
-
-      void Update(UWPOpenIGTLink::TrackedFrame^ frame, const DX::StepTimer& timer, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);
-
-      bool HasSlice() const;
-      Windows::Foundation::Numerics::float4x4 GetSlicePose() const;
-      Windows::Foundation::Numerics::float3 GetSliceVelocity() const;
-
-      // IVoiceInput functions
-      virtual void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap);
-
-    protected:
-      void Process2DFrame(UWPOpenIGTLink::TrackedFrame^ frame, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);
-      void Process3DFrame(UWPOpenIGTLink::TrackedFrame^ frame, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);
-
-    protected:
-      // Slice system
-      uint32 m_sliceToken = Rendering::SliceRenderer::INVALID_SLICE_INDEX;
+      virtual void RegisterVoiceCallbacks(VoiceInputCallbackMap& callbackMap) = 0;
+      virtual ~IVoiceInput() {};
     };
   }
 }

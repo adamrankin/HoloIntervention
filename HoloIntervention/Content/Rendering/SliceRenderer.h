@@ -24,27 +24,26 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
-#include "StepTimer.h"
-#include "DeviceResources.h"
+#include "IEngineComponent.h"
 #include "SliceEntry.h"
 
-// Windows includes
-#include <ppltasks.h>
-
-// DirectXTK includes
-#include <SimpleMath.h>
-
-// STD includes
+// STL includes
 #include <list>
 
 // DirectX includes
 #include <d3d11.h>
 
+namespace DX
+{
+  class DeviceResources;
+  class StepTimer;
+}
+
 namespace HoloIntervention
 {
   namespace Rendering
   {
-    class SliceRenderer
+    class SliceRenderer : public IEngineComponent
     {
       // list instead of vector so that erase does not require copy constructor
       typedef std::list<std::shared_ptr<SliceEntry>> SliceList;
@@ -70,7 +69,6 @@ namespace HoloIntervention
       void SetDesiredSlicePose(uint32 sliceId, const Windows::Foundation::Numerics::float4x4& pose);
       Windows::Foundation::Numerics::float3 GetSliceVelocity(uint32 sliceId) const;
 
-      // D3D device related controls
       void CreateDeviceDependentResources();
       void ReleaseDeviceDependentResources();
 
@@ -98,7 +96,6 @@ namespace HoloIntervention
 
       // System resources for quad geometry.
       uint32                                              m_indexCount = 0;
-      std::atomic_bool                                    m_loadingComplete = false;
       bool                                                m_usingVprtShaders = false;
 
       // Lock protection when accessing image list

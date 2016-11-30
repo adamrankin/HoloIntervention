@@ -11,9 +11,10 @@
 
 #pragma once
 
-#include "DeviceResources.h"
-
-using namespace DirectX;
+namespace DX
+{
+  class DeviceResources;
+}
 
 namespace HoloIntervention
 {
@@ -21,16 +22,16 @@ namespace HoloIntervention
   {
     class DistanceFieldRenderer
     {
-		struct VertexPosition
-		{
-			XMFLOAT2 position;
-		};
+      struct VertexPosition
+      {
+        DirectX::XMFLOAT2 position;
+      };
 
     public:
-      DistanceFieldRenderer( const std::shared_ptr<DX::DeviceResources>& deviceResources, unsigned int const& textureWidth, unsigned int const& textureHeight );
+      DistanceFieldRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources, unsigned int const& textureWidth, unsigned int const& textureHeight);
       ~DistanceFieldRenderer();
 
-      void RenderDistanceField( ID3D11ShaderResourceView* texture );
+      void RenderDistanceField(ID3D11ShaderResourceView* texture);
 
       void CreateDeviceDependentResources();
       void ReleaseDeviceDependentResources();
@@ -55,8 +56,8 @@ namespace HoloIntervention
       Microsoft::WRL::ComPtr<ID3D11RenderTargetView>      m_renderTargetView;
 
       // CPU-based variables for configuring the off-screen render target.
-      const UINT                                          m_textureWidth;
-      const UINT                                          m_textureHeight;
+      const uint32                                        m_textureWidth;
+      const uint32                                        m_textureHeight;
 
       // System resources for quad geometry.
       uint32                                              m_indexCount = 0;

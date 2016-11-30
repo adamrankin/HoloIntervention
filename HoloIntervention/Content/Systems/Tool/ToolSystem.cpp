@@ -26,8 +26,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "pch.h"
 #include "AppView.h"
-#include "Common.h"
 #include "ToolSystem.h"
+
+// Common includes
+#include "Common.h"
 
 // Rendering includes
 #include "ModelRenderer.h"
@@ -38,6 +40,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 using namespace Concurrency;
 using namespace Windows::Data::Xml::Dom;
+using namespace Windows::Foundation::Numerics;
 using namespace Windows::Perception::Spatial;
 using namespace Windows::Storage;
 
@@ -62,7 +65,10 @@ namespace HoloIntervention
       {
         GetXmlDocumentFromFileAsync(L"Assets\\Data\\configuration.xml").then([this](XmlDocument ^ doc)
         {
-          return InitAsync(doc);
+          return InitAsync(doc).then([this]()
+          {
+            m_componentReady = true;
+          });
         });
       }
       catch (Platform::Exception^ e)

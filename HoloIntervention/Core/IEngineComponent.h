@@ -23,46 +23,21 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-// STD includes
-#include <functional>
-#include <map>
-#include <string>
-
-// Sound includes
-#include "IVoiceInput.h"
-
-using namespace Concurrency;
-using namespace Windows::Media::SpeechRecognition;
+// STL includes
+#include <atomic>
 
 namespace HoloIntervention
 {
-  namespace Input
+  class IEngineComponent
   {
-    class VoiceInputHandler
-    {
-    public:
-      VoiceInputHandler();
-      ~VoiceInputHandler();
+  public:
+    virtual bool IsReady();
 
-      task<bool> CompileCallbacks( HoloIntervention::Sound::VoiceInputCallbackMap& callbacks );
+  public:
+    IEngineComponent() {};
+    virtual ~IEngineComponent() {};
 
-    protected:
-      void OnResultGenerated( SpeechContinuousRecognitionSession^ sender, SpeechContinuousRecognitionResultGeneratedEventArgs^ args );
-
-    protected:
-      // Used for cleaning up
-      bool                                                  m_speechBeingDetected = false;
-
-      // API objects used to process voice input
-      SpeechRecognizer^                                     m_speechRecognizer;
-
-      // Store the command related details
-      HoloIntervention::Sound::VoiceInputCallbackMap        m_callbacks;
-
-      // Event registration token.
-      Windows::Foundation::EventRegistrationToken           m_speechDetectedEventToken;
-
-      const float                                           MINIMUM_CONFIDENCE_FOR_DETECTION = 0.4f; // [0,1]
-    };
-  }
+  protected:
+    std::atomic_bool      m_componentReady = false;
+  };
 }

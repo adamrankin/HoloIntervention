@@ -25,7 +25,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "AudioFileReader.h"
-#include "StepTimer.h"
 #include "VoiceCallback.h"
 
 // WinRT includes
@@ -36,10 +35,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 // STL includes
 #include <map>
 
-using namespace Concurrency;
-using namespace Microsoft::WRL;
-using namespace Windows::Foundation::Numerics;
-using namespace Windows::Perception::Spatial;
+namespace DX
+{
+  class StepTimer;
+}
 
 namespace HoloIntervention
 {
@@ -49,33 +48,33 @@ namespace HoloIntervention
     class OmnidirectionalSound
     {
     public:
-      OmnidirectionalSound( AudioFileReader& audioFile );
+      OmnidirectionalSound(AudioFileReader& audioFile);
       virtual ~OmnidirectionalSound();
-      HRESULT Initialize( _In_ ComPtr<IXAudio2> xaudio2, _In_ IXAudio2SubmixVoice* parentVoice, _In_ const float3& position );
+      HRESULT Initialize(_In_ Microsoft::WRL::ComPtr<IXAudio2> xaudio2, _In_ IXAudio2SubmixVoice* parentVoice, _In_ const Windows::Foundation::Numerics::float3& position);
 
       HRESULT Start();
       HRESULT StartOnce();
       HRESULT Stop();
 
-      void Update( const DX::StepTimer& timer );
-      HRESULT SetEnvironment( _In_ HrtfEnvironment environment );
+      void Update(const DX::StepTimer& timer);
+      HRESULT SetEnvironment(_In_ HrtfEnvironment environment);
       HrtfEnvironment GetEnvironment();
 
       bool IsFinished() const;
 
-      void SetSourcePosition( _In_ const float3& position );
-      float3& GetSourcePosition();
+      void SetSourcePosition(_In_ const Windows::Foundation::Numerics::float3& position);
+      Windows::Foundation::Numerics::float3& GetSourcePosition();
 
     protected:
       std::shared_ptr<VoiceCallback<OmnidirectionalSound>>    m_callBack = nullptr;
       AudioFileReader&                                        m_audioFile;
       IXAudio2SourceVoice*                                    m_sourceVoice;
-      ComPtr<IXAPOHrtfParameters>                             m_hrtfParams;
+      Microsoft::WRL::ComPtr<IXAPOHrtfParameters>             m_hrtfParams;
       HrtfEnvironment                                         m_environment = HrtfEnvironment::Medium;
-      float3                                                  m_sourcePosition;
+      Windows::Foundation::Numerics::float3                   m_sourcePosition;
 
-      bool                                                    m_isFinished = false;
-      bool                                                    m_resourcesLoaded = false;
+      std::atomic_bool                                        m_isFinished = false;
+      std::atomic_bool                                        m_resourcesLoaded = false;
     };
   }
 }

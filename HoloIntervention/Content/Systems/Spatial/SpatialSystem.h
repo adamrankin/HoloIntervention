@@ -23,6 +23,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
+// Local includes
+#include "IEngineComponent.h"
 #include "IVoiceInput.h"
 #include "SpatialSurfaceCollection.h"
 
@@ -31,6 +33,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 namespace DX
 {
+  class DeviceResources;
   class StepTimer;
 }
 
@@ -48,7 +51,7 @@ namespace HoloIntervention
 
   namespace System
   {
-    class SpatialSystem : public Sound::IVoiceInput
+    class SpatialSystem : public Sound::IVoiceInput, public IEngineComponent
     {
     public:
       SpatialSystem(const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer);
@@ -59,13 +62,13 @@ namespace HoloIntervention
       void CreateDeviceDependentResources();
       void ReleaseDeviceDependentResources();
 
-      // Handle surface change events.
+      /// Handle surface change events.
       void OnSurfacesChanged(Windows::Perception::Spatial::Surfaces::SpatialSurfaceObserver^ sender, Platform::Object^ args);
 
-      // Positions the Spatial Mapping surface observer at the origin of the given coordinate system.
+      /// Positions the Spatial Mapping surface observer at the origin of the given coordinate system.
       void UpdateSurfaceObserverPosition(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem);
 
-      // Perform a ray cast to determine if the ray hits any stored mesh
+      /// Perform a ray cast to determine if the ray hits any stored mesh
       bool TestRayIntersection(Windows::Perception::Spatial::SpatialCoordinateSystem^ desiredCoordinateSystem,
                                const Windows::Foundation::Numerics::float3 rayOrigin,
                                const Windows::Foundation::Numerics::float3 rayDirection,
@@ -77,10 +80,8 @@ namespace HoloIntervention
       std::shared_ptr<Spatial::SurfaceMesh> GetLastHitMesh();
       Platform::Guid GetLastHitMeshGuid();
 
-      // Initializes the Spatial Mapping surface observer.
       void InitializeSurfaceObserver(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem);
 
-      // Handle saving and loading of app state owned by AppMain.
       Concurrency::task<void> SaveAppStateAsync();
       Concurrency::task<void> LoadAppStateAsync();
 

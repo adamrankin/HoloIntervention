@@ -23,7 +23,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-// std includes
+// STL includes
 #include <string>
 
 // WinRT includes

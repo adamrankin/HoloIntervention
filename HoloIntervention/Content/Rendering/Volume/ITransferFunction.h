@@ -25,7 +25,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // STL includes
 #include <atomic>
-#include <WindowsNumerics.h>
 
 namespace HoloIntervention
 {

@@ -14,8 +14,6 @@
 // Local includes
 #include "CameraResources.h"
 
-using namespace Windows::Graphics::DirectX;
-
 namespace DX
 {
   // Provides an interface for an application that owns DeviceResources to be notified of the device being lost or created.
@@ -33,24 +31,24 @@ namespace DX
 
     // Public methods related to Direct3D devices.
     void HandleDeviceLost();
-    void RegisterDeviceNotify( IDeviceNotify* deviceNotify );
+    void RegisterDeviceNotify(IDeviceNotify* deviceNotify);
     void Trim();
-    void Present( Windows::Graphics::Holographic::HolographicFrame^ frame );
+    void Present(Windows::Graphics::Holographic::HolographicFrame^ frame);
 
     // Public methods related to holographic devices.
-    void SetHolographicSpace( Windows::Graphics::Holographic::HolographicSpace^ space );
+    void SetHolographicSpace(Windows::Graphics::Holographic::HolographicSpace^ space);
     void EnsureCameraResources(
       Windows::Graphics::Holographic::HolographicFrame^ frame,
-      Windows::Graphics::Holographic::HolographicFramePrediction^ prediction );
+      Windows::Graphics::Holographic::HolographicFramePrediction^ prediction);
 
-    void AddHolographicCamera( Windows::Graphics::Holographic::HolographicCamera^ camera );
-    void RemoveHolographicCamera( Windows::Graphics::Holographic::HolographicCamera^ camera );
+    void AddHolographicCamera(Windows::Graphics::Holographic::HolographicCamera^ camera);
+    void RemoveHolographicCamera(Windows::Graphics::Holographic::HolographicCamera^ camera);
 
     // Holographic accessors.
     template<typename RetType, typename LCallback>
-    RetType UseHolographicCameraResources( const LCallback& callback );
+    RetType UseHolographicCameraResources(const LCallback& callback);
 
-    Direct3D11::IDirect3DDevice^ GetD3DInteropDevice() const;
+    Windows::Graphics::DirectX::Direct3D11::IDirect3DDevice^ GetD3DInteropDevice() const;
 
     // D3D accessors.
     ID3D11Device4*          GetD3DDevice() const;
@@ -111,9 +109,9 @@ namespace DX
 // The callback takes a parameter of type std::map<UINT32, std::unique_ptr<DX::CameraResources>>&
 // through which the list of cameras will be accessed.
 template<typename RetType, typename LCallback>
-RetType DX::DeviceResources::UseHolographicCameraResources( const LCallback& callback )
+RetType DX::DeviceResources::UseHolographicCameraResources(const LCallback& callback)
 {
-  std::lock_guard<std::mutex> guard( m_cameraResourcesLock );
-  return callback( m_cameraResources );
+  std::lock_guard<std::mutex> guard(m_cameraResourcesLock);
+  return callback(m_cameraResources);
 }
 

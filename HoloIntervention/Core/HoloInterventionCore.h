@@ -48,8 +48,8 @@ namespace HoloIntervention
 
   namespace Input
   {
-    class SpatialInputHandler;
-    class VoiceInputHandler;
+    class SpatialInput;
+    class VoiceInput;
   }
 
   namespace Rendering
@@ -145,13 +145,16 @@ namespace HoloIntervention
     std::unique_ptr<Rendering::VolumeRenderer>            m_volumeRenderer;
 
     // Event handlers
-    std::unique_ptr<Input::SpatialInputHandler>           m_spatialInputHandler;
-    std::unique_ptr<Input::VoiceInputHandler>             m_voiceInputHandler;
+    std::unique_ptr<Input::SpatialInput>                  m_spatialInputHandler;
+    std::unique_ptr<Input::VoiceInput>                    m_voiceInputHandler;
 
     // Interface that manages a network connection to an IGT link server
     std::unique_ptr<Network::IGTLinkIF>                   m_igtLinkIF;
     UWPOpenIGTLink::TrackedFrame^                         m_latestFrame;
     double                                                m_latestTimestamp;
+
+    // Engine state
+    std::atomic_bool                                      m_engineReady = false;
 
     // Cached pointer to device resources.
     std::shared_ptr<DX::DeviceResources>                  m_deviceResources;

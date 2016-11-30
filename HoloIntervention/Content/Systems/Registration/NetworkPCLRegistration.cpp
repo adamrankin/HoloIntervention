@@ -40,14 +40,17 @@ OTHER DEALINGS IN THE SOFTWARE.
 // OpenIGTLink includes
 #include <igtlutil/igtl_util.h>
 
-// std includes
+// STL includes
 #include <sstream>
 
 // DirectXTex includes
 #include <DirectXTex.h>
 
+using namespace Concurrency;
 using namespace DirectX;
 using namespace Windows::Data::Xml::Dom;
+using namespace Windows::Foundation::Numerics;
+using namespace Windows::Media::SpeechRecognition;
 using namespace Windows::Networking;
 using namespace Windows::Perception::Spatial::Surfaces;
 using namespace Windows::Perception::Spatial;

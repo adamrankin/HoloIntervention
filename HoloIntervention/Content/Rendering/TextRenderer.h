@@ -13,7 +13,10 @@
 
 #pragma once
 
-#include "DeviceResources.h"
+namespace DX
+{
+  class DeviceResources;
+}
 
 namespace HoloIntervention
 {
@@ -22,12 +25,10 @@ namespace HoloIntervention
     class TextRenderer
     {
     public:
-      TextRenderer( const std::shared_ptr<DX::DeviceResources>& deviceResources,
-                    unsigned int const& textureWidth,
-                    unsigned int const& textureHeight );
+      TextRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources, uint32 const& textureWidth, uint32 const& textureHeight);
       ~TextRenderer();
 
-      void RenderTextOffscreen( const std::wstring& str );
+      void RenderTextOffscreen(const std::wstring& str);
 
       void SetFont(const std::wstring& fontName, DWRITE_FONT_WEIGHT fontWeight, DWRITE_FONT_STYLE fontStyle, DWRITE_FONT_STRETCH fontStretch, float fontSize, const std::wstring& locale = L"");
 

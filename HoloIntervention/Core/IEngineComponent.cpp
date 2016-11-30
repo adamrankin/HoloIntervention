@@ -21,21 +21,15 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 ====================================================================*/
 
-#pragma once
-
-using namespace Windows::Media::SpeechRecognition;
+// Local includes
+#include "pch.h"
+#include "IEngineComponent.h"
 
 namespace HoloIntervention
 {
-  namespace Sound
+  //----------------------------------------------------------------------------
+  bool IEngineComponent::IsReady()
   {
-    typedef std::map<std::wstring, std::function<void(SpeechRecognitionResult^ result)>> VoiceInputCallbackMap;
-
-    class IVoiceInput
-    {
-    public:
-      virtual void RegisterVoiceCallbacks(VoiceInputCallbackMap& callbackMap) = 0;
-      virtual ~IVoiceInput() {};
-    };
+    return m_componentReady;
   }
 }

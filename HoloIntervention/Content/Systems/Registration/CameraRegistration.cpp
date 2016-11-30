@@ -59,6 +59,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 using namespace Concurrency;
 using namespace DirectX;
+using namespace Microsoft::WRL;
 using namespace Windows::Foundation::Numerics;
 using namespace Windows::Foundation;
 using namespace Windows::Graphics::Imaging;
@@ -678,10 +679,6 @@ namespace HoloIntervention
           cvToD3D.m33 = -1.f;
           phantomToCameraTransform = transpose(phantomToCameraTransform) * cvToD3D; // Output is in column-major format, OpenCV produces row-major
 
-          std::stringstream ss;
-          ss << "phantomToCamera: " << phantomToCameraTransform << std::endl;
-          OutputDebugStringA(ss.str().c_str());
-
           result = true;
         }
 done:
@@ -883,9 +880,7 @@ done:
             (greenLinks.size() == 2 && yellowLinks.size() == 2)))
       {
         // No pair of 2, cannot deduce pattern
-        std::stringstream ss;
-        ss << "Unable to deduce pattern. No 2 sets of detected links available. Blue: " << circleLinkResults[blue_link].size() << ", green: " << circleLinkResults[green_link].size() << ", yellow: " << circleLinkResults[yellow_link].size() << "." << std::endl;
-        OutputDebugStringA(ss.str().c_str());
+        return false;
       }
 
       // Determine valid pair
@@ -963,19 +958,6 @@ done:
 
       // Fill the last remaining index with the last remaining colour
       output[remainingIndicies[0]] = inOutPhantomFiducialsCv[remainingColours[0]];
-
-
-      {
-        std::stringstream ss;
-        ss << "pixel centers unsorted: " << inCircles[0] << ", " << inCircles[1] << ", " << inCircles[2] << ", " << inCircles[3] << std::endl;
-        OutputDebugStringA(ss.str().c_str());
-      }
-
-      {
-        std::stringstream ss;
-        ss << "fiducial centers: " << output[0] << ", " << output[1] << ", " << output[2] << ", " << output[3] << std::endl;
-        OutputDebugStringA(ss.str().c_str());
-      }
 
       inOutPhantomFiducialsCv = output;
 

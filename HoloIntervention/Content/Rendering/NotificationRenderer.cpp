@@ -23,10 +23,17 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "pch.h"
-#include "Common.h"
-#include "DirectXHelper.h"
+#include "DistanceFieldRenderer.h"
 #include "NotificationRenderer.h"
+#include "TextRenderer.h"
 
+// Common includes
+#include "Common.h"
+#include "DeviceResources.h"
+#include "DirectXHelper.h"
+#include "StepTimer.h"
+
+using namespace Concurrency;
 using namespace DirectX;
 
 namespace HoloIntervention
@@ -52,27 +59,20 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void NotificationRenderer::Update(NotificationConstantBuffer& buffer)
     {
-      if (!m_loadingComplete)
+      if (!m_componentReady)
       {
         return;
       }
 
       // Update the model transform buffer for the hologram.
-      m_deviceResources->GetD3DDeviceContext()->UpdateSubresource(
-        m_modelConstantBuffer.Get(),
-        0,
-        nullptr,
-        &buffer,
-        0,
-        0
-      );
+      m_deviceResources->GetD3DDeviceContext()->UpdateSubresource(m_modelConstantBuffer.Get(), 0, nullptr, &buffer, 0, 0);
     }
 
     //----------------------------------------------------------------------------
     void NotificationRenderer::Render()
     {
       // Loading is asynchronous. Resources must be created before drawing can occur.
-      if (!m_loadingComplete)
+      if (!m_componentReady)
       {
         return;
       }
@@ -253,14 +253,14 @@ namespace HoloIntervention
         DX::ThrowIfFailed(m_deviceResources->GetD3DDevice()->CreateBlendState(&blendDesc, &m_blendState));
 
         // After the assets are loaded, the quad is ready to be rendered.
-        m_loadingComplete = true;
+        m_componentReady = true;
       });
     }
 
     //----------------------------------------------------------------------------
     void NotificationRenderer::ReleaseDeviceDependentResources()
     {
-      m_loadingComplete = false;
+      m_componentReady = false;
 
       m_textRenderer = nullptr;
       m_distanceFieldRenderer = nullptr;
