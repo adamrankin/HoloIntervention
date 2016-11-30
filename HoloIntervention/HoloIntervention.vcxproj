@@ -138,6 +138,8 @@
     <ClInclude Include="Content\SpatialMapping\SpatialSurfaceCollection.h" />
     <ClInclude Include="Content\SpatialMapping\SurfaceMesh.h" />
     <ClInclude Include="Content\Systems\Gaze\GazeSystem.h" />
+    <ClInclude Include="Content\Systems\Icon\IconEntry.h" />
+    <ClInclude Include="Content\Systems\Icon\IconSystem.h" />
     <ClInclude Include="Content\Systems\Imaging\ImagingSystem.h" />
     <ClInclude Include="Content\Systems\Notification\NotificationSystem.h" />
     <ClInclude Include="Content\Systems\Registration\CameraRegistration.h" />
@@ -183,6 +185,8 @@
     <ClCompile Include="Content\SpatialMapping\SpatialSurfaceCollection.cpp" />
     <ClCompile Include="Content\SpatialMapping\SurfaceMesh.cpp" />
     <ClCompile Include="Content\Systems\Gaze\GazeSystem.cpp" />
+    <ClCompile Include="Content\Systems\Icon\IconEntry.cpp" />
+    <ClCompile Include="Content\Systems\Icon\IconSystem.cpp" />
     <ClCompile Include="Content\Systems\Imaging\ImagingSystem.cpp" />
     <ClCompile Include="Content\Systems\Notification\NotificationSystem.cpp" />
     <ClCompile Include="Content\Systems\Registration\CameraRegistration.cpp" />

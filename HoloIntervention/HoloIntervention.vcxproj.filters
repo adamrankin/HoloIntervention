@@ -130,6 +130,12 @@
     <ClCompile Include="Content\Input\VoiceInput.cpp">
       <Filter>Content\Input</Filter>
     </ClCompile>
+    <ClCompile Include="Content\Systems\Icon\IconSystem.cpp">
+      <Filter>Content\Systems\Icon</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Systems\Icon\IconEntry.cpp">
+      <Filter>Content\Systems\Icon</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common\CameraResources.h">
@@ -275,6 +281,12 @@
     </ClInclude>
     <ClInclude Include="Content\Input\IVoiceInput.h">
       <Filter>Content\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Systems\Icon\IconSystem.h">
+      <Filter>Content\Systems\Icon</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Systems\Icon\IconEntry.h">
+      <Filter>Content\Systems\Icon</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -734,6 +746,9 @@
     </Filter>
     <Filter Include="Core">
       <UniqueIdentifier>{0508fb3b-5346-4e2e-9fc6-f720b2bf9c87}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Systems\Icon">
+      <UniqueIdentifier>{fe11c5fa-8399-4d3e-b999-11f76d17b462}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
