@@ -24,6 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
+#include "IEngineComponent.h"
 #include "PiecewiseLinearTF.h"
 
 namespace DX
@@ -52,7 +53,7 @@ namespace HoloIntervention
       Windows::Foundation::Numerics::float3 pos;
     };
 
-    class VolumeRenderer
+    class VolumeRenderer : public IEngineComponent
     {
     public:
       enum TransferFunctionType
@@ -137,7 +138,6 @@ namespace HoloIntervention
       // State flags
       std::atomic_bool                                  m_volumeReady = false;
       std::atomic_bool                                  m_faceCalcReady = false;
-      std::atomic_bool                                  m_loadingComplete = false;
       std::atomic_bool                                  m_usingVprtShaders = false;
 
       // Transfer function CPU resources

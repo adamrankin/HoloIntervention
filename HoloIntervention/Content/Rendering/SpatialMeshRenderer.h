@@ -12,16 +12,12 @@
 #pragma once
 
 // Local includes
-#include "DeviceResources.h"
-#include "StepTimer.h"
+#include "IEngineComponent.h"
 #include "SpatialMesh.h"
 
-// stl includes
+// STL includes
 #include <memory>
 #include <map>
-
-// WinRT includes
-#include <ppltasks.h>
 
 // Sound includes
 #include "IVoiceInput.h"
@@ -29,11 +25,17 @@
 using namespace Windows::Foundation::Collections;
 using namespace Windows::Perception::Spatial;
 
+namespace DX
+{
+  class DeviceResources;
+  class StepTimer;
+}
+
 namespace HoloIntervention
 {
   namespace Rendering
   {
-    class SpatialMeshRenderer : public Sound::IVoiceInput
+    class SpatialMeshRenderer : public Sound::IVoiceInput, public IEngineComponent
     {
       typedef std::map<Platform::Guid, SpatialMesh> GuidMeshMap;
 
@@ -59,10 +61,6 @@ namespace HoloIntervention
       void CreateDeviceDependentResources();
       void ReleaseDeviceDependentResources();
 
-      void DebugDrawBoundingBox(int32_t index);
-      void DebugDrawBoundingBoxes(bool draw);
-      void DebugLoopThroughMeshes();
-
       void Reset();
 
       // IVoiceInput functions
@@ -86,62 +84,27 @@ namespace HoloIntervention
       Microsoft::WRL::ComPtr<ID3D11PixelShader>       m_colorPixelShader;
 
       // Control variables
-      bool                                            m_renderEnabled = false;
+      std::atomic_bool                                m_renderEnabled = false;
 
-      // Looping related variables
-      bool                                            m_isLooping = false;
-      size_t                                          m_currentLoopIndex = 0;
-      float                                           m_loopTimer = 0.f;
-      bool                                            m_drawSingleMesh = false;
-      Platform::Guid                                  m_drawSingleMeshGuid;
-
-      // Bounding box debug related variables
-      bool                                            m_debugBoundingBox;
-      int32_t                                         m_overrideDrawIndex = -1;
-
-      // The set of surfaces in the collection.
       GuidMeshMap                                     m_meshCollection;
-
-      // A way to lock map access.
       std::mutex                                      m_meshCollectionLock;
-
-      // Total number of surface meshes.
       unsigned int                                    m_surfaceMeshCount;
-
-      // Level of detail setting. The number of triangles that the system is allowed to provide per cubic meter.
       double                                          m_maxTrianglesPerCubicMeter = 1000.0;
-
-      // If the current D3D Device supports VPRT, we can avoid using a geometry
-      // shader just to set the render target array index.
       bool                                            m_usingVprtShaders = false;
 
-      // Rasterizer states, for different rendering modes.
       Microsoft::WRL::ComPtr<ID3D11RasterizerState>   m_defaultRasterizerState;
       Microsoft::WRL::ComPtr<ID3D11RasterizerState>   m_wireframeRasterizerState;
-
-      // Event tokens
       Windows::Foundation::EventRegistrationToken     m_surfacesChangedToken;
+      std::atomic_bool                                m_surfaceAccessAllowed = false;
+      std::atomic_bool                                m_spatialPerceptionAccessRequested = false;
 
-      // Indicates whether access to spatial mapping data has been granted.
-      bool                                            m_surfaceAccessAllowed = false;
-
-      // Indicates whether the surface observer initialization process was started.
-      bool                                            m_spatialPerceptionAccessRequested = false;
-
-      // Obtains spatial mapping data from the device in real time.
       Surfaces::SpatialSurfaceObserver^               m_surfaceObserver;
       Surfaces::SpatialSurfaceMeshOptions^            m_surfaceMeshOptions;
 
-      // Determines the rendering mode.
-      bool                                            m_drawWireframe = true;
+      std::atomic_bool                                m_drawWireframe = true;
 
-      // The duration of time, in seconds, a mesh is allowed to remain inactive before deletion.
-      const float                                     c_maxInactiveMeshTime = 120.f;
-
-      // The duration of time, in seconds, taken for a new surface mesh to fade in on-screen.
-      const float                                     c_surfaceMeshFadeInTime = 3.0f;
-
-      bool                                            m_loadingComplete;
+      const float                                     MAX_INACTIVE_MESH_TIME = 120.f;
+      const float                                     SURFACE_MESH_FADE_IN_TIME = 3.0f;
     };
   }
 }

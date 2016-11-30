@@ -24,12 +24,11 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
+#include "IEngineComponent.h"
 #include "IVoiceInput.h"
 
 // Model includes
 #include "ModelEntry.h"
-
-using namespace Windows::Foundation::Numerics;
 
 namespace DX
 {
@@ -40,7 +39,7 @@ namespace HoloIntervention
 {
   namespace System
   {
-    class GazeSystem : public Sound::IVoiceInput
+    class GazeSystem : public Sound::IVoiceInput, public IEngineComponent
     {
     public:
       GazeSystem();

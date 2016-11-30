@@ -25,42 +25,26 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "IEngineComponent.h"
-#include "IVoiceInput.h"
-
-// Rendering includes
-#include "SliceRenderer.h"
-
-namespace DX
-{
-  class StepTimer;
-}
 
 namespace HoloIntervention
 {
-  namespace System
+  namespace Input
   {
-    class ImagingSystem : public Sound::IVoiceInput, public IEngineComponent
+    class SpatialInput : public IEngineComponent
     {
     public:
-      ImagingSystem();
-      ~ImagingSystem();
+      SpatialInput();
+      ~SpatialInput();
 
-      void Update(UWPOpenIGTLink::TrackedFrame^ frame, const DX::StepTimer& timer, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);
-
-      bool HasSlice() const;
-      Windows::Foundation::Numerics::float4x4 GetSlicePose() const;
-      Windows::Foundation::Numerics::float3 GetSliceVelocity() const;
-
-      // IVoiceInput functions
-      virtual void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap);
+      Windows::UI::Input::Spatial::SpatialInteractionSourceState^ CheckForPressedInput();
 
     protected:
-      void Process2DFrame(UWPOpenIGTLink::TrackedFrame^ frame, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);
-      void Process3DFrame(UWPOpenIGTLink::TrackedFrame^ frame, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);
+      void OnSourcePressed(Windows::UI::Input::Spatial::SpatialInteractionManager^ sender, Windows::UI::Input::Spatial::SpatialInteractionSourceEventArgs^ args);
 
-    protected:
-      // Slice system
-      uint32 m_sliceToken = Rendering::SliceRenderer::INVALID_SLICE_INDEX;
+      Windows::UI::Input::Spatial::SpatialInteractionManager^     m_interactionManager = nullptr;
+      Windows::Foundation::EventRegistrationToken                 m_sourcePressedEventToken;
+      Windows::Foundation::EventRegistrationToken                 m_sourceDetectedEventToken;
+      Windows::UI::Input::Spatial::SpatialInteractionSourceState^ m_sourceState = nullptr;
     };
   }
 }

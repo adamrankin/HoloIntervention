@@ -23,7 +23,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "pch.h"
-#include "SpatialInputHandler.h"
+#include "SpatialInput.h"
 
 // STL includes
 #include <functional>
@@ -37,22 +37,23 @@ namespace HoloIntervention
   namespace Input
   {
     //----------------------------------------------------------------------------
-    SpatialInputHandler::SpatialInputHandler()
+    SpatialInput::SpatialInput()
     {
       m_interactionManager = SpatialInteractionManager::GetForCurrentView();
       m_sourcePressedEventToken =
-        m_interactionManager->SourcePressed += ref new TypedEventHandler<SpatialInteractionManager^, SpatialInteractionSourceEventArgs^>(bind(&SpatialInputHandler::OnSourcePressed, this, _1, _2));
+        m_interactionManager->SourcePressed += ref new TypedEventHandler<SpatialInteractionManager^, SpatialInteractionSourceEventArgs^>(bind(&SpatialInput::OnSourcePressed, this, _1, _2));
+      m_componentReady = true;
     }
 
     //----------------------------------------------------------------------------
-    SpatialInputHandler::~SpatialInputHandler()
+    SpatialInput::~SpatialInput()
     {
       m_interactionManager->SourcePressed -= m_sourcePressedEventToken;
       m_interactionManager->SourceDetected -= m_sourceDetectedEventToken;
     }
 
     //----------------------------------------------------------------------------
-    SpatialInteractionSourceState^ SpatialInputHandler::CheckForPressedInput()
+    SpatialInteractionSourceState^ SpatialInput::CheckForPressedInput()
     {
       SpatialInteractionSourceState^ sourceState = m_sourceState;
       m_sourceState = nullptr;
@@ -60,7 +61,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SpatialInputHandler::OnSourcePressed(SpatialInteractionManager^ sender, SpatialInteractionSourceEventArgs^ args)
+    void SpatialInput::OnSourcePressed(SpatialInteractionManager^ sender, SpatialInteractionSourceEventArgs^ args)
     {
       m_sourceState = args->State;
     }

@@ -24,10 +24,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "pch.h"
 #include "AppView.h"
-#include "VoiceInputHandler.h"
+#include "VoiceInput.h"
 #include "NotificationSystem.h"
 
-// STD includes
+// STL includes
 #include <algorithm>
 
 // Windows includes
@@ -46,25 +46,44 @@ namespace HoloIntervention
   namespace Input
   {
     //----------------------------------------------------------------------------
-    VoiceInputHandler::VoiceInputHandler()
+    VoiceInput::VoiceInput()
     {
       m_speechRecognizer = ref new SpeechRecognizer();
       m_speechRecognizer->Constraints->Clear();
     }
 
     //----------------------------------------------------------------------------
-    VoiceInputHandler::~VoiceInputHandler()
+    VoiceInput::~VoiceInput()
     {
-      if (m_speechBeingDetected)
+      if (m_componentReady)
       {
         m_speechRecognizer->ContinuousRecognitionSession->ResultGenerated -= m_speechDetectedEventToken;
-        auto stopTask = create_task(m_speechRecognizer->ContinuousRecognitionSession->StopAsync());
-        stopTask.wait();
+        m_speechRecognizer->ContinuousRecognitionSession->StopAsync();
       }
     }
 
     //----------------------------------------------------------------------------
-    task<bool> VoiceInputHandler::CompileCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbacks)
+    void VoiceInput::EnableVoiceAnalysis(bool enable)
+    {
+      m_speechBeingDetected = enable;
+      if (m_componentReady && m_speechBeingDetected)
+      {
+        m_speechRecognizer->ContinuousRecognitionSession->Resume();
+      }
+      if (m_componentReady && !m_speechBeingDetected)
+      {
+        m_speechRecognizer->ContinuousRecognitionSession->PauseAsync();
+      }
+    }
+
+    //----------------------------------------------------------------------------
+    bool VoiceInput::IsVoiceEnabled() const
+    {
+      return m_speechBeingDetected;
+    }
+
+    //----------------------------------------------------------------------------
+    task<bool> VoiceInput::CompileCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbacks)
     {
       Platform::Collections::Vector<Platform::String^ >^ speechCommandList = ref new Platform::Collections::Vector<Platform::String^ >();
       for (auto entry : callbacks)
@@ -82,19 +101,20 @@ namespace HoloIntervention
         {
           m_speechDetectedEventToken = m_speechRecognizer->ContinuousRecognitionSession->ResultGenerated +=
                                          ref new TypedEventHandler<SpeechContinuousRecognitionSession^, SpeechContinuousRecognitionResultGeneratedEventArgs^>(
-                                           std::bind(&VoiceInputHandler::OnResultGenerated, this, std::placeholders::_1, std::placeholders::_2)
-                                         );
-          m_speechRecognizer->ContinuousRecognitionSession->StartAsync();
-          m_speechBeingDetected = true;
+                                           std::bind(&VoiceInput::OnResultGenerated, this, std::placeholders::_1, std::placeholders::_2));
+          create_task(m_speechRecognizer->ContinuousRecognitionSession->StartAsync()).then([this]()
+          {
+            m_speechRecognizer->ContinuousRecognitionSession->PauseAsync();
+          });
+          m_componentReady = true;
         }
         else
         {
-          // Handle errors here.
           HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Unable to compile speech patterns.");
         }
       }).then([this, callbacks]()
       {
-        if (m_speechBeingDetected)
+        if (m_componentReady)
         {
           m_callbacks = callbacks;
           return true;
@@ -108,8 +128,13 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void VoiceInputHandler::OnResultGenerated(SpeechContinuousRecognitionSession^ sender, SpeechContinuousRecognitionResultGeneratedEventArgs^ args)
+    void VoiceInput::OnResultGenerated(SpeechContinuousRecognitionSession^ sender, SpeechContinuousRecognitionResultGeneratedEventArgs^ args)
     {
+      if (!m_speechBeingDetected)
+      {
+        return;
+      }
+
       if (args->Result->RawConfidence > MINIMUM_CONFIDENCE_FOR_DETECTION)
       {
         HoloIntervention::instance()->GetSoundManager().PlayOmniSoundOnce(L"input_ok");

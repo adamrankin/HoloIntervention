@@ -24,10 +24,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "pch.h"
 #include "AppView.h"
-#include "Common.h"
 #include "GazeSystem.h"
 
 // Common includes
+#include "Common.h"
 #include "StepTimer.h"
 
 // Rendering includes
@@ -42,6 +42,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 using namespace Windows::Foundation::Numerics;
 using namespace Windows::Perception::Spatial;
+using namespace Windows::UI::Input::Spatial;
 
 namespace HoloIntervention
 {
@@ -58,11 +59,13 @@ namespace HoloIntervention
       m_modelToken = HoloIntervention::instance()->GetModelRenderer().AddModel(GAZE_CURSOR_ASSET_LOCATION);
       m_modelEntry = HoloIntervention::instance()->GetModelRenderer().GetModel(m_modelToken);
       m_modelEntry->SetVisible(false);
+      m_componentReady = true;
     }
 
     //----------------------------------------------------------------------------
     GazeSystem::~GazeSystem()
     {
+      m_componentReady = false;
     }
 
     //----------------------------------------------------------------------------
@@ -130,19 +133,19 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    const Windows::Foundation::Numerics::float3& GazeSystem::GetHitPosition() const
+    const float3& GazeSystem::GetHitPosition() const
     {
       return m_goalHitPosition;
     }
 
     //----------------------------------------------------------------------------
-    const Windows::Foundation::Numerics::float3& GazeSystem::GetHitNormal() const
+    const float3& GazeSystem::GetHitNormal() const
     {
       return m_goalHitNormal;
     }
 
     //----------------------------------------------------------------------------
-    Windows::Foundation::Numerics::float3 GazeSystem::GetHitVelocity() const
+    float3 GazeSystem::GetHitVelocity() const
     {
       return m_velocity;
     }

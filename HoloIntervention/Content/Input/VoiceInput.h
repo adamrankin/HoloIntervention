@@ -27,40 +27,36 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "IEngineComponent.h"
 #include "IVoiceInput.h"
 
-// Rendering includes
-#include "SliceRenderer.h"
-
-namespace DX
-{
-  class StepTimer;
-}
+// STL includes
+#include <functional>
+#include <map>
+#include <string>
 
 namespace HoloIntervention
 {
-  namespace System
+  namespace Input
   {
-    class ImagingSystem : public Sound::IVoiceInput, public IEngineComponent
+    class VoiceInput : public IEngineComponent
     {
     public:
-      ImagingSystem();
-      ~ImagingSystem();
+      VoiceInput();
+      ~VoiceInput();
 
-      void Update(UWPOpenIGTLink::TrackedFrame^ frame, const DX::StepTimer& timer, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);
+      void EnableVoiceAnalysis(bool enable);
+      bool IsVoiceEnabled() const;
 
-      bool HasSlice() const;
-      Windows::Foundation::Numerics::float4x4 GetSlicePose() const;
-      Windows::Foundation::Numerics::float3 GetSliceVelocity() const;
-
-      // IVoiceInput functions
-      virtual void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap);
+      Concurrency::task<bool> CompileCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbacks);
 
     protected:
-      void Process2DFrame(UWPOpenIGTLink::TrackedFrame^ frame, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);
-      void Process3DFrame(UWPOpenIGTLink::TrackedFrame^ frame, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);
+      void OnResultGenerated(Windows::Media::SpeechRecognition::SpeechContinuousRecognitionSession^ sender, Windows::Media::SpeechRecognition::SpeechContinuousRecognitionResultGeneratedEventArgs^ args);
 
     protected:
-      // Slice system
-      uint32 m_sliceToken = Rendering::SliceRenderer::INVALID_SLICE_INDEX;
+      std::atomic_bool                                      m_speechBeingDetected = false;
+      Windows::Media::SpeechRecognition::SpeechRecognizer^  m_speechRecognizer = nullptr;
+      HoloIntervention::Sound::VoiceInputCallbackMap        m_callbacks;
+      Windows::Foundation::EventRegistrationToken           m_speechDetectedEventToken;
+
+      const float                                           MINIMUM_CONFIDENCE_FOR_DETECTION = 0.4f; // [0,1]
     };
   }
 }

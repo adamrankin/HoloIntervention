@@ -24,12 +24,13 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
+#include "IEngineComponent.h"
 #include "IVoiceInput.h"
 
 // Rendering includes
 #include "NotificationRenderer.h"
 
-// STD includes
+// STL includes
 #include <deque>
 
 namespace DX
@@ -42,7 +43,7 @@ namespace HoloIntervention
 {
   namespace System
   {
-    class NotificationSystem : public Sound::IVoiceInput
+    class NotificationSystem : public Sound::IVoiceInput, public IEngineComponent
     {
       enum AnimationState
       {
@@ -56,90 +57,76 @@ namespace HoloIntervention
       typedef std::deque<MessageDuration> MessageQueue;
 
     public:
-      NotificationSystem( const std::shared_ptr<DX::DeviceResources>& deviceResources );
+      NotificationSystem(const std::shared_ptr<DX::DeviceResources>& deviceResources);
       ~NotificationSystem();
 
       // Add a message to the queue to render
-      void QueueMessage( const std::string& message, double duration = DEFAULT_NOTIFICATION_DURATION_SEC );
-      void QueueMessage( const std::wstring& message, double duration = DEFAULT_NOTIFICATION_DURATION_SEC );
-      void QueueMessage( Platform::String^ message, double duration = DEFAULT_NOTIFICATION_DURATION_SEC );
+      void QueueMessage(const std::string& message, double duration = DEFAULT_NOTIFICATION_DURATION_SEC);
+      void QueueMessage(const std::wstring& message, double duration = DEFAULT_NOTIFICATION_DURATION_SEC);
+      void QueueMessage(Platform::String^ message, double duration = DEFAULT_NOTIFICATION_DURATION_SEC);
 
-      void DebugSetMessage( const std::wstring& message, double duration = DEFAULT_NOTIFICATION_DURATION_SEC );
-      void DebugSetMessage( Platform::String^ message, double duration = DEFAULT_NOTIFICATION_DURATION_SEC );
+      void DebugSetMessage(const std::wstring& message, double duration = DEFAULT_NOTIFICATION_DURATION_SEC);
+      void DebugSetMessage(Platform::String^ message, double duration = DEFAULT_NOTIFICATION_DURATION_SEC);
 
-      void Initialize( SpatialPointerPose^ pointerPose );
-      void Update( SpatialPointerPose^ pointerPose, const DX::StepTimer& timer );
+      void Initialize(Windows::UI::Input::Spatial::SpatialPointerPose^ pointerPose);
+      void Update(Windows::UI::Input::Spatial::SpatialPointerPose^ pointerPose, const DX::StepTimer& timer);
 
-      // D3D device related controls
       void CreateDeviceDependentResources();
       void ReleaseDeviceDependentResources();
 
       // Accessors
       bool IsShowingNotification() const;
-      const float3& GetPosition() const;
-      const float3& GetVelocity() const;
+      const Windows::Foundation::Numerics::float3& GetPosition() const;
+      const Windows::Foundation::Numerics::float3& GetVelocity() const;
 
       // Override the current lerp and force the position
-      void SetPose( SpatialPointerPose^ pointerPose );
+      void SetPose(Windows::UI::Input::Spatial::SpatialPointerPose^ pointerPose);
 
       std::unique_ptr<Rendering::NotificationRenderer>& GetRenderer();
 
       // ISystem functions
-      virtual void RegisterVoiceCallbacks( HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap);
+      virtual void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap);
 
     protected:
-      void UpdateHologramPosition( SpatialPointerPose^ pointerPose, const DX::StepTimer& timer );
+      void UpdateHologramPosition(Windows::UI::Input::Spatial::SpatialPointerPose^ pointerPose, const DX::StepTimer& timer);
 
       void CalculateWorldMatrix();
-      void CalculateAlpha( const DX::StepTimer& timer );
-      void CalculateVelocity( float oneOverDeltaTime );
+      void CalculateAlpha(const DX::StepTimer& timer);
+      void CalculateVelocity(float oneOverDeltaTime);
       void GrabNextMessage();
       bool IsFading() const;
 
     protected:
       // Cached pointer to device resources.
       std::shared_ptr<DX::DeviceResources>                m_deviceResources;
-
-      // Renderer
       std::unique_ptr<Rendering::NotificationRenderer>    m_notificationRenderer;
-
-      // Constant buffer data cache
       Rendering::NotificationConstantBuffer               m_constantBuffer;
 
-      // Number of seconds it takes to fade the hologram in, or out.
-      const float                                         c_maxFadeTime = 1.f;
-
-      // Timer used to fade the hologram in, or out.
       float                                               m_fadeTime = 0.f;
-
-      // Whether or not the hologram is fading in, or out.
       AnimationState                                      m_animationState = HIDDEN;
 
-      // Message pose information
-      float3                                              m_position = { 0.f, 0.f, -2.f };
-      float3                                              m_lastPosition = { 0.f, 0.f, -2.f };
-      float3                                              m_velocity = { 0.f, 0.f, 0.f };
+      Windows::Foundation::Numerics::float3               m_position = { 0.f, 0.f, -2.f };
+      Windows::Foundation::Numerics::float3               m_lastPosition = { 0.f, 0.f, -2.f };
+      Windows::Foundation::Numerics::float3               m_velocity = { 0.f, 0.f, 0.f };
 
-      // List of messages to show, in order (fifo)
       MessageQueue                                        m_messages;
       MessageDuration                                     m_currentMessage;
 
-      // Lock protection when accessing message list
       std::mutex                                          m_messageQueueMutex;
 
-      // Cached value of the total time the current message has been showing
       double                                              m_messageTimeElapsedSec = 0.0f;
 
       // Constants relating to behavior of the notification system
-      static const double                                 MAXIMUM_REQUESTED_DURATION_SEC;
+      static const DirectX::XMFLOAT4                      HIDDEN_ALPHA_VALUE;
+      static const DirectX::XMFLOAT4                      SHOWING_ALPHA_VALUE;
+      static const Windows::Foundation::Numerics::float3  NOTIFICATION_SCREEN_OFFSET;
       static const double                                 DEFAULT_NOTIFICATION_DURATION_SEC;
+      static const double                                 MAXIMUM_REQUESTED_DURATION_SEC;
+      static const float                                  LERP_RATE;
+      static const float                                  MAX_FADE_TIME;
+      static const float                                  NOTIFICATION_DISTANCE_OFFSET;
       static const uint32                                 BLUR_TARGET_WIDTH_PIXEL;
       static const uint32                                 OFFSCREEN_RENDER_TARGET_WIDTH_PIXEL;
-      static const XMFLOAT4                               SHOWING_ALPHA_VALUE;
-      static const XMFLOAT4                               HIDDEN_ALPHA_VALUE;
-      static const float3                                 NOTIFICATION_SCREEN_OFFSET;
-      static const float                                  NOTIFICATION_DISTANCE_OFFSET;
-      static const float                                  LERP_RATE;
     };
   }
 }

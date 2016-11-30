@@ -10,8 +10,14 @@
 //*********************************************************
 
 #include "pch.h"
-#include "DirectXHelper.h"
 #include "DistanceFieldRenderer.h"
+
+// Common includes
+#include "DeviceResources.h"
+#include "DirectXHelper.h"
+
+// DirectX includes
+#include "DirectXColors.h"
 
 using namespace Concurrency;
 using namespace DirectX;
@@ -21,10 +27,10 @@ namespace HoloIntervention
   namespace Rendering
   {
     //----------------------------------------------------------------------------
-    DistanceFieldRenderer::DistanceFieldRenderer( const std::shared_ptr<DX::DeviceResources>& deviceResources, unsigned int const& textureWidth, unsigned int const& textureHeight )
-      : m_deviceResources( deviceResources ),
-        m_textureWidth( textureWidth ),
-        m_textureHeight( textureHeight )
+    DistanceFieldRenderer::DistanceFieldRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources, unsigned int const& textureWidth, unsigned int const& textureHeight)
+      : m_deviceResources(deviceResources),
+        m_textureWidth(textureWidth),
+        m_textureHeight(textureHeight)
     {
       CreateDeviceDependentResources();
     }
@@ -36,56 +42,40 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void DistanceFieldRenderer::RenderDistanceField( ID3D11ShaderResourceView* texture )
+    void DistanceFieldRenderer::RenderDistanceField(ID3D11ShaderResourceView* texture)
     {
       // Loading is asynchronous. Resources must be created before drawing can occur.
-      if ( !m_loadingComplete )
+      if (!m_loadingComplete)
       {
         return;
       }
 
       const auto context = m_deviceResources->GetD3DDeviceContext();
 
-      // Set and clear the off-screen render target.
       ID3D11RenderTargetView* const targets[1] = { m_renderTargetView.Get() };
-      context->OMSetRenderTargets( 1, targets, m_d3dDepthStencilView.Get() );
-      context->ClearRenderTargetView( targets[0], DirectX::Colors::Transparent );
-      context->ClearDepthStencilView( m_d3dDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0 );
+      context->OMSetRenderTargets(1, targets, m_d3dDepthStencilView.Get());
+      context->ClearRenderTargetView(targets[0], DirectX::Colors::Transparent);
+      context->ClearDepthStencilView(m_d3dDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 
-      // Set the viewport to cover the whole texture.
-      CD3D11_VIEWPORT viewport = CD3D11_VIEWPORT(
-                                   0.f, 0.f,
-                                   static_cast<float>( m_textureWidth ),
-                                   static_cast<float>( m_textureHeight ) );
-      context->RSSetViewports( 1, &viewport );
+      CD3D11_VIEWPORT viewport = CD3D11_VIEWPORT(0.f, 0.f, static_cast<float>(m_textureWidth), static_cast<float>(m_textureHeight));
+      context->RSSetViewports(1, &viewport);
 
-      // Each vertex is one instance of the XMFLOAT2 struct.
       const UINT stride = m_vertexStride;
       const UINT offset = 0;
-      context->IASetVertexBuffers( 0, 1, m_vertexBuffer.GetAddressOf(), &stride, &offset );
-      context->IASetIndexBuffer( m_indexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0 );
-      context->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
-      context->IASetInputLayout( m_inputLayout.Get() );
+      context->IASetVertexBuffers(0, 1, m_vertexBuffer.GetAddressOf(), &stride, &offset);
+      context->IASetIndexBuffer(m_indexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
+      context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+      context->IASetInputLayout(m_inputLayout.Get());
+      context->VSSetShader(m_vertexShader.Get(), nullptr, 0);
 
-      // Attach the vertex shader.
-      context->VSSetShader( m_vertexShader.Get(), nullptr, 0 );
-
-      if ( !m_deviceResources->GetDeviceSupportsVprt() )
+      if (!m_deviceResources->GetDeviceSupportsVprt())
       {
-        // Previous render passes may have left in a geometry shader that we don't need
-        context->GSSetShader( nullptr, nullptr, 0 );
+        context->GSSetShader(nullptr, nullptr, 0);
       }
 
-      // Attach the pixel shader.
-      context->PSSetShader( m_pixelShader.Get(), nullptr, 0 );
-      context->PSSetShaderResources( 0, 1, &texture );
-
-      // Draw the objects.
-      context->DrawIndexed(
-        m_indexCount,   // Index count.
-        0,              // Start index location.
-        0               // Base vertex location.
-      );
+      context->PSSetShader(m_pixelShader.Get(), nullptr, 0);
+      context->PSSetShaderResources(0, 1, &texture);
+      context->DrawIndexed(m_indexCount, 0, 0);
 
       ++m_renderCount;
     }
@@ -119,48 +109,34 @@ namespace HoloIntervention
       auto device = m_deviceResources->GetD3DDevice();
 
       // Create the texture that will be used as the off-screen render target.
-      CD3D11_TEXTURE2D_DESC textureDesc(
-        DXGI_FORMAT_R8G8_UNORM,
-        m_textureWidth,
-        m_textureHeight,
-        1,
-        1,
-        D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET
-      );
+      CD3D11_TEXTURE2D_DESC textureDesc(DXGI_FORMAT_R8G8_UNORM, m_textureWidth, m_textureHeight, 1, 1, D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET);
 
-      DX::ThrowIfFailed( device->CreateTexture2D( &textureDesc, nullptr, &m_texture ) );
+      DX::ThrowIfFailed(device->CreateTexture2D(&textureDesc, nullptr, &m_texture));
 
       // Create read and write views for the off-screen render target.
-      DX::ThrowIfFailed( device->CreateShaderResourceView( m_texture.Get(), nullptr, &m_shaderResourceView ) );
-      DX::ThrowIfFailed( device->CreateRenderTargetView( m_texture.Get(), nullptr, &m_renderTargetView ) );
+      DX::ThrowIfFailed(device->CreateShaderResourceView(m_texture.Get(), nullptr, &m_shaderResourceView));
+      DX::ThrowIfFailed(device->CreateRenderTargetView(m_texture.Get(), nullptr, &m_renderTargetView));
 
       // Create a depth stencil view.
-      CD3D11_TEXTURE2D_DESC depthStencilDesc(
-        DXGI_FORMAT_D16_UNORM,
-        m_textureWidth,
-        m_textureHeight,
-        1, // One array level.
-        1, // Use a single mipmap level.
-        D3D11_BIND_DEPTH_STENCIL
-      );
+      CD3D11_TEXTURE2D_DESC depthStencilDesc(DXGI_FORMAT_D16_UNORM, m_textureWidth, m_textureHeight, 1, 1, D3D11_BIND_DEPTH_STENCIL);
 
       Microsoft::WRL::ComPtr<ID3D11Texture2D> depthStencil;
-      DX::ThrowIfFailed( device->CreateTexture2D( &depthStencilDesc, nullptr, &depthStencil ) );
+      DX::ThrowIfFailed(device->CreateTexture2D(&depthStencilDesc, nullptr, &depthStencil));
 
-      CD3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc( D3D11_DSV_DIMENSION_TEXTURE2D );
-      DX::ThrowIfFailed( device->CreateDepthStencilView( depthStencil.Get(), &depthStencilViewDesc, &m_d3dDepthStencilView ) );
+      CD3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc(D3D11_DSV_DIMENSION_TEXTURE2D);
+      DX::ThrowIfFailed(device->CreateDepthStencilView(depthStencil.Get(), &depthStencilViewDesc, &m_d3dDepthStencilView));
 
 
       // Load shaders asynchronously.
-      task<std::vector<byte>> loadVSTask = DX::ReadDataAsync( L"ms-appx:///DFRFullscreenQuadVertexShader.cso" );
-      task<std::vector<byte>> loadPSTask = DX::ReadDataAsync( L"ms-appx:///DFRCreateDistanceFieldPixelShader.cso" );
+      task<std::vector<byte>> loadVSTask = DX::ReadDataAsync(L"ms-appx:///DFRFullscreenQuadVertexShader.cso");
+      task<std::vector<byte>> loadPSTask = DX::ReadDataAsync(L"ms-appx:///DFRCreateDistanceFieldPixelShader.cso");
 
       // After the vertex shader file is loaded, create the shader and input layout.
-      task<void> createVSTask = loadVSTask.then( [this]( const std::vector<byte>& fileData )
+      task<void> createVSTask = loadVSTask.then([this](const std::vector<byte>& fileData)
       {
         auto device = m_deviceResources->GetD3DDevice();
 
-        DX::ThrowIfFailed( device->CreateVertexShader( fileData.data(), fileData.size(), nullptr, &m_vertexShader ) );
+        DX::ThrowIfFailed(device->CreateVertexShader(fileData.data(), fileData.size(), nullptr, &m_vertexShader));
 
         constexpr std::array<D3D11_INPUT_ELEMENT_DESC, 1> vertexDesc =
         {
@@ -169,17 +145,17 @@ namespace HoloIntervention
           }
         };
 
-        DX::ThrowIfFailed( device->CreateInputLayout( vertexDesc.data(), vertexDesc.size(), fileData.data(), fileData.size(), &m_inputLayout ) );
-      } );
+        DX::ThrowIfFailed(device->CreateInputLayout(vertexDesc.data(), vertexDesc.size(), fileData.data(), fileData.size(), &m_inputLayout));
+      });
 
       // After the pixel shader file is loaded, create the shader and constant buffer.
-      task<void> createPSTask = loadPSTask.then( [this]( const std::vector<byte>& fileData )
+      task<void> createPSTask = loadPSTask.then([this](const std::vector<byte>& fileData)
       {
-        DX::ThrowIfFailed( m_deviceResources->GetD3DDevice()->CreatePixelShader( fileData.data(), fileData.size(), nullptr, &m_pixelShader ) );
-      } );
+        DX::ThrowIfFailed(m_deviceResources->GetD3DDevice()->CreatePixelShader(fileData.data(), fileData.size(), nullptr, &m_pixelShader));
+      });
 
       // Once all shaders are loaded, create the mesh.
-      task<void> createQuadTask = ( createPSTask && createVSTask ).then( [this]()
+      task<void> createQuadTask = (createPSTask && createVSTask).then([this]()
       {
         auto device = m_deviceResources->GetD3DDevice();
 
@@ -187,21 +163,21 @@ namespace HoloIntervention
         static const std::array<VertexPosition, 4> quadVertices =
         {
           {
-            { XMFLOAT2( -1.0f,  1.0f ) },
-            { XMFLOAT2( 1.0f,  1.0f ) },
-            { XMFLOAT2( 1.0f, -1.0f ) },
-            { XMFLOAT2( -1.0f, -1.0f ) },
+            { XMFLOAT2(-1.0f,  1.0f) },
+            { XMFLOAT2(1.0f,  1.0f) },
+            { XMFLOAT2(1.0f, -1.0f) },
+            { XMFLOAT2(-1.0f, -1.0f) },
           }
         };
 
-        m_vertexStride = sizeof( VertexPosition );
+        m_vertexStride = sizeof(VertexPosition);
 
         D3D11_SUBRESOURCE_DATA vertexBufferData = { 0 };
         vertexBufferData.pSysMem = quadVertices.data();
         vertexBufferData.SysMemPitch = 0;
         vertexBufferData.SysMemSlicePitch = 0;
-        const CD3D11_BUFFER_DESC vertexBufferDesc( m_vertexStride * quadVertices.size(), D3D11_BIND_VERTEX_BUFFER );
-        DX::ThrowIfFailed( device->CreateBuffer( &vertexBufferDesc, &vertexBufferData, &m_vertexBuffer ) );
+        const CD3D11_BUFFER_DESC vertexBufferDesc(m_vertexStride * quadVertices.size(), D3D11_BIND_VERTEX_BUFFER);
+        DX::ThrowIfFailed(device->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &m_vertexBuffer));
 
         // Note that the winding order is clockwise by default.
         constexpr std::array<unsigned short, 6> quadIndices =
@@ -219,14 +195,14 @@ namespace HoloIntervention
         indexBufferData.pSysMem = quadIndices.data();
         indexBufferData.SysMemPitch = 0;
         indexBufferData.SysMemSlicePitch = 0;
-        const CD3D11_BUFFER_DESC indexBufferDesc( sizeof( unsigned short ) * quadIndices.size(), D3D11_BIND_INDEX_BUFFER );
-        DX::ThrowIfFailed( device->CreateBuffer( &indexBufferDesc, &indexBufferData, &m_indexBuffer ) );
-      } );
+        const CD3D11_BUFFER_DESC indexBufferDesc(sizeof(unsigned short) * quadIndices.size(), D3D11_BIND_INDEX_BUFFER);
+        DX::ThrowIfFailed(device->CreateBuffer(&indexBufferDesc, &indexBufferData, &m_indexBuffer));
+      });
 
-      auto loadingCompleteTask = createQuadTask.then( [this]()
+      auto loadingCompleteTask = createQuadTask.then([this]()
       {
         m_loadingComplete = true;
-      } );
+      });
     }
 
     //----------------------------------------------------------------------------

@@ -38,10 +38,13 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <xapo.h>
 #include <xaudio2.h>
 
-// stl includes
+// STL includes
 #include <sstream>
 
 using namespace Concurrency;
+using namespace DirectX;
+using namespace Windows::Foundation::Numerics;
+using namespace Windows::Perception::Spatial;
 
 namespace HoloIntervention
 {
@@ -58,6 +61,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     SoundManager::~SoundManager()
     {
+      m_componentReady = false;
       m_cardioidSounds.clear();
       m_omniDirectionalSounds.clear();
       m_audioAssets.clear();
@@ -74,7 +78,6 @@ namespace HoloIntervention
         m_masterVoice->DestroyVoice();
       }
       m_xaudio2 = nullptr;
-      m_resourcesLoaded = false;
     }
 
     //----------------------------------------------------------------------------
@@ -125,7 +128,7 @@ namespace HoloIntervention
           m_audioAssets[name] = fileReader;
         }
 
-        m_resourcesLoaded = true;
+        m_componentReady = true;
 
         return S_OK;
       });

@@ -24,41 +24,35 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
-#include "StepTimer.h"
-#include "DeviceResources.h"
+#include "IEngineComponent.h"
 
-// Rendering includes
-#include "DistanceFieldRenderer.h"
-#include "TextRenderer.h"
-
-// Windows includes
-#include <ppltasks.h>
-
-using namespace Concurrency;
-using namespace DirectX;
-using namespace Microsoft::WRL;
-using namespace Windows::Foundation::Numerics;
-using namespace Windows::Graphics::Holographic;
-using namespace Windows::UI::Input::Spatial;
+namespace DX
+{
+  class DeviceResources;
+  class StepTimer;
+}
 
 namespace HoloIntervention
 {
   namespace Rendering
   {
+    class DistanceFieldRenderer;
+    class TextRenderer;
+
     struct NotificationConstantBuffer
     {
-      XMFLOAT4X4 worldMatrix;
-      XMFLOAT4   hologramColorFadeMultiplier;
+      DirectX::XMFLOAT4X4 worldMatrix;
+      DirectX::XMFLOAT4   hologramColorFadeMultiplier;
     };
     static_assert(sizeof(NotificationConstantBuffer) % 16 == 0, "Constant buffer must be a size of multiple 16.");
 
-    class NotificationRenderer
+    class NotificationRenderer : public IEngineComponent
     {
       struct VertexPositionColorTex
       {
-        XMFLOAT3 pos;
-        XMFLOAT4 color;
-        XMFLOAT2 texCoord;
+        DirectX::XMFLOAT3 pos;
+        DirectX::XMFLOAT4 color;
+        DirectX::XMFLOAT2 texCoord;
       };
 
     public:
@@ -79,24 +73,21 @@ namespace HoloIntervention
       std::shared_ptr<DX::DeviceResources>                m_deviceResources;
 
       // Direct3D resources for quad geometry.
-      ComPtr<ID3D11InputLayout>                           m_inputLayout;
-      ComPtr<ID3D11Buffer>                                m_vertexBuffer;
-      ComPtr<ID3D11Buffer>                                m_indexBuffer;
-      ComPtr<ID3D11VertexShader>                          m_vertexShader;
-      ComPtr<ID3D11GeometryShader>                        m_geometryShader;
-      ComPtr<ID3D11PixelShader>                           m_pixelShader;
-      ComPtr<ID3D11Buffer>                                m_modelConstantBuffer;
-      ComPtr<ID3D11BlendState>                            m_blendState;
+      Microsoft::WRL::ComPtr<ID3D11InputLayout>           m_inputLayout;
+      Microsoft::WRL::ComPtr<ID3D11Buffer>                m_vertexBuffer;
+      Microsoft::WRL::ComPtr<ID3D11Buffer>                m_indexBuffer;
+      Microsoft::WRL::ComPtr<ID3D11VertexShader>          m_vertexShader;
+      Microsoft::WRL::ComPtr<ID3D11GeometryShader>        m_geometryShader;
+      Microsoft::WRL::ComPtr<ID3D11PixelShader>           m_pixelShader;
+      Microsoft::WRL::ComPtr<ID3D11Buffer>                m_modelConstantBuffer;
+      Microsoft::WRL::ComPtr<ID3D11BlendState>            m_blendState;
 
       // Direct3D resources for the texture.
-      ComPtr<ID3D11SamplerState>                          m_quadTextureSamplerState;
+      Microsoft::WRL::ComPtr<ID3D11SamplerState>          m_quadTextureSamplerState;
 
       // System resources for quad geometry.
       NotificationConstantBuffer                          m_constantBufferData;
       uint32                                              m_indexCount = 0;
-
-      // Variables used with the rendering loop.
-      bool                                                m_loadingComplete = false;
 
       // If the current D3D Device supports VPRT, we can avoid using a geometry
       // shader just to set the render target array index.
@@ -107,8 +98,8 @@ namespace HoloIntervention
       std::unique_ptr<DistanceFieldRenderer>              m_distanceFieldRenderer = nullptr;
 
       // Rendering related constants
-      static const uint32 BLUR_TARGET_WIDTH_PIXEL;
-      static const uint32 OFFSCREEN_RENDER_TARGET_WIDTH_PIXEL;
+      static const uint32                                 BLUR_TARGET_WIDTH_PIXEL;
+      static const uint32                                 OFFSCREEN_RENDER_TARGET_WIDTH_PIXEL;
     };
   }
 }

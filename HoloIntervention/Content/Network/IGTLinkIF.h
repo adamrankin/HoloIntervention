@@ -24,15 +24,12 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
+#include "IEngineComponent.h"
 #include "IVoiceInput.h"
 
-// Windows includes
-#include <ppltasks.h>
-
-// std includes
+// STL includes
 #include <mutex>
 
-// IGT forward declarations
 namespace igtl
 {
   class TrackedFrameMessage;
@@ -52,7 +49,7 @@ namespace HoloIntervention
       CONNECTION_STATE_CONNECTED
     };
 
-    class IGTLinkIF : public Sound::IVoiceInput
+    class IGTLinkIF : public Sound::IVoiceInput, public IEngineComponent
     {
     public:
       IGTLinkIF();
@@ -62,25 +59,16 @@ namespace HoloIntervention
       /// If connected to a server, disconnects first.
       Concurrency::task<bool> ConnectAsync(double timeoutSec = CONNECT_TIMEOUT_SEC, Concurrency::task_options& options = Concurrency::task_options());
 
-      /// Disconnect from the server
       void Disconnect();
-
-      /// Accessor to connected state
       bool IsConnected();
 
-      /// Set the hostname to connect to
       void SetHostname(const std::wstring& hostname);
-
-      /// Get the hostname to connect to
       std::wstring GetHostname() const;
 
-      /// Set the port to connect to
       void SetPort(int32 port);
+      int32 GetPort() const;
 
-      /// Retrieve the latest tracked frame
       bool GetTrackedFrame(UWPOpenIGTLink::TrackedFrame^& frame, double* latestTimestamp = nullptr);
-
-      /// Retrieve the latest command
       bool GetCommand(UWPOpenIGTLink::Command^& cmd, double* latestTimestamp = nullptr);
 
       /// IVoiceInput functions
@@ -96,7 +84,7 @@ namespace HoloIntervention
     protected:
       UWPOpenIGTLink::IGTLinkClient^            m_igtClient = ref new UWPOpenIGTLink::IGTLinkClient();
       ConnectionState                           m_connectionState = CONNECTION_STATE_UNKNOWN;
-      std::mutex                                m_clientMutex;
+      mutable std::mutex                        m_clientMutex;
       Concurrency::task<void>*                  m_keepAliveTask = nullptr;
       Concurrency::cancellation_token_source    m_keepAliveTokenSource;
       bool                                      m_reconnectOnDrop = true;

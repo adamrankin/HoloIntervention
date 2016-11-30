@@ -205,11 +205,13 @@ namespace HoloIntervention
       {
         model->CreateDeviceDependentResources();
       }
+      m_componentReady = true;
     }
 
     //----------------------------------------------------------------------------
     void ModelRenderer::ReleaseDeviceDependentResources()
     {
+      m_componentReady = false;
       for (auto model : m_models)
       {
         model->ReleaseDeviceDependentResources();

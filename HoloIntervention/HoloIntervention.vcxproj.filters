@@ -7,9 +7,6 @@
     <ClCompile Include="Common\DeviceResources.cpp">
       <Filter>Common</Filter>
     </ClCompile>
-    <ClCompile Include="Content\Input\SpatialInputHandler.cpp">
-      <Filter>Content\Input</Filter>
-    </ClCompile>
     <ClCompile Include="Content\Sound\CardioidSound.cpp">
       <Filter>Content\Sound</Filter>
     </ClCompile>
@@ -30,9 +27,6 @@
     </ClCompile>
     <ClCompile Include="Content\SpatialMapping\SpatialSurfaceCollection.cpp">
       <Filter>Content\Spatial</Filter>
-    </ClCompile>
-    <ClCompile Include="Content\Input\VoiceInputHandler.cpp">
-      <Filter>Content\Input</Filter>
     </ClCompile>
     <ClCompile Include="Content\Rendering\SliceRenderer.cpp">
       <Filter>Content\Rendering\SliceRenderer</Filter>
@@ -82,7 +76,6 @@
     <ClCompile Include="Common\Common.cpp">
       <Filter>Common</Filter>
     </ClCompile>
-    <ClCompile Include="HoloInterventionCore.cpp" />
     <ClCompile Include="Content\Systems\Registration\RegistrationSystem.cpp">
       <Filter>Content\Systems\Registration</Filter>
     </ClCompile>
@@ -125,6 +118,18 @@
     <ClCompile Include="Content\Rendering\PrimitiveEntry.cpp">
       <Filter>Content\Rendering\ModelRenderer</Filter>
     </ClCompile>
+    <ClCompile Include="Core\IEngineComponent.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\HoloInterventionCore.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Input\SpatialInput.cpp">
+      <Filter>Content\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Input\VoiceInput.cpp">
+      <Filter>Content\Input</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common\CameraResources.h">
@@ -138,9 +143,6 @@
     </ClInclude>
     <ClInclude Include="Common\StepTimer.h">
       <Filter>Common</Filter>
-    </ClInclude>
-    <ClInclude Include="Content\Input\SpatialInputHandler.h">
-      <Filter>Content\Input</Filter>
     </ClInclude>
     <ClInclude Include="Content\Sound\OmnidirectionalSound.h">
       <Filter>Content\Sound</Filter>
@@ -157,17 +159,11 @@
     <ClInclude Include="pch.h">
       <Filter>Infrastructure</Filter>
     </ClInclude>
-    <ClInclude Include="Content\Sound\VoiceCallback.h">
-      <Filter>Content\Sound</Filter>
-    </ClInclude>
     <ClInclude Include="Content\SpatialMapping\SurfaceMesh.h">
       <Filter>Content\Spatial</Filter>
     </ClInclude>
     <ClInclude Include="Content\SpatialMapping\SpatialSurfaceCollection.h">
       <Filter>Content\Spatial</Filter>
-    </ClInclude>
-    <ClInclude Include="Content\Input\VoiceInputHandler.h">
-      <Filter>Content\Input</Filter>
     </ClInclude>
     <ClInclude Include="Common\Common.h">
       <Filter>Common</Filter>
@@ -217,10 +213,6 @@
     <ClInclude Include="Content\Rendering\DirectXTK\InstancedGeometricPrimitive.h">
       <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
     </ClInclude>
-    <ClInclude Include="Content\Sound\IVoiceInput.h">
-      <Filter>Content\Sound</Filter>
-    </ClInclude>
-    <ClInclude Include="HoloInterventionCore.h" />
     <ClInclude Include="Content\Systems\Registration\RegistrationSystem.h">
       <Filter>Content\Systems\Registration</Filter>
     </ClInclude>
@@ -266,6 +258,24 @@
     <ClInclude Include="Content\Rendering\PrimitiveEntry.h">
       <Filter>Content\Rendering\ModelRenderer</Filter>
     </ClInclude>
+    <ClInclude Include="Core\IEngineComponent.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\HoloInterventionCore.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Input\SpatialInput.h">
+      <Filter>Content\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Input\VoiceInput.h">
+      <Filter>Content\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Input\VoiceCallback.h">
+      <Filter>Content\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Input\IVoiceInput.h">
+      <Filter>Content\Input</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\LockScreenLogo.scale-200.png">
@@ -287,6 +297,12 @@
       <Filter>Assets\Images</Filter>
     </Image>
     <Image Include="Assets\Wide310x150Logo.scale-200.png">
+      <Filter>Assets\Images</Filter>
+    </Image>
+    <Image Include="Assets\SplashScreen.scale-400.png">
+      <Filter>Assets\Images</Filter>
+    </Image>
+    <Image Include="Assets\SplashScreen.scale-100.png">
       <Filter>Assets\Images</Filter>
     </Image>
   </ItemGroup>
@@ -715,6 +731,9 @@
     </Filter>
     <Filter Include="Content\Rendering\VolumeRenderer\Shaders">
       <UniqueIdentifier>{008c216f-e2c3-4c3f-8558-d63cac5e03db}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core">
+      <UniqueIdentifier>{0508fb3b-5346-4e2e-9fc6-f720b2bf9c87}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

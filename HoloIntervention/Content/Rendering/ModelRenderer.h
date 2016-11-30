@@ -24,6 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
+#include "IEngineComponent.h"
 #include "ModelEntry.h"
 #include "PrimitiveEntry.h"
 
@@ -42,7 +43,7 @@ namespace HoloIntervention
 {
   namespace Rendering
   {
-    class ModelRenderer
+    class ModelRenderer : public IEngineComponent
     {
       typedef std::list<std::shared_ptr<ModelEntry>> ModelList;
       typedef std::list<std::shared_ptr<PrimitiveEntry>> PrimitiveList;

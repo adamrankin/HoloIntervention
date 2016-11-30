@@ -51,6 +51,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     IGTLinkIF::IGTLinkIF()
     {
+      m_componentReady = true;
     }
 
     //----------------------------------------------------------------------------
@@ -102,6 +103,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     std::wstring IGTLinkIF::GetHostname() const
     {
+      std::lock_guard<std::mutex> guard(m_clientMutex);
       return std::wstring(m_igtClient->ServerHost->Data());
     }
 
@@ -110,6 +112,13 @@ namespace HoloIntervention
     {
       std::lock_guard<std::mutex> guard(m_clientMutex);
       m_igtClient->ServerPort = port;
+    }
+
+    //----------------------------------------------------------------------------
+    int32 IGTLinkIF::GetPort() const
+    {
+      std::lock_guard<std::mutex> guard(m_clientMutex);
+      return m_igtClient->ServerPort;
     }
 
     //----------------------------------------------------------------------------

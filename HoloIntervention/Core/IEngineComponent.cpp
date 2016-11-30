@@ -21,48 +21,15 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 ====================================================================*/
 
-#pragma once
-
-// STD includes
-#include <functional>
-#include <map>
-#include <string>
-
-// Sound includes
-#include "IVoiceInput.h"
-
-using namespace Concurrency;
-using namespace Windows::Media::SpeechRecognition;
+// Local includes
+#include "pch.h"
+#include "IEngineComponent.h"
 
 namespace HoloIntervention
 {
-  namespace Input
+  //----------------------------------------------------------------------------
+  bool IEngineComponent::IsReady()
   {
-    class VoiceInputHandler
-    {
-    public:
-      VoiceInputHandler();
-      ~VoiceInputHandler();
-
-      task<bool> CompileCallbacks( HoloIntervention::Sound::VoiceInputCallbackMap& callbacks );
-
-    protected:
-      void OnResultGenerated( SpeechContinuousRecognitionSession^ sender, SpeechContinuousRecognitionResultGeneratedEventArgs^ args );
-
-    protected:
-      // Used for cleaning up
-      bool                                                  m_speechBeingDetected = false;
-
-      // API objects used to process voice input
-      SpeechRecognizer^                                     m_speechRecognizer;
-
-      // Store the command related details
-      HoloIntervention::Sound::VoiceInputCallbackMap        m_callbacks;
-
-      // Event registration token.
-      Windows::Foundation::EventRegistrationToken           m_speechDetectedEventToken;
-
-      const float                                           MINIMUM_CONFIDENCE_FOR_DETECTION = 0.4f; // [0,1]
-    };
+    return m_componentReady;
   }
 }

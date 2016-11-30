@@ -24,13 +24,11 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
+#include "IEngineComponent.h"
 #include "AudioFileReader.h"
 
-// std includes
+// STL includes
 #include <vector>
-
-// WinRT includes
-#include <ppltasks.h>
 
 // XAudio2 includes
 #include <hrtfapoapi.h>
@@ -41,11 +39,6 @@ namespace DX
   class StepTimer;
 }
 
-using namespace Concurrency;
-using namespace Microsoft::WRL;
-using namespace Windows::Foundation::Numerics;
-using namespace Windows::Perception::Spatial;
-
 namespace HoloIntervention
 {
   namespace Sound
@@ -53,7 +46,7 @@ namespace HoloIntervention
     class OmnidirectionalSound;
     class CardioidSound;
 
-    class SoundManager
+    class SoundManager : public IEngineComponent
     {
       template <class T> using SoundList = std::map<std::wstring, std::vector<T>>;
       typedef std::map<std::wstring, std::shared_ptr<AudioFileReader>> SoundDataList;
@@ -61,19 +54,19 @@ namespace HoloIntervention
     public:
       virtual ~SoundManager();
 
-      task<HRESULT> InitializeAsync();
+      Concurrency::task<HRESULT> InitializeAsync();
 
-      void PlayOmniSoundOnce( const std::wstring& assetName, SpatialCoordinateSystem^ coordinateSystem = nullptr, const float3& position = { 0.f, 0.f, 0.f }, HrtfEnvironment env = HrtfEnvironment::Medium );
-      void PlayCarioidSoundOnce( const std::wstring& assetName, SpatialCoordinateSystem^ coordinateSystem = nullptr, const float3& position = { 0.f, 0.f, 0.f }, const float3& pitchYawRoll = { 0.f, 0.f, 0.f }, HrtfEnvironment env = HrtfEnvironment::Medium );
+      void PlayOmniSoundOnce(const std::wstring& assetName, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem = nullptr, const Windows::Foundation::Numerics::float3& position = { 0.f, 0.f, 0.f }, HrtfEnvironment env = HrtfEnvironment::Medium);
+      void PlayCarioidSoundOnce(const std::wstring& assetName, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem = nullptr, const Windows::Foundation::Numerics::float3& position = { 0.f, 0.f, 0.f }, const Windows::Foundation::Numerics::float3& pitchYawRoll = { 0.f, 0.f, 0.f }, HrtfEnvironment env = HrtfEnvironment::Medium);
 
-      void Update( DX::StepTimer& stepTimer, SpatialCoordinateSystem^ coordinateSystem );
+      void Update(DX::StepTimer& stepTimer, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem);
 
     protected:
       HRESULT CreateSubmixParentVoices();
 
     protected:
       // XAudio2 assets
-      ComPtr<IXAudio2>                                              m_xaudio2 = nullptr;
+      Microsoft::WRL::ComPtr<IXAudio2>                              m_xaudio2 = nullptr;
       IXAudio2MasteringVoice*                                       m_masterVoice = nullptr;
 
       IXAudio2SubmixVoice*                                          m_omniSubmixParentVoice = nullptr;
@@ -83,9 +76,7 @@ namespace HoloIntervention
       SoundList<std::shared_ptr<Sound::OmnidirectionalSound>>       m_omniDirectionalSounds;
       SoundDataList                                                 m_audioAssets;
 
-      SpatialCoordinateSystem^                                      m_coordinateSystem = nullptr;
-
-      bool                                                          m_resourcesLoaded = false;
+      Windows::Perception::Spatial::SpatialCoordinateSystem^        m_coordinateSystem = nullptr;
     };
   }
 }

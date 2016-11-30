@@ -21,13 +21,13 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 ====================================================================*/
 
-#include "pch.h"
-
 // Local includes
+#include "pch.h"
 #include "AppView.h"
 #include "SpatialSystem.h"
 
 // Common includes
+#include "DeviceResources.h"
 #include "StepTimer.h"
 
 // System includes
@@ -46,13 +46,15 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "ModelRenderer.h"
 #include "ModelEntry.h"
 
+using namespace Concurrency;
 using namespace Platform;
 using namespace Windows::Foundation::Collections;
+using namespace Windows::Foundation::Numerics;
 using namespace Windows::Foundation;
 using namespace Windows::Graphics::DirectX;
 using namespace Windows::Perception::Spatial::Surfaces;
 using namespace Windows::Perception::Spatial;
-using namespace Concurrency;
+using namespace Windows::UI::Input::Spatial;
 
 namespace HoloIntervention
 {
@@ -93,11 +95,13 @@ namespace HoloIntervention
     void SpatialSystem::CreateDeviceDependentResources()
     {
       m_surfaceCollection->CreateDeviceDependentResources();
+      m_componentReady = true;
     }
 
     //----------------------------------------------------------------------------
     void SpatialSystem::ReleaseDeviceDependentResources()
     {
+      m_componentReady = false;
       m_surfaceCollection->ReleaseDeviceDependentResources();
     }
 
@@ -204,7 +208,6 @@ namespace HoloIntervention
         {
         case SpatialPerceptionAccessStatus::Allowed:
         {
-          // Set up the surface observer to use our preferred data formats.
           m_surfaceMeshOptions = ref new SpatialSurfaceMeshOptions();
 
           IVectorView<DirectXPixelFormat>^ supportedVertexPositionFormats = m_surfaceMeshOptions->SupportedVertexPositionFormats;
@@ -267,7 +270,6 @@ namespace HoloIntervention
           auto mapContainingSurfaceCollection = m_surfaceObserver->GetObservedSurfaces();
           if (mapContainingSurfaceCollection->Size == 0)
           {
-            OutputDebugStringA("Mesh collection size is 0. Trying again after a delay.\n");
             auto fire_once = new Concurrency::timer<int>(INIT_SURFACE_RETRY_DELAY_MS, 0, nullptr, false);
             // Create a call object that sets the completion event after the timer fires.
             auto callback = new Concurrency::call<int>([ = ](int)
@@ -289,11 +291,8 @@ namespace HoloIntervention
           }
 
           // We can also subscribe to an event to receive up-to-date data.
-          m_surfaceObserverEventToken =
-            m_surfaceObserver->ObservedSurfacesChanged +=
-              ref new Windows::Foundation::TypedEventHandler<SpatialSurfaceObserver^, Platform::Object^>(
-                std::bind(&SpatialSystem::OnSurfacesChanged, this, std::placeholders::_1, std::placeholders::_2)
-              );
+          m_surfaceObserverEventToken = m_surfaceObserver->ObservedSurfacesChanged +=
+                                          ref new Windows::Foundation::TypedEventHandler<SpatialSurfaceObserver^, Platform::Object^>(std::bind(&SpatialSystem::OnSurfacesChanged, this, std::placeholders::_1, std::placeholders::_2));
         }
       });
     }

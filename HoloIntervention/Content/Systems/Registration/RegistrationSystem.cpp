@@ -44,10 +44,14 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "SpatialSystem.h"
 #include "NotificationSystem.h"
 
+// Unnecessary, but removes fake errors
+#include <WindowsNumerics.h>
+
 using namespace Concurrency;
 using namespace Windows::Data::Xml::Dom;
 using namespace Windows::Foundation::Numerics;
 using namespace Windows::Perception::Spatial;
+using namespace Windows::UI::Input::Spatial;
 
 namespace HoloIntervention
 {
@@ -62,6 +66,8 @@ namespace HoloIntervention
       : m_deviceResources(deviceResources)
       , m_cameraRegistration(std::make_shared<CameraRegistration>(deviceResources))
     {
+      m_cameraRegistration->SetVisualization(true);
+
       m_regAnchorModelId = HoloIntervention::instance()->GetModelRenderer().AddModel(REGISTRATION_ANCHOR_MODEL_FILENAME);
       if (m_regAnchorModelId != Rendering::INVALID_ENTRY)
       {
@@ -87,8 +93,10 @@ namespace HoloIntervention
         {
           return;
         }
+      }).then([this]()
+      {
+        m_componentReady = true;
       });
-
     }
 
     //----------------------------------------------------------------------------
@@ -212,7 +220,7 @@ namespace HoloIntervention
 
       callbackMap[L"enable spheres"] = [this](SpeechRecognitionResult ^ result)
       {
-        m_cameraRegistration->SetVisualization(true);
+        ;
         HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Sphere visualization enabled.");
       };
 

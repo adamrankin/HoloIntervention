@@ -24,15 +24,18 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
+#include "IEngineComponent.h"
 #include "SurfaceMesh.h"
-#include "StepTimer.h"
 
 // STL includes
 #include <memory>
 #include <map>
 
-// WinRT includes
-#include <ppltasks.h>
+namespace DX
+{
+  class DeviceResources;
+  class StepTimer;
+}
 
 namespace HoloIntervention
 {
@@ -45,7 +48,7 @@ namespace HoloIntervention
     };
     static_assert((sizeof(RayConstantBuffer) % (sizeof(float) * 4)) == 0, "Ray constant buffer size must be 16-byte aligned (16 bytes is the length of four floats).");
 
-    class SpatialSurfaceCollection
+    class SpatialSurfaceCollection : public IEngineComponent
     {
       typedef std::map<Platform::Guid, std::shared_ptr<SurfaceMesh> > GuidMeshMap;
 

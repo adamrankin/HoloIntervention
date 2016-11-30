@@ -23,10 +23,11 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-// std includes
+// STL includes
 #include <vector>
 
-// Sound includes
+// Local includes
+#include "IEngineComponent.h"
 #include "IVoiceInput.h"
 
 // WinRT includes
@@ -45,7 +46,7 @@ namespace HoloIntervention
 
   namespace System
   {
-    class RegistrationSystem : public Sound::IVoiceInput
+    class RegistrationSystem : public Sound::IVoiceInput, public IEngineComponent
     {
     public:
       RegistrationSystem(const std::shared_ptr<DX::DeviceResources>& deviceResources);
