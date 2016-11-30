@@ -72,7 +72,14 @@ namespace HoloIntervention
       : m_deviceResources(deviceResources)
       , m_stepTimer(stepTimer)
     {
-      CreateDeviceDependentResources();
+      try
+      {
+        CreateDeviceDependentResourcesAsync();
+      }
+      catch (const std::exception& e)
+      {
+        OutputDebugStringA(e.what());
+      }
     };
 
     //----------------------------------------------------------------------------
@@ -115,9 +122,14 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SpatialSurfaceCollection::CreateDeviceDependentResources()
+    task<void> SpatialSurfaceCollection::CreateDeviceDependentResourcesAsync()
     {
       std::lock_guard<std::mutex> guard(m_meshCollectionLock);
+
+      if (m_resourcesLoaded)
+      {
+        return create_task([]() {});
+      }
 
       for (auto pair : m_meshCollection)
       {
@@ -131,25 +143,11 @@ namespace HoloIntervention
       constant_buffer_desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
       constant_buffer_desc.CPUAccessFlags = 0;
 
-      auto hr = m_deviceResources->GetD3DDevice()->CreateBuffer(&constant_buffer_desc, nullptr, &m_constantBuffer);
+      DX::ThrowIfFailed(m_deviceResources->GetD3DDevice()->CreateBuffer(&constant_buffer_desc, nullptr, &m_constantBuffer));
 
-      if (FAILED(hr))
+      return DX::ReadDataAsync(L"ms-appx:///CSRayTriangleIntersection.cso").then([ = ](std::vector<byte> data)
       {
-        OutputDebugStringA("Unable to create constant buffer in SpatialSurfaceCollection.");
-        ReleaseDeviceDependentResources();
-        return;
-      }
-
-      DX::ReadDataAsync(L"ms-appx:///CSRayTriangleIntersection.cso").then([ = ](std::vector<byte> data)
-      {
-        auto hr = m_deviceResources->GetD3DDevice()->CreateComputeShader(&data.front(), data.size(), nullptr, &m_d3d11ComputeShader);
-
-        if (FAILED(hr))
-        {
-          OutputDebugStringA("Unable to create compute shader.");
-          ReleaseDeviceDependentResources();
-          return;
-        }
+        DX::ThrowIfFailed(m_deviceResources->GetD3DDevice()->CreateComputeShader(&data.front(), data.size(), nullptr, &m_d3d11ComputeShader));
 
 #if defined(_DEBUG) || defined(PROFILE)
         m_d3d11ComputeShader->SetPrivateData(WKPDID_D3DDebugObjectName, strlen("main") - 1, "main");

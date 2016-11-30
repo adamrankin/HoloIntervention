@@ -24,9 +24,12 @@ OTHER DEALINGS IN THE SOFTWARE.
 // local includes
 #include "pch.h"
 #include "AppView.h"
+#include "HoloInterventionCore.h"
+#include "IEngineComponent.h"
+
+// Common includes
 #include "Common.h"
 #include "DirectXHelper.h"
-#include "HoloInterventionCore.h"
 
 // System includes
 #include "GazeSystem.h"
@@ -119,6 +122,21 @@ namespace HoloIntervention
     m_registrationSystem = std::make_unique<System::RegistrationSystem>(m_deviceResources);
     m_imagingSystem = std::make_unique<System::ImagingSystem>();
 
+    m_engineComponents.push_back(m_modelRenderer.get());
+    m_engineComponents.push_back(m_sliceRenderer.get());
+    m_engineComponents.push_back(m_volumeRenderer.get());
+    m_engineComponents.push_back(m_meshRenderer.get());
+    m_engineComponents.push_back(m_soundManager.get());
+    m_engineComponents.push_back(m_notificationSystem.get());
+    m_engineComponents.push_back(m_spatialInputHandler.get());
+    m_engineComponents.push_back(m_voiceInputHandler.get());
+    m_engineComponents.push_back(m_spatialSystem.get());
+    m_engineComponents.push_back(m_igtLinkIF.get());
+    m_engineComponents.push_back(m_gazeSystem.get());
+    m_engineComponents.push_back(m_toolSystem.get());
+    m_engineComponents.push_back(m_registrationSystem.get());
+    m_engineComponents.push_back(m_imagingSystem.get());
+
     // TODO : remove temp code
     m_igtLinkIF->SetHostname(L"192.168.0.102");
 
@@ -203,6 +221,15 @@ namespace HoloIntervention
       return true;
     });
 
+    if (!m_engineReady)
+    {
+      m_engineReady = true;
+      for (auto& component : m_engineComponents)
+      {
+        m_engineReady = m_engineReady && component->IsReady();
+      }
+    }
+
     if (m_engineReady && !m_voiceInputHandler->IsVoiceEnabled())
     {
       m_voiceInputHandler->EnableVoiceAnalysis(true);
@@ -251,7 +278,7 @@ namespace HoloIntervention
   // frame was rendered to at least one camera.
   bool HoloInterventionCore::Render(Windows::Graphics::Holographic::HolographicFrame^ holographicFrame)
   {
-    if (m_timer.GetFrameCount() == 0)
+    if (m_timer.GetFrameCount() == 0 || !m_engineReady)
     {
       return false;
     }

@@ -65,7 +65,7 @@ namespace HoloIntervention
       void RenderText(const std::wstring& message);
 
       // D3D device related controls
-      void CreateDeviceDependentResources();
+      Concurrency::task<void> CreateDeviceDependentResourcesAsync();
       void ReleaseDeviceDependentResources();
 
     protected:

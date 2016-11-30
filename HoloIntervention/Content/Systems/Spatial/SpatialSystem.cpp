@@ -67,8 +67,8 @@ namespace HoloIntervention
       : m_deviceResources(deviceResources)
       , m_stepTimer(stepTimer)
     {
-
       m_surfaceCollection = std::make_unique<Spatial::SpatialSurfaceCollection>(m_deviceResources, stepTimer);
+      CreateDeviceDependentResources();
     }
 
     //----------------------------------------------------------------------------
@@ -94,8 +94,17 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void SpatialSystem::CreateDeviceDependentResources()
     {
-      m_surfaceCollection->CreateDeviceDependentResources();
-      m_componentReady = true;
+      try
+      {
+        m_surfaceCollection->CreateDeviceDependentResourcesAsync().then([this]()
+        {
+          m_componentReady = true;
+        });
+      }
+      catch (const std::exception&)
+      {
+        HoloIntervention::instance()->GetNotificationSystem().QueueMessage("Unable to start spatial system.");
+      }
     }
 
     //----------------------------------------------------------------------------

@@ -24,18 +24,19 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Common includes
-#include "StepTimer.h"
 #include "DeviceResources.h"
+#include "StepTimer.h"
 
-// std includes
+// STL includes
 #include <vector>
 
-// winrt includes
+// WinRT includes
 #include <collection.h>
 
-// Forward declarations
 namespace HoloIntervention
 {
+  class IEngineComponent;
+
   namespace System
   {
     class GazeSystem;
@@ -138,6 +139,9 @@ namespace HoloIntervention
     void SetHolographicFocusPoint(Windows::Graphics::Holographic::HolographicFramePrediction^ prediction, Windows::Graphics::Holographic::HolographicFrame^ holographicFrame, Windows::Perception::Spatial::SpatialCoordinateSystem^ currentCoordinateSystem);
 
   protected:
+    // IEngineComponent list, used to query overall system status
+    std::vector<IEngineComponent*>                        m_engineComponents;
+
     // Renderers
     std::unique_ptr<Rendering::ModelRenderer>             m_modelRenderer;
     std::unique_ptr<Rendering::SliceRenderer>             m_sliceRenderer;

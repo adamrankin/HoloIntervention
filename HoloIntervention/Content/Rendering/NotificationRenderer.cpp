@@ -47,13 +47,11 @@ namespace HoloIntervention
     NotificationRenderer::NotificationRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources)
       : m_deviceResources(deviceResources)
     {
-      CreateDeviceDependentResources();
     }
 
     //----------------------------------------------------------------------------
     NotificationRenderer::~NotificationRenderer()
     {
-      ReleaseDeviceDependentResources();
     }
 
     //----------------------------------------------------------------------------
@@ -123,10 +121,17 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void NotificationRenderer::CreateDeviceDependentResources()
+    task<void> NotificationRenderer::CreateDeviceDependentResourcesAsync()
     {
+      if (m_componentReady)
+      {
+        return create_task([]() {});
+      }
+
       m_textRenderer = std::make_unique<TextRenderer>(m_deviceResources, OFFSCREEN_RENDER_TARGET_WIDTH_PIXEL, OFFSCREEN_RENDER_TARGET_WIDTH_PIXEL);
+      m_textRenderer->CreateDeviceDependentResources();
       m_distanceFieldRenderer = std::make_unique<DistanceFieldRenderer>(m_deviceResources, BLUR_TARGET_WIDTH_PIXEL, BLUR_TARGET_WIDTH_PIXEL);
+      m_distanceFieldRenderer->CreateDeviceDependentResources();
 
       m_usingVprtShaders = m_deviceResources->GetDeviceSupportsVprt();
 
@@ -176,7 +181,7 @@ namespace HoloIntervention
       }
 
       task<void> shaderTaskGroup = m_usingVprtShaders ? (createPSTask && createVSTask) : (createPSTask && createVSTask && createGSTask);
-      task<void> finishLoadingTask = shaderTaskGroup.then([this]()
+      return shaderTaskGroup.then([this]()
       {
         // Windows Holographic is scaled in meters, so to draw the
         // quad at a comfortable size we made the quad width 0.2 m (20 cm).
@@ -262,7 +267,9 @@ namespace HoloIntervention
     {
       m_componentReady = false;
 
+      m_textRenderer->ReleaseDeviceDependentResources();
       m_textRenderer = nullptr;
+      m_distanceFieldRenderer->ReleaseDeviceDependentResources();
       m_distanceFieldRenderer = nullptr;
 
       m_vertexShader.Reset();

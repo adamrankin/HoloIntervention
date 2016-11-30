@@ -53,6 +53,17 @@ namespace HoloIntervention
       : m_deviceResources(deviceResources)
       , m_notificationRenderer(std::make_unique<Rendering::NotificationRenderer>(deviceResources))
     {
+      try
+      {
+        m_notificationRenderer->CreateDeviceDependentResourcesAsync().then([this]()
+        {
+          m_componentReady = true;
+        });
+      }
+      catch (const std::exception&)
+      {
+        OutputDebugStringA("Unable to initialize notification system.");
+      }
     }
 
     //----------------------------------------------------------------------------
@@ -192,8 +203,10 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void NotificationSystem::CreateDeviceDependentResources()
     {
-      m_notificationRenderer->CreateDeviceDependentResources();
-      m_componentReady = true;
+      m_notificationRenderer->CreateDeviceDependentResourcesAsync().then([this]()
+      {
+        m_componentReady = true;
+      });
     }
 
     //----------------------------------------------------------------------------

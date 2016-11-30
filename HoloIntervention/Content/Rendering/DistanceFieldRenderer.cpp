@@ -32,13 +32,11 @@ namespace HoloIntervention
         m_textureWidth(textureWidth),
         m_textureHeight(textureHeight)
     {
-      CreateDeviceDependentResources();
     }
 
     //----------------------------------------------------------------------------
     DistanceFieldRenderer::~DistanceFieldRenderer()
     {
-      ReleaseDeviceDependentResources();
     }
 
     //----------------------------------------------------------------------------
@@ -108,30 +106,21 @@ namespace HoloIntervention
     {
       auto device = m_deviceResources->GetD3DDevice();
 
-      // Create the texture that will be used as the off-screen render target.
       CD3D11_TEXTURE2D_DESC textureDesc(DXGI_FORMAT_R8G8_UNORM, m_textureWidth, m_textureHeight, 1, 1, D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET);
-
       DX::ThrowIfFailed(device->CreateTexture2D(&textureDesc, nullptr, &m_texture));
 
-      // Create read and write views for the off-screen render target.
       DX::ThrowIfFailed(device->CreateShaderResourceView(m_texture.Get(), nullptr, &m_shaderResourceView));
       DX::ThrowIfFailed(device->CreateRenderTargetView(m_texture.Get(), nullptr, &m_renderTargetView));
 
-      // Create a depth stencil view.
       CD3D11_TEXTURE2D_DESC depthStencilDesc(DXGI_FORMAT_D16_UNORM, m_textureWidth, m_textureHeight, 1, 1, D3D11_BIND_DEPTH_STENCIL);
-
       Microsoft::WRL::ComPtr<ID3D11Texture2D> depthStencil;
       DX::ThrowIfFailed(device->CreateTexture2D(&depthStencilDesc, nullptr, &depthStencil));
-
       CD3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc(D3D11_DSV_DIMENSION_TEXTURE2D);
       DX::ThrowIfFailed(device->CreateDepthStencilView(depthStencil.Get(), &depthStencilViewDesc, &m_d3dDepthStencilView));
 
-
-      // Load shaders asynchronously.
       task<std::vector<byte>> loadVSTask = DX::ReadDataAsync(L"ms-appx:///DFRFullscreenQuadVertexShader.cso");
       task<std::vector<byte>> loadPSTask = DX::ReadDataAsync(L"ms-appx:///DFRCreateDistanceFieldPixelShader.cso");
 
-      // After the vertex shader file is loaded, create the shader and input layout.
       task<void> createVSTask = loadVSTask.then([this](const std::vector<byte>& fileData)
       {
         auto device = m_deviceResources->GetD3DDevice();
@@ -148,13 +137,11 @@ namespace HoloIntervention
         DX::ThrowIfFailed(device->CreateInputLayout(vertexDesc.data(), vertexDesc.size(), fileData.data(), fileData.size(), &m_inputLayout));
       });
 
-      // After the pixel shader file is loaded, create the shader and constant buffer.
       task<void> createPSTask = loadPSTask.then([this](const std::vector<byte>& fileData)
       {
         DX::ThrowIfFailed(m_deviceResources->GetD3DDevice()->CreatePixelShader(fileData.data(), fileData.size(), nullptr, &m_pixelShader));
       });
 
-      // Once all shaders are loaded, create the mesh.
       task<void> createQuadTask = (createPSTask && createVSTask).then([this]()
       {
         auto device = m_deviceResources->GetD3DDevice();
