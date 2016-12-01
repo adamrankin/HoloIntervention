@@ -174,7 +174,14 @@ namespace HoloIntervention
     SpatialCoordinateSystem^ currentCoordinateSystem = m_attachedReferenceFrame->GetStationaryCoordinateSystemAtTimestamp(holographicFrame->CurrentPrediction->Timestamp);
     SpatialPointerPose^ pose = SpatialPointerPose::TryGetAtTimestamp(currentCoordinateSystem, holographicFrame->CurrentPrediction->Timestamp);
     m_notificationSystem->Initialize(pose);
-    m_spatialSystem->InitializeSurfaceObserver(currentCoordinateSystem);
+    m_spatialSystem->InitializeSurfaceObserverAsync(currentCoordinateSystem).then([this](bool result)
+    {
+      if (!result)
+      {
+        // TODO : add more robust error handling
+        m_notificationSystem->QueueMessage("Unable to initialize surface observer.");
+      }
+    });
   }
 
   //----------------------------------------------------------------------------
@@ -261,7 +268,7 @@ namespace HoloIntervention
       {
         m_registrationSystem->Update(m_timer, renderingCoordinateSystem, headPose);
         m_gazeSystem->Update(m_timer, renderingCoordinateSystem, headPose);
-        m_iconSystem->Update(m_timer, renderingCoordinateSystem, headPose);
+        m_iconSystem->Update(m_timer, headPose);
         m_soundManager->Update(m_timer, renderingCoordinateSystem);
         m_sliceRenderer->Update(headPose, m_timer);
         m_notificationSystem->Update(headPose, m_timer);

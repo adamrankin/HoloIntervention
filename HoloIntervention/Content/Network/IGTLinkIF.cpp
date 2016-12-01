@@ -95,6 +95,12 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    HoloIntervention::Network::ConnectionState IGTLinkIF::GetConnectionState() const
+    {
+      return m_connectionState;
+    }
+
+    //----------------------------------------------------------------------------
     void IGTLinkIF::SetHostname(const std::wstring& hostname)
     {
       std::lock_guard<std::mutex> guard(m_clientMutex);

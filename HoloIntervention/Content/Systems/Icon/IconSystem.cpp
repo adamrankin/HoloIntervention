@@ -29,6 +29,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // System includes
 #include "NotificationSystem.h"
+#include "RegistrationSystem.h"
 
 // Rendering includes
 #include "ModelRenderer.h"
@@ -45,8 +46,10 @@ namespace HoloIntervention
 {
   namespace System
   {
-    const float IconSystem::ANGLE_BETWEEN_ICONS_DEG = 5.75f;
-    const float IconSystem::ICON_SIZE_METER = 0.15f;
+    const float IconSystem::NETWORK_BLINK_TIME_SEC = 0.75;
+    const float IconSystem::CAMERA_BLINK_TIME_SEC = 1.25f;
+    const float IconSystem::ANGLE_BETWEEN_ICONS_DEG = 1.25f;
+    const float IconSystem::ICON_SIZE_METER = 0.025f;
 
     //----------------------------------------------------------------------------
     IconSystem::IconSystem()
@@ -86,6 +89,9 @@ namespace HoloIntervention
         return true;
       }).then([this](bool loaded)
       {
+        m_networkIcon->GetModelEntry()->EnableLighting(false);
+        m_cameraIcon->GetModelEntry()->EnableLighting(false);
+
         m_iconEntries.push_back(m_networkIcon);
         m_iconEntries.push_back(m_cameraIcon);
         m_componentReady = loaded;
@@ -98,24 +104,28 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void IconSystem::Update(DX::StepTimer& timer, SpatialCoordinateSystem^ renderingCoordinateSystem, SpatialPointerPose^ headPose)
+    void IconSystem::Update(DX::StepTimer& timer, SpatialPointerPose^ headPose)
     {
       if (!m_componentReady)
       {
         return;
       }
 
+      ProcessNetworkLogic(timer);
+      ProcessCameraLogic(timer);
+
       // Calculate forward vector 2m ahead
-      float3 basePosition = headPose->Head->Position + (2.f * headPose->Head->ForwardDirection);
-      float4x4 rotatedToWorldPose = make_float4x4_world(basePosition, -headPose->Head->ForwardDirection, float3(0.f, 1.f, 0.f));
+      float3 basePosition = headPose->Head->Position + (float3(2.f) * headPose->Head->ForwardDirection);
+      float4x4 worldToRotatedTransform = make_float4x4_world(basePosition, headPose->Head->ForwardDirection, float3(0.f, 1.f, 0.f));
 
       int32 i = 0;
       const float PI = 3.14159265359f;
-      float angle = -0.25f * PI;
+      const float UP_ANGLE = 7.f / 180.f * PI;
+      float angle = 11.f / 180.f * PI;
       for (auto& entry : m_iconEntries)
       {
-        float4x4 worldToScaledWorldPose = make_float4x4_scale(entry->GetScaleFactor());
-        entry->GetModelEntry()->SetWorld(make_float4x4_rotation_y(angle) * rotatedToWorldPose * worldToScaledWorldPose);
+        float4x4 scaleToWorldTransform = make_float4x4_scale(entry->GetScaleFactor());
+        entry->GetModelEntry()->SetWorld(scaleToWorldTransform * worldToRotatedTransform * make_float4x4_rotation_y(angle) * make_float4x4_rotation_x(UP_ANGLE));
         angle += (ANGLE_BETWEEN_ICONS_DEG / 180.f * PI);
       }
     }
@@ -159,6 +169,76 @@ namespace HoloIntervention
       }
 
       return nullptr;
+    }
+
+    //----------------------------------------------------------------------------
+    void IconSystem::ProcessNetworkLogic(DX::StepTimer& timer)
+    {
+      auto state = HoloIntervention::instance()->GetIGTLink().GetConnectionState();
+
+      switch (state)
+      {
+      case HoloIntervention::Network::CONNECTION_STATE_CONNECTING:
+      case HoloIntervention::Network::CONNECTION_STATE_DISCONNECTING:
+        if (m_networkPreviousState != state)
+        {
+          m_networkBlinkTimer = 0.f;
+        }
+        else
+        {
+          m_networkBlinkTimer += static_cast<float>(timer.GetElapsedSeconds());
+          if (m_networkBlinkTimer >= NETWORK_BLINK_TIME_SEC)
+          {
+            m_networkBlinkTimer = 0.f;
+            m_networkIcon->GetModelEntry()->ToggleVisible();
+          }
+        }
+        m_networkIsBlinking = true;
+        if (state == Network::CONNECTION_STATE_CONNECTING)
+        {
+          m_networkRenderState = Rendering::RENDERING_GREYSCALE;
+        }
+        else
+        {
+          m_networkRenderState = Rendering::RENDERING_DEFAULT;
+        }
+        break;
+      case HoloIntervention::Network::CONNECTION_STATE_UNKNOWN:
+      case HoloIntervention::Network::CONNECTION_STATE_DISCONNECTED:
+      case HoloIntervention::Network::CONNECTION_STATE_CONNECTION_LOST:
+        m_networkIcon->GetModelEntry()->SetVisible(true);
+        m_networkIsBlinking = false;
+        m_networkRenderState = Rendering::RENDERING_GREYSCALE;
+        break;
+      case HoloIntervention::Network::CONNECTION_STATE_CONNECTED:
+        m_networkIcon->GetModelEntry()->SetVisible(true);
+        m_networkIsBlinking = false;
+        m_networkRenderState = Rendering::RENDERING_DEFAULT;
+        break;
+      }
+
+      m_networkIcon->GetModelEntry()->SetRenderingState(m_networkRenderState);
+      m_networkPreviousState = state;
+    }
+
+    //----------------------------------------------------------------------------
+    void IconSystem::ProcessCameraLogic(DX::StepTimer& timer)
+    {
+      if (HoloIntervention::instance()->GetRegistrationSystem().IsCameraActive())
+      {
+        m_cameraIcon->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
+        m_cameraBlinkTimer += static_cast<float>(timer.GetElapsedSeconds());
+        if (m_cameraBlinkTimer >= NETWORK_BLINK_TIME_SEC)
+        {
+          m_cameraBlinkTimer = 0.f;
+          m_cameraIcon->GetModelEntry()->ToggleVisible();
+        }
+      }
+      else
+      {
+        m_cameraIcon->GetModelEntry()->SetVisible(true);
+        m_cameraIcon->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
+      }
     }
   }
 }

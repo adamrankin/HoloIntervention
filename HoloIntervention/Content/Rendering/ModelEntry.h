@@ -60,17 +60,15 @@ namespace HoloIntervention
       void Update(const DX::StepTimer& timer, const DX::ViewProjection& vp);
       void Render();
 
-      // D3D device related controls
       void CreateDeviceDependentResources();
       void ReleaseDeviceDependentResources();
 
-      // Model enable control
       void SetVisible(bool enable);
       void ToggleVisible();
       bool IsVisible() const;
-
-      // Model pose control
+      void SetRenderingState(ModelRenderingState state);
       void SetWorld(const Windows::Foundation::Numerics::float4x4& world);
+      void EnableLighting(bool enable);
 
       uint64 GetId() const;
       void SetId(uint64 id);
@@ -103,7 +101,7 @@ namespace HoloIntervention
       Windows::Foundation::Numerics::float4x4             m_worldMatrix = Windows::Foundation::Numerics::float4x4::identity();
       std::array<float, 6>                                m_modelBounds = { -1.f };
       std::wstring                                        m_assetLocation;
-      Windows::Foundation::Numerics::float3               m_defaultColour;
+      DirectX::XMFLOAT4                                   m_defaultColour;
 
       // Model related behavior
       std::atomic_bool                                    m_visible = false;

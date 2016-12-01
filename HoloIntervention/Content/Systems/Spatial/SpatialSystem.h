@@ -80,7 +80,7 @@ namespace HoloIntervention
       std::shared_ptr<Spatial::SurfaceMesh> GetLastHitMesh();
       Platform::Guid GetLastHitMeshGuid();
 
-      void InitializeSurfaceObserver(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem);
+      Concurrency::task<bool> InitializeSurfaceObserverAsync(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem);
 
       Concurrency::task<void> SaveAppStateAsync();
       Concurrency::task<void> LoadAppStateAsync();

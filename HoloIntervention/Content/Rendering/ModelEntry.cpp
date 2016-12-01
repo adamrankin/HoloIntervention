@@ -38,6 +38,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <algorithm>
 
 using namespace Concurrency;
+using namespace DirectX;
 using namespace Microsoft::WRL;
 using namespace Windows::Foundation::Numerics;
 using namespace Windows::UI::Input::Spatial;
@@ -167,6 +168,15 @@ namespace HoloIntervention
       m_effectFactory->SetSharing(false);   // Disable re-use of effect shaders, as this prevents us from rendering different colours
       m_model = std::shared_ptr<DirectX::Model>(std::move(DirectX::Model::CreateFromCMO(m_deviceResources->GetD3DDevice(), m_assetLocation.c_str(), *m_effectFactory)));
       CalculateBounds();
+      m_model->UpdateEffects([this](IEffect * effect)
+      {
+        InstancedBasicEffect* basicEffect = dynamic_cast<InstancedBasicEffect*>(effect);
+        if (basicEffect != nullptr)
+        {
+          XMStoreFloat4(&m_defaultColour, basicEffect->GetDiffuseColor());
+          m_defaultColour.w = basicEffect->GetAlpha();
+        }
+      });
 
       m_loadingComplete = true;
     }
@@ -201,9 +211,28 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    void ModelEntry::SetRenderingState(ModelRenderingState state)
+    {
+      m_renderingState = state;
+    }
+
+    //----------------------------------------------------------------------------
     void ModelEntry::SetWorld(const float4x4& world)
     {
       m_worldMatrix = world;
+    }
+
+    //----------------------------------------------------------------------------
+    void ModelEntry::EnableLighting(bool enable)
+    {
+      m_model->UpdateEffects([this, enable](IEffect * effect)
+      {
+        InstancedBasicEffect* basicEffect = dynamic_cast<InstancedBasicEffect*>(effect);
+        if (basicEffect != nullptr)
+        {
+          basicEffect->SetLightingEnabled(enable);
+        }
+      });
     }
 
     //----------------------------------------------------------------------------
@@ -283,6 +312,15 @@ namespace HoloIntervention
       m_deviceResources->GetD3DDeviceContext()->IASetIndexBuffer(part.indexBuffer.Get(), part.indexFormat, 0);
 
       assert(part.effect != nullptr);
+      InstancedBasicEffect* basicEffect = dynamic_cast<InstancedBasicEffect*>(part.effect.get());
+      if (basicEffect != nullptr && m_renderingState == RENDERING_GREYSCALE)
+      {
+        basicEffect->SetColorAndAlpha(XMLoadFloat4(&XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f)));
+      }
+      else if (basicEffect != nullptr && m_renderingState == RENDERING_DEFAULT)
+      {
+        basicEffect->SetColorAndAlpha(XMLoadFloat4(&m_defaultColour));
+      }
       part.effect->Apply(m_deviceResources->GetD3DDeviceContext());
 
       // Hook lets the caller replace our shaders or state settings with whatever else they see fit.

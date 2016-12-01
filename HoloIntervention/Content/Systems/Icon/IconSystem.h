@@ -26,6 +26,12 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "IEngineComponent.h"
 
+// Network includes
+#include "IGTLinkIF.h"
+
+// Rendering includes
+#include "ModelEntry.h"
+
 namespace DX
 {
   class StepTimer;
@@ -45,22 +51,37 @@ namespace HoloIntervention
       IconSystem();
       ~IconSystem();
 
-      void Update(DX::StepTimer& timer, Windows::Perception::Spatial::SpatialCoordinateSystem^ renderingCoordinateSystem, Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
+      void Update(DX::StepTimer& timer, Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
 
       std::shared_ptr<IconEntry> AddEntry(const std::wstring& modelName);
       bool RemoveEntry(uint64 entryId);
       std::shared_ptr<IconEntry> GetEntry(uint64 entryId);
 
     protected:
-      uint64                      m_nextValidEntry = 0;
-      IconEntryList               m_iconEntries;
+      void ProcessNetworkLogic(DX::StepTimer&);
+      void ProcessCameraLogic(DX::StepTimer&);
+
+    protected:
+      uint64                          m_nextValidEntry = 0;
+      IconEntryList                   m_iconEntries;
 
       // Icons that this subsystem manages
-      std::shared_ptr<IconEntry>  m_networkIcon = nullptr;
-      std::shared_ptr<IconEntry>  m_cameraIcon = nullptr;
+      std::shared_ptr<IconEntry>      m_networkIcon = nullptr;
+      std::shared_ptr<IconEntry>      m_cameraIcon = nullptr;
 
-      static const float          ANGLE_BETWEEN_ICONS_DEG;
-      static const float          ICON_SIZE_METER;
+      // Network logic variables
+      bool                            m_networkIsBlinking = true;
+      Network::ConnectionState        m_networkPreviousState = Network::CONNECTION_STATE_UNKNOWN;
+      Rendering::ModelRenderingState  m_networkRenderState = Rendering::RENDERING_DEFAULT;
+      float                           m_networkBlinkTimer = 0.f;
+      static const float              NETWORK_BLINK_TIME_SEC;
+
+      // Camera logic variables
+      float                           m_cameraBlinkTimer = 0.f;
+      static const float              CAMERA_BLINK_TIME_SEC;
+
+      static const float              ANGLE_BETWEEN_ICONS_DEG;
+      static const float              ICON_SIZE_METER;
     };
   }
 }

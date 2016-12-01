@@ -46,6 +46,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "ModelRenderer.h"
 #include "ModelEntry.h"
 
+// Unnecessary, but reduces intellisense errors
+#include <WindowsNumerics.h>
+
 using namespace Concurrency;
 using namespace Platform;
 using namespace Windows::Foundation::Collections;
@@ -68,7 +71,7 @@ namespace HoloIntervention
       , m_stepTimer(stepTimer)
     {
       m_surfaceCollection = std::make_unique<Spatial::SpatialSurfaceCollection>(m_deviceResources, stepTimer);
-      CreateDeviceDependentResources();
+
     }
 
     //----------------------------------------------------------------------------
@@ -199,19 +202,16 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SpatialSystem::InitializeSurfaceObserver(SpatialCoordinateSystem^ coordinateSystem)
+    task<bool> SpatialSystem::InitializeSurfaceObserverAsync(SpatialCoordinateSystem^ coordinateSystem)
     {
-      // If a SpatialSurfaceObserver exists, we need to unregister from event notifications before releasing it.
       if (m_surfaceObserver != nullptr)
       {
         m_surfaceObserver->ObservedSurfacesChanged -= m_surfaceObserverEventToken;
         m_surfaceObserver = nullptr;
       }
 
-      // The spatial mapping API reads information about the user's environment. The user must
-      // grant permission to the app to use this capability of the Windows Holographic device.
       auto initSurfaceObserverTask = create_task(SpatialSurfaceObserver::RequestAccessAsync());
-      initSurfaceObserverTask.then([this, coordinateSystem](Windows::Perception::Spatial::SpatialPerceptionAccessStatus status)
+      return initSurfaceObserverTask.then([this, coordinateSystem](Windows::Perception::Spatial::SpatialPerceptionAccessStatus status)
       {
         switch (status)
         {
@@ -269,40 +269,45 @@ namespace HoloIntervention
         break;
         default:
           // unreachable
+          assert(false);
           break;
         }
 
         if (m_surfaceObserver != nullptr)
         {
-          // If the surface observer was successfully created, we can initialize our
-          // collection by pulling the current data set.
-          auto mapContainingSurfaceCollection = m_surfaceObserver->GetObservedSurfaces();
-          if (mapContainingSurfaceCollection->Size == 0)
+          return create_task([this]() -> bool
           {
-            auto fire_once = new Concurrency::timer<int>(INIT_SURFACE_RETRY_DELAY_MS, 0, nullptr, false);
-            // Create a call object that sets the completion event after the timer fires.
-            auto callback = new Concurrency::call<int>([ = ](int)
+            uint32 msCount(0);
+            while (m_surfaceObserver->GetObservedSurfaces()->Size == 0 && msCount < 5000)
             {
-              InitializeSurfaceObserver(coordinateSystem);
-            });
+              msCount += 100;
+              std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            }
 
-            // Connect the timer to the callback and start the timer.
-            fire_once->link_target(callback);
-            fire_once->start();
-            return;
-          }
-          for (auto const& pair : mapContainingSurfaceCollection)
-          {
-            // Store the ID and metadata for each surface.
-            auto const& id = pair->Key;
-            auto const& surfaceInfo = pair->Value;
-            m_surfaceCollection->AddOrUpdateSurfaceAsync(id, surfaceInfo, m_surfaceMeshOptions);
-          }
+            if (msCount >= 5000)
+            {
+              return false;
+            }
 
-          // We can also subscribe to an event to receive up-to-date data.
-          m_surfaceObserverEventToken = m_surfaceObserver->ObservedSurfacesChanged +=
-                                          ref new Windows::Foundation::TypedEventHandler<SpatialSurfaceObserver^, Platform::Object^>(std::bind(&SpatialSystem::OnSurfacesChanged, this, std::placeholders::_1, std::placeholders::_2));
+            for (auto const& pair : m_surfaceObserver->GetObservedSurfaces())
+            {
+              auto const& id = pair->Key;
+              auto const& surfaceInfo = pair->Value;
+              m_surfaceCollection->AddOrUpdateSurfaceAsync(id, surfaceInfo, m_surfaceMeshOptions);
+            }
+
+            m_surfaceObserverEventToken = m_surfaceObserver->ObservedSurfacesChanged +=
+            ref new Windows::Foundation::TypedEventHandler<SpatialSurfaceObserver^, Platform::Object^>(std::bind(&SpatialSystem::OnSurfacesChanged, this, std::placeholders::_1, std::placeholders::_2));
+
+            CreateDeviceDependentResources();
+
+            m_componentReady = true;
+
+            return true;
+          });
         }
+
+        return task_from_result<bool>(false);
       });
     }
 

@@ -52,7 +52,7 @@ struct InstancedBasicEffectConstants
   XMMATRIX worldViewProj[2];
 };
 
-static_assert( ( sizeof( InstancedBasicEffectConstants ) % ( sizeof( float ) * 4 ) ) == 0, "InstancedBasicEffectConstants size must be 16-byte aligned (16 bytes is the length of four floats)." );
+static_assert((sizeof(InstancedBasicEffectConstants) % (sizeof(float) * 4)) == 0, "InstancedBasicEffectConstants size must be 16-byte aligned (16 bytes is the length of four floats).");
 
 // Traits type describes our characteristics to the EffectBase template.
 struct BasicEffectTraits
@@ -90,29 +90,29 @@ struct BasicEffectTraits
 
 const ShaderBytecode InstancedEffectBase<BasicEffectTraits>::VPRTVertexShaderBytecode[] =
 {
-  { InstancedBasicEffect_VSBasicVPRT,                    sizeof( InstancedBasicEffect_VSBasicVPRT ) },
-  { InstancedBasicEffect_VSBasicNoFogVPRT,               sizeof( InstancedBasicEffect_VSBasicNoFogVPRT ) },
-  { InstancedBasicEffect_VSBasicVcVPRT,                  sizeof( InstancedBasicEffect_VSBasicVcVPRT ) },
-  { InstancedBasicEffect_VSBasicVcNoFogVPRT,             sizeof( InstancedBasicEffect_VSBasicVcNoFogVPRT ) },
-  { InstancedBasicEffect_VSBasicTxVPRT,                  sizeof( InstancedBasicEffect_VSBasicTxVPRT ) },
-  { InstancedBasicEffect_VSBasicTxNoFogVPRT,             sizeof( InstancedBasicEffect_VSBasicTxNoFogVPRT ) },
-  { InstancedBasicEffect_VSBasicTxVcVPRT,                sizeof( InstancedBasicEffect_VSBasicTxVcVPRT ) },
-  { InstancedBasicEffect_VSBasicTxVcNoFogVPRT,           sizeof( InstancedBasicEffect_VSBasicTxVcNoFogVPRT ) },
+  { InstancedBasicEffect_VSBasicVPRT,                    sizeof(InstancedBasicEffect_VSBasicVPRT) },
+  { InstancedBasicEffect_VSBasicNoFogVPRT,               sizeof(InstancedBasicEffect_VSBasicNoFogVPRT) },
+  { InstancedBasicEffect_VSBasicVcVPRT,                  sizeof(InstancedBasicEffect_VSBasicVcVPRT) },
+  { InstancedBasicEffect_VSBasicVcNoFogVPRT,             sizeof(InstancedBasicEffect_VSBasicVcNoFogVPRT) },
+  { InstancedBasicEffect_VSBasicTxVPRT,                  sizeof(InstancedBasicEffect_VSBasicTxVPRT) },
+  { InstancedBasicEffect_VSBasicTxNoFogVPRT,             sizeof(InstancedBasicEffect_VSBasicTxNoFogVPRT) },
+  { InstancedBasicEffect_VSBasicTxVcVPRT,                sizeof(InstancedBasicEffect_VSBasicTxVcVPRT) },
+  { InstancedBasicEffect_VSBasicTxVcNoFogVPRT,           sizeof(InstancedBasicEffect_VSBasicTxVcNoFogVPRT) },
 
-  { InstancedBasicEffect_VSBasicVertexLightingVPRT,      sizeof( InstancedBasicEffect_VSBasicVertexLightingVPRT ) },
-  { InstancedBasicEffect_VSBasicVertexLightingVcVPRT,    sizeof( InstancedBasicEffect_VSBasicVertexLightingVcVPRT ) },
-  { InstancedBasicEffect_VSBasicVertexLightingTxVPRT,    sizeof( InstancedBasicEffect_VSBasicVertexLightingTxVPRT ) },
-  { InstancedBasicEffect_VSBasicVertexLightingTxVcVPRT,  sizeof( InstancedBasicEffect_VSBasicVertexLightingTxVcVPRT ) },
+  { InstancedBasicEffect_VSBasicVertexLightingVPRT,      sizeof(InstancedBasicEffect_VSBasicVertexLightingVPRT) },
+  { InstancedBasicEffect_VSBasicVertexLightingVcVPRT,    sizeof(InstancedBasicEffect_VSBasicVertexLightingVcVPRT) },
+  { InstancedBasicEffect_VSBasicVertexLightingTxVPRT,    sizeof(InstancedBasicEffect_VSBasicVertexLightingTxVPRT) },
+  { InstancedBasicEffect_VSBasicVertexLightingTxVcVPRT,  sizeof(InstancedBasicEffect_VSBasicVertexLightingTxVcVPRT) },
 
-  { InstancedBasicEffect_VSBasicOneLightVPRT,            sizeof( InstancedBasicEffect_VSBasicOneLightVPRT ) },
-  { InstancedBasicEffect_VSBasicOneLightVcVPRT,          sizeof( InstancedBasicEffect_VSBasicOneLightVcVPRT ) },
-  { InstancedBasicEffect_VSBasicOneLightTxVPRT,          sizeof( InstancedBasicEffect_VSBasicOneLightTxVPRT ) },
-  { InstancedBasicEffect_VSBasicOneLightTxVcVPRT,        sizeof( InstancedBasicEffect_VSBasicOneLightTxVcVPRT ) },
+  { InstancedBasicEffect_VSBasicOneLightVPRT,            sizeof(InstancedBasicEffect_VSBasicOneLightVPRT) },
+  { InstancedBasicEffect_VSBasicOneLightVcVPRT,          sizeof(InstancedBasicEffect_VSBasicOneLightVcVPRT) },
+  { InstancedBasicEffect_VSBasicOneLightTxVPRT,          sizeof(InstancedBasicEffect_VSBasicOneLightTxVPRT) },
+  { InstancedBasicEffect_VSBasicOneLightTxVcVPRT,        sizeof(InstancedBasicEffect_VSBasicOneLightTxVcVPRT) },
 
-  { InstancedBasicEffect_VSBasicPixelLightingVPRT,       sizeof( InstancedBasicEffect_VSBasicPixelLightingVPRT ) },
-  { InstancedBasicEffect_VSBasicPixelLightingVcVPRT,     sizeof( InstancedBasicEffect_VSBasicPixelLightingVcVPRT ) },
-  { InstancedBasicEffect_VSBasicPixelLightingTxVPRT,     sizeof( InstancedBasicEffect_VSBasicPixelLightingTxVPRT ) },
-  { InstancedBasicEffect_VSBasicPixelLightingTxVcVPRT,   sizeof( InstancedBasicEffect_VSBasicPixelLightingTxVcVPRT ) },
+  { InstancedBasicEffect_VSBasicPixelLightingVPRT,       sizeof(InstancedBasicEffect_VSBasicPixelLightingVPRT) },
+  { InstancedBasicEffect_VSBasicPixelLightingVcVPRT,     sizeof(InstancedBasicEffect_VSBasicPixelLightingVcVPRT) },
+  { InstancedBasicEffect_VSBasicPixelLightingTxVPRT,     sizeof(InstancedBasicEffect_VSBasicPixelLightingTxVPRT) },
+  { InstancedBasicEffect_VSBasicPixelLightingTxVcVPRT,   sizeof(InstancedBasicEffect_VSBasicPixelLightingTxVcVPRT) },
 };
 
 #include <InstancedBasicEffect_VSBasic.inc>
@@ -138,29 +138,29 @@ const ShaderBytecode InstancedEffectBase<BasicEffectTraits>::VPRTVertexShaderByt
 
 const ShaderBytecode InstancedEffectBase<BasicEffectTraits>::VertexShaderBytecode[] =
 {
-  { InstancedBasicEffect_VSBasic,                    sizeof( InstancedBasicEffect_VSBasic ) },
-  { InstancedBasicEffect_VSBasicNoFog,               sizeof( InstancedBasicEffect_VSBasicNoFog ) },
-  { InstancedBasicEffect_VSBasicVc,                  sizeof( InstancedBasicEffect_VSBasicVc ) },
-  { InstancedBasicEffect_VSBasicVcNoFog,             sizeof( InstancedBasicEffect_VSBasicVcNoFog ) },
-  { InstancedBasicEffect_VSBasicTx,                  sizeof( InstancedBasicEffect_VSBasicTx ) },
-  { InstancedBasicEffect_VSBasicTxNoFog,             sizeof( InstancedBasicEffect_VSBasicTxNoFog ) },
-  { InstancedBasicEffect_VSBasicTxVc,                sizeof( InstancedBasicEffect_VSBasicTxVc ) },
-  { InstancedBasicEffect_VSBasicTxVcNoFog,           sizeof( InstancedBasicEffect_VSBasicTxVcNoFog ) },
+  { InstancedBasicEffect_VSBasic,                    sizeof(InstancedBasicEffect_VSBasic) },
+  { InstancedBasicEffect_VSBasicNoFog,               sizeof(InstancedBasicEffect_VSBasicNoFog) },
+  { InstancedBasicEffect_VSBasicVc,                  sizeof(InstancedBasicEffect_VSBasicVc) },
+  { InstancedBasicEffect_VSBasicVcNoFog,             sizeof(InstancedBasicEffect_VSBasicVcNoFog) },
+  { InstancedBasicEffect_VSBasicTx,                  sizeof(InstancedBasicEffect_VSBasicTx) },
+  { InstancedBasicEffect_VSBasicTxNoFog,             sizeof(InstancedBasicEffect_VSBasicTxNoFog) },
+  { InstancedBasicEffect_VSBasicTxVc,                sizeof(InstancedBasicEffect_VSBasicTxVc) },
+  { InstancedBasicEffect_VSBasicTxVcNoFog,           sizeof(InstancedBasicEffect_VSBasicTxVcNoFog) },
 
-  { InstancedBasicEffect_VSBasicVertexLighting,      sizeof( InstancedBasicEffect_VSBasicVertexLighting ) },
-  { InstancedBasicEffect_VSBasicVertexLightingVc,    sizeof( InstancedBasicEffect_VSBasicVertexLightingVc ) },
-  { InstancedBasicEffect_VSBasicVertexLightingTx,    sizeof( InstancedBasicEffect_VSBasicVertexLightingTx ) },
-  { InstancedBasicEffect_VSBasicVertexLightingTxVc,  sizeof( InstancedBasicEffect_VSBasicVertexLightingTxVc ) },
+  { InstancedBasicEffect_VSBasicVertexLighting,      sizeof(InstancedBasicEffect_VSBasicVertexLighting) },
+  { InstancedBasicEffect_VSBasicVertexLightingVc,    sizeof(InstancedBasicEffect_VSBasicVertexLightingVc) },
+  { InstancedBasicEffect_VSBasicVertexLightingTx,    sizeof(InstancedBasicEffect_VSBasicVertexLightingTx) },
+  { InstancedBasicEffect_VSBasicVertexLightingTxVc,  sizeof(InstancedBasicEffect_VSBasicVertexLightingTxVc) },
 
-  { InstancedBasicEffect_VSBasicOneLight,            sizeof( InstancedBasicEffect_VSBasicOneLight ) },
-  { InstancedBasicEffect_VSBasicOneLightVc,          sizeof( InstancedBasicEffect_VSBasicOneLightVc ) },
-  { InstancedBasicEffect_VSBasicOneLightTx,          sizeof( InstancedBasicEffect_VSBasicOneLightTx ) },
-  { InstancedBasicEffect_VSBasicOneLightTxVc,        sizeof( InstancedBasicEffect_VSBasicOneLightTxVc ) },
+  { InstancedBasicEffect_VSBasicOneLight,            sizeof(InstancedBasicEffect_VSBasicOneLight) },
+  { InstancedBasicEffect_VSBasicOneLightVc,          sizeof(InstancedBasicEffect_VSBasicOneLightVc) },
+  { InstancedBasicEffect_VSBasicOneLightTx,          sizeof(InstancedBasicEffect_VSBasicOneLightTx) },
+  { InstancedBasicEffect_VSBasicOneLightTxVc,        sizeof(InstancedBasicEffect_VSBasicOneLightTxVc) },
 
-  { InstancedBasicEffect_VSBasicPixelLighting,       sizeof( InstancedBasicEffect_VSBasicPixelLighting ) },
-  { InstancedBasicEffect_VSBasicPixelLightingVc,     sizeof( InstancedBasicEffect_VSBasicPixelLightingVc ) },
-  { InstancedBasicEffect_VSBasicPixelLightingTx,     sizeof( InstancedBasicEffect_VSBasicPixelLightingTx ) },
-  { InstancedBasicEffect_VSBasicPixelLightingTxVc,   sizeof( InstancedBasicEffect_VSBasicPixelLightingTxVc ) },
+  { InstancedBasicEffect_VSBasicPixelLighting,       sizeof(InstancedBasicEffect_VSBasicPixelLighting) },
+  { InstancedBasicEffect_VSBasicPixelLightingVc,     sizeof(InstancedBasicEffect_VSBasicPixelLightingVc) },
+  { InstancedBasicEffect_VSBasicPixelLightingTx,     sizeof(InstancedBasicEffect_VSBasicPixelLightingTx) },
+  { InstancedBasicEffect_VSBasicPixelLightingTxVc,   sizeof(InstancedBasicEffect_VSBasicPixelLightingTxVc) },
 };
 
 const int InstancedEffectBase<BasicEffectTraits>::VertexShaderIndices[] =
@@ -282,18 +282,18 @@ const int InstancedEffectBase<BasicEffectTraits>::GeometryShaderIndices[] =
 
 const ShaderBytecode InstancedEffectBase<BasicEffectTraits>::PixelShaderBytecode[] =
 {
-  { InstancedBasicEffect_PSBasic,                      sizeof( InstancedBasicEffect_PSBasic ) },
-  { InstancedBasicEffect_PSBasicNoFog,                 sizeof( InstancedBasicEffect_PSBasicNoFog ) },
-  { InstancedBasicEffect_PSBasicTx,                    sizeof( InstancedBasicEffect_PSBasicTx ) },
-  { InstancedBasicEffect_PSBasicTxNoFog,               sizeof( InstancedBasicEffect_PSBasicTxNoFog ) },
+  { InstancedBasicEffect_PSBasic,                      sizeof(InstancedBasicEffect_PSBasic) },
+  { InstancedBasicEffect_PSBasicNoFog,                 sizeof(InstancedBasicEffect_PSBasicNoFog) },
+  { InstancedBasicEffect_PSBasicTx,                    sizeof(InstancedBasicEffect_PSBasicTx) },
+  { InstancedBasicEffect_PSBasicTxNoFog,               sizeof(InstancedBasicEffect_PSBasicTxNoFog) },
 
-  { InstancedBasicEffect_PSBasicVertexLighting,        sizeof( InstancedBasicEffect_PSBasicVertexLighting ) },
-  { InstancedBasicEffect_PSBasicVertexLightingNoFog,   sizeof( InstancedBasicEffect_PSBasicVertexLightingNoFog ) },
-  { InstancedBasicEffect_PSBasicVertexLightingTx,      sizeof( InstancedBasicEffect_PSBasicVertexLightingTx ) },
-  { InstancedBasicEffect_PSBasicVertexLightingTxNoFog, sizeof( InstancedBasicEffect_PSBasicVertexLightingTxNoFog ) },
+  { InstancedBasicEffect_PSBasicVertexLighting,        sizeof(InstancedBasicEffect_PSBasicVertexLighting) },
+  { InstancedBasicEffect_PSBasicVertexLightingNoFog,   sizeof(InstancedBasicEffect_PSBasicVertexLightingNoFog) },
+  { InstancedBasicEffect_PSBasicVertexLightingTx,      sizeof(InstancedBasicEffect_PSBasicVertexLightingTx) },
+  { InstancedBasicEffect_PSBasicVertexLightingTxNoFog, sizeof(InstancedBasicEffect_PSBasicVertexLightingTxNoFog) },
 
-  { InstancedBasicEffect_PSBasicPixelLighting,         sizeof( InstancedBasicEffect_PSBasicPixelLighting ) },
-  { InstancedBasicEffect_PSBasicPixelLightingTx,       sizeof( InstancedBasicEffect_PSBasicPixelLightingTx ) },
+  { InstancedBasicEffect_PSBasicPixelLighting,         sizeof(InstancedBasicEffect_PSBasicPixelLighting) },
+  { InstancedBasicEffect_PSBasicPixelLightingTx,       sizeof(InstancedBasicEffect_PSBasicPixelLightingTx) },
 };
 
 
@@ -345,7 +345,7 @@ namespace DirectX
   class InstancedBasicEffect::Impl : public InstancedEffectBase<BasicEffectTraits>
   {
   public:
-    Impl( _In_ ID3D11Device* device );
+    Impl(_In_ ID3D11Device* device);
 
     bool lightingEnabled;
     bool preferPerPixelLighting;
@@ -356,18 +356,18 @@ namespace DirectX
 
     int GetCurrentShaderPermutation() const;
 
-    void Apply( _In_ ID3D11DeviceContext* deviceContext );
+    void Apply(_In_ ID3D11DeviceContext* deviceContext);
   };
 
   // Constructor.
-  InstancedBasicEffect::Impl::Impl( _In_ ID3D11Device* device )
-    : InstancedEffectBase( device ),
-      lightingEnabled( false ),
-      preferPerPixelLighting( false ),
-      vertexColorEnabled( false ),
-      textureEnabled( false )
+  InstancedBasicEffect::Impl::Impl(_In_ ID3D11Device* device)
+    : InstancedEffectBase(device),
+      lightingEnabled(false),
+      preferPerPixelLighting(false),
+      vertexColorEnabled(false),
+      textureEnabled(false)
   {
-    lights.InitializeConstants( constants.specularColorAndPower, constants.lightDirection, constants.lightDiffuseColor, constants.lightSpecularColor );
+    lights.InitializeConstants(constants.specularColorAndPower, constants.lightDirection, constants.lightDiffuseColor, constants.lightSpecularColor);
   }
 
   int InstancedBasicEffect::Impl::GetCurrentShaderPermutation() const
@@ -375,31 +375,31 @@ namespace DirectX
     int permutation = 0;
 
     // Use optimized shaders if fog is disabled.
-    if ( !fog.enabled )
+    if (!fog.enabled)
     {
       permutation += 1;
     }
 
     // Support vertex coloring?
-    if ( vertexColorEnabled )
+    if (vertexColorEnabled)
     {
       permutation += 2;
     }
 
     // Support texturing?
-    if ( textureEnabled )
+    if (textureEnabled)
     {
       permutation += 4;
     }
 
-    if ( lightingEnabled )
+    if (lightingEnabled)
     {
-      if ( preferPerPixelLighting )
+      if (preferPerPixelLighting)
       {
         // Do lighting in the pixel shader.
         permutation += 24;
       }
-      else if ( !lights.lightEnabled[1] && !lights.lightEnabled[2] )
+      else if (!lights.lightEnabled[1] && !lights.lightEnabled[2])
       {
         // Use the only-bother-with-the-first-light shader optimization.
         permutation += 16;
@@ -416,51 +416,51 @@ namespace DirectX
 
 
   // Sets our state onto the D3D device.
-  void InstancedBasicEffect::Impl::Apply( _In_ ID3D11DeviceContext* deviceContext )
+  void InstancedBasicEffect::Impl::Apply(_In_ ID3D11DeviceContext* deviceContext)
   {
-    matrices.SetConstants( dirtyFlags, constants.worldViewProj[0], constants.worldViewProj[1] );
-    fog.SetConstants( dirtyFlags, matrices.worldView[0], matrices.worldView[1], constants.fogVector[0], constants.fogVector[1] );
-    lights.SetConstants( dirtyFlags,
-                         matrices,
-                         constants.world,
-                         constants.worldInverseTranspose,
-                         constants.eyePosition[0],
-                         constants.eyePosition[1],
-                         constants.diffuseColor,
-                         constants.emissiveColor,
-                         lightingEnabled );
+    matrices.SetConstants(dirtyFlags, constants.worldViewProj[0], constants.worldViewProj[1]);
+    fog.SetConstants(dirtyFlags, matrices.worldView[0], matrices.worldView[1], constants.fogVector[0], constants.fogVector[1]);
+    lights.SetConstants(dirtyFlags,
+                        matrices,
+                        constants.world,
+                        constants.worldInverseTranspose,
+                        constants.eyePosition[0],
+                        constants.eyePosition[1],
+                        constants.diffuseColor,
+                        constants.emissiveColor,
+                        lightingEnabled);
 
     // Set the texture.
-    if ( textureEnabled )
+    if (textureEnabled)
     {
       ID3D11ShaderResourceView* textures[1] = { texture.Get() };
 
-      deviceContext->PSSetShaderResources( 0, 1, textures );
+      deviceContext->PSSetShaderResources(0, 1, textures);
     }
 
     // Set shaders and constant buffers.
-    ApplyShaders( deviceContext, GetCurrentShaderPermutation() );
+    ApplyShaders(deviceContext, GetCurrentShaderPermutation());
   }
 
 
   // Public constructor.
-  InstancedBasicEffect::InstancedBasicEffect( _In_ ID3D11Device* device )
-    : pImpl( new Impl( device ) )
+  InstancedBasicEffect::InstancedBasicEffect(_In_ ID3D11Device* device)
+    : pImpl(new Impl(device))
   {
   }
 
 
   // Move constructor.
-  InstancedBasicEffect::InstancedBasicEffect( InstancedBasicEffect&& moveFrom )
-    : pImpl( std::move( moveFrom.pImpl ) )
+  InstancedBasicEffect::InstancedBasicEffect(InstancedBasicEffect&& moveFrom)
+    : pImpl(std::move(moveFrom.pImpl))
   {
   }
 
 
   // Move assignment.
-  InstancedBasicEffect& InstancedBasicEffect::operator= ( InstancedBasicEffect&& moveFrom )
+  InstancedBasicEffect& InstancedBasicEffect::operator= (InstancedBasicEffect&& moveFrom)
   {
-    pImpl = std::move( moveFrom.pImpl );
+    pImpl = std::move(moveFrom.pImpl);
     return *this;
   }
 
@@ -472,20 +472,20 @@ namespace DirectX
 
 
   // IEffect methods.
-  void InstancedBasicEffect::Apply( _In_ ID3D11DeviceContext* deviceContext )
+  void InstancedBasicEffect::Apply(_In_ ID3D11DeviceContext* deviceContext)
   {
-    pImpl->Apply( deviceContext );
+    pImpl->Apply(deviceContext);
   }
 
 
-  void InstancedBasicEffect::GetVertexShaderBytecode( _Out_ void const** pShaderByteCode, _Out_ size_t* pByteCodeLength )
+  void InstancedBasicEffect::GetVertexShaderBytecode(_Out_ void const** pShaderByteCode, _Out_ size_t* pByteCodeLength)
   {
-    pImpl->GetVertexShaderBytecode( pImpl->GetCurrentShaderPermutation(), pShaderByteCode, pByteCodeLength );
+    pImpl->GetVertexShaderBytecode(pImpl->GetCurrentShaderPermutation(), pShaderByteCode, pByteCodeLength);
   }
 
 
   // Camera settings.
-  void XM_CALLCONV InstancedBasicEffect::SetWorld( FXMMATRIX value )
+  void XM_CALLCONV InstancedBasicEffect::SetWorld(FXMMATRIX value)
   {
     pImpl->matrices.world = value;
 
@@ -493,21 +493,21 @@ namespace DirectX
   }
 
 
-  void XM_CALLCONV InstancedBasicEffect::SetView( FXMMATRIX view[2] )
+  void XM_CALLCONV InstancedBasicEffect::SetView(FXMMATRIX view[2])
   {
     pImpl->matrices.view[0] = view[0];
     pImpl->matrices.view[1] = view[1];
   }
 
 
-  void XM_CALLCONV InstancedBasicEffect::SetProjection( FXMMATRIX projection[2] )
+  void XM_CALLCONV InstancedBasicEffect::SetProjection(FXMMATRIX projection[2])
   {
     pImpl->matrices.projection[0] = projection[0];
     pImpl->matrices.projection[1] = projection[1];
   }
 
 
-  void XM_CALLCONV InstancedBasicEffect::SetMatrices( FXMMATRIX world, FXMMATRIX view[2], FXMMATRIX projection[2] )
+  void XM_CALLCONV InstancedBasicEffect::SetMatrices(FXMMATRIX world, FXMMATRIX view[2], FXMMATRIX projection[2])
   {
     pImpl->matrices.world = world;
 
@@ -520,8 +520,9 @@ namespace DirectX
     pImpl->dirtyFlags |= EffectDirtyFlags::WorldViewProj | EffectDirtyFlags::WorldInverseTranspose | EffectDirtyFlags::EyePosition | EffectDirtyFlags::FogVector;
   }
 
+
   // Material settings.
-  void XM_CALLCONV InstancedBasicEffect::SetDiffuseColor( FXMVECTOR value )
+  void XM_CALLCONV InstancedBasicEffect::SetDiffuseColor(FXMVECTOR value)
   {
     pImpl->lights.diffuseColor = value;
 
@@ -529,7 +530,13 @@ namespace DirectX
   }
 
 
-  void XM_CALLCONV InstancedBasicEffect::SetEmissiveColor( FXMVECTOR value )
+  FXMVECTOR XM_CALLCONV InstancedBasicEffect::GetDiffuseColor() const
+  {
+    return pImpl->lights.diffuseColor;
+  }
+
+
+  void XM_CALLCONV InstancedBasicEffect::SetEmissiveColor(FXMVECTOR value)
   {
     pImpl->lights.emissiveColor = value;
 
@@ -537,19 +544,25 @@ namespace DirectX
   }
 
 
-  void XM_CALLCONV InstancedBasicEffect::SetSpecularColor( FXMVECTOR value )
+  FXMVECTOR XM_CALLCONV InstancedBasicEffect::GetEmissiveColor() const
+  {
+    return pImpl->lights.emissiveColor;
+  }
+
+
+  void XM_CALLCONV InstancedBasicEffect::SetSpecularColor(FXMVECTOR value)
   {
     // Set xyz to new value, but preserve existing w (specular power).
-    pImpl->constants.specularColorAndPower = XMVectorSelect( pImpl->constants.specularColorAndPower, value, g_XMSelect1110 );
+    pImpl->constants.specularColorAndPower = XMVectorSelect(pImpl->constants.specularColorAndPower, value, g_XMSelect1110);
 
     pImpl->dirtyFlags |= EffectDirtyFlags::ConstantBuffer;
   }
 
 
-  void InstancedBasicEffect::SetSpecularPower( float value )
+  void InstancedBasicEffect::SetSpecularPower(float value)
   {
     // Set w to new value, but preserve existing xyz (specular color).
-    pImpl->constants.specularColorAndPower = XMVectorSetW( pImpl->constants.specularColorAndPower, value );
+    pImpl->constants.specularColorAndPower = XMVectorSetW(pImpl->constants.specularColorAndPower, value);
 
     pImpl->dirtyFlags |= EffectDirtyFlags::ConstantBuffer;
   }
@@ -566,7 +579,7 @@ namespace DirectX
   }
 
 
-  void InstancedBasicEffect::SetAlpha( float value )
+  void InstancedBasicEffect::SetAlpha(float value)
   {
     pImpl->lights.alpha = value;
 
@@ -574,17 +587,23 @@ namespace DirectX
   }
 
 
-  void XM_CALLCONV InstancedBasicEffect::SetColorAndAlpha( FXMVECTOR value )
+  float InstancedBasicEffect::GetAlpha() const
+  {
+    return pImpl->lights.alpha;
+  }
+
+
+  void XM_CALLCONV InstancedBasicEffect::SetColorAndAlpha(FXMVECTOR value)
   {
     pImpl->lights.diffuseColor = value;
-    pImpl->lights.alpha = XMVectorGetW( value );
+    pImpl->lights.alpha = XMVectorGetW(value);
 
     pImpl->dirtyFlags |= EffectDirtyFlags::MaterialColor;
   }
 
 
   // Light settings.
-  void InstancedBasicEffect::SetLightingEnabled( bool value )
+  void InstancedBasicEffect::SetLightingEnabled(bool value)
   {
     pImpl->lightingEnabled = value;
 
@@ -592,13 +611,13 @@ namespace DirectX
   }
 
 
-  void InstancedBasicEffect::SetPerPixelLighting( bool value )
+  void InstancedBasicEffect::SetPerPixelLighting(bool value)
   {
     pImpl->preferPerPixelLighting = value;
   }
 
 
-  void XM_CALLCONV InstancedBasicEffect::SetAmbientLightColor( FXMVECTOR value )
+  void XM_CALLCONV InstancedBasicEffect::SetAmbientLightColor(FXMVECTOR value)
   {
     pImpl->lights.ambientLightColor = value;
 
@@ -606,15 +625,15 @@ namespace DirectX
   }
 
 
-  void InstancedBasicEffect::SetLightEnabled( int whichLight, bool value )
+  void InstancedBasicEffect::SetLightEnabled(int whichLight, bool value)
   {
-    pImpl->dirtyFlags |= pImpl->lights.SetLightEnabled( whichLight, value, pImpl->constants.lightDiffuseColor, pImpl->constants.lightSpecularColor );
+    pImpl->dirtyFlags |= pImpl->lights.SetLightEnabled(whichLight, value, pImpl->constants.lightDiffuseColor, pImpl->constants.lightSpecularColor);
   }
 
 
-  void XM_CALLCONV InstancedBasicEffect::SetLightDirection( int whichLight, FXMVECTOR value )
+  void XM_CALLCONV InstancedBasicEffect::SetLightDirection(int whichLight, FXMVECTOR value)
   {
-    EffectLights::ValidateLightIndex( whichLight );
+    EffectLights::ValidateLightIndex(whichLight);
 
     pImpl->constants.lightDirection[whichLight] = value;
 
@@ -622,25 +641,25 @@ namespace DirectX
   }
 
 
-  void XM_CALLCONV InstancedBasicEffect::SetLightDiffuseColor( int whichLight, FXMVECTOR value )
+  void XM_CALLCONV InstancedBasicEffect::SetLightDiffuseColor(int whichLight, FXMVECTOR value)
   {
-    pImpl->dirtyFlags |= pImpl->lights.SetLightDiffuseColor( whichLight, value, pImpl->constants.lightDiffuseColor );
+    pImpl->dirtyFlags |= pImpl->lights.SetLightDiffuseColor(whichLight, value, pImpl->constants.lightDiffuseColor);
   }
 
 
-  void XM_CALLCONV InstancedBasicEffect::SetLightSpecularColor( int whichLight, FXMVECTOR value )
+  void XM_CALLCONV InstancedBasicEffect::SetLightSpecularColor(int whichLight, FXMVECTOR value)
   {
-    pImpl->dirtyFlags |= pImpl->lights.SetLightSpecularColor( whichLight, value, pImpl->constants.lightSpecularColor );
+    pImpl->dirtyFlags |= pImpl->lights.SetLightSpecularColor(whichLight, value, pImpl->constants.lightSpecularColor);
   }
 
 
   void InstancedBasicEffect::EnableDefaultLighting()
   {
-    EffectLights::EnableDefaultLighting( this );
+    EffectLights::EnableDefaultLighting(this);
   }
 
   // Fog settings.
-  void InstancedBasicEffect::SetFogEnabled( bool value )
+  void InstancedBasicEffect::SetFogEnabled(bool value)
   {
     pImpl->fog.enabled = value;
 
@@ -648,7 +667,7 @@ namespace DirectX
   }
 
 
-  void InstancedBasicEffect::SetFogStart( float value )
+  void InstancedBasicEffect::SetFogStart(float value)
   {
     pImpl->fog.start = value;
 
@@ -656,7 +675,7 @@ namespace DirectX
   }
 
 
-  void InstancedBasicEffect::SetFogEnd( float value )
+  void InstancedBasicEffect::SetFogEnd(float value)
   {
     pImpl->fog.end = value;
 
@@ -664,7 +683,7 @@ namespace DirectX
   }
 
 
-  void XM_CALLCONV InstancedBasicEffect::SetFogColor( FXMVECTOR value )
+  void XM_CALLCONV InstancedBasicEffect::SetFogColor(FXMVECTOR value)
   {
     pImpl->constants.fogColor = value;
 
@@ -673,20 +692,20 @@ namespace DirectX
 
 
   // Vertex color setting.
-  void InstancedBasicEffect::SetVertexColorEnabled( bool value )
+  void InstancedBasicEffect::SetVertexColorEnabled(bool value)
   {
     pImpl->vertexColorEnabled = value;
   }
 
 
   // Texture settings.
-  void InstancedBasicEffect::SetTextureEnabled( bool value )
+  void InstancedBasicEffect::SetTextureEnabled(bool value)
   {
     pImpl->textureEnabled = value;
   }
 
 
-  void InstancedBasicEffect::SetTexture( _In_opt_ ID3D11ShaderResourceView* value )
+  void InstancedBasicEffect::SetTexture(_In_opt_ ID3D11ShaderResourceView* value)
   {
     pImpl->texture = value;
   }

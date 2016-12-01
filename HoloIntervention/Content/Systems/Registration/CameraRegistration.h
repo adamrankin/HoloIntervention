@@ -89,6 +89,7 @@ namespace HoloIntervention
       void Update(Platform::IBox<Windows::Foundation::Numerics::float4x4>^ anchorToRequestedBox);
       Concurrency::task<bool> StopCameraAsync();
       Concurrency::task<bool> StartCameraAsync();
+      bool IsCameraActive() const;
       void SetVisualization(bool enabled);
 
       Windows::Perception::Spatial::SpatialAnchor^ GetWorldAnchor();

@@ -161,6 +161,12 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    bool RegistrationSystem::IsCameraActive() const
+    {
+      return m_cameraRegistration->IsCameraActive();
+    }
+
+    //----------------------------------------------------------------------------
     void RegistrationSystem::RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap)
     {
       callbackMap[L"drop anchor"] = [this](SpeechRecognitionResult ^ result)

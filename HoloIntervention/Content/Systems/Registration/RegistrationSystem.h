@@ -55,7 +55,7 @@ namespace HoloIntervention
       void Update(DX::StepTimer& timer, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem, Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
 
       Concurrency::task<void> LoadAppStateAsync();
-
+      bool IsCameraActive() const;
       virtual void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbacks);
 
       Windows::Foundation::Numerics::float4x4 GetTrackerToCoordinateSystemTransformation(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem);

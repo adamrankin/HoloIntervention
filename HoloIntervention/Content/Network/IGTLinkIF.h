@@ -61,6 +61,7 @@ namespace HoloIntervention
 
       void Disconnect();
       bool IsConnected();
+      ConnectionState GetConnectionState() const;
 
       void SetHostname(const std::wstring& hostname);
       std::wstring GetHostname() const;

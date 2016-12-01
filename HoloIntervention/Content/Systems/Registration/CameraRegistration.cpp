@@ -260,6 +260,12 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    bool CameraRegistration::IsCameraActive() const
+    {
+      return m_videoFrameProcessor != nullptr && m_videoFrameProcessor->IsStarted();
+    }
+
+    //----------------------------------------------------------------------------
     void CameraRegistration::SetVisualization(bool enabled)
     {
       if (!enabled)
