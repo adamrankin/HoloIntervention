@@ -169,6 +169,12 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
+  HoloIntervention::System::IconSystem& AppView::GetIconSystem()
+  {
+    return m_main->GetIconSystem();
+  }
+
+  //----------------------------------------------------------------------------
   System::RegistrationSystem& AppView::GetRegistrationSystem()
   {
     return m_main->GetRegistrationSystem();

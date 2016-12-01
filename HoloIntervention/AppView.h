@@ -53,6 +53,7 @@ namespace HoloIntervention
   namespace System
   {
     class GazeSystem;
+    class IconSystem;
     class ImagingSystem;
     class NotificationSystem;
     class RegistrationSystem;
@@ -75,12 +76,13 @@ namespace HoloIntervention
 
   internal:
     // Provide app wide access to the logic systems
-    System::NotificationSystem & GetNotificationSystem();
-    System::SpatialSystem & GetSpatialSystem();
     System::GazeSystem & GetGazeSystem();
-    System::RegistrationSystem & GetRegistrationSystem();
-    System::ToolSystem & GetToolSystem();
+    System::IconSystem & GetIconSystem();
     System::ImagingSystem & GetImagingSystem();
+    System::NotificationSystem & GetNotificationSystem();
+    System::RegistrationSystem & GetRegistrationSystem();
+    System::SpatialSystem & GetSpatialSystem();
+    System::ToolSystem & GetToolSystem();
 
     // Provide app wide access to the sound manager
     Sound::SoundManager & GetSoundManager();

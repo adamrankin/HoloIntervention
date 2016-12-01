@@ -33,6 +33,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // System includes
 #include "GazeSystem.h"
+#include "IconSystem.h"
 #include "ImagingSystem.h"
 #include "NotificationSystem.h"
 #include "RegistrationSystem.h"
@@ -117,6 +118,7 @@ namespace HoloIntervention
     m_igtLinkIF = std::make_unique<Network::IGTLinkIF>();
 
     // Model renderer must come before the following systems
+    m_iconSystem = std::make_unique<System::IconSystem>();
     m_gazeSystem = std::make_unique<System::GazeSystem>();
     m_toolSystem = std::make_unique<System::ToolSystem>();
     m_registrationSystem = std::make_unique<System::RegistrationSystem>(m_deviceResources);
@@ -136,6 +138,7 @@ namespace HoloIntervention
     m_engineComponents.push_back(m_toolSystem.get());
     m_engineComponents.push_back(m_registrationSystem.get());
     m_engineComponents.push_back(m_imagingSystem.get());
+    m_engineComponents.push_back(m_iconSystem.get());
 
     // TODO : remove temp code
     m_igtLinkIF->SetHostname(L"192.168.0.102");
@@ -207,16 +210,16 @@ namespace HoloIntervention
 
     m_deviceResources->EnsureCameraResources(holographicFrame, prediction);
 
-    SpatialCoordinateSystem^ currentCoordinateSystem = m_attachedReferenceFrame->GetStationaryCoordinateSystemAtTimestamp(prediction->Timestamp);
+    SpatialCoordinateSystem^ renderingCoordinateSystem = m_attachedReferenceFrame->GetStationaryCoordinateSystemAtTimestamp(prediction->Timestamp);
 
     DX::ViewProjection vp;
     DX::CameraResources* cameraResources(nullptr);
-    m_deviceResources->UseHolographicCameraResources<bool>([this, holographicFrame, prediction, currentCoordinateSystem, &vp, &cameraResources](std::map<UINT32, std::unique_ptr<DX::CameraResources>>& cameraResourceMap)
+    m_deviceResources->UseHolographicCameraResources<bool>([this, holographicFrame, prediction, renderingCoordinateSystem, &vp, &cameraResources](std::map<UINT32, std::unique_ptr<DX::CameraResources>>& cameraResourceMap)
     {
       for (auto cameraPose : prediction->CameraPoses)
       {
         cameraResources = cameraResourceMap[cameraPose->HolographicCamera->Id].get();
-        auto result = cameraResources->UpdateViewProjectionBuffer(m_deviceResources, cameraPose, currentCoordinateSystem, vp);
+        auto result = cameraResources->UpdateViewProjectionBuffer(m_deviceResources, cameraPose, renderingCoordinateSystem, vp);
       }
       return true;
     });
@@ -238,7 +241,7 @@ namespace HoloIntervention
     // Time-based updates
     m_timer.Tick([&]()
     {
-      SpatialPointerPose^ pose = SpatialPointerPose::TryGetAtTimestamp(currentCoordinateSystem, prediction->Timestamp);
+      SpatialPointerPose^ headPose = SpatialPointerPose::TryGetAtTimestamp(renderingCoordinateSystem, prediction->Timestamp);
 
       if (m_igtLinkIF->IsConnected())
       {
@@ -246,28 +249,29 @@ namespace HoloIntervention
         {
           m_latestTimestamp = m_latestFrame->Timestamp;
           // TODO : extract system logic from volume renderer and move to imaging system
-          m_volumeRenderer->Update(m_latestFrame, m_timer, cameraResources, currentCoordinateSystem);
-          m_imagingSystem->Update(m_latestFrame, m_timer, currentCoordinateSystem);
-          m_toolSystem->Update(m_latestFrame, m_timer, currentCoordinateSystem);
+          m_volumeRenderer->Update(m_latestFrame, m_timer, cameraResources, renderingCoordinateSystem);
+          m_imagingSystem->Update(m_latestFrame, m_timer, renderingCoordinateSystem);
+          m_toolSystem->Update(m_latestFrame, m_timer, renderingCoordinateSystem);
         }
       }
 
-      m_spatialSystem->Update(currentCoordinateSystem);
+      m_spatialSystem->Update(renderingCoordinateSystem);
 
-      if (pose != nullptr)
+      if (headPose != nullptr)
       {
-        m_registrationSystem->Update(m_timer, currentCoordinateSystem, pose);
-        m_gazeSystem->Update(m_timer, currentCoordinateSystem, pose);
-        m_soundManager->Update(m_timer, currentCoordinateSystem);
-        m_sliceRenderer->Update(pose, m_timer);
-        m_notificationSystem->Update(pose, m_timer);
+        m_registrationSystem->Update(m_timer, renderingCoordinateSystem, headPose);
+        m_gazeSystem->Update(m_timer, renderingCoordinateSystem, headPose);
+        m_iconSystem->Update(m_timer, renderingCoordinateSystem, headPose);
+        m_soundManager->Update(m_timer, renderingCoordinateSystem);
+        m_sliceRenderer->Update(headPose, m_timer);
+        m_notificationSystem->Update(headPose, m_timer);
       }
 
-      m_meshRenderer->Update(vp, m_timer, currentCoordinateSystem);
+      m_meshRenderer->Update(vp, m_timer, renderingCoordinateSystem);
       m_modelRenderer->Update(m_timer, vp);
     });
 
-    SetHolographicFocusPoint(prediction, holographicFrame, currentCoordinateSystem);
+    SetHolographicFocusPoint(prediction, holographicFrame, renderingCoordinateSystem);
 
     return holographicFrame;
   }
@@ -371,6 +375,12 @@ namespace HoloIntervention
   System::ToolSystem& HoloInterventionCore::GetToolSystem()
   {
     return *m_toolSystem.get();
+  }
+
+  //----------------------------------------------------------------------------
+  System::IconSystem& HoloInterventionCore::GetIconSystem()
+  {
+    return *m_iconSystem.get();
   }
 
   //----------------------------------------------------------------------------

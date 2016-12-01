@@ -72,17 +72,20 @@ namespace HoloIntervention
       // Model pose control
       void SetWorld(const Windows::Foundation::Numerics::float4x4& world);
 
-      // Accessors
       uint64 GetId() const;
       void SetId(uint64 id);
+      const std::array<float, 6>& GetBounds() const;
 
       // Alternate rendering options
       void RenderGreyscale();
       void RenderDefault();
 
+      bool IsLoaded() const;
+
     protected:
       void DrawMesh(_In_ const DirectX::ModelMesh& mesh, _In_ bool alpha, _In_opt_ std::function<void __cdecl(std::shared_ptr<DirectX::IEffect>)> setCustomState = nullptr);
       void DrawMeshPart(_In_ const DirectX::ModelMeshPart& part, _In_opt_ std::function<void __cdecl(std::shared_ptr<DirectX::IEffect>)> setCustomState = nullptr);
+      void CalculateBounds();
 
       // Update all effects used by the model
       void __cdecl UpdateEffects(_In_ std::function<void __cdecl(DirectX::IEffect*)> setEffect);
@@ -95,12 +98,12 @@ namespace HoloIntervention
       std::unique_ptr<DirectX::CommonStates>              m_states = nullptr;
       std::unique_ptr<DirectX::InstancedEffectFactory>    m_effectFactory = nullptr;
       std::shared_ptr<DirectX::Model>                     m_model = nullptr;
-      std::wstring                                        m_assetLocation;
-      Windows::Foundation::Numerics::float3               m_defaultColour;
 
-      // Cached eye view projection to pass to IEffect system
       DX::ViewProjection                                  m_viewProjection;
       Windows::Foundation::Numerics::float4x4             m_worldMatrix = Windows::Foundation::Numerics::float4x4::identity();
+      std::array<float, 6>                                m_modelBounds = { -1.f };
+      std::wstring                                        m_assetLocation;
+      Windows::Foundation::Numerics::float3               m_defaultColour;
 
       // Model related behavior
       std::atomic_bool                                    m_visible = false;

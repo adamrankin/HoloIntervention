@@ -45,7 +45,7 @@ namespace HoloIntervention
       IconSystem();
       ~IconSystem();
 
-      void Update(DX::StepTimer& timer, Windows::Perception::Spatial::SpatialCoordinateSystem^ renderingCoordinateSystem);
+      void Update(DX::StepTimer& timer, Windows::Perception::Spatial::SpatialCoordinateSystem^ renderingCoordinateSystem, Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
 
       std::shared_ptr<IconEntry> AddEntry(const std::wstring& modelName);
       bool RemoveEntry(uint64 entryId);
@@ -58,6 +58,9 @@ namespace HoloIntervention
       // Icons that this subsystem manages
       std::shared_ptr<IconEntry>  m_networkIcon = nullptr;
       std::shared_ptr<IconEntry>  m_cameraIcon = nullptr;
+
+      static const float          ANGLE_BETWEEN_ICONS_DEG;
+      static const float          ICON_SIZE_METER;
     };
   }
 }

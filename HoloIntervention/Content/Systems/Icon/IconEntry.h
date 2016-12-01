@@ -42,12 +42,16 @@ namespace HoloIntervention
       void SetId(uint64 id);
       uint64 GetId() const;
 
+      void SetScaleFactor(float scaleFactor);
+      float GetScaleFactor() const;
+
       std::shared_ptr<Rendering::ModelEntry> GetModelEntry() const;
       void SetModelEntry(std::shared_ptr<Rendering::ModelEntry> entry);
 
     protected:
       uint64                                          m_id;
       std::shared_ptr<Rendering::ModelEntry>          m_modelEntry;
+      float                                           m_scaleFactor = 1.f;
     };
   }
 }

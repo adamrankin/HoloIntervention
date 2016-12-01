@@ -55,6 +55,18 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    void IconEntry::SetScaleFactor(float scaleFactor)
+    {
+      m_scaleFactor = scaleFactor;
+    }
+
+    //----------------------------------------------------------------------------
+    float IconEntry::GetScaleFactor() const
+    {
+      return m_scaleFactor;
+    }
+
+    //----------------------------------------------------------------------------
     std::shared_ptr<HoloIntervention::Rendering::ModelEntry> IconEntry::GetModelEntry() const
     {
       return m_modelEntry;

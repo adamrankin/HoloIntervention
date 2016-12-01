@@ -27,15 +27,27 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "IconEntry.h"
 #include "IconSystem.h"
 
+// System includes
+#include "NotificationSystem.h"
+
 // Rendering includes
 #include "ModelRenderer.h"
 
+// Unnecessary, but removes intellisense errors
+#include <WindowsNumerics.h>
+
+using namespace Concurrency;
+using namespace Windows::Foundation::Numerics;
 using namespace Windows::Perception::Spatial;
+using namespace Windows::UI::Input::Spatial;
 
 namespace HoloIntervention
 {
   namespace System
   {
+    const float IconSystem::ANGLE_BETWEEN_ICONS_DEG = 5.75f;
+    const float IconSystem::ICON_SIZE_METER = 0.15f;
+
     //----------------------------------------------------------------------------
     IconSystem::IconSystem()
     {
@@ -43,9 +55,41 @@ namespace HoloIntervention
       m_networkIcon = AddEntry(L"Assets/Models/network_icon.cmo");
 
       // Create camera icon
-      m_networkIcon = AddEntry(L"Assets/Models/camera_icon.cmo");
+      m_cameraIcon = AddEntry(L"Assets/Models/camera_icon.cmo");
 
-      m_componentReady = true;
+      create_task([this]()
+      {
+        uint32 msCount(0);
+        while (!m_networkIcon->GetModelEntry()->IsLoaded() && !m_cameraIcon->GetModelEntry()->IsLoaded() && msCount < 5000)
+        {
+          std::this_thread::sleep_for(std::chrono::milliseconds(100));
+          msCount += 100;
+        }
+
+        if (msCount >= 5000)
+        {
+          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Icon models failed to load after 5s.");
+          return false;
+        }
+
+        // Determine scale factors for both models
+        {
+          auto& bounds = m_networkIcon->GetModelEntry()->GetBounds();
+          m_networkIcon->SetScaleFactor(ICON_SIZE_METER / (bounds[1] - bounds[0]));
+        }
+
+        {
+          auto& bounds = m_cameraIcon->GetModelEntry()->GetBounds();
+          m_cameraIcon->SetScaleFactor(ICON_SIZE_METER / (bounds[1] - bounds[0]));
+        }
+
+        return true;
+      }).then([this](bool loaded)
+      {
+        m_iconEntries.push_back(m_networkIcon);
+        m_iconEntries.push_back(m_cameraIcon);
+        m_componentReady = loaded;
+      });
     }
 
     //----------------------------------------------------------------------------
@@ -54,9 +98,26 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void IconSystem::Update(DX::StepTimer& timer, SpatialCoordinateSystem^ renderingCoordinateSystem)
+    void IconSystem::Update(DX::StepTimer& timer, SpatialCoordinateSystem^ renderingCoordinateSystem, SpatialPointerPose^ headPose)
     {
+      if (!m_componentReady)
+      {
+        return;
+      }
 
+      // Calculate forward vector 2m ahead
+      float3 basePosition = headPose->Head->Position + (2.f * headPose->Head->ForwardDirection);
+      float4x4 rotatedToWorldPose = make_float4x4_world(basePosition, -headPose->Head->ForwardDirection, float3(0.f, 1.f, 0.f));
+
+      int32 i = 0;
+      const float PI = 3.14159265359f;
+      float angle = -0.25f * PI;
+      for (auto& entry : m_iconEntries)
+      {
+        float4x4 worldToScaledWorldPose = make_float4x4_scale(entry->GetScaleFactor());
+        entry->GetModelEntry()->SetWorld(make_float4x4_rotation_y(angle) * rotatedToWorldPose * worldToScaledWorldPose);
+        angle += (ANGLE_BETWEEN_ICONS_DEG / 180.f * PI);
+      }
     }
 
     //----------------------------------------------------------------------------
@@ -89,7 +150,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     std::shared_ptr<HoloIntervention::System::IconEntry> IconSystem::GetEntry(uint64 entryId)
     {
-      for (auto entry : m_iconEntries)
+      for (auto& entry : m_iconEntries)
       {
         if (entry->GetId() == entryId)
         {

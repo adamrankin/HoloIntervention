@@ -94,7 +94,15 @@ namespace HoloIntervention
           {
             if (file != nullptr)
             {
-              CreateDeviceDependentResources();
+              try
+              {
+                CreateDeviceDependentResources();
+              }
+              catch (const std::exception& e)
+              {
+                OutputDebugStringA("Unable to load model.");
+                OutputDebugStringA(e.what());
+              }
             }
           });
         });
@@ -156,16 +164,9 @@ namespace HoloIntervention
     {
       m_states = std::make_unique<DirectX::CommonStates>(m_deviceResources->GetD3DDevice());
       m_effectFactory = std::make_unique<DirectX::InstancedEffectFactory>(m_deviceResources->GetD3DDevice());
-      m_effectFactory->SetSharing(false);   // Disable re-use of effect shaders, as
-      try
-      {
-        m_model = std::shared_ptr<DirectX::Model>(std::move(DirectX::Model::CreateFromCMO(m_deviceResources->GetD3DDevice(), m_assetLocation.c_str(), *m_effectFactory)));
-      }
-      catch (const std::exception& e)
-      {
-        OutputDebugStringA(e.what());
-        return;
-      }
+      m_effectFactory->SetSharing(false);   // Disable re-use of effect shaders, as this prevents us from rendering different colours
+      m_model = std::shared_ptr<DirectX::Model>(std::move(DirectX::Model::CreateFromCMO(m_deviceResources->GetD3DDevice(), m_assetLocation.c_str(), *m_effectFactory)));
+      CalculateBounds();
 
       m_loadingComplete = true;
     }
@@ -174,6 +175,8 @@ namespace HoloIntervention
     void ModelEntry::ReleaseDeviceDependentResources()
     {
       m_loadingComplete = false;
+
+      m_modelBounds = { -1.f };
       m_model = nullptr;
       m_effectFactory = nullptr;
       m_states = nullptr;
@@ -216,6 +219,12 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    const std::array<float, 6>& ModelEntry::GetBounds() const
+    {
+      return m_modelBounds;
+    }
+
+    //----------------------------------------------------------------------------
     void ModelEntry::RenderGreyscale()
     {
       m_renderingState = RENDERING_GREYSCALE;
@@ -225,6 +234,12 @@ namespace HoloIntervention
     void ModelEntry::RenderDefault()
     {
       m_renderingState = RENDERING_DEFAULT;
+    }
+
+    //----------------------------------------------------------------------------
+    bool ModelEntry::IsLoaded() const
+    {
+      return m_loadingComplete;
     }
 
     //----------------------------------------------------------------------------
@@ -277,7 +292,6 @@ namespace HoloIntervention
       }
 
       m_deviceResources->GetD3DDeviceContext()->IASetPrimitiveTopology(part.primitiveType);
-
       m_deviceResources->GetD3DDeviceContext()->DrawIndexedInstanced(part.indexCount, 2, part.startIndex, part.vertexOffset, 0);
     }
 
@@ -285,6 +299,37 @@ namespace HoloIntervention
     void ModelEntry::UpdateEffects(_In_ std::function<void __cdecl(DirectX::IEffect*)> setEffect)
     {
       m_model->UpdateEffects(setEffect);
+    }
+
+    //----------------------------------------------------------------------------
+    void ModelEntry::CalculateBounds()
+    {
+      if (m_model->meshes.size() == 0)
+      {
+        return;
+      }
+
+      m_modelBounds[0] = m_model->meshes[0]->boundingBox.Center.x - m_model->meshes[0]->boundingBox.Extents.x;
+      m_modelBounds[1] = m_model->meshes[0]->boundingBox.Center.x + m_model->meshes[0]->boundingBox.Extents.x;
+
+      m_modelBounds[2] = m_model->meshes[0]->boundingBox.Center.y - m_model->meshes[0]->boundingBox.Extents.y;
+      m_modelBounds[3] = m_model->meshes[0]->boundingBox.Center.y + m_model->meshes[0]->boundingBox.Extents.y;
+
+      m_modelBounds[4] = m_model->meshes[0]->boundingBox.Center.z - m_model->meshes[0]->boundingBox.Extents.z;
+      m_modelBounds[5] = m_model->meshes[0]->boundingBox.Center.z + m_model->meshes[0]->boundingBox.Extents.z;
+
+      for (auto& mesh : m_model->meshes)
+      {
+        auto bbox = mesh->boundingBox;
+        m_modelBounds[0] = min(m_modelBounds[0], mesh->boundingBox.Center.x - mesh->boundingBox.Extents.x);
+        m_modelBounds[1] = max(m_modelBounds[1], mesh->boundingBox.Center.x + mesh->boundingBox.Extents.x);
+
+        m_modelBounds[2] = min(m_modelBounds[2], mesh->boundingBox.Center.y - mesh->boundingBox.Extents.y);
+        m_modelBounds[3] = max(m_modelBounds[3], mesh->boundingBox.Center.y + mesh->boundingBox.Extents.y);
+
+        m_modelBounds[4] = min(m_modelBounds[4], mesh->boundingBox.Center.z - mesh->boundingBox.Extents.z);
+        m_modelBounds[5] = max(m_modelBounds[5], mesh->boundingBox.Center.z + mesh->boundingBox.Extents.z);
+      }
     }
   }
 }

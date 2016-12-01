@@ -40,11 +40,12 @@ namespace HoloIntervention
   namespace System
   {
     class GazeSystem;
+    class IconSystem;
+    class ImagingSystem;
     class NotificationSystem;
     class RegistrationSystem;
     class SpatialSystem;
     class ToolSystem;
-    class ImagingSystem;
   }
 
   namespace Input
@@ -98,6 +99,7 @@ namespace HoloIntervention
 
     // Provide access to the logic systems
     System::GazeSystem& GetGazeSystem();
+    System::IconSystem& GetIconSystem();
     System::ImagingSystem& GetImagingSystem();
     System::NotificationSystem& GetNotificationsSystem();
     System::RegistrationSystem& GetRegistrationSystem();
@@ -185,12 +187,13 @@ namespace HoloIntervention
     Windows::Perception::Spatial::SpatialLocatability     m_locatability;
 
     // System pointers
-    std::unique_ptr<System::SpatialSystem>                m_spatialSystem;
     std::unique_ptr<System::GazeSystem>                   m_gazeSystem;
-    std::unique_ptr<System::ToolSystem>                   m_toolSystem;
+    std::unique_ptr<System::IconSystem>                   m_iconSystem;
+    std::unique_ptr<System::ImagingSystem>                m_imagingSystem;
     std::unique_ptr<System::NotificationSystem>           m_notificationSystem;
     std::unique_ptr<System::RegistrationSystem>           m_registrationSystem;
-    std::unique_ptr<System::ImagingSystem>                m_imagingSystem;
+    std::unique_ptr<System::SpatialSystem>                m_spatialSystem;
+    std::unique_ptr<System::ToolSystem>                   m_toolSystem;
 
     // Sound assets
     std::unique_ptr<Sound::SoundManager>                  m_soundManager;
