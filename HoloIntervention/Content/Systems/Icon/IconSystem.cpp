@@ -116,17 +116,17 @@ namespace HoloIntervention
 
       // Calculate forward vector 2m ahead
       float3 basePosition = headPose->Head->Position + (float3(2.f) * headPose->Head->ForwardDirection);
-      float4x4 worldToRotatedTransform = make_float4x4_world(basePosition, headPose->Head->ForwardDirection, float3(0.f, 1.f, 0.f));
+      float4x4 worldToRotatedTransform = make_float4x4_world(basePosition, headPose->Head->ForwardDirection, headPose->Head->UpDirection);
 
       int32 i = 0;
       const float PI = 3.14159265359f;
       const float UP_ANGLE = 7.f / 180.f * PI;
-      float angle = 11.f / 180.f * PI;
+      float angle = 13.f / 180.f * PI;
       for (auto& entry : m_iconEntries)
       {
         float4x4 scaleToWorldTransform = make_float4x4_scale(entry->GetScaleFactor());
         entry->GetModelEntry()->SetWorld(scaleToWorldTransform * worldToRotatedTransform * make_float4x4_rotation_y(angle) * make_float4x4_rotation_x(UP_ANGLE));
-        angle += (ANGLE_BETWEEN_ICONS_DEG / 180.f * PI);
+        angle -= (ANGLE_BETWEEN_ICONS_DEG / 180.f * PI);
       }
     }
 

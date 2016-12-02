@@ -225,12 +225,17 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ModelEntry::EnableLighting(bool enable)
     {
+      if (m_model == nullptr)
+      {
+        return;
+      }
+
       m_model->UpdateEffects([this, enable](IEffect * effect)
       {
         InstancedBasicEffect* basicEffect = dynamic_cast<InstancedBasicEffect*>(effect);
         if (basicEffect != nullptr)
         {
-          basicEffect->SetLightingEnabled(enable);
+          //basicEffect->SetLightingEnabled(enable);
         }
       });
     }

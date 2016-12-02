@@ -66,14 +66,6 @@ namespace HoloIntervention
     void VoiceInput::EnableVoiceAnalysis(bool enable)
     {
       m_speechBeingDetected = enable;
-      if (m_componentReady && m_speechBeingDetected)
-      {
-        m_speechRecognizer->ContinuousRecognitionSession->Resume();
-      }
-      if (m_componentReady && !m_speechBeingDetected)
-      {
-        m_speechRecognizer->ContinuousRecognitionSession->PauseAsync();
-      }
     }
 
     //----------------------------------------------------------------------------
@@ -102,15 +94,15 @@ namespace HoloIntervention
           m_speechDetectedEventToken = m_speechRecognizer->ContinuousRecognitionSession->ResultGenerated +=
                                          ref new TypedEventHandler<SpeechContinuousRecognitionSession^, SpeechContinuousRecognitionResultGeneratedEventArgs^>(
                                            std::bind(&VoiceInput::OnResultGenerated, this, std::placeholders::_1, std::placeholders::_2));
-          create_task(m_speechRecognizer->ContinuousRecognitionSession->StartAsync()).then([this]()
+          return create_task(m_speechRecognizer->ContinuousRecognitionSession->StartAsync()).then([this]()
           {
-            m_speechRecognizer->ContinuousRecognitionSession->PauseAsync();
+            m_componentReady = true;
           });
-          m_componentReady = true;
         }
         else
         {
           HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Unable to compile speech patterns.");
+          return create_task([]() {});
         }
       }).then([this, callbacks]()
       {
