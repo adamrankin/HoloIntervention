@@ -152,7 +152,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     Windows::Foundation::Numerics::float4x4 CameraRegistration::GetTrackerToWorldAnchorTransformation() const
     {
-      return m_trackerToWorldAnchor;
+      return m_trackerToAnchor;
     }
 
     //----------------------------------------------------------------------------
@@ -323,9 +323,20 @@ namespace HoloIntervention
       {
         try
         {
-          auto worldAnchorToNewAnchorBox = m_worldAnchor->CoordinateSystem->TryGetTransformTo(worldAnchor->CoordinateSystem);
-          // If possible, update the registration to be referential to the new world anchor
-          m_trackerToWorldAnchor = m_trackerToWorldAnchor * worldAnchorToNewAnchorBox->Value;
+          Platform::IBox<float4x4>^ worldAnchorToNewAnchorBox(nullptr);
+          try
+          {
+            worldAnchorToNewAnchorBox = m_worldAnchor->CoordinateSystem->TryGetTransformTo(worldAnchor->CoordinateSystem);
+          }
+          catch (Platform::Exception^ e)
+          {
+            OutputDebugStringW(e->Message->Data());
+          }
+          if (worldAnchorToNewAnchorBox != nullptr)
+          {
+            // If possible, update the registration to be referential to the new world anchor
+            m_trackerToAnchor = m_trackerToAnchor * worldAnchorToNewAnchorBox->Value;
+          }
         }
         catch (Platform::Exception^ e) {}
       }
@@ -457,6 +468,9 @@ namespace HoloIntervention
     void CameraRegistration::PerformLandmarkRegistration()
     {
       HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Calculating registration...");
+
+      assert(m_sphereInAnchorResults.size() == m_sphereInTrackerResults.size());
+
       VecFloat3 sphereInTrackerResults;
       VecFloat3 sphereInAnchorResults;
       for (auto& frame : m_sphereInTrackerResults)
@@ -488,14 +502,21 @@ namespace HoloIntervention
         {
           m_hasRegistration = true;
           resultValid = true;
-          m_trackerToWorldAnchor = trackerToAnchorTransformation;
+          m_trackerToAnchor = trackerToAnchorTransformation;
         }
         calcFinished = true;
       });
 
-      while (!calcFinished)
+      uint32 msCount(0);
+      while (!calcFinished && msCount <= 5000)
       {
+        msCount += 100;
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      }
+
+      if (!calcFinished)
+      {
+        assert(false);
       }
 
       if (!resultValid)
@@ -775,7 +796,7 @@ done:
     {
       if (m_hasRegistration)
       {
-        m_trackerToWorldAnchor = m_trackerToWorldAnchor * args->OldRawCoordinateSystemToNewRawCoordinateSystemTransform;
+        m_trackerToAnchor = m_trackerToAnchor * args->OldRawCoordinateSystemToNewRawCoordinateSystemTransform;
       }
 
       if (m_workerTask != nullptr)

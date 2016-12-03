@@ -217,16 +217,16 @@ namespace HoloIntervention
 
     m_deviceResources->EnsureCameraResources(holographicFrame, prediction);
 
-    SpatialCoordinateSystem^ renderingCoordinateSystem = m_attachedReferenceFrame->GetStationaryCoordinateSystemAtTimestamp(prediction->Timestamp);
+    SpatialCoordinateSystem^ hmdCoordinateSystem = m_attachedReferenceFrame->GetStationaryCoordinateSystemAtTimestamp(prediction->Timestamp);
 
     DX::ViewProjection vp;
     DX::CameraResources* cameraResources(nullptr);
-    m_deviceResources->UseHolographicCameraResources<bool>([this, holographicFrame, prediction, renderingCoordinateSystem, &vp, &cameraResources](std::map<UINT32, std::unique_ptr<DX::CameraResources>>& cameraResourceMap)
+    m_deviceResources->UseHolographicCameraResources<bool>([this, holographicFrame, prediction, hmdCoordinateSystem, &vp, &cameraResources](std::map<UINT32, std::unique_ptr<DX::CameraResources>>& cameraResourceMap)
     {
       for (auto cameraPose : prediction->CameraPoses)
       {
         cameraResources = cameraResourceMap[cameraPose->HolographicCamera->Id].get();
-        auto result = cameraResources->UpdateViewProjectionBuffer(m_deviceResources, cameraPose, renderingCoordinateSystem, vp);
+        auto result = cameraResources->UpdateViewProjectionBuffer(m_deviceResources, cameraPose, hmdCoordinateSystem, vp);
       }
       return true;
     });
@@ -248,7 +248,7 @@ namespace HoloIntervention
     // Time-based updates
     m_timer.Tick([&]()
     {
-      SpatialPointerPose^ headPose = SpatialPointerPose::TryGetAtTimestamp(renderingCoordinateSystem, prediction->Timestamp);
+      SpatialPointerPose^ headPose = SpatialPointerPose::TryGetAtTimestamp(hmdCoordinateSystem, prediction->Timestamp);
 
       if (m_igtLinkIF->IsConnected())
       {
@@ -256,29 +256,29 @@ namespace HoloIntervention
         {
           m_latestTimestamp = m_latestFrame->Timestamp;
           // TODO : extract system logic from volume renderer and move to imaging system
-          m_volumeRenderer->Update(m_latestFrame, m_timer, cameraResources, renderingCoordinateSystem);
-          m_imagingSystem->Update(m_latestFrame, m_timer, renderingCoordinateSystem);
-          m_toolSystem->Update(m_latestFrame, m_timer, renderingCoordinateSystem);
+          m_volumeRenderer->Update(m_latestFrame, m_timer, cameraResources, hmdCoordinateSystem);
+          m_imagingSystem->Update(m_latestFrame, m_timer, hmdCoordinateSystem);
+          m_toolSystem->Update(m_latestFrame, m_timer, hmdCoordinateSystem);
         }
       }
 
-      m_spatialSystem->Update(renderingCoordinateSystem);
+      m_spatialSystem->Update(hmdCoordinateSystem);
 
       if (headPose != nullptr)
       {
-        m_registrationSystem->Update(m_timer, renderingCoordinateSystem, headPose);
-        m_gazeSystem->Update(m_timer, renderingCoordinateSystem, headPose);
+        m_registrationSystem->Update(m_timer, hmdCoordinateSystem, headPose);
+        m_gazeSystem->Update(m_timer, hmdCoordinateSystem, headPose);
         m_iconSystem->Update(m_timer, headPose);
-        m_soundManager->Update(m_timer, renderingCoordinateSystem);
+        m_soundManager->Update(m_timer, hmdCoordinateSystem);
         m_sliceRenderer->Update(headPose, m_timer);
         m_notificationSystem->Update(headPose, m_timer);
       }
 
-      m_meshRenderer->Update(vp, m_timer, renderingCoordinateSystem);
+      m_meshRenderer->Update(vp, m_timer, hmdCoordinateSystem);
       m_modelRenderer->Update(m_timer, vp);
     });
 
-    SetHolographicFocusPoint(prediction, holographicFrame, renderingCoordinateSystem);
+    SetHolographicFocusPoint(prediction, holographicFrame, hmdCoordinateSystem);
 
     return holographicFrame;
   }

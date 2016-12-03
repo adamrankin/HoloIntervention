@@ -156,7 +156,7 @@ namespace HoloIntervention
       Concurrency::cancellation_token_source                                m_tokenSource;
       std::atomic_bool                                                      m_hasRegistration = false;
 
-      Windows::Foundation::Numerics::float4x4                               m_trackerToWorldAnchor = Windows::Foundation::Numerics::float4x4::identity(); // row-major order
+      Windows::Foundation::Numerics::float4x4                               m_trackerToAnchor = Windows::Foundation::Numerics::float4x4::identity(); // column-major order
       std::shared_ptr<LandmarkRegistration>                                 m_landmarkRegistration = std::make_shared<LandmarkRegistration>();
 
       static const uint32                                                   PHANTOM_SPHERE_COUNT = 4;

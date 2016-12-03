@@ -115,7 +115,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void VolumeRenderer::Update(UWPOpenIGTLink::TrackedFrame^ frame, const DX::StepTimer& timer, DX::CameraResources* cameraResources, SpatialCoordinateSystem^ coordSystem)
+    void VolumeRenderer::Update(UWPOpenIGTLink::TrackedFrame^ frame, const DX::StepTimer& timer, DX::CameraResources* cameraResources, SpatialCoordinateSystem^ hmdCoordinateSystem)
     {
       if (frame == m_frame || !m_componentReady || !m_tfResourcesReady)
       {
@@ -164,7 +164,7 @@ namespace HoloIntervention
 
       // Retrieve the current registration from reference to HMD
       m_transformRepository->SetTransforms(m_frame);
-      float4x4 trackerToHMD = HoloIntervention::instance()->GetRegistrationSystem().GetTrackerToCoordinateSystemTransformation(coordSystem);
+      float4x4 trackerToHMD = HoloIntervention::instance()->GetRegistrationSystem().GetTrackerToCoordinateSystemTransformation(hmdCoordinateSystem);
       m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD"), &trackerToHMD, true);
       bool isValid;
       float4x4 transform = m_transformRepository->GetTransform(m_imageToHMDName, &isValid);

@@ -250,12 +250,12 @@ namespace HoloIntervention
       auto trackerToWorldAnchor = m_cameraRegistration->GetTrackerToWorldAnchorTransformation();
       try
       {
-        Platform::IBox<float4x4>^ worldAnchorToRequested = worldAnchor->CoordinateSystem->TryGetTransformTo(requestedCoordinateSystem);
-        if (worldAnchorToRequested == nullptr)
+        Platform::IBox<float4x4>^ anchorToRequestedBox = worldAnchor->CoordinateSystem->TryGetTransformTo(requestedCoordinateSystem);
+        if (anchorToRequestedBox == nullptr)
         {
           return float4x4::identity();
         }
-        return trackerToWorldAnchor * worldAnchorToRequested->Value;
+        return trackerToWorldAnchor * anchorToRequestedBox->Value;
       }
       catch (Platform::Exception^ e)
       {
