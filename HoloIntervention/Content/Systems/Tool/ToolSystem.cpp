@@ -114,7 +114,7 @@ namespace HoloIntervention
     {
       // Update the transform repository with the latest registration
       float4x4 trackerToRendering = HoloIntervention::instance()->GetRegistrationSystem().GetTrackerToCoordinateSystemTransformation(hmdCoordinateSystem);
-      m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD"), &trackerToRendering, true);
+      m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD"), trackerToRendering, true);
 
       m_transformRepository->SetTransforms(frame);
 

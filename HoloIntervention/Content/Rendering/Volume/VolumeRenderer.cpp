@@ -165,13 +165,15 @@ namespace HoloIntervention
       // Retrieve the current registration from reference to HMD
       m_transformRepository->SetTransforms(m_frame);
       float4x4 trackerToHMD = HoloIntervention::instance()->GetRegistrationSystem().GetTrackerToCoordinateSystemTransformation(hmdCoordinateSystem);
-      m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD"), &trackerToHMD, true);
+      m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD"), transpose(trackerToHMD), true);
       bool isValid;
-      float4x4 transform = m_transformRepository->GetTransform(m_imageToHMDName, &isValid);
+      float4x4 transform = transpose(m_transformRepository->GetTransform(m_imageToHMDName, &isValid));
       if (!isValid)
       {
         return;
       }
+
+      transform.m43 -= 1.5f; // move it 1.5 meters away from the camera
 
       XMStoreFloat4x4(&m_constantBuffer.worldMatrix, XMLoadFloat4x4(&transform));
       context->UpdateSubresource(m_volumeConstantBuffer.Get(), 0, nullptr, &m_constantBuffer, 0, 0);
@@ -198,7 +200,7 @@ namespace HoloIntervention
           mappedData += mappedResource.RowPitch;
           imageData += m_frameSize[0] * bytesPerPixel;
         }
-        mappedData += mappedResource.DepthPitch;
+        //mappedData += mappedResource.DepthPitch;
         // TODO : does imageData need to be advanced? I don't think so...
       }
       context->Unmap(m_volumeStagingTexture.Get(), 0);
@@ -251,8 +253,10 @@ namespace HoloIntervention
       //volumes are not always perfect cubes. so we need to scale our cube
       //by the sizes of the volume. Also, scalar data is not always sampled
       //at equidistant steps. So we also need to scale the cube model by mRatios.
-      float3 sizes = float3(m_frameSize[0], m_frameSize[1], m_frameSize[2]);
-      m_constantBuffer.scaleFactor = float3(1.f, 1.f, 1.f) / ((float3(1.f, 1.f, 1.f) * maxSize) / (sizes * m_ratios));
+      float widthScaleFactor = 1.f / maxSize / m_frameSize[0] * m_ratios.x;
+      float heightScaleFactor = 1.f / maxSize / m_frameSize[1] * m_ratios.y;
+      float depthScaleFactor = 1.f / maxSize / m_frameSize[2] * m_ratios.z;
+      m_constantBuffer.scaleFactor = float3(widthScaleFactor, heightScaleFactor, depthScaleFactor);
 
       float borderColour[4] = { 0.f, 0.f, 0.f, 0.f };
       CD3D11_SAMPLER_DESC desc(D3D11_FILTER_MIN_MAG_MIP_LINEAR, D3D11_TEXTURE_ADDRESS_BORDER, D3D11_TEXTURE_ADDRESS_BORDER, D3D11_TEXTURE_ADDRESS_BORDER, 0.f, 3, D3D11_COMPARISON_NEVER, borderColour, 0, 3);

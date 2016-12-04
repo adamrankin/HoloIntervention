@@ -128,7 +128,7 @@ namespace HoloIntervention
 
       // Anchor resources
       std::mutex                                                            m_anchorMutex;
-      Windows::Perception::Spatial::SpatialAnchor^                           m_worldAnchor = nullptr;
+      Windows::Perception::Spatial::SpatialAnchor^                          m_worldAnchor = nullptr;
 
       // Visualization resources
       std::atomic_bool                                                      m_visualizationEnabled = false;
@@ -138,17 +138,17 @@ namespace HoloIntervention
       // Camera
       Windows::Foundation::EventRegistrationToken                           m_anchorUpdatedToken;
       std::mutex                                                            m_framesLock;
-      Windows::Media::Capture::Frames::MediaFrameReference^                  m_currentFrame = nullptr;
-      Windows::Media::Capture::Frames::MediaFrameReference^                  m_nextFrame = nullptr;
+      Windows::Media::Capture::Frames::MediaFrameReference^                 m_currentFrame = nullptr;
+      Windows::Media::Capture::Frames::MediaFrameReference^                 m_nextFrame = nullptr;
       DetectionFrames                                                       m_sphereInAnchorResults;
 
       // IGT link
-      UWPOpenIGTLink::TransformRepository^                                   m_transformRepository = ref new UWPOpenIGTLink::TransformRepository();
+      UWPOpenIGTLink::TransformRepository^                                  m_transformRepository = ref new UWPOpenIGTLink::TransformRepository();
       std::atomic_bool                                                      m_transformsAvailable = false;
       double                                                                m_latestTimestamp = 0.0;
       DetectionFrames                                                       m_sphereInTrackerResults;
       std::array<Windows::Foundation::Numerics::float4x4, 4>                m_sphereToPhantomPoses;
-      std::atomic_bool                                                      m_hasSpherePoses = false;
+      std::atomic_bool                                                      m_hasTrackerSpherePoses = false;
       std::array<UWPOpenIGTLink::TransformName^, 4>                         m_sphereCoordinateNames;
 
       // State variables

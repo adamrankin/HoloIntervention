@@ -137,6 +137,7 @@ namespace HoloIntervention
         for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
         {
           auto entry = HoloIntervention::instance()->GetModelRenderer().GetPrimitive(m_spherePrimitiveIds[i]);
+          entry->SetVisible(m_hasRegistration);
           float4x4 anchorToRequested = anchorToRequestedBox->Value;
           entry->SetDesiredWorldPose(m_sphereToAnchorPoses[i] * anchorToRequested);
         }
@@ -759,7 +760,7 @@ done:
       outSphereInReferenceResults.push_back(float3(translation.x, translation.y, translation.z));
 
       // Phantom is rigid body, so only need to pull the values once
-      if (!m_hasSpherePoses)
+      if (!m_hasTrackerSpherePoses)
       {
         bool hasError(false);
         if (!ExtractPhantomToFiducialPose(m_sphereToPhantomPoses[0], m_transformRepository, L"RedSphere1", L"Phantom"))
@@ -784,7 +785,7 @@ done:
 
         if (!hasError)
         {
-          m_hasSpherePoses = true;
+          m_hasTrackerSpherePoses = true;
         }
       }
 
