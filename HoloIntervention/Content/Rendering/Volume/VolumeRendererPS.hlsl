@@ -24,18 +24,16 @@ OTHER DEALINGS IN THE SOFTWARE.
 cbuffer VolumeConstantBuffer : register(b0)
 {
   float4x4		c_worldPose;
-	float				c_maximumXValue;
+	float				c_maximumXValue; // used for transfer function logic
 	float3			c_stepSize;
   uint        c_numIterations;
-  float3      c_scaleFactor;
 };
 
 struct PixelShaderInput
 {
-  min16float4 Position : SV_POSITION;
-  min16float3 texC : TEXCOORD0;
-  min16float4 pos : TEXCOORD1;
-  uint				rtvId : SV_RenderTargetArrayIndex;
+  min16float4 Position              : SV_POSITION;
+  min16float3 ModelSpacePosition    : TEXCOORD0; // not used
+  uint				rtvId                 : SV_RenderTargetArrayIndex;
 };
 
 // Must match ITransferFunction::TRANSFER_FUNCTION_TABLE_SIZE
@@ -50,14 +48,8 @@ SamplerState Sampler : s0;
 
 float4 main(PixelShaderInput input) : SV_TARGET
 {
-  // Calculate projective texture coordinates
-	// used to project the front and back position textures onto the cube
-  float2 texC = input.pos.xy /= input.pos.w;
-  texC.x = 0.5f * texC.x + 0.5f;
-  texC.y = -0.5f * texC.y + 0.5f;
-	
-  float3 front = frontPositionTextures.Sample(Sampler, float3(texC, input.rtvId)).xyz;
-  float3 back = backPositionTextures.Sample(Sampler, float3(texC, input.rtvId)).xyz;
+  float3 front = frontPositionTextures.Sample(Sampler, float3(input.Position.xy - float2(0.5f, 0.5f), input.rtvId)).xyz;
+  float3 back = backPositionTextures.Sample(Sampler, float3(input.Position.xy - float2(0.5f, 0.5f), input.rtvId)).xyz;
     
   float3 dir = normalize(back - front);
   float3 pos = front;

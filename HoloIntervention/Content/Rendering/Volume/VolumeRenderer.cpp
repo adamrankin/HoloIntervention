@@ -173,7 +173,10 @@ namespace HoloIntervention
         return;
       }
 
+      // Temporary debug code
       transform.m43 -= 1.5f; // move it 1.5 meters away from the camera
+
+      // TODO : scale to correct dimensions
 
       XMStoreFloat4x4(&m_constantBuffer.worldMatrix, XMLoadFloat4x4(&transform));
       context->UpdateSubresource(m_volumeConstantBuffer.Get(), 0, nullptr, &m_constantBuffer, 0, 0);
@@ -248,15 +251,6 @@ namespace HoloIntervention
 
       m_constantBuffer.stepSize = stepSize * m_stepScale;
       m_constantBuffer.numIterations = (uint32)(maxSize * (1.0f / m_stepScale) * 2.0f);
-
-      //calculate the scale factor
-      //volumes are not always perfect cubes. so we need to scale our cube
-      //by the sizes of the volume. Also, scalar data is not always sampled
-      //at equidistant steps. So we also need to scale the cube model by mRatios.
-      float widthScaleFactor = 1.f / maxSize / m_frameSize[0] * m_ratios.x;
-      float heightScaleFactor = 1.f / maxSize / m_frameSize[1] * m_ratios.y;
-      float depthScaleFactor = 1.f / maxSize / m_frameSize[2] * m_ratios.z;
-      m_constantBuffer.scaleFactor = float3(widthScaleFactor, heightScaleFactor, depthScaleFactor);
 
       float borderColour[4] = { 0.f, 0.f, 0.f, 0.f };
       CD3D11_SAMPLER_DESC desc(D3D11_FILTER_MIN_MAG_MIP_LINEAR, D3D11_TEXTURE_ADDRESS_BORDER, D3D11_TEXTURE_ADDRESS_BORDER, D3D11_TEXTURE_ADDRESS_BORDER, 0.f, 3, D3D11_COMPARISON_NEVER, borderColour, 0, 3);

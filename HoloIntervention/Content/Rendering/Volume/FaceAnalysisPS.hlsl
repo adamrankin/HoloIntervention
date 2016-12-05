@@ -23,13 +23,12 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 struct PixelShaderInput
 {
-  min16float4 Position : SV_POSITION;
-  min16float3 texC : TEXCOORD0;
-  min16float4 pos : TEXCOORD1;
-  uint rtvId : SV_RenderTargetArrayIndex;
+  min16float4 Position              : SV_POSITION;
+  min16float3 ModelSpacePosition    : TEXCOORD0;
+  uint        rtvId                 : SV_RenderTargetArrayIndex;
 };
 
 float4 main(PixelShaderInput input) : SV_TARGET
 {
-  return float4(input.texC, 1.0f);
+  return float4(input.ModelSpacePosition, 1.0f);
 }

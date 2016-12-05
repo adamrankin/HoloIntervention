@@ -23,46 +23,42 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 cbuffer VolumeConstantBuffer : register(b0)
 {
-  float4x4 c_worldPose;
-  float c_maximumXValue;
-  float3 c_stepSize;
-  uint c_numIterations;
-  float3 c_scaleFactor;
+  float4x4  c_worldPose;
+  float     c_maximumXValue;
+  float3    c_stepSize;
+  uint      c_numIterations;
 };
 
 cbuffer ViewProjectionConstantBuffer : register(b1)
 {
-  float4 cameraPosition;
-  float4 lightPosition;
-  float4x4 viewProjection[2];
+  float4    cameraPosition;
+  float4    lightPosition;
+  float4x4  viewProjection[2];
 };
 
 struct VertexShaderInput
 {
-  min16float3 Position : POSITION0;
-  uint instId : SV_InstanceID;
+  min16float3 Position  : POSITION0;
+  uint        instId    : SV_InstanceID;
 };
 
 struct VertexShaderOutput
 {
-  min16float4 Position : SV_POSITION;
-  min16float3 texC : TEXCOORD0; // Sent to FaceAnalysisPS
-  min16float4 pos : TEXCOORD1;  // Send to VolumeRendererPS
-  uint viewId : TEXCOORD5;      // SV_InstanceID % 2
+  min16float4 Position              : SV_POSITION;
+  min16float3 ModelSpacePosition    : TEXCOORD0; // used in FaceAnalysisPS
+  uint        viewId                : TEXCOORD5; // SV_InstanceID % 2
 };
 
 VertexShaderOutput main(VertexShaderInput input)
 {
   VertexShaderOutput output;
-  float4 pos = float4(input.Position * c_scaleFactor, 1.0f);
 
   int idx = input.instId % 2;
 
-  pos = mul(pos, c_worldPose);
+  float4 pos = mul(float4(input.Position, 1.f), c_worldPose);
   pos = mul(pos, viewProjection[idx]);
   output.Position = min16float4(pos);
-  output.texC = input.Position;
-  output.pos = output.Position;
+  output.ModelSpacePosition = input.Position;
   output.viewId = idx;
 
   return output;
