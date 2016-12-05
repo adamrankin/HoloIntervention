@@ -291,7 +291,7 @@ namespace HoloIntervention
                                       std::move(DirectX::InstancedGeometricPrimitive::CreateSphere(m_deviceResources->GetD3DDeviceContext(), VISUALIZATION_SPHERE_RADIUS, 30))
                                     );
           auto entry = HoloIntervention::instance()->GetModelRenderer().GetPrimitive(m_spherePrimitiveIds[i]);
-          entry->SetVisible(true);
+          entry->SetVisible(false);
           entry->SetColour(float3(0.803921640f, 0.360784322f, 0.360784322f));
           entry->SetDesiredWorldPose(float4x4::identity());
         }

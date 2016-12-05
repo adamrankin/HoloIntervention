@@ -55,8 +55,7 @@ VertexShaderOutput main(VertexShaderInput input)
 
   int idx = input.instId % 2;
   
-  float4 inputPos = float4(input.Position, 1.f);
-  float4 pos = mul(inputPos, c_worldPose);
+  float4 pos = mul(c_worldPose, float4(input.Position, 1.f));
   pos = mul(pos, viewProjection[idx]);
   output.Position = min16float4(pos);
   output.ModelSpacePosition = input.Position;

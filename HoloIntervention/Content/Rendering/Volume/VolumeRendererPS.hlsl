@@ -56,6 +56,7 @@ float4 main(PixelShaderInput input) : SV_TARGET
   float4 src;
 	float3 step = dir * c_stepSize;
     
+    /*
   [loop]
   for (uint i = 0; i < c_numIterations; i++)
   {
@@ -83,6 +84,7 @@ float4 main(PixelShaderInput input) : SV_TARGET
       break;
     }
   }
+*/
 
   return dst;
 }

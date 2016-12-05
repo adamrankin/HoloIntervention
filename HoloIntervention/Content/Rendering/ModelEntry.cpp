@@ -142,6 +142,8 @@ namespace HoloIntervention
 
       const auto context = m_deviceResources->GetD3DDeviceContext();
 
+      // TODO : add in frustrum culling
+
       // Draw opaque parts
       for (auto it = m_model->meshes.cbegin(); it != m_model->meshes.cend(); ++it)
       {
