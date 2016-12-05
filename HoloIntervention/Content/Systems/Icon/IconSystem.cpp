@@ -89,8 +89,10 @@ namespace HoloIntervention
         return true;
       }).then([this](bool loaded)
       {
-        m_networkIcon->GetModelEntry()->EnableLighting(false);
-        m_cameraIcon->GetModelEntry()->EnableLighting(false);
+        m_networkIcon->GetModelEntry()->EnablePoseLerp(true);
+        m_networkIcon->GetModelEntry()->SetPoseLerpRate(8.f);
+        m_cameraIcon->GetModelEntry()->EnablePoseLerp(true);
+        m_cameraIcon->GetModelEntry()->SetPoseLerpRate(8.f);
 
         m_iconEntries.push_back(m_networkIcon);
         m_iconEntries.push_back(m_cameraIcon);
@@ -120,8 +122,8 @@ namespace HoloIntervention
 
       int32 i = 0;
       const float PI = 3.14159265359f;
-      const float UP_ANGLE = 7.f / 180.f * PI;
-      float angle = 13.f / 180.f * PI;
+      const float UP_ANGLE = 6.f / 180.f * PI;
+      float angle = 12.f / 180.f * PI;
       for (auto& entry : m_iconEntries)
       {
         float4x4 scaleToWorldTransform = make_float4x4_scale(entry->GetScaleFactor());

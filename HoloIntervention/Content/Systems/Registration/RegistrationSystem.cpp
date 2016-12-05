@@ -60,7 +60,6 @@ namespace HoloIntervention
   {
     Platform::String^ RegistrationSystem::REGISTRATION_ANCHOR_NAME = ref new Platform::String(L"Registration");
     const std::wstring RegistrationSystem::REGISTRATION_ANCHOR_MODEL_FILENAME = L"Assets/Models/anchor.cmo";
-    const float RegistrationSystem::REGISTRATION_ANCHOR_MODEL_LERP_RATE = 4.f;
 
     //----------------------------------------------------------------------------
     RegistrationSystem::RegistrationSystem(const std::shared_ptr<DX::DeviceResources>& deviceResources)
@@ -80,6 +79,8 @@ namespace HoloIntervention
         return;
       }
       m_regAnchorModel->SetVisible(false);
+      m_regAnchorModel->EnablePoseLerp(true);
+      m_regAnchorModel->SetPoseLerpRate(4.f);
 
       auto repo = ref new UWPOpenIGTLink::TransformRepository();
       auto trName = ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD");
@@ -134,13 +135,7 @@ namespace HoloIntervention
         transformContainer = m_regAnchor->CoordinateSystem->TryGetTransformTo(coordinateSystem);
         if (transformContainer != nullptr)
         {
-          m_anchorToDesiredWorld = transformContainer->Value;
-
-          const float& deltaTime = static_cast<float>(timer.GetElapsedSeconds());
-
-          float4x4 smoothedPose = lerp(m_anchorToCurrentWorld, m_anchorToDesiredWorld, deltaTime * REGISTRATION_ANCHOR_MODEL_LERP_RATE);
-          m_anchorToCurrentWorld = smoothedPose;
-          m_regAnchorModel->SetWorld(m_anchorToCurrentWorld);
+          m_regAnchorModel->SetWorld(transformContainer->Value);
         }
       }
 

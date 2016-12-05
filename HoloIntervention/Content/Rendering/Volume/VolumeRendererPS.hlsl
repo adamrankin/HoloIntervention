@@ -39,17 +39,16 @@ struct PixelShaderInput
 // Must match ITransferFunction::TRANSFER_FUNCTION_TABLE_SIZE
 #define TRANSFER_FUNCTION_TABLE_SIZE 1024
 
-ByteAddressBuffer lookupTable : register(t0);
-Texture3D volumeTexture : register(t1);
-Texture2DArray frontPositionTextures : register(t2);
-Texture2DArray backPositionTextures : register(t3);
-
-SamplerState Sampler : s0;
+ByteAddressBuffer r_lookupTable             : register(t0);
+Texture3D         r_volumeTexture           : register(t1);
+Texture2DArray    r_frontPositionTextures   : register(t2);
+Texture2DArray    r_backPositionTextures    : register(t3);
+SamplerState      r_sampler                 : s0;
 
 float4 main(PixelShaderInput input) : SV_TARGET
 {
-  float3 front = frontPositionTextures.Sample(Sampler, float3(input.Position.xy - float2(0.5f, 0.5f), input.rtvId)).xyz;
-  float3 back = backPositionTextures.Sample(Sampler, float3(input.Position.xy - float2(0.5f, 0.5f), input.rtvId)).xyz;
+  float3 front = r_frontPositionTextures.Sample(r_sampler, float3(input.Position.xy - float2(0.5f, 0.5f), input.rtvId)).xyz;
+  float3 back = r_backPositionTextures.Sample(r_sampler, float3(input.Position.xy - float2(0.5f, 0.5f), input.rtvId)).xyz;
     
   float3 dir = normalize(back - front);
   float3 pos = front;
@@ -60,7 +59,7 @@ float4 main(PixelShaderInput input) : SV_TARGET
   [loop]
   for (uint i = 0; i < c_numIterations; i++)
   {
-    src = volumeTexture.SampleLevel(Sampler, pos, 0.f);
+    src = r_volumeTexture.SampleLevel(r_sampler, pos, 0.f);
     src.a *= .1f; // Reduce the alpha to have a more transparent result
 									//  this needs to be adjusted based on the step size
 									//  i.e. the more steps we take, the faster the alpha will grow	
@@ -80,7 +79,9 @@ float4 main(PixelShaderInput input) : SV_TARGET
 		
 		// Break if the position is greater than <1, 1, 1>
     if(pos.x > 1.0f || pos.y > 1.0f || pos.z > 1.0f)
+    {
       break;
+    }
   }
 
   return dst;

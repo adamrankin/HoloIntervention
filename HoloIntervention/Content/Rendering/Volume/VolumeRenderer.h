@@ -67,7 +67,7 @@ namespace HoloIntervention
       VolumeRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources);
       ~VolumeRenderer();
 
-      void Update(UWPOpenIGTLink::TrackedFrame^ frame, const DX::StepTimer& timer, DX::CameraResources* cameraResources, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);
+      void Update(UWPOpenIGTLink::TrackedFrame^ frame, const DX::StepTimer& timer, DX::CameraResources* cameraResources, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem, Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
       void Render();
 
       Concurrency::task<void> SetTransferFunctionTypeAsync(TransferFunctionType type, const std::vector<Windows::Foundation::Numerics::float2>& controlPoints);
@@ -114,6 +114,7 @@ namespace HoloIntervention
       Microsoft::WRL::ComPtr<ID3D11RenderTargetView>    m_backPositionRTV;
       Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>  m_frontPositionSRV;
       Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>  m_backPositionSRV;
+      Microsoft::WRL::ComPtr<ID3D11RasterizerState>     m_cullBackRasterState;
       Microsoft::WRL::ComPtr<ID3D11RasterizerState>     m_cullFrontRasterState;
 
       // Transfer function GPU resources
@@ -132,8 +133,7 @@ namespace HoloIntervention
       uint32                                            m_indexCount = 0;
       VolumeConstantBuffer                              m_constantBuffer;
       uint16                                            m_frameSize[3] = { 0, 0, 0 };
-      float                                             m_stepScale = 1.f;
-      Windows::Foundation::Numerics::float3             m_ratios = { 1.f, 1.f, 1.f };
+      float                                             m_stepScale = 1.f;  // Increasing this reduces the number of steps taken per pixel
 
       // State flags
       std::atomic_bool                                  m_volumeReady = false;

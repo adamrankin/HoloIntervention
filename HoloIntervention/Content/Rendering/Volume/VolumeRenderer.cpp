@@ -44,6 +44,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <DirectXMath.h>
 #include <DirectXTex.h>
 
+// Unnecessary, but reduces intellisense errors
+#include <WindowsNumerics.h>
+
 using namespace Concurrency;
 using namespace DirectX;
 using namespace Windows::Data::Xml::Dom;
@@ -115,7 +118,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void VolumeRenderer::Update(UWPOpenIGTLink::TrackedFrame^ frame, const DX::StepTimer& timer, DX::CameraResources* cameraResources, SpatialCoordinateSystem^ hmdCoordinateSystem)
+    void VolumeRenderer::Update(UWPOpenIGTLink::TrackedFrame^ frame, const DX::StepTimer& timer, DX::CameraResources* cameraResources, SpatialCoordinateSystem^ hmdCoordinateSystem, SpatialPointerPose^ headPose)
     {
       if (frame == m_frame || !m_componentReady || !m_tfResourcesReady)
       {
@@ -174,9 +177,10 @@ namespace HoloIntervention
       }
 
       // Temporary debug code
-      transform.m43 -= 1.5f; // move it 1.5 meters away from the camera
-
-      // TODO : scale to correct dimensions
+      const float PI = 3.14159265359f;
+      float3 pos = headPose->Head->Position + (2.f * headPose->Head->ForwardDirection);
+      // Create pixel to meter scaling factor
+      transform = make_float4x4_scale(0.5f / 11.2f) * make_float4x4_rotation_y(23.f * PI / 180.f) * make_float4x4_translation(pos);
 
       XMStoreFloat4x4(&m_constantBuffer.worldMatrix, XMLoadFloat4x4(&transform));
       context->UpdateSubresource(m_volumeConstantBuffer.Get(), 0, nullptr, &m_constantBuffer, 0, 0);
@@ -203,8 +207,6 @@ namespace HoloIntervention
           mappedData += mappedResource.RowPitch;
           imageData += m_frameSize[0] * bytesPerPixel;
         }
-        //mappedData += mappedResource.DepthPitch;
-        // TODO : does imageData need to be advanced? I don't think so...
       }
       context->Unmap(m_volumeStagingTexture.Get(), 0);
 
@@ -242,15 +244,15 @@ namespace HoloIntervention
       CD3D11_SHADER_RESOURCE_VIEW_DESC srvDesc(m_volumeTexture.Get(), (DXGI_FORMAT)m_frame->PixelFormat);
       DX::ThrowIfFailed(device->CreateShaderResourceView(m_volumeTexture.Get(), &srvDesc, m_volumeSRV.GetAddressOf()));
 
-      //compute the step size and number of iterations to use
-      //the step size for each component needs to be a ratio of the largest component
+      // Compute the step size and number of iterations to use
+      //    The step size for each component needs to be a ratio of the largest component
       float maxSize = std::max(m_frameSize[0], std::max(m_frameSize[1], m_frameSize[2]));
       float3 stepSize = float3(1.0f / (m_frameSize[0] * (maxSize / m_frameSize[0])),
                                1.0f / (m_frameSize[1] * (maxSize / m_frameSize[1])),
                                1.0f / (m_frameSize[2] * (maxSize / m_frameSize[2])));
 
       m_constantBuffer.stepSize = stepSize * m_stepScale;
-      m_constantBuffer.numIterations = (uint32)(maxSize * (1.0f / m_stepScale) * 2.0f);
+      m_constantBuffer.numIterations = (uint32)(maxSize * (1.0f / m_stepScale));
 
       float borderColour[4] = { 0.f, 0.f, 0.f, 0.f };
       CD3D11_SAMPLER_DESC desc(D3D11_FILTER_MIN_MAG_MIP_LINEAR, D3D11_TEXTURE_ADDRESS_BORDER, D3D11_TEXTURE_ADDRESS_BORDER, D3D11_TEXTURE_ADDRESS_BORDER, 0.f, 3, D3D11_COMPARISON_NEVER, borderColour, 0, 3);
@@ -293,6 +295,7 @@ namespace HoloIntervention
 
       // Render pass to render cube position textures used for quick ray calculation
       ID3D11RenderTargetView* targets[1] = { m_frontPositionRTV.Get() };
+      context->RSSetState(m_cullBackRasterState.Get());
       context->OMSetRenderTargets(1, targets, nullptr);
       context->VSSetShader(m_volRenderVertexShader.Get(), nullptr, 0);
       context->VSSetConstantBuffers(0, 1, m_volumeConstantBuffer.GetAddressOf());
@@ -310,7 +313,7 @@ namespace HoloIntervention
       context->DrawIndexedInstanced(m_indexCount, 2, 0, 0, 0);
 
       // Clean up after rendering to textures
-      context->RSSetState(nullptr);
+      context->RSSetState(m_cullBackRasterState.Get());
 
       // Now perform the actual volume render
       targets[0] = hololensRenderTargetView;
@@ -395,7 +398,13 @@ namespace HoloIntervention
       CD3D11_RASTERIZER_DESC rasterDesc;
       rasterDesc.FillMode = D3D11_FILL_SOLID;
       rasterDesc.CullMode = D3D11_CULL_FRONT;
+      rasterDesc.FrontCounterClockwise = FALSE;
+      rasterDesc.DepthBias = 0;
+      rasterDesc.DepthBiasClamp = 0.f;
+      rasterDesc.SlopeScaledDepthBias = 0.f;
       DX::ThrowIfFailed(device->CreateRasterizerState(&rasterDesc, m_cullFrontRasterState.GetAddressOf()));
+      rasterDesc.CullMode = D3D11_CULL_BACK;
+      DX::ThrowIfFailed(device->CreateRasterizerState(&rasterDesc, m_cullBackRasterState.GetAddressOf()));
 
       task<void> createVSTask = loadVSTask.then([this, device](const std::vector<byte>& fileData)
       {
@@ -461,6 +470,7 @@ namespace HoloIntervention
       ReleaseTFResources();
 
       m_cullFrontRasterState.Reset();
+      m_cullBackRasterState.Reset();
       m_faceCalcPixelShader.Reset();
       m_volRenderVertexShader.Reset();
       m_inputLayout.Reset();

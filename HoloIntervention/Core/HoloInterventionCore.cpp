@@ -256,7 +256,10 @@ namespace HoloIntervention
         {
           m_latestTimestamp = m_latestFrame->Timestamp;
           // TODO : extract system logic from volume renderer and move to imaging system
-          m_volumeRenderer->Update(m_latestFrame, m_timer, cameraResources, hmdCoordinateSystem);
+          if (headPose != nullptr)
+          {
+            m_volumeRenderer->Update(m_latestFrame, m_timer, cameraResources, hmdCoordinateSystem, headPose);
+          }
           m_imagingSystem->Update(m_latestFrame, m_timer, hmdCoordinateSystem);
           m_toolSystem->Update(m_latestFrame, m_timer, hmdCoordinateSystem);
         }

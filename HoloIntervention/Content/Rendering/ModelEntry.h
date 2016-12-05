@@ -69,6 +69,8 @@ namespace HoloIntervention
       void SetRenderingState(ModelRenderingState state);
       void SetWorld(const Windows::Foundation::Numerics::float4x4& world);
       void EnableLighting(bool enable);
+      void EnablePoseLerp(bool enable);
+      void SetPoseLerpRate(float lerpRate);
 
       uint64 GetId() const;
       void SetId(uint64 id);
@@ -102,6 +104,10 @@ namespace HoloIntervention
       std::array<float, 6>                                m_modelBounds = { -1.f };
       std::wstring                                        m_assetLocation;
       DirectX::XMFLOAT4                                   m_defaultColour;
+      std::atomic_bool                                    m_enableLerp;
+      float                                               m_poseLerpRate = 4.f;
+      Windows::Foundation::Numerics::float4x4             m_currentPose = Windows::Foundation::Numerics::float4x4::identity();
+      Windows::Foundation::Numerics::float4x4             m_desiredPose = Windows::Foundation::Numerics::float4x4::identity();
 
       // Model related behavior
       std::atomic_bool                                    m_visible = false;

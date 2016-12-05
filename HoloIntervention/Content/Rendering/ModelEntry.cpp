@@ -34,8 +34,11 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <Effects.h>
 #include <InstancedEffects.h>
 
-// std includes
+// STL includes
 #include <algorithm>
+
+// Unnecessary, but removes intellisense errors
+#include <WindowsNumerics.h>
 
 using namespace Concurrency;
 using namespace DirectX;
@@ -52,7 +55,6 @@ namespace HoloIntervention
     ModelEntry::ModelEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, const std::wstring& assetLocation)
       : m_deviceResources(deviceResources)
       , m_assetLocation(assetLocation)
-      , m_worldMatrix(1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f)
     {
       // Validate asset location
       Platform::String^ mainFolderLocation = Windows::ApplicationModel::Package::Current->InstalledLocation->Path;
@@ -120,6 +122,14 @@ namespace HoloIntervention
     void ModelEntry::Update(const DX::StepTimer& timer, const DX::ViewProjection& vp)
     {
       m_viewProjection = vp;
+
+      if (m_enableLerp)
+      {
+        const float deltaTime = static_cast<float>(timer.GetElapsedSeconds());
+
+        m_worldMatrix = lerp(m_currentPose, m_desiredPose, deltaTime * m_poseLerpRate);
+        m_currentPose = m_worldMatrix;
+      }
     }
 
     //----------------------------------------------------------------------------
@@ -219,7 +229,14 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ModelEntry::SetWorld(const float4x4& world)
     {
-      m_worldMatrix = world;
+      if (m_enableLerp)
+      {
+        m_desiredPose = world;
+      }
+      else
+      {
+        m_worldMatrix = world;
+      }
     }
 
     //----------------------------------------------------------------------------
@@ -235,9 +252,21 @@ namespace HoloIntervention
         InstancedBasicEffect* basicEffect = dynamic_cast<InstancedBasicEffect*>(effect);
         if (basicEffect != nullptr)
         {
-          //basicEffect->SetLightingEnabled(enable);
+          basicEffect->SetLightingEnabled(enable);
         }
       });
+    }
+
+    //----------------------------------------------------------------------------
+    void ModelEntry::EnablePoseLerp(bool enable)
+    {
+      m_enableLerp = enable;
+    }
+
+    //----------------------------------------------------------------------------
+    void ModelEntry::SetPoseLerpRate(float lerpRate)
+    {
+      m_poseLerpRate = lerpRate;
     }
 
     //----------------------------------------------------------------------------
