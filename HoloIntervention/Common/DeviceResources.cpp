@@ -43,38 +43,13 @@ namespace DX
     options.debugLevel = D2D1_DEBUG_LEVEL_INFORMATION;
 #endif
 
-    // Initialize the Direct2D Factory.
-    ThrowIfFailed(
-      D2D1CreateFactory(
-        D2D1_FACTORY_TYPE_SINGLE_THREADED,
-        __uuidof( ID2D1Factory2 ),
-        &options,
-        &m_d2dFactory
-      )
-    );
-
-    // Initialize the DirectWrite Factory.
-    ThrowIfFailed(
-      DWriteCreateFactory(
-        DWRITE_FACTORY_TYPE_SHARED,
-        __uuidof( IDWriteFactory2 ),
-        &m_dwriteFactory
-      )
-    );
-
-    // Initialize the Windows Imaging Component (WIC) Factory.
-    ThrowIfFailed(
-      CoCreateInstance(
-        CLSID_WICImagingFactory2,
-        nullptr,
-        CLSCTX_INPROC_SERVER,
-        IID_PPV_ARGS( &m_wicFactory )
-      )
-    );
+    ThrowIfFailed(D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, __uuidof(ID2D1Factory2), &options, &m_d2dFactory));
+    ThrowIfFailed(DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory2), &m_dwriteFactory));
+    ThrowIfFailed(CoCreateInstance(CLSID_WICImagingFactory2, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&m_wicFactory)));
   }
 
   //----------------------------------------------------------------------------
-  void DeviceResources::SetHolographicSpace( HolographicSpace^ holographicSpace )
+  void DeviceResources::SetHolographicSpace(HolographicSpace^ holographicSpace)
   {
     // Cache the holographic space. Used to re-initialize during device-lost scenarios.
     m_holographicSpace = holographicSpace;
@@ -97,33 +72,23 @@ namespace DX
     // the corresponding DXGI adapter and use it to create Direct3D devices
     // and device contexts. Otherwise, there is no restriction on the DXGI
     // adapter the app can use.
-    if ( ( id.HighPart != 0 ) && ( id.LowPart != 0 ) )
+    if ((id.HighPart != 0) && (id.LowPart != 0))
     {
       UINT createFlags = 0;
-#ifdef DEBUG
-      if ( SdkLayersAvailable() )
+#if defined(_DEBUG)
+      if (SdkLayersAvailable())
       {
         createFlags |= DXGI_CREATE_FACTORY_DEBUG;
       }
 #endif
       // Create the DXGI factory.
       ComPtr<IDXGIFactory1> dxgiFactory;
-      ThrowIfFailed(
-        CreateDXGIFactory2(
-          createFlags,
-          IID_PPV_ARGS( &dxgiFactory )
-        )
-      );
+      ThrowIfFailed(CreateDXGIFactory2(createFlags, IID_PPV_ARGS(&dxgiFactory)));
       ComPtr<IDXGIFactory4> dxgiFactory4;
-      ThrowIfFailed( dxgiFactory.As( &dxgiFactory4 ) );
+      ThrowIfFailed(dxgiFactory.As(&dxgiFactory4));
 
       // Retrieve the adapter specified by the holographic space.
-      ThrowIfFailed(
-        dxgiFactory4->EnumAdapterByLuid(
-          id,
-          IID_PPV_ARGS( &m_dxgiAdapter )
-        )
-      );
+      ThrowIfFailed(dxgiFactory4->EnumAdapterByLuid(id, IID_PPV_ARGS(&m_dxgiAdapter)));
     }
     else
     {
@@ -134,13 +99,13 @@ namespace DX
     {
       CreateDeviceResources();
     }
-    catch ( const std::exception& e )
+    catch (const std::exception& e)
     {
-      OutputDebugStringA( e.what() );
+      OutputDebugStringA(e.what());
       return;
     }
 
-    m_holographicSpace->SetDirect3D11Device( m_d3dInteropDevice );
+    m_holographicSpace->SetDirect3D11Device(m_d3dInteropDevice);
   }
 
   //----------------------------------------------------------------------------
@@ -151,7 +116,7 @@ namespace DX
     UINT creationFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 
 #if defined(_DEBUG)
-    if ( SdkLayersAvailable() )
+    if (SdkLayersAvailable())
     {
       // If the project is in a debug build, enable debugging via SDK Layers with this flag.
       creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
@@ -182,14 +147,14 @@ namespace DX
                          0,                          // Should be 0 unless the driver is D3D_DRIVER_TYPE_SOFTWARE.
                          creationFlags,              // Set debug and Direct2D compatibility flags.
                          featureLevels,              // List of feature levels this app can support.
-                         ARRAYSIZE( featureLevels ), // Size of the list above.
+                         ARRAYSIZE(featureLevels),   // Size of the list above.
                          D3D11_SDK_VERSION,          // Always set this to D3D11_SDK_VERSION for Windows Store apps.
                          &device,                    // Returns the Direct3D device created.
                          &m_d3dFeatureLevel,         // Returns feature level of device created.
                          &context                    // Returns the device immediate context.
                        );
 
-    if ( FAILED( hr ) )
+    if (FAILED(hr))
     {
       // If the initialization fails, fall back to the WARP device.
       // For more information on WARP, see:
@@ -201,7 +166,7 @@ namespace DX
           0,
           creationFlags,
           featureLevels,
-          ARRAYSIZE( featureLevels ),
+          ARRAYSIZE(featureLevels),
           D3D11_SDK_VERSION,
           &device,
           &m_d3dFeatureLevel,
@@ -211,85 +176,75 @@ namespace DX
     }
 
     // Store pointers to the Direct3D device and immediate context.
-    ThrowIfFailed(
-      device.As( &m_d3dDevice )
-    );
+    ThrowIfFailed(device.As(&m_d3dDevice));
 
-    ThrowIfFailed(
-      context.As( &m_d3dContext )
-    );
+    ThrowIfFailed(context.As(&m_d3dContext));
 
     // Acquire the DXGI interface for the Direct3D device.
     ComPtr<IDXGIDevice3> dxgiDevice;
-    ThrowIfFailed(
-      m_d3dDevice.As( &dxgiDevice )
-    );
+    ThrowIfFailed(m_d3dDevice.As(&dxgiDevice));
 
     // Wrap the native device using a WinRT interop object.
-    m_d3dInteropDevice = CreateDirect3DDevice( dxgiDevice.Get() );
+    m_d3dInteropDevice = CreateDirect3DDevice(dxgiDevice.Get());
 
     // Cache the DXGI adapter.
     // This is for the case of no preferred DXGI adapter, or fallback to WARP.
     ComPtr<IDXGIAdapter> dxgiAdapter;
-    ThrowIfFailed(
-      dxgiDevice->GetAdapter( &dxgiAdapter )
-    );
-    ThrowIfFailed(
-      dxgiAdapter.As( &m_dxgiAdapter )
-    );
+    ThrowIfFailed(dxgiDevice->GetAdapter(&dxgiAdapter));
+    ThrowIfFailed(dxgiAdapter.As(&m_dxgiAdapter));
 
     // Check for device support for the optional feature that allows setting the render target array index from the vertex shader stage.
     D3D11_FEATURE_DATA_D3D11_OPTIONS3 options;
-    m_d3dDevice->CheckFeatureSupport( D3D11_FEATURE_D3D11_OPTIONS3, &options, sizeof( options ) );
-    if ( options.VPAndRTArrayIndexFromAnyShaderFeedingRasterizer )
+    m_d3dDevice->CheckFeatureSupport(D3D11_FEATURE_D3D11_OPTIONS3, &options, sizeof(options));
+    if (options.VPAndRTArrayIndexFromAnyShaderFeedingRasterizer)
     {
       m_supportsVprt = true;
     }
     D3D11_FEATURE_DATA_DOUBLES hwopts;
-    m_d3dDevice->CheckFeatureSupport( D3D11_FEATURE_DOUBLES, &hwopts, sizeof( hwopts ) );
-    if ( !hwopts.DoublePrecisionFloatShaderOps )
+    m_d3dDevice->CheckFeatureSupport(D3D11_FEATURE_DOUBLES, &hwopts, sizeof(hwopts));
+    if (!hwopts.DoublePrecisionFloatShaderOps)
     {
-      throw std::exception( "No hardware double-precision capable device found. Cannot create D3D device!" );
+      throw std::exception("No hardware double-precision capable device found. Cannot create D3D device!");
     }
   }
 
   //----------------------------------------------------------------------------
-  void DeviceResources::EnsureCameraResources( HolographicFrame^ frame, HolographicFramePrediction^ prediction )
+  void DeviceResources::EnsureCameraResources(HolographicFrame^ frame, HolographicFramePrediction^ prediction)
   {
-    UseHolographicCameraResources<void>( [this, frame, prediction]( std::map<UINT32, std::unique_ptr<CameraResources>>& cameraResourceMap )
+    UseHolographicCameraResources<void>([this, frame, prediction](std::map<UINT32, std::unique_ptr<CameraResources>>& cameraResourceMap)
     {
-      for ( const auto& pose : prediction->CameraPoses )
+      for (const auto& pose : prediction->CameraPoses)
       {
-        HolographicCameraRenderingParameters^ renderingParameters = frame->GetRenderingParameters( pose );
+        HolographicCameraRenderingParameters^ renderingParameters = frame->GetRenderingParameters(pose);
         CameraResources* pCameraResources = cameraResourceMap[pose->HolographicCamera->Id].get();
 
-        pCameraResources->CreateResourcesForBackBuffer( this, renderingParameters );
+        pCameraResources->CreateResourcesForBackBuffer(this, renderingParameters);
       }
-    } );
+    });
   }
 
   //----------------------------------------------------------------------------
-  void DeviceResources::AddHolographicCamera( HolographicCamera^ camera )
+  void DeviceResources::AddHolographicCamera(HolographicCamera^ camera)
   {
-    UseHolographicCameraResources<void>( [this, camera]( std::map<UINT32, std::unique_ptr<CameraResources>>& cameraResourceMap )
+    UseHolographicCameraResources<void>([this, camera](std::map<UINT32, std::unique_ptr<CameraResources>>& cameraResourceMap)
     {
-      cameraResourceMap[camera->Id] = std::make_unique<CameraResources>( camera );
-    } );
+      cameraResourceMap[camera->Id] = std::make_unique<CameraResources>(camera);
+    });
   }
 
   //----------------------------------------------------------------------------
-  void DeviceResources::RemoveHolographicCamera( HolographicCamera^ camera )
+  void DeviceResources::RemoveHolographicCamera(HolographicCamera^ camera)
   {
-    UseHolographicCameraResources<void>( [this, camera]( std::map<UINT32, std::unique_ptr<CameraResources>>& cameraResourceMap )
+    UseHolographicCameraResources<void>([this, camera](std::map<UINT32, std::unique_ptr<CameraResources>>& cameraResourceMap)
     {
       CameraResources* pCameraResources = cameraResourceMap[camera->Id].get();
 
-      if ( pCameraResources != nullptr )
+      if (pCameraResources != nullptr)
       {
-        pCameraResources->ReleaseResourcesForBackBuffer( this );
-        cameraResourceMap.erase( camera->Id );
+        pCameraResources->ReleaseResourcesForBackBuffer(this);
+        cameraResourceMap.erase(camera->Id);
       }
-    } );
+    });
   }
 
   //----------------------------------------------------------------------------
@@ -349,30 +304,30 @@ namespace DX
   //----------------------------------------------------------------------------
   void DeviceResources::HandleDeviceLost()
   {
-    if ( m_deviceNotify != nullptr )
+    if (m_deviceNotify != nullptr)
     {
       m_deviceNotify->OnDeviceLost();
     }
 
-    UseHolographicCameraResources<void>( [this]( std::map<UINT32, std::unique_ptr<CameraResources>>& cameraResourceMap )
+    UseHolographicCameraResources<void>([this](std::map<UINT32, std::unique_ptr<CameraResources>>& cameraResourceMap)
     {
-      for ( auto& pair : cameraResourceMap )
+      for (auto& pair : cameraResourceMap)
       {
         CameraResources* pCameraResources = pair.second.get();
-        pCameraResources->ReleaseResourcesForBackBuffer( this );
+        pCameraResources->ReleaseResourcesForBackBuffer(this);
       }
-    } );
+    });
 
     InitializeUsingHolographicSpace();
 
-    if ( m_deviceNotify != nullptr )
+    if (m_deviceNotify != nullptr)
     {
       m_deviceNotify->OnDeviceRestored();
     }
   }
 
   //----------------------------------------------------------------------------
-  void DeviceResources::RegisterDeviceNotify( DX::IDeviceNotify* deviceNotify )
+  void DeviceResources::RegisterDeviceNotify(DX::IDeviceNotify* deviceNotify)
   {
     m_deviceNotify = deviceNotify;
   }
@@ -383,12 +338,12 @@ namespace DX
     m_d3dContext->ClearState();
 
     ComPtr<IDXGIDevice3> dxgiDevice;
-    ThrowIfFailed( m_d3dDevice.As( &dxgiDevice ) );
+    ThrowIfFailed(m_d3dDevice.As(&dxgiDevice));
     dxgiDevice->Trim();
   }
 
   //----------------------------------------------------------------------------
-  void DeviceResources::Present( HolographicFrame^ frame )
+  void DeviceResources::Present(HolographicFrame^ frame)
   {
     // By default, this API waits for the frame to finish before it returns.
     // Holographic apps should wait for the previous frame to finish before
@@ -397,9 +352,9 @@ namespace DX
     HolographicFramePresentResult presentResult = frame->PresentUsingCurrentPrediction();
 
     HolographicFramePrediction^ prediction = frame->CurrentPrediction;
-    UseHolographicCameraResources<void>( [this, prediction]( std::map<UINT32, std::unique_ptr<CameraResources>>& cameraResourceMap )
+    UseHolographicCameraResources<void>([this, prediction](std::map<UINT32, std::unique_ptr<CameraResources>>& cameraResourceMap)
     {
-      for ( auto cameraPose : prediction->CameraPoses )
+      for (auto cameraPose : prediction->CameraPoses)
       {
         // This represents the device-based resources for a HolographicCamera.
         CameraResources* pCameraResources = cameraResourceMap[cameraPose->HolographicCamera->Id].get();
@@ -408,17 +363,17 @@ namespace DX
         // This is a valid operation only when the existing contents will be
         // entirely overwritten. If dirty or scroll rects are used, this call
         // should be removed.
-        m_d3dContext->DiscardView( pCameraResources->GetBackBufferRenderTargetView() );
+        m_d3dContext->DiscardView(pCameraResources->GetBackBufferRenderTargetView());
 
         // Discard the contents of the depth stencil.
-        m_d3dContext->DiscardView( pCameraResources->GetDepthStencilView() );
+        m_d3dContext->DiscardView(pCameraResources->GetDepthStencilView());
       }
-    } );
+    });
 
     // The PresentUsingCurrentPrediction API will detect when the graphics device
     // changes or becomes invalid. When this happens, it is considered a Direct3D
     // device lost scenario.
-    if ( presentResult == HolographicFramePresentResult::DeviceRemoved )
+    if (presentResult == HolographicFramePresentResult::DeviceRemoved)
     {
       // The Direct3D device, context, and resources should be recreated.
       HandleDeviceLost();

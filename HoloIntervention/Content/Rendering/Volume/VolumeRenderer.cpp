@@ -241,8 +241,14 @@ namespace HoloIntervention
       // Create the texture that will be used by the shader to access the current volume to be rendered
       textureDesc = CD3D11_TEXTURE3D_DESC((DXGI_FORMAT)m_frame->PixelFormat, m_frameSize[0], m_frameSize[1], m_frameSize[2], 1);
       DX::ThrowIfFailed(device->CreateTexture3D(&textureDesc, &imgData, m_volumeTexture.GetAddressOf()));
+#if _DEBUG
+      m_volumeTexture->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("VolumeTexture") - 1, "VolumeTexture");
+#endif
       CD3D11_SHADER_RESOURCE_VIEW_DESC srvDesc(m_volumeTexture.Get(), (DXGI_FORMAT)m_frame->PixelFormat);
       DX::ThrowIfFailed(device->CreateShaderResourceView(m_volumeTexture.Get(), &srvDesc, m_volumeSRV.GetAddressOf()));
+#if _DEBUG
+      m_volumeSRV->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("VolumeSRV") - 1, "VolumeSRV");
+#endif
 
       // Compute the step size and number of iterations to use
       //    The step size for each component needs to be a ratio of the largest component
@@ -257,6 +263,9 @@ namespace HoloIntervention
       float borderColour[4] = { 0.f, 0.f, 0.f, 0.f };
       CD3D11_SAMPLER_DESC desc(D3D11_FILTER_MIN_MAG_MIP_LINEAR, D3D11_TEXTURE_ADDRESS_BORDER, D3D11_TEXTURE_ADDRESS_BORDER, D3D11_TEXTURE_ADDRESS_BORDER, 0.f, 3, D3D11_COMPARISON_NEVER, borderColour, 0, 3);
       DX::ThrowIfFailed(device->CreateSamplerState(&desc, m_samplerState.GetAddressOf()));
+#if _DEBUG
+      m_samplerState->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("VolRendSamplerState") - 1, "VolRendSamplerState");
+#endif
 
       m_volumeReady = true;
     }
@@ -294,15 +303,17 @@ namespace HoloIntervention
       context->OMGetRenderTargets(1, &hololensRenderTargetView, &hololensStencilView);
 
       // Render pass to render cube position textures used for quick ray calculation
-      ID3D11RenderTargetView* targets[1] = { m_frontPositionRTV.Get() };
       context->RSSetState(m_cullBackRasterState.Get());
+      ID3D11RenderTargetView* targets[1] = { m_frontPositionRTV.Get() };
       context->OMSetRenderTargets(1, targets, nullptr);
       context->VSSetShader(m_volRenderVertexShader.Get(), nullptr, 0);
       context->VSSetConstantBuffers(0, 1, m_volumeConstantBuffer.GetAddressOf());
       if (!m_usingVprtShaders)
       {
         context->GSSetShader(m_volRenderGeometryShader.Get(), nullptr, 0);
+        context->GSSetConstantBuffers(0, 1, m_volumeConstantBuffer.GetAddressOf());
       }
+      context->PSSetConstantBuffers(0, 1, m_volumeConstantBuffer.GetAddressOf()); // DEBUG: Not really needed as no constant buffers are used
       context->PSSetShader(m_faceCalcPixelShader.Get(), nullptr, 0);
       context->DrawIndexedInstanced(m_indexCount, 2, 0, 0, 0);
 
@@ -314,6 +325,8 @@ namespace HoloIntervention
 
       // Clean up after rendering to textures
       context->RSSetState(nullptr);
+      targets[0] = { nullptr };
+      context->OMSetRenderTargets(1, targets, nullptr);
 
       // Now perform the actual volume render
       targets[0] = hololensRenderTargetView;
@@ -403,8 +416,14 @@ namespace HoloIntervention
       rasterDesc.DepthBiasClamp = 0.f;
       rasterDesc.SlopeScaledDepthBias = 0.f;
       DX::ThrowIfFailed(device->CreateRasterizerState(&rasterDesc, m_cullFrontRasterState.GetAddressOf()));
+#if _DEBUG
+      m_cullFrontRasterState->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("CullFrontRasterState") - 1, "CullFrontRasterState");
+#endif
       rasterDesc.CullMode = D3D11_CULL_BACK;
       DX::ThrowIfFailed(device->CreateRasterizerState(&rasterDesc, m_cullBackRasterState.GetAddressOf()));
+#if _DEBUG
+      m_cullBackRasterState->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("CullBackRasterState") - 1, "CullBackRasterState");
+#endif
 
       task<void> createVSTask = loadVSTask.then([this, device](const std::vector<byte>& fileData)
       {
@@ -421,6 +440,9 @@ namespace HoloIntervention
       task<void> createPSTask = loadPSTask.then([this, device](const std::vector<byte>& fileData)
       {
         DX::ThrowIfFailed(device->CreatePixelShader(fileData.data(), fileData.size(), nullptr, &m_volRenderPixelShader));
+#if _DEBUG
+        m_volRenderPixelShader->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("VolRenderPixelShader") - 1, "VolRenderPixelShader");
+#endif
 
         VolumeConstantBuffer buffer;
         XMStoreFloat4x4(&buffer.worldMatrix, XMMatrixIdentity());
@@ -436,6 +458,9 @@ namespace HoloIntervention
       task<void> createFacePSTask = loadFacePSTask.then([this, device](const std::vector<byte>& fileData)
       {
         DX::ThrowIfFailed(device->CreatePixelShader(fileData.data(), fileData.size(), nullptr, &m_faceCalcPixelShader));
+#if _DEBUG
+        m_faceCalcPixelShader->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("FaceCalcPixelShader") - 1, "FaceCalcPixelShader");
+#endif
       });
 
       task<void> createGSTask;
@@ -504,6 +529,9 @@ namespace HoloIntervention
       vertexBufferData.SysMemSlicePitch = 0;
       const CD3D11_BUFFER_DESC vertexBufferDesc(sizeof(cubeVertices), D3D11_BIND_VERTEX_BUFFER);
       DX::ThrowIfFailed(device->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &m_vertexBuffer));
+#if _DEBUG
+      m_vertexBuffer->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("VolRendVertexBuffer") - 1, "VolRendVertexBuffer");
+#endif
 
       constexpr std::array<uint16_t, 36> cubeIndices =
       {
@@ -536,6 +564,9 @@ namespace HoloIntervention
       indexBufferData.SysMemSlicePitch = 0;
       const CD3D11_BUFFER_DESC indexBufferDesc(sizeof(cubeIndices), D3D11_BIND_INDEX_BUFFER);
       DX::ThrowIfFailed(device->CreateBuffer(&indexBufferDesc, &indexBufferData, &m_indexBuffer));
+#if _DEBUG
+      m_indexBuffer->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("VolRendIndexBuffer") - 1, "VolRendIndexBuffer");
+#endif
 
       m_componentReady = true;
     }
@@ -561,19 +592,37 @@ namespace HoloIntervention
 
       const auto size = m_cameraResources->GetRenderTargetSize();
 
-      CD3D11_TEXTURE2D_DESC textureDesc(DXGI_FORMAT_R8G8B8A8_UNORM, static_cast<UINT>(size.Width), static_cast<UINT>(size.Height), 2, 0, D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET);
+      CD3D11_TEXTURE2D_DESC textureDesc(DXGI_FORMAT_R8G8B8A8_UNORM, static_cast<UINT>(size.Width), static_cast<UINT>(size.Height), 2, 1, D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET);
       m_deviceResources->GetD3DDevice()->CreateTexture2D(&textureDesc, nullptr, &m_frontPositionTextureArray);
+#if _DEBUG
+      m_frontPositionTextureArray->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("FrontFaceArray") - 1, "FrontFaceArray");
+#endif
       m_deviceResources->GetD3DDevice()->CreateTexture2D(&textureDesc, nullptr, &m_backPositionTextureArray);
+#if _DEBUG
+      m_backPositionTextureArray->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("BackFaceArray") - 1, "BackFaceArray");
+#endif
 
       CD3D11_SHADER_RESOURCE_VIEW_DESC frontSrvDesc(m_frontPositionTextureArray.Get(), D3D11_SRV_DIMENSION_TEXTURE2DARRAY);
       m_deviceResources->GetD3DDevice()->CreateShaderResourceView(m_frontPositionTextureArray.Get(), &frontSrvDesc, m_frontPositionSRV.GetAddressOf());
+#if _DEBUG
+      m_frontPositionSRV->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("FrontFaceSRV") - 1, "FrontFaceSRV");
+#endif
       CD3D11_SHADER_RESOURCE_VIEW_DESC backSrvDesc(m_backPositionTextureArray.Get(), D3D11_SRV_DIMENSION_TEXTURE2DARRAY);
       m_deviceResources->GetD3DDevice()->CreateShaderResourceView(m_backPositionTextureArray.Get(), &backSrvDesc, m_backPositionSRV.GetAddressOf());
+#if _DEBUG
+      m_backPositionSRV->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("BackFaceSRV") - 1, "BackFaceSRV");
+#endif
 
       CD3D11_RENDER_TARGET_VIEW_DESC frontRendDesc(m_frontPositionTextureArray.Get(), D3D11_RTV_DIMENSION_TEXTURE2DARRAY);
       m_deviceResources->GetD3DDevice()->CreateRenderTargetView(m_frontPositionTextureArray.Get(), &frontRendDesc, m_frontPositionRTV.GetAddressOf());
+#if _DEBUG
+      m_frontPositionRTV->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("FrontFaceRTV") - 1, "FrontFaceRTV");
+#endif
       CD3D11_RENDER_TARGET_VIEW_DESC backRendDesc(m_backPositionTextureArray.Get(), D3D11_RTV_DIMENSION_TEXTURE2DARRAY);
       m_deviceResources->GetD3DDevice()->CreateRenderTargetView(m_backPositionTextureArray.Get(), &backRendDesc, m_backPositionRTV.GetAddressOf());
+#if _DEBUG
+      m_backPositionRTV->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("BackFaceRTV") - 1, "BackFaceRTV");
+#endif
 
       m_faceCalcReady = true;
     }
@@ -616,9 +665,15 @@ namespace HoloIntervention
 
       D3D11_SUBRESOURCE_DATA bufferBytes = { m_transferFunction->GetTFLookupTable().LookupTable, 0, 0 };
       DX::ThrowIfFailed(m_deviceResources->GetD3DDevice()->CreateBuffer(&desc, &bufferBytes, m_lookupTableBuffer.GetAddressOf()));
+#if _DEBUG
+      m_lookupTableBuffer->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("LookupTable") - 1, "LookupTable");
+#endif
 
       CD3D11_SHADER_RESOURCE_VIEW_DESC srvDesc(m_lookupTableBuffer.Get(), DXGI_FORMAT_R32_TYPELESS, 0, TransferFunctionLookup::TRANSFER_FUNCTION_TABLE_SIZE, D3D11_BUFFEREX_SRV_FLAG_RAW);
       DX::ThrowIfFailed(m_deviceResources->GetD3DDevice()->CreateShaderResourceView(m_lookupTableBuffer.Get(), &srvDesc, m_lookupTableSRV.GetAddressOf()));
+#if _DEBUG
+      m_lookupTableSRV->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("LookupTableSRV") - 1, "LookupTableSRV");
+#endif
 
       m_tfResourcesReady = true;
     }

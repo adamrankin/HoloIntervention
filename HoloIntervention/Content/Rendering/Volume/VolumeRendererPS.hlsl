@@ -47,8 +47,8 @@ SamplerState      r_sampler                 : s0;
 
 float4 main(PixelShaderInput input) : SV_TARGET
 {
-  float3 front = r_frontPositionTextures.Sample(r_sampler, float3(input.Position.xy - float2(0.5f, 0.5f), input.rtvId)).xyz;
-  float3 back = r_backPositionTextures.Sample(r_sampler, float3(input.Position.xy - float2(0.5f, 0.5f), input.rtvId)).xyz;
+  float3 front = r_frontPositionTextures.SampleLevel(r_sampler, float3(input.Position.xy - float2(0.5f, 0.5f), input.rtvId), 0.f).xyz;
+  float3 back = r_backPositionTextures.SampleLevel(r_sampler, float3(input.Position.xy - float2(0.5f, 0.5f), input.rtvId), 0.f).xyz;
     
   float3 dir = normalize(back - front);
   float3 pos = front;
@@ -56,6 +56,16 @@ float4 main(PixelShaderInput input) : SV_TARGET
   float4 src;
 	float3 step = dir * c_stepSize;
     
+  if( pos.x != 256.f)
+  {
+    dst = float4(front + back, 1.f);
+    dst += float4(1.f, 0.f, 0.f, 1.f);
+  }
+
+  if( dir.x == 256.f )
+  {
+    dst += float4(0.f, 0.f, 0.f, 0.f);
+  }
     /*
   [loop]
   for (uint i = 0; i < c_numIterations; i++)
