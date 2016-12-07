@@ -40,11 +40,12 @@ namespace HoloIntervention
   {
     struct VolumeConstantBuffer
     {
-      DirectX::XMFLOAT4X4                     worldMatrix;
+      Windows::Foundation::Numerics::float4x4 worldMatrix;
       float                                   lt_maximumXValue;
       Windows::Foundation::Numerics::float3   stepSize;
+      Windows::Foundation::Numerics::float2   viewportDimensions;
       uint32                                  numIterations;
-      Windows::Foundation::Numerics::float3   scaleFactor;
+      uint32                                  padding;
     };
     static_assert((sizeof(VolumeConstantBuffer) % (sizeof(float) * 4)) == 0, "Model constant buffer size must be 16-byte aligned (16 bytes is the length of four floats).");
 

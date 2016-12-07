@@ -26,6 +26,7 @@ cbuffer VolumeConstantBuffer : register(b0)
   float4x4		c_worldPose;
 	float				c_maximumXValue; // used for transfer function logic
 	float3			c_stepSize;
+  float2      c_viewportDimensions;
   uint        c_numIterations;
 };
 
@@ -47,8 +48,9 @@ SamplerState      r_sampler                 : s0;
 
 float4 main(PixelShaderInput input) : SV_TARGET
 {
-  float3 front = r_frontPositionTextures.SampleLevel(r_sampler, float3(input.Position.xy - float2(0.5f, 0.5f), input.rtvId), 0.f).xyz;
-  float3 back = r_backPositionTextures.SampleLevel(r_sampler, float3(input.Position.xy - float2(0.5f, 0.5f), input.rtvId), 0.f).xyz;
+  float3 pixelPosition = float3((input.Position.xy - float2(0.5f, 0.5f)) / c_viewportDimensions, input.rtvId);
+  float3 front = r_frontPositionTextures.SampleLevel(r_sampler, pixelPosition, 0.f).xyz;
+  float3 back = r_backPositionTextures.SampleLevel(r_sampler, pixelPosition, 0.f).xyz;
     
   float3 dir = normalize(back - front);
   float3 pos = front;

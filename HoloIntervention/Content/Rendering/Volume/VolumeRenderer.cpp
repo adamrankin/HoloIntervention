@@ -592,6 +592,9 @@ namespace HoloIntervention
 
       const auto size = m_cameraResources->GetRenderTargetSize();
 
+      m_constantBuffer.viewportDimensions.x = size.Width;
+      m_constantBuffer.viewportDimensions.y = size.Height;
+
       CD3D11_TEXTURE2D_DESC textureDesc(DXGI_FORMAT_R8G8B8A8_UNORM, static_cast<UINT>(size.Width), static_cast<UINT>(size.Height), 2, 1, D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET);
       m_deviceResources->GetD3DDevice()->CreateTexture2D(&textureDesc, nullptr, &m_frontPositionTextureArray);
 #if _DEBUG
