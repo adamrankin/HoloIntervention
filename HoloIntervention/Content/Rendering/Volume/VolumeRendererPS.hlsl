@@ -25,6 +25,7 @@ cbuffer VolumeConstantBuffer : register(b0)
 {
   float4x4		c_worldPose;
 	float				c_maximumXValue; // used for transfer function logic
+  uint        c_tfArraySize;
 	float3			c_stepSize;
   float2      c_viewportDimensions;
   uint        c_numIterations;
@@ -36,9 +37,6 @@ struct PixelShaderInput
   min16float3 ModelSpacePosition    : TEXCOORD0; // not used
   uint				rtvId                 : SV_RenderTargetArrayIndex;
 };
-
-// Must match ITransferFunction::TRANSFER_FUNCTION_TABLE_SIZE
-#define TRANSFER_FUNCTION_TABLE_SIZE 1024
 
 ByteAddressBuffer r_lookupTable             : register(t0);
 Texture3D         r_volumeTexture           : register(t1);

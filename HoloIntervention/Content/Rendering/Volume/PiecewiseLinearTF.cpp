@@ -51,12 +51,12 @@ namespace HoloIntervention
         throw new std::exception("Not enough control points to compute a function. Need at least 2.");
       }
 
-      m_transferFunction.MaximumXValue = m_controlPoints.rbegin()->second.x;
+      m_transferFunction.SetMaximumXValue(m_controlPoints.rbegin()->second.x);
 
-      for (unsigned int i = 0; i < TransferFunctionLookup::TRANSFER_FUNCTION_TABLE_SIZE; ++i)
+      for (unsigned int i = 0; i < m_transferFunction.GetArraySize(); ++i)
       {
-        auto ratio = (1.f * i) / TransferFunctionLookup::TRANSFER_FUNCTION_TABLE_SIZE - 1;
-        auto xValue = ratio * m_transferFunction.MaximumXValue;
+        auto ratio = (1.f * i) / (m_transferFunction.GetArraySize() - 1);
+        auto xValue = ratio * m_transferFunction.GetMaximumXValue();
         // find xValue in control points
         for (unsigned int j = 1; j < m_controlPoints.size(); ++j)
         {
@@ -66,7 +66,7 @@ namespace HoloIntervention
             auto thisXRange = m_controlPoints[j].second.x - m_controlPoints[j - 1].second.x;
             auto thisYRange = m_controlPoints[j].second.y - m_controlPoints[j - 1].second.y;
             auto offset = xValue - m_controlPoints[j - 1].second.x;
-            m_transferFunction.LookupTable[i] = m_controlPoints[j - 1].second.y + (offset / thisXRange) * thisYRange;
+            m_transferFunction.GetLookupTableArray()[i] = m_controlPoints[j - 1].second.y + (offset / thisXRange) * thisYRange;
           }
         }
       }

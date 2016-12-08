@@ -428,7 +428,7 @@ namespace HoloIntervention
 
         VolumeConstantBuffer buffer;
         XMStoreFloat4x4(&buffer.worldMatrix, XMMatrixIdentity());
-        buffer.lt_maximumXValue = m_transferFunction->GetTFLookupTable().MaximumXValue;
+        buffer.lt_maximumXValue = m_transferFunction->GetTFLookupTable().GetMaximumXValue();
         D3D11_SUBRESOURCE_DATA resData;
         resData.pSysMem = &buffer;
         resData.SysMemPitch = 0;
@@ -668,23 +668,24 @@ namespace HoloIntervention
       }
 
       m_transferFunction->Update();
-      m_constantBuffer.lt_maximumXValue = m_transferFunction->GetTFLookupTable().MaximumXValue;
+      m_constantBuffer.lt_maximumXValue = m_transferFunction->GetTFLookupTable().GetMaximumXValue();
+      m_constantBuffer.lt_arraySize = m_transferFunction->GetTFLookupTable().GetArraySize();
 
       // Set up GPU memory
       D3D11_BUFFER_DESC desc;
       ZeroMemory(&desc, sizeof(desc));
       desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-      desc.ByteWidth = sizeof(float) * TransferFunctionLookup::TRANSFER_FUNCTION_TABLE_SIZE;
+      desc.ByteWidth = sizeof(float) * m_transferFunction->GetTFLookupTable().GetArraySize();
       desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_ALLOW_RAW_VIEWS;
       desc.StructureByteStride = sizeof(float);
 
-      D3D11_SUBRESOURCE_DATA bufferBytes = { m_transferFunction->GetTFLookupTable().LookupTable, 0, 0 };
+      D3D11_SUBRESOURCE_DATA bufferBytes = { m_transferFunction->GetTFLookupTable().GetLookupTableArray(), 0, 0 };
       DX::ThrowIfFailed(m_deviceResources->GetD3DDevice()->CreateBuffer(&desc, &bufferBytes, m_lookupTableBuffer.GetAddressOf()));
 #if _DEBUG
       m_lookupTableBuffer->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("LookupTable") - 1, "LookupTable");
 #endif
 
-      CD3D11_SHADER_RESOURCE_VIEW_DESC srvDesc(m_lookupTableBuffer.Get(), DXGI_FORMAT_R32_TYPELESS, 0, TransferFunctionLookup::TRANSFER_FUNCTION_TABLE_SIZE, D3D11_BUFFEREX_SRV_FLAG_RAW);
+      CD3D11_SHADER_RESOURCE_VIEW_DESC srvDesc(m_lookupTableBuffer.Get(), DXGI_FORMAT_R32_TYPELESS, 0, m_transferFunction->GetTFLookupTable().GetArraySize(), D3D11_BUFFEREX_SRV_FLAG_RAW);
       DX::ThrowIfFailed(m_deviceResources->GetD3DDevice()->CreateShaderResourceView(m_lookupTableBuffer.Get(), &srvDesc, m_lookupTableSRV.GetAddressOf()));
 #if _DEBUG
       m_lookupTableSRV->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("LookupTableSRV") - 1, "LookupTableSRV");

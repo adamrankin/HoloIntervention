@@ -30,21 +30,28 @@ namespace HoloIntervention
 {
   namespace Rendering
   {
-    struct TransferFunctionLookup
+    class TransferFunctionLookup
     {
-      float MaximumXValue;
-      float* LookupTable;
-      static const uint32 TRANSFER_FUNCTION_TABLE_SIZE = 1024;
-
+    public:
       TransferFunctionLookup()
       {
-        LookupTable = new float[TRANSFER_FUNCTION_TABLE_SIZE];
-        memset(LookupTable, 0, sizeof(float)*TRANSFER_FUNCTION_TABLE_SIZE);
+        m_lookupTable = new float[m_transferFunctionTableSize];
+        memset(m_lookupTable, 0, sizeof(float)*m_transferFunctionTableSize);
       }
       ~TransferFunctionLookup()
       {
-        delete[] LookupTable;
+        delete[] m_lookupTable;
       }
+
+      float GetMaximumXValue() { return m_maximumXValue; }
+      void SetMaximumXValue(float maxXValue) { m_maximumXValue = maxXValue; }
+      float* GetLookupTableArray() { return m_lookupTable; }
+      uint32 GetArraySize() { return m_transferFunctionTableSize; }
+
+    protected:
+      float                 m_maximumXValue;
+      float*                m_lookupTable;
+      uint32                m_transferFunctionTableSize = 256;
     };
 
     class ITransferFunction
@@ -137,10 +144,10 @@ namespace HoloIntervention
       };
 
     protected:
-      uint32_t          m_nextUid = 0;
-      ControlPointList  m_controlPoints;
-      TransferFunctionLookup m_transferFunction;
-      std::atomic_bool m_isValid = false;
+      uint32_t                  m_nextUid = 0;
+      ControlPointList          m_controlPoints;
+      TransferFunctionLookup    m_transferFunction;
+      std::atomic_bool          m_isValid = false;
     };
   }
 }

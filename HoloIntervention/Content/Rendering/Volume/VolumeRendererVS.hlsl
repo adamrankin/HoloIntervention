@@ -25,6 +25,7 @@ cbuffer VolumeConstantBuffer : register(b0)
 {
   float4x4  c_worldPose;
   float     c_maximumXValue;
+  uint      c_tfArraySize;
   float3    c_stepSize;
   float2    c_viewportDimensions;
   uint      c_numIterations;
