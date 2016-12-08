@@ -115,6 +115,7 @@ namespace HoloIntervention
       m_sphereCoordinateNames[1] = ref new UWPOpenIGTLink::TransformName(L"RedSphere2", L"Reference");
       m_sphereCoordinateNames[2] = ref new UWPOpenIGTLink::TransformName(L"RedSphere3", L"Reference");
       m_sphereCoordinateNames[3] = ref new UWPOpenIGTLink::TransformName(L"RedSphere4", L"Reference");
+      m_sphereCoordinateNames[4] = ref new UWPOpenIGTLink::TransformName(L"RedSphere5", L"Reference");
     }
 
     //----------------------------------------------------------------------------
@@ -421,7 +422,7 @@ namespace HoloIntervention
           }
 
           VecFloat3 sphereInTrackerResults;
-          std::array<float4x4, 4> sphereToPhantomPose;
+          std::array<float4x4, 5> sphereToPhantomPose;
           if (!RetrieveTrackerFrameLocations(l_latestTrackedFrame, sphereInTrackerResults, sphereToPhantomPose))
           {
             continue;
@@ -640,9 +641,14 @@ namespace HoloIntervention
               circleCentersPixel.push_back(cv::Point2f(circle.x, circle.y));
             }
           }
+          else if (circles.size() > PHANTOM_SPHERE_COUNT)
+          {
+            // TODO : is it possible to make our code more robust by identifying 5 circles that make sense? pixel center distances? radii? etc...
+            result = false;
+            goto done;
+          }
           else
           {
-            // TODO : is it possible to make our code more robust by identifying 4 circles that make sense? pixel center distances? radii? etc...
             result = false;
             goto done;
           }
@@ -718,28 +724,24 @@ done:
     }
 
     //----------------------------------------------------------------------------
-    bool CameraRegistration::RetrieveTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame, CameraRegistration::VecFloat3& outSphereInReferenceResults, std::array<float4x4, 4>& outSphereToPhantomPose)
+    bool CameraRegistration::RetrieveTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame, CameraRegistration::VecFloat3& outSphereInReferenceResults, std::array<float4x4, 5>& outSphereToPhantomPose)
     {
       m_transformRepository->SetTransforms(trackedFrame);
 
-      float4x4 red1ToReferenceTransform;
-      float4x4 red2ToReferenceTransform;
-      float4x4 red3ToReferenceTransform;
-      float4x4 red4ToReferenceTransform;
+      float4x4 redXToReferenceTransform[PHANTOM_SPHERE_COUNT];
 
       // Calculate world position from transforms in tracked frame
       try
       {
         bool isValid(false);
-        float4x4 red1ToReferenceTransform = transpose(m_transformRepository->GetTransform(m_sphereCoordinateNames[0], &isValid));
-        if (!isValid)
+        for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
         {
-          return false;
+          redXToReferenceTransform[i] = transpose(m_transformRepository->GetTransform(m_sphereCoordinateNames[i], &isValid));
+          if (!isValid)
+          {
+            return false;
+          }
         }
-
-        float4x4 red2ToReferenceTransform = transpose(m_transformRepository->GetTransform(m_sphereCoordinateNames[1], &isValid));
-        float4x4 red3ToReferenceTransform = transpose(m_transformRepository->GetTransform(m_sphereCoordinateNames[2], &isValid));
-        float4x4 red4ToReferenceTransform = transpose(m_transformRepository->GetTransform(m_sphereCoordinateNames[3], &isValid));
       }
       catch (Platform::Exception^ e)
       {
@@ -747,40 +749,22 @@ done:
       }
 
       float4 origin = { 0.f, 0.f, 0.f, 1.f };
-      float4 translation = transform(origin, red1ToReferenceTransform);
-      outSphereInReferenceResults.push_back(float3(translation.x, translation.y, translation.z));
-
-      translation = transform(origin, red2ToReferenceTransform);
-      outSphereInReferenceResults.push_back(float3(translation.x, translation.y, translation.z));
-
-      translation = transform(origin, red3ToReferenceTransform);
-      outSphereInReferenceResults.push_back(float3(translation.x, translation.y, translation.z));
-
-      translation = transform(origin, red4ToReferenceTransform);
-      outSphereInReferenceResults.push_back(float3(translation.x, translation.y, translation.z));
+      for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
+      {
+        float4 translation = transform(origin, redXToReferenceTransform[i]);
+        outSphereInReferenceResults.push_back(float3(translation.x, translation.y, translation.z));
+      }
 
       // Phantom is rigid body, so only need to pull the values once
       if (!m_hasTrackerSpherePoses)
       {
         bool hasError(false);
-        if (!ExtractPhantomToFiducialPose(m_sphereToPhantomPoses[0], m_transformRepository, L"RedSphere1", L"Phantom"))
+        for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
         {
-          hasError = true;
-        }
-
-        if (!ExtractPhantomToFiducialPose(m_sphereToPhantomPoses[1], m_transformRepository, L"RedSphere2", L"Phantom"))
-        {
-          hasError = true;
-        }
-
-        if (!ExtractPhantomToFiducialPose(m_sphereToPhantomPoses[2], m_transformRepository, L"RedSphere3", L"Phantom"))
-        {
-          hasError = true;
-        }
-
-        if (!ExtractPhantomToFiducialPose(m_sphereToPhantomPoses[3], m_transformRepository, L"RedSphere4", L"Phantom"))
-        {
-          hasError = true;
+          if (!ExtractPhantomToFiducialPose(m_sphereToPhantomPoses[i], m_transformRepository, L"RedSphere" + (i + 1).ToString(), L"Phantom"))
+          {
+            hasError = true;
+          }
         }
 
         if (!hasError)
@@ -833,20 +817,15 @@ done:
       byte* imageData = (byte*)image.data;
 
       // Build the list of patches to check
-      typedef std::pair<uint32, uint32> Line; // indices into inCircles
-      std::vector<Line> lines;
-      lines.push_back(Line(0, 2));
-      lines.push_back(Line(0, 3));
-      lines.push_back(Line(1, 2));
-      lines.push_back(Line(1, 3));
-      lines.push_back(Line(2, 3));
-      lines.push_back(Line(0, 1));
+      typedef std::vector<uint32> Line; // indices into inCircles
+      std::vector<Line> lines = NChooseR(PHANTOM_SPHERE_COUNT, 2);
 
       enum Colours
       {
         green_link = 0,
         blue_link,
         yellow_link,
+        teal_link,
         colour_count
       };
 
@@ -855,8 +834,8 @@ done:
       for (auto& line : lines)
       {
         // Given a pair of circles, compute histogram of patch that lies between, determine if profile of patch matches expected parameters
-        auto firstCircle = inCircles[line.first];
-        auto secondCircle = inCircles[line.second];
+        auto firstCircle = inCircles[line[0]];
+        auto secondCircle = inCircles[line[1]];
         float startMmToPixel = firstCircle.z / SPHERE_RADIUS_MM;
         float endMmToPixel = secondCircle.z / SPHERE_RADIUS_MM;
 
@@ -878,24 +857,32 @@ done:
         uint8 blueHue[2] = { 100, 120 };
         if (IsPatchColour(blueHue, 70, 50, hsvMeans, histogram, pixelCount, FIFTH_PERCENTILE_FACTOR, MEAN_DISTRIBUTION_RATIO_THRESHOLD))
         {
-          circleLinkResults[blue_link].push_back(line.first);
-          circleLinkResults[blue_link].push_back(line.second);
+          circleLinkResults[blue_link].push_back(line[0]);
+          circleLinkResults[blue_link].push_back(line[1]);
         }
 
         // Green hue, 45-65, tuning needed
         uint8 greenHue[2] = { 50, 70 };
         if (IsPatchColour(greenHue, 70, 40, hsvMeans, histogram, pixelCount, FIFTH_PERCENTILE_FACTOR, MEAN_DISTRIBUTION_RATIO_THRESHOLD))
         {
-          circleLinkResults[green_link].push_back(line.first);
-          circleLinkResults[green_link].push_back(line.second);
+          circleLinkResults[green_link].push_back(line[0]);
+          circleLinkResults[green_link].push_back(line[1]);
         }
 
         // Yellow hue, 17-37, tuning needed
         uint8 yelloHue[2] = { 17, 37 };
         if (IsPatchColour(yelloHue, 70, 50, hsvMeans, histogram, pixelCount, FIFTH_PERCENTILE_FACTOR, MEAN_DISTRIBUTION_RATIO_THRESHOLD))
         {
-          circleLinkResults[yellow_link].push_back(line.first);
-          circleLinkResults[yellow_link].push_back(line.second);
+          circleLinkResults[yellow_link].push_back(line[0]);
+          circleLinkResults[yellow_link].push_back(line[1]);
+        }
+
+        // Teal hue, 75-95, tuning needed
+        uint8 tealHue[2] = { 75, 95 };
+        if (IsPatchColour(tealHue, 70, 40, hsvMeans, histogram, pixelCount, FIFTH_PERCENTILE_FACTOR, MEAN_DISTRIBUTION_RATIO_THRESHOLD))
+        {
+          circleLinkResults[teal_link].push_back(line[0]);
+          circleLinkResults[teal_link].push_back(line[1]);
         }
       }
 
@@ -903,43 +890,56 @@ done:
       auto& blueLinks = circleLinkResults[blue_link];
       auto& greenLinks = circleLinkResults[green_link];
       auto& yellowLinks = circleLinkResults[yellow_link];
-      if (!((blueLinks.size() == 2 && greenLinks.size() == 2) ||
-            (blueLinks.size() == 2 && yellowLinks.size() == 2) ||
-            (greenLinks.size() == 2 && yellowLinks.size() == 2)))
+      auto& tealLinks = circleLinkResults[teal_link];
+      if (!((blueLinks.size() == 2 && greenLinks.size() == 2 && tealLinks.size() == 2) ||
+            (blueLinks.size() == 2 && yellowLinks.size() == 2 && tealLinks.size() == 2) ||
+            (greenLinks.size() == 2 && yellowLinks.size() == 2 && tealLinks.size() == 2) ||
+            (greenLinks.size() == 2 && yellowLinks.size() == 2 && blueLinks.size() == 2)))
       {
-        // No pair of 2, cannot deduce pattern
+        // No trio of 2, cannot deduce pattern
         return false;
       }
 
       // Determine valid pair
       std::vector<uint32>* listA(nullptr);
       std::vector<uint32>* listB(nullptr);
-      if (blueLinks.size() == 2 && yellowLinks.size() == 2)
+      std::vector<uint32>* listC(nullptr);
+      if (blueLinks.size() == 2 && yellowLinks.size() == 2 && tealLinks.size() == 2)
       {
         listA = &blueLinks;
         listB = &yellowLinks;
+        listC = &tealLinks;
       }
-      else if (blueLinks.size() == 2 && greenLinks.size() == 2)
+      else if (blueLinks.size() == 2 && greenLinks.size() == 2 && tealLinks.size() == 2)
       {
         listA = &blueLinks;
         listB = &greenLinks;
+        listC = &tealLinks;
       }
-      else
+      else if (greenLinks.size() == 2 && yellowLinks.size() == 2 && blueLinks.size() == 2)
       {
         listA = &greenLinks;
         listB = &yellowLinks;
+        listC = &blueLinks;
+      }
+      else
+      {
+        listA = &tealLinks;
+        listB = &greenLinks;
+        listC = &yellowLinks;
       }
 
-      // If this is a successful detection, there will be one and only one index common to all listA and listB
+      // If this is a successful detection, there will be one and only one index common to, listA, listB, and listC
       int32 centerSphereIndex(-1);
       for (auto& circleIndex : *listA)
       {
-        if (circleIndex != (*listB)[0] && circleIndex != (*listB)[1])
+        auto listBIter = std::find(listB->begin(), listB->end(), circleIndex);
+        auto listCIter = std::find(listC->begin(), listC->end(), circleIndex);
+        if (listBIter != listB->end() && listCIter != listC->end())
         {
-          continue;
+          centerSphereIndex = circleIndex;
+          break;
         }
-        centerSphereIndex = circleIndex;
-        break;
       }
 
       if (centerSphereIndex == -1)
@@ -951,34 +951,41 @@ done:
       // Find it, remove it from the other lists, and the values remaining in those lists are the index of the other circles
       RemoveResultFromList(*listA, centerSphereIndex);
       RemoveResultFromList(*listB, centerSphereIndex);
+      RemoveResultFromList(*listC, centerSphereIndex);
 
       // Now we know one, and two others (based on which colour of list they're in)
-      std::vector<cv::Point3f> output(4);
+      std::vector<cv::Point3f> output(5);
 
       output[centerSphereIndex] = inOutPhantomFiducialsCv[1];
 
-      std::vector<uint32> remainingColours = { 0, 2, 3 }; // 0 = green, 2 = yellow, 3 = blue
-      std::vector<uint32> remainingIndicies = { 0, 1, 2, 3 };
+      std::vector<uint32> remainingColours = { 0, 2, 3, 4 }; // 0 = green, 2 = yellow, 3 = blue, 4 = teal
+      std::vector<uint32> remainingIndicies = { 0, 1, 2, 3, 4 };
 
       remainingIndicies.erase(std::find(remainingIndicies.begin(), remainingIndicies.end(), centerSphereIndex));
 
-      if (listA == &greenLinks || listB == &greenLinks)
+      if (listA == &greenLinks || listB == &greenLinks || listC == &greenLinks)
       {
         output[greenLinks[0]] = inOutPhantomFiducialsCv[0];
         remainingIndicies.erase(std::find(remainingIndicies.begin(), remainingIndicies.end(), greenLinks[0]));
         remainingColours.erase(std::find(remainingColours.begin(), remainingColours.end(), 0));
       }
-      if (listA == &blueLinks || listB == &blueLinks)
+      if (listA == &blueLinks || listB == &blueLinks || listC == &blueLinks)
       {
         output[blueLinks[0]] = inOutPhantomFiducialsCv[3];
         remainingIndicies.erase(std::find(remainingIndicies.begin(), remainingIndicies.end(), blueLinks[0]));
         remainingColours.erase(std::find(remainingColours.begin(), remainingColours.end(), 3));
       }
-      if (listA == &yellowLinks || listB == &yellowLinks)
+      if (listA == &yellowLinks || listB == &yellowLinks || listC == &yellowLinks)
       {
         output[yellowLinks[0]] = inOutPhantomFiducialsCv[2];
         remainingIndicies.erase(std::find(remainingIndicies.begin(), remainingIndicies.end(), yellowLinks[0]));
         remainingColours.erase(std::find(remainingColours.begin(), remainingColours.end(), 2));
+      }
+      if (listA == &tealLinks || listB == &tealLinks || listC == &tealLinks)
+      {
+        output[tealLinks[0]] = inOutPhantomFiducialsCv[4];
+        remainingIndicies.erase(std::find(remainingIndicies.begin(), remainingIndicies.end(), tealLinks[0]));
+        remainingColours.erase(std::find(remainingColours.begin(), remainingColours.end(), 4));
       }
 
       // One remaining circle has not yet been set, it's index (as per remaining colours above) remains

@@ -434,8 +434,7 @@ namespace HoloIntervention
         resData.SysMemPitch = 0;
         resData.SysMemSlicePitch = 0;
 
-        CD3D11_BUFFER_DESC constantBufferDesc(sizeof(VolumeConstantBuffer), D3D11_BIND_CONSTANT_BUFFER);
-        DX::ThrowIfFailed(device->CreateBuffer(&constantBufferDesc, &resData, &m_volumeConstantBuffer));
+        DX::ThrowIfFailed(device->CreateBuffer(&CD3D11_BUFFER_DESC(sizeof(VolumeConstantBuffer), D3D11_BIND_CONSTANT_BUFFER), &resData, &m_volumeConstantBuffer));
       });
       task<void> createFacePSTask = loadFacePSTask.then([this, device](const std::vector<byte>& fileData)
       {
@@ -665,7 +664,7 @@ namespace HoloIntervention
 
       if (!m_transferFunction->IsValid())
       {
-        throw new std::exception("Transfer function table not valid.");
+        throw std::exception("Transfer function table not valid.");
       }
 
       m_transferFunction->Update();

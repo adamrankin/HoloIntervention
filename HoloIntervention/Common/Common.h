@@ -24,7 +24,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // STL includes
+#include <algorithm>
+#include <iostream>
 #include <string>
+#include <vector>
 
 // WinRT includes
 #include <ppltasks.h>
@@ -129,6 +132,7 @@ namespace HoloIntervention
     });
   }
 
+  std::vector<std::vector<uint32>> NChooseR(uint32 n, uint32 r);
   std::ostream& operator<<(std::ostream& out, const Windows::Foundation::Numerics::float4x4& matrix);
   std::ostream& operator<<(std::ostream& out, const Windows::Foundation::Numerics::float4& vec);
   std::ostream& operator<<(std::ostream& out, const Windows::Foundation::Numerics::float3& vec);

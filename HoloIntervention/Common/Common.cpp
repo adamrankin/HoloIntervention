@@ -73,6 +73,31 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
+  std::vector<std::vector<uint32>> NChooseR(uint32 n, uint32 r)
+  {
+    std::vector<bool> v(n);
+    std::fill(v.begin(), v.begin() + r, true);
+
+    std::vector<std::vector<uint32>> output;
+
+    do
+    {
+      std::vector<uint32> thisCombination;
+      for (uint32 i = 0; i < n; ++i)
+      {
+        if (v[i])
+        {
+          thisCombination.push_back(i);
+        }
+      }
+      output.push_back(thisCombination);
+    }
+    while (std::prev_permutation(v.begin(), v.end()));
+
+    return std::move(output);
+  }
+
+  //----------------------------------------------------------------------------
   std::ostream& operator<<(std::ostream& out, const Windows::Foundation::Numerics::float4x4& matrix)
   {
     out << matrix.m11 << " " << matrix.m12 << " " << matrix.m13 << " " << matrix.m14 << std::endl

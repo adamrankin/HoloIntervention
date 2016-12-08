@@ -58,17 +58,6 @@ float4 main(PixelShaderInput input) : SV_TARGET
   float4 src;
 	float3 step = dir * c_stepSize;
     
-  if( pos.x != 256.f)
-  {
-    dst = float4(front + back, 1.f);
-    dst += float4(1.f, 0.f, 0.f, 1.f);
-  }
-
-  if( dir.x == 256.f )
-  {
-    dst += float4(0.f, 0.f, 0.f, 0.f);
-  }
-    /*
   [loop]
   for (uint i = 0; i < c_numIterations; i++)
   {
@@ -96,7 +85,6 @@ float4 main(PixelShaderInput input) : SV_TARGET
       break;
     }
   }
-*/
 
   return dst;
 }
