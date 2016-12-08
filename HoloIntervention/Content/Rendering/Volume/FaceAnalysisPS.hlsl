@@ -30,5 +30,8 @@ struct PixelShaderInput
 
 float4 main(PixelShaderInput input) : SV_TARGET
 {
-  return float4(input.ModelSpacePosition, 1.0f);
+    // Account for RHS x right, y up, z towards -> x right, y down, z away
+    //   Flip y, z
+    //   Since we know this is a unit cube, 1 - value = flip
+  return float4(input.ModelSpacePosition.x, 1.f - input.ModelSpacePosition.y, 1.f - input.ModelSpacePosition.z, 1.0f);
 }

@@ -181,7 +181,7 @@ namespace HoloIntervention
       const float PI = 3.14159265359f;
       float3 pos = headPose->Head->Position + (2.f * headPose->Head->ForwardDirection);
       // Create pixel to meter scaling factor
-      transform = make_float4x4_scale(0.5f / 11.2f) * make_float4x4_rotation_y(23.f * PI / 180.f) * make_float4x4_translation(pos);
+      transform = make_float4x4_scale(0.75f / 11.2f) * make_float4x4_rotation_y(23.f * PI / 180.f) * make_float4x4_translation(pos);
 
       XMStoreFloat4x4(&m_constantBuffer.worldMatrix, XMLoadFloat4x4(&transform));
       context->UpdateSubresource(m_volumeConstantBuffer.Get(), 0, nullptr, &m_constantBuffer, 0, 0);

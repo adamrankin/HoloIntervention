@@ -86,5 +86,6 @@ float4 main(PixelShaderInput input) : SV_TARGET
     }
   }
 
+  dst.y = dst.z = dst.x;
   return dst;
 }
