@@ -97,7 +97,8 @@ namespace HoloIntervention
       // Direct3D resources for volume rendering
       Microsoft::WRL::ComPtr<ID3D11InputLayout>         m_inputLayout;
       Microsoft::WRL::ComPtr<ID3D11Buffer>              m_vertexBuffer;
-      Microsoft::WRL::ComPtr<ID3D11Buffer>              m_indexBuffer;
+      Microsoft::WRL::ComPtr<ID3D11Buffer>              m_cwIndexBuffer;
+      Microsoft::WRL::ComPtr<ID3D11Buffer>              m_ccwIndexBuffer;
       Microsoft::WRL::ComPtr<ID3D11VertexShader>        m_volRenderVertexShader;
       Microsoft::WRL::ComPtr<ID3D11GeometryShader>      m_volRenderGeometryShader;
       Microsoft::WRL::ComPtr<ID3D11PixelShader>         m_volRenderPixelShader;
@@ -115,8 +116,6 @@ namespace HoloIntervention
       Microsoft::WRL::ComPtr<ID3D11RenderTargetView>    m_backPositionRTV;
       Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>  m_frontPositionSRV;
       Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>  m_backPositionSRV;
-      Microsoft::WRL::ComPtr<ID3D11RasterizerState>     m_cullBackRasterState;
-      Microsoft::WRL::ComPtr<ID3D11RasterizerState>     m_cullFrontRasterState;
 
       // Transfer function GPU resources
       Microsoft::WRL::ComPtr<ID3D11Buffer>              m_lookupTableBuffer;

@@ -43,6 +43,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <d3d11_3.h>
 #include <DirectXMath.h>
 #include <DirectXTex.h>
+#include <DirectXColors.h>
 
 // Unnecessary, but reduces intellisense errors
 #include <WindowsNumerics.h>
@@ -288,12 +289,11 @@ namespace HoloIntervention
         return;
       }
 
-      auto context = m_deviceResources->GetD3DDeviceContext();
+      ID3D11DeviceContext3* context = m_deviceResources->GetD3DDeviceContext();
 
       const UINT stride = sizeof(VertexPosition);
       const UINT offset = 0;
       context->IASetVertexBuffers(0, 1, m_vertexBuffer.GetAddressOf(), &stride, &offset);
-      context->IASetIndexBuffer(m_indexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
       context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
       context->IASetInputLayout(m_inputLayout.Get());
 
@@ -302,8 +302,13 @@ namespace HoloIntervention
       ID3D11DepthStencilView* hololensStencilView;
       context->OMGetRenderTargets(1, &hololensRenderTargetView, &hololensStencilView);
 
-      // Render pass to render cube position textures used for quick ray calculation
-      context->RSSetState(m_cullBackRasterState.Get());
+      context->ClearRenderTargetView(m_frontPositionRTV.Get(), DirectX::Colors::Black);
+      context->ClearRenderTargetView(m_backPositionRTV.Get(), DirectX::Colors::Black);
+
+      context->RSSetState(nullptr);
+
+      // Set index buffer to cw winding to calculate front faces
+      context->IASetIndexBuffer(m_cwIndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
       ID3D11RenderTargetView* targets[1] = { m_frontPositionRTV.Get() };
       context->OMSetRenderTargets(1, targets, nullptr);
       context->VSSetShader(m_volRenderVertexShader.Get(), nullptr, 0);
@@ -313,24 +318,19 @@ namespace HoloIntervention
         context->GSSetShader(m_volRenderGeometryShader.Get(), nullptr, 0);
         context->GSSetConstantBuffers(0, 1, m_volumeConstantBuffer.GetAddressOf());
       }
-      context->PSSetConstantBuffers(0, 1, m_volumeConstantBuffer.GetAddressOf()); // DEBUG: Not really needed as no constant buffers are used
       context->PSSetShader(m_faceCalcPixelShader.Get(), nullptr, 0);
       context->DrawIndexedInstanced(m_indexCount, 2, 0, 0, 0);
 
-      // Set raster state to cull front faces, and perform second pass
-      context->RSSetState(m_cullFrontRasterState.Get());
+      // Set index buffer to ccw winding to calculate back faces
+      context->IASetIndexBuffer(m_ccwIndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
       targets[0] = m_backPositionRTV.Get();
       context->OMSetRenderTargets(1, targets, nullptr);
       context->DrawIndexedInstanced(m_indexCount, 2, 0, 0, 0);
 
-      // Clean up after rendering to textures
-      context->RSSetState(nullptr);
-      targets[0] = { nullptr };
-      context->OMSetRenderTargets(1, targets, nullptr);
-
       // Now perform the actual volume render
       targets[0] = hololensRenderTargetView;
       context->OMSetRenderTargets(1, targets, hololensStencilView);
+      context->IASetIndexBuffer(m_cwIndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
       ID3D11ShaderResourceView* shaderResourceViews[4] = { m_lookupTableSRV.Get(), m_volumeSRV.Get(), m_frontPositionSRV.Get(), m_backPositionSRV.Get() };
       context->PSSetShaderResources(0, 4, shaderResourceViews);
       ID3D11SamplerState* samplerStates[1] = { m_samplerState.Get() };
@@ -407,24 +407,6 @@ namespace HoloIntervention
       }
 
       task<std::vector<byte>> loadFacePSTask = DX::ReadDataAsync(L"ms-appx:///FaceAnalysisPS.cso");
-
-      CD3D11_RASTERIZER_DESC rasterDesc;
-      rasterDesc.FillMode = D3D11_FILL_SOLID;
-      rasterDesc.CullMode = D3D11_CULL_FRONT;
-      rasterDesc.FrontCounterClockwise = FALSE;
-      rasterDesc.DepthBias = 0;
-      rasterDesc.DepthBiasClamp = 0.f;
-      rasterDesc.SlopeScaledDepthBias = 0.f;
-      DX::ThrowIfFailed(device->CreateRasterizerState(&rasterDesc, m_cullFrontRasterState.GetAddressOf()));
-#if _DEBUG
-      m_cullFrontRasterState->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("CullFrontRasterState") - 1, "CullFrontRasterState");
-#endif
-      rasterDesc.CullMode = D3D11_CULL_BACK;
-      DX::ThrowIfFailed(device->CreateRasterizerState(&rasterDesc, m_cullBackRasterState.GetAddressOf()));
-#if _DEBUG
-      m_cullBackRasterState->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("CullBackRasterState") - 1, "CullBackRasterState");
-#endif
-
       task<void> createVSTask = loadVSTask.then([this, device](const std::vector<byte>& fileData)
       {
         DX::ThrowIfFailed(device->CreateVertexShader(fileData.data(), fileData.size(), nullptr, &m_volRenderVertexShader));
@@ -494,8 +476,6 @@ namespace HoloIntervention
       ReleaseCameraResources();
       ReleaseTFResources();
 
-      m_cullFrontRasterState.Reset();
-      m_cullBackRasterState.Reset();
       m_faceCalcPixelShader.Reset();
       m_volRenderVertexShader.Reset();
       m_inputLayout.Reset();
@@ -533,7 +513,7 @@ namespace HoloIntervention
       m_vertexBuffer->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("VolRendVertexBuffer") - 1, "VolRendVertexBuffer");
 #endif
 
-      constexpr std::array<uint16_t, 36> cubeIndices =
+      constexpr std::array<uint16_t, 36> cwCubeIndices =
       {
         {
           2, 1, 0, // -x
@@ -556,16 +536,48 @@ namespace HoloIntervention
         }
       };
 
-      m_indexCount = cubeIndices.size();
+      m_indexCount = cwCubeIndices.size();
 
-      D3D11_SUBRESOURCE_DATA indexBufferData = { 0 };
-      indexBufferData.pSysMem = cubeIndices.data();
-      indexBufferData.SysMemPitch = 0;
-      indexBufferData.SysMemSlicePitch = 0;
-      const CD3D11_BUFFER_DESC indexBufferDesc(sizeof(cubeIndices), D3D11_BIND_INDEX_BUFFER);
-      DX::ThrowIfFailed(device->CreateBuffer(&indexBufferDesc, &indexBufferData, &m_indexBuffer));
+      D3D11_SUBRESOURCE_DATA cwIndexBufferData = { 0 };
+      cwIndexBufferData.pSysMem = cwCubeIndices.data();
+      cwIndexBufferData.SysMemPitch = 0;
+      cwIndexBufferData.SysMemSlicePitch = 0;
+      const CD3D11_BUFFER_DESC cwIndexBufferDesc(sizeof(cwCubeIndices), D3D11_BIND_INDEX_BUFFER);
+      DX::ThrowIfFailed(device->CreateBuffer(&cwIndexBufferDesc, &cwIndexBufferData, &m_cwIndexBuffer));
 #if _DEBUG
-      m_indexBuffer->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("VolRendIndexBuffer") - 1, "VolRendIndexBuffer");
+      m_cwIndexBuffer->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("VolRendCwIndexBuffer") - 1, "VolRendCwIndexBuffer");
+#endif
+
+      constexpr std::array<uint16_t, 36> ccwCubeIndices =
+      {
+        {
+          0, 1, 2, // -x
+          1, 3, 2,
+
+          5, 4, 6, // +x
+          7, 5, 6,
+
+          5, 1, 0, // -y
+          4, 5, 0,
+
+          7, 6, 2, // +y
+          3, 7, 2,
+
+          6, 4, 0, // -z
+          2, 6, 0,
+
+          7, 3, 1, // +z
+          5, 7, 1,
+        }
+      };
+      D3D11_SUBRESOURCE_DATA ccwIndexBufferData = { 0 };
+      ccwIndexBufferData.pSysMem = ccwCubeIndices.data();
+      ccwIndexBufferData.SysMemPitch = 0;
+      ccwIndexBufferData.SysMemSlicePitch = 0;
+      const CD3D11_BUFFER_DESC ccwIndexBufferDesc(sizeof(ccwCubeIndices), D3D11_BIND_INDEX_BUFFER);
+      DX::ThrowIfFailed(device->CreateBuffer(&ccwIndexBufferDesc, &ccwIndexBufferData, &m_ccwIndexBuffer));
+#if _DEBUG
+      m_cwIndexBuffer->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("VolRendCcwIndexBuffer") - 1, "VolRendCcwIndexBuffer");
 #endif
 
       m_componentReady = true;
@@ -576,7 +588,8 @@ namespace HoloIntervention
     {
       m_componentReady = false;
 
-      m_indexBuffer.Reset();
+      m_cwIndexBuffer.Reset();
+      m_ccwIndexBuffer.Reset();
       m_vertexBuffer.Reset();
     }
 
