@@ -18,6 +18,9 @@
 // WinRT includes
 #include <windows.graphics.directx.direct3d11.interop.h>
 
+// Unnecessary, but reduces intellisense errors
+#include <WindowsNumerics.h>
+
 using namespace DirectX;
 using namespace Microsoft::WRL;
 using namespace Windows::Foundation::Numerics;
