@@ -268,9 +268,8 @@ namespace HoloIntervention
         {
           XMFLOAT3 vertex(verticesComponents[0], verticesComponents[1], verticesComponents[2]);
 
-          // TODO : does this return the right result? row/column matrix order
           // Transform it into world coordinates
-          XMStoreFloat3(&vertex, XMVector3Transform(XMLoadFloat3(&vertex), XMMatrixTranspose(XMLoadFloat4x4(&meshToWorld))));
+          XMStoreFloat3(&vertex, XMVector3Transform(XMLoadFloat3(&vertex), XMLoadFloat4x4(&meshToWorld)));
 
           // Store it
           vertices.push_back(vertex);

@@ -137,19 +137,13 @@ namespace HoloIntervention
 
       // Set up a transform from surface mesh space, to world space.
       XMMATRIX scaleTransform = XMMatrixScalingFromVector(XMLoadFloat3(&m_surfaceMesh->VertexPositionScale));
-      XMStoreFloat4x4(
-        &m_meshToWorldTransform,
-        XMMatrixTranspose(scaleTransform * transform)
-      );
+      XMStoreFloat4x4(&m_meshToWorldTransform, scaleTransform * transform);
 
       // Surface meshes come with normals, which are also transformed from surface mesh space, to world space.
       XMMATRIX normalTransform = transform;
       // Normals are not translated, so we remove the translation component here.
       normalTransform.r[3] = XMVectorSet(0.f, 0.f, 0.f, XMVectorGetW(normalTransform.r[3]));
-      XMStoreFloat4x4(
-        &m_normalToWorldTransform,
-        XMMatrixTranspose(normalTransform)
-      );
+      XMStoreFloat4x4(&m_normalToWorldTransform, normalTransform);
 
       if (!m_loadingComplete)
       {
@@ -411,7 +405,7 @@ namespace HoloIntervention
       {
         XMMATRIX rotation = XMLoadFloat4x4(&make_float4x4_from_quaternion(bounds->Value.Orientation));
         XMMATRIX scale = XMLoadFloat4x4(&make_float4x4_scale(2 * bounds->Value.Extents));
-        XMMATRIX translation = XMMatrixTranspose(XMLoadFloat4x4(&make_float4x4_translation(bounds->Value.Center)));
+        XMMATRIX translation = XMLoadFloat4x4(&make_float4x4_translation(bounds->Value.Center));
         XMVECTOR determinant;
         XMStoreFloat4x4(&m_worldToBoxTransform, XMMatrixInverse(&determinant, XMMatrixMultiply(translation, XMMatrixMultiply(rotation, scale))));
 

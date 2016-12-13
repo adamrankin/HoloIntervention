@@ -57,13 +57,13 @@ VertexShaderOutput main(VertexShaderInput input)
   int idx = input.instId % 2;
 
   // Transform the vertex position into world space.
-  pos = mul(pos, modelToWorld);
+  pos = mul(modelToWorld, pos);
 
   // Store the world position.
   output.worldPos = (min16float3)pos;
 
   // Correct for perspective and project the vertex position onto the screen.
-  pos = mul(pos, viewProjection[idx]);
+  pos = mul(viewProjection[idx], pos);
   output.screenPos = (min16float4)pos;
 
   // Pass a color.

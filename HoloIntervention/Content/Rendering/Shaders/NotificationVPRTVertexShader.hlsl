@@ -51,8 +51,8 @@ VertexShaderOutput main(VertexShaderInput input)
 
   int idx = input.instId % 2;
 
-  pos = mul(pos, model);
-  pos = mul(pos, viewProjection[idx]);
+  pos = mul(model, pos);
+  pos = mul(viewProjection[idx], pos);
   output.pos = min16float4(pos);
 
   // Pass the color through with fade.

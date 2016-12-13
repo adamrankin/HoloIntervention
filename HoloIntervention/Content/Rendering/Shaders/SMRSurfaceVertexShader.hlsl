@@ -60,7 +60,7 @@ VertexShaderOutput main(VertexShaderInput input)
   output.worldPos = (min16float3)pos;
 
   // Correct for perspective and project the vertex position onto the screen.
-  pos = mul(pos, viewProjection[idx]);
+  pos = mul(viewProjection[idx], pos);
   output.screenPos = (min16float4)pos;
 
   // Pass a color.

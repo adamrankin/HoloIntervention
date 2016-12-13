@@ -23,12 +23,12 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 cbuffer VolumeConstantBuffer : register(b0)
 {
-  float4x4		c_worldPose;
-	float				c_maximumXValue; // used for transfer function logic
-  uint        c_tfArraySize;
-	float3			c_stepSize;
-  float2      c_viewportDimensions;
-  uint        c_numIterations;
+  float4x4  c_worldPose;
+  float     c_maximumXValue;
+  uint      c_tfArraySize;
+  float3    c_stepSize;
+  float2    c_viewportDimensions;
+  uint      c_numIterations;
 };
 
 struct PixelShaderInput

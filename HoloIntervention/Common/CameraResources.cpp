@@ -140,14 +140,14 @@ namespace DX
       XMStoreFloat4x4(&vp.projection[0], XMLoadFloat4x4(&cameraProjectionTransform.Left));
       XMStoreFloat4x4(&vp.projection[1], XMLoadFloat4x4(&cameraProjectionTransform.Right));
 
-      XMStoreFloat4x4(&viewProjectionConstantBufferData.viewProjection[0], XMMatrixTranspose(XMLoadFloat4x4(&viewCoordinateSystemTransform.Left) * XMLoadFloat4x4(&cameraProjectionTransform.Left)));
-      XMStoreFloat4x4(&viewProjectionConstantBufferData.viewProjection[1], XMMatrixTranspose(XMLoadFloat4x4(&viewCoordinateSystemTransform.Right) * XMLoadFloat4x4(&cameraProjectionTransform.Right)));
+      XMStoreFloat4x4(&viewProjectionConstantBufferData.viewProjection[0], XMLoadFloat4x4(&viewCoordinateSystemTransform.Left) * XMLoadFloat4x4(&cameraProjectionTransform.Left));
+      XMStoreFloat4x4(&viewProjectionConstantBufferData.viewProjection[1], XMLoadFloat4x4(&viewCoordinateSystemTransform.Right) * XMLoadFloat4x4(&cameraProjectionTransform.Right));
 
       float4x4 viewInverse;
       bool invertible = Windows::Foundation::Numerics::invert(viewCoordinateSystemTransform.Left, &viewInverse);
       if (invertible)
       {
-        // For the purposes of this app, use the camera position as a light source.
+        // For the purposes of this app, use the left camera position as a light source.
         float4 cameraPosition = float4(viewInverse.m41, viewInverse.m42, viewInverse.m43, 0.f);
         float4 lightPosition = cameraPosition + float4(0.f, 0.25f, 0.f, 0.f);
 

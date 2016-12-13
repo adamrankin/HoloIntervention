@@ -58,13 +58,13 @@ CommonVSOutput ComputeCommonVSOutputWithLighting(float4 position, float3 normal,
 {
   CommonVSOutput vout;
 
-  float4 pos_ws = mul(position, World);
+  float4 pos_ws = mul(World, position);
   float3 eyeVector = normalize(EyePosition[instId] - pos_ws.xyz);
-  float3 worldNormal = normalize(mul(normal, WorldInverseTranspose));
+  float3 worldNormal = normalize(mul(WorldInverseTranspose, normal));
 
   ColorPair lightResult = ComputeLights(eyeVector, worldNormal, numLights);
 
-  vout.Pos_ps = mul(position, WorldViewProj[instId]);
+  vout.Pos_ps = mul(WorldViewProj[instId], position);
   vout.Diffuse = float4(lightResult.Diffuse, DiffuseColor.a);
   vout.Specular = lightResult.Specular;
   vout.FogFactor = ComputeFogFactor(position, instId);
@@ -86,9 +86,9 @@ CommonVSOutputPixelLighting ComputeCommonVSOutputPixelLighting(float4 position, 
 {
   CommonVSOutputPixelLighting vout;
 
-  vout.Pos_ps = mul(position, WorldViewProj[instId]);
-  vout.Pos_ws = mul(position, World).xyz;
-  vout.Normal_ws = normalize(mul(normal, WorldInverseTranspose));
+  vout.Pos_ps = mul(WorldViewProj[instId], position);
+  vout.Pos_ws = mul(World, position).xyz;
+  vout.Normal_ws = normalize(mul(WorldInverseTranspose, normal));
   vout.FogFactor = ComputeFogFactor(position, instId);
 
   return vout;

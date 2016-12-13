@@ -40,7 +40,7 @@ CommonVSOutput ComputeCommonVSOutput(float4 position, uint instId)
 {
   CommonVSOutput vout;
 
-  vout.Pos_ps = mul(position, WorldViewProj[instId]);
+  vout.Pos_ps = mul(WorldViewProj[instId], position);
   vout.Diffuse = DiffuseColor;
   vout.Specular = 0;
   vout.FogFactor = ComputeFogFactor(position, instId);

@@ -252,7 +252,7 @@ namespace HoloIntervention
       // Construct the 4x4 rotation matrix.
       XMMATRIX rotationMatrix = XMMATRIX(xAxisRotation, yAxisRotation, facingNormal, XMVectorSet(0.f, 0.f, 0.f, 1.f));
       const XMMATRIX modelTranslation = XMMatrixTranslationFromVector(XMLoadFloat3(&m_position));
-      XMStoreFloat4x4(&m_constantBuffer.worldMatrix, XMMatrixTranspose(rotationMatrix * modelTranslation));
+      XMStoreFloat4x4(&m_constantBuffer.worldMatrix, rotationMatrix * modelTranslation);
     }
 
     //----------------------------------------------------------------------------

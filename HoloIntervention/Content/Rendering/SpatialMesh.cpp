@@ -143,13 +143,13 @@ namespace HoloIntervention
 
       // Set up a transform from surface mesh space, to world space.
       XMMATRIX scaleTransform = XMMatrixScalingFromVector(XMLoadFloat3(&m_surfaceMesh->VertexPositionScale));
-      XMStoreFloat4x4(&m_constantBufferData.modelToWorld, XMMatrixTranspose(scaleTransform * transform));
+      XMStoreFloat4x4(&m_constantBufferData.modelToWorld, scaleTransform * transform);
 
       // Surface meshes come with normals, which are also transformed from surface mesh space, to world space.
       XMMATRIX normalTransform = transform;
       // Normals are not translated, so we remove the translation component here.
       normalTransform.r[3] = XMVectorSet(0.f, 0.f, 0.f, XMVectorGetW(normalTransform.r[3]));
-      XMStoreFloat4x4(&m_constantBufferData.normalToWorld, XMMatrixTranspose(normalTransform));
+      XMStoreFloat4x4(&m_constantBufferData.normalToWorld, normalTransform);
 
       if (!m_constantBufferCreated)
       {
