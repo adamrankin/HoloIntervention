@@ -23,19 +23,19 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 cbuffer VolumeConstantBuffer : register(b0)
 {
-  float4x4  c_worldPose;
-  float     c_maximumXValue;
-  uint      c_tfArraySize;
-  float3    c_stepSize;
-  float2    c_viewportDimensions;
-  uint      c_numIterations;
+  float4x4  c_worldPose           : packoffset(c0);
+  float3    c_stepSize            : packoffset(c4);
+  float     c_maximumXValue       : packoffset(c4.w);
+  float2    c_viewportDimensions  : packoffset(c5);
+  float     c_tfArraySize         : packoffset(c5.z);
+  uint      c_numIterations       : packoffset(c5.w);
 };
 
 struct PixelShaderInput
 {
   min16float4 Position              : SV_POSITION;
   min16float3 ModelSpacePosition    : TEXCOORD0; // not used
-  uint				rtvId                 : SV_RenderTargetArrayIndex;
+  uint        rtvId                 : SV_RenderTargetArrayIndex;
 };
 
 ByteAddressBuffer r_lookupTable             : register(t0);
@@ -54,7 +54,7 @@ float4 main(PixelShaderInput input) : SV_TARGET
   float3 pos = front;
   float4 dst = float4(0, 0, 0, 0);
   float4 src;
-	float3 step = dir * c_stepSize;
+	float3 step = dir * c_stepSize.xyz;
     
   [loop]
   for (uint i = 0; i < c_numIterations; i++)

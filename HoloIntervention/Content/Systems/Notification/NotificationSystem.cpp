@@ -31,6 +31,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "DeviceResources.h"
 #include "StepTimer.h"
 
+// Unnecessary, but reduces intellisense errors
+#include <WindowsNumerics.h>
+
 using namespace DirectX;
 using namespace Windows::Foundation::Numerics;
 using namespace Windows::UI::Input::Spatial;
@@ -72,44 +75,49 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void NotificationSystem::QueueMessage(const std::string& message, double duration)
+    uint64 NotificationSystem::QueueMessage(const std::string& message, double duration)
     {
-      QueueMessage(std::wstring(message.begin(), message.end()), duration);
+      return QueueMessage(std::wstring(message.begin(), message.end()), duration);
     }
 
     //----------------------------------------------------------------------------
-    void NotificationSystem::QueueMessage(Platform::String^ message, double duration)
+    uint64 NotificationSystem::QueueMessage(Platform::String^ message, double duration)
     {
-      QueueMessage(std::wstring(message->Data()), duration);
+      return QueueMessage(std::wstring(message->Data()), duration);
     }
 
     //----------------------------------------------------------------------------
-    void NotificationSystem::QueueMessage(const std::wstring& message, double duration)
+    uint64 NotificationSystem::QueueMessage(const std::wstring& message, double duration)
     {
       duration = clamp<double>(duration, MAXIMUM_REQUESTED_DURATION_SEC, 0.1);
 
       std::lock_guard<std::mutex> guard(m_messageQueueMutex);
-      MessageDuration mt(message, duration);
+      MessageEntry mt(m_nextMessageId, message, duration);
       m_messages.push_back(mt);
+
+      m_nextMessageId++;
+      return m_nextMessageId - 1;
     }
 
     //----------------------------------------------------------------------------
-    void NotificationSystem::DebugSetMessage(const std::wstring& message, double duration /*= DEFAULT_NOTIFICATION_DURATION_SEC*/)
+    void NotificationSystem::RemoveMessage(uint64 messageId)
     {
-      // set this message as the active one
-      m_animationState = HIDDEN;
-      m_messageTimeElapsedSec = 0.0;
+      if (m_currentMessage.messageId == messageId)
+      {
+        // Currently being displayed, terminate it
+        m_animationState = SHOWING;
+        m_messageTimeElapsedSec = m_currentMessage.messageDuration + 0.5;
+        return;
+      }
 
-      std::lock_guard<std::mutex> guard(m_messageQueueMutex);
-      MessageDuration mt(message, duration);
-      m_messages.push_front(mt);
-    }
-
-    //----------------------------------------------------------------------------
-    void NotificationSystem::DebugSetMessage(Platform::String^ message, double duration /*= DEFAULT_NOTIFICATION_DURATION_SEC*/)
-    {
-      std::wstring string(message->Data());
-      DebugSetMessage(string, duration);
+      for (auto it = m_messages.begin(); it != m_messages.end(); ++it)
+      {
+        if (it->messageId == messageId)
+        {
+          m_messages.erase(it);
+          return;
+        }
+      }
     }
 
     //----------------------------------------------------------------------------
@@ -143,10 +151,9 @@ namespace HoloIntervention
 
         GrabNextMessage();
       }
-      else if (m_animationState == SHOWING && m_messageTimeElapsedSec > m_currentMessage.second)
+      else if (m_animationState == SHOWING && m_messageTimeElapsedSec > m_currentMessage.messageDuration)
       {
         // The time for the current message has ended
-
         if (m_messages.size() > 0)
         {
           // There is a new message to show, switch to it, do not do any fade
@@ -165,7 +172,7 @@ namespace HoloIntervention
       {
         if (!IsFading())
         {
-          // animation has finished, switch to showing
+          // Animation has finished, switch to SHOWING
           m_animationState = SHOWING;
           m_messageTimeElapsedSec = 0.f;
         }
@@ -183,7 +190,7 @@ namespace HoloIntervention
 
         if (!IsFading())
         {
-          // animation has finished, switch to HIDDEN
+          // Animation has finished, switch to HIDDEN
           m_animationState = HIDDEN;
         }
       }
@@ -265,7 +272,7 @@ namespace HoloIntervention
       m_currentMessage = m_messages.front();
       m_messages.pop_front();
 
-      m_notificationRenderer->RenderText(m_currentMessage.first);
+      m_notificationRenderer->RenderText(m_currentMessage.message);
     }
 
     //----------------------------------------------------------------------------

@@ -86,6 +86,7 @@ namespace HoloIntervention
     void IGTLinkIF::Disconnect()
     {
       m_igtClient->Disconnect();
+      m_connectionState = CONNECTION_STATE_DISCONNECTED;
     }
 
     //----------------------------------------------------------------------------
@@ -161,9 +162,10 @@ namespace HoloIntervention
     {
       callbackMap[L"connect"] = [this](SpeechRecognitionResult ^ result)
       {
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Connecting...");
-        ConnectAsync(4.0).then([this](bool result)
+        uint64 connectMessageId = HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Connecting...");
+        ConnectAsync(4.0).then([this, connectMessageId](bool result)
         {
+          HoloIntervention::instance()->GetNotificationSystem().RemoveMessage(connectMessageId);
           if (result)
           {
             HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Connection successful.");
@@ -211,7 +213,6 @@ namespace HoloIntervention
           if (m_connectionState == CONNECTION_STATE_CONNECTED)
           {
             // send keep alive message
-
             igtl::StatusMessage::Pointer statusMsg = igtl::StatusMessage::New();
             statusMsg->SetCode(igtl::StatusMessage::STATUS_OK);
             statusMsg->Pack();

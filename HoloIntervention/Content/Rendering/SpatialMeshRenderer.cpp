@@ -492,16 +492,15 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void SpatialMeshRenderer::RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap)
     {
-      // Disable debug mesh commands until needed again
       callbackMap[L"mesh on"] = [this](SpeechRecognitionResult ^ result)
       {
-        HoloIntervention::instance()->GetNotificationSystem().DebugSetMessage(L"Mesh showing.");
+        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Mesh showing.");
         SetEnabled(true);
       };
 
       callbackMap[L"mesh off"] = [this](SpeechRecognitionResult ^ result)
       {
-        HoloIntervention::instance()->GetNotificationSystem().DebugSetMessage(L"Mesh disabled.");
+        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Mesh disabled.");
         SetEnabled(false);
       };
     }

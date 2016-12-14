@@ -153,7 +153,7 @@ namespace HoloIntervention
         m_sliceToken = HoloIntervention::instance()->GetSliceRenderer().AddSlice(Network::IGTLinkIF::GetSharedImagePtr(frame),
                        frame->FrameSize->GetAt(0),
                        frame->FrameSize->GetAt(1),
-                       (DXGI_FORMAT)frame->PixelFormat,
+                       (DXGI_FORMAT)frame->GetPixelFormat(true),
                        transpose(frame->EmbeddedImageTransform),
                        coordSystem);
       }
@@ -163,7 +163,7 @@ namespace HoloIntervention
             Network::IGTLinkIF::GetSharedImagePtr(frame),
             frame->Width,
             frame->Height,
-            (DXGI_FORMAT)frame->PixelFormat,
+            (DXGI_FORMAT)frame->GetPixelFormat(true),
             transpose(frame->EmbeddedImageTransform),
             coordSystem);
       }

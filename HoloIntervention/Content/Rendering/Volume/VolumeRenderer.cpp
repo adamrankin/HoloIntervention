@@ -192,7 +192,7 @@ namespace HoloIntervention
     {
       const auto context = m_deviceResources->GetD3DDeviceContext();
 
-      auto bytesPerPixel = BitsPerPixel((DXGI_FORMAT)m_frame->PixelFormat) / 8;
+      auto bytesPerPixel = BitsPerPixel((DXGI_FORMAT)m_frame->GetPixelFormat(false)) / 8;
       auto imagePtr = Network::IGTLinkIF::GetSharedImagePtr(m_frame);
 
       // Map image resource and update data
@@ -228,11 +228,11 @@ namespace HoloIntervention
       m_frameSize[1] = m_frame->FrameSize->GetAt(1);
       m_frameSize[2] = m_frame->FrameSize->GetAt(2);
 
-      auto bytesPerPixel = BitsPerPixel((DXGI_FORMAT)m_frame->PixelFormat) / 8;
+      auto bytesPerPixel = BitsPerPixel((DXGI_FORMAT)m_frame->GetPixelFormat(false)) / 8;
 
       // Create a staging texture that will be used to copy data from the CPU to the GPU,
       // the staging texture will then copy to the render texture
-      CD3D11_TEXTURE3D_DESC textureDesc((DXGI_FORMAT)m_frame->PixelFormat, m_frameSize[0], m_frameSize[1], m_frameSize[2], 1, 0, D3D11_USAGE_STAGING, D3D11_CPU_ACCESS_WRITE | D3D11_CPU_ACCESS_READ);
+      CD3D11_TEXTURE3D_DESC textureDesc((DXGI_FORMAT)m_frame->GetPixelFormat(false), m_frameSize[0], m_frameSize[1], m_frameSize[2], 1, 0, D3D11_USAGE_STAGING, D3D11_CPU_ACCESS_WRITE | D3D11_CPU_ACCESS_READ);
       D3D11_SUBRESOURCE_DATA imgData;
       imgData.pSysMem = Network::IGTLinkIF::GetSharedImagePtr(m_frame).get();
       imgData.SysMemPitch = m_frameSize[0] * bytesPerPixel;
@@ -240,12 +240,12 @@ namespace HoloIntervention
       DX::ThrowIfFailed(device->CreateTexture3D(&textureDesc, &imgData, m_volumeStagingTexture.GetAddressOf()));
 
       // Create the texture that will be used by the shader to access the current volume to be rendered
-      textureDesc = CD3D11_TEXTURE3D_DESC((DXGI_FORMAT)m_frame->PixelFormat, m_frameSize[0], m_frameSize[1], m_frameSize[2], 1);
+      textureDesc = CD3D11_TEXTURE3D_DESC((DXGI_FORMAT)m_frame->GetPixelFormat(false), m_frameSize[0], m_frameSize[1], m_frameSize[2], 1);
       DX::ThrowIfFailed(device->CreateTexture3D(&textureDesc, &imgData, m_volumeTexture.GetAddressOf()));
 #if _DEBUG
       m_volumeTexture->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("VolumeTexture") - 1, "VolumeTexture");
 #endif
-      CD3D11_SHADER_RESOURCE_VIEW_DESC srvDesc(m_volumeTexture.Get(), (DXGI_FORMAT)m_frame->PixelFormat);
+      CD3D11_SHADER_RESOURCE_VIEW_DESC srvDesc(m_volumeTexture.Get(), (DXGI_FORMAT)m_frame->GetPixelFormat(false));
       DX::ThrowIfFailed(device->CreateShaderResourceView(m_volumeTexture.Get(), &srvDesc, m_volumeSRV.GetAddressOf()));
 #if _DEBUG
       m_volumeSRV->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("VolumeSRV") - 1, "VolumeSRV");
@@ -259,7 +259,7 @@ namespace HoloIntervention
                                1.0f / (m_frameSize[2] * (maxSize / m_frameSize[2])));
 
       m_constantBuffer.stepSize = stepSize * m_stepScale;
-      m_constantBuffer.numIterations = (uint32)(maxSize * (1.0f / m_stepScale));
+      m_constantBuffer.numIterations = static_cast<uint32>(maxSize * (1.0f / m_stepScale));
 
       float borderColour[4] = { 0.f, 0.f, 0.f, 0.f };
       CD3D11_SAMPLER_DESC desc(D3D11_FILTER_MIN_MAG_MIP_LINEAR, D3D11_TEXTURE_ADDRESS_BORDER, D3D11_TEXTURE_ADDRESS_BORDER, D3D11_TEXTURE_ADDRESS_BORDER, 0.f, 3, D3D11_COMPARISON_NEVER, borderColour, 0, 3);
@@ -576,7 +576,7 @@ namespace HoloIntervention
       const CD3D11_BUFFER_DESC ccwIndexBufferDesc(sizeof(ccwCubeIndices), D3D11_BIND_INDEX_BUFFER);
       DX::ThrowIfFailed(device->CreateBuffer(&ccwIndexBufferDesc, &ccwIndexBufferData, &m_ccwIndexBuffer));
 #if _DEBUG
-      m_cwIndexBuffer->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("VolRendCcwIndexBuffer") - 1, "VolRendCcwIndexBuffer");
+      m_ccwIndexBuffer->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("VolRendCcwIndexBuffer") - 1, "VolRendCcwIndexBuffer");
 #endif
 
       m_componentReady = true;
@@ -669,7 +669,7 @@ namespace HoloIntervention
 
       m_transferFunction->Update();
       m_constantBuffer.lt_maximumXValue = m_transferFunction->GetTFLookupTable().GetMaximumXValue();
-      m_constantBuffer.lt_arraySize = m_transferFunction->GetTFLookupTable().GetArraySize();
+      m_constantBuffer.lt_arraySize = 1.f * m_transferFunction->GetTFLookupTable().GetArraySize();
 
       // Set up GPU memory
       D3D11_BUFFER_DESC desc;

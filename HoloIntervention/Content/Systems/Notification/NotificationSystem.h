@@ -53,20 +53,31 @@ namespace HoloIntervention
         HIDDEN
       };
 
-      typedef std::pair<std::wstring, double> MessageDuration;
-      typedef std::deque<MessageDuration> MessageQueue;
+      struct MessageEntry
+      {
+        MessageEntry() {};
+        MessageEntry(uint64 id, const std::wstring& msg, double duration)
+          : messageId(id)
+          , message(msg)
+          , messageDuration(duration)
+        {}
+
+        uint64 messageId = 0;
+        std::wstring message = L"";
+        double messageDuration = 0.0;
+      };
+      typedef std::deque<MessageEntry> MessageQueue;
 
     public:
       NotificationSystem(const std::shared_ptr<DX::DeviceResources>& deviceResources);
       ~NotificationSystem();
 
       // Add a message to the queue to render
-      void QueueMessage(const std::string& message, double duration = DEFAULT_NOTIFICATION_DURATION_SEC);
-      void QueueMessage(const std::wstring& message, double duration = DEFAULT_NOTIFICATION_DURATION_SEC);
-      void QueueMessage(Platform::String^ message, double duration = DEFAULT_NOTIFICATION_DURATION_SEC);
+      uint64 QueueMessage(const std::string& message, double duration = DEFAULT_NOTIFICATION_DURATION_SEC);
+      uint64 QueueMessage(const std::wstring& message, double duration = DEFAULT_NOTIFICATION_DURATION_SEC);
+      uint64 QueueMessage(Platform::String^ message, double duration = DEFAULT_NOTIFICATION_DURATION_SEC);
 
-      void DebugSetMessage(const std::wstring& message, double duration = DEFAULT_NOTIFICATION_DURATION_SEC);
-      void DebugSetMessage(Platform::String^ message, double duration = DEFAULT_NOTIFICATION_DURATION_SEC);
+      void RemoveMessage(uint64 messageId);
 
       void Initialize(Windows::UI::Input::Spatial::SpatialPointerPose^ pointerPose);
       void Update(Windows::UI::Input::Spatial::SpatialPointerPose^ pointerPose, const DX::StepTimer& timer);
@@ -110,11 +121,12 @@ namespace HoloIntervention
       Windows::Foundation::Numerics::float3               m_velocity = { 0.f, 0.f, 0.f };
 
       MessageQueue                                        m_messages;
-      MessageDuration                                     m_currentMessage;
-
       std::mutex                                          m_messageQueueMutex;
 
+      MessageEntry                                        m_currentMessage;
       double                                              m_messageTimeElapsedSec = 0.0f;
+
+      uint64                                              m_nextMessageId = 0;
 
       // Constants relating to behavior of the notification system
       static const DirectX::XMFLOAT4                      HIDDEN_ALPHA_VALUE;

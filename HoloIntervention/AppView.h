@@ -67,7 +67,7 @@ namespace HoloIntervention
   public:
     AppView();
 
-    // IFrameworkView methods.
+    // IFrameworkView methods
     virtual void Initialize(Windows::ApplicationModel::Core::CoreApplicationView ^ applicationView);
     virtual void SetWindow(Windows::UI::Core::CoreWindow ^ window);
     virtual void Load(Platform::String ^ entryPoint);

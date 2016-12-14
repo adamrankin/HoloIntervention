@@ -378,6 +378,7 @@ namespace HoloIntervention
         return;
       }
 
+      uint64 lastMessageId(std::numeric_limits<uint64>::max());
       while (!token.is_canceled())
       {
         if (m_videoFrameProcessor == nullptr || !HoloIntervention::instance()->GetIGTLink().IsConnected())
@@ -449,7 +450,11 @@ namespace HoloIntervention
 
             m_sphereInAnchorResults.push_back(sphereInAnchorResults);
             m_sphereInTrackerResults.push_back(sphereInTrackerResults);
-            HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Acquired " + m_sphereInAnchorResults.size().ToString() + L"/" + NUMBER_OF_FRAMES_FOR_CALIBRATION.ToString() + " frames.",  0.5);
+            if (lastMessageId != std::numeric_limits<uint64>::max())
+            {
+              HoloIntervention::instance()->GetNotificationSystem().RemoveMessage(lastMessageId);
+            }
+            lastMessageId = HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Acquired " + m_sphereInAnchorResults.size().ToString() + L"/" + NUMBER_OF_FRAMES_FOR_CALIBRATION.ToString() + " frames.");
           }
 
           // If we've acquired enough frames, perform the registration
