@@ -78,7 +78,7 @@ namespace HoloIntervention
       std::vector<float2> points;
       points.push_back(float2(0.f, 0.f));
       points.push_back(float2(255.f, 1.f));
-      SetTransferFunctionTypeAsync(TransferFunction_Piecewise_Linear, points);
+      SetTransferFunctionTypeAsync(TransferFunction_Piecewise_Linear, 512, points);
 
       try
       {
@@ -347,26 +347,32 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<void> VolumeRenderer::SetTransferFunctionTypeAsync(TransferFunctionType type, const std::vector<float2>& controlPoints)
+    task<void> VolumeRenderer::SetTransferFunctionTypeAsync(TransferFunctionType functionType, uint32 tableSize, const std::vector<float2>& controlPoints)
     {
-      return create_task([this, type, controlPoints]()
+      return create_task([this, functionType, tableSize, controlPoints]()
       {
         std::lock_guard<std::mutex> guard(m_tfMutex);
 
         delete m_transferFunction;
-        switch (type)
+        switch (functionType)
         {
-        case VolumeRenderer::TransferFunction_Piecewise_Linear:
-        default:
-          m_tfType = VolumeRenderer::TransferFunction_Piecewise_Linear;
-          m_transferFunction = new PiecewiseLinearTF();
-          break;
+          case VolumeRenderer::TransferFunction_Piecewise_Linear:
+          {
+            m_tfType = VolumeRenderer::TransferFunction_Piecewise_Linear;
+            m_transferFunction = new PiecewiseLinearTransferFunction();
+            break;
+          }
+          default:
+            throw std::invalid_argument("Function type not recognized.");
+            break;
         }
 
         for (auto& point : controlPoints)
         {
           m_transferFunction->AddControlPoint(point);
         }
+
+        m_transferFunction->SetLookupTableSize(tableSize);
 
         m_transferFunction->Update();
       }).then([this]()
@@ -428,7 +434,6 @@ namespace HoloIntervention
 
         VolumeConstantBuffer buffer;
         XMStoreFloat4x4(&buffer.worldMatrix, XMMatrixIdentity());
-        buffer.lt_maximumXValue = m_transferFunction->GetTFLookupTable().GetMaximumXValue();
         D3D11_SUBRESOURCE_DATA resData;
         resData.pSysMem = &buffer;
         resData.SysMemPitch = 0;
@@ -668,7 +673,7 @@ namespace HoloIntervention
       }
 
       m_transferFunction->Update();
-      m_constantBuffer.lt_maximumXValue = m_transferFunction->GetTFLookupTable().GetMaximumXValue();
+      m_constantBuffer.lt_maximumXValue = m_transferFunction->GetMaximumXValue();
       m_constantBuffer.lt_arraySize = 1.f * m_transferFunction->GetTFLookupTable().GetArraySize();
 
       // Set up GPU memory

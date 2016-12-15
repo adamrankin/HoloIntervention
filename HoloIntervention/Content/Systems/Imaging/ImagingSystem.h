@@ -29,6 +29,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Rendering includes
 #include "SliceRenderer.h"
+#include "VolumeRenderer.h"
 
 namespace DX
 {
@@ -60,7 +61,9 @@ namespace HoloIntervention
 
     protected:
       // Slice system
-      uint32 m_sliceToken = Rendering::SliceRenderer::INVALID_SLICE_INDEX;
+      uint32                                            m_sliceToken = Rendering::SliceRenderer::INVALID_SLICE_INDEX;
+      Rendering::VolumeRenderer::TransferFunctionType   m_transferFunctionType = Rendering::VolumeRenderer::TransferFunction_Piecewise_Linear;
+      std::atomic_bool                                  m_transferFunctionInitialized = false;
     };
   }
 }
