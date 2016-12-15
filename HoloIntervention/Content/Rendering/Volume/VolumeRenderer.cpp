@@ -78,7 +78,7 @@ namespace HoloIntervention
       std::vector<float2> points;
       points.push_back(float2(0.f, 0.f));
       points.push_back(float2(255.f, 1.f));
-      SetTransferFunctionTypeAsync(TransferFunction_Piecewise_Linear, points);
+      SetTransferFunctionTypeAsync(TransferFunction_Piecewise_Linear, IGTL_SCALAR_UINT8, points);
 
       try
       {
@@ -258,7 +258,7 @@ namespace HoloIntervention
                                1.0f / (m_frameSize[1] * (maxSize / m_frameSize[1])),
                                1.0f / (m_frameSize[2] * (maxSize / m_frameSize[2])));
 
-      m_constantBuffer.stepSize = stepSize * m_stepScale;
+      m_constantBuffer.stepSize = float4(stepSize * m_stepScale, 1.f);
       m_constantBuffer.numIterations = static_cast<uint32>(maxSize * (1.0f / m_stepScale));
 
       float borderColour[4] = { 0.f, 0.f, 0.f, 0.f };
@@ -347,20 +347,54 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<void> VolumeRenderer::SetTransferFunctionTypeAsync(TransferFunctionType type, const std::vector<float2>& controlPoints)
+    task<void> VolumeRenderer::SetTransferFunctionTypeAsync(TransferFunctionType functionType, DXGI_FORMAT pixelFormat, const std::vector<float2>& controlPoints)
     {
-      return create_task([this, type, controlPoints]()
+      uint32 pixelSizeByte = DirectX::BitsPerPixel(pixelFormat) / 8;
+      return create_task([this, functionType, pixelSizeByte, pixelFormat, controlPoints]()
       {
         std::lock_guard<std::mutex> guard(m_tfMutex);
 
         delete m_transferFunction;
-        switch (type)
+        switch (functionType)
         {
-        case VolumeRenderer::TransferFunction_Piecewise_Linear:
-        default:
-          m_tfType = VolumeRenderer::TransferFunction_Piecewise_Linear;
-          m_transferFunction = new PiecewiseLinearTF();
-          break;
+          case VolumeRenderer::TransferFunction_Piecewise_Linear:
+          {
+            m_tfType = VolumeRenderer::TransferFunction_Piecewise_Linear;
+
+            switch (pixelSizeByte)
+            {
+              case IGTL_SCALAR_INT8:
+                m_transferFunction = new PiecewiseLinearTransferFunction<int8>();
+                break;
+              case IGTL_SCALAR_UINT8:
+                m_transferFunction = new PiecewiseLinearTransferFunction<uint8>();
+                break;
+              case IGTL_SCALAR_INT16:
+                m_transferFunction = new PiecewiseLinearTransferFunction<int16>();
+                break;
+              case IGTL_SCALAR_UINT16:
+                m_transferFunction = new PiecewiseLinearTransferFunction<uint16>();
+                break;
+              case IGTL_SCALAR_INT32:
+                m_transferFunction = new PiecewiseLinearTransferFunction<int32>();
+                break;
+              case IGTL_SCALAR_UINT32:
+                m_transferFunction = new PiecewiseLinearTransferFunction<uint32>();
+                break;
+              case IGTL_SCALAR_FLOAT32:
+                m_transferFunction = new PiecewiseLinearTransferFunction<float>();
+                break;
+              case IGTL_SCALAR_FLOAT64:
+                m_transferFunction = new PiecewiseLinearTransferFunction<double>();
+                break;
+              default:
+                throw std::invalid_argument("Scalar type not recognized.");
+                break;
+            }
+          }
+          default:
+            throw std::invalid_argument("Function type not recognized.");
+            break;
         }
 
         for (auto& point : controlPoints)
@@ -428,7 +462,6 @@ namespace HoloIntervention
 
         VolumeConstantBuffer buffer;
         XMStoreFloat4x4(&buffer.worldMatrix, XMMatrixIdentity());
-        buffer.lt_maximumXValue = m_transferFunction->GetTFLookupTable().GetMaximumXValue();
         D3D11_SUBRESOURCE_DATA resData;
         resData.pSysMem = &buffer;
         resData.SysMemPitch = 0;
@@ -668,7 +701,6 @@ namespace HoloIntervention
       }
 
       m_transferFunction->Update();
-      m_constantBuffer.lt_maximumXValue = m_transferFunction->GetTFLookupTable().GetMaximumXValue();
       m_constantBuffer.lt_arraySize = 1.f * m_transferFunction->GetTFLookupTable().GetArraySize();
 
       // Set up GPU memory

@@ -24,8 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 cbuffer VolumeConstantBuffer : register(b0)
 {
   float4x4  c_worldPose           : packoffset(c0);
-  float3    c_stepSize            : packoffset(c4);
-  float     c_maximumXValue       : packoffset(c4.w);
+  float4    c_stepSize            : packoffset(c4);
   float2    c_viewportDimensions  : packoffset(c5);
   float     c_tfArraySize         : packoffset(c5.z);
   uint      c_numIterations       : packoffset(c5.w);
@@ -60,6 +59,8 @@ float4 main(PixelShaderInput input) : SV_TARGET
   for (uint i = 0; i < c_numIterations; i++)
   {
     src = r_volumeTexture.SampleLevel(r_sampler, pos, 0.f);
+    src.r;
+
     src.a *= .1f; // Reduce the alpha to have a more transparent result
 									//  this needs to be adjusted based on the step size
 									//  i.e. the more steps we take, the faster the alpha will grow	

@@ -25,7 +25,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "IEngineComponent.h"
-#include "PiecewiseLinearTF.h"
+#include "PiecewiseLinearTransferFunction.h"
 
 namespace DX
 {
@@ -41,8 +41,7 @@ namespace HoloIntervention
     struct VolumeConstantBuffer
     {
       Windows::Foundation::Numerics::float4x4 worldMatrix;
-      Windows::Foundation::Numerics::float3   stepSize;
-      float                                   lt_maximumXValue;
+      Windows::Foundation::Numerics::float4   stepSize;
       Windows::Foundation::Numerics::float2   viewportDimensions;
       float                                   lt_arraySize;
       uint32                                  numIterations;
@@ -71,7 +70,7 @@ namespace HoloIntervention
       void Update(UWPOpenIGTLink::TrackedFrame^ frame, const DX::StepTimer& timer, DX::CameraResources* cameraResources, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem, Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
       void Render();
 
-      Concurrency::task<void> SetTransferFunctionTypeAsync(TransferFunctionType type, const std::vector<Windows::Foundation::Numerics::float2>& controlPoints);
+      Concurrency::task<void> SetTransferFunctionTypeAsync(TransferFunctionType type, DXGI_FORMAT pixelFormat, const std::vector<Windows::Foundation::Numerics::float2>& controlPoints);
 
       // D3D device related controls
       Concurrency::task<void> CreateDeviceDependentResourcesAsync();
@@ -143,7 +142,7 @@ namespace HoloIntervention
       // Transfer function CPU resources
       std::mutex                                        m_tfMutex;
       TransferFunctionType                              m_tfType = TransferFunction_Unknown;
-      ITransferFunction*                                m_transferFunction = nullptr;
+      BaseTransferFunction*                                m_transferFunction = nullptr;
     };
   }
 }

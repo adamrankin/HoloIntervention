@@ -24,20 +24,42 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
-#include "ITransferFunction.h"
+#include "TransferFunctionLookupTable.h"
+
+// STL includes
+#include <atomic>
+#include <vector>
 
 namespace HoloIntervention
 {
   namespace Rendering
   {
-    class PiecewiseLinearTF : public ITransferFunction
+    class BaseTransferFunction
     {
-    public:
-      PiecewiseLinearTF();
-      virtual ~PiecewiseLinearTF();
+      typedef std::pair<uint32, Windows::Foundation::Numerics::float2> ControlPoint;
+      typedef std::vector<ControlPoint> ControlPointList;
 
-      // ITransferFunction functions
-      virtual void Update();
+    public:
+      virtual ~BaseTransferFunction();
+      virtual TransferFunctionLookupTable& GetTFLookupTable();
+      virtual bool IsValid() const;
+      virtual void Update() = 0;
+
+      virtual uint32 AddControlPoint(float x, float y);
+      virtual uint32 AddControlPoint(const Windows::Foundation::Numerics::float2& point);
+      virtual uint32 AddControlPoint(float point[2]);
+      virtual uint32 AddControlPoint(const std::array<float, 2>& point);
+
+      virtual bool RemoveControlPoint(uint32 controlPointUid);
+
+    protected:
+      BaseTransferFunction();
+
+    protected:
+      uint32_t                        m_nextUid = 0;
+      ControlPointList                m_controlPoints;
+      TransferFunctionLookupTable     m_transferFunction;
+      std::atomic_bool                m_isValid = false;
     };
   }
 }

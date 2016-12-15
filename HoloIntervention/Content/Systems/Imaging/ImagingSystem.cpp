@@ -38,7 +38,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Rendering includes
 #include "SliceRenderer.h"
-#include "VolumeRenderer.h"
 
 using namespace Windows::Foundation::Numerics;
 using namespace Windows::Perception::Spatial;
@@ -137,10 +136,8 @@ namespace HoloIntervention
       callbackMap[L"piecewise linear transfer function"] = [this](SpeechRecognitionResult ^ result)
       {
         HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Using built-in piecewise linear transfer function.");
-        std::vector<float2> points;
-        points.push_back(float2(0.f, 0.f));
-        points.push_back(float2(255.f, 1.f));
-        HoloIntervention::instance()->GetVolumeRenderer().SetTransferFunctionTypeAsync(Rendering::VolumeRenderer::TransferFunction_Piecewise_Linear, points);
+        m_transferFunctionType = Rendering::VolumeRenderer::TransferFunction_Piecewise_Linear;
+        m_transferFunctionInitialized = false;
       };
     }
 
@@ -172,7 +169,13 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ImagingSystem::Process3DFrame(UWPOpenIGTLink::TrackedFrame^ frame, SpatialCoordinateSystem^ coordSystem)
     {
-
+      if (!m_transferFunctionInitialized)
+      {
+        std::vector<float2> points;
+        points.push_back(float2(0.f, 0.f));
+        points.push_back(float2(255.f, 1.f));
+        HoloIntervention::instance()->GetVolumeRenderer().SetTransferFunctionTypeAsync(Rendering::VolumeRenderer::TransferFunction_Piecewise_Linear, frame->GetPixelFormat(true), points);
+      }
     }
   }
 }
