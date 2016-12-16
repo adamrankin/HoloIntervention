@@ -23,42 +23,25 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-namespace HoloIntervention
+// DirectX includes
+#include <DirectXMath.h>
+
+inline DirectX::XMFLOAT4 operator-(const DirectX::XMFLOAT4& lhs, const DirectX::XMFLOAT4& rhs)
 {
-  namespace Rendering
-  {
-    class TransferFunctionLookupTable
-    {
-    public:
-      TransferFunctionLookupTable()
-      {
-        m_lookupTable = new DirectX::XMFLOAT4[m_transferFunctionTableSize];
-        memset(m_lookupTable, 0, sizeof(DirectX::XMFLOAT4)*m_transferFunctionTableSize);
-      }
-      ~TransferFunctionLookupTable()
-      {
-        delete[] m_lookupTable;
-      }
+  return DirectX::XMFLOAT4(lhs.x - rhs.x, lhs.y - rhs.y, lhs.z - rhs.z, lhs.w - rhs.w);
+}
 
-      DirectX::XMFLOAT4* GetLookupTableArray()
-      {
-        return m_lookupTable;
-      }
-      uint32 GetArraySize()
-      {
-        return m_transferFunctionTableSize;
-      }
-      void SetArraySize(uint32 size)
-      {
-        m_transferFunctionTableSize = size;
-        delete[] m_lookupTable;
-        m_lookupTable = new DirectX::XMFLOAT4[m_transferFunctionTableSize];
-        memset(m_lookupTable, 0, sizeof(DirectX::XMFLOAT4)*m_transferFunctionTableSize);
-      }
+inline DirectX::XMFLOAT4 operator+(const DirectX::XMFLOAT4& lhs, const DirectX::XMFLOAT4& rhs)
+{
+  return DirectX::XMFLOAT4(lhs.x + rhs.x, lhs.y + rhs.y, lhs.z + rhs.z, lhs.w + rhs.w);
+}
 
-    protected:
-      DirectX::XMFLOAT4*             m_lookupTable;
-      uint32                m_transferFunctionTableSize = 256;
-    };
-  }
+inline DirectX::XMFLOAT4 operator*(const float& lhs, const DirectX::XMFLOAT4& rhs)
+{
+  return DirectX::XMFLOAT4(lhs * rhs.x, lhs * rhs.y, lhs * rhs.z, lhs * rhs.w);
+}
+
+inline DirectX::XMFLOAT4 operator*(const DirectX::XMFLOAT4& lhs, const float& rhs)
+{
+  return DirectX::XMFLOAT4(lhs.x * rhs, lhs.y * rhs, lhs.z * rhs, lhs.w * rhs);
 }

@@ -291,6 +291,9 @@
     <ClInclude Include="Content\Rendering\Volume\BaseTransferFunction.h">
       <Filter>Content\Rendering\VolumeRenderer\Transfer Functions</Filter>
     </ClInclude>
+    <ClInclude Include="Content\Rendering\RenderingCommon.h">
+      <Filter>Content\Rendering</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\LockScreenLogo.scale-200.png">

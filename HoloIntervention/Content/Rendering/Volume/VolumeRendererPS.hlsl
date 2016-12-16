@@ -27,7 +27,7 @@ cbuffer VolumeConstantBuffer : register(b0)
   float3    c_stepSize            : packoffset(c4);
   float     c_tfMaximumXValue     : packoffset(c4.w);
   float2    c_viewportDimensions  : packoffset(c5);
-  float     c_tfArraySize         : packoffset(c5.z);
+  uint      c_tfArraySize         : packoffset(c5.z);
   uint      c_numIterations       : packoffset(c5.w);
 };
 
@@ -38,11 +38,15 @@ struct PixelShaderInput
   uint        rtvId                 : SV_RenderTargetArrayIndex;
 };
 
-ByteAddressBuffer r_lookupTable             : register(t0);
-Texture3D         r_volumeTexture           : register(t1);
-Texture2DArray    r_frontPositionTextures   : register(t2);
-Texture2DArray    r_backPositionTextures    : register(t3);
-SamplerState      r_sampler                 : s0;
+struct LookupTableBufferType
+{
+  float4 lookupValue;
+};
+StructuredBuffer<LookupTableBufferType> r_opacityLookupTable      : register(t0);
+Texture3D                               r_volumeTexture           : register(t1);
+Texture2DArray                          r_frontPositionTextures   : register(t2);
+Texture2DArray                          r_backPositionTextures    : register(t3);
+SamplerState                            r_sampler                 : s0;
 
 float4 main(PixelShaderInput input) : SV_TARGET
 {
@@ -60,11 +64,11 @@ float4 main(PixelShaderInput input) : SV_TARGET
   for (uint i = 0; i < c_numIterations; i++)
   {
     src = r_volumeTexture.SampleLevel(r_sampler, pos, 0.f);
-    src.r;
+    //float ratio = src.r * 255 / c_tfMaximumXValue;
+    //float arrayIndex = ratio * c_tfArraySize;
+    //src.a = (r_opacityLookupTable[floor(arrayIndex)].lookupValue * (arrayIndex % 1.f) + r_opacityLookupTable[ceil(arrayIndex)].lookupValue * (1.f - (arrayIndex % 1.f))).a;
 
-    src.a *= .1f; // Reduce the alpha to have a more transparent result
-									//  this needs to be adjusted based on the step size
-									//  i.e. the more steps we take, the faster the alpha will grow	
+    src.a *= 0.1;
 
 		// Front to back blending
 		//  dst.rgb = dst.rgb + (1 - dst.a) * src.a * src.rgb

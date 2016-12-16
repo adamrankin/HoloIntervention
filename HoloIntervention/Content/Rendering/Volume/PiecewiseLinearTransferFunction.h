@@ -52,13 +52,13 @@ namespace HoloIntervention
           // find xValue in control points
           for (unsigned int j = 1; j < m_controlPoints.size(); ++j)
           {
-            if (xValue >= m_controlPoints[j - 1].second.x && xValue < m_controlPoints[j].second.x)
+            if (xValue >= m_controlPoints[j - 1].m_inputValue && xValue < m_controlPoints[j].m_inputValue)
             {
               // found it, linear interpolate y value and store
-              auto thisXRange = m_controlPoints[j].second.x - m_controlPoints[j - 1].second.x;
-              auto thisYRange = m_controlPoints[j].second.y - m_controlPoints[j - 1].second.y;
-              auto offset = xValue - m_controlPoints[j - 1].second.x;
-              m_lookupTable.GetLookupTableArray()[i] = m_controlPoints[j - 1].second.y + (offset / thisXRange) * thisYRange;
+              float thisXRange = m_controlPoints[j].m_inputValue - m_controlPoints[j - 1].m_inputValue;
+              DirectX::XMFLOAT4 thisYRange = m_controlPoints[j].m_outputValue - m_controlPoints[j - 1].m_outputValue;
+              float offset = xValue - m_controlPoints[j - 1].m_inputValue;
+              m_lookupTable.GetLookupTableArray()[i] = m_controlPoints[j - 1].m_outputValue + (offset / thisXRange) * thisYRange;
             }
           }
         }

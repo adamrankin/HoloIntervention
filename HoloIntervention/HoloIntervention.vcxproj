@@ -123,6 +123,7 @@
     <ClInclude Include="Content\Rendering\ModelRenderer.h" />
     <ClInclude Include="Content\Rendering\NotificationRenderer.h" />
     <ClInclude Include="Content\Rendering\PrimitiveEntry.h" />
+    <ClInclude Include="Content\Rendering\RenderingCommon.h" />
     <ClInclude Include="Content\Rendering\SliceEntry.h" />
     <ClInclude Include="Content\Rendering\SliceRenderer.h" />
     <ClInclude Include="Content\Rendering\SpatialMeshRenderer.h" />

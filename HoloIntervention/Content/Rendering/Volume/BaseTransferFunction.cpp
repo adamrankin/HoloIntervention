@@ -25,6 +25,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "pch.h"
 #include "BaseTransferFunction.h"
 
+using namespace DirectX;
+
 namespace HoloIntervention
 {
   namespace Rendering
@@ -50,7 +52,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float BaseTransferFunction::GetMaximumXValue()
     {
-      return m_controlPoints.rbegin()->second.x;
+      return m_controlPoints.rbegin()->m_inputValue;
     }
 
     //----------------------------------------------------------------------------
@@ -60,45 +62,39 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    uint32 BaseTransferFunction::AddControlPoint(const std::array<float, 2>& point)
+    uint32 BaseTransferFunction::AddControlPoint(float pixelValue, float r, float g, float b)
     {
-      return AddControlPoint(point[0], point[1]);
+      return AddControlPoint(pixelValue, r, g, b, 1.f);
     }
 
     //----------------------------------------------------------------------------
-    uint32 BaseTransferFunction::AddControlPoint(float point[2])
+    uint32 BaseTransferFunction::AddControlPoint(float pixelValue, float alphaValue)
     {
-      return AddControlPoint(point[0], point[1]);
+      return AddControlPoint(pixelValue, 0.f, 0.f, 0.f, alphaValue);
     }
 
     //----------------------------------------------------------------------------
-    uint32 BaseTransferFunction::AddControlPoint(const Windows::Foundation::Numerics::float2& point)
+    uint32 BaseTransferFunction::AddControlPoint(float pixelValue, float r, float g, float b, float alpha)
     {
-      return AddControlPoint(point.x, point.y);
-    }
-
-    //----------------------------------------------------------------------------
-    uint32 BaseTransferFunction::AddControlPoint(float x, float y)
-    {
-      if (x == 0.f)
+      if (pixelValue == 0.f)
       {
         // special case, replace assumed 0,0
-        m_controlPoints[0].second.y = y;
-        return m_controlPoints[0].first;
+        m_controlPoints[0].m_outputValue = XMFLOAT4(r, g, b, alpha);
+        return m_controlPoints[0].m_uid;
       }
 
       for (auto& point : m_controlPoints)
       {
-        if (point.second.x == x)
+        if (point.m_inputValue == pixelValue)
         {
-          throw new std::exception("X value control point already exists.");
+          throw std::exception("Pixel value control point already exists.");
         }
       }
 
-      m_controlPoints.push_back(ControlPoint(m_nextUid, Windows::Foundation::Numerics::float2(x, y)));
+      m_controlPoints.push_back(ControlPoint(m_nextUid, pixelValue, XMFLOAT4(r, g, b, alpha)));
       std::sort(m_controlPoints.begin(), m_controlPoints.end(), [](auto & left, auto & right)
       {
-        return left.first < right.first;
+        return left.m_uid < right.m_uid;
       });
 
       m_nextUid++;
@@ -109,17 +105,17 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     bool BaseTransferFunction::RemoveControlPoint(uint32 controlPointUid)
     {
-      if (m_controlPoints[0].first == controlPointUid)
+      if (m_controlPoints[0].m_inputValue == controlPointUid)
       {
         // handle special 0 case, reset to assumed 0,0
-        m_controlPoints[0].second.y = 0.f;
+        m_controlPoints[0].m_outputValue = XMFLOAT4(0.f, 0.f, 0.f, 0.f);
         m_isValid = false;
         return true;
       }
 
       for (ControlPointList::iterator it = m_controlPoints.begin(); it != m_controlPoints.end(); it++)
       {
-        if (it->first == controlPointUid)
+        if (it->m_uid == controlPointUid)
         {
           m_controlPoints.erase(it);
           m_isValid = false;
@@ -133,7 +129,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     BaseTransferFunction::BaseTransferFunction()
     {
-      m_controlPoints.push_back(ControlPoint(m_nextUid++, Windows::Foundation::Numerics::float2(0.f, 0.f)));
+      m_controlPoints.push_back(ControlPoint(m_nextUid++, 0.f, XMFLOAT4(0.f, 0.f, 0.f, 0.f)));
     }
   }
 }

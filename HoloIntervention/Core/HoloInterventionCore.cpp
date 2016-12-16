@@ -468,21 +468,21 @@ namespace HoloIntervention
 
     switch (sender->Locatability)
     {
-    case SpatialLocatability::Unavailable:
-    {
-      m_notificationSystem->QueueMessage(L"Warning! Positional tracking is unavailable.");
-    }
-    break;
-
-    case SpatialLocatability::PositionalTrackingActivating:
-    case SpatialLocatability::OrientationOnly:
-    case SpatialLocatability::PositionalTrackingInhibited:
-      // Gaze-locked content still valid
+      case SpatialLocatability::Unavailable:
+      {
+        m_notificationSystem->QueueMessage(L"Warning! Positional tracking is unavailable.");
+      }
       break;
 
-    case SpatialLocatability::PositionalTrackingActive:
-      m_notificationSystem->QueueMessage(L"Positional tracking is active.");
-      break;
+      case SpatialLocatability::PositionalTrackingActivating:
+      case SpatialLocatability::OrientationOnly:
+      case SpatialLocatability::PositionalTrackingInhibited:
+        // Gaze-locked content still valid
+        break;
+
+      case SpatialLocatability::PositionalTrackingActive:
+        m_notificationSystem->QueueMessage(L"Positional tracking is active.");
+        break;
     }
   }
 

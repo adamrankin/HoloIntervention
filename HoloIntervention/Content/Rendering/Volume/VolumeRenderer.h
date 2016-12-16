@@ -38,13 +38,18 @@ namespace HoloIntervention
 {
   namespace Rendering
   {
+    struct LookupTableBufferType
+    {
+      DirectX::XMFLOAT4                       lookupValue;
+    };
+
     struct VolumeConstantBuffer
     {
-      Windows::Foundation::Numerics::float4x4 worldMatrix;
-      Windows::Foundation::Numerics::float3   stepSize;
+      DirectX::XMFLOAT4X4                     worldMatrix;
+      DirectX::XMFLOAT3                       stepSize;
       float                                   lt_maximumXValue;
-      Windows::Foundation::Numerics::float2   viewportDimensions;
-      float                                   lt_arraySize;
+      DirectX::XMFLOAT2                       viewportDimensions;
+      uint32                                  lt_arraySize;
       uint32                                  numIterations;
     };
     static_assert((sizeof(VolumeConstantBuffer) % (sizeof(float) * 4)) == 0, "Model constant buffer size must be 16-byte aligned (16 bytes is the length of four floats).");
@@ -57,12 +62,13 @@ namespace HoloIntervention
     class VolumeRenderer : public IEngineComponent
     {
     public:
+      typedef std::pair<float, Windows::Foundation::Numerics::float4> ControlPoint;
+      typedef std::vector<ControlPoint> ControlPointList;
       enum TransferFunctionType
       {
         TransferFunction_Unknown,
         TransferFunction_Piecewise_Linear,
       };
-      static const uint32_t INVALID_VOLUME_INDEX = 0;
 
     public:
       VolumeRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources);
@@ -71,7 +77,7 @@ namespace HoloIntervention
       void Update(UWPOpenIGTLink::TrackedFrame^ frame, const DX::StepTimer& timer, DX::CameraResources* cameraResources, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem, Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
       void Render();
 
-      Concurrency::task<void> SetTransferFunctionTypeAsync(TransferFunctionType type, uint32 tableSize, const std::vector<Windows::Foundation::Numerics::float2>& controlPoints);
+      Concurrency::task<void> SetOpacityTransferFunctionTypeAsync(TransferFunctionType type, uint32 tableSize, const ControlPointList& controlPoints);
 
       // D3D device related controls
       Concurrency::task<void> CreateDeviceDependentResourcesAsync();
@@ -118,9 +124,14 @@ namespace HoloIntervention
       Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>  m_backPositionSRV;
 
       // Transfer function GPU resources
-      Microsoft::WRL::ComPtr<ID3D11Buffer>              m_lookupTableBuffer;
-      Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>  m_lookupTableSRV;
+      Microsoft::WRL::ComPtr<ID3D11Buffer>              m_opacityLookupTableBuffer;
+      Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>  m_opacityLookupTableSRV;
       std::atomic_bool                                  m_tfResourcesReady = false;
+
+      // Transfer function CPU resources
+      std::mutex                                        m_opacityTFMutex;
+      TransferFunctionType                              m_opacityTFType = TransferFunction_Unknown;
+      BaseTransferFunction*                             m_opacityTransferFunction = nullptr;
 
       // IGT frame resources
       std::wstring                                      m_fromCoordFrame = L"Image";
@@ -139,11 +150,6 @@ namespace HoloIntervention
       std::atomic_bool                                  m_volumeReady = false;
       std::atomic_bool                                  m_faceCalcReady = false;
       std::atomic_bool                                  m_usingVprtShaders = false;
-
-      // Transfer function CPU resources
-      std::mutex                                        m_tfMutex;
-      TransferFunctionType                              m_tfType = TransferFunction_Unknown;
-      BaseTransferFunction*                                m_transferFunction = nullptr;
     };
   }
 }

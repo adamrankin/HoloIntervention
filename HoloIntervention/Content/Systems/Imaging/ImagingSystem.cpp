@@ -171,12 +171,12 @@ namespace HoloIntervention
     {
       if (!m_transferFunctionInitialized)
       {
-        std::vector<float2> points;
-        points.push_back(float2(0.f, 0.f));
+        Rendering::VolumeRenderer::ControlPointList points;
+        points.push_back(Rendering::VolumeRenderer::ControlPoint(0.f, float4(0.f, 0.f, 0.f, 0.f)));
         // TODO : calculate max value based on data type
         // TODO : calculate preferred table sized based on data type
-        points.push_back(float2(255.f, 1.f));
-        HoloIntervention::instance()->GetVolumeRenderer().SetTransferFunctionTypeAsync(m_transferFunctionType, 512, points);
+        points.push_back(Rendering::VolumeRenderer::ControlPoint(255.f, float4(0.f, 0.f, 0.f, 1.f)));
+        HoloIntervention::instance()->GetVolumeRenderer().SetOpacityTransferFunctionTypeAsync(m_transferFunctionType, 512, points);
       }
     }
   }

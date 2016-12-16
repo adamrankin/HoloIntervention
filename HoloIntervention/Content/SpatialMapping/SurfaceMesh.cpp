@@ -39,6 +39,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <d3dcompiler.h>
 #include <DirectXMath.h>
 
+// Unnecessary, but reduces intellisense errors
+#include <WindowsNumerics.h>
+
 using namespace Concurrency;
 using namespace DirectX;
 using namespace Microsoft::WRL;

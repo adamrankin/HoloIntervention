@@ -25,6 +25,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "TransferFunctionLookupTable.h"
+#include "RenderingCommon.h"
 
 // STL includes
 #include <atomic>
@@ -36,7 +37,16 @@ namespace HoloIntervention
   {
     class BaseTransferFunction
     {
-      typedef std::pair<uint32, Windows::Foundation::Numerics::float2> ControlPoint;
+      struct ControlPoint
+      {
+        ControlPoint(uint32 uid, float inputValue, DirectX::XMFLOAT4 outputValue)
+          : m_uid(uid)
+          , m_inputValue(inputValue)
+          , m_outputValue(outputValue) {}
+        uint32            m_uid;
+        float             m_inputValue;
+        DirectX::XMFLOAT4 m_outputValue;
+      };
       typedef std::vector<ControlPoint> ControlPointList;
 
     public:
@@ -47,14 +57,14 @@ namespace HoloIntervention
       virtual bool IsValid() const;
       virtual void Update() = 0;
 
-      virtual uint32 AddControlPoint(float x, float y);
-      virtual uint32 AddControlPoint(const Windows::Foundation::Numerics::float2& point);
-      virtual uint32 AddControlPoint(float point[2]);
-      virtual uint32 AddControlPoint(const std::array<float, 2>& point);
+      virtual uint32 AddControlPoint(float pixelValue, float r, float g, float b);
+      virtual uint32 AddControlPoint(float pixelValue, float alphaValue);
 
       virtual bool RemoveControlPoint(uint32 controlPointUid);
 
     protected:
+      virtual uint32 AddControlPoint(float pixelValue, float r, float g, float b, float alpha);
+
       BaseTransferFunction();
 
     protected:
