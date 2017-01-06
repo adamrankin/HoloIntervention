@@ -141,7 +141,7 @@ namespace HoloIntervention
     m_engineComponents.push_back(m_iconSystem.get());
 
     // TODO : remove temp code
-    m_igtLinkIF->SetHostname(L"192.168.1.26");
+    m_igtLinkIF->SetHostname(L"192.168.0.102");
 
     try
     {

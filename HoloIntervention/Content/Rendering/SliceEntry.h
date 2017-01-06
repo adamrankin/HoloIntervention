@@ -33,18 +33,12 @@ namespace HoloIntervention
 {
   namespace Rendering
   {
-    struct VertexPositionTexture
-    {
-      DirectX::XMFLOAT3 pos;
-      DirectX::XMFLOAT2 texCoord;
-    };
-
     struct SliceConstantBuffer
     {
       DirectX::XMFLOAT4X4 worldMatrix;
     };
 
-    static_assert((sizeof(SliceConstantBuffer) % (sizeof(float) * 4)) == 0, "SliceConstantBuffer constant buffer size must be 16-byte aligned (16 bytes is the length of four floats).");
+    static_assert((sizeof(SliceConstantBuffer) % (sizeof(float) * 4)) == 0, "Slice constant buffer size must be 16-byte aligned (16 bytes is the length of four floats).");
 
     class SliceEntry
     {
@@ -66,7 +60,7 @@ namespace HoloIntervention
       void CreateDeviceDependentResources();
       void ReleaseDeviceDependentResources();
 
-      uint32                                              m_id = 0;
+      uint64                                              m_id = 0;
       SliceConstantBuffer                                 m_constantBuffer;
       std::atomic_bool                                    m_showing = true;
       Windows::Foundation::Numerics::float4x4             m_desiredPose = Windows::Foundation::Numerics::float4x4::identity();
@@ -82,7 +76,6 @@ namespace HoloIntervention
       Microsoft::WRL::ComPtr<ID3D11Texture2D>             m_imageTexture;
       Microsoft::WRL::ComPtr<ID3D11Texture2D>             m_imageStagingTexture;
       Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>    m_shaderResourceView;
-      Microsoft::WRL::ComPtr<ID3D11Buffer>                m_vertexBuffer;
       Microsoft::WRL::ComPtr<ID3D11Buffer>                m_sliceConstantBuffer;
 
       // Rendering behavior vars
@@ -100,7 +93,6 @@ namespace HoloIntervention
       static const float                                  LOCKED_SLICE_DISTANCE_OFFSET;
       static const float                                  LOCKED_SLICE_SCALE_FACTOR;
       static const float                                  LERP_RATE;
-
     };
   }
 }

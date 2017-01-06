@@ -63,10 +63,19 @@ float4 main(PixelShaderInput input) : SV_TARGET
   [loop]
   for (uint i = 0; i < c_numIterations; i++)
   {
+    // Break if the position is greater than <1, 1, 1>
+    if(pos.x > 1.0f || pos.y > 1.0f || pos.z > 1.0f)
+    {
+      break;
+    }
+
     src = r_volumeTexture.SampleLevel(r_sampler, pos, 0.f);
+    //src = float4(1.f, 0.f, 0.f, 1.f);
     //float ratio = src.r * 255 / c_tfMaximumXValue;
     //float arrayIndex = ratio * c_tfArraySize;
-    //src.a = (r_opacityLookupTable[floor(arrayIndex)].lookupValue * (arrayIndex % 1.f) + r_opacityLookupTable[ceil(arrayIndex)].lookupValue * (1.f - (arrayIndex % 1.f))).a;
+    //float lowerIndex = floor(arrayIndex);
+    //float upperIndex = ceil(arrayIndex);
+    //float opacity = (r_opacityLookupTable[floor(arrayIndex)].lookupValue * (arrayIndex % 1.f) + r_opacityLookupTable[ceil(arrayIndex)].lookupValue * (1.f - (arrayIndex % 1.f))).a;
 
     src.a *= 0.1;
 
@@ -82,12 +91,6 @@ float4 main(PixelShaderInput input) : SV_TARGET
 		
 		// Advance the current position
     pos.xyz += step;
-		
-		// Break if the position is greater than <1, 1, 1>
-    if(pos.x > 1.0f || pos.y > 1.0f || pos.z > 1.0f)
-    {
-      break;
-    }
   }
 
   dst.y = dst.z = dst.x;

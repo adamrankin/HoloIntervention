@@ -25,7 +25,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "IEngineComponent.h"
-#include "PiecewiseLinearTransferFunction.h"
+#include "VolumeEntry.h"
+
+// WinRt includes
+#include <ppltasks.h>
 
 namespace DX
 {
@@ -38,46 +41,34 @@ namespace HoloIntervention
 {
   namespace Rendering
   {
-    struct LookupTableBufferType
+    struct VolumeRendererConstantBuffer
     {
-      DirectX::XMFLOAT4                       lookupValue;
+      DirectX::XMFLOAT4     viewportDimensions;
     };
-
-    struct VolumeConstantBuffer
-    {
-      DirectX::XMFLOAT4X4                     worldMatrix;
-      DirectX::XMFLOAT3                       stepSize;
-      float                                   lt_maximumXValue;
-      DirectX::XMFLOAT2                       viewportDimensions;
-      uint32                                  lt_arraySize;
-      uint32                                  numIterations;
-    };
-    static_assert((sizeof(VolumeConstantBuffer) % (sizeof(float) * 4)) == 0, "Model constant buffer size must be 16-byte aligned (16 bytes is the length of four floats).");
-
-    struct VertexPosition
-    {
-      Windows::Foundation::Numerics::float3 pos;
-    };
+    static_assert((sizeof(VolumeRendererConstantBuffer) % (sizeof(float) * 4)) == 0, "Volume constant buffer size must be 16-byte aligned (16 bytes is the length of four floats).");
 
     class VolumeRenderer : public IEngineComponent
     {
-    public:
-      typedef std::pair<float, Windows::Foundation::Numerics::float4> ControlPoint;
-      typedef std::vector<ControlPoint> ControlPointList;
-      enum TransferFunctionType
-      {
-        TransferFunction_Unknown,
-        TransferFunction_Piecewise_Linear,
-      };
+      typedef std::list<std::shared_ptr<VolumeEntry>> VolumeList;
 
     public:
       VolumeRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources);
       ~VolumeRenderer();
 
+      uint64 AddVolume();
+      void RemoveVolume(uint64 volumeToken);
+
+      void ShowVolume(uint64 volumeToken);
+      void HideVolume(uint64 volumeToken);
+      void SetVolumeVisible(uint64 volumeToken, bool show);
+
+      void SetVolumePose(uint64 volumeToken, const Windows::Foundation::Numerics::float4x4& pose);
+      Windows::Foundation::Numerics::float4x4 GetVolumePose(uint64 volumeToken) const;
+      void SetDesiredVolumePose(uint64 volumeToken, const Windows::Foundation::Numerics::float4x4& pose);
+      Windows::Foundation::Numerics::float3 GetVolumeVelocity(uint64 volumeToken) const;
+
       void Update(UWPOpenIGTLink::TrackedFrame^ frame, const DX::StepTimer& timer, DX::CameraResources* cameraResources, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem, Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
       void Render();
-
-      Concurrency::task<void> SetOpacityTransferFunctionTypeAsync(TransferFunctionType type, uint32 tableSize, const ControlPointList& controlPoints);
 
       // D3D device related controls
       Concurrency::task<void> CreateDeviceDependentResourcesAsync();
@@ -88,12 +79,6 @@ namespace HoloIntervention
       void ReleaseVertexResources();
       void CreateCameraResources();
       void ReleaseCameraResources();
-      void CreateTFResources();
-      void ReleaseTFResources();
-
-      void CreateVolumeResources();
-      void ReleaseVolumeResources();
-      void UpdateGPUImageData();
 
     protected:
       // Cached pointer to device and camera resources.
@@ -101,21 +86,16 @@ namespace HoloIntervention
       DX::CameraResources*                              m_cameraResources = nullptr;
 
       // Direct3D resources for volume rendering
-      Microsoft::WRL::ComPtr<ID3D11InputLayout>         m_inputLayout;
-      Microsoft::WRL::ComPtr<ID3D11Buffer>              m_vertexBuffer;
       Microsoft::WRL::ComPtr<ID3D11Buffer>              m_cwIndexBuffer;
       Microsoft::WRL::ComPtr<ID3D11Buffer>              m_ccwIndexBuffer;
+      Microsoft::WRL::ComPtr<ID3D11InputLayout>         m_inputLayout;
+      Microsoft::WRL::ComPtr<ID3D11Buffer>              m_vertexBuffer;
       Microsoft::WRL::ComPtr<ID3D11VertexShader>        m_volRenderVertexShader;
       Microsoft::WRL::ComPtr<ID3D11GeometryShader>      m_volRenderGeometryShader;
       Microsoft::WRL::ComPtr<ID3D11PixelShader>         m_volRenderPixelShader;
-      Microsoft::WRL::ComPtr<ID3D11Buffer>              m_volumeConstantBuffer;
-      Microsoft::WRL::ComPtr<ID3D11Texture3D>           m_volumeStagingTexture;
-      Microsoft::WRL::ComPtr<ID3D11Texture3D>           m_volumeTexture;
-      Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>  m_volumeSRV;
-      Microsoft::WRL::ComPtr<ID3D11SamplerState>        m_samplerState;
+      Microsoft::WRL::ComPtr<ID3D11Buffer>              m_volumeRendererConstantBuffer;
 
       // D3D resources for left and right eye position calculation
-      Microsoft::WRL::ComPtr<ID3D11PixelShader>         m_faceCalcPixelShader;
       Microsoft::WRL::ComPtr<ID3D11Texture2D>           m_frontPositionTextureArray;
       Microsoft::WRL::ComPtr<ID3D11Texture2D>           m_backPositionTextureArray;
       Microsoft::WRL::ComPtr<ID3D11RenderTargetView>    m_frontPositionRTV;
@@ -123,32 +103,16 @@ namespace HoloIntervention
       Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>  m_frontPositionSRV;
       Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>  m_backPositionSRV;
 
-      // Transfer function GPU resources
-      Microsoft::WRL::ComPtr<ID3D11Buffer>              m_opacityLookupTableBuffer;
-      Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>  m_opacityLookupTableSRV;
-      std::atomic_bool                                  m_tfResourcesReady = false;
+      // D3D resources for left and right eye position calculation
+      Microsoft::WRL::ComPtr<ID3D11PixelShader>         m_faceCalcPixelShader;
 
-      // Transfer function CPU resources
-      std::mutex                                        m_opacityTFMutex;
-      TransferFunctionType                              m_opacityTFType = TransferFunction_Unknown;
-      BaseTransferFunction*                             m_opacityTransferFunction = nullptr;
-
-      // IGT frame resources
-      std::wstring                                      m_fromCoordFrame = L"Image";
-      std::wstring                                      m_toCoordFrame = L"HMD";
-      UWPOpenIGTLink::TransformName^                    m_imageToHMDName = ref new UWPOpenIGTLink::TransformName(ref new Platform::String(m_fromCoordFrame.c_str()), ref new Platform::String(m_toCoordFrame.c_str()));
-      UWPOpenIGTLink::TransformRepository^              m_transformRepository = ref new UWPOpenIGTLink::TransformRepository();
-      UWPOpenIGTLink::TrackedFrame^                     m_frame = nullptr;
-
-      // CPU resources for volume rendering
+      VolumeRendererConstantBuffer                      m_constantBuffer;
+      std::atomic_bool                                  m_verticesReady = false;
+      std::atomic_bool                                  m_cameraResourcesReady = false;
       uint32                                            m_indexCount = 0;
-      VolumeConstantBuffer                              m_constantBuffer;
-      uint16                                            m_frameSize[3] = { 0, 0, 0 };
-      float                                             m_stepScale = 1.f;  // Increasing this reduces the number of steps taken per pixel
-
-      // State flags
-      std::atomic_bool                                  m_volumeReady = false;
-      std::atomic_bool                                  m_faceCalcReady = false;
+      mutable std::mutex                                m_volumeMapMutex;
+      VolumeList                                        m_volumes;
+      uint64                                            m_nextUnusedVolumeToken = INVALID_TOKEN + 1;
       std::atomic_bool                                  m_usingVprtShaders = false;
     };
   }

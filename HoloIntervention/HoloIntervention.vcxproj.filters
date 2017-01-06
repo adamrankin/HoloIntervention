@@ -136,6 +136,9 @@
     <ClCompile Include="Content\Rendering\Volume\BaseTransferFunction.cpp">
       <Filter>Content\Rendering\VolumeRenderer\Transfer Functions</Filter>
     </ClCompile>
+    <ClCompile Include="Content\Rendering\VolumeEntry.cpp">
+      <Filter>Content\Rendering\VolumeRenderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common\CameraResources.h">
@@ -293,6 +296,9 @@
     </ClInclude>
     <ClInclude Include="Content\Rendering\RenderingCommon.h">
       <Filter>Content\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Rendering\VolumeEntry.h">
+      <Filter>Content\Rendering\VolumeRenderer</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

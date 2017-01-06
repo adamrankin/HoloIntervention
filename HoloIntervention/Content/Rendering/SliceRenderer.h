@@ -29,6 +29,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // STL includes
 #include <list>
+#include <mutex>
 
 // DirectX includes
 #include <d3d11.h>
@@ -43,6 +44,12 @@ namespace HoloIntervention
 {
   namespace Rendering
   {
+    struct VertexPositionTexture
+    {
+      DirectX::XMFLOAT3 pos;
+      DirectX::XMFLOAT2 texCoord;
+    };
+
     class SliceRenderer : public IEngineComponent
     {
       // list instead of vector so that erase does not require copy constructor
@@ -52,22 +59,22 @@ namespace HoloIntervention
       SliceRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources);
       ~SliceRenderer();
 
-      uint32 AddSlice();
-      uint32 AddSlice(std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 imageToTrackerTransform, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);
-      uint32 AddSlice(Windows::Storage::Streams::IBuffer^ imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 imageToTrackerTransform, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);
-      void RemoveSlice(uint32 sliceId);
+      uint64 AddSlice();
+      uint64 AddSlice(std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 imageToTrackerTransform, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);
+      uint64 AddSlice(Windows::Storage::Streams::IBuffer^ imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 imageToTrackerTransform, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);
+      void RemoveSlice(uint64 sliceToken);
 
-      void UpdateSlice(uint32 sliceId, std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 imageToTrackerTransform, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);
+      void UpdateSlice(uint64 sliceToken, std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 imageToTrackerTransform, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);
 
-      void ShowSlice(uint32 sliceId);
-      void HideSlice(uint32 sliceId);
-      void SetSliceVisible(uint32 sliceId, bool show);
-      void SetSliceHeadlocked(uint32 sliceId, bool headlocked);
+      void ShowSlice(uint64 sliceToken);
+      void HideSlice(uint64 sliceToken);
+      void SetSliceVisible(uint64 sliceToken, bool show);
+      void SetSliceHeadlocked(uint64 sliceToken, bool headlocked);
 
-      void SetSlicePose(uint32 sliceId, const Windows::Foundation::Numerics::float4x4& pose);
-      Windows::Foundation::Numerics::float4x4 GetSlicePose(uint32 sliceId) const;
-      void SetDesiredSlicePose(uint32 sliceId, const Windows::Foundation::Numerics::float4x4& pose);
-      Windows::Foundation::Numerics::float3 GetSliceVelocity(uint32 sliceId) const;
+      void SetSlicePose(uint64 sliceToken, const Windows::Foundation::Numerics::float4x4& pose);
+      Windows::Foundation::Numerics::float4x4 GetSlicePose(uint64 sliceToken) const;
+      void SetDesiredSlicePose(uint64 sliceToken, const Windows::Foundation::Numerics::float4x4& pose);
+      Windows::Foundation::Numerics::float3 GetSliceVelocity(uint64 sliceToken) const;
 
       void CreateDeviceDependentResources();
       void ReleaseDeviceDependentResources();
@@ -75,10 +82,8 @@ namespace HoloIntervention
       void Update(Windows::UI::Input::Spatial::SpatialPointerPose^ pose, const DX::StepTimer& timer);
       void Render();
 
-      static const uint32_t INVALID_SLICE_INDEX = 0;
-
     protected:
-      bool FindSlice(uint32 sliceId, std::shared_ptr<SliceEntry>& sliceEntry) const;
+      bool FindSlice(uint64 sliceToken, std::shared_ptr<SliceEntry>& sliceEntry) const;
 
     protected:
       // Cached pointer to device resources.
@@ -87,6 +92,7 @@ namespace HoloIntervention
       // Direct3D resources
       Microsoft::WRL::ComPtr<ID3D11InputLayout>           m_inputLayout;
       Microsoft::WRL::ComPtr<ID3D11Buffer>                m_indexBuffer;
+      Microsoft::WRL::ComPtr<ID3D11Buffer>                m_vertexBuffer;
       Microsoft::WRL::ComPtr<ID3D11VertexShader>          m_vertexShader;
       Microsoft::WRL::ComPtr<ID3D11GeometryShader>        m_geometryShader;
       Microsoft::WRL::ComPtr<ID3D11PixelShader>           m_pixelShader;
@@ -101,7 +107,7 @@ namespace HoloIntervention
       // Lock protection when accessing image list
       mutable std::mutex                                  m_sliceMapMutex;
       SliceList                                           m_slices;
-      uint32                                              m_nextUnusedSliceId = 1; // start at 1, 0 is considered invalid
+      uint64                                              m_nextUnusedSliceId = INVALID_TOKEN + 1;
     };
   }
 }

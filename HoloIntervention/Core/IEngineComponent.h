@@ -28,6 +28,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 namespace HoloIntervention
 {
+  static uint64 INVALID_TOKEN = 0;
+
   class IEngineComponent
   {
   public:

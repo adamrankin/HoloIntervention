@@ -33,6 +33,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 // DirectXTex includes
 #include <DirectXTex.h>
 
+// Unnecessary, but reduces intellisense errors
+#include <WindowsNumerics.h>
+
 using namespace DirectX;
 using namespace Windows::Foundation::Numerics;
 using namespace Windows::UI::Input::Spatial;
@@ -155,10 +158,6 @@ namespace HoloIntervention
       const auto context = m_deviceResources->GetD3DDeviceContext();
 
       context->VSSetConstantBuffers(0, 1, m_sliceConstantBuffer.GetAddressOf());
-
-      const UINT stride = sizeof(VertexPositionTexture);
-      const UINT offset = 0;
-      context->IASetVertexBuffers(0, 1, m_vertexBuffer.GetAddressOf(), &stride, &offset);
       context->PSSetShaderResources(0, 1, m_shaderResourceView.GetAddressOf());
 
       context->DrawIndexedInstanced(indexCount, 2, 0, 0, 0);
@@ -247,41 +246,11 @@ namespace HoloIntervention
         DX::ThrowIfFailed(device->CreateTexture2D(&textureDesc, nullptr, &m_imageTexture));
         DX::ThrowIfFailed(device->CreateShaderResourceView(m_imageTexture.Get(), nullptr, &m_shaderResourceView));
       }
-
-      // Determine x and y scaling from world matrix
-      float3 scale;
-      quaternion rotation;
-      float3 translation;
-      decompose(m_desiredPose, &scale, &rotation, &translation);
-
-      // Vertices should match the aspect ratio of the image size
-      float bottom = -(m_height / 2 * scale.y);
-      float left = -(m_width / 2 * scale.x);
-      float right = m_width / 2 * scale.x;
-      float top = m_height / 2 * scale.y;
-
-      std::array<VertexPositionTexture, 4> quadVertices;
-      quadVertices[0].pos = XMFLOAT3(left, top, 0.f);
-      quadVertices[0].texCoord = XMFLOAT2(0.f, 0.f);
-      quadVertices[1].pos = XMFLOAT3(right, top, 0.f);
-      quadVertices[1].texCoord = XMFLOAT2(1.f, 0.f);
-      quadVertices[2].pos = XMFLOAT3(right, bottom, 0.f);
-      quadVertices[2].texCoord = XMFLOAT2(1.f, 1.f);
-      quadVertices[3].pos = XMFLOAT3(left, bottom, 0.f);
-      quadVertices[3].texCoord = XMFLOAT2(0.f, 1.f);
-
-      D3D11_SUBRESOURCE_DATA vertexBufferData = { 0 };
-      vertexBufferData.pSysMem = quadVertices.data();
-      vertexBufferData.SysMemPitch = 0;
-      vertexBufferData.SysMemSlicePitch = 0;
-      const CD3D11_BUFFER_DESC vertexBufferDesc(sizeof(VertexPositionTexture) * quadVertices.size(), D3D11_BIND_VERTEX_BUFFER);
-      DX::ThrowIfFailed(device->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &m_vertexBuffer));
     }
 
     //----------------------------------------------------------------------------
     void SliceEntry::ReleaseDeviceDependentResources()
     {
-      m_vertexBuffer.Reset();
       m_sliceConstantBuffer.Reset();
       m_shaderResourceView.Reset();
       m_imageTexture.Reset();

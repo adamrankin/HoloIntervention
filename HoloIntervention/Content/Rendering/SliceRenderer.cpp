@@ -67,7 +67,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    uint32 SliceRenderer::AddSlice()
+    uint64 SliceRenderer::AddSlice()
     {
       std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources);
       entry->m_id = m_nextUnusedSliceId;
@@ -84,7 +84,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    uint32 SliceRenderer::AddSlice(std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, float4x4 imageToTrackerTransform, SpatialCoordinateSystem^ coordSystem)
+    uint64 SliceRenderer::AddSlice(std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, float4x4 imageToTrackerTransform, SpatialCoordinateSystem^ coordSystem)
     {
       std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources);
       entry->m_id = m_nextUnusedSliceId;
@@ -105,7 +105,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    uint32 SliceRenderer::AddSlice(IBuffer^ imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, float4x4 imageToTrackerTransform, SpatialCoordinateSystem^ coordSystem)
+    uint64 SliceRenderer::AddSlice(IBuffer^ imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, float4x4 imageToTrackerTransform, SpatialCoordinateSystem^ coordSystem)
     {
       std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources);
       entry->m_id = m_nextUnusedSliceId;
@@ -128,15 +128,15 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SliceRenderer::RemoveSlice(uint32 sliceId)
+    void SliceRenderer::RemoveSlice(uint64 sliceToken)
     {
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
       std::shared_ptr<SliceEntry> slice;
-      if (FindSlice(sliceId, slice))
+      if (FindSlice(sliceToken, slice))
       {
         for (auto sliceIter = m_slices.begin(); sliceIter != m_slices.end(); ++sliceIter)
         {
-          if ((*sliceIter)->m_id == sliceId)
+          if ((*sliceIter)->m_id == sliceToken)
           {
             m_slices.erase(sliceIter);
             return;
@@ -146,11 +146,11 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SliceRenderer::UpdateSlice(uint32 sliceId, std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, float4x4 imageToTrackerTransform, SpatialCoordinateSystem^ coordSystem)
+    void SliceRenderer::UpdateSlice(uint64 sliceToken, std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, float4x4 imageToTrackerTransform, SpatialCoordinateSystem^ coordSystem)
     {
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
       std::shared_ptr<SliceEntry> entry;
-      if (FindSlice(sliceId, entry))
+      if (FindSlice(sliceToken, entry))
       {
         float4x4 trackerToHMD = HoloIntervention::instance()->GetRegistrationSystem().GetTrackerToCoordinateSystemTransformation(coordSystem);
         float4x4 imageToHMD = imageToTrackerTransform * trackerToHMD;
@@ -160,98 +160,98 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SliceRenderer::ShowSlice(uint32 sliceId)
+    void SliceRenderer::ShowSlice(uint64 sliceToken)
     {
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
       std::shared_ptr<SliceEntry> entry;
-      if (FindSlice(sliceId, entry))
+      if (FindSlice(sliceToken, entry))
       {
         entry->m_showing = true;
       }
     }
 
     //----------------------------------------------------------------------------
-    void SliceRenderer::HideSlice(uint32 sliceId)
+    void SliceRenderer::HideSlice(uint64 sliceToken)
     {
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
       std::shared_ptr<SliceEntry> entry;
-      if (FindSlice(sliceId, entry))
+      if (FindSlice(sliceToken, entry))
       {
         entry->m_showing = false;
       }
     }
 
     //----------------------------------------------------------------------------
-    void SliceRenderer::SetSliceVisible(uint32 sliceId, bool show)
+    void SliceRenderer::SetSliceVisible(uint64 sliceToken, bool show)
     {
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
       std::shared_ptr<SliceEntry> entry;
-      if (FindSlice(sliceId, entry))
+      if (FindSlice(sliceToken, entry))
       {
         entry->m_showing = show;
       }
     }
 
     //----------------------------------------------------------------------------
-    void SliceRenderer::SetSliceHeadlocked(uint32 sliceId, bool headlocked)
+    void SliceRenderer::SetSliceHeadlocked(uint64 sliceToken, bool headlocked)
     {
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
       std::shared_ptr<SliceEntry> entry;
-      if (FindSlice(sliceId, entry))
+      if (FindSlice(sliceToken, entry))
       {
         entry->SetHeadlocked(headlocked);
       }
     }
 
     //----------------------------------------------------------------------------
-    void SliceRenderer::SetSlicePose(uint32 sliceId, const float4x4& pose)
+    void SliceRenderer::SetSlicePose(uint64 sliceToken, const float4x4& pose)
     {
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
       std::shared_ptr<SliceEntry> entry;
-      if (FindSlice(sliceId, entry))
+      if (FindSlice(sliceToken, entry))
       {
         entry->m_currentPose = entry->m_desiredPose = entry->m_lastPose = pose;
       }
     }
 
     //----------------------------------------------------------------------------
-    float4x4 SliceRenderer::GetSlicePose(uint32 sliceId) const
+    float4x4 SliceRenderer::GetSlicePose(uint64 sliceToken) const
     {
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
       std::shared_ptr<SliceEntry> entry;
-      if (FindSlice(sliceId, entry))
+      if (FindSlice(sliceToken, entry))
       {
         return entry->m_currentPose;
       }
 
       std::stringstream ss;
-      ss << "Unable to locate slice with id: " << sliceId;
+      ss << "Unable to locate slice with id: " << sliceToken;
       throw std::exception(ss.str().c_str());
     }
 
     //----------------------------------------------------------------------------
-    void SliceRenderer::SetDesiredSlicePose(uint32 sliceId, const float4x4& pose)
+    void SliceRenderer::SetDesiredSlicePose(uint64 sliceToken, const float4x4& pose)
     {
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
       std::shared_ptr<SliceEntry> entry;
-      if (FindSlice(sliceId, entry))
+      if (FindSlice(sliceToken, entry))
       {
         entry->SetDesiredPose(pose);
       }
     }
 
     //----------------------------------------------------------------------------
-    float3 SliceRenderer::GetSliceVelocity(uint32 sliceId) const
+    float3 SliceRenderer::GetSliceVelocity(uint64 sliceToken) const
     {
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
       std::shared_ptr<SliceEntry> entry;
-      if (FindSlice(sliceId, entry))
+      if (FindSlice(sliceToken, entry))
       {
         return entry->GetSliceVelocity();
       }
 
       std::stringstream ss;
-      ss << "Unable to locate slice with id: " << sliceId;
+      ss << "Unable to locate slice with id: " << sliceToken;
       throw std::exception(ss.str().c_str());
     }
 
@@ -300,6 +300,28 @@ namespace HoloIntervention
         });
       }
 
+      float bottom = -0.5;
+      float left = -0.5;
+      float right = 0.5;
+      float top = 0.5;
+
+      std::array<VertexPositionTexture, 4> quadVertices;
+      quadVertices[0].pos = XMFLOAT3(left, top, 0.f);
+      quadVertices[0].texCoord = XMFLOAT2(0.f, 0.f);
+      quadVertices[1].pos = XMFLOAT3(right, top, 0.f);
+      quadVertices[1].texCoord = XMFLOAT2(1.f, 0.f);
+      quadVertices[2].pos = XMFLOAT3(right, bottom, 0.f);
+      quadVertices[2].texCoord = XMFLOAT2(1.f, 1.f);
+      quadVertices[3].pos = XMFLOAT3(left, bottom, 0.f);
+      quadVertices[3].texCoord = XMFLOAT2(0.f, 1.f);
+
+      D3D11_SUBRESOURCE_DATA vertexBufferData = { 0 };
+      vertexBufferData.pSysMem = quadVertices.data();
+      vertexBufferData.SysMemPitch = 0;
+      vertexBufferData.SysMemSlicePitch = 0;
+      const CD3D11_BUFFER_DESC vertexBufferDesc(sizeof(VertexPositionTexture) * quadVertices.size(), D3D11_BIND_VERTEX_BUFFER);
+      DX::ThrowIfFailed(m_deviceResources->GetD3DDevice()->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &m_vertexBuffer));
+
       task<void> shaderTaskGroup = m_usingVprtShaders ? (createPSTask && createVSTask) : (createPSTask && createVSTask && createGSTask);
       task<void> finishLoadingTask = shaderTaskGroup.then([this]()
       {
@@ -344,6 +366,7 @@ namespace HoloIntervention
       m_componentReady = false;
       m_inputLayout.Reset();
       m_indexBuffer.Reset();
+      m_vertexBuffer.Reset();
       m_vertexShader.Reset();
       m_geometryShader.Reset();
       m_pixelShader.Reset();
@@ -375,6 +398,9 @@ namespace HoloIntervention
 
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
 
+      const UINT stride = sizeof(VertexPositionTexture);
+      const UINT offset = 0;
+      context->IASetVertexBuffers(0, 1, m_vertexBuffer.GetAddressOf(), &stride, &offset);
       context->IASetIndexBuffer(m_indexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
       context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
       context->IASetInputLayout(m_inputLayout.Get());
@@ -398,11 +424,11 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool SliceRenderer::FindSlice(uint32 sliceId, std::shared_ptr<SliceEntry>& sliceEntry) const
+    bool SliceRenderer::FindSlice(uint64 sliceToken, std::shared_ptr<SliceEntry>& sliceEntry) const
     {
       for (auto slice : m_slices)
       {
-        if (slice->m_id == sliceId)
+        if (slice->m_id == sliceToken)
         {
           sliceEntry = slice;
           return true;

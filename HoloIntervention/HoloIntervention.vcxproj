@@ -129,6 +129,7 @@
     <ClInclude Include="Content\Rendering\SpatialMeshRenderer.h" />
     <ClInclude Include="Content\Rendering\SpatialMesh.h" />
     <ClInclude Include="Content\Rendering\TextRenderer.h" />
+    <ClInclude Include="Content\Rendering\VolumeEntry.h" />
     <ClInclude Include="Content\Rendering\Volume\BaseTransferFunction.h" />
     <ClInclude Include="Content\Rendering\Volume\PiecewiseLinearTransferFunction.h" />
     <ClInclude Include="Content\Rendering\Volume\TransferFunctionLookupTable.h" />
@@ -178,6 +179,7 @@
     <ClCompile Include="Content\Rendering\SpatialMeshRenderer.cpp" />
     <ClCompile Include="Content\Rendering\SpatialMesh.cpp" />
     <ClCompile Include="Content\Rendering\TextRenderer.cpp" />
+    <ClCompile Include="Content\Rendering\VolumeEntry.cpp" />
     <ClCompile Include="Content\Rendering\Volume\BaseTransferFunction.cpp" />
     <ClCompile Include="Content\Rendering\Volume\VolumeRenderer.cpp" />
     <ClCompile Include="Content\Sound\AudioFileReader.cpp" />

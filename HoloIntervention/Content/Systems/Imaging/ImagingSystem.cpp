@@ -79,7 +79,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     bool ImagingSystem::HasSlice() const
     {
-      return m_sliceToken != Rendering::SliceRenderer::INVALID_SLICE_INDEX;
+      return m_sliceToken != INVALID_TOKEN;
     }
 
     //----------------------------------------------------------------------------
@@ -109,11 +109,39 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    bool ImagingSystem::HasVolume() const
+    {
+      return m_volumeToken != INVALID_TOKEN;
+    }
+
+    //----------------------------------------------------------------------------
     void ImagingSystem::RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap)
     {
+      callbackMap[L"slice on"] = [this](SpeechRecognitionResult ^ result)
+      {
+        if (HasSlice())
+        {
+          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Slice showing.");
+          HoloIntervention::instance()->GetSliceRenderer().ShowSlice(m_sliceToken);
+          return;
+        }
+        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"No slice available.");
+      };
+
+      callbackMap[L"slice off"] = [this](SpeechRecognitionResult ^ result)
+      {
+        if (HasSlice())
+        {
+          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Slice hidden.");
+          HoloIntervention::instance()->GetSliceRenderer().HideSlice(m_sliceToken);
+          return;
+        }
+        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"No slice available.");
+      };
+
       callbackMap[L"lock slice"] = [this](SpeechRecognitionResult ^ result)
       {
-        if (m_sliceToken == Rendering::SliceRenderer::INVALID_SLICE_INDEX)
+        if (!HasSlice())
         {
           HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"No slice to head-lock!");
           return;
@@ -124,7 +152,7 @@ namespace HoloIntervention
 
       callbackMap[L"unlock slice"] = [this](SpeechRecognitionResult ^ result)
       {
-        if (m_sliceToken == Rendering::SliceRenderer::INVALID_SLICE_INDEX)
+        if (!HasSlice())
         {
           HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"No slice to unlock!");
           return;
@@ -136,15 +164,14 @@ namespace HoloIntervention
       callbackMap[L"piecewise linear transfer function"] = [this](SpeechRecognitionResult ^ result)
       {
         HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Using built-in piecewise linear transfer function.");
-        m_transferFunctionType = Rendering::VolumeRenderer::TransferFunction_Piecewise_Linear;
-        m_transferFunctionInitialized = false;
+        // TODO : how to define which volume to apply to?
       };
     }
 
     //----------------------------------------------------------------------------
     void ImagingSystem::Process2DFrame(UWPOpenIGTLink::TrackedFrame^ frame, SpatialCoordinateSystem^ coordSystem)
     {
-      if (m_sliceToken == Rendering::SliceRenderer::INVALID_SLICE_INDEX)
+      if (!HasSlice())
       {
         // For now, our slice renderer only draws one slice, in the future, it should be able to draw more
         m_sliceToken = HoloIntervention::instance()->GetSliceRenderer().AddSlice(Network::IGTLinkIF::GetSharedImagePtr(frame),
@@ -169,14 +196,25 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ImagingSystem::Process3DFrame(UWPOpenIGTLink::TrackedFrame^ frame, SpatialCoordinateSystem^ coordSystem)
     {
-      if (!m_transferFunctionInitialized)
+      if (!HasSlice())
       {
-        Rendering::VolumeRenderer::ControlPointList points;
-        points.push_back(Rendering::VolumeRenderer::ControlPoint(0.f, float4(0.f, 0.f, 0.f, 0.f)));
-        // TODO : calculate max value based on data type
-        // TODO : calculate preferred table sized based on data type
-        points.push_back(Rendering::VolumeRenderer::ControlPoint(255.f, float4(0.f, 0.f, 0.f, 1.f)));
-        HoloIntervention::instance()->GetVolumeRenderer().SetOpacityTransferFunctionTypeAsync(m_transferFunctionType, 512, points);
+        // For now, our slice renderer only draws one slice, in the future, it should be able to draw more
+        m_volumeToken = HoloIntervention::instance()->GetVolumeRenderer().AddVolume(Network::IGTLinkIF::GetSharedImagePtr(frame),
+                        frame->FrameSize->GetAt(0),
+                        frame->FrameSize->GetAt(1),
+                        (DXGI_FORMAT)frame->GetPixelFormat(true),
+                        transpose(frame->EmbeddedImageTransform),
+                        coordSystem);
+      }
+      else
+      {
+        HoloIntervention::instance()->GetVolumeRenderer().AddVolume(m_volumeToken,
+            Network::IGTLinkIF::GetSharedImagePtr(frame),
+            frame->Width,
+            frame->Height,
+            (DXGI_FORMAT)frame->GetPixelFormat(true),
+            transpose(frame->EmbeddedImageTransform),
+            coordSystem);
       }
     }
   }

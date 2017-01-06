@@ -52,6 +52,8 @@ namespace HoloIntervention
       Windows::Foundation::Numerics::float4x4 GetSlicePose() const;
       Windows::Foundation::Numerics::float3 GetSliceVelocity() const;
 
+      bool HasVolume() const;
+
       // IVoiceInput functions
       virtual void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap);
 
@@ -61,9 +63,10 @@ namespace HoloIntervention
 
     protected:
       // Slice system
-      uint32                                            m_sliceToken = Rendering::SliceRenderer::INVALID_SLICE_INDEX;
-      Rendering::VolumeRenderer::TransferFunctionType   m_transferFunctionType = Rendering::VolumeRenderer::TransferFunction_Piecewise_Linear;
-      std::atomic_bool                                  m_transferFunctionInitialized = false;
+      uint64                                            m_sliceToken = INVALID_TOKEN;
+
+      // Volume system
+      uint64                                            m_volumeToken = INVALID_TOKEN;
     };
   }
 }
