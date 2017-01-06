@@ -55,8 +55,10 @@ namespace HoloIntervention
       VolumeRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources);
       ~VolumeRenderer();
 
-      uint64 AddVolume();
+      uint64 AddVolume(std::shared_ptr<byte> imageData, uint16 width, uint16 height, uint16 depth, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 imageToTrackerTransform, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);
       void RemoveVolume(uint64 volumeToken);
+
+      void UpdateVolume(uint64 volumeToken, std::shared_ptr<byte> imageData, uint16 width, uint16 height, uint16 depth, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 imageToTrackerTransform, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);
 
       void ShowVolume(uint64 volumeToken);
       void HideVolume(uint64 volumeToken);
@@ -73,6 +75,9 @@ namespace HoloIntervention
       // D3D device related controls
       Concurrency::task<void> CreateDeviceDependentResourcesAsync();
       void ReleaseDeviceDependentResources();
+
+    protected:
+      bool FindVolume(uint64 volumeToken, std::shared_ptr<VolumeEntry>& volumeEntry) const;
 
     protected:
       void CreateVertexResources();

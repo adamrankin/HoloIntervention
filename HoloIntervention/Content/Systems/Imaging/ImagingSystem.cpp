@@ -200,18 +200,20 @@ namespace HoloIntervention
       {
         // For now, our slice renderer only draws one slice, in the future, it should be able to draw more
         m_volumeToken = HoloIntervention::instance()->GetVolumeRenderer().AddVolume(Network::IGTLinkIF::GetSharedImagePtr(frame),
-                        frame->FrameSize->GetAt(0),
-                        frame->FrameSize->GetAt(1),
+                        frame->Width,
+                        frame->Height,
+                        frame->Depth,
                         (DXGI_FORMAT)frame->GetPixelFormat(true),
                         transpose(frame->EmbeddedImageTransform),
                         coordSystem);
       }
       else
       {
-        HoloIntervention::instance()->GetVolumeRenderer().AddVolume(m_volumeToken,
+        HoloIntervention::instance()->GetVolumeRenderer().UpdateVolume(m_volumeToken,
             Network::IGTLinkIF::GetSharedImagePtr(frame),
             frame->Width,
             frame->Height,
+            frame->Depth,
             (DXGI_FORMAT)frame->GetPixelFormat(true),
             transpose(frame->EmbeddedImageTransform),
             coordSystem);

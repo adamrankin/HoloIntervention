@@ -25,6 +25,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #include "PiecewiseLinearTransferFunction.h"
 
+// WinRt includes
+#include <ppltasks.h>
+
 namespace DX
 {
   class DeviceResources;
@@ -68,28 +71,46 @@ namespace HoloIntervention
       };
 
     public:
-      VolumeEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources);
+      VolumeEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources,
+                  uint64 token,
+                  ID3D11Buffer* cwIndexBuffer,
+                  ID3D11Buffer* ccwIndexBuffer,
+                  ID3D11InputLayout* inputLayout,
+                  ID3D11Buffer* vertexBuffer,
+                  ID3D11VertexShader* volRenderVertexShader,
+                  ID3D11GeometryShader* volRenderGeometryShader,
+                  ID3D11PixelShader* volRenderPixelShader,
+                  ID3D11PixelShader* faceCalcPixelShader,
+                  ID3D11Texture2D* frontPositionTextureArray,
+                  ID3D11Texture2D* backPositionTextureArray,
+                  ID3D11RenderTargetView* frontPositionRTV,
+                  ID3D11RenderTargetView* backPositionRTV,
+                  ID3D11ShaderResourceView* frontPositionSRV,
+                  ID3D11ShaderResourceView* backPositionSRV);
       ~VolumeEntry();
 
-      void Update(UWPOpenIGTLink::TrackedFrame^ frame, const DX::StepTimer& timer, DX::CameraResources* cameraResources, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem, Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
+      void Update(const DX::StepTimer& timer, DX::CameraResources* cameraResources, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem, Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
       void Render(uint32 indexCount);
 
+      void SetTransforms(UWPOpenIGTLink::TrackedFrame^ frame);
+      void SetImageData(std::shared_ptr<byte> imageData, uint16 width, uint16 height, uint16 depth, DXGI_FORMAT pixelFormat);
+      std::shared_ptr<byte> GetImageData() const;
+      void SetShowing(bool showing);
+      uint64 GetToken() const;
+
       void SetDesiredPose(const Windows::Foundation::Numerics::float4x4& matrix);
-      Windows::Foundation::Numerics::float3 GetSliceVelocity() const;
+      Windows::Foundation::Numerics::float3 GetVelocity() const;
 
       Concurrency::task<void> SetOpacityTransferFunctionTypeAsync(VolumeEntry::TransferFunctionType type, uint32 tableSize, const VolumeEntry::ControlPointList& controlPoints);
 
       // D3D device related controls
-      Concurrency::task<void> CreateDeviceDependentResourcesAsync();
+      void CreateDeviceDependentResources();
       void ReleaseDeviceDependentResources();
 
-      uint64                                            m_token = 0;
-      std::atomic_bool                                  m_showing = true;
       Windows::Foundation::Numerics::float4x4           m_desiredPose = Windows::Foundation::Numerics::float4x4::identity();
       Windows::Foundation::Numerics::float4x4           m_currentPose = Windows::Foundation::Numerics::float4x4::identity();
       Windows::Foundation::Numerics::float4x4           m_lastPose = Windows::Foundation::Numerics::float4x4::identity();
       Windows::Foundation::Numerics::float3             m_velocity = { 0.f, 0.f, 0.f };
-      DXGI_FORMAT                                       m_pixelFormat = DXGI_FORMAT_UNKNOWN;
 
     protected:
       void UpdateGPUImageData();
@@ -144,17 +165,18 @@ namespace HoloIntervention
       std::wstring                                      m_toCoordFrame = L"HMD";
       UWPOpenIGTLink::TransformName^                    m_imageToHMDName = ref new UWPOpenIGTLink::TransformName(ref new Platform::String(m_fromCoordFrame.c_str()), ref new Platform::String(m_toCoordFrame.c_str()));
       UWPOpenIGTLink::TransformRepository^              m_transformRepository = ref new UWPOpenIGTLink::TransformRepository();
-      UWPOpenIGTLink::TrackedFrame^                     m_frame = nullptr;
 
       // CPU resources for volume rendering
       VolumeEntryConstantBuffer                         m_constantBuffer;
+      std::shared_ptr<byte>                             m_imageData = nullptr;
       uint16                                            m_frameSize[3] = { 0, 0, 0 };
+      mutable std::mutex                                m_imageAccessMutex;
+      DXGI_FORMAT                                       m_pixelFormat = DXGI_FORMAT_UNKNOWN;
       float                                             m_stepScale = 1.f;  // Increasing this reduces the number of steps taken per pixel
 
-      // image data vars
-      mutable std::mutex                                m_imageAccessMutex;
-
-      // State flags
+      // State
+      uint64                                            m_token = 0;
+      std::atomic_bool                                  m_showing = true;
       std::atomic_bool                                  m_entryReady = false;
       std::atomic_bool                                  m_volumeReady = false;
 

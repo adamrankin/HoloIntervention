@@ -36,6 +36,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "RegistrationSystem.h"
 #include "NotificationSystem.h"
 
+// Network includes
+#include "IGTLinkIF.h"
+
 // DirectX includes
 #include <d3d11_3.h>
 #include <DirectXMath.h>
@@ -106,6 +109,156 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    uint64 VolumeRenderer::AddVolume(std::shared_ptr<byte> imageData, uint16 width, uint16 height, uint16 depth, DXGI_FORMAT pixelFormat, float4x4 imageToTrackerTransform, SpatialCoordinateSystem^ coordSystem)
+    {
+      if (!m_componentReady)
+      {
+        throw std::exception("System not ready.");
+      }
+
+      std::shared_ptr<VolumeEntry> entry = std::make_shared<VolumeEntry>(m_deviceResources,
+                                           m_nextUnusedVolumeToken,
+                                           m_cwIndexBuffer.Get(),
+                                           m_ccwIndexBuffer.Get(),
+                                           m_inputLayout.Get(),
+                                           m_vertexBuffer.Get(),
+                                           m_volRenderVertexShader.Get(),
+                                           m_volRenderGeometryShader.Get(),
+                                           m_volRenderPixelShader.Get(),
+                                           m_faceCalcPixelShader.Get(),
+                                           m_frontPositionTextureArray.Get(),
+                                           m_backPositionTextureArray.Get(),
+                                           m_frontPositionRTV.Get(),
+                                           m_backPositionRTV.Get(),
+                                           m_frontPositionSRV.Get(),
+                                           m_backPositionSRV.Get());
+      float4x4 trackerToHMD = HoloIntervention::instance()->GetRegistrationSystem().GetTrackerToCoordinateSystemTransformation(coordSystem);
+      float4x4 imageToHMD = imageToTrackerTransform * trackerToHMD;
+      entry->SetDesiredPose(imageToHMD);
+      entry->SetImageData(imageData, width, height, depth, pixelFormat);
+      entry->SetShowing(true);
+
+      std::lock_guard<std::mutex> guard(m_volumeMapMutex);
+      m_volumes.push_back(entry);
+
+      m_nextUnusedVolumeToken++;
+      return m_nextUnusedVolumeToken - 1;
+    }
+
+    //----------------------------------------------------------------------------
+    void VolumeRenderer::RemoveVolume(uint64 volumeToken)
+    {
+      std::lock_guard<std::mutex> guard(m_volumeMapMutex);
+      std::shared_ptr<VolumeEntry> entry;
+      if (FindVolume(volumeToken, entry))
+      {
+        for (auto iter = m_volumes.begin(); iter != m_volumes.end(); ++iter)
+        {
+          if ((*iter)->GetToken() == volumeToken)
+          {
+            m_volumes.erase(iter);
+            return;
+          }
+        }
+      }
+    }
+
+    //----------------------------------------------------------------------------
+    void VolumeRenderer::UpdateVolume(uint64 volumeToken, std::shared_ptr<byte> imageData, uint16 width, uint16 height, uint16 depth, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 imageToTrackerTransform, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem)
+    {
+      std::lock_guard<std::mutex> guard(m_volumeMapMutex);
+      std::shared_ptr<VolumeEntry> entry;
+      if (FindVolume(volumeToken, entry))
+      {
+        float4x4 trackerToHMD = HoloIntervention::instance()->GetRegistrationSystem().GetTrackerToCoordinateSystemTransformation(coordSystem);
+        float4x4 imageToHMD = imageToTrackerTransform * trackerToHMD;
+        entry->SetDesiredPose(imageToHMD);
+        entry->SetImageData(imageData, width, height, depth, pixelFormat);
+      }
+    }
+
+    //----------------------------------------------------------------------------
+    void VolumeRenderer::ShowVolume(uint64 volumeToken)
+    {
+      std::lock_guard<std::mutex> guard(m_volumeMapMutex);
+      std::shared_ptr<VolumeEntry> entry;
+      if (FindVolume(volumeToken, entry))
+      {
+        entry->SetShowing(true);
+      }
+    }
+
+    //----------------------------------------------------------------------------
+    void VolumeRenderer::HideVolume(uint64 volumeToken)
+    {
+      std::lock_guard<std::mutex> guard(m_volumeMapMutex);
+      std::shared_ptr<VolumeEntry> entry;
+      if (FindVolume(volumeToken, entry))
+      {
+        entry->SetShowing(false);
+      }
+    }
+
+    //----------------------------------------------------------------------------
+    void VolumeRenderer::SetVolumeVisible(uint64 volumeToken, bool show)
+    {
+      std::lock_guard<std::mutex> guard(m_volumeMapMutex);
+      std::shared_ptr<VolumeEntry> entry;
+      if (FindVolume(volumeToken, entry))
+      {
+        entry->SetShowing(show);
+      }
+    }
+
+    //----------------------------------------------------------------------------
+    void VolumeRenderer::SetVolumePose(uint64 volumeToken, const Windows::Foundation::Numerics::float4x4& pose)
+    {
+      std::lock_guard<std::mutex> guard(m_volumeMapMutex);
+      std::shared_ptr<VolumeEntry> entry;
+      if (FindVolume(volumeToken, entry))
+      {
+        entry->m_currentPose = entry->m_desiredPose = entry->m_lastPose = pose;
+      }
+    }
+
+    //----------------------------------------------------------------------------
+    Windows::Foundation::Numerics::float4x4 VolumeRenderer::GetVolumePose(uint64 volumeToken) const
+    {
+      std::lock_guard<std::mutex> guard(m_volumeMapMutex);
+      std::shared_ptr<VolumeEntry> entry;
+      if (FindVolume(volumeToken, entry))
+      {
+        return entry->m_currentPose;
+      }
+
+      std::stringstream ss;
+      ss << "Unable to locate volume with id: " << volumeToken;
+      throw std::exception(ss.str().c_str());
+    }
+
+    //----------------------------------------------------------------------------
+    void VolumeRenderer::SetDesiredVolumePose(uint64 volumeToken, const Windows::Foundation::Numerics::float4x4& pose)
+    {
+      std::lock_guard<std::mutex> guard(m_volumeMapMutex);
+      std::shared_ptr<VolumeEntry> entry;
+      if (FindVolume(volumeToken, entry))
+      {
+        entry->SetDesiredPose(pose);
+      }
+    }
+
+    //----------------------------------------------------------------------------
+    Windows::Foundation::Numerics::float3 VolumeRenderer::GetVolumeVelocity(uint64 volumeToken) const
+    {
+      std::lock_guard<std::mutex> guard(m_volumeMapMutex);
+      std::shared_ptr<VolumeEntry> entry;
+      if (FindVolume(volumeToken, entry))
+      {
+        return entry->GetVelocity();
+      }
+    }
+
+    //----------------------------------------------------------------------------
     void VolumeRenderer::Update(UWPOpenIGTLink::TrackedFrame^ frame, const DX::StepTimer& timer, DX::CameraResources* cameraResources, SpatialCoordinateSystem^ hmdCoordinateSystem, SpatialPointerPose^ headPose)
     {
       if (m_cameraResources != cameraResources)
@@ -117,6 +270,13 @@ namespace HoloIntervention
         m_cameraResources = cameraResources;
         CreateCameraResources();
         m_deviceResources->GetD3DDeviceContext()->UpdateSubresource(m_volumeRendererConstantBuffer.Get(), 0, nullptr, &m_constantBuffer, 0, 0);
+      }
+
+      for (auto& volEntry : m_volumes)
+      {
+        volEntry->SetTransforms(frame);
+        volEntry->SetImageData(Network::IGTLinkIF::GetSharedImagePtr(frame), frame->FrameSize->GetAt(0), frame->FrameSize->GetAt(1), frame->FrameSize->GetAt(2), (DXGI_FORMAT)frame->GetPixelFormat(true));
+        volEntry->Update(timer, cameraResources, hmdCoordinateSystem, headPose);
       }
     }
 
@@ -217,14 +377,12 @@ namespace HoloIntervention
                                    ? (createPSTask && createVSTask && createFacePSTask)
                                    : (createPSTask && createVSTask && createGSTask && createFacePSTask);
 
-      task<void> result = create_task([]() {});
       for (auto& volEntry : m_volumes)
       {
-        auto& task = volEntry->CreateDeviceDependentResourcesAsync();
-        result = result && task;
+        volEntry->CreateDeviceDependentResources();
       }
 
-      return (shaderTaskGroup && result).then([this]()
+      return shaderTaskGroup.then([this]()
       {
         m_componentReady = true;
       });
@@ -302,6 +460,21 @@ namespace HoloIntervention
       m_backPositionRTV.Reset();
       m_frontPositionSRV.Reset();
       m_backPositionSRV.Reset();
+    }
+
+    //----------------------------------------------------------------------------
+    bool VolumeRenderer::FindVolume(uint64 volumeToken, std::shared_ptr<VolumeEntry>& volumeEntry) const
+    {
+      for (auto volume : m_volumes)
+      {
+        if (volume->GetToken() == volumeToken)
+        {
+          volumeEntry = volume;
+          return true;
+        }
+      }
+
+      return false;
     }
 
     //----------------------------------------------------------------------------
