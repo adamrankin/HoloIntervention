@@ -196,7 +196,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ImagingSystem::Process3DFrame(UWPOpenIGTLink::TrackedFrame^ frame, SpatialCoordinateSystem^ coordSystem)
     {
-      if (!HasSlice())
+      if (!HasVolume())
       {
         // For now, our slice renderer only draws one slice, in the future, it should be able to draw more
         m_volumeToken = HoloIntervention::instance()->GetVolumeRenderer().AddVolume(Network::IGTLinkIF::GetSharedImagePtr(frame),

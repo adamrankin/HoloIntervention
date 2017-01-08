@@ -27,7 +27,6 @@ cbuffer VolumeConstantBuffer : register(b0)
   float     c_maximumXValue;
   uint      c_tfArraySize;
   float3    c_stepSize;
-  float2    c_viewportDimensions;
   uint      c_numIterations;
 };
 
@@ -36,6 +35,11 @@ cbuffer ViewProjectionConstantBuffer : register(b1)
   float4    cameraPosition;
   float4    lightPosition;
   float4x4  viewProjection[2];
+};
+
+cbuffer VolumeRendererConstantBuffer : register(b2)
+{
+  float4 viewportDimensions;
 };
 
 struct VertexShaderInput

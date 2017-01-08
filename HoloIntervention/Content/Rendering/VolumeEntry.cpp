@@ -150,6 +150,8 @@ namespace HoloIntervention
       {
         HoloIntervention::instance()->GetNotificationSystem().QueueMessage(e->Message);
       }
+
+      CreateDeviceDependentResources();
     }
 
     //----------------------------------------------------------------------------
@@ -208,6 +210,18 @@ namespace HoloIntervention
       float3 smoothedTranslation = lerp(currentTranslation, desiredTranslation, deltaTime * LERP_RATE);
 
       m_currentPose = MatrixCompose(smoothedTranslation, smoothedRotation, smoothedScale, true);
+
+      if (m_volumeUpdateNeeded)
+      {
+        ReleaseVolumeResources();
+        CreateVolumeResources();
+        m_volumeUpdateNeeded = false;
+      }
+
+      if (m_onGPUImageData != m_imageData)
+      {
+        UpdateGPUImageData();
+      }
 
       XMStoreFloat4x4(&m_constantBuffer.worldMatrix, XMLoadFloat4x4(&m_currentPose));
       context->UpdateSubresource(m_volumeEntryConstantBuffer.Get(), 0, nullptr, &m_constantBuffer, 0, 0);
@@ -303,17 +317,11 @@ namespace HoloIntervention
 
       if (!m_volumeReady)
       {
-        ReleaseVolumeResources();
-        CreateVolumeResources();
+        m_volumeUpdateNeeded = true;
       }
       else if (width != m_frameSize[0] || height != m_frameSize[1] || depth != m_frameSize[2])
       {
-        ReleaseVolumeResources();
-        CreateVolumeResources();
-      }
-      else
-      {
-        UpdateGPUImageData();
+        m_volumeUpdateNeeded = true;
       }
     }
 
@@ -371,6 +379,8 @@ namespace HoloIntervention
       context->Unmap(m_volumeStagingTexture.Get(), 0);
 
       context->CopyResource(m_volumeTexture.Get(), m_volumeStagingTexture.Get());
+
+      m_onGPUImageData = m_imageData;
     }
 
     //----------------------------------------------------------------------------
@@ -396,7 +406,7 @@ namespace HoloIntervention
       resData.SysMemPitch = 0;
       resData.SysMemSlicePitch = 0;
 
-      DX::ThrowIfFailed(device->CreateBuffer(&CD3D11_BUFFER_DESC(sizeof(VolumeEntryConstantBuffer), D3D11_BIND_CONSTANT_BUFFER), &resData, &m_volumeEntryConstantBuffer));
+      DX::ThrowIfFailed(device->CreateBuffer(&CD3D11_BUFFER_DESC(sizeof(VolumeEntryConstantBuffer), D3D11_BIND_CONSTANT_BUFFER), &resData, m_volumeEntryConstantBuffer.GetAddressOf()));
     }
 
     //----------------------------------------------------------------------------

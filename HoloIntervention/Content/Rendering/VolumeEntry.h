@@ -169,6 +169,7 @@ namespace HoloIntervention
       // CPU resources for volume rendering
       VolumeEntryConstantBuffer                         m_constantBuffer;
       std::shared_ptr<byte>                             m_imageData = nullptr;
+      std::shared_ptr<byte>                             m_onGPUImageData = nullptr;
       uint16                                            m_frameSize[3] = { 0, 0, 0 };
       mutable std::mutex                                m_imageAccessMutex;
       DXGI_FORMAT                                       m_pixelFormat = DXGI_FORMAT_UNKNOWN;
@@ -179,6 +180,7 @@ namespace HoloIntervention
       std::atomic_bool                                  m_showing = true;
       std::atomic_bool                                  m_entryReady = false;
       std::atomic_bool                                  m_volumeReady = false;
+      std::atomic_bool                                  m_volumeUpdateNeeded = false;
 
       // Constants relating to volume entry behavior
       static const float                                LERP_RATE;

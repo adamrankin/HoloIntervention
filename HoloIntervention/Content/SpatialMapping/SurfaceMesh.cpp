@@ -410,12 +410,10 @@ namespace HoloIntervention
         XMMATRIX scale = XMLoadFloat4x4(&make_float4x4_scale(2 * bounds->Value.Extents));
         XMMATRIX translation = XMLoadFloat4x4(&make_float4x4_translation(bounds->Value.Center));
         XMVECTOR determinant;
+
         XMStoreFloat4x4(&m_worldToBoxTransform, XMMatrixInverse(&determinant, XMMatrixMultiply(translation, XMMatrixMultiply(rotation, scale))));
 
-        if (determinant.m128_f32[0] == 0.f &&
-            determinant.m128_f32[1] == 0.f &&
-            determinant.m128_f32[2] == 0.f &&
-            determinant.m128_f32[3] == 0.f)
+        if (determinant.m128_f32[0] == 0.f && determinant.m128_f32[1] == 0.f && determinant.m128_f32[2] == 0.f && determinant.m128_f32[3] == 0.f)
         {
           return;
         }

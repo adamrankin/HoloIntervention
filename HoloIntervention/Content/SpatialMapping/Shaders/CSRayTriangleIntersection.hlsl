@@ -68,9 +68,9 @@ void main(uint3 DTid : SV_DispatchThreadID)
   float4 v2 = {meshBuffer[indexBuffer[(DTid.x * 3) + 2].index].vertex.x, meshBuffer[indexBuffer[(DTid.x * 3) + 2].index].vertex.y, meshBuffer[indexBuffer[(DTid.x * 3) + 2].index].vertex.z, 1};
 
   // Transform the vertex position into world space.
-  v0 = mul(v0, meshToWorld);
-  v1 = mul(v1, meshToWorld);
-  v2 = mul(v2, meshToWorld);
+  v0 = mul(meshToWorld, v0);
+  v1 = mul(meshToWorld, v1);
+  v2 = mul(meshToWorld, v2);
 
   //Find vectors for two edges sharing v0
   float3 e1 = v1.xyz - v0.xyz;

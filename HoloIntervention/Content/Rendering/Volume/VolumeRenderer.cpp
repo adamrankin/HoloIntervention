@@ -256,6 +256,10 @@ namespace HoloIntervention
       {
         return entry->GetVelocity();
       }
+
+      std::stringstream ss;
+      ss << "Unable to locate volume with id: " << volumeToken;
+      throw std::exception(ss.str().c_str());
     }
 
     //----------------------------------------------------------------------------
