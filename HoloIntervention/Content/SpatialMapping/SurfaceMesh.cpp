@@ -72,7 +72,6 @@ namespace HoloIntervention
     void SurfaceMesh::UpdateSurface(SpatialSurfaceMesh^ newMesh)
     {
       std::lock_guard<std::mutex> lock(m_meshResourcesMutex);
-      m_worldToBoxTransformComputed = false;
       m_surfaceMesh = newMesh;
       m_updateNeeded = true;
     }
@@ -128,11 +127,6 @@ namespace HoloIntervention
         }
       }
 
-      if (!m_worldToBoxTransformComputed)
-      {
-        ComputeOBBInverseWorld(baseCoordinateSystem);
-      }
-
       if (!m_isActive)
       {
         return;
@@ -178,12 +172,24 @@ namespace HoloIntervention
       Microsoft::WRL::ComPtr<ID3D11Buffer> updatedVertexPositions;
       Microsoft::WRL::ComPtr<ID3D11Buffer> updatedTriangleIndices;
       DX::ThrowIfFailed(CreateStructuredBuffer(sizeof(VertexBufferType), positions, updatedVertexPositions.GetAddressOf()));
+#if _DEBUG
+      updatedVertexPositions->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("updatedVertexPositions") - 1, "updatedVertexPositions");
+#endif
       DX::ThrowIfFailed(CreateStructuredBuffer(sizeof(IndexBufferType), indices, updatedTriangleIndices.GetAddressOf()));
+#if _DEBUG
+      updatedTriangleIndices->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("updatedTriangleIndices") - 1, "updatedTriangleIndices");
+#endif
 
       Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> updatedVertexPositionsSRV;
       Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> updatedTriangleIndicesSRV;
       DX::ThrowIfFailed(CreateBufferSRV(updatedVertexPositions, updatedVertexPositionsSRV.GetAddressOf()));
+#if _DEBUG
+      updatedVertexPositionsSRV->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("updatedVertexPositionsSRV") - 1, "updatedVertexPositionsSRV");
+#endif
       DX::ThrowIfFailed(CreateBufferSRV(updatedTriangleIndices, updatedTriangleIndicesSRV.GetAddressOf()));
+#if _DEBUG
+      updatedTriangleIndicesSRV->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("updatedTriangleIndicesSRV") - 1, "updatedTriangleIndicesSRV");
+#endif
 
       // Before updating the meshes, check to ensure that there wasn't a more recent update.
       std::lock_guard<std::mutex> lock(m_meshResourcesMutex);
@@ -216,9 +222,21 @@ namespace HoloIntervention
       CreateVertexResources();
 
       DX::ThrowIfFailed(CreateStructuredBuffer(sizeof(OutputBufferType), 1, m_outputBuffer.GetAddressOf()));
+#if _DEBUG
+      m_outputBuffer->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("m_outputBuffer") - 1, "m_outputBuffer");
+#endif
       DX::ThrowIfFailed(CreateReadbackBuffer(sizeof(OutputBufferType), 1));
+#if _DEBUG
+      m_readBackBuffer->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("m_readBackBuffer") - 1, "m_readBackBuffer");
+#endif
       DX::ThrowIfFailed(CreateConstantBuffer());
+#if _DEBUG
+      m_meshConstantBuffer->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("m_meshConstantBuffer") - 1, "m_meshConstantBuffer");
+#endif
       DX::ThrowIfFailed(CreateBufferUAV(m_outputBuffer, m_outputUAV.GetAddressOf()));
+#if _DEBUG
+      m_outputUAV->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("m_outputUAV") - 1, "m_outputUAV");
+#endif
 
       m_loadingComplete = true;
     }
@@ -395,31 +413,31 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void SurfaceMesh::ComputeOBBInverseWorld(SpatialCoordinateSystem^ baseCoordinateSystem)
     {
-      m_worldToBoxTransformComputed = false;
+      if (m_lastWorldToBoxComputedCoordSystem == baseCoordinateSystem)
+      {
+        return;
+      }
 
       if (m_surfaceMesh == nullptr)
       {
         return;
       }
 
+      if (m_surfaceMesh->SurfaceInfo == nullptr)
+      {
+        throw std::exception("Mesh surface info not available.");
+      }
       Platform::IBox<SpatialBoundingOrientedBox>^ bounds = m_surfaceMesh->SurfaceInfo->TryGetBounds(baseCoordinateSystem);
 
-      if (bounds != nullptr)
+      if (bounds == nullptr)
       {
-        XMMATRIX rotation = XMLoadFloat4x4(&make_float4x4_from_quaternion(bounds->Value.Orientation));
-        XMMATRIX scale = XMLoadFloat4x4(&make_float4x4_scale(2 * bounds->Value.Extents));
-        XMMATRIX translation = XMLoadFloat4x4(&make_float4x4_translation(bounds->Value.Center));
-        XMVECTOR determinant;
-
-        XMStoreFloat4x4(&m_worldToBoxTransform, XMMatrixInverse(&determinant, XMMatrixMultiply(translation, XMMatrixMultiply(rotation, scale))));
-
-        if (determinant.m128_f32[0] == 0.f && determinant.m128_f32[1] == 0.f && determinant.m128_f32[2] == 0.f && determinant.m128_f32[3] == 0.f)
-        {
-          return;
-        }
-
-        m_worldToBoxTransformComputed = true;
+        throw std::exception("Cannot compute bounds.");
       }
+
+      //float4x4 boxToWorld = make_float4x4_scale(bounds->Value.Extents) * make_float4x4_from_quaternion(bounds->Value.Orientation) * make_float4x4_translation(bounds->Value.Center);
+      float4x4 m_worldToBoxCenterTransform = make_float4x4_scale(float3(1.f, 1.f, 1.f) / bounds->Value.Extents) * make_float4x4_from_quaternion(inverse(bounds->Value.Orientation)) * make_float4x4_translation(-bounds->Value.Center);
+
+      m_lastWorldToBoxComputedCoordSystem = baseCoordinateSystem;
     }
 
     //--------------------------------------------------------------------------------------
@@ -546,58 +564,51 @@ namespace HoloIntervention
         return m_hasLastComputedHit;
       }
 
-      if (m_surfaceMesh->SurfaceInfo == nullptr)
+      try
       {
-        return true;
+        ComputeOBBInverseWorld(desiredCoordinateSystem);
       }
-      else
+      catch (const std::exception&)
       {
-        Platform::IBox<SpatialBoundingOrientedBox>^ bounds = m_surfaceMesh->SurfaceInfo->TryGetBounds(desiredCoordinateSystem);
-
-        if (bounds == nullptr || !m_worldToBoxTransformComputed)
-        {
-          return true;
-        }
-
-        XMVECTOR rayBox = XMVector3Transform(XMLoadFloat3(&rayOrigin), XMLoadFloat4x4(&m_worldToBoxTransform));
-        XMVECTOR rayDirBox = XMVector3Transform(XMLoadFloat3(&rayDirection), XMLoadFloat4x4(&m_worldToBoxTransform));
-
-        XMVECTOR rayInvDirBox;
-        rayInvDirBox.m128_f32[0] = 1.f / rayDirBox.m128_f32[0];
-        rayInvDirBox.m128_f32[1] = 1.f / rayDirBox.m128_f32[1];
-        rayInvDirBox.m128_f32[2] = 1.f / rayDirBox.m128_f32[2];
-        rayInvDirBox.m128_f32[3] = 1.f;
-
-        // Algorithm implementation derived from
-        // https://tavianator.com/cgit/dimension.git/tree/libdimension/bvh/bvh.c
-        // thanks to Tavian Barnes <tavianator@tavianator.com>
-        float xMin = -0.5f;
-        float xMax = 0.5;
-        float yMin = -0.5f;
-        float yMax = 0.5f;
-        float zMin = -0.5f;
-        float zMax = 0.5;
-
-        float tx1 = (xMin - rayBox.m128_f32[0]) * rayInvDirBox.m128_f32[0];
-        float tx2 = (xMax - rayBox.m128_f32[0]) * rayInvDirBox.m128_f32[0];
-
-        float tmin = min(tx1, tx2);
-        float tmax = max(tx1, tx2);
-
-        float ty1 = (yMin - rayBox.m128_f32[1]) * rayInvDirBox.m128_f32[1];
-        float ty2 = (yMax - rayBox.m128_f32[1]) * rayInvDirBox.m128_f32[1];
-
-        tmin = max(tmin, min(ty1, ty2));
-        tmax = min(tmax, max(ty1, ty2));
-
-        float tz1 = (zMin - rayBox.m128_f32[2]) * rayInvDirBox.m128_f32[2];
-        float tz2 = (zMax - rayBox.m128_f32[2]) * rayInvDirBox.m128_f32[2];
-
-        tmin = max(tmin, min(tz1, tz2));
-        tmax = min(tmax, max(tz1, tz2));
-
-        return tmax >= max(0.0, tmin);
+        return false;
       }
+
+      float3 rayBox = transform(rayOrigin, m_worldToBoxCenterTransform);
+      float4x4 rotateScale = m_worldToBoxCenterTransform;
+      rotateScale.m41 = 0.f;
+      rotateScale.m42 = 0.f;
+      rotateScale.m43 = 0.f;
+      float3 rayDirBox = transform(rayDirection, rotateScale);
+      rayDirBox = normalize(rayDirBox);
+
+      float3 rayInvDirBox;
+      rayInvDirBox.x = 1.f / rayDirBox.x;
+      rayInvDirBox.y = 1.f / rayDirBox.y;
+      rayInvDirBox.z = 1.f / rayDirBox.z;
+
+      // Algorithm implementation derived from
+      // https://tavianator.com/cgit/dimension.git/tree/libdimension/bvh/bvh.c
+      // thanks to Tavian Barnes <tavianator@tavianator.com>
+
+      float tx1 = (-0.5f - rayBox.x) * rayInvDirBox.x;
+      float tx2 = (0.5f - rayBox.x) * rayInvDirBox.x;
+
+      float tmin = std::fmin(tx1, tx2);
+      float tmax = std::fmax(tx1, tx2);
+
+      float ty1 = (-0.5f - rayBox.y) * rayInvDirBox.y;
+      float ty2 = (0.5f - rayBox.y) * rayInvDirBox.y;
+
+      tmin = std::fmax(tmin, std::fmin(ty1, ty2));
+      tmax = std::fmin(tmax, std::fmax(ty1, ty2));
+
+      float tz1 = (-0.5f - rayBox.z) * rayInvDirBox.z;
+      float tz2 = (0.5f - rayBox.z) * rayInvDirBox.z;
+
+      tmin = std::fmax(tmin, std::fmin(tz1, tz2));
+      tmax = std::fmin(tmax, std::fmax(tz1, tz2));
+
+      return tmax >= std::fmax(0.0, tmin);
     }
   }
 }

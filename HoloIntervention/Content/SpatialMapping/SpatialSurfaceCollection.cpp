@@ -144,13 +144,16 @@ namespace HoloIntervention
       constant_buffer_desc.CPUAccessFlags = 0;
 
       DX::ThrowIfFailed(m_deviceResources->GetD3DDevice()->CreateBuffer(&constant_buffer_desc, nullptr, &m_constantBuffer));
+#if _DEBUG
+      m_constantBuffer->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("SpatSurfCollConstBuffer") - 1, "SpatSurfCollConstBuffer");
+#endif
 
       return DX::ReadDataAsync(L"ms-appx:///CSRayTriangleIntersection.cso").then([ = ](std::vector<byte> data)
       {
         DX::ThrowIfFailed(m_deviceResources->GetD3DDevice()->CreateComputeShader(&data.front(), data.size(), nullptr, &m_d3d11ComputeShader));
 
 #if defined(_DEBUG) || defined(PROFILE)
-        m_d3d11ComputeShader->SetPrivateData(WKPDID_D3DDebugObjectName, strlen("main") - 1, "main");
+        m_d3d11ComputeShader->SetPrivateData(WKPDID_D3DDebugObjectName, strlen("RayTriangleIntersectionCS") - 1, "RayTriangleIntersectionCS");
 #endif
         m_resourcesLoaded = true;
       });

@@ -74,34 +74,36 @@ namespace HoloIntervention
     {
       const float& deltaTime = static_cast<float>(timer.GetElapsedSeconds());
 
-      if (IsCursorEnabled())
+      if (!IsCursorEnabled())
       {
-        float3 outHitPosition;
-        float3 outHitNormal;
-        float3 outHitEdge;
-        bool hit = HoloIntervention::instance()->GetSpatialSystem().TestRayIntersection(currentCoordinateSystem,
-                   headPose->Head->Position,
-                   headPose->Head->ForwardDirection,
-                   outHitPosition,
-                   outHitNormal,
-                   outHitEdge);
+        return;
+      }
 
-        if (hit)
-        {
-          // Update the gaze system with the pose to render
-          m_goalHitNormal = outHitNormal;
-          m_goalHitPosition = outHitPosition;
-          m_goalHitEdge = outHitEdge;
-          m_modelEntry->RenderDefault();
-        }
-        else
-        {
-          // Couldn't find a hit, throw the cursor where the gaze head vector is at 2m depth, and turn the model grey
-          m_goalHitPosition = headPose->Head->Position + (2.f * (headPose->Head->ForwardDirection));
-          m_goalHitNormal = -headPose->Head->ForwardDirection;
-          m_goalHitEdge = { 1.f, 0.f, 0.f }; // right relative to head pose
-          m_modelEntry->RenderGreyscale();
-        }
+      float3 outHitPosition;
+      float3 outHitNormal;
+      float3 outHitEdge;
+      bool hit = HoloIntervention::instance()->GetSpatialSystem().TestRayIntersection(currentCoordinateSystem,
+                 headPose->Head->Position,
+                 headPose->Head->ForwardDirection,
+                 outHitPosition,
+                 outHitNormal,
+                 outHitEdge);
+
+      if (hit)
+      {
+        // Update the gaze system with the pose to render
+        m_goalHitNormal = outHitNormal;
+        m_goalHitPosition = outHitPosition;
+        m_goalHitEdge = outHitEdge;
+        m_modelEntry->RenderDefault();
+      }
+      else
+      {
+        // Couldn't find a hit, throw the cursor where the gaze head vector is at 2m depth, and turn the model grey
+        m_goalHitPosition = headPose->Head->Position + (2.f * (headPose->Head->ForwardDirection));
+        m_goalHitNormal = -headPose->Head->ForwardDirection;
+        m_goalHitEdge = { 1.f, 0.f, 0.f }; // right relative to head pose
+        m_modelEntry->RenderGreyscale();
       }
 
       m_lastPosition = m_currentPosition;

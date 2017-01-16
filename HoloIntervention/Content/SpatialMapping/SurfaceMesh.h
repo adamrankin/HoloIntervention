@@ -160,8 +160,8 @@ namespace HoloIntervention
       float                                                         m_lastActiveTime = -1.f;
 
       // Bounding box inverse world matrix
-      Windows::Foundation::Numerics::float4x4                       m_worldToBoxTransform = Windows::Foundation::Numerics::float4x4::identity();
-      bool                                                          m_worldToBoxTransformComputed = false;
+      Windows::Foundation::Numerics::float4x4                       m_worldToBoxCenterTransform = Windows::Foundation::Numerics::float4x4::identity();
+      Windows::Perception::Spatial::SpatialCoordinateSystem^        m_lastWorldToBoxComputedCoordSystem = nullptr;
 
       // Number of indices in the mesh data
       uint32                                                        m_indexCount = 0;
