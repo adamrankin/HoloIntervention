@@ -139,6 +139,9 @@
     <ClCompile Include="Content\Rendering\VolumeEntry.cpp">
       <Filter>Content\Rendering\VolumeRenderer</Filter>
     </ClCompile>
+    <ClCompile Include="Core\Log.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common\CameraResources.h">
@@ -299,6 +302,9 @@
     </ClInclude>
     <ClInclude Include="Content\Rendering\VolumeEntry.h">
       <Filter>Content\Rendering\VolumeRenderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Log.h">
+      <Filter>Core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

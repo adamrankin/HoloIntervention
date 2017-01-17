@@ -101,7 +101,7 @@ namespace DX
     }
     catch (const std::exception& e)
     {
-      OutputDebugStringA(e.what());
+      HoloIntervention::LogMessage(e.what());
       return;
     }
 

@@ -156,6 +156,7 @@
     <ClInclude Include="Core\IEngineComponent.h" />
     <ClInclude Include="Common\DeviceResources.h" />
     <ClInclude Include="Common\CameraResources.h" />
+    <ClInclude Include="Core\Log.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
@@ -204,6 +205,7 @@
     <ClCompile Include="Core\IEngineComponent.cpp" />
     <ClCompile Include="Common\DeviceResources.cpp" />
     <ClCompile Include="Common\CameraResources.cpp" />
+    <ClCompile Include="Core\Log.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
