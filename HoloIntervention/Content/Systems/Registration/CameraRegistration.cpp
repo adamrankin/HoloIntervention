@@ -138,9 +138,18 @@ namespace HoloIntervention
         for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
         {
           auto entry = HoloIntervention::instance()->GetModelRenderer().GetPrimitive(m_spherePrimitiveIds[i]);
-          entry->SetVisible(m_hasRegistration);
-          float4x4 anchorToRequested = anchorToRequestedBox->Value;
-          entry->SetDesiredWorldPose(m_sphereToAnchorPoses[i] * anchorToRequested);
+          float4x4 sphereToRequested = m_sphereToAnchorPoses[i] * anchorToRequestedBox->Value;
+
+#if _DEBUG
+          if (i == 0)
+          {
+            HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_INFO, std::string("m_sphereToAnchorPoses[0]: ") + toString(m_sphereToAnchorPoses[i]));
+            HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_INFO, std::string("anchorToRequested: ") + toString(anchorToRequestedBox->Value));
+            HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_INFO, std::string("sphereToRequested: ") + toString(sphereToRequested));
+          }
+#endif
+
+          entry->SetDesiredWorldPose(sphereToRequested);
         }
       }
     }
@@ -228,7 +237,7 @@ namespace HoloIntervention
               {
                 m_tokenSource = cancellation_token_source();
                 auto token = m_tokenSource.get_token();
-                m_workerTask = &concurrency::create_task([this, token]()
+                m_workerTask = &create_task([this, token]()
                 {
                   try
                   {
@@ -292,7 +301,7 @@ namespace HoloIntervention
                                       std::move(DirectX::InstancedGeometricPrimitive::CreateSphere(m_deviceResources->GetD3DDeviceContext(), VISUALIZATION_SPHERE_RADIUS, 30))
                                     );
           auto entry = HoloIntervention::instance()->GetModelRenderer().GetPrimitive(m_spherePrimitiveIds[i]);
-          entry->SetVisible(false);
+          entry->SetVisible(true);
           entry->SetColour(float3(0.803921640f, 0.360784322f, 0.360784322f));
           entry->SetDesiredWorldPose(float4x4::identity());
         }
@@ -429,8 +438,17 @@ namespace HoloIntervention
             continue;
           }
 
+          VideoMediaFrame^ frame(nullptr);
           float4x4 phantomToCameraTransform;
-          if (!sphereInTrackerResults.empty() && ComputePhantomToCameraTransform(l_latestCameraFrame->VideoMediaFrame, l_initialized, l_height, l_width, l_hsv, l_redMat, l_redMatWrap, l_imageRGB, l_mask, l_rvec, l_tvec, l_canny_output, phantomToCameraTransform))
+          try
+          {
+            frame = l_latestCameraFrame->VideoMediaFrame;
+          }
+          catch (Platform::Exception^ e)
+          {
+            continue;
+          }
+          if (!sphereInTrackerResults.empty() && ComputePhantomToCameraTransform(frame, l_initialized, l_height, l_width, l_hsv, l_redMat, l_redMatWrap, l_imageRGB, l_mask, l_rvec, l_tvec, l_canny_output, phantomToCameraTransform))
           {
             // Transform points in model space to anchor space
             VecFloat3 sphereInAnchorResults;

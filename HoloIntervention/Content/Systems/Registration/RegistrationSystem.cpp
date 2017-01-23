@@ -128,7 +128,7 @@ namespace HoloIntervention
         m_regAnchorRequested = false;
       }
 
-      Platform::IBox<float4x4>^ transformContainer;
+      Platform::IBox<float4x4>^ transformContainer(nullptr);
       // Anchor model position update logic
       if (m_regAnchor != nullptr)
       {
@@ -222,7 +222,7 @@ namespace HoloIntervention
 
       callbackMap[L"enable spheres"] = [this](SpeechRecognitionResult ^ result)
       {
-        ;
+        m_cameraRegistration->SetVisualization(true);
         HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Sphere visualization enabled.");
       };
 
