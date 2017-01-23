@@ -215,62 +215,62 @@ namespace HoloIntervention
       {
         switch (status)
         {
-        case SpatialPerceptionAccessStatus::Allowed:
-        {
-          m_surfaceMeshOptions = ref new SpatialSurfaceMeshOptions();
+          case SpatialPerceptionAccessStatus::Allowed:
+          {
+            m_surfaceMeshOptions = ref new SpatialSurfaceMeshOptions();
 
-          IVectorView<DirectXPixelFormat>^ supportedVertexPositionFormats = m_surfaceMeshOptions->SupportedVertexPositionFormats;
-          unsigned int formatIndex = 0;
-          if (supportedVertexPositionFormats->IndexOf(DirectXPixelFormat::R32G32B32Float, &formatIndex))
-          {
-            m_surfaceMeshOptions->VertexPositionFormat = DirectXPixelFormat::R32G32B32Float;
-          }
-          else if (supportedVertexPositionFormats->IndexOf(DirectXPixelFormat::R32G32B32A32Float, &formatIndex))
-          {
-            m_surfaceMeshOptions->VertexPositionFormat = DirectXPixelFormat::R32G32B32A32Float;
-          }
-          else
-          {
-            OutputDebugStringA("WARNING - Cannot load desired vertex position format.");
-          }
+            IVectorView<DirectXPixelFormat>^ supportedVertexPositionFormats = m_surfaceMeshOptions->SupportedVertexPositionFormats;
+            unsigned int formatIndex = 0;
+            if (supportedVertexPositionFormats->IndexOf(DirectXPixelFormat::R32G32B32Float, &formatIndex))
+            {
+              m_surfaceMeshOptions->VertexPositionFormat = DirectXPixelFormat::R32G32B32Float;
+            }
+            else if (supportedVertexPositionFormats->IndexOf(DirectXPixelFormat::R32G32B32A32Float, &formatIndex))
+            {
+              m_surfaceMeshOptions->VertexPositionFormat = DirectXPixelFormat::R32G32B32A32Float;
+            }
+            else
+            {
+              HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_WARNING, "Cannot load desired vertex position format.");
+            }
 
-          // Our shader pipeline can handle a variety of triangle index formats
-          IVectorView<DirectXPixelFormat>^ supportedTriangleIndexFormats = m_surfaceMeshOptions->SupportedTriangleIndexFormats;
-          if (supportedTriangleIndexFormats->IndexOf(DirectXPixelFormat::R32UInt, &formatIndex))
-          {
-            m_surfaceMeshOptions->TriangleIndexFormat = DirectXPixelFormat::R32UInt;
-          }
-          else
-          {
-            OutputDebugStringA("WARNING - Cannot load desired index format.");
-          }
+            // Our shader pipeline can handle a variety of triangle index formats
+            IVectorView<DirectXPixelFormat>^ supportedTriangleIndexFormats = m_surfaceMeshOptions->SupportedTriangleIndexFormats;
+            if (supportedTriangleIndexFormats->IndexOf(DirectXPixelFormat::R32UInt, &formatIndex))
+            {
+              m_surfaceMeshOptions->TriangleIndexFormat = DirectXPixelFormat::R32UInt;
+            }
+            else
+            {
+              HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_WARNING, "Cannot load desired index format.");
+            }
 
-          if (m_surfaceObserver == nullptr)
-          {
-            m_surfaceObserver = ref new SpatialSurfaceObserver();
-            UpdateSurfaceObserverPosition(coordinateSystem);
+            if (m_surfaceObserver == nullptr)
+            {
+              m_surfaceObserver = ref new SpatialSurfaceObserver();
+              UpdateSurfaceObserverPosition(coordinateSystem);
+            }
           }
-        }
-        break;
-        case SpatialPerceptionAccessStatus::DeniedBySystem:
-        {
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Error: Cannot initialize surface observer because the system denied access to the spatialPerception capability.");
-        }
-        break;
-        case SpatialPerceptionAccessStatus::DeniedByUser:
-        {
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Error: Cannot initialize surface observer because the user denied access to the spatialPerception capability.");
-        }
-        break;
-        case SpatialPerceptionAccessStatus::Unspecified:
-        {
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Error: Cannot initialize surface observer. Access was denied for an unspecified reason.");
-        }
-        break;
-        default:
-          // unreachable
-          assert(false);
           break;
+          case SpatialPerceptionAccessStatus::DeniedBySystem:
+          {
+            HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Error: Cannot initialize surface observer because the system denied access to the spatialPerception capability.");
+          }
+          break;
+          case SpatialPerceptionAccessStatus::DeniedByUser:
+          {
+            HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Error: Cannot initialize surface observer because the user denied access to the spatialPerception capability.");
+          }
+          break;
+          case SpatialPerceptionAccessStatus::Unspecified:
+          {
+            HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Error: Cannot initialize surface observer. Access was denied for an unspecified reason.");
+          }
+          break;
+          default:
+            // unreachable
+            assert(false);
+            break;
         }
 
         if (m_surfaceObserver != nullptr)

@@ -173,9 +173,7 @@ namespace HoloIntervention
 
       if (FAILED(hr))
       {
-        std::wstringstream wss;
-        wss << L"Unable to initialize sound: " << assetName << std::endl;
-        OutputDebugStringW(wss.str().c_str());
+        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, std::wstring(L"Unable to initialize sound. ") + assetName);
         omniSound = nullptr;
         return;
       }
@@ -184,9 +182,7 @@ namespace HoloIntervention
 
       if (FAILED(hr))
       {
-        std::wstringstream wss;
-        wss << L"Unable to set sound environment: " << assetName << std::endl;
-        OutputDebugStringW(wss.str().c_str());
+        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, std::wstring(L"Unable to set sound environment. ") + assetName);
         omniSound = nullptr;
         return;
       }
@@ -235,9 +231,7 @@ namespace HoloIntervention
 
       if (FAILED(hr))
       {
-        std::wstringstream wss;
-        wss << L"Unable to initialize sound: " << assetName << std::endl;
-        OutputDebugStringW(wss.str().c_str());
+        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, std::wstring(L"Unable to initialize sound. ") + assetName);
         cardioidSound = nullptr;
         return;
       }
@@ -246,9 +240,7 @@ namespace HoloIntervention
 
       if (FAILED(hr))
       {
-        std::wstringstream wss;
-        wss << L"Unable to set sound environment: " << assetName << std::endl;
-        OutputDebugStringW(wss.str().c_str());
+        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, std::wstring(L"Unable to set sound environment. ") + assetName);
         cardioidSound = nullptr;
         return;
       }

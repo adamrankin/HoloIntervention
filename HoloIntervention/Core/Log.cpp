@@ -38,21 +38,25 @@ using namespace Windows::Storage::Streams;
 
 namespace HoloIntervention
 {
+
+  //----------------------------------------------------------------------------
+  HoloIntervention::Log& Log::instance()
+  {
+    static Log instance;
+    return instance;
+  }
+
   //----------------------------------------------------------------------------
   Log::Log()
   {
+    DataSenderAsync();
   }
 
   //----------------------------------------------------------------------------
   Log::~Log()
   {
-    if (m_connected)
-    {
-      m_socket->Close();
-      m_connected = false;
-    }
+    m_tokenSource.cancel();
   }
-
 
   //----------------------------------------------------------------------------
   void Log::LogMessage(LogLevelType level, const std::string& message)
@@ -63,23 +67,7 @@ namespace HoloIntervention
   //----------------------------------------------------------------------------
   void Log::LogMessage(LogLevelType level, const std::wstring& message)
   {
-    SendMessageAsync(level, message).then([this, message](task<bool> previousTask)
-    {
-      bool result(false);
-      try
-      {
-        result = previousTask.get();
-      }
-      catch (const std::exception& e)
-      {
-        OutputDebugStringA(e.what());
-      }
-
-      if (!result)
-      {
-        OutputDebugStringW(message.c_str());
-      }
-    });
+    m_sendList.push_back(std::pair<LogLevelType, std::wstring>(level, message));
   }
 
   //----------------------------------------------------------------------------
@@ -113,12 +101,59 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
-  Concurrency::task<void> Log::DataReceiverAsync()
+  task<void> Log::DataSenderAsync()
   {
     auto token = m_tokenSource.get_token();
-    return create_task([ = ]()
+    return create_task([this, token]()
     {
-      DataReader^ reader = ref new DataReader(m_socket->InputStream);
+      while (true)
+      {
+        if (token.is_canceled())
+        {
+          return;
+        }
+
+        auto connectionTask = ConnectAsync();
+        bool result = connectionTask.get();
+
+        if (!result || m_sendList.size() == 0)
+        {
+          std::this_thread::sleep_for(std::chrono::milliseconds(100));
+          continue;
+        }
+
+        std::pair<LogLevelType, std::wstring> item = m_sendList.front();
+        m_sendList.pop_front();
+        try
+        {
+          SendMessageAsync(item.first, item.second).then([this, item](bool result)
+          {
+            if (!result)
+            {
+              m_sendList.push_front(item);
+            }
+          });
+        }
+        catch (const std::exception& e)
+        {
+          OutputDebugStringA(e.what());
+          m_reader = nullptr;
+          m_writer = nullptr;
+          m_connected = false;
+        }
+      }
+    });
+
+    delete m_socket;
+    m_connected = false;
+  }
+
+  //----------------------------------------------------------------------------
+  task<void> Log::DataReceiverAsync()
+  {
+    auto token = m_tokenSource.get_token();
+    return create_task([this, token]()
+    {
       while (true)
       {
         if (token.is_canceled())
@@ -146,8 +181,10 @@ namespace HoloIntervention
 
         IBuffer^ buffer = reader->ReadBuffer(byteSize);
         */
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
       }
-    }, m_tokenSource.get_token());
+    });
   }
 
   //----------------------------------------------------------------------------
@@ -155,39 +192,14 @@ namespace HoloIntervention
   {
     return create_task([ = ]() -> bool
     {
-      if (!m_connected)
-      {
-        Windows::Networking::HostName^ hostname(nullptr);
-        if (m_hostname == nullptr)
-        {
-          hostname = ref new HostName(ref new Platform::String(HoloIntervention::instance()->GetIGTLink().GetHostname().c_str()));
-        }
-        else
-        {
-          hostname = ref new HostName(m_hostname);
-        }
+      std::wstring msg = LevelToString(level) + L"||" + message;
+      std::string msgStr(msg.begin(), msg.end());
 
-        m_socket->Control->KeepAlive = true;
-        auto connectTask = create_task(m_socket->ConnectAsync(hostname, m_port.ToString()));
+      m_writer->WriteUInt32(msgStr.length());
+      Platform::Array<byte>^ data = ref new Platform::Array<byte>((byte*)&msgStr[0], msg.length());
+      m_writer->WriteBytes(data);
 
-        try
-        {
-          connectTask.wait();
-        }
-        catch (Platform::Exception^ e)
-        {
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Unable to connect to log server.");
-          return false;
-        }
-
-        m_connected = true;
-      }
-
-      DataWriter^ writer = ref new DataWriter(m_socket->OutputStream);
-
-      writer->WriteString(level.ToString() + L"||" + ref new Platform::String(message.c_str()));
-
-      auto storeTask = create_task(writer->StoreAsync()).then([ = ](task<uint32> writeTask)
+      auto storeTask = create_task(m_writer->StoreAsync()).then([ = ](task<uint32> writeTask)
       {
         uint32 bytesWritten;
         try
@@ -201,7 +213,7 @@ namespace HoloIntervention
           throw std::exception(messageStr.c_str());
         }
 
-        if (bytesWritten != message.length())
+        if (bytesWritten != sizeof(uint32) + msg.length())
         {
           throw std::exception("Entire message couldn't be sent.");
         }
@@ -217,6 +229,7 @@ namespace HoloIntervention
       catch (const std::exception& e)
       {
         OutputDebugStringA(e.what());
+        return false;
       }
 
       if (bytesWritten > 0)
@@ -225,5 +238,69 @@ namespace HoloIntervention
       }
       return false;
     }, task_continuation_context::use_arbitrary());
+  }
+
+  //----------------------------------------------------------------------------
+  std::wstring Log::LevelToString(LogLevelType type)
+  {
+    switch (type)
+    {
+      case HoloIntervention::Log::LOG_LEVEL_ERROR:
+        return L"ERROR";
+        break;
+      case HoloIntervention::Log::LOG_LEVEL_WARNING:
+        return L"WARNING";
+        break;
+      case HoloIntervention::Log::LOG_LEVEL_INFO:
+        return L"INFO";
+        break;
+      case HoloIntervention::Log::LOG_LEVEL_DEBUG:
+        return L"DEBUG";
+        break;
+      case HoloIntervention::Log::LOG_LEVEL_TRACE:
+        return L"TRACE";
+        break;
+      default:
+        return L"UNKNOWN";
+        break;
+    }
+  }
+
+  //----------------------------------------------------------------------------
+  task<bool> Log::ConnectAsync()
+  {
+    return create_task([this]()
+    {
+      if (!m_connected)
+      {
+        Windows::Networking::HostName^ hostname(nullptr);
+        if (m_hostname == nullptr)
+        {
+          hostname = ref new HostName(ref new Platform::String(HoloIntervention::instance()->GetIGTLink().GetHostname().c_str()));
+        }
+        else
+        {
+          hostname = ref new HostName(m_hostname);
+        }
+
+        auto connectTask = create_task(m_socket->ConnectAsync(hostname, m_port.ToString()));
+
+        try
+        {
+          connectTask.wait();
+        }
+        catch (Platform::Exception^ e)
+        {
+          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Unable to connect to log server.");
+          return false;
+        }
+
+        m_reader = ref new DataReader(m_socket->InputStream);
+        m_writer = ref new DataWriter(m_socket->OutputStream);
+        m_connected = true;
+      }
+
+      return true;
+    });
   }
 }

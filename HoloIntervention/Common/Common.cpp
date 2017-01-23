@@ -29,6 +29,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 // System includes
 #include "NotificationSystem.h"
 
+// STL includes
+#include <sstream>
+
 using namespace Concurrency;
 using namespace Windows::Data::Xml::Dom;
 using namespace Windows::Foundation::Numerics;
@@ -200,6 +203,14 @@ namespace HoloIntervention
         return doc;
       });
     });
+  }
+
+  //----------------------------------------------------------------------------
+  std::string toString(const Windows::Foundation::Numerics::float4x4& matrix)
+  {
+    std::stringstream ss;
+    ss << matrix;
+    return ss.str();
   }
 
   //----------------------------------------------------------------------------

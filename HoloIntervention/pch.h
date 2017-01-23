@@ -2,6 +2,7 @@
 
 // Local includes
 #include "Log.h"
+#include "Common.h"
 
 // Windows includes
 #include <xapo.h>

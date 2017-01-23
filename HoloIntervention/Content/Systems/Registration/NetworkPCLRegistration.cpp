@@ -137,7 +137,7 @@ namespace HoloIntervention
           }
           catch (Platform::Exception^ e)
           {
-            OutputDebugStringW(e->Message->Data());
+            HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e->Message);
           }
         }
       }
@@ -172,7 +172,7 @@ namespace HoloIntervention
         catch (const std::exception& e)
         {
           HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Unable to send registration data.");
-          OutputDebugStringA(e.what());
+          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e.what());
         }
         if (result)
         {
@@ -354,11 +354,11 @@ namespace HoloIntervention
         }
         catch (const std::exception& e)
         {
-          OutputDebugStringA(e.what());
+          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e.what());
         }
         catch (Platform::Exception^ e)
         {
-          OutputDebugStringW(e->Message->Data());
+          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e->Message);
         }
 
         if (bytesWritten > 0)
@@ -377,11 +377,11 @@ namespace HoloIntervention
         }
         catch (const std::exception& e)
         {
-          OutputDebugStringA(e.what());
+          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e.what());
         }
         catch (Platform::Exception^ e)
         {
-          OutputDebugStringW(e->Message->Data());
+          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e->Message);
         }
 
         if (result)
@@ -393,11 +393,11 @@ namespace HoloIntervention
           }
           catch (const std::exception& e)
           {
-            OutputDebugStringA(e.what());
+            HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e.what());
           }
           catch (Platform::Exception^ e)
           {
-            OutputDebugStringW(e->Message->Data());
+            HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e->Message);
           }
         }
       });
@@ -431,11 +431,11 @@ namespace HoloIntervention
             }
             catch (const std::exception& e)
             {
-              OutputDebugStringA(e.what());
+              HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e.what());
             }
             catch (Platform::Exception^ e)
             {
-              OutputDebugStringW(e->Message->Data());
+              HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e->Message);
             }
             if (bytesRead != sizeof(NetworkPCL::PCLMessageHeader))
             {
@@ -458,7 +458,7 @@ namespace HoloIntervention
               }
               catch (const std::exception& e)
               {
-                OutputDebugStringA(e.what());
+                HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e.what());
               }
             }
 
@@ -479,7 +479,7 @@ namespace HoloIntervention
             }
             catch (const std::exception& e)
             {
-              OutputDebugStringA(e.what());
+              HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e.what());
             }
             if (bytesRead != m_nextHeader.bodySize)
             {

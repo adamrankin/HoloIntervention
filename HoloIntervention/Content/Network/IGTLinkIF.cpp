@@ -248,11 +248,11 @@ namespace HoloIntervention
                   }
                   catch (const std::exception& e)
                   {
-                    OutputDebugStringA(e.what());
+                    HoloIntervention::Log::instance().LogMessage(HoloIntervention::Log::LOG_LEVEL_ERROR, e.what());
                   }
                   catch (Platform::Exception^ e)
                   {
-                    OutputDebugStringW(e->Message->Data());
+                    HoloIntervention::Log::instance().LogMessage(HoloIntervention::Log::LOG_LEVEL_ERROR, e->Message);
                   }
                 }
 
@@ -276,7 +276,7 @@ namespace HoloIntervention
           }
           else
           {
-            OutputDebugStringA("Keep alive running unconnected but token not canceled.\n");
+            HoloIntervention::Log::instance().LogMessage(HoloIntervention::Log::LOG_LEVEL_ERROR, "Keep alive running unconnected but token not canceled.");
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
           }
         }

@@ -103,8 +103,7 @@ namespace HoloIntervention
               }
               catch (const std::exception& e)
               {
-                OutputDebugStringA("Unable to load model.");
-                OutputDebugStringA(e.what());
+                HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, std::string("Unable to load model. ") + e.what());
               }
             }
           });

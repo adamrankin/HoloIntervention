@@ -65,7 +65,7 @@ namespace HoloIntervention
       }
       catch (const std::exception&)
       {
-        OutputDebugStringA("Unable to initialize notification system.");
+        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Unable to initialize notification system.");
       }
     }
 

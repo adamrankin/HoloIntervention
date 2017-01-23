@@ -78,7 +78,7 @@ namespace HoloIntervention
       }
       catch (const std::exception& e)
       {
-        OutputDebugStringA(e.what());
+        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e.what());
       }
     };
 

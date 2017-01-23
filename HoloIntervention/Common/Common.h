@@ -140,5 +140,7 @@ namespace HoloIntervention
   Concurrency::task<void> InitializeTransformRepositoryAsync(UWPOpenIGTLink::TransformRepository^ transformRepository, Platform::String^ fileName);
   Concurrency::task<Windows::Data::Xml::Dom::XmlDocument^> GetXmlDocumentFromFileAsync(Platform::String^ fileName);
 
+  std::string toString(const Windows::Foundation::Numerics::float4x4& matrix);
+
   int IsLittleEndian();
 }

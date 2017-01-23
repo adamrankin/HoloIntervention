@@ -237,7 +237,7 @@ namespace HoloIntervention
                   catch (const std::exception& e)
                   {
                     HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Registration failed. Please retry.");
-                    OutputDebugStringA(e.what());
+                    HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e.what());
                     m_tokenSource.cancel();
                     return;
                   }
@@ -332,7 +332,7 @@ namespace HoloIntervention
           }
           catch (Platform::Exception^ e)
           {
-            OutputDebugStringW(e->Message->Data());
+            HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e->Message);
           }
           if (worldAnchorToNewAnchorBox != nullptr)
           {
@@ -374,7 +374,7 @@ namespace HoloIntervention
 
       if (!m_transformsAvailable)
       {
-        OutputDebugStringA("Unable to process frames. Transform repository was not properly initialized.");
+        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Unable to process frames. Transform repository was not properly initialized.");
         return;
       }
 
@@ -408,7 +408,7 @@ namespace HoloIntervention
             }
             catch (Platform::Exception^ e)
             {
-              OutputDebugStringW((L"Exception: " + e->Message)->Data());
+              HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, L"Exception: " + e->Message);
               continue;
             }
             if (cameraToRawWorldAnchorBox != nullptr)
@@ -444,6 +444,11 @@ namespace HoloIntervention
               {
                 // If visualizing, update the latest known poses of the spheres
                 m_sphereToAnchorPoses[i] = sphereToAnchorPose;
+#if _DEBUG
+                std::stringstream ss;
+                ss << i;
+                HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_DEBUG, std::string("m_sphereToAnchorPoses[") + ss.str() + "]: " + toString(m_sphereToAnchorPoses[i]));
+#endif
                 i++;
               }
             }
@@ -558,7 +563,7 @@ namespace HoloIntervention
     {
       if (m_sphereToPhantomPoses.size() != PHANTOM_SPHERE_COUNT)
       {
-        OutputDebugStringW(L"Phantom coordinates haven't been received. Can't determine 3D sphere coordinates.");
+        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Phantom coordinates haven't been received. Can't determine 3D sphere coordinates.");
         return false;
       }
 
@@ -567,14 +572,14 @@ namespace HoloIntervention
       {
         if (videoFrame == nullptr || videoFrame->CameraIntrinsics == nullptr)
         {
-          OutputDebugStringW(L"Camera intrinsics not available. Cannot continue.");
+          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Camera intrinsics not available. Cannot continue.");
           return false;
         }
         cameraIntrinsics = videoFrame->CameraIntrinsics;
       }
       catch (Platform::Exception^ e)
       {
-        OutputDebugStringW(e->Message->Data());
+        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e->Message);
         return false;
       }
 
@@ -718,6 +723,10 @@ namespace HoloIntervention
           cvToD3D.m33 = -1.f;
           phantomToCameraTransform = transpose(phantomToCameraTransform) * cvToD3D; // Output is in column-major format, OpenCV produces row-major
 
+#if _DEBUG
+          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_DEBUG, std::string("phantomToCameraTransform: ") + toString(phantomToCameraTransform));
+#endif
+
           result = true;
         }
 done:
@@ -770,6 +779,11 @@ done:
           {
             hasError = true;
           }
+#if _DEBUG
+          std::stringstream ss;
+          ss << i;
+          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_DEBUG, std::string("m_sphereToPhantomPoses[") + ss.str() + "]: " + toString(m_sphereToPhantomPoses[i]));
+#endif
         }
 
         if (!hasError)
@@ -949,7 +963,7 @@ done:
 
       if (centerSphereIndex == -1)
       {
-        OutputDebugStringA("No index common to all lists.\n");
+        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "No index common to all lists.");
         return false;
       }
 

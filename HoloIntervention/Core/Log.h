@@ -28,6 +28,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 // WinRT includes
 #include <ppltasks.h>
 
+// STL includes
+#include <deque>
+
 namespace HoloIntervention
 {
   class Log : public IEngineComponent
@@ -43,10 +46,9 @@ namespace HoloIntervention
 
       LOG_LEVEL_DEFAULT = LOG_LEVEL_INFO,
     };
-    // TODO : make singleton
+
   public:
-    Log();
-    ~Log();
+    static Log& instance();
 
     void LogMessage(LogLevelType level, Platform::String^ message);
     void LogMessage(LogLevelType level, const std::string& message);
@@ -59,15 +61,25 @@ namespace HoloIntervention
     std::wstring GetHostname()const;;
 
   protected:
+    Concurrency::task<void> DataSenderAsync();
     Concurrency::task<void> DataReceiverAsync();
     Concurrency::task<bool> SendMessageAsync(LogLevelType level, const std::wstring& message);
+    std::wstring LevelToString(LogLevelType type);
 
-    Concurrency::cancellation_token_source          m_tokenSource;
-    Concurrency::task<void>*                        m_receiverTask = nullptr;
-    Windows::Networking::Sockets::StreamSocket^     m_socket = ref new Windows::Networking::Sockets::StreamSocket();
-    std::atomic_bool                                m_connected = false;
+    Concurrency::task<bool> ConnectAsync();
 
-    Platform::String^                               m_hostname = nullptr;
-    uint32                                          m_port = 24012;
+  protected:
+    Log();
+    ~Log();
+
+    Concurrency::cancellation_token_source            m_tokenSource;
+    Windows::Networking::Sockets::StreamSocket^       m_socket = ref new Windows::Networking::Sockets::StreamSocket();
+    std::atomic_bool                                  m_connected = false;
+    Windows::Storage::Streams::DataWriter^            m_writer = nullptr;
+    Windows::Storage::Streams::DataReader^            m_reader = nullptr;
+    Platform::String^                                 m_hostname = nullptr;
+    uint32                                            m_port = 8484;
+
+    std::deque<std::pair<LogLevelType, std::wstring>> m_sendList;
   };
 }
