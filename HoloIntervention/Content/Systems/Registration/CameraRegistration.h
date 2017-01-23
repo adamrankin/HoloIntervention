@@ -96,7 +96,7 @@ namespace HoloIntervention
       void SetWorldAnchor(Windows::Perception::Spatial::SpatialAnchor^ worldAnchor);
 
       bool HasRegistration() const;
-      Windows::Foundation::Numerics::float4x4 GetTrackerToWorldAnchorTransformation() const;
+      Windows::Foundation::Numerics::float4x4 GetReferenceToWorldAnchorTransformation() const;
 
     protected:
       void ProcessAvailableFrames(Concurrency::cancellation_token token);
@@ -147,7 +147,7 @@ namespace HoloIntervention
       UWPOpenIGTLink::TransformRepository^                                  m_transformRepository = ref new UWPOpenIGTLink::TransformRepository();
       std::atomic_bool                                                      m_transformsAvailable = false;
       double                                                                m_latestTimestamp = 0.0;
-      DetectionFrames                                                       m_sphereInTrackerResults;
+      DetectionFrames                                                       m_sphereInReferenceResults;
       std::array<Windows::Foundation::Numerics::float4x4, 5>                m_sphereToPhantomPoses;
       std::atomic_bool                                                      m_hasTrackerSpherePoses = false;
       std::array<UWPOpenIGTLink::TransformName^, 5>                         m_sphereCoordinateNames;
@@ -157,7 +157,7 @@ namespace HoloIntervention
       Concurrency::cancellation_token_source                                m_tokenSource;
       std::atomic_bool                                                      m_hasRegistration = false;
 
-      Windows::Foundation::Numerics::float4x4                               m_trackerToAnchor = Windows::Foundation::Numerics::float4x4::identity(); // column-major order
+      Windows::Foundation::Numerics::float4x4                               m_referenceToAnchor = Windows::Foundation::Numerics::float4x4::identity(); // column-major order
       std::shared_ptr<LandmarkRegistration>                                 m_landmarkRegistration = std::make_shared<LandmarkRegistration>();
 
       static const uint32                                                   PHANTOM_SPHERE_COUNT = 5;

@@ -242,7 +242,7 @@ namespace HoloIntervention
         return float4x4::identity();
       }
 
-      auto trackerToWorldAnchor = m_cameraRegistration->GetTrackerToWorldAnchorTransformation();
+      auto trackerToWorldAnchor = m_cameraRegistration->GetReferenceToWorldAnchorTransformation();
       try
       {
         Platform::IBox<float4x4>^ anchorToRequestedBox = worldAnchor->CoordinateSystem->TryGetTransformTo(requestedCoordinateSystem);

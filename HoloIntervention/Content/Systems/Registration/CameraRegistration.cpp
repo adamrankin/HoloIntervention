@@ -151,9 +151,9 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    Windows::Foundation::Numerics::float4x4 CameraRegistration::GetTrackerToWorldAnchorTransformation() const
+    Windows::Foundation::Numerics::float4x4 CameraRegistration::GetReferenceToWorldAnchorTransformation() const
     {
-      return m_trackerToAnchor;
+      return m_referenceToAnchor;
     }
 
     //----------------------------------------------------------------------------
@@ -188,7 +188,7 @@ namespace HoloIntervention
     {
       std::lock_guard<std::mutex> frameGuard(m_framesLock);
       m_sphereInAnchorResults.clear();
-      m_sphereInTrackerResults.clear();
+      m_sphereInReferenceResults.clear();
 
       return StopCameraAsync().then([this](bool result)
       {
@@ -336,7 +336,7 @@ namespace HoloIntervention
           if (worldAnchorToNewAnchorBox != nullptr)
           {
             // If possible, update the registration to be referential to the new world anchor
-            m_trackerToAnchor = m_trackerToAnchor * worldAnchorToNewAnchorBox->Value;
+            m_referenceToAnchor = m_referenceToAnchor * worldAnchorToNewAnchorBox->Value;
           }
         }
         catch (Platform::Exception^ e) {}
@@ -421,9 +421,9 @@ namespace HoloIntervention
             continue;
           }
 
-          VecFloat3 sphereInTrackerResults;
+          VecFloat3 sphereInReferenceResults;
           std::array<float4x4, 5> sphereToPhantomPoses;
-          if (!RetrieveTrackerFrameLocations(l_latestTrackedFrame, sphereInTrackerResults, sphereToPhantomPoses))
+          if (!RetrieveTrackerFrameLocations(l_latestTrackedFrame, sphereInReferenceResults, sphereToPhantomPoses))
           {
             continue;
           }
@@ -438,7 +438,7 @@ namespace HoloIntervention
           {
             continue;
           }
-          if (!sphereInTrackerResults.empty() && ComputePhantomToCameraTransform(frame, l_initialized, l_height, l_width, l_hsv, l_redMat, l_redMatWrap, l_imageRGB, l_mask, l_rvec, l_tvec, l_canny_output, phantomToCameraTransform))
+          if (!sphereInReferenceResults.empty() && ComputePhantomToCameraTransform(frame, l_initialized, l_height, l_width, l_hsv, l_redMat, l_redMatWrap, l_imageRGB, l_mask, l_rvec, l_tvec, l_canny_output, phantomToCameraTransform))
           {
             // Transform points in model space to anchor space
             VecFloat3 sphereInAnchorResults;
@@ -462,7 +462,7 @@ namespace HoloIntervention
             }
 
             m_sphereInAnchorResults.push_back(sphereInAnchorResults);
-            m_sphereInTrackerResults.push_back(sphereInTrackerResults);
+            m_sphereInReferenceResults.push_back(sphereInReferenceResults);
             if (lastMessageId != std::numeric_limits<uint64>::max())
             {
               HoloIntervention::instance()->GetNotificationSystem().RemoveMessage(lastMessageId);
@@ -489,15 +489,15 @@ namespace HoloIntervention
     {
       HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Calculating registration...");
 
-      assert(m_sphereInAnchorResults.size() == m_sphereInTrackerResults.size());
+      assert(m_sphereInAnchorResults.size() == m_sphereInReferenceResults.size());
 
-      VecFloat3 sphereInTrackerResults;
+      VecFloat3 sphereInReferenceResults;
       VecFloat3 sphereInAnchorResults;
-      for (auto& frame : m_sphereInTrackerResults)
+      for (auto& frame : m_sphereInReferenceResults)
       {
         for (auto& sphereWorld : frame)
         {
-          sphereInTrackerResults.push_back(sphereWorld);
+          sphereInReferenceResults.push_back(sphereWorld);
         }
       }
       for (auto& frame : m_sphereInAnchorResults)
@@ -507,14 +507,14 @@ namespace HoloIntervention
           sphereInAnchorResults.push_back(sphereWorld);
         }
       }
-      m_landmarkRegistration->SetSourceLandmarks(sphereInTrackerResults);
+      m_landmarkRegistration->SetSourceLandmarks(sphereInReferenceResults);
       m_landmarkRegistration->SetTargetLandmarks(sphereInAnchorResults);
 
       std::atomic_bool calcFinished(false);
       bool resultValid(false);
-      m_landmarkRegistration->CalculateTransformationAsync().then([this, &calcFinished, &resultValid](float4x4 trackerToAnchorTransformation)
+      m_landmarkRegistration->CalculateTransformationAsync().then([this, &calcFinished, &resultValid](float4x4 referenceToAnchorTransformation)
       {
-        if (trackerToAnchorTransformation == float4x4::identity())
+        if (referenceToAnchorTransformation == float4x4::identity())
         {
           resultValid = false;
         }
@@ -522,7 +522,7 @@ namespace HoloIntervention
         {
           m_hasRegistration = true;
           resultValid = true;
-          m_trackerToAnchor = trackerToAnchorTransformation;
+          m_referenceToAnchor = referenceToAnchorTransformation;
         }
         calcFinished = true;
       });
@@ -551,7 +551,7 @@ namespace HoloIntervention
       }
 
       m_sphereInAnchorResults.clear();
-      m_sphereInTrackerResults.clear();
+      m_sphereInReferenceResults.clear();
     }
 
     //----------------------------------------------------------------------------
@@ -811,7 +811,7 @@ done:
     {
       if (m_hasRegistration)
       {
-        m_trackerToAnchor = m_trackerToAnchor * args->OldRawCoordinateSystemToNewRawCoordinateSystemTransform;
+        m_referenceToAnchor = m_referenceToAnchor * args->OldRawCoordinateSystemToNewRawCoordinateSystemTransform;
       }
 
       if (m_workerTask != nullptr)
