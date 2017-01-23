@@ -51,6 +51,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <opencv2/calib3d.hpp>
 
 // Unnecessary, but eliminates intellisense errors
+#include "Log.h"
 #include <WindowsNumerics.h>
 
 #ifndef SUCCEEDED
@@ -138,18 +139,7 @@ namespace HoloIntervention
         for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
         {
           auto entry = HoloIntervention::instance()->GetModelRenderer().GetPrimitive(m_spherePrimitiveIds[i]);
-          float4x4 sphereToRequested = m_sphereToAnchorPoses[i] * anchorToRequestedBox->Value;
-
-#if _DEBUG
-          if (i == 0)
-          {
-            HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_INFO, std::string("m_sphereToAnchorPoses[0]: ") + toString(m_sphereToAnchorPoses[i]));
-            HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_INFO, std::string("anchorToRequested: ") + toString(anchorToRequestedBox->Value));
-            HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_INFO, std::string("sphereToRequested: ") + toString(sphereToRequested));
-          }
-#endif
-
-          entry->SetDesiredWorldPose(sphereToRequested);
+          entry->SetDesiredWorldPose(m_sphereToAnchorPoses[i] * anchorToRequestedBox->Value);
         }
       }
     }
@@ -432,8 +422,8 @@ namespace HoloIntervention
           }
 
           VecFloat3 sphereInTrackerResults;
-          std::array<float4x4, 5> sphereToPhantomPose;
-          if (!RetrieveTrackerFrameLocations(l_latestTrackedFrame, sphereInTrackerResults, sphereToPhantomPose))
+          std::array<float4x4, 5> sphereToPhantomPoses;
+          if (!RetrieveTrackerFrameLocations(l_latestTrackedFrame, sphereInTrackerResults, sphereToPhantomPoses))
           {
             continue;
           }
@@ -453,7 +443,7 @@ namespace HoloIntervention
             // Transform points in model space to anchor space
             VecFloat3 sphereInAnchorResults;
             int i = 0;
-            for (auto& sphereToPhantom : m_sphereToPhantomPoses)
+            for (auto& sphereToPhantom : sphereToPhantomPoses)
             {
               float4x4 sphereToAnchorPose = sphereToPhantom * phantomToCameraTransform * cameraToRawWorldAnchor;
               float3 sphereOriginInAnchorSpace = transform(float3(0.f, 0.f, 0.f), sphereToAnchorPose);
@@ -756,7 +746,7 @@ done:
     }
 
     //----------------------------------------------------------------------------
-    bool CameraRegistration::RetrieveTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame, CameraRegistration::VecFloat3& outSphereInReferenceResults, std::array<float4x4, 5>& outSphereToPhantomPose)
+    bool CameraRegistration::RetrieveTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame, CameraRegistration::VecFloat3& outSphereInReferenceResults, std::array<float4x4, 5>& outSphereToPhantomPoses)
     {
       m_transformRepository->SetTransforms(trackedFrame);
 
@@ -809,6 +799,8 @@ done:
           m_hasTrackerSpherePoses = true;
         }
       }
+
+      outSphereToPhantomPoses = m_sphereToPhantomPoses;
 
       return true;
     }
