@@ -698,6 +698,7 @@ namespace HoloIntervention
             goto done;
           }
 
+          // Is this our first frame?
           if (m_sphereInAnchorResults.size() == 0)
           {
             // Initialize rvec and tvec with a reasonable guess
@@ -929,7 +930,7 @@ done:
         return false;
       }
 
-      // Determine valid pair
+      // Determine valid triplet
       std::vector<uint32>* listA(nullptr);
       std::vector<uint32>* listB(nullptr);
       std::vector<uint32>* listC(nullptr);
@@ -958,7 +959,7 @@ done:
         listC = &yellowLinks;
       }
 
-      // If this is a successful detection, there will be one and only one index common to, listA, listB, and listC
+      // If this is a successful detection, there will be one and only one index common to listA, listB, and listC
       int32 centerSphereIndex(-1);
       for (auto& circleIndex : *listA)
       {
