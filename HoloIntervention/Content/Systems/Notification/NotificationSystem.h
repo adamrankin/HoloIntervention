@@ -27,9 +27,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "IEngineComponent.h"
 #include "IVoiceInput.h"
 
-// Rendering includes
-#include "NotificationRenderer.h"
-
 // STL includes
 #include <deque>
 
@@ -41,6 +38,11 @@ namespace DX
 
 namespace HoloIntervention
 {
+  namespace Rendering
+  {
+    class NotificationRenderer;
+  }
+
   namespace System
   {
     class NotificationSystem : public Sound::IVoiceInput, public IEngineComponent
@@ -69,7 +71,7 @@ namespace HoloIntervention
       typedef std::deque<MessageEntry> MessageQueue;
 
     public:
-      NotificationSystem(const std::shared_ptr<DX::DeviceResources>& deviceResources);
+      NotificationSystem(Rendering::NotificationRenderer& notificationRenderer);
       ~NotificationSystem();
 
       // Add a message to the queue to render
@@ -93,8 +95,6 @@ namespace HoloIntervention
       // Override the current lerp and force the position
       void SetPose(Windows::UI::Input::Spatial::SpatialPointerPose^ pointerPose);
 
-      std::unique_ptr<Rendering::NotificationRenderer>& GetRenderer();
-
       // ISystem functions
       virtual void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap);
 
@@ -109,9 +109,7 @@ namespace HoloIntervention
 
     protected:
       // Cached pointer to device resources.
-      std::shared_ptr<DX::DeviceResources>                m_deviceResources;
-      std::unique_ptr<Rendering::NotificationRenderer>    m_notificationRenderer;
-      Rendering::NotificationConstantBuffer               m_constantBuffer;
+      Rendering::NotificationRenderer&                    m_notificationRenderer;
 
       float                                               m_fadeTime = 0.f;
       AnimationState                                      m_animationState = HIDDEN;
@@ -119,6 +117,9 @@ namespace HoloIntervention
       Windows::Foundation::Numerics::float3               m_position = { 0.f, 0.f, -2.f };
       Windows::Foundation::Numerics::float3               m_lastPosition = { 0.f, 0.f, -2.f };
       Windows::Foundation::Numerics::float3               m_velocity = { 0.f, 0.f, 0.f };
+
+      Windows::Foundation::Numerics::float4x4             m_worldMatrix;
+      Windows::Foundation::Numerics::float4               m_hologramColorFadeMultiplier;
 
       MessageQueue                                        m_messages;
       std::mutex                                          m_messageQueueMutex;
@@ -129,8 +130,8 @@ namespace HoloIntervention
       uint64                                              m_nextMessageId = 0;
 
       // Constants relating to behavior of the notification system
-      static const DirectX::XMFLOAT4                      HIDDEN_ALPHA_VALUE;
-      static const DirectX::XMFLOAT4                      SHOWING_ALPHA_VALUE;
+      static const Windows::Foundation::Numerics::float4  HIDDEN_ALPHA_VALUE;
+      static const Windows::Foundation::Numerics::float4  SHOWING_ALPHA_VALUE;
       static const Windows::Foundation::Numerics::float3  NOTIFICATION_SCREEN_OFFSET;
       static const double                                 DEFAULT_NOTIFICATION_DURATION_SEC;
       static const double                                 MAXIMUM_REQUESTED_DURATION_SEC;

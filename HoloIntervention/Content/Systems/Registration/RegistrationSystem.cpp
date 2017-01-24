@@ -38,10 +38,12 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "SurfaceMesh.h"
 
 // Network includes
-#include "IGTLinkIF.h"
+#include "IGTConnector.h"
+
+// Physics includes
+#include "SurfaceAPI.h"
 
 // System includes
-#include "SpatialSystem.h"
 #include "NotificationSystem.h"
 
 // Unnecessary, but removes fake errors
@@ -62,20 +64,22 @@ namespace HoloIntervention
     const std::wstring RegistrationSystem::REGISTRATION_ANCHOR_MODEL_FILENAME = L"Assets/Models/anchor.cmo";
 
     //----------------------------------------------------------------------------
-    RegistrationSystem::RegistrationSystem(const std::shared_ptr<DX::DeviceResources>& deviceResources)
-      : m_deviceResources(deviceResources)
-      , m_cameraRegistration(std::make_shared<CameraRegistration>(deviceResources))
+    RegistrationSystem::RegistrationSystem(Network::IGTConnector& igtConnector, Physics::SurfaceAPI& physicsAPI, NotificationSystem& notificationSystem, Rendering::ModelRenderer& modelRenderer)
+      : m_notificationSystem(notificationSystem)
+      , m_modelRenderer(modelRenderer)
+      , m_physicsAPI(physicsAPI)
+      , m_cameraRegistration(std::make_shared<CameraRegistration>(notificationSystem, igtConnector, modelRenderer))
     {
       m_cameraRegistration->SetVisualization(true);
 
-      m_regAnchorModelId = HoloIntervention::instance()->GetModelRenderer().AddModel(REGISTRATION_ANCHOR_MODEL_FILENAME);
-      if (m_regAnchorModelId != Rendering::INVALID_ENTRY)
+      m_regAnchorModelId = m_modelRenderer.AddModel(REGISTRATION_ANCHOR_MODEL_FILENAME);
+      if (m_regAnchorModelId != INVALID_TOKEN)
       {
-        m_regAnchorModel = HoloIntervention::instance()->GetModelRenderer().GetModel(m_regAnchorModelId);
+        m_regAnchorModel = m_modelRenderer.GetModel(m_regAnchorModelId);
       }
       if (m_regAnchorModel == nullptr)
       {
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Unable to retrieve anchor model.");
+        m_notificationSystem.QueueMessage(L"Unable to retrieve anchor model.");
         return;
       }
       m_regAnchorModel->SetVisible(false);
@@ -114,16 +118,16 @@ namespace HoloIntervention
       // Anchor placement logic
       if (m_regAnchorRequested)
       {
-        if (HoloIntervention::instance()->GetSpatialSystem().DropAnchorAtIntersectionHit(REGISTRATION_ANCHOR_NAME, coordinateSystem, headPose))
+        if (m_physicsAPI.DropAnchorAtIntersectionHit(REGISTRATION_ANCHOR_NAME, coordinateSystem, headPose))
         {
           if (m_regAnchorModel != nullptr)
           {
             m_regAnchorModel->SetVisible(true);
-            m_regAnchor = HoloIntervention::instance()->GetSpatialSystem().GetAnchor(REGISTRATION_ANCHOR_NAME);
+            m_regAnchor = m_physicsAPI.GetAnchor(REGISTRATION_ANCHOR_NAME);
             m_cameraRegistration->SetWorldAnchor(m_regAnchor);
           }
 
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Anchor created.");
+          m_notificationSystem.QueueMessage(L"Anchor created.");
         }
         m_regAnchorRequested = false;
       }
@@ -147,9 +151,9 @@ namespace HoloIntervention
     {
       return create_task([ = ]()
       {
-        if (HoloIntervention::instance()->GetSpatialSystem().HasAnchor(REGISTRATION_ANCHOR_NAME))
+        if (m_physicsAPI.HasAnchor(REGISTRATION_ANCHOR_NAME))
         {
-          m_regAnchor = HoloIntervention::instance()->GetSpatialSystem().GetAnchor(REGISTRATION_ANCHOR_NAME);
+          m_regAnchor = m_physicsAPI.GetAnchor(REGISTRATION_ANCHOR_NAME);
           m_regAnchorModel->SetVisible(true);
         }
       });
@@ -179,9 +183,9 @@ namespace HoloIntervention
         {
           m_regAnchorModel->SetVisible(false);
         }
-        if (HoloIntervention::instance()->GetSpatialSystem().RemoveAnchor(REGISTRATION_ANCHOR_NAME) == 1)
+        if (m_physicsAPI.RemoveAnchor(REGISTRATION_ANCHOR_NAME) == 1)
         {
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Anchor \"" + REGISTRATION_ANCHOR_NAME + "\" removed.");
+          m_notificationSystem.QueueMessage(L"Anchor \"" + REGISTRATION_ANCHOR_NAME + "\" removed.");
         }
       };
 
@@ -189,13 +193,13 @@ namespace HoloIntervention
       {
         if (m_registrationActive)
         {
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Registration already running.");
+          m_notificationSystem.QueueMessage(L"Registration already running.");
           return;
         }
 
         if (m_cameraRegistration->GetWorldAnchor() == nullptr)
         {
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Anchor required. Please place an anchor with 'drop anchor'.");
+          m_notificationSystem.QueueMessage(L"Anchor required. Please place an anchor with 'drop anchor'.");
           return;
         }
 
@@ -223,13 +227,13 @@ namespace HoloIntervention
       callbackMap[L"enable spheres"] = [this](SpeechRecognitionResult ^ result)
       {
         m_cameraRegistration->SetVisualization(true);
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Sphere visualization enabled.");
+        m_notificationSystem.QueueMessage(L"Sphere visualization enabled.");
       };
 
       callbackMap[L"disable spheres"] = [this](SpeechRecognitionResult ^ result)
       {
         m_cameraRegistration->SetVisualization(false);
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Sphere visualization disabled.");
+        m_notificationSystem.QueueMessage(L"Sphere visualization disabled.");
       };
     }
 

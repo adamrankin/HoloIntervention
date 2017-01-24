@@ -30,7 +30,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "NotificationSystem.h"
 
 // Network includes
-#include "IGTLinkIF.h"
+#include "IGTConnector.h"
 
 using namespace Concurrency;
 using namespace Windows::Networking;
@@ -38,7 +38,6 @@ using namespace Windows::Storage::Streams;
 
 namespace HoloIntervention
 {
-
   //----------------------------------------------------------------------------
   HoloIntervention::Log& Log::instance()
   {
@@ -48,6 +47,7 @@ namespace HoloIntervention
 
   //----------------------------------------------------------------------------
   Log::Log()
+    : m_IGTConnector(nullptr)
   {
     DataSenderAsync();
   }
@@ -98,6 +98,12 @@ namespace HoloIntervention
   std::wstring Log::GetHostname() const
   {
     return std::wstring(m_hostname->Data());
+  }
+
+  //----------------------------------------------------------------------------
+  void Log::SetIGTConnector(Network::IGTConnector& connector)
+  {
+    m_IGTConnector = &connector;
   }
 
   //----------------------------------------------------------------------------
@@ -245,24 +251,24 @@ namespace HoloIntervention
   {
     switch (type)
     {
-      case HoloIntervention::Log::LOG_LEVEL_ERROR:
-        return L"ERROR";
-        break;
-      case HoloIntervention::Log::LOG_LEVEL_WARNING:
-        return L"WARNING";
-        break;
-      case HoloIntervention::Log::LOG_LEVEL_INFO:
-        return L"INFO";
-        break;
-      case HoloIntervention::Log::LOG_LEVEL_DEBUG:
-        return L"DEBUG";
-        break;
-      case HoloIntervention::Log::LOG_LEVEL_TRACE:
-        return L"TRACE";
-        break;
-      default:
-        return L"UNKNOWN";
-        break;
+    case HoloIntervention::Log::LOG_LEVEL_ERROR:
+      return L"ERROR";
+      break;
+    case HoloIntervention::Log::LOG_LEVEL_WARNING:
+      return L"WARNING";
+      break;
+    case HoloIntervention::Log::LOG_LEVEL_INFO:
+      return L"INFO";
+      break;
+    case HoloIntervention::Log::LOG_LEVEL_DEBUG:
+      return L"DEBUG";
+      break;
+    case HoloIntervention::Log::LOG_LEVEL_TRACE:
+      return L"TRACE";
+      break;
+    default:
+      return L"UNKNOWN";
+      break;
     }
   }
 
@@ -274,9 +280,9 @@ namespace HoloIntervention
       if (!m_connected)
       {
         Windows::Networking::HostName^ hostname(nullptr);
-        if (m_hostname == nullptr)
+        if (m_IGTConnector != nullptr)
         {
-          hostname = ref new HostName(ref new Platform::String(HoloIntervention::instance()->GetIGTLink().GetHostname().c_str()));
+          hostname = ref new HostName(ref new Platform::String(m_IGTConnector->GetHostname().c_str()));
         }
         else
         {
@@ -291,7 +297,7 @@ namespace HoloIntervention
         }
         catch (Platform::Exception^ e)
         {
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Unable to connect to log server.");
+          OutputDebugStringW(L"Unable to connect to log server.");
           return false;
         }
 

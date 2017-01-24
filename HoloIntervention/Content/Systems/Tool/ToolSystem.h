@@ -30,6 +30,13 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 namespace HoloIntervention
 {
+  namespace Rendering
+  {
+    class ModelRenderer;
+  }
+
+  class NotificationSystem;
+  class RegistrationSystem;
   class TransformName;
 
   namespace System
@@ -37,7 +44,7 @@ namespace HoloIntervention
     class ToolSystem : public Sound::IVoiceInput, public IEngineComponent
     {
     public:
-      ToolSystem();
+      ToolSystem(NotificationSystem& notificationSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer);
       ~ToolSystem();
 
       uint64 RegisterTool(const std::wstring& modelName, UWPOpenIGTLink::TransformName^ coordinateFrame);
@@ -53,6 +60,11 @@ namespace HoloIntervention
       Concurrency::task<void> InitAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
 
     protected:
+      // Cached entries
+      NotificationSystem&                               m_notificationSystem;
+      RegistrationSystem&                               m_registrationSystem;
+      Rendering::ModelRenderer&                         m_modelRenderer;
+
       std::vector<std::shared_ptr<Tools::ToolEntry>>    m_toolEntries;
       UWPOpenIGTLink::TransformRepository^              m_transformRepository;
     };

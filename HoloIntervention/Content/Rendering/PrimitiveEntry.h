@@ -91,7 +91,7 @@ namespace HoloIntervention
 
       // Model related behavior
       std::atomic_bool                                      m_visible = false;
-      uint64                                                m_id = Rendering::INVALID_ENTRY;
+      uint64                                                m_id = INVALID_TOKEN;
 
       // Variables used with the rendering loop.
       std::atomic_bool                                      m_loadingComplete = false;

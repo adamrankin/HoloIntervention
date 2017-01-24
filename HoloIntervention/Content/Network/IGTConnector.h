@@ -37,6 +37,11 @@ namespace igtl
 
 namespace HoloIntervention
 {
+  namespace System
+  {
+    class NotificationSystem;
+  }
+
   namespace Network
   {
     enum ConnectionState
@@ -49,11 +54,11 @@ namespace HoloIntervention
       CONNECTION_STATE_CONNECTED
     };
 
-    class IGTLinkIF : public Sound::IVoiceInput, public IEngineComponent
+    class IGTConnector : public Sound::IVoiceInput, public IEngineComponent
     {
     public:
-      IGTLinkIF();
-      ~IGTLinkIF();
+      IGTConnector(System::NotificationSystem& notificationSystem);
+      ~IGTConnector();
 
       /// Connect to the server specified by SetHostname() and SetPort()
       /// If connected to a server, disconnects first.
@@ -83,6 +88,9 @@ namespace HoloIntervention
       Concurrency::task<void> KeepAliveAsync();
 
     protected:
+      // Cached entries
+      System::NotificationSystem&               m_notificationSystem;
+
       UWPOpenIGTLink::IGTLinkClient^            m_igtClient = ref new UWPOpenIGTLink::IGTLinkClient();
       ConnectionState                           m_connectionState = CONNECTION_STATE_UNKNOWN;
       mutable std::mutex                        m_clientMutex;

@@ -35,6 +35,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 using namespace Concurrency;
 using namespace DirectX;
+using namespace Windows::Foundation::Numerics;
 
 namespace HoloIntervention
 {
@@ -47,23 +48,28 @@ namespace HoloIntervention
     NotificationRenderer::NotificationRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources)
       : m_deviceResources(deviceResources)
     {
+      CreateDeviceDependentResourcesAsync();
     }
 
     //----------------------------------------------------------------------------
     NotificationRenderer::~NotificationRenderer()
     {
+      ReleaseDeviceDependentResources();
     }
 
     //----------------------------------------------------------------------------
-    void NotificationRenderer::Update(NotificationConstantBuffer& buffer)
+    void NotificationRenderer::Update(const float4x4& worldMatrix, const float4& hologramColorFadeMultiplier)
     {
       if (!m_componentReady)
       {
         return;
       }
 
+      XMStoreFloat4x4(&m_constantBufferData.worldMatrix, XMLoadFloat4x4(&worldMatrix));
+      XMStoreFloat4(&m_constantBufferData.hologramColorFadeMultiplier, XMLoadFloat4(&hologramColorFadeMultiplier));
+
       // Update the model transform buffer for the hologram.
-      m_deviceResources->GetD3DDeviceContext()->UpdateSubresource(m_modelConstantBuffer.Get(), 0, nullptr, &buffer, 0, 0);
+      m_deviceResources->GetD3DDeviceContext()->UpdateSubresource(m_constantBuffer.Get(), 0, nullptr, &m_constantBufferData, 0, 0);
     }
 
     //----------------------------------------------------------------------------
@@ -88,7 +94,7 @@ namespace HoloIntervention
       // Attach the vertex shader.
       context->VSSetShader(m_vertexShader.Get(), nullptr, 0);
       // Apply the model constant buffer to the vertex shader.
-      context->VSSetConstantBuffers(0, 1, m_modelConstantBuffer.GetAddressOf());
+      context->VSSetConstantBuffers(0, 1, m_constantBuffer.GetAddressOf());
 
       if (!m_usingVprtShaders)
       {
@@ -168,7 +174,7 @@ namespace HoloIntervention
         DX::ThrowIfFailed(m_deviceResources->GetD3DDevice()->CreatePixelShader(fileData.data(), fileData.size(), nullptr, &m_pixelShader));
 
         const CD3D11_BUFFER_DESC constantBufferDesc(sizeof(NotificationConstantBuffer), D3D11_BIND_CONSTANT_BUFFER);
-        DX::ThrowIfFailed(m_deviceResources->GetD3DDevice()->CreateBuffer(&constantBufferDesc, nullptr, &m_modelConstantBuffer));
+        DX::ThrowIfFailed(m_deviceResources->GetD3DDevice()->CreateBuffer(&constantBufferDesc, nullptr, &m_constantBuffer));
       });
 
       task<void> createGSTask;
@@ -277,7 +283,7 @@ namespace HoloIntervention
       m_pixelShader.Reset();
       m_geometryShader.Reset();
 
-      m_modelConstantBuffer.Reset();
+      m_constantBuffer.Reset();
 
       m_vertexBuffer.Reset();
       m_indexBuffer.Reset();

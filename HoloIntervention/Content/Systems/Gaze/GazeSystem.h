@@ -27,9 +27,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "IEngineComponent.h"
 #include "IVoiceInput.h"
 
-// Model includes
-#include "ModelEntry.h"
-
 namespace DX
 {
   class StepTimer;
@@ -37,12 +34,25 @@ namespace DX
 
 namespace HoloIntervention
 {
+  namespace Rendering
+  {
+    class ModelEntry;
+    class ModelRenderer;
+  }
+
+  namespace Physics
+  {
+    class SurfaceAPI;
+  }
+
   namespace System
   {
+    class NotificationSystem;
+
     class GazeSystem : public Sound::IVoiceInput, public IEngineComponent
     {
     public:
-      GazeSystem();
+      GazeSystem(NotificationSystem& notificationSystem, Physics::SurfaceAPI& physicsAPI, Rendering::ModelRenderer& modelRenderer);
       ~GazeSystem();
 
       void Update(const DX::StepTimer& timer, Windows::Perception::Spatial::SpatialCoordinateSystem^ currentCoordinateSystem, Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
@@ -61,6 +71,11 @@ namespace HoloIntervention
       void CalculateVelocity(float oneOverDeltaTime);
 
     protected:
+      // Cached entries
+      Rendering::ModelRenderer&                 m_modelRenderer;
+      NotificationSystem&                       m_notificationSystem;
+      Physics::SurfaceAPI&                      m_physicsAPI;
+
       std::shared_ptr<Rendering::ModelEntry>    m_modelEntry;
       uint64                                    m_modelToken;
       bool                                      m_systemEnabled;

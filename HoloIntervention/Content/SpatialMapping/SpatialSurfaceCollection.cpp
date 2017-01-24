@@ -24,11 +24,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "pch.h"
 #include "AppView.h"
-#include "SpatialSurfaceCollection.h"
-
-// Common includes
 #include "DeviceResources.h"
 #include "DirectXHelper.h"
+#include "SpatialSurfaceCollection.h"
 #include "StepTimer.h"
 
 // System includes
@@ -68,8 +66,9 @@ namespace HoloIntervention
     const uint64_t SpatialSurfaceCollection::FRAMES_BEFORE_EXPIRED = 2;
 
     //----------------------------------------------------------------------------
-    SpatialSurfaceCollection::SpatialSurfaceCollection(const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer)
+    SpatialSurfaceCollection::SpatialSurfaceCollection(System::NotificationSystem& notificationSystem, const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer)
       : m_deviceResources(deviceResources)
+      , m_notificationSystem(notificationSystem)
       , m_stepTimer(stepTimer)
     {
       try
@@ -236,7 +235,7 @@ namespace HoloIntervention
 
       std::lock_guard<std::mutex> guard(m_meshCollectionLock);
 
-      uint64 currentFrame = HoloIntervention::instance()->GetCurrentFrameNumber();
+      uint64 currentFrame = m_stepTimer.GetFrameCount();
 
       // Perform CPU based pre-check using OBB
       std::mutex potentialHitsMutex;
@@ -361,7 +360,7 @@ namespace HoloIntervention
         }
         catch (const std::exception& e)
         {
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(e.what());
+          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e.what());
           return false;
         }
 
@@ -391,7 +390,7 @@ namespace HoloIntervention
         }
         catch (const std::exception& e)
         {
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(e.what());
+          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e.what());
           return false;
         }
 

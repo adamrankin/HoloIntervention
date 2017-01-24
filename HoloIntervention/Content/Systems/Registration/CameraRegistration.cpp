@@ -43,7 +43,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <algorithm>
 
 // Network includes
-#include "IGTLinkIF.h"
+#include "IGTConnector.h"
 
 // OpenCV includes
 #include <opencv2/core.hpp>
@@ -97,8 +97,10 @@ namespace HoloIntervention
     const float CameraRegistration::VISUALIZATION_SPHERE_RADIUS = 0.03f;
 
     //----------------------------------------------------------------------------
-    CameraRegistration::CameraRegistration(const std::shared_ptr<DX::DeviceResources>& deviceResources)
-      : m_deviceResources(deviceResources)
+    CameraRegistration::CameraRegistration(NotificationSystem& notificationSystem, Network::IGTConnector& igtConnector, Rendering::ModelRenderer& modelRenderer)
+      : m_modelRenderer(modelRenderer)
+      , m_notificationSystem(notificationSystem)
+      , m_igtConnector(igtConnector)
     {
       try
       {
@@ -109,7 +111,7 @@ namespace HoloIntervention
       }
       catch (Platform::Exception^ e)
       {
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(e->Message);
+        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e->Message);
       }
 
       m_sphereCoordinateNames[0] = ref new UWPOpenIGTLink::TransformName(L"RedSphere1", L"Reference");
@@ -133,12 +135,12 @@ namespace HoloIntervention
         return;
       }
 
-      if (m_visualizationEnabled && m_spherePrimitiveIds[0] != Rendering::INVALID_ENTRY && m_sphereInAnchorResults.size() > 0)
+      if (m_visualizationEnabled && m_spherePrimitiveIds[0] != INVALID_TOKEN && m_sphereInAnchorResults.size() > 0)
       {
         // Only do this if we've enabled visualization, the sphere primitives have been created, and we've analyzed at least 1 frame
         for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
         {
-          auto entry = HoloIntervention::instance()->GetModelRenderer().GetPrimitive(m_spherePrimitiveIds[i]);
+          auto entry = m_modelRenderer.GetPrimitive(m_spherePrimitiveIds[i]);
           entry->SetDesiredWorldPose(m_sphereToAnchorPoses[i] * anchorToRequestedBox->Value);
         }
       }
@@ -173,7 +175,7 @@ namespace HoloIntervention
           m_currentFrame = nullptr;
           m_nextFrame = nullptr;
           m_workerTask = nullptr;
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Capturing stopped.");
+          m_notificationSystem.QueueMessage(L"Capturing stopped.");
           return true;
         });
       }
@@ -201,7 +203,7 @@ namespace HoloIntervention
             std::lock_guard<std::mutex> guard(m_processorLock);
             if (processor == nullptr)
             {
-              HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Unable to initialize capture system.");
+              m_notificationSystem.QueueMessage(L"Unable to initialize capture system.");
             }
             else
             {
@@ -214,11 +216,11 @@ namespace HoloIntervention
             {
               if (status == MediaFrameReaderStartStatus::Success)
               {
-                HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Capturing...");
+                m_notificationSystem.QueueMessage(L"Capturing...");
               }
               else
               {
-                HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Unable to start capturing.");
+                m_notificationSystem.QueueMessage(L"Unable to start capturing.");
               }
               m_createTask = nullptr;
             }).then([this](task<void> previousTask)
@@ -235,7 +237,7 @@ namespace HoloIntervention
                   }
                   catch (const std::exception& e)
                   {
-                    HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Registration failed. Please retry.");
+                    m_notificationSystem.QueueMessage(L"Registration failed. Please retry.");
                     HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e.what());
                     m_tokenSource.cancel();
                     return;
@@ -273,9 +275,9 @@ namespace HoloIntervention
       {
         for (auto& sphereId : m_spherePrimitiveIds)
         {
-          if (sphereId != Rendering::INVALID_ENTRY)
+          if (sphereId != INVALID_TOKEN)
           {
-            auto entry = HoloIntervention::instance()->GetModelRenderer().GetPrimitive(sphereId);
+            auto entry = m_modelRenderer.GetPrimitive(sphereId);
             entry->SetVisible(false);
           }
         }
@@ -283,14 +285,12 @@ namespace HoloIntervention
         return;
       }
 
-      if (enabled && m_spherePrimitiveIds[0] == Rendering::INVALID_ENTRY)
+      if (enabled && m_spherePrimitiveIds[0] == INVALID_TOKEN)
       {
         for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
         {
-          m_spherePrimitiveIds[i] = HoloIntervention::instance()->GetModelRenderer().AddGeometricPrimitive(
-                                      std::move(DirectX::InstancedGeometricPrimitive::CreateSphere(m_deviceResources->GetD3DDeviceContext(), VISUALIZATION_SPHERE_RADIUS, 30))
-                                    );
-          auto entry = HoloIntervention::instance()->GetModelRenderer().GetPrimitive(m_spherePrimitiveIds[i]);
+          m_spherePrimitiveIds[i] = m_modelRenderer.AddPrimitive(Rendering::PrimitiveType_SPHERE, VISUALIZATION_SPHERE_RADIUS, 30);
+          auto entry = m_modelRenderer.GetPrimitive(m_spherePrimitiveIds[i]);
           entry->SetVisible(true);
           entry->SetColour(float3(0.803921640f, 0.360784322f, 0.360784322f));
           entry->SetDesiredWorldPose(float4x4::identity());
@@ -315,7 +315,7 @@ namespace HoloIntervention
         // World anchor changed during registration, invalidate the registration session.
         StopCameraAsync().then([this](bool result)
         {
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"World anchor changed during registration. Aborting... please restart.");
+          m_notificationSystem.QueueMessage(L"World anchor changed during registration. Aborting... please restart.");
           return;
         });
       }
@@ -380,7 +380,7 @@ namespace HoloIntervention
       uint64 lastMessageId(std::numeric_limits<uint64>::max());
       while (!token.is_canceled())
       {
-        if (m_videoFrameProcessor == nullptr || !HoloIntervention::instance()->GetIGTLink().IsConnected())
+        if (m_videoFrameProcessor == nullptr || !m_igtConnector.IsConnected())
         {
           std::this_thread::sleep_for(std::chrono::milliseconds(100));
           continue;
@@ -389,7 +389,7 @@ namespace HoloIntervention
         std::lock_guard<std::mutex> frameGuard(m_framesLock);
         UWPOpenIGTLink::TrackedFrame^ trackedFrame(nullptr);
         MediaFrameReference^ cameraFrame(m_videoFrameProcessor->GetLatestFrame());
-        if (HoloIntervention::instance()->GetIGTLink().GetTrackedFrame(l_latestTrackedFrame, &m_latestTimestamp) &&
+        if (m_igtConnector.GetTrackedFrame(l_latestTrackedFrame, &m_latestTimestamp) &&
             cameraFrame != nullptr &&
             cameraFrame != l_latestCameraFrame)
         {
@@ -465,9 +465,9 @@ namespace HoloIntervention
             m_sphereInReferenceResults.push_back(sphereInReferenceResults);
             if (lastMessageId != std::numeric_limits<uint64>::max())
             {
-              HoloIntervention::instance()->GetNotificationSystem().RemoveMessage(lastMessageId);
+              m_notificationSystem.RemoveMessage(lastMessageId);
             }
-            lastMessageId = HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Acquired " + m_sphereInAnchorResults.size().ToString() + L"/" + NUMBER_OF_FRAMES_FOR_CALIBRATION.ToString() + " frames.");
+            lastMessageId = m_notificationSystem.QueueMessage(L"Acquired " + m_sphereInAnchorResults.size().ToString() + L"/" + NUMBER_OF_FRAMES_FOR_CALIBRATION.ToString() + " frames.");
           }
 
           // If we've acquired enough frames, perform the registration
@@ -487,7 +487,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void CameraRegistration::PerformLandmarkRegistration()
     {
-      HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Calculating registration...");
+      m_notificationSystem.QueueMessage(L"Calculating registration...");
 
       assert(m_sphereInAnchorResults.size() == m_sphereInReferenceResults.size());
 
@@ -541,12 +541,12 @@ namespace HoloIntervention
 
       if (!resultValid)
       {
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Registration failed. Please repeat process.");
+        m_notificationSystem.QueueMessage(L"Registration failed. Please repeat process.");
         StopCameraAsync();
       }
       else
       {
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Registration complete.");
+        m_notificationSystem.QueueMessage(L"Registration complete.");
         StopCameraAsync();
       }
 

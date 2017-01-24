@@ -37,6 +37,11 @@ namespace HoloIntervention
 {
   class IEngineComponent;
 
+  namespace Physics
+  {
+    class SurfaceAPI;
+  }
+
   namespace System
   {
     class GazeSystem;
@@ -44,7 +49,6 @@ namespace HoloIntervention
     class ImagingSystem;
     class NotificationSystem;
     class RegistrationSystem;
-    class SpatialSystem;
     class ToolSystem;
   }
 
@@ -65,12 +69,12 @@ namespace HoloIntervention
 
   namespace Network
   {
-    class IGTLinkIF;
+    class IGTConnector;
   }
 
   namespace Sound
   {
-    class SoundManager;
+    class SoundAPI;
   }
 
   // Updates, renders, and presents holographic content using Direct3D.
@@ -103,16 +107,19 @@ namespace HoloIntervention
     System::ImagingSystem& GetImagingSystem();
     System::NotificationSystem& GetNotificationsSystem();
     System::RegistrationSystem& GetRegistrationSystem();
-    System::SpatialSystem& GetSpatialSystem();
     System::ToolSystem& GetToolSystem();
 
+    // Provide access to the physics system
+    Physics::SurfaceAPI& GetSurfaceAPI();
+
     // Provide access to the sound manager
-    Sound::SoundManager& GetSoundManager();
+    Sound::SoundAPI& GetSoundAPI();
 
     // Provide access to the network link
-    Network::IGTLinkIF& GetIGTLink();
+    Network::IGTConnector& GetIGTLink();
 
     // Provide access to the renderers
+    bool HasModelRenderer() const;
     Rendering::ModelRenderer& GetModelRenderer();
     Rendering::SliceRenderer& GetSliceRenderer();
     Rendering::VolumeRenderer& GetVolumeRenderer();
@@ -146,16 +153,17 @@ namespace HoloIntervention
 
     // Renderers
     std::unique_ptr<Rendering::ModelRenderer>             m_modelRenderer;
+    std::unique_ptr<Rendering::NotificationRenderer>      m_notificationRenderer;
     std::unique_ptr<Rendering::SliceRenderer>             m_sliceRenderer;
     std::unique_ptr<Rendering::SpatialMeshRenderer>       m_meshRenderer;
     std::unique_ptr<Rendering::VolumeRenderer>            m_volumeRenderer;
 
     // Event handlers
-    std::unique_ptr<Input::SpatialInput>                  m_spatialInputHandler;
-    std::unique_ptr<Input::VoiceInput>                    m_voiceInputHandler;
+    std::unique_ptr<Input::SpatialInput>                  m_spatialInput;
+    std::unique_ptr<Input::VoiceInput>                    m_voiceInput;
 
     // Interface that manages a network connection to an IGT link server
-    std::unique_ptr<Network::IGTLinkIF>                   m_igtLinkIF;
+    std::unique_ptr<Network::IGTConnector>                m_IGTConnector;
     UWPOpenIGTLink::TrackedFrame^                         m_latestFrame;
     double                                                m_latestTimestamp;
 
@@ -192,10 +200,12 @@ namespace HoloIntervention
     std::unique_ptr<System::ImagingSystem>                m_imagingSystem;
     std::unique_ptr<System::NotificationSystem>           m_notificationSystem;
     std::unique_ptr<System::RegistrationSystem>           m_registrationSystem;
-    std::unique_ptr<System::SpatialSystem>                m_spatialSystem;
     std::unique_ptr<System::ToolSystem>                   m_toolSystem;
 
-    // Sound assets
-    std::unique_ptr<Sound::SoundManager>                  m_soundManager;
+    // Physics
+    std::unique_ptr<Physics::SurfaceAPI>                  m_physicsAPI;
+
+    // Sound
+    std::unique_ptr<Sound::SoundAPI>                      m_soundAPI;
   };
 }

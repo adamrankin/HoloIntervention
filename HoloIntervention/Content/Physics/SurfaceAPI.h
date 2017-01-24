@@ -49,13 +49,13 @@ namespace HoloIntervention
     class ModelEntry;
   }
 
-  namespace System
+  namespace Physics
   {
-    class SpatialSystem : public Sound::IVoiceInput, public IEngineComponent
+    class SurfaceAPI : public Sound::IVoiceInput, public IEngineComponent
     {
     public:
-      SpatialSystem(const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer);
-      ~SpatialSystem();
+      SurfaceAPI(System::NotificationSystem& notificationSystem, const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer);
+      ~SurfaceAPI();
 
       void Update(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem);
 
@@ -97,8 +97,9 @@ namespace HoloIntervention
       // Event registration tokens.
       Windows::Foundation::EventRegistrationToken                               m_surfaceObserverEventToken;
 
-      // Keep a reference to the device resources
+      // Cached entries
       std::shared_ptr<DX::DeviceResources>                                      m_deviceResources;
+      System::NotificationSystem&                                               m_notificationSystem;
       DX::StepTimer&                                                            m_stepTimer;
 
       // Anchor interaction variables

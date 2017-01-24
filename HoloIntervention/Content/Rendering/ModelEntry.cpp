@@ -23,16 +23,17 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "pch.h"
+#include "CameraResources.h"
+#include "DeviceResources.h"
 #include "ModelEntry.h"
-
-// Common includes
-#include <DeviceResources.h>
-#include <StepTimer.h>
+#include "StepTimer.h"
 
 // DirectXTK includes
+#include <CommonStates.h>
 #include <DirectXHelper.h>
 #include <Effects.h>
 #include <InstancedEffects.h>
+#include <Model.h>
 
 // STL includes
 #include <algorithm>
@@ -55,6 +56,7 @@ namespace HoloIntervention
     ModelEntry::ModelEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, const std::wstring& assetLocation)
       : m_deviceResources(deviceResources)
       , m_assetLocation(assetLocation)
+      , m_viewProjection(std::make_unique<DX::ViewProjection>())
     {
       // Validate asset location
       Platform::String^ mainFolderLocation = Windows::ApplicationModel::Package::Current->InstalledLocation->Path;
@@ -120,7 +122,10 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ModelEntry::Update(const DX::StepTimer& timer, const DX::ViewProjection& vp)
     {
-      m_viewProjection = vp;
+      m_viewProjection->view[0] = vp.view[0];
+      m_viewProjection->view[1] = vp.view[1];
+      m_viewProjection->projection[0] = vp.projection[0];
+      m_viewProjection->projection[1] = vp.projection[1];
 
       if (m_enableLerp)
       {
@@ -325,8 +330,8 @@ namespace HoloIntervention
         auto imatrices = dynamic_cast<DirectX::IStereoEffectMatrices*>(part->effect.get());
         if (imatrices)
         {
-          DirectX::XMMATRIX view[2] = { DirectX::XMLoadFloat4x4(&m_viewProjection.view[0]), DirectX::XMLoadFloat4x4(&m_viewProjection.view[1]) };
-          DirectX::XMMATRIX proj[2] = { DirectX::XMLoadFloat4x4(&m_viewProjection.projection[0]), DirectX::XMLoadFloat4x4(&m_viewProjection.projection[1]) };
+          DirectX::XMMATRIX view[2] = { DirectX::XMLoadFloat4x4(&m_viewProjection->view[0]), DirectX::XMLoadFloat4x4(&m_viewProjection->view[1]) };
+          DirectX::XMMATRIX proj[2] = { DirectX::XMLoadFloat4x4(&m_viewProjection->projection[0]), DirectX::XMLoadFloat4x4(&m_viewProjection->projection[1]) };
 
           imatrices->SetMatrices(DirectX::XMLoadFloat4x4(&m_worldMatrix), view, proj);
         }

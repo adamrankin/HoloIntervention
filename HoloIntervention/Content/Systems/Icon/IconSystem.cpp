@@ -52,7 +52,11 @@ namespace HoloIntervention
     const float IconSystem::ICON_SIZE_METER = 0.025f;
 
     //----------------------------------------------------------------------------
-    IconSystem::IconSystem()
+    IconSystem::IconSystem(NotificationSystem& notificationSystem, RegistrationSystem& registrationSystem, Network::IGTConnector& igtConnector, Rendering::ModelRenderer& modelRenderer)
+      : m_modelRenderer(modelRenderer)
+      , m_notificationSystem(notificationSystem)
+      , m_registrationSystem(registrationSystem)
+      , m_IGTConnector(igtConnector)
     {
       // Create network icon
       m_networkIcon = AddEntry(L"Assets/Models/network_icon.cmo");
@@ -71,7 +75,7 @@ namespace HoloIntervention
 
         if (msCount >= 5000)
         {
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Icon models failed to load after 5s.");
+          m_notificationSystem.QueueMessage(L"Icon models failed to load after 5s.");
           return false;
         }
 
@@ -135,8 +139,8 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     std::shared_ptr<IconEntry> IconSystem::AddEntry(const std::wstring& modelName)
     {
-      auto modelEntryId = HoloIntervention::instance()->GetModelRenderer().AddModel(modelName);
-      auto modelEntry = HoloIntervention::instance()->GetModelRenderer().GetModel(modelEntryId);
+      auto modelEntryId = m_modelRenderer.AddModel(modelName);
+      auto modelEntry = m_modelRenderer.GetModel(modelEntryId);
       auto entry = std::make_shared<IconEntry>();
       entry->SetModelEntry(modelEntry);
       entry->SetId(m_nextValidEntry++);
@@ -176,7 +180,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void IconSystem::ProcessNetworkLogic(DX::StepTimer& timer)
     {
-      auto state = HoloIntervention::instance()->GetIGTLink().GetConnectionState();
+      auto state = m_IGTConnector.GetConnectionState();
 
       switch (state)
       {
@@ -226,7 +230,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void IconSystem::ProcessCameraLogic(DX::StepTimer& timer)
     {
-      if (HoloIntervention::instance()->GetRegistrationSystem().IsCameraActive())
+      if (m_registrationSystem.IsCameraActive())
       {
         m_cameraIcon->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
         m_cameraBlinkTimer += static_cast<float>(timer.GetElapsedSeconds());

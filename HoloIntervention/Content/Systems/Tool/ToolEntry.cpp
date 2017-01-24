@@ -42,16 +42,18 @@ namespace HoloIntervention
   namespace Tools
   {
     //----------------------------------------------------------------------------
-    ToolEntry::ToolEntry(UWPOpenIGTLink::TransformName^ coordinateFrame, const std::wstring& modelName, UWPOpenIGTLink::TransformRepository^ transformRepository)
-      : m_transformRepository(transformRepository)
+    ToolEntry::ToolEntry(Rendering::ModelRenderer& modelRenderer, UWPOpenIGTLink::TransformName^ coordinateFrame, const std::wstring& modelName, UWPOpenIGTLink::TransformRepository^ transformRepository)
+      : m_modelRenderer(modelRenderer)
+      , m_transformRepository(transformRepository)
       , m_coordinateFrame(coordinateFrame)
     {
       CreateModel(modelName);
     }
 
     //----------------------------------------------------------------------------
-    ToolEntry::ToolEntry(const std::wstring& coordinateFrame, const std::wstring& modelName, UWPOpenIGTLink::TransformRepository^ transformRepository)
-      : m_transformRepository(transformRepository)
+    ToolEntry::ToolEntry(Rendering::ModelRenderer& modelRenderer, const std::wstring& coordinateFrame, const std::wstring& modelName, UWPOpenIGTLink::TransformRepository^ transformRepository)
+      : m_modelRenderer(modelRenderer)
+      , m_transformRepository(transformRepository)
     {
       m_coordinateFrame = ref new UWPOpenIGTLink::TransformName(ref new Platform::String(coordinateFrame.c_str()));
 
@@ -91,7 +93,7 @@ namespace HoloIntervention
     {
       if (m_modelEntry == nullptr)
       {
-        return Rendering::INVALID_ENTRY;
+        return INVALID_TOKEN;
       }
       return m_modelEntry->GetId();
     }
@@ -99,13 +101,13 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ToolEntry::CreateModel(const std::wstring& modelName)
     {
-      uint64 modelToken = HoloIntervention::instance()->GetModelRenderer().AddModel(L"Assets\\Models\\Tools\\" + modelName + L".cmo");
-      if (modelToken == Rendering::INVALID_ENTRY)
+      uint64 modelToken = m_modelRenderer.AddModel(L"Assets\\Models\\Tools\\" + modelName + L".cmo");
+      if (modelToken == INVALID_TOKEN)
       {
         HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_WARNING, std::wstring(L"Unable to create model with name: ") + modelName);
         return;
       }
-      m_modelEntry = HoloIntervention::instance()->GetModelRenderer().GetModel(modelToken);
+      m_modelEntry = m_modelRenderer.GetModel(modelToken);
       m_modelEntry->SetVisible(false);
     }
   }

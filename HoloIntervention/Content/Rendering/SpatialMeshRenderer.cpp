@@ -21,7 +21,7 @@
 
 // System includes
 #include "NotificationSystem.h"
-#include "SpatialSystem.h"
+#include "SurfaceAPI.h"
 
 using namespace Concurrency;
 using namespace DX;
@@ -44,8 +44,9 @@ namespace HoloIntervention
   namespace Rendering
   {
     //----------------------------------------------------------------------------
-    SpatialMeshRenderer::SpatialMeshRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources) :
-      m_deviceResources(deviceResources)
+    SpatialMeshRenderer::SpatialMeshRenderer(System::NotificationSystem& notificationSystem, const std::shared_ptr<DX::DeviceResources>& deviceResources)
+      : m_deviceResources(deviceResources)
+      , m_notificationSystem(notificationSystem)
     {
       m_meshCollection.clear();
       CreateDeviceDependentResources();
@@ -494,13 +495,13 @@ namespace HoloIntervention
     {
       callbackMap[L"mesh on"] = [this](SpeechRecognitionResult ^ result)
       {
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Mesh showing.");
+        m_notificationSystem.QueueMessage(L"Mesh showing.");
         SetEnabled(true);
       };
 
       callbackMap[L"mesh off"] = [this](SpeechRecognitionResult ^ result)
       {
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Mesh disabled.");
+        m_notificationSystem.QueueMessage(L"Mesh disabled.");
         SetEnabled(false);
       };
     }

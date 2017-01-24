@@ -36,10 +36,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 namespace HoloIntervention
 {
-  namespace Rendering
-  {
-    static const uint64 INVALID_ENTRY = 0;
-  }
+  static const uint64 INVALID_TOKEN = 0;
 
   //------------------------------------------------------------------------
   template<class T>

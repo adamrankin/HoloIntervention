@@ -33,34 +33,6 @@ namespace DX
 
 namespace HoloIntervention
 {
-  namespace Rendering
-  {
-    class ModelRenderer;
-    class SliceRenderer;
-    class VolumeRenderer;
-  }
-
-  namespace Sound
-  {
-    class SoundManager;
-  }
-
-  namespace Network
-  {
-    class IGTLinkIF;
-  }
-
-  namespace System
-  {
-    class GazeSystem;
-    class IconSystem;
-    class ImagingSystem;
-    class NotificationSystem;
-    class RegistrationSystem;
-    class SpatialSystem;
-    class ToolSystem;
-  }
-
   // IFrameworkView class. Connects the app with the Windows shell and handles application lifecycle events.
   ref class AppView sealed : public Windows::ApplicationModel::Core::IFrameworkView
   {
@@ -68,48 +40,24 @@ namespace HoloIntervention
     AppView();
 
     // IFrameworkView methods
-    virtual void Initialize(Windows::ApplicationModel::Core::CoreApplicationView ^ applicationView);
-    virtual void SetWindow(Windows::UI::Core::CoreWindow ^ window);
-    virtual void Load(Platform::String ^ entryPoint);
+    virtual void Initialize(Windows::ApplicationModel::Core::CoreApplicationView^ applicationView);
+    virtual void SetWindow(Windows::UI::Core::CoreWindow^ window);
+    virtual void Load(Platform::String^ entryPoint);
     virtual void Run();
     virtual void Uninitialize();
 
-  internal:
-    // Provide app wide access to the logic systems
-    System::GazeSystem & GetGazeSystem();
-    System::IconSystem & GetIconSystem();
-    System::ImagingSystem & GetImagingSystem();
-    System::NotificationSystem & GetNotificationSystem();
-    System::RegistrationSystem & GetRegistrationSystem();
-    System::SpatialSystem & GetSpatialSystem();
-    System::ToolSystem & GetToolSystem();
-
-    // Provide app wide access to the sound manager
-    Sound::SoundManager & GetSoundManager();
-
-    // Provide access to the network link
-    Network::IGTLinkIF & GetIGTLink();
-
-    // Provide app wide access to the renderers
-    Rendering::ModelRenderer & GetModelRenderer();
-    Rendering::SliceRenderer & GetSliceRenderer();
-    Rendering::VolumeRenderer & GetVolumeRenderer();
-
-    // Global access to the current frame number
-    uint64 GetCurrentFrameNumber() const;
-
   protected:
     // Application lifecycle event handlers.
-    void OnViewActivated(Windows::ApplicationModel::Core::CoreApplicationView ^ sender, Windows::ApplicationModel::Activation::IActivatedEventArgs ^ args);
-    void OnSuspending(Platform::Object ^ sender, Windows::ApplicationModel::SuspendingEventArgs ^ args);
-    void OnResuming(Platform::Object ^ sender, Platform::Object ^ args);
+    void OnViewActivated(Windows::ApplicationModel::Core::CoreApplicationView^ sender, Windows::ApplicationModel::Activation::IActivatedEventArgs^ args);
+    void OnSuspending(Platform::Object^ sender, Windows::ApplicationModel::SuspendingEventArgs^ args);
+    void OnResuming(Platform::Object^ sender, Platform::Object^ args);
 
     // Window event handlers.
-    void OnVisibilityChanged(Windows::UI::Core::CoreWindow ^ sender, Windows::UI::Core::VisibilityChangedEventArgs ^ args);
-    void OnWindowClosed(Windows::UI::Core::CoreWindow ^ sender, Windows::UI::Core::CoreWindowEventArgs ^ args);
+    void OnVisibilityChanged(Windows::UI::Core::CoreWindow^ sender, Windows::UI::Core::VisibilityChangedEventArgs^ args);
+    void OnWindowClosed(Windows::UI::Core::CoreWindow^ sender, Windows::UI::Core::CoreWindowEventArgs^ args);
 
     // CoreWindow input event handlers.
-    void OnKeyPressed(Windows::UI::Core::CoreWindow ^ sender, Windows::UI::Core::KeyEventArgs ^ args);
+    void OnKeyPressed(Windows::UI::Core::CoreWindow^ sender, Windows::UI::Core::KeyEventArgs^ args);
 
   private:
     std::unique_ptr<HoloInterventionCore> m_main;
@@ -119,16 +67,14 @@ namespace HoloIntervention
     bool m_windowVisible = true;
 
     // The holographic space the app will use for rendering.
-    Windows::Graphics::Holographic::HolographicSpace ^ m_holographicSpace = nullptr;
+    Windows::Graphics::Holographic::HolographicSpace^ m_holographicSpace = nullptr;
   };
-
-  AppView ^ instance();
 
   // The entry point for the app.
   ref class AppViewSource sealed : Windows::ApplicationModel::Core::IFrameworkViewSource
   {
   public:
-    virtual Windows::ApplicationModel::Core::IFrameworkView ^ CreateView();
+    virtual Windows::ApplicationModel::Core::IFrameworkView^ CreateView();
   };
 }
 

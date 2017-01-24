@@ -34,12 +34,17 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 namespace HoloIntervention
 {
+  namespace Sound
+  {
+    class SoundAPI;
+  }
+
   namespace Input
   {
     class VoiceInput : public IEngineComponent
     {
     public:
-      VoiceInput();
+      VoiceInput(System::NotificationSystem& notificationSystem, Sound::SoundAPI& soundAPI);
       ~VoiceInput();
 
       void EnableVoiceAnalysis(bool enable);
@@ -51,6 +56,10 @@ namespace HoloIntervention
       void OnResultGenerated(Windows::Media::SpeechRecognition::SpeechContinuousRecognitionSession^ sender, Windows::Media::SpeechRecognition::SpeechContinuousRecognitionResultGeneratedEventArgs^ args);
 
     protected:
+      // Cached entries
+      System::NotificationSystem&                           m_notificationSystem;
+      Sound::SoundAPI&                                      m_soundAPI;
+
       std::atomic_bool                                      m_speechBeingDetected = false;
       Windows::Media::SpeechRecognition::SpeechRecognizer^  m_speechRecognizer = nullptr;
       HoloIntervention::Sound::VoiceInputCallbackMap        m_callbacks;

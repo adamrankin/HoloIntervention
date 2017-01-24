@@ -21,15 +21,14 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 ====================================================================*/
 
-// local includes
+// Local includes
 #include "pch.h"
 #include "AppView.h"
-#include "HoloInterventionCore.h"
-#include "IEngineComponent.h"
-
-// Common includes
 #include "Common.h"
 #include "DirectXHelper.h"
+#include "HoloInterventionCore.h"
+#include "IEngineComponent.h"
+#include "IStabilizedComponent.h"
 
 // System includes
 #include "GazeSystem.h"
@@ -37,11 +36,13 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "ImagingSystem.h"
 #include "NotificationSystem.h"
 #include "RegistrationSystem.h"
-#include "SpatialSystem.h"
 #include "ToolSystem.h"
 
+// Physics includes
+#include "SurfaceAPI.h"
+
 // Sound includes
-#include "SoundManager.h"
+#include "SoundAPI.h"
 
 // Rendering includes
 #include "ModelRenderer.h"
@@ -51,7 +52,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "VolumeRenderer.h"
 
 // Network includes
-#include "IGTLinkIF.h"
+#include "IGTConnector.h"
 
 // Input includes
 #include "SpatialInput.h"
@@ -105,35 +106,38 @@ namespace HoloIntervention
     m_holographicSpace = holographicSpace;
 
     // Initialize the system components
+    m_notificationRenderer = std::make_unique<Rendering::NotificationRenderer>(m_deviceResources);
+    m_notificationSystem = std::make_unique<System::NotificationSystem>(*m_notificationRenderer.get());
     m_modelRenderer = std::make_unique<Rendering::ModelRenderer>(m_deviceResources);
     m_sliceRenderer = std::make_unique<Rendering::SliceRenderer>(m_deviceResources);
     m_volumeRenderer = std::make_unique<Rendering::VolumeRenderer>(m_deviceResources);
-    m_meshRenderer = std::make_unique<Rendering::SpatialMeshRenderer>(m_deviceResources);
-    m_soundManager = std::make_unique<Sound::SoundManager>();
+    m_meshRenderer = std::make_unique<Rendering::SpatialMeshRenderer>(*m_notificationSystem.get(), m_deviceResources);
 
-    m_notificationSystem = std::make_unique<System::NotificationSystem>(m_deviceResources);
-    m_spatialInputHandler = std::make_unique<Input::SpatialInput>();
-    m_voiceInputHandler = std::make_unique<Input::VoiceInput>();
-    m_spatialSystem = std::make_unique<System::SpatialSystem>(m_deviceResources, m_timer);
-    m_igtLinkIF = std::make_unique<Network::IGTLinkIF>();
+    m_soundAPI = std::make_unique<Sound::SoundAPI>();
 
-    // Model renderer must come before the following systems
-    m_iconSystem = std::make_unique<System::IconSystem>();
-    m_gazeSystem = std::make_unique<System::GazeSystem>();
-    m_toolSystem = std::make_unique<System::ToolSystem>();
-    m_registrationSystem = std::make_unique<System::RegistrationSystem>(m_deviceResources);
-    m_imagingSystem = std::make_unique<System::ImagingSystem>();
+    m_spatialInput = std::make_unique<Input::SpatialInput>();
+    m_voiceInput = std::make_unique<Input::VoiceInput>(*m_notificationSystem.get(), *m_soundAPI.get());
+
+    m_IGTConnector = std::make_unique<Network::IGTConnector>(*m_notificationSystem.get());
+    HoloIntervention::Log::instance().SetIGTConnector(*m_IGTConnector.get());
+    m_physicsAPI = std::make_unique<Physics::SurfaceAPI>(*m_notificationSystem.get(), m_deviceResources, m_timer);
+
+    m_registrationSystem = std::make_unique<System::RegistrationSystem>(*m_IGTConnector.get(), *m_physicsAPI.get(), *m_notificationSystem.get(), *m_modelRenderer.get());
+    m_iconSystem = std::make_unique<System::IconSystem>(*m_notificationSystem.get(), *m_registrationSystem.get(), *m_IGTConnector.get(), *m_modelRenderer.get());
+    m_gazeSystem = std::make_unique<System::GazeSystem>(*m_notificationSystem.get(), *m_physicsAPI.get(), *m_modelRenderer.get());
+    m_toolSystem = std::make_unique<System::ToolSystem>(*m_notificationSystem.get(), *m_registrationSystem.get(), *m_modelRenderer.get());
+    m_imagingSystem = std::make_unique<System::ImagingSystem>(*m_registrationSystem.get(), *m_notificationSystem.get(), *m_sliceRenderer.get(), *m_volumeRenderer.get());
 
     m_engineComponents.push_back(m_modelRenderer.get());
     m_engineComponents.push_back(m_sliceRenderer.get());
     m_engineComponents.push_back(m_volumeRenderer.get());
     m_engineComponents.push_back(m_meshRenderer.get());
-    m_engineComponents.push_back(m_soundManager.get());
+    m_engineComponents.push_back(m_soundAPI.get());
     m_engineComponents.push_back(m_notificationSystem.get());
-    m_engineComponents.push_back(m_spatialInputHandler.get());
-    m_engineComponents.push_back(m_voiceInputHandler.get());
-    m_engineComponents.push_back(m_spatialSystem.get());
-    m_engineComponents.push_back(m_igtLinkIF.get());
+    m_engineComponents.push_back(m_spatialInput.get());
+    m_engineComponents.push_back(m_voiceInput.get());
+    m_engineComponents.push_back(m_physicsAPI.get());
+    m_engineComponents.push_back(m_IGTConnector.get());
     m_engineComponents.push_back(m_gazeSystem.get());
     m_engineComponents.push_back(m_toolSystem.get());
     m_engineComponents.push_back(m_registrationSystem.get());
@@ -141,11 +145,11 @@ namespace HoloIntervention
     m_engineComponents.push_back(m_iconSystem.get());
 
     // TODO : remove temp code
-    m_igtLinkIF->SetHostname(L"192.168.0.102");
+    m_IGTConnector->SetHostname(L"192.168.0.102");
 
     try
     {
-      m_soundManager->InitializeAsync();
+      m_soundAPI->InitializeAsync();
     }
     catch (Platform::Exception^ e)
     {
@@ -174,7 +178,7 @@ namespace HoloIntervention
     SpatialCoordinateSystem^ currentCoordinateSystem = m_attachedReferenceFrame->GetStationaryCoordinateSystemAtTimestamp(holographicFrame->CurrentPrediction->Timestamp);
     SpatialPointerPose^ pose = SpatialPointerPose::TryGetAtTimestamp(currentCoordinateSystem, holographicFrame->CurrentPrediction->Timestamp);
     m_notificationSystem->Initialize(pose);
-    m_spatialSystem->InitializeSurfaceObserverAsync(currentCoordinateSystem).then([this](bool result)
+    m_physicsAPI->InitializeSurfaceObserverAsync(currentCoordinateSystem).then([this](bool result)
     {
       if (!result)
       {
@@ -240,9 +244,9 @@ namespace HoloIntervention
       }
     }
 
-    if (m_engineReady && !m_voiceInputHandler->IsVoiceEnabled())
+    if (m_engineReady && !m_voiceInput->IsVoiceEnabled())
     {
-      m_voiceInputHandler->EnableVoiceAnalysis(true);
+      m_voiceInput->EnableVoiceAnalysis(true);
     }
 
     // Time-based updates
@@ -250,9 +254,9 @@ namespace HoloIntervention
     {
       SpatialPointerPose^ headPose = SpatialPointerPose::TryGetAtTimestamp(hmdCoordinateSystem, prediction->Timestamp);
 
-      if (m_igtLinkIF->IsConnected())
+      if (m_IGTConnector->IsConnected())
       {
-        if (m_igtLinkIF->GetTrackedFrame(m_latestFrame, &m_latestTimestamp))
+        if (m_IGTConnector->GetTrackedFrame(m_latestFrame, &m_latestTimestamp))
         {
           m_latestTimestamp = m_latestFrame->Timestamp;
           // TODO : extract system logic from volume renderer and move to imaging system
@@ -265,14 +269,14 @@ namespace HoloIntervention
         }
       }
 
-      m_spatialSystem->Update(hmdCoordinateSystem);
+      m_physicsAPI->Update(hmdCoordinateSystem);
 
       if (headPose != nullptr)
       {
         m_registrationSystem->Update(m_timer, hmdCoordinateSystem, headPose);
         m_gazeSystem->Update(m_timer, hmdCoordinateSystem, headPose);
         m_iconSystem->Update(m_timer, headPose);
-        m_soundManager->Update(m_timer, hmdCoordinateSystem);
+        m_soundAPI->Update(m_timer, hmdCoordinateSystem);
         m_sliceRenderer->Update(headPose, m_timer);
         m_notificationSystem->Update(headPose, m_timer);
       }
@@ -337,7 +341,7 @@ namespace HoloIntervention
 
         if (m_notificationSystem->IsShowingNotification())
         {
-          m_notificationSystem->GetRenderer()->Render();
+          m_notificationRenderer->Render();
         }
 
         atLeastOneCameraRendered = true;
@@ -350,13 +354,13 @@ namespace HoloIntervention
   //----------------------------------------------------------------------------
   task<void> HoloInterventionCore::SaveAppStateAsync()
   {
-    return m_spatialSystem->SaveAppStateAsync();
+    return m_physicsAPI->SaveAppStateAsync();
   }
 
   //----------------------------------------------------------------------------
   task<void> HoloInterventionCore::LoadAppStateAsync()
   {
-    return m_spatialSystem->LoadAppStateAsync().then([ = ]()
+    return m_physicsAPI->LoadAppStateAsync().then([ = ]()
     {
       // Registration must follow spatial due to anchor store
       m_registrationSystem->LoadAppStateAsync();
@@ -376,9 +380,9 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
-  System::SpatialSystem& HoloInterventionCore::GetSpatialSystem()
+  Physics::SurfaceAPI& HoloInterventionCore::GetSurfaceAPI()
   {
-    return *m_spatialSystem.get();
+    return *m_physicsAPI.get();
   }
 
   //----------------------------------------------------------------------------
@@ -412,15 +416,21 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
-  Sound::SoundManager& HoloInterventionCore::GetSoundManager()
+  Sound::SoundAPI& HoloInterventionCore::GetSoundAPI()
   {
-    return *m_soundManager.get();
+    return *m_soundAPI.get();
   }
 
   //----------------------------------------------------------------------------
-  Network::IGTLinkIF& HoloInterventionCore::GetIGTLink()
+  Network::IGTConnector& HoloInterventionCore::GetIGTLink()
   {
-    return *m_igtLinkIF.get();
+    return *m_IGTConnector.get();
+  }
+
+  //----------------------------------------------------------------------------
+  bool HoloInterventionCore::HasModelRenderer() const
+  {
+    return m_modelRenderer != nullptr;
   }
 
   //----------------------------------------------------------------------------
@@ -445,7 +455,7 @@ namespace HoloIntervention
   void HoloInterventionCore::OnDeviceLost()
   {
     m_meshRenderer->ReleaseDeviceDependentResources();
-    m_spatialSystem->ReleaseDeviceDependentResources();
+    m_physicsAPI->ReleaseDeviceDependentResources();
     m_modelRenderer->ReleaseDeviceDependentResources();
     m_sliceRenderer->ReleaseDeviceDependentResources();
     m_notificationSystem->ReleaseDeviceDependentResources();
@@ -458,7 +468,7 @@ namespace HoloIntervention
     m_modelRenderer->CreateDeviceDependentResources();
     m_sliceRenderer->CreateDeviceDependentResources();
     m_notificationSystem->CreateDeviceDependentResources();
-    m_spatialSystem->CreateDeviceDependentResources();
+    m_physicsAPI->CreateDeviceDependentResources();
   }
 
   //----------------------------------------------------------------------------
@@ -524,14 +534,14 @@ namespace HoloIntervention
     Sound::VoiceInputCallbackMap callbacks;
 
     m_gazeSystem->RegisterVoiceCallbacks(callbacks);
-    m_igtLinkIF->RegisterVoiceCallbacks(callbacks);
-    m_spatialSystem->RegisterVoiceCallbacks(callbacks);
+    m_IGTConnector->RegisterVoiceCallbacks(callbacks);
+    m_physicsAPI->RegisterVoiceCallbacks(callbacks);
     m_toolSystem->RegisterVoiceCallbacks(callbacks);
     m_imagingSystem->RegisterVoiceCallbacks(callbacks);
     m_meshRenderer->RegisterVoiceCallbacks(callbacks);
     m_registrationSystem->RegisterVoiceCallbacks(callbacks);
 
-    auto task = m_voiceInputHandler->CompileCallbacks(callbacks);
+    auto task = m_voiceInput->CompileCallbacks(callbacks);
   }
 
   //----------------------------------------------------------------------------

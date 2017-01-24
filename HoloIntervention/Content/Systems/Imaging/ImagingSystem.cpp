@@ -21,37 +21,86 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 ====================================================================*/
 
-#include "pch.h"
-
 // Local includes
+#include "pch.h"
 #include "AppView.h"
+#include "Common.h"
 #include "ImagingSystem.h"
-
-// Common includes
 #include "StepTimer.h"
 
 // Network includes
-#include "IGTLinkIF.h"
+#include "IGTConnector.h"
 
 // System includes
 #include "NotificationSystem.h"
 
 // Rendering includes
+#include "VolumeRenderer.h"
 #include "SliceRenderer.h"
+
+// Unnecessary, but removes intellisense errors
+#include "Log.h"
+#include <WindowsNumerics.h>
 
 using namespace Windows::Foundation::Numerics;
 using namespace Windows::Perception::Spatial;
 using namespace Windows::UI::Input::Spatial;
 using namespace Windows::Media::SpeechRecognition;
+using namespace Windows::Data::Xml::Dom;
 
 namespace HoloIntervention
 {
   namespace System
   {
     //----------------------------------------------------------------------------
-    ImagingSystem::ImagingSystem()
+    ImagingSystem::ImagingSystem(RegistrationSystem& registrationSystem, NotificationSystem& notificationSystem, Rendering::SliceRenderer& sliceRenderer, Rendering::VolumeRenderer& volumeRenderer)
+      : m_notificationSystem(notificationSystem)
+      , m_registrationSystem(registrationSystem)
+      , m_sliceRenderer(sliceRenderer)
+      , m_volumeRenderer(volumeRenderer)
     {
-      m_componentReady = true;
+      try
+      {
+        InitializeTransformRepositoryAsync(m_transformRepository, L"Assets\\Data\\configuration.xml").then([this]()
+        {
+          m_componentReady = true;
+        });
+      }
+      catch (Platform::Exception^ e)
+      {
+        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e->Message);
+      }
+
+      try
+      {
+        GetXmlDocumentFromFileAsync(L"Assets\\Data\\configuration.xml").then([this](XmlDocument ^ doc)
+        {
+          auto xpath = ref new Platform::String(L"/HoloIntervention/VolumeRendering");
+          if (doc->SelectNodes(xpath)->Length != 1)
+          {
+            // No configuration found, use defaults
+            return;
+          }
+
+          IXmlNode^ volRendering = doc->SelectNodes(xpath)->Item(0);
+          Platform::String^ fromAttribute = dynamic_cast<Platform::String^>(volRendering->Attributes->GetNamedItem(L"From")->NodeValue);
+          Platform::String^ toAttribute = dynamic_cast<Platform::String^>(volRendering->Attributes->GetNamedItem(L"To")->NodeValue);
+          if (fromAttribute->IsEmpty() || toAttribute->IsEmpty())
+          {
+            return;
+          }
+          else
+          {
+            m_fromCoordFrame = std::wstring(fromAttribute->Data());
+            m_toCoordFrame = std::wstring(toAttribute->Data());
+            m_imageToHMDName = ref new UWPOpenIGTLink::TransformName(fromAttribute, toAttribute);
+          }
+        });
+      }
+      catch (Platform::Exception^ e)
+      {
+        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e->Message);
+      }
     }
 
     //----------------------------------------------------------------------------
@@ -87,7 +136,7 @@ namespace HoloIntervention
     {
       try
       {
-        return HoloIntervention::instance()->GetSliceRenderer().GetSlicePose(m_sliceToken);
+        return m_sliceRenderer.GetSlicePose(m_sliceToken);
       }
       catch (const std::exception&)
       {
@@ -100,7 +149,7 @@ namespace HoloIntervention
     {
       try
       {
-        return HoloIntervention::instance()->GetSliceRenderer().GetSliceVelocity(m_sliceToken);
+        return m_sliceRenderer.GetSliceVelocity(m_sliceToken);
       }
       catch (const std::exception&)
       {
@@ -121,49 +170,49 @@ namespace HoloIntervention
       {
         if (HasSlice())
         {
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Slice showing.");
-          HoloIntervention::instance()->GetSliceRenderer().ShowSlice(m_sliceToken);
+          m_notificationSystem.QueueMessage(L"Slice showing.");
+          m_sliceRenderer.ShowSlice(m_sliceToken);
           return;
         }
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"No slice available.");
+        m_notificationSystem.QueueMessage(L"No slice available.");
       };
 
       callbackMap[L"slice off"] = [this](SpeechRecognitionResult ^ result)
       {
         if (HasSlice())
         {
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Slice hidden.");
-          HoloIntervention::instance()->GetSliceRenderer().HideSlice(m_sliceToken);
+          m_notificationSystem.QueueMessage(L"Slice hidden.");
+          m_sliceRenderer.HideSlice(m_sliceToken);
           return;
         }
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"No slice available.");
+        m_notificationSystem.QueueMessage(L"No slice available.");
       };
 
       callbackMap[L"lock slice"] = [this](SpeechRecognitionResult ^ result)
       {
         if (!HasSlice())
         {
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"No slice to head-lock!");
+          m_notificationSystem.QueueMessage(L"No slice to head-lock!");
           return;
         }
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Slice is now head-locked.");
-        HoloIntervention::instance()->GetSliceRenderer().SetSliceHeadlocked(m_sliceToken, true);
+        m_notificationSystem.QueueMessage(L"Slice is now head-locked.");
+        m_sliceRenderer.SetSliceHeadlocked(m_sliceToken, true);
       };
 
       callbackMap[L"unlock slice"] = [this](SpeechRecognitionResult ^ result)
       {
         if (!HasSlice())
         {
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"No slice to unlock!");
+          m_notificationSystem.QueueMessage(L"No slice to unlock!");
           return;
         }
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Slice is now in world-space.");
-        HoloIntervention::instance()->GetSliceRenderer().SetSliceHeadlocked(m_sliceToken, false);
+        m_notificationSystem.QueueMessage(L"Slice is now in world-space.");
+        m_sliceRenderer.SetSliceHeadlocked(m_sliceToken, false);
       };
 
       callbackMap[L"piecewise linear transfer function"] = [this](SpeechRecognitionResult ^ result)
       {
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Using built-in piecewise linear transfer function.");
+        m_notificationSystem.QueueMessage(L"Using built-in piecewise linear transfer function.");
         // TODO : how to define which volume to apply to?
       };
     }
@@ -171,52 +220,50 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ImagingSystem::Process2DFrame(UWPOpenIGTLink::TrackedFrame^ frame, SpatialCoordinateSystem^ coordSystem)
     {
+      // TODO : apply registration to incoming transform
       if (!HasSlice())
       {
         // For now, our slice renderer only draws one slice, in the future, it should be able to draw more
-        m_sliceToken = HoloIntervention::instance()->GetSliceRenderer().AddSlice(Network::IGTLinkIF::GetSharedImagePtr(frame),
-                       frame->FrameSize->GetAt(0),
-                       frame->FrameSize->GetAt(1),
-                       (DXGI_FORMAT)frame->GetPixelFormat(true),
-                       transpose(frame->EmbeddedImageTransform),
-                       coordSystem);
+        m_sliceToken = m_sliceRenderer.AddSlice(Network::IGTConnector::GetSharedImagePtr(frame),
+                                                frame->FrameSize->GetAt(0),
+                                                frame->FrameSize->GetAt(1),
+                                                (DXGI_FORMAT)frame->GetPixelFormat(true),
+                                                transpose(frame->EmbeddedImageTransform));
       }
       else
       {
-        HoloIntervention::instance()->GetSliceRenderer().UpdateSlice(m_sliceToken,
-            Network::IGTLinkIF::GetSharedImagePtr(frame),
-            frame->Width,
-            frame->Height,
-            (DXGI_FORMAT)frame->GetPixelFormat(true),
-            transpose(frame->EmbeddedImageTransform),
-            coordSystem);
+        m_sliceRenderer.UpdateSlice(m_sliceToken,
+                                    Network::IGTConnector::GetSharedImagePtr(frame),
+                                    frame->Width,
+                                    frame->Height,
+                                    (DXGI_FORMAT)frame->GetPixelFormat(true),
+                                    transpose(frame->EmbeddedImageTransform));
       }
     }
 
     //----------------------------------------------------------------------------
     void ImagingSystem::Process3DFrame(UWPOpenIGTLink::TrackedFrame^ frame, SpatialCoordinateSystem^ coordSystem)
     {
+      // TODO : apply registration to incoming transform
       if (!HasVolume())
       {
         // For now, our slice renderer only draws one slice, in the future, it should be able to draw more
-        m_volumeToken = HoloIntervention::instance()->GetVolumeRenderer().AddVolume(Network::IGTLinkIF::GetSharedImagePtr(frame),
+        m_volumeToken = m_volumeRenderer.AddVolume(Network::IGTConnector::GetSharedImagePtr(frame),
                         frame->Width,
                         frame->Height,
                         frame->Depth,
                         (DXGI_FORMAT)frame->GetPixelFormat(true),
-                        transpose(frame->EmbeddedImageTransform),
-                        coordSystem);
+                        transpose(frame->EmbeddedImageTransform));
       }
       else
       {
-        HoloIntervention::instance()->GetVolumeRenderer().UpdateVolume(m_volumeToken,
-            Network::IGTLinkIF::GetSharedImagePtr(frame),
-            frame->Width,
-            frame->Height,
-            frame->Depth,
-            (DXGI_FORMAT)frame->GetPixelFormat(true),
-            transpose(frame->EmbeddedImageTransform),
-            coordSystem);
+        m_volumeRenderer.UpdateVolume(m_volumeToken,
+                                      Network::IGTConnector::GetSharedImagePtr(frame),
+                                      frame->Width,
+                                      frame->Height,
+                                      frame->Depth,
+                                      (DXGI_FORMAT)frame->GetPixelFormat(true),
+                                      transpose(frame->EmbeddedImageTransform));
       }
     }
   }

@@ -38,12 +38,20 @@ namespace DX
 
 namespace HoloIntervention
 {
+  namespace Rendering
+  {
+    class SliceRenderer;
+    class VolumeRenderer;
+  }
+
   namespace System
   {
+    class NotificationSystem;
+
     class ImagingSystem : public Sound::IVoiceInput, public IEngineComponent
     {
     public:
-      ImagingSystem();
+      ImagingSystem(RegistrationSystem& registrationSystem, NotificationSystem& notificationSystem, Rendering::SliceRenderer& sliceRenderer, Rendering::VolumeRenderer& volumeRenderer);
       ~ImagingSystem();
 
       void Update(UWPOpenIGTLink::TrackedFrame^ frame, const DX::StepTimer& timer, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);
@@ -62,11 +70,21 @@ namespace HoloIntervention
       void Process3DFrame(UWPOpenIGTLink::TrackedFrame^ frame, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);
 
     protected:
+      // Cached variables
+      NotificationSystem&                   m_notificationSystem;
+      RegistrationSystem&                   m_registrationSystem;
+      Rendering::SliceRenderer&             m_sliceRenderer;
+      Rendering::VolumeRenderer&            m_volumeRenderer;
+
       // Slice system
-      uint64                                            m_sliceToken = INVALID_TOKEN;
+      std::wstring                          m_fromCoordFrame = L"Image";
+      std::wstring                          m_toCoordFrame = L"HMD";
+      UWPOpenIGTLink::TransformName^        m_imageToHMDName = ref new UWPOpenIGTLink::TransformName(ref new Platform::String(m_fromCoordFrame.c_str()), ref new Platform::String(m_toCoordFrame.c_str()));
+      UWPOpenIGTLink::TransformRepository^  m_transformRepository = ref new UWPOpenIGTLink::TransformRepository();
+      uint64                                m_sliceToken = INVALID_TOKEN;
 
       // Volume system
-      uint64                                            m_volumeToken = INVALID_TOKEN;
+      uint64                                m_volumeToken = INVALID_TOKEN;
     };
   }
 }

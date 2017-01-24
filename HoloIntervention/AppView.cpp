@@ -57,16 +57,9 @@ int main(Platform::Array<Platform::String^>^)
 namespace HoloIntervention
 {
   //----------------------------------------------------------------------------
-  HoloIntervention::AppView^ instance()
-  {
-    static AppView^ ins = ref new AppView();
-    return ins;
-  }
-
-  //----------------------------------------------------------------------------
   IFrameworkView^ AppViewSource::CreateView()
   {
-    return HoloIntervention::instance();
+    return ref new AppView();
   }
 
   //----------------------------------------------------------------------------
@@ -148,84 +141,6 @@ namespace HoloIntervention
   void AppView::Uninitialize()
   {
 
-  }
-
-  //----------------------------------------------------------------------------
-  System::NotificationSystem& AppView::GetNotificationSystem()
-  {
-    return m_main->GetNotificationsSystem();
-  }
-
-  //----------------------------------------------------------------------------
-  System::SpatialSystem& AppView::GetSpatialSystem()
-  {
-    return m_main->GetSpatialSystem();
-  }
-
-  //----------------------------------------------------------------------------
-  System::GazeSystem& AppView::GetGazeSystem()
-  {
-    return m_main->GetGazeSystem();
-  }
-
-  //----------------------------------------------------------------------------
-  HoloIntervention::System::IconSystem& AppView::GetIconSystem()
-  {
-    return m_main->GetIconSystem();
-  }
-
-  //----------------------------------------------------------------------------
-  System::RegistrationSystem& AppView::GetRegistrationSystem()
-  {
-    return m_main->GetRegistrationSystem();
-  }
-
-  //----------------------------------------------------------------------------
-  HoloIntervention::System::ToolSystem& AppView::GetToolSystem()
-  {
-    return m_main->GetToolSystem();
-  }
-
-  //----------------------------------------------------------------------------
-  HoloIntervention::System::ImagingSystem& AppView::GetImagingSystem()
-  {
-    return m_main->GetImagingSystem();
-  }
-
-  //----------------------------------------------------------------------------
-  HoloIntervention::Sound::SoundManager& AppView::GetSoundManager()
-  {
-    return m_main->GetSoundManager();
-  }
-
-  //----------------------------------------------------------------------------
-  HoloIntervention::Network::IGTLinkIF& AppView::GetIGTLink()
-  {
-    return m_main->GetIGTLink();
-  }
-
-  //----------------------------------------------------------------------------
-  Rendering::ModelRenderer& AppView::GetModelRenderer()
-  {
-    return m_main->GetModelRenderer();
-  }
-
-  //----------------------------------------------------------------------------
-  Rendering::SliceRenderer& AppView::GetSliceRenderer()
-  {
-    return m_main->GetSliceRenderer();
-  }
-
-  //----------------------------------------------------------------------------
-  Rendering::VolumeRenderer& AppView::GetVolumeRenderer()
-  {
-    return m_main->GetVolumeRenderer();
-  }
-
-  //----------------------------------------------------------------------------
-  uint64 AppView::GetCurrentFrameNumber() const
-  {
-    return m_main->GetCurrentFrameNumber();
   }
 
   //----------------------------------------------------------------------------

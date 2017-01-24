@@ -38,6 +38,11 @@ namespace DX
 
 namespace HoloIntervention
 {
+  namespace System
+  {
+    class NotificationSystem;
+  }
+
   namespace Spatial
   {
     struct RayConstantBuffer
@@ -52,7 +57,7 @@ namespace HoloIntervention
       typedef std::map<Platform::Guid, std::shared_ptr<SurfaceMesh> > GuidMeshMap;
 
     public:
-      SpatialSurfaceCollection(const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer);
+      SpatialSurfaceCollection(System::NotificationSystem& notificationSystem, const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer);
       ~SpatialSurfaceCollection();
 
       void Update(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem);
@@ -82,8 +87,9 @@ namespace HoloIntervention
       Platform::Guid GetLastHitMeshGuid();
 
     protected:
-      // Cache the step timer for out of date queries
+      // Cached entries
       DX::StepTimer&                                  m_stepTimer;
+      System::NotificationSystem&                     m_notificationSystem;
 
       Microsoft::WRL::ComPtr<ID3D11Buffer>            m_constantBuffer = nullptr;
       Microsoft::WRL::ComPtr<ID3D11ComputeShader>     m_d3d11ComputeShader = nullptr;

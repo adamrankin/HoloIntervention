@@ -43,6 +43,11 @@ namespace HoloIntervention
 {
   namespace Rendering
   {
+    enum PrimitiveType
+    {
+      PrimitiveType_SPHERE
+    };
+
     class ModelRenderer : public IEngineComponent
     {
       typedef std::list<std::shared_ptr<ModelEntry>> ModelList;
@@ -63,7 +68,7 @@ namespace HoloIntervention
       void RemoveModel(uint64 modelId);
       std::shared_ptr<ModelEntry> GetModel(uint64 modelId) const;
 
-      uint64 AddGeometricPrimitive(std::unique_ptr<DirectX::InstancedGeometricPrimitive> primitive);
+      uint64 AddPrimitive(PrimitiveType type, float diameter = 1, size_t tessellation = 16, bool rhcoords = true, bool invertn = false);
       void RemovePrimitive(uint64 primitiveId);
       std::shared_ptr<PrimitiveEntry> GetPrimitive(uint64 primitiveId) const;
 

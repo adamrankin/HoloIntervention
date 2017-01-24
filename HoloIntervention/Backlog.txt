@@ -1,5 +1,6 @@
 Major implementation details remaining:
 
+Stabilization plane
 Volume rendering
 Registration
 Loading screen
