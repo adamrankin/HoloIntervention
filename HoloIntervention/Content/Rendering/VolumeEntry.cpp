@@ -290,6 +290,12 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    const float4x4& VolumeEntry::GetCurrentPose() const
+    {
+      return m_currentPose;
+    }
+
+    //----------------------------------------------------------------------------
     float3 VolumeEntry::GetVelocity() const
     {
       return m_velocity;

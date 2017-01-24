@@ -24,7 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
-#include "IEngineComponent.h"
+#include "IStabilizedComponent.h"
 #include "IVoiceInput.h"
 
 // Rendering includes
@@ -48,8 +48,14 @@ namespace HoloIntervention
   {
     class NotificationSystem;
 
-    class ImagingSystem : public Sound::IVoiceInput, public IEngineComponent
+    class ImagingSystem : public Sound::IVoiceInput, public IStabilizedComponent
     {
+    public:
+      virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition() const;
+      virtual Windows::Foundation::Numerics::float3 GetStabilizedNormal() const;
+      virtual Windows::Foundation::Numerics::float3 GetStabilizedVelocity() const;
+      virtual float GetStabilizePriority() const;
+
     public:
       ImagingSystem(RegistrationSystem& registrationSystem, NotificationSystem& notificationSystem, Rendering::SliceRenderer& sliceRenderer, Rendering::VolumeRenderer& volumeRenderer);
       ~ImagingSystem();
@@ -76,15 +82,24 @@ namespace HoloIntervention
       Rendering::SliceRenderer&             m_sliceRenderer;
       Rendering::VolumeRenderer&            m_volumeRenderer;
 
-      // Slice system
-      std::wstring                          m_fromCoordFrame = L"Image";
-      std::wstring                          m_toCoordFrame = L"HMD";
-      UWPOpenIGTLink::TransformName^        m_imageToHMDName = ref new UWPOpenIGTLink::TransformName(ref new Platform::String(m_fromCoordFrame.c_str()), ref new Platform::String(m_toCoordFrame.c_str()));
+      // Common variables
       UWPOpenIGTLink::TransformRepository^  m_transformRepository = ref new UWPOpenIGTLink::TransformRepository();
+
+      // Slice system
+      std::wstring                          m_imageFromCoordFrame = L"Image";
+      std::wstring                          m_imageToCoordFrame = L"HMD";
+      UWPOpenIGTLink::TransformName^        m_imageToHMDName = ref new UWPOpenIGTLink::TransformName(ref new Platform::String(m_imageFromCoordFrame.c_str()), ref new Platform::String(m_imageToCoordFrame.c_str()));
       uint64                                m_sliceToken = INVALID_TOKEN;
+      double                                m_lastSliceTimestamp = 0.0;
+      std::atomic_bool                      m_sliceValid = false;
 
       // Volume system
+      std::wstring                          m_volumeFromCoordFrame = L"Volume";
+      std::wstring                          m_volumeToCoordFrame = L"HMD";
+      UWPOpenIGTLink::TransformName^        m_volumeToHMDName = ref new UWPOpenIGTLink::TransformName(ref new Platform::String(m_volumeFromCoordFrame.c_str()), ref new Platform::String(m_volumeToCoordFrame.c_str()));
       uint64                                m_volumeToken = INVALID_TOKEN;
+      double                                m_lastVolumeTimestamp = 0.0;
+      std::atomic_bool                      m_volumeValid = false;
     };
   }
 }

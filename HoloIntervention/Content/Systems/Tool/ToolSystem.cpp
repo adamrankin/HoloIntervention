@@ -25,10 +25,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "pch.h"
-#include "AppView.h"
+#include "ToolEntry.h"
 #include "ToolSystem.h"
-
-// Common includes
 #include "Common.h"
 
 // Rendering includes
@@ -48,6 +46,87 @@ namespace HoloIntervention
 {
   namespace System
   {
+    //----------------------------------------------------------------------------
+    float3 ToolSystem::GetStabilizedPosition() const
+    {
+      std::shared_ptr<Tools::ToolEntry> maxEntry(nullptr);
+      float maxPriority(PRIORITY_NOT_ACTIVE);
+      for (auto& entry : m_toolEntries)
+      {
+        if (entry->GetStabilizePriority() > maxPriority)
+        {
+          maxPriority = entry->GetStabilizePriority();
+          maxEntry = entry;
+        }
+      }
+
+      if (maxEntry != nullptr)
+      {
+        return maxEntry->GetStabilizedPosition();
+      }
+
+      return float3(0.f, 0.f, 0.f);
+    }
+
+    //----------------------------------------------------------------------------
+    float3 ToolSystem::GetStabilizedNormal() const
+    {
+      std::shared_ptr<Tools::ToolEntry> maxEntry(nullptr);
+      float maxPriority(PRIORITY_NOT_ACTIVE);
+      for (auto& entry : m_toolEntries)
+      {
+        if (entry->GetStabilizePriority() > maxPriority)
+        {
+          maxPriority = entry->GetStabilizePriority();
+          maxEntry = entry;
+        }
+      }
+
+      if (maxEntry != nullptr)
+      {
+        return maxEntry->GetStabilizedNormal();
+      }
+
+      return float3(0.f, 1.f, 0.f);
+    }
+
+    //----------------------------------------------------------------------------
+    float3 ToolSystem::GetStabilizedVelocity() const
+    {
+      std::shared_ptr<Tools::ToolEntry> maxEntry(nullptr);
+      float maxPriority(PRIORITY_NOT_ACTIVE);
+      for (auto& entry : m_toolEntries)
+      {
+        if (entry->GetStabilizePriority() > maxPriority)
+        {
+          maxPriority = entry->GetStabilizePriority();
+          maxEntry = entry;
+        }
+      }
+
+      if (maxEntry != nullptr)
+      {
+        return maxEntry->GetStabilizedVelocity();
+      }
+
+      return float3(0.f, 0.f, 0.f);
+    }
+
+    //----------------------------------------------------------------------------
+    float ToolSystem::GetStabilizePriority() const
+    {
+      float maxPriority(PRIORITY_NOT_ACTIVE);
+      for (auto& entry : m_toolEntries)
+      {
+        if (entry->GetStabilizePriority() > maxPriority)
+        {
+          maxPriority = entry->GetStabilizePriority();
+        }
+      }
+
+      return maxPriority;
+    }
+
     //----------------------------------------------------------------------------
     ToolSystem::ToolSystem(NotificationSystem& notificationSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer)
       : m_notificationSystem(notificationSystem)

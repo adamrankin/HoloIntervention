@@ -31,10 +31,14 @@ namespace HoloIntervention
   class IStabilizedComponent : public IEngineComponent
   {
   public:
-    virtual Windows::Foundation::Numerics::float3 GetStabilizePosition() const = 0;
-    virtual Windows::Foundation::Numerics::float3 GetStabilizeNormal() const = 0;
-    virtual Windows::Foundation::Numerics::float3 GetStabilizeVelocity() const = 0;
+    virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition() const = 0;
+    virtual Windows::Foundation::Numerics::float3 GetStabilizedNormal() const = 0;
+    virtual Windows::Foundation::Numerics::float3 GetStabilizedVelocity() const = 0;
     virtual float GetStabilizePriority() const = 0;
+    inline bool IsStabilizationActive() { return GetStabilizePriority() > PRIORITY_NOT_ACTIVE; }
+
+  protected:
+    const float PRIORITY_NOT_ACTIVE = 0.f;
 
   protected:
     IStabilizedComponent() {};

@@ -66,11 +66,17 @@ namespace HoloIntervention
       void SetVisible(bool enable);
       void ToggleVisible();
       bool IsVisible() const;
+
       void SetRenderingState(ModelRenderingState state);
-      void SetWorld(const Windows::Foundation::Numerics::float4x4& world);
       void EnableLighting(bool enable);
+
       void EnablePoseLerp(bool enable);
       void SetPoseLerpRate(float lerpRate);
+
+      void SetWorld(const Windows::Foundation::Numerics::float4x4& world);
+      const Windows::Foundation::Numerics::float4x4& GetWorld() const;
+
+      const Windows::Foundation::Numerics::float3& GetVelocity() const;
 
       uint64 GetId() const;
       void SetId(uint64 id);
@@ -106,6 +112,8 @@ namespace HoloIntervention
       DirectX::XMFLOAT4                                   m_defaultColour;
       std::atomic_bool                                    m_enableLerp;
       float                                               m_poseLerpRate = 4.f;
+      Windows::Foundation::Numerics::float3               m_velocity;
+      Windows::Foundation::Numerics::float4x4             m_lastPose = Windows::Foundation::Numerics::float4x4::identity();
       Windows::Foundation::Numerics::float4x4             m_currentPose = Windows::Foundation::Numerics::float4x4::identity();
       Windows::Foundation::Numerics::float4x4             m_desiredPose = Windows::Foundation::Numerics::float4x4::identity();
 

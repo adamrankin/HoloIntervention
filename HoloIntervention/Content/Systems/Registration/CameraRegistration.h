@@ -24,6 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
+#include "IStabilizedComponent.h"
 #include "LandmarkRegistration.h"
 
 // Capture includes
@@ -68,7 +69,7 @@ namespace HoloIntervention
   {
     class NotificationSystem;
 
-    class CameraRegistration
+    class CameraRegistration : public IStabilizedComponent
     {
       typedef std::vector<uint32> ColourToCircleList;
 
@@ -93,6 +94,12 @@ namespace HoloIntervention
       typedef std::vector<Windows::Foundation::Numerics::float4> VecFloat4;
       typedef std::vector<Windows::Foundation::Numerics::float4x4> VecFloat4x4;
       typedef std::vector<VecFloat3> DetectionFrames;
+
+    public:
+      virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition() const;
+      virtual Windows::Foundation::Numerics::float3 GetStabilizedNormal() const;
+      virtual Windows::Foundation::Numerics::float3 GetStabilizedVelocity() const;
+      virtual float GetStabilizePriority() const;
 
     public:
       CameraRegistration(NotificationSystem& notificationSystem, Network::IGTConnector& igtConnector, Rendering::ModelRenderer& modelRenderer);

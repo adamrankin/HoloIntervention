@@ -547,55 +547,30 @@ namespace HoloIntervention
   //----------------------------------------------------------------------------
   void HoloInterventionCore::SetHolographicFocusPoint(HolographicFramePrediction^ prediction, HolographicFrame^ holographicFrame, SpatialCoordinateSystem^ currentCoordinateSystem)
   {
+    float maxPriority(-1.f);
+    IStabilizedComponent* winningComponent(nullptr);
+    for (auto& component : m_engineComponents)
+    {
+      IStabilizedComponent* stabilizedComponent = dynamic_cast<IStabilizedComponent*>(component);
+      if (stabilizedComponent != nullptr && stabilizedComponent->GetStabilizePriority() > maxPriority)
+      {
+        winningComponent = stabilizedComponent;
+      }
+    }
+
+    if (winningComponent == nullptr)
+    {
+      HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_WARNING, "No component returned a stabilization request.");
+      return;
+    }
+
     for (auto cameraPose : prediction->CameraPoses)
     {
       HolographicCameraRenderingParameters^ renderingParameters = holographicFrame->GetRenderingParameters(cameraPose);
 
-      float3 focusPointPosition = { 0.f, 0.f, 0.f };
-      float3 focusPointNormal = { 0.f, 0.f, 0.f };
-      float3 focusPointVelocity = { 0.f, 0.f, 0.f };
-
-      if (m_notificationSystem->IsShowingNotification())
-      {
-        focusPointPosition = m_notificationSystem->GetPosition();
-        focusPointNormal = (focusPointPosition == float3(0.f)) ? float3(0.f, 0.f, 1.f) : -normalize(focusPointPosition);
-        focusPointVelocity = m_notificationSystem->GetVelocity();
-      }
-      else if (m_imagingSystem->HasSlice())
-      {
-        float4x4 mat;
-        try
-        {
-          mat = m_imagingSystem->GetSlicePose();
-        }
-        catch (const std::exception&)
-        {
-          break;
-        }
-
-        float3 translation;
-        float3 scale;
-        quaternion rotation;
-        decompose(mat, &scale, &rotation, &translation);
-
-        focusPointPosition = { translation.x, translation.y, translation.z };
-        focusPointNormal = (focusPointPosition == float3(0.f)) ? float3(0.f, 0.f, 1.f) : -normalize(focusPointPosition);
-        try
-        {
-          focusPointVelocity = m_imagingSystem->GetSliceVelocity();
-        }
-        catch (const std::exception&)
-        {
-          focusPointVelocity = { 0.f, 0.f, 0.f };
-        }
-
-      }
-      else if (m_gazeSystem->IsCursorEnabled() && m_gazeSystem->GetHitNormal() != float3::zero())
-      {
-        focusPointPosition = m_gazeSystem->GetHitPosition();
-        focusPointNormal = m_gazeSystem->GetHitNormal();
-        focusPointVelocity = m_gazeSystem->GetHitVelocity();
-      }
+      float3 focusPointPosition = winningComponent->GetStabilizedPosition();
+      float3 focusPointNormal = winningComponent->GetStabilizedNormal();
+      float3 focusPointVelocity = winningComponent->GetStabilizedVelocity();
 
       if (focusPointNormal != float3::zero())
       {
@@ -608,9 +583,9 @@ namespace HoloIntervention
             focusPointVelocity
           );
         }
-        catch (Platform::Exception^ ex)
+        catch (Platform::Exception^ e)
         {
-          m_notificationSystem->QueueMessage(ex->Message);
+          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e->Message);
         }
       }
     }

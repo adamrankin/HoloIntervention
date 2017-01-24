@@ -28,13 +28,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "InstancedEffects.h"
 #include "InstancedGeometricPrimitive.h"
 
-// Common includes
-#include "CameraResources.h"
-#include "Common.h"
-
-// DirectXTK includes
-#include <Effects.h>
-
 // STL includes
 #include <atomic>
 
@@ -47,6 +40,7 @@ namespace DX
 {
   class DeviceResources;
   class StepTimer;
+  struct ViewProjection;
 }
 
 namespace HoloIntervention
@@ -72,7 +66,10 @@ namespace HoloIntervention
       Windows::Foundation::Numerics::float3 GetColour() const;
 
       // Primitive pose control
-      void SetDesiredWorldPose(const Windows::Foundation::Numerics::float4x4& world);
+      void SetDesiredPose(const Windows::Foundation::Numerics::float4x4& world);
+      const Windows::Foundation::Numerics::float4x4& GetCurrentPose() const;
+
+      const Windows::Foundation::Numerics::float3& GetVelocity() const;
 
       // Accessors
       uint64 GetId() const;
@@ -81,13 +78,15 @@ namespace HoloIntervention
     protected:
       // Cached pointer to device resources.
       std::shared_ptr<DX::DeviceResources>                  m_deviceResources;
-      DX::ViewProjection                                    m_viewProjection;
+      std::unique_ptr<DX::ViewProjection>                   m_viewProjection;
 
       // Primitive resources
       std::unique_ptr<DirectX::InstancedGeometricPrimitive> m_primitive = nullptr;
       Windows::Foundation::Numerics::float4                 m_colour;
-      Windows::Foundation::Numerics::float4x4               m_desiredWorldMatrix = Windows::Foundation::Numerics::float4x4::identity();
-      Windows::Foundation::Numerics::float4x4               m_currentWorldMatrix = Windows::Foundation::Numerics::float4x4::identity();
+      Windows::Foundation::Numerics::float3                 m_velocity;
+      Windows::Foundation::Numerics::float4x4               m_lastPose = Windows::Foundation::Numerics::float4x4::identity();
+      Windows::Foundation::Numerics::float4x4               m_desiredPose = Windows::Foundation::Numerics::float4x4::identity();
+      Windows::Foundation::Numerics::float4x4               m_currentPose = Windows::Foundation::Numerics::float4x4::identity();
 
       // Model related behavior
       std::atomic_bool                                      m_visible = false;

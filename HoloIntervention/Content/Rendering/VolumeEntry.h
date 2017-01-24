@@ -98,6 +98,7 @@ namespace HoloIntervention
       uint64 GetToken() const;
 
       void SetDesiredPose(const Windows::Foundation::Numerics::float4x4& matrix);
+      const Windows::Foundation::Numerics::float4x4& GetCurrentPose() const;
       Windows::Foundation::Numerics::float3 GetVelocity() const;
 
       Concurrency::task<void> SetOpacityTransferFunctionTypeAsync(VolumeEntry::TransferFunctionType type, uint32 tableSize, const VolumeEntry::ControlPointList& controlPoints);

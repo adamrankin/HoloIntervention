@@ -27,7 +27,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <vector>
 
 // Local includes
-#include "IEngineComponent.h"
+#include "IStabilizedComponent.h"
 #include "IVoiceInput.h"
 
 // WinRT includes
@@ -55,8 +55,15 @@ namespace HoloIntervention
   {
     class NotificationSystem;
 
-    class RegistrationSystem : public Sound::IVoiceInput, public IEngineComponent
+    class RegistrationSystem : public Sound::IVoiceInput, public IStabilizedComponent
     {
+    public:
+      // IStabilizedComponent methods
+      virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition() const;
+      virtual Windows::Foundation::Numerics::float3 GetStabilizedNormal() const;
+      virtual Windows::Foundation::Numerics::float3 GetStabilizedVelocity() const;
+      virtual float GetStabilizePriority() const;
+
     public:
       RegistrationSystem(Network::IGTConnector& igtConnector, Physics::SurfaceAPI& physicsAPI, NotificationSystem& notificationSystem, Rendering::ModelRenderer& modelRenderer);
       ~RegistrationSystem();

@@ -68,6 +68,7 @@ namespace HoloIntervention
       uint64 AddSlice(std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 desiredPose);
       uint64 AddSlice(Windows::Storage::Streams::IBuffer^ imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 desiredPose);
       void RemoveSlice(uint64 sliceToken);
+      std::shared_ptr<SliceEntry> GetSlice(uint64 sliceToken);
 
       void UpdateSlice(uint64 sliceToken, std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 desiredPose);
 

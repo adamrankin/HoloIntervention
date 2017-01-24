@@ -142,6 +142,14 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    std::shared_ptr<SliceEntry> SliceRenderer::GetSlice(uint64 sliceToken)
+    {
+      std::shared_ptr<SliceEntry> entry(nullptr);
+      FindSlice(sliceToken, entry);
+      return entry;
+    }
+
+    //----------------------------------------------------------------------------
     void SliceRenderer::UpdateSlice(uint64 sliceToken, std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, float4x4 desiredPose)
     {
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
@@ -241,7 +249,7 @@ namespace HoloIntervention
       std::shared_ptr<SliceEntry> entry;
       if (FindSlice(sliceToken, entry))
       {
-        return entry->GetSliceVelocity();
+        return entry->GetVelocity();
       }
 
       std::stringstream ss;

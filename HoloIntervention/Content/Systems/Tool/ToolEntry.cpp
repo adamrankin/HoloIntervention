@@ -23,7 +23,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "pch.h"
-#include "AppView.h"
 #include "Common.h"
 #include "ToolEntry.h"
 
@@ -31,7 +30,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "ModelEntry.h"
 #include "ModelRenderer.h"
 
-// std includes
+// STL includes
 #include <string>
 #include <sstream>
 
@@ -41,6 +40,45 @@ namespace HoloIntervention
 {
   namespace Tools
   {
+
+    //----------------------------------------------------------------------------
+    Windows::Foundation::Numerics::float3 ToolEntry::GetStabilizedPosition() const
+    {
+      if (m_modelEntry != nullptr)
+      {
+        return transform(float3(0.f, 0.f, 0.f), m_modelEntry->GetWorld());
+      }
+      return float3(0.f, 0.f, 0.f);
+    }
+
+    //----------------------------------------------------------------------------
+    Windows::Foundation::Numerics::float3 ToolEntry::GetStabilizedNormal() const
+    {
+      if (m_modelEntry != nullptr)
+      {
+        return ExtractNormal(m_modelEntry->GetWorld());
+      }
+      return float3(0.f, 1.f, 0.f);
+    }
+
+    //----------------------------------------------------------------------------
+    Windows::Foundation::Numerics::float3 ToolEntry::GetStabilizedVelocity() const
+    {
+      if (m_modelEntry != nullptr)
+      {
+        return m_modelEntry->GetVelocity();
+      }
+      return float3(0.f, 0.f, 0.f);
+    }
+
+    //----------------------------------------------------------------------------
+    float ToolEntry::GetStabilizePriority() const
+    {
+      // TODO : affect priority based on proximity to center of view frustrum?
+      // TODO : stabilizer values?
+      return m_isValid ? 2.5f : 0.75f;
+    }
+
     //----------------------------------------------------------------------------
     ToolEntry::ToolEntry(Rendering::ModelRenderer& modelRenderer, UWPOpenIGTLink::TransformName^ coordinateFrame, const std::wstring& modelName, UWPOpenIGTLink::TransformRepository^ transformRepository)
       : m_modelRenderer(modelRenderer)
@@ -48,6 +86,8 @@ namespace HoloIntervention
       , m_coordinateFrame(coordinateFrame)
     {
       CreateModel(modelName);
+
+      m_componentReady = true;
     }
 
     //----------------------------------------------------------------------------
@@ -74,10 +114,10 @@ namespace HoloIntervention
       float4x4 transform;
       try
       {
-        transform = transpose(m_transformRepository->GetTransform(m_coordinateFrame, &isValid));
+        transform = m_transformRepository->GetTransform(m_coordinateFrame, &isValid);
+        m_isValid = isValid;
         m_modelEntry->RenderDefault();
 
-        // Transforms are retrieved in row-major
         m_modelEntry->SetWorld(transform);
       }
       catch (Platform::Exception^ e)

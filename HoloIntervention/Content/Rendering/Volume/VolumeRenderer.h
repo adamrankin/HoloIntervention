@@ -57,6 +57,7 @@ namespace HoloIntervention
 
       uint64 AddVolume(std::shared_ptr<byte> imageData, uint16 width, uint16 height, uint16 depth, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 desiredPose);
       void RemoveVolume(uint64 volumeToken);
+      std::shared_ptr<VolumeEntry> GetVolume(uint64 volumeToken);
 
       void UpdateVolume(uint64 volumeToken, std::shared_ptr<byte> imageData, uint16 width, uint16 height, uint16 depth, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 desiredPose);
 

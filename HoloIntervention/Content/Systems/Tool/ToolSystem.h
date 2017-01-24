@@ -24,9 +24,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
-#include "IEngineComponent.h"
+#include "IStabilizedComponent.h"
 #include "IVoiceInput.h"
-#include "ToolEntry.h"
 
 namespace HoloIntervention
 {
@@ -35,14 +34,26 @@ namespace HoloIntervention
     class ModelRenderer;
   }
 
-  class NotificationSystem;
-  class RegistrationSystem;
   class TransformName;
+
+  namespace Tools
+  {
+    class ToolEntry;
+  }
 
   namespace System
   {
-    class ToolSystem : public Sound::IVoiceInput, public IEngineComponent
+    class NotificationSystem;
+    class RegistrationSystem;
+
+    class ToolSystem : public Sound::IVoiceInput, public IStabilizedComponent
     {
+    public:
+      virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition() const;
+      virtual Windows::Foundation::Numerics::float3 GetStabilizedNormal() const;
+      virtual Windows::Foundation::Numerics::float3 GetStabilizedVelocity() const;
+      virtual float GetStabilizePriority() const;
+
     public:
       ToolSystem(NotificationSystem& notificationSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer);
       ~ToolSystem();

@@ -24,7 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
-#include "IEngineComponent.h"
+#include "IStabilizedComponent.h"
 #include "IVoiceInput.h"
 
 namespace DX
@@ -49,8 +49,14 @@ namespace HoloIntervention
   {
     class NotificationSystem;
 
-    class GazeSystem : public Sound::IVoiceInput, public IEngineComponent
+    class GazeSystem : public Sound::IVoiceInput, public IStabilizedComponent
     {
+    public:
+      virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition() const;
+      virtual Windows::Foundation::Numerics::float3 GetStabilizedNormal() const;
+      virtual Windows::Foundation::Numerics::float3 GetStabilizedVelocity() const;
+      virtual float GetStabilizePriority() const;
+
     public:
       GazeSystem(NotificationSystem& notificationSystem, Physics::SurfaceAPI& physicsAPI, Rendering::ModelRenderer& modelRenderer);
       ~GazeSystem();
@@ -58,7 +64,7 @@ namespace HoloIntervention
       void Update(const DX::StepTimer& timer, Windows::Perception::Spatial::SpatialCoordinateSystem^ currentCoordinateSystem, Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
 
       void EnableCursor(bool enable);
-      bool IsCursorEnabled();
+      bool IsCursorEnabled() const;
 
       const Windows::Foundation::Numerics::float3& GetHitPosition() const;
       const Windows::Foundation::Numerics::float3& GetHitNormal() const;
@@ -78,7 +84,7 @@ namespace HoloIntervention
 
       std::shared_ptr<Rendering::ModelEntry>    m_modelEntry;
       uint64                                    m_modelToken;
-      bool                                      m_systemEnabled;
+
       Windows::Foundation::Numerics::float3     m_goalHitPosition;
       Windows::Foundation::Numerics::float3     m_goalHitNormal;
       Windows::Foundation::Numerics::float3     m_goalHitEdge;

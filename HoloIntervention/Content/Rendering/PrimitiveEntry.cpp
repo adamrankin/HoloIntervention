@@ -23,10 +23,12 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "pch.h"
+#include "CameraResources.h"
 #include "PrimitiveEntry.h"
-
-// Common includes
 #include "StepTimer.h"
+
+// Unnecessary, but reduces intellisense errors
+#include <WindowsNumerics.h>
 
 using namespace DirectX;
 using namespace Windows::Foundation::Numerics;
@@ -41,6 +43,7 @@ namespace HoloIntervention
     PrimitiveEntry::PrimitiveEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, std::unique_ptr<DirectX::InstancedGeometricPrimitive> primitive)
       : m_deviceResources(deviceResources)
       , m_primitive(std::move(primitive))
+      , m_viewProjection(std::make_unique<DX::ViewProjection>())
     {
 
     }
@@ -53,13 +56,19 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void PrimitiveEntry::Update(const DX::StepTimer& timer, const DX::ViewProjection& vp)
     {
-      m_viewProjection = vp;
+      m_viewProjection->view[0] = vp.view[0];
+      m_viewProjection->view[1] = vp.view[1];
+      m_viewProjection->projection[0] = vp.projection[0];
+      m_viewProjection->projection[1] = vp.projection[1];
 
       const float& deltaTime = static_cast<float>(timer.GetElapsedSeconds());
 
-      const float4x4 smoothedPosition = lerp(m_currentWorldMatrix, m_desiredWorldMatrix, deltaTime * PRIMITIVE_LERP_RATE);
+      const float4x4 smoothedPosition = lerp(m_currentPose, m_desiredPose, deltaTime * PRIMITIVE_LERP_RATE);
+      m_currentPose = smoothedPosition;
 
-      m_currentWorldMatrix = smoothedPosition;
+      const float3 deltaPosition = transform(float3(0.f, 0.f, 0.f), m_currentPose - m_lastPose); // meters
+      m_velocity = deltaPosition * (1.f / deltaTime); // meters per second
+      m_lastPose = m_currentPose;
     }
 
     //----------------------------------------------------------------------------
@@ -67,9 +76,9 @@ namespace HoloIntervention
     {
       if (m_visible)
       {
-        FXMMATRIX view[2] = { XMLoadFloat4x4(&m_viewProjection.view[0]), XMLoadFloat4x4(&m_viewProjection.view[1]) };
-        FXMMATRIX projection[2] = { XMLoadFloat4x4(&m_viewProjection.projection[0]), XMLoadFloat4x4(&m_viewProjection.projection[1]) };
-        m_primitive->Draw(XMLoadFloat4x4(&m_currentWorldMatrix), view, projection, XMLoadFloat4(&m_colour));
+        FXMMATRIX view[2] = { XMLoadFloat4x4(&m_viewProjection->view[0]), XMLoadFloat4x4(&m_viewProjection->view[1]) };
+        FXMMATRIX projection[2] = { XMLoadFloat4x4(&m_viewProjection->projection[0]), XMLoadFloat4x4(&m_viewProjection->projection[1]) };
+        m_primitive->Draw(XMLoadFloat4x4(&m_currentPose), view, projection, XMLoadFloat4(&m_colour));
       }
     }
 
@@ -92,21 +101,33 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void PrimitiveEntry::SetColour(Windows::Foundation::Numerics::float3 newColour)
+    void PrimitiveEntry::SetColour(float3 newColour)
     {
       m_colour = float4(newColour.x, newColour.y, newColour.z, 1.f);
     }
 
     //----------------------------------------------------------------------------
-    Windows::Foundation::Numerics::float3 PrimitiveEntry::GetColour() const
+    float3 PrimitiveEntry::GetColour() const
     {
       return float3(m_colour.x, m_colour.y, m_colour.z);
     }
 
     //----------------------------------------------------------------------------
-    void PrimitiveEntry::SetDesiredWorldPose(const Windows::Foundation::Numerics::float4x4& world)
+    void PrimitiveEntry::SetDesiredPose(const float4x4& world)
     {
-      m_desiredWorldMatrix = world;
+      m_desiredPose = world;
+    }
+
+    //----------------------------------------------------------------------------
+    const float4x4& PrimitiveEntry::GetCurrentPose() const
+    {
+      return m_currentPose;
+    }
+
+    //----------------------------------------------------------------------------
+    const float3& PrimitiveEntry::GetVelocity() const
+    {
+      return m_velocity;
     }
 
     //----------------------------------------------------------------------------

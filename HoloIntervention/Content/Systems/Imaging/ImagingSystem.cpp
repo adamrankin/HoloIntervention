@@ -52,6 +52,127 @@ namespace HoloIntervention
 {
   namespace System
   {
+
+    //----------------------------------------------------------------------------
+    Windows::Foundation::Numerics::float3 ImagingSystem::GetStabilizedPosition() const
+    {
+      std::shared_ptr<Rendering::SliceEntry> sliceEntry(nullptr);
+      if (m_sliceValid)
+      {
+        sliceEntry = m_sliceRenderer.GetSlice(m_sliceToken);
+      }
+
+      std::shared_ptr<Rendering::VolumeEntry> volumeEntry(nullptr);
+      if (m_volumeValid)
+      {
+        volumeEntry = m_volumeRenderer.GetVolume(m_volumeToken);
+      }
+
+      if (m_sliceValid && m_volumeValid)
+      {
+        // TODO : which one is close to the view frustrum?
+        // TODO : which one is more recent?
+        // TODO : other metrics?
+        return m_lastSliceTimestamp > m_lastVolumeTimestamp ? transform(float3(0.f, 0.f, 0.f), sliceEntry->GetCurrentPose()) : transform(float3(0.f, 0.f, 0.f), volumeEntry->GetCurrentPose());
+      }
+      else if (m_volumeValid)
+      {
+        return transform(float3(0.f, 0.f, 0.f), volumeEntry->GetCurrentPose());
+      }
+      else if (m_sliceValid)
+      {
+        return transform(float3(0.f, 0.f, 0.f), sliceEntry->GetCurrentPose());
+      }
+      else
+      {
+        return float3(0.f, 0.f, 0.f);
+      }
+    }
+
+    //----------------------------------------------------------------------------
+    Windows::Foundation::Numerics::float3 ImagingSystem::GetStabilizedNormal() const
+    {
+      std::shared_ptr<Rendering::SliceEntry> sliceEntry(nullptr);
+      if (m_sliceValid)
+      {
+        sliceEntry = m_sliceRenderer.GetSlice(m_sliceToken);
+      }
+
+      std::shared_ptr<Rendering::VolumeEntry> volumeEntry(nullptr);
+      if (m_volumeValid)
+      {
+        volumeEntry = m_volumeRenderer.GetVolume(m_volumeToken);
+      }
+
+      if (m_sliceValid && m_volumeValid)
+      {
+        // TODO : which one is close to the view frustrum?
+        // TODO : which one is more recent?
+        // TODO : other metrics?
+        return m_lastSliceTimestamp > m_lastVolumeTimestamp ? ExtractNormal(sliceEntry->GetCurrentPose()) : ExtractNormal(volumeEntry->GetCurrentPose());
+      }
+      else if (m_volumeValid)
+      {
+        return ExtractNormal(volumeEntry->GetCurrentPose());
+      }
+      else if (m_sliceValid)
+      {
+        return ExtractNormal(sliceEntry->GetCurrentPose());
+      }
+      else
+      {
+        return float3(0.f, 1.f, 0.f);
+      }
+    }
+
+    //----------------------------------------------------------------------------
+    Windows::Foundation::Numerics::float3 ImagingSystem::GetStabilizedVelocity() const
+    {
+      std::shared_ptr<Rendering::SliceEntry> sliceEntry(nullptr);
+      if (m_sliceValid)
+      {
+        sliceEntry = m_sliceRenderer.GetSlice(m_sliceToken);
+      }
+
+      std::shared_ptr<Rendering::VolumeEntry> volumeEntry(nullptr);
+      if (m_volumeValid)
+      {
+        volumeEntry = m_volumeRenderer.GetVolume(m_volumeToken);
+      }
+
+      if (m_sliceValid && m_volumeValid)
+      {
+        // TODO : which one is close to the view frustrum?
+        // TODO : which one is more recent?
+        // TODO : other metrics?
+        return m_lastSliceTimestamp > m_lastVolumeTimestamp ? sliceEntry->GetVelocity() : volumeEntry->GetVelocity();
+      }
+      else if (m_volumeValid)
+      {
+        return volumeEntry->GetVelocity();
+      }
+      else if (m_sliceValid)
+      {
+        return sliceEntry->GetVelocity();
+      }
+      else
+      {
+        return float3(0.f, 0.f, 0.f);
+      }
+    }
+
+    //----------------------------------------------------------------------------
+    float ImagingSystem::GetStabilizePriority() const
+    {
+      if (m_sliceValid || m_volumeValid)
+      {
+        // TODO : stabilizer values?
+        return 3.f;
+      }
+
+      return PRIORITY_NOT_ACTIVE;
+    }
+
     //----------------------------------------------------------------------------
     ImagingSystem::ImagingSystem(RegistrationSystem& registrationSystem, NotificationSystem& notificationSystem, Rendering::SliceRenderer& sliceRenderer, Rendering::VolumeRenderer& volumeRenderer)
       : m_notificationSystem(notificationSystem)
@@ -91,10 +212,12 @@ namespace HoloIntervention
           }
           else
           {
-            m_fromCoordFrame = std::wstring(fromAttribute->Data());
-            m_toCoordFrame = std::wstring(toAttribute->Data());
-            m_imageToHMDName = ref new UWPOpenIGTLink::TransformName(fromAttribute, toAttribute);
+            m_volumeFromCoordFrame = std::wstring(fromAttribute->Data());
+            m_volumeToCoordFrame = std::wstring(toAttribute->Data());
+            m_volumeToHMDName = ref new UWPOpenIGTLink::TransformName(fromAttribute, toAttribute);
           }
+
+          // TODO : slice entries in config
         });
       }
       catch (Platform::Exception^ e)
@@ -220,6 +343,8 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ImagingSystem::Process2DFrame(UWPOpenIGTLink::TrackedFrame^ frame, SpatialCoordinateSystem^ coordSystem)
     {
+      m_lastSliceTimestamp = frame->Timestamp;
+
       // TODO : apply registration to incoming transform
       if (!HasSlice())
       {
@@ -244,6 +369,8 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ImagingSystem::Process3DFrame(UWPOpenIGTLink::TrackedFrame^ frame, SpatialCoordinateSystem^ coordSystem)
     {
+      m_lastVolumeTimestamp = frame->Timestamp;
+
       // TODO : apply registration to incoming transform
       if (!HasVolume())
       {

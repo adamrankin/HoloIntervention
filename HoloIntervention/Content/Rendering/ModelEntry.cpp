@@ -133,6 +133,10 @@ namespace HoloIntervention
 
         m_worldMatrix = lerp(m_currentPose, m_desiredPose, deltaTime * m_poseLerpRate);
         m_currentPose = m_worldMatrix;
+
+        const float3 deltaPosition = transform(float3(0.f, 0.f, 0.f), m_currentPose - m_lastPose); // meters
+        m_velocity = deltaPosition * (1.f / deltaTime); // meters per second
+        m_lastPose = m_currentPose;
       }
     }
 
@@ -243,6 +247,18 @@ namespace HoloIntervention
       {
         m_worldMatrix = world;
       }
+    }
+
+    //----------------------------------------------------------------------------
+    const Windows::Foundation::Numerics::float4x4& ModelEntry::GetWorld() const
+    {
+      return m_currentPose;
+    }
+
+    //----------------------------------------------------------------------------
+    const float3& ModelEntry::GetVelocity() const
+    {
+      return m_velocity;
     }
 
     //----------------------------------------------------------------------------

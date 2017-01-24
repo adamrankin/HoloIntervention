@@ -97,6 +97,74 @@ namespace HoloIntervention
     const float CameraRegistration::VISUALIZATION_SPHERE_RADIUS = 0.03f;
 
     //----------------------------------------------------------------------------
+    float3 CameraRegistration::GetStabilizedPosition() const
+    {
+      float3 position(0.f, 0.f, 0.f);
+      if (m_visualizationEnabled && m_spherePrimitiveIds[0] != INVALID_TOKEN && m_sphereInAnchorResults.size() > 0)
+      {
+        // Only do this if we've enabled visualization, the sphere primitives have been created, and we've analyzed at least 1 frame
+        for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
+        {
+          auto entry = m_modelRenderer.GetPrimitive(m_spherePrimitiveIds[i]);
+          position += transform(float3(0.f, 0.f, 0.f), entry->GetCurrentPose());
+        }
+        position /= static_cast<float>(PHANTOM_SPHERE_COUNT);
+      }
+
+      return position;
+    }
+
+    //----------------------------------------------------------------------------
+    float3 CameraRegistration::GetStabilizedNormal() const
+    {
+      if (m_visualizationEnabled && m_spherePrimitiveIds[0] != INVALID_TOKEN && m_sphereInAnchorResults.size() > 0)
+      {
+        float3 normal(0.f, 0.f, 0.f);
+        // Only do this if we've enabled visualization, the sphere primitives have been created, and we've analyzed at least 1 frame
+        for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
+        {
+          auto entry = m_modelRenderer.GetPrimitive(m_spherePrimitiveIds[i]);
+          normal += ExtractNormal(entry->GetCurrentPose());
+        }
+        normal /= static_cast<float>(PHANTOM_SPHERE_COUNT);
+        return normal;
+      }
+
+      return float3(0.f, 1.f, 0.f);
+    }
+
+    //----------------------------------------------------------------------------
+    float3 CameraRegistration::GetStabilizedVelocity() const
+    {
+      if (m_visualizationEnabled && m_spherePrimitiveIds[0] != INVALID_TOKEN && m_sphereInAnchorResults.size() > 0)
+      {
+        float3 velocity(0.f, 0.f, 0.f);
+        // Only do this if we've enabled visualization, the sphere primitives have been created, and we've analyzed at least 1 frame
+        for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
+        {
+          auto entry = m_modelRenderer.GetPrimitive(m_spherePrimitiveIds[i]);
+          velocity += entry->GetVelocity();
+        }
+        velocity /= static_cast<float>(PHANTOM_SPHERE_COUNT);
+        return velocity;
+      }
+
+      return float3(0.f, 0.f, 0.f);
+    }
+
+    //----------------------------------------------------------------------------
+    float CameraRegistration::GetStabilizePriority() const
+    {
+      if (m_visualizationEnabled && m_spherePrimitiveIds[0] != INVALID_TOKEN && m_sphereInAnchorResults.size() > 0)
+      {
+        // TODO : priority values?
+        return 2.f;
+      }
+
+      return PRIORITY_NOT_ACTIVE;
+    }
+
+    //----------------------------------------------------------------------------
     CameraRegistration::CameraRegistration(NotificationSystem& notificationSystem, Network::IGTConnector& igtConnector, Rendering::ModelRenderer& modelRenderer)
       : m_modelRenderer(modelRenderer)
       , m_notificationSystem(notificationSystem)
@@ -141,7 +209,7 @@ namespace HoloIntervention
         for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
         {
           auto entry = m_modelRenderer.GetPrimitive(m_spherePrimitiveIds[i]);
-          entry->SetDesiredWorldPose(m_sphereToAnchorPoses[i] * anchorToRequestedBox->Value);
+          entry->SetDesiredPose(m_sphereToAnchorPoses[i] * anchorToRequestedBox->Value);
         }
       }
     }
@@ -293,7 +361,7 @@ namespace HoloIntervention
           auto entry = m_modelRenderer.GetPrimitive(m_spherePrimitiveIds[i]);
           entry->SetVisible(true);
           entry->SetColour(float3(0.803921640f, 0.360784322f, 0.360784322f));
-          entry->SetDesiredWorldPose(float4x4::identity());
+          entry->SetDesiredPose(float4x4::identity());
         }
         m_visualizationEnabled = true;
       }
@@ -455,7 +523,7 @@ namespace HoloIntervention
 #if _DEBUG
                 std::stringstream ss;
                 ss << i;
-                HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_DEBUG, std::string("m_sphereToAnchorPoses[") + ss.str() + "]: " + toString(m_sphereToAnchorPoses[i]));
+                HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_DEBUG, std::string("m_sphereToAnchorPoses[") + ss.str() + "]: " + ToString(m_sphereToAnchorPoses[i]));
 #endif
                 i++;
               }
@@ -733,7 +801,7 @@ namespace HoloIntervention
           phantomToCameraTransform = transpose(phantomToCameraTransform) * cvToD3D; // Output is in column-major format, OpenCV produces row-major
 
 #if _DEBUG
-          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_DEBUG, std::string("phantomToCameraTransform: ") + toString(phantomToCameraTransform));
+          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_DEBUG, std::string("phantomToCameraTransform: ") + ToString(phantomToCameraTransform));
 #endif
 
           result = true;
@@ -791,7 +859,7 @@ done:
 #if _DEBUG
           std::stringstream ss;
           ss << i;
-          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_DEBUG, std::string("m_sphereToPhantomPoses[") + ss.str() + "]: " + toString(m_sphereToPhantomPoses[i]));
+          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_DEBUG, std::string("m_sphereToPhantomPoses[") + ss.str() + "]: " + ToString(m_sphereToPhantomPoses[i]));
 #endif
         }
 

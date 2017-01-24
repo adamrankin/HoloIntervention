@@ -24,7 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
-#include "IEngineComponent.h"
+#include "IStabilizedComponent.h"
 
 // Network includes
 #include "IGTConnector.h"
@@ -57,8 +57,14 @@ namespace HoloIntervention
 
     typedef std::vector<std::shared_ptr<IconEntry>> IconEntryList;
 
-    class IconSystem : public IEngineComponent
+    class IconSystem : public IStabilizedComponent
     {
+    public:
+      virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition() const;
+      virtual Windows::Foundation::Numerics::float3 GetStabilizedNormal() const;
+      virtual Windows::Foundation::Numerics::float3 GetStabilizedVelocity() const;
+      virtual float GetStabilizePriority() const;
+
     public:
       IconSystem(NotificationSystem& notificationSystem, RegistrationSystem& registrationSystem, Network::IGTConnector& igtConnector, Rendering::ModelRenderer& modelRenderer);
       ~IconSystem();

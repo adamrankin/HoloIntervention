@@ -162,6 +162,14 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    std::shared_ptr<VolumeEntry> VolumeRenderer::GetVolume(uint64 volumeToken)
+    {
+      std::shared_ptr<VolumeEntry> entry(nullptr);
+      FindVolume(volumeToken, entry);
+      return entry;
+    }
+
+    //----------------------------------------------------------------------------
     void VolumeRenderer::UpdateVolume(uint64 volumeToken, std::shared_ptr<byte> imageData, uint16 width, uint16 height, uint16 depth, DXGI_FORMAT pixelFormat, float4x4 desiredPose)
     {
       std::lock_guard<std::mutex> guard(m_volumeMapMutex);

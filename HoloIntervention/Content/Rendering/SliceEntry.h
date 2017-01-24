@@ -23,6 +23,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
+// Local includes
+#include "IStabilizedComponent.h"
+
 namespace DX
 {
   class DeviceResources;
@@ -40,8 +43,14 @@ namespace HoloIntervention
 
     static_assert((sizeof(SliceConstantBuffer) % (sizeof(float) * 4)) == 0, "Slice constant buffer size must be 16-byte aligned (16 bytes is the length of four floats).");
 
-    class SliceEntry
+    class SliceEntry : public IStabilizedComponent
     {
+    public:
+      virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition() const;
+      virtual Windows::Foundation::Numerics::float3 GetStabilizedNormal() const;
+      virtual Windows::Foundation::Numerics::float3 GetStabilizedVelocity() const;
+      virtual float GetStabilizePriority() const;
+
     public:
       SliceEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources);
       ~SliceEntry();
@@ -53,7 +62,9 @@ namespace HoloIntervention
       std::shared_ptr<byte> GetImageData() const;
 
       void SetDesiredPose(const Windows::Foundation::Numerics::float4x4& matrix);
-      Windows::Foundation::Numerics::float3 GetSliceVelocity() const;
+      const Windows::Foundation::Numerics::float4x4& GetCurrentPose() const;
+      Windows::Foundation::Numerics::float3 GetVelocity() const;
+
       void SetHeadlocked(bool headLocked);
 
       // D3D device related controls

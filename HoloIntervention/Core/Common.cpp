@@ -206,11 +206,19 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
-  std::string toString(const Windows::Foundation::Numerics::float4x4& matrix)
+  std::string ToString(const Windows::Foundation::Numerics::float4x4& matrix)
   {
     std::stringstream ss;
     ss << matrix;
     return ss.str();
+  }
+
+  //----------------------------------------------------------------------------
+  Windows::Foundation::Numerics::float3 ExtractNormal(const Windows::Foundation::Numerics::float4x4& matrix)
+  {
+    // Assumes column order matrix
+    // TODO: verify
+    return float3(matrix.m31, matrix.m32, matrix.m33);
   }
 
   //----------------------------------------------------------------------------

@@ -23,6 +23,12 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
+// Local includes
+#include "IStabilizedComponent.h"
+
+// STL includes
+#include <atomic>
+
 namespace DX
 {
   class StepTimer;
@@ -39,8 +45,14 @@ namespace HoloIntervention
 
   namespace Tools
   {
-    class ToolEntry
+    class ToolEntry : public IStabilizedComponent
     {
+    public:
+      virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition() const;
+      virtual Windows::Foundation::Numerics::float3 GetStabilizedNormal() const;
+      virtual Windows::Foundation::Numerics::float3 GetStabilizedVelocity() const;
+      virtual float GetStabilizePriority() const;
+
     public:
       ToolEntry(Rendering::ModelRenderer& modelRenderer, UWPOpenIGTLink::TransformName^ coordinateFrame, const std::wstring& modelName, UWPOpenIGTLink::TransformRepository^ transformRepository);
       ToolEntry(Rendering::ModelRenderer& modelRenderer, const std::wstring& coordinateFrame, const std::wstring& modelName, UWPOpenIGTLink::TransformRepository^ transformRepository);
@@ -58,6 +70,7 @@ namespace HoloIntervention
       Rendering::ModelRenderer&               m_modelRenderer;
       UWPOpenIGTLink::TransformRepository^    m_transformRepository;
 
+      std::atomic_bool                        m_isValid;
       UWPOpenIGTLink::TransformName^          m_coordinateFrame;
       std::shared_ptr<Rendering::ModelEntry>  m_modelEntry;
     };

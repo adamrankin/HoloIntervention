@@ -53,6 +53,30 @@ namespace HoloIntervention
     const float GazeSystem::LERP_RATE = 6.f;
 
     //----------------------------------------------------------------------------
+    Windows::Foundation::Numerics::float3 GazeSystem::GetStabilizedPosition() const
+    {
+      return transform(float3(0.f, 0.f, 0.f), m_modelEntry->GetWorld());
+    }
+
+    //----------------------------------------------------------------------------
+    Windows::Foundation::Numerics::float3 GazeSystem::GetStabilizedNormal() const
+    {
+      return ExtractNormal(m_modelEntry->GetWorld());
+    }
+
+    //----------------------------------------------------------------------------
+    Windows::Foundation::Numerics::float3 GazeSystem::GetStabilizedVelocity() const
+    {
+      return m_modelEntry->GetVelocity();
+    }
+
+    //----------------------------------------------------------------------------
+    float GazeSystem::GetStabilizePriority() const
+    {
+      return IsCursorEnabled() ? 1.f : PRIORITY_NOT_ACTIVE;
+    }
+
+    //----------------------------------------------------------------------------
     GazeSystem::GazeSystem(NotificationSystem& notificationSystem, Physics::SurfaceAPI& physicsAPI, Rendering::ModelRenderer& modelRenderer)
       : m_modelRenderer(modelRenderer)
       , m_notificationSystem(notificationSystem)
@@ -127,15 +151,13 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void GazeSystem::EnableCursor(bool enable)
     {
-      m_systemEnabled = enable;
-
       m_modelEntry->SetVisible(enable);
     }
 
     //----------------------------------------------------------------------------
-    bool GazeSystem::IsCursorEnabled()
+    bool GazeSystem::IsCursorEnabled() const
     {
-      return m_systemEnabled;
+      return m_modelEntry->IsVisible();
     }
 
     //----------------------------------------------------------------------------

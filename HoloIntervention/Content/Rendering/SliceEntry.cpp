@@ -23,11 +23,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "pch.h"
-#include "SliceEntry.h"
-
-// Common includes
+#include "Common.h"
 #include "DeviceResources.h"
 #include "DirectXHelper.h"
+#include "SliceEntry.h"
 #include "StepTimer.h"
 
 // DirectXTex includes
@@ -73,6 +72,31 @@ namespace HoloIntervention
     const float SliceEntry::LOCKED_SLICE_DISTANCE_OFFSET = 2.1f;
     const float SliceEntry::LOCKED_SLICE_SCALE_FACTOR = 10.f;
     const float SliceEntry::LERP_RATE = 2.5f;
+
+    //----------------------------------------------------------------------------
+    Windows::Foundation::Numerics::float3 SliceEntry::GetStabilizedPosition() const
+    {
+      return transform(float3(0.f, 0.f, 0.f), m_currentPose);
+    }
+
+    //----------------------------------------------------------------------------
+    Windows::Foundation::Numerics::float3 SliceEntry::GetStabilizedNormal() const
+    {
+      return ExtractNormal(m_currentPose);
+    }
+
+    //----------------------------------------------------------------------------
+    Windows::Foundation::Numerics::float3 SliceEntry::GetStabilizedVelocity() const
+    {
+      return m_velocity;
+    }
+
+    //----------------------------------------------------------------------------
+    float SliceEntry::GetStabilizePriority() const
+    {
+      // Priority is determined by systems that use this slice entry
+      return PRIORITY_NOT_ACTIVE;
+    }
 
     //----------------------------------------------------------------------------
     SliceEntry::SliceEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources)
@@ -210,7 +234,13 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    float3 SliceEntry::GetSliceVelocity() const
+    const float4x4& SliceEntry::GetCurrentPose() const
+    {
+      return m_currentPose;
+    }
+
+    //----------------------------------------------------------------------------
+    float3 SliceEntry::GetVelocity() const
     {
       return m_velocity;
     }

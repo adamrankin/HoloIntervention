@@ -64,6 +64,108 @@ namespace HoloIntervention
     const std::wstring RegistrationSystem::REGISTRATION_ANCHOR_MODEL_FILENAME = L"Assets/Models/anchor.cmo";
 
     //----------------------------------------------------------------------------
+    float3 RegistrationSystem::GetStabilizedPosition() const
+    {
+      if (m_cameraRegistration->IsStabilizationActive() && m_regAnchorModelId != INVALID_TOKEN)
+      {
+        return (m_cameraRegistration->GetStabilizedPosition() + transform(float3(0.f, 0.f, 0.f), m_regAnchorModel->GetWorld())) / 2.f;
+      }
+      else if (!m_cameraRegistration->IsStabilizationActive() && m_regAnchorModelId != INVALID_TOKEN)
+      {
+        return transform(float3(0.f, 0.f, 0.f), m_regAnchorModel->GetWorld());
+      }
+      else if (m_cameraRegistration->IsStabilizationActive() && m_regAnchorModelId == INVALID_TOKEN)
+      {
+        // This shouldn't be possible, camReg needs anchor
+        assert(false);
+        return m_cameraRegistration->GetStabilizedPosition();
+      }
+      else
+      {
+        // Nothing completed yet, this shouldn't even be called because in this case, priority returns not active
+        assert(false);
+        return float3(0.f, 0.f, 0.f);
+      }
+    }
+
+    //----------------------------------------------------------------------------
+    float3 RegistrationSystem::GetStabilizedNormal() const
+    {
+      if (m_cameraRegistration->IsStabilizationActive() && m_regAnchorModelId != INVALID_TOKEN)
+      {
+        return (m_cameraRegistration->GetStabilizedNormal() + ExtractNormal(m_regAnchorModel->GetWorld())) / 2.f;
+      }
+      else if (!m_cameraRegistration->IsStabilizationActive() && m_regAnchorModelId != INVALID_TOKEN)
+      {
+        return ExtractNormal(m_regAnchorModel->GetWorld());
+      }
+      else if (m_cameraRegistration->IsStabilizationActive() && m_regAnchorModelId == INVALID_TOKEN)
+      {
+        // This shouldn't be possible, camReg needs anchor
+        assert(false);
+        return m_cameraRegistration->GetStabilizedNormal();
+      }
+      else
+      {
+        // Nothing completed yet, this shouldn't even be called because in this case, priority returns not active
+        assert(false);
+        return float3(0.f, 1.f, 0.f);
+      }
+    }
+
+    //----------------------------------------------------------------------------
+    float3 RegistrationSystem::GetStabilizedVelocity() const
+    {
+      if (m_cameraRegistration->IsStabilizationActive() && m_regAnchorModelId != INVALID_TOKEN)
+      {
+        return (m_cameraRegistration->GetStabilizedVelocity() + m_regAnchorModel->GetVelocity()) / 2.f;
+      }
+      else if (!m_cameraRegistration->IsStabilizationActive() && m_regAnchorModelId != INVALID_TOKEN)
+      {
+        return m_regAnchorModel->GetVelocity();
+      }
+      else if (m_cameraRegistration->IsStabilizationActive() && m_regAnchorModelId == INVALID_TOKEN)
+      {
+        // This shouldn't be possible, camReg needs anchor
+        assert(false);
+        return m_cameraRegistration->GetStabilizedVelocity();
+      }
+      else
+      {
+        // Nothing completed yet, this shouldn't even be called because in this case, priority returns not active
+        assert(false);
+        return float3(0.f, 0.f, 0.f);
+      }
+    }
+
+    //----------------------------------------------------------------------------
+    float RegistrationSystem::GetStabilizePriority() const
+    {
+      if (m_cameraRegistration->IsStabilizationActive() && m_regAnchorModelId != INVALID_TOKEN)
+      {
+        // TODO : stabilization values?
+        return std::fmaxf(m_cameraRegistration->GetStabilizePriority(), 3.f);
+      }
+      else if (!m_cameraRegistration->IsStabilizationActive() && m_regAnchorModelId != INVALID_TOKEN)
+      {
+        // TODO : stabilization values?
+        return 3.f;
+      }
+      else if (m_cameraRegistration->IsStabilizationActive() && m_regAnchorModelId == INVALID_TOKEN)
+      {
+        // This shouldn't be possible, camReg needs anchor
+        assert(false);
+        return m_cameraRegistration->GetStabilizePriority();
+      }
+      else
+      {
+        // Nothing completed yet, this shouldn't even be called because in this case, priority returns not active
+        assert(false);
+        return PRIORITY_NOT_ACTIVE;
+      }
+    }
+
+    //----------------------------------------------------------------------------
     RegistrationSystem::RegistrationSystem(Network::IGTConnector& igtConnector, Physics::SurfaceAPI& physicsAPI, NotificationSystem& notificationSystem, Rendering::ModelRenderer& modelRenderer)
       : m_notificationSystem(notificationSystem)
       , m_modelRenderer(modelRenderer)
