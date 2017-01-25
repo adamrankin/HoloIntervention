@@ -139,6 +139,7 @@
     <ClCompile Include="Content\Physics\SurfaceAPI.cpp">
       <Filter>Content\Physics</Filter>
     </ClCompile>
+    <ClCompile Include="Content\Systems\Splash\SplashSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Content\Sound\OmnidirectionalSound.h">
@@ -303,6 +304,7 @@
     <ClInclude Include="Content\Physics\SurfaceAPI.h">
       <Filter>Content\Physics</Filter>
     </ClInclude>
+    <ClInclude Include="Content\Systems\Splash\SplashSystem.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\LockScreenLogo.scale-200.png">
@@ -330,6 +332,9 @@
       <Filter>Assets\Images</Filter>
     </Image>
     <Image Include="Assets\SplashScreen.scale-100.png">
+      <Filter>Assets\Images</Filter>
+    </Image>
+    <Image Include="Assets\Images\HoloIntervention.png">
       <Filter>Assets\Images</Filter>
     </Image>
   </ItemGroup>
@@ -767,6 +772,9 @@
     </Filter>
     <Filter Include="Content\Physics">
       <UniqueIdentifier>{7d845063-76f8-4271-82e4-85d9f6fdfb5d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Systems\Splash">
+      <UniqueIdentifier>{a1eddbb3-f563-4909-b006-e303e4ec04ac}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

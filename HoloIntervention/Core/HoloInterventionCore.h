@@ -49,6 +49,7 @@ namespace HoloIntervention
     class ImagingSystem;
     class NotificationSystem;
     class RegistrationSystem;
+    class SplashSystem;
     class ToolSystem;
   }
 
@@ -108,6 +109,7 @@ namespace HoloIntervention
     System::NotificationSystem& GetNotificationsSystem();
     System::RegistrationSystem& GetRegistrationSystem();
     System::ToolSystem& GetToolSystem();
+    System::SplashSystem& GetSplashSystem();
 
     // Provide access to the physics system
     Physics::SurfaceAPI& GetSurfaceAPI();
@@ -200,6 +202,7 @@ namespace HoloIntervention
     std::unique_ptr<System::ImagingSystem>                m_imagingSystem;
     std::unique_ptr<System::NotificationSystem>           m_notificationSystem;
     std::unique_ptr<System::RegistrationSystem>           m_registrationSystem;
+    std::unique_ptr<System::SplashSystem>                 m_splashSystem;
     std::unique_ptr<System::ToolSystem>                   m_toolSystem;
 
     // Physics

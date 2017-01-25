@@ -36,6 +36,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "ImagingSystem.h"
 #include "NotificationSystem.h"
 #include "RegistrationSystem.h"
+#include "SplashSystem.h"
 #include "ToolSystem.h"
 
 // Physics includes
@@ -127,6 +128,7 @@ namespace HoloIntervention
     m_gazeSystem = std::make_unique<System::GazeSystem>(*m_notificationSystem.get(), *m_physicsAPI.get(), *m_modelRenderer.get());
     m_toolSystem = std::make_unique<System::ToolSystem>(*m_notificationSystem.get(), *m_registrationSystem.get(), *m_modelRenderer.get());
     m_imagingSystem = std::make_unique<System::ImagingSystem>(*m_registrationSystem.get(), *m_notificationSystem.get(), *m_sliceRenderer.get(), *m_volumeRenderer.get());
+    m_splashSystem = std::make_unique<System::SplashSystem>(*m_sliceRenderer.get());
 
     m_engineComponents.push_back(m_modelRenderer.get());
     m_engineComponents.push_back(m_sliceRenderer.get());
@@ -143,6 +145,7 @@ namespace HoloIntervention
     m_engineComponents.push_back(m_registrationSystem.get());
     m_engineComponents.push_back(m_imagingSystem.get());
     m_engineComponents.push_back(m_iconSystem.get());
+    m_engineComponents.push_back(m_splashSystem.get());
 
     // TODO : remove temp code
     m_IGTConnector->SetHostname(L"192.168.0.102");
@@ -389,6 +392,12 @@ namespace HoloIntervention
   System::ToolSystem& HoloInterventionCore::GetToolSystem()
   {
     return *m_toolSystem.get();
+  }
+
+  //----------------------------------------------------------------------------
+  HoloIntervention::System::SplashSystem& HoloInterventionCore::GetSplashSystem()
+  {
+    return *m_splashSystem.get();
   }
 
   //----------------------------------------------------------------------------
