@@ -25,6 +25,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "pch.h"
 #include "Common.h"
 #include "SplashSystem.h"
+#include "StepTimer.h"
+
+// Rendering includes
+#include "SliceRenderer.h"
 
 // STL includes
 #include <functional>
@@ -32,59 +36,77 @@ OTHER DEALINGS IN THE SOFTWARE.
 // WinRT includes
 #include <ppltasks.h>
 
+// DirectXTK includes
+#include <WICTextureLoader.h>
+
 using namespace Concurrency;
 using namespace Windows::Storage;
 using namespace Windows::Foundation::Numerics;
-using namespace Windows::UI::Xaml;
-using namespace Windows::UI::Xaml::Media::Imaging;
+using namespace Windows::UI::Input::Spatial;
+using namespace Windows::Perception::Spatial;
 
 namespace HoloIntervention
 {
   namespace System
   {
+    const float SplashSystem::LERP_RATE = 4.0;
+    const float SplashSystem::NOTIFICATION_DISTANCE_OFFSET = 2.0f;
+    const float3 SplashSystem::NOTIFICATION_SCREEN_OFFSET = float3(0.f, -0.11f, 0.f);
+
     //----------------------------------------------------------------------------
     float3 SplashSystem::GetStabilizedPosition() const
     {
-
+      auto& pose = m_sliceEntry->GetCurrentPose();
+      return float3(pose.m41, pose.m42, pose.m43);
     }
 
     //----------------------------------------------------------------------------
     float3 SplashSystem::GetStabilizedNormal() const
     {
-
+      return ExtractNormal(m_sliceEntry->GetCurrentPose());
     }
 
     //----------------------------------------------------------------------------
     float3 SplashSystem::GetStabilizedVelocity() const
     {
-
+      return m_sliceEntry->GetStabilizedVelocity();
     }
 
     //----------------------------------------------------------------------------
     float SplashSystem::GetStabilizePriority() const
     {
-
+      // Ultra high, this should be stabilized during loading
+      return 4.f;
     }
 
     //----------------------------------------------------------------------------
     SplashSystem::SplashSystem(Rendering::SliceRenderer& sliceRenderer)
       : m_sliceRenderer(sliceRenderer)
     {
-      create_task(Windows::ApplicationModel::Package::Current->InstalledLocation->GetFileAsync(L"Assets\\Images\\HoloIntervention.png")).then([this](StorageFile ^ storageFile)
-      {
-        return storageFile->OpenReadAsync();
-      }).then([this](Streams::IRandomAccessStreamWithContentType ^ stream)
-      {
-        m_splashImage = ref new WriteableBitmap(1, 1);
-        m_splashImage->SetSource(stream);
-
-        byte* pixelData = GetDataFromIBuffer<byte>(m_splashImage->PixelBuffer);
-      });
+      m_sliceToken = m_sliceRenderer.AddSlice(m_splashImageFilename);
+      m_sliceEntry = m_sliceRenderer.GetSlice(m_sliceToken);
     }
 
     //----------------------------------------------------------------------------
     SplashSystem::~SplashSystem()
     {
+    }
+
+    //----------------------------------------------------------------------------
+    void SplashSystem::Update(const DX::StepTimer& timer, SpatialCoordinateSystem^ hmdCoordinateSystem, SpatialPointerPose^ headPose)
+    {
+      // Calculate world pose, ahead of face, centered
+      const float& deltaTime = static_cast<float>(timer.GetElapsedSeconds());
+
+      if (headPose != nullptr)
+      {
+        // Get the gaze direction relative to the given coordinate system.
+        const float3 headPosition = headPose->Head->Position;
+        const float3 headDirection = headPose->Head->ForwardDirection;
+
+        // Offset the view to centered, lower quadrant
+        const float3 offsetFromGazeAtTwoMeters = headPosition + (float3(NOTIFICATION_DISTANCE_OFFSET) * (headDirection + NOTIFICATION_SCREEN_OFFSET));
+      }
     }
   }
 }

@@ -58,12 +58,12 @@ namespace HoloIntervention
       void Update(Windows::UI::Input::Spatial::SpatialPointerPose^ pose, const DX::StepTimer& timer);
       void Render(uint32 indexCount);
 
+      void SetImageData(const std::wstring& fileName);
       void SetImageData(std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat);
       std::shared_ptr<byte> GetImageData() const;
 
       void SetDesiredPose(const Windows::Foundation::Numerics::float4x4& matrix);
       const Windows::Foundation::Numerics::float4x4& GetCurrentPose() const;
-      Windows::Foundation::Numerics::float3 GetVelocity() const;
 
       void SetHeadlocked(bool headLocked);
 
@@ -90,6 +90,7 @@ namespace HoloIntervention
       Microsoft::WRL::ComPtr<ID3D11Buffer>                m_sliceConstantBuffer;
 
       // Rendering behavior vars
+      std::atomic_bool                                    m_sliceValid = false;
       std::atomic_bool                                    m_headLocked = false;
       float                                               m_scalingFactor = 1.f;
 

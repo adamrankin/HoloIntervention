@@ -26,10 +26,16 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "IStabilizedComponent.h"
 
+namespace DX
+{
+  class StepTimer;
+}
+
 namespace HoloIntervention
 {
   namespace Rendering
   {
+    class SliceEntry;
     class SliceRenderer;
   }
 
@@ -47,18 +53,21 @@ namespace HoloIntervention
       SplashSystem(Rendering::SliceRenderer& sliceRenderer);
       ~SplashSystem();
 
-    protected:
-      void OnImageOpened(Windows::UI::Xaml::Media::Imaging::BitmapImage^ sender, Windows::UI::Xaml::RoutedEventArgs^ args);
+      void Update(const DX::StepTimer& timer, Windows::Perception::Spatial::SpatialCoordinateSystem^ hmdCoordinateSystem, Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
 
     protected:
       // Cached entries
       Rendering::SliceRenderer&                           m_sliceRenderer;
 
       uint64                                              m_sliceToken = INVALID_TOKEN;
+      std::shared_ptr<Rendering::SliceEntry>              m_sliceEntry = nullptr;
 
-      std::wstring                                        m_splashImageFilename;
-      Windows::Foundation::EventRegistrationToken         m_imageOpenedToken;
-      Windows::UI::Xaml::Media::Imaging::WriteableBitmap^ m_splashImage = nullptr;
+      Windows::Foundation::Numerics::float3               m_position;
+      static const float                                  LERP_RATE;
+      static const Windows::Foundation::Numerics::float3  NOTIFICATION_SCREEN_OFFSET;
+      static const float                                  NOTIFICATION_DISTANCE_OFFSET;
+
+      std::wstring                                        m_splashImageFilename = L"Assets\\Images\\HoloIntervention.png";
     };
   }
 }

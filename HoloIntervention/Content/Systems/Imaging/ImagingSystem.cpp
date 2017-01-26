@@ -145,7 +145,7 @@ namespace HoloIntervention
         // TODO : which one is close to the view frustrum?
         // TODO : which one is more recent?
         // TODO : other metrics?
-        return m_lastSliceTimestamp > m_lastVolumeTimestamp ? sliceEntry->GetVelocity() : volumeEntry->GetVelocity();
+        return m_lastSliceTimestamp > m_lastVolumeTimestamp ? sliceEntry->GetStabilizedVelocity() : volumeEntry->GetVelocity();
       }
       else if (m_volumeValid)
       {
@@ -153,7 +153,7 @@ namespace HoloIntervention
       }
       else if (m_sliceValid)
       {
-        return sliceEntry->GetVelocity();
+        return sliceEntry->GetStabilizedVelocity();
       }
       else
       {

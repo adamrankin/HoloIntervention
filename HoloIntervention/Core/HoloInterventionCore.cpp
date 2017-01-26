@@ -257,6 +257,12 @@ namespace HoloIntervention
     {
       SpatialPointerPose^ headPose = SpatialPointerPose::TryGetAtTimestamp(hmdCoordinateSystem, prediction->Timestamp);
 
+      if (!m_engineReady)
+      {
+        m_splashSystem->Update(m_timer, hmdCoordinateSystem, headPose);
+        return;
+      }
+
       if (m_IGTConnector->IsConnected())
       {
         if (m_IGTConnector->GetTrackedFrame(m_latestFrame, &m_latestTimestamp))

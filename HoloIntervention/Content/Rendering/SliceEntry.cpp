@@ -32,6 +32,12 @@ OTHER DEALINGS IN THE SOFTWARE.
 // DirectXTex includes
 #include <DirectXTex.h>
 
+// DirectXTK includes
+#include <WICTextureLoader.h>
+
+// Direct3D includes
+#include <d3d11_4.h>
+
 // Unnecessary, but reduces intellisense errors
 #include <WindowsNumerics.h>
 
@@ -174,7 +180,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void SliceEntry::Render(uint32 indexCount)
     {
-      if (!m_showing || m_imageData == nullptr)
+      if (!m_showing || !m_sliceValid)
       {
         return;
       }
@@ -222,6 +228,27 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    void SliceEntry::SetImageData(const std::wstring& fileName)
+    {
+      TexMetadata metadata;
+      GetMetadataFromWICFile(fileName.c_str(), WIC_FLAGS_NONE, metadata);
+
+      if (metadata.width != m_width || metadata.height != m_height || metadata.format != m_pixelFormat)
+      {
+        m_width = static_cast<uint16>(metadata.width);
+        m_height = static_cast<uint16>(metadata.height);
+        m_pixelFormat = metadata.format;
+        ReleaseDeviceDependentResources();
+        CreateDeviceDependentResources();
+      }
+
+      m_imageTexture.Reset();
+      m_imageData = nullptr;
+
+      CreateWICTextureFromFile(m_deviceResources->GetD3DDevice(), m_deviceResources->GetD3DDeviceContext(), fileName.c_str(), (ID3D11Resource**)m_imageTexture.GetAddressOf(), nullptr);
+    }
+
+    //----------------------------------------------------------------------------
     std::shared_ptr<byte> SliceEntry::GetImageData() const
     {
       return m_imageData;
@@ -237,12 +264,6 @@ namespace HoloIntervention
     const float4x4& SliceEntry::GetCurrentPose() const
     {
       return m_currentPose;
-    }
-
-    //----------------------------------------------------------------------------
-    float3 SliceEntry::GetVelocity() const
-    {
-      return m_velocity;
     }
 
     //----------------------------------------------------------------------------
@@ -276,11 +297,14 @@ namespace HoloIntervention
         DX::ThrowIfFailed(device->CreateTexture2D(&textureDesc, nullptr, &m_imageTexture));
         DX::ThrowIfFailed(device->CreateShaderResourceView(m_imageTexture.Get(), nullptr, &m_shaderResourceView));
       }
+
+      m_sliceValid = true;
     }
 
     //----------------------------------------------------------------------------
     void SliceEntry::ReleaseDeviceDependentResources()
     {
+      m_sliceValid = false;
       m_sliceConstantBuffer.Reset();
       m_shaderResourceView.Reset();
       m_imageTexture.Reset();

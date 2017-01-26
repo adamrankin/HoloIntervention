@@ -124,6 +124,22 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    uint64 SliceRenderer::AddSlice(const std::wstring& fileName)
+    {
+      std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources);
+      entry->m_id = m_nextUnusedSliceId;
+
+      entry->SetImageData(fileName);
+      entry->m_showing = true;
+
+      std::lock_guard<std::mutex> guard(m_sliceMapMutex);
+      m_slices.push_back(entry);
+
+      m_nextUnusedSliceId++;
+      return m_nextUnusedSliceId - 1;
+    }
+
+    //----------------------------------------------------------------------------
     void SliceRenderer::RemoveSlice(uint64 sliceToken)
     {
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
@@ -249,7 +265,7 @@ namespace HoloIntervention
       std::shared_ptr<SliceEntry> entry;
       if (FindSlice(sliceToken, entry))
       {
-        return entry->GetVelocity();
+        return entry->GetStabilizedVelocity();
       }
 
       std::stringstream ss;

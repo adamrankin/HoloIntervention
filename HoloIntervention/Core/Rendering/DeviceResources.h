@@ -14,6 +14,11 @@
 // Local includes
 #include "CameraResources.h"
 
+// DirectX includes
+#include <d3d11_4.h>
+#include <d2d1_2.h>
+#include <dwrite_2.h>
+
 namespace DX
 {
   // Provides an interface for an application that owns DeviceResources to be notified of the device being lost or created.
