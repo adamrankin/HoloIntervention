@@ -65,6 +65,7 @@ namespace HoloIntervention
       void SetDesiredPose(const Windows::Foundation::Numerics::float4x4& matrix);
       const Windows::Foundation::Numerics::float4x4& GetCurrentPose() const;
 
+      void SetVisible(bool visible);
       void SetHeadlocked(bool headLocked);
 
       // D3D device related controls
@@ -73,7 +74,6 @@ namespace HoloIntervention
 
       uint64                                              m_id = 0;
       SliceConstantBuffer                                 m_constantBuffer;
-      std::atomic_bool                                    m_showing = true;
       Windows::Foundation::Numerics::float4x4             m_desiredPose = Windows::Foundation::Numerics::float4x4::identity();
       Windows::Foundation::Numerics::float4x4             m_currentPose = Windows::Foundation::Numerics::float4x4::identity();
       Windows::Foundation::Numerics::float4x4             m_lastPose = Windows::Foundation::Numerics::float4x4::identity();
@@ -92,6 +92,7 @@ namespace HoloIntervention
       // Rendering behavior vars
       std::atomic_bool                                    m_sliceValid = false;
       std::atomic_bool                                    m_headLocked = false;
+      std::atomic_bool                                    m_showing = true;
       float                                               m_scalingFactor = 1.f;
 
       // image data vars

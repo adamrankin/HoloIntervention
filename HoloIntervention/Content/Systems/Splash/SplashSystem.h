@@ -64,8 +64,6 @@ namespace HoloIntervention
 
       Windows::Foundation::Numerics::float3               m_position;
       static const float                                  LERP_RATE;
-      static const Windows::Foundation::Numerics::float3  NOTIFICATION_SCREEN_OFFSET;
-      static const float                                  NOTIFICATION_DISTANCE_OFFSET;
 
       std::wstring                                        m_splashImageFilename = L"Assets\\Images\\HoloIntervention.png";
     };

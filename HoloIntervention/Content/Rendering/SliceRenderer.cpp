@@ -71,7 +71,7 @@ namespace HoloIntervention
     {
       std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources);
       entry->m_id = m_nextUnusedSliceId;
-      entry->m_showing = false;
+      entry->SetVisible(false);
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
       m_slices.push_back(entry);
 
@@ -93,7 +93,6 @@ namespace HoloIntervention
       entry->m_desiredPose = entry->m_currentPose = entry->m_lastPose = desiredPose;
 
       entry->SetImageData(imageData, width, height, pixelFormat);
-      entry->m_showing = true;
 
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
       m_slices.push_back(entry);
@@ -114,7 +113,6 @@ namespace HoloIntervention
       std::shared_ptr<byte> imDataPtr(new byte[imageData->Length], std::default_delete<byte[]>());
       memcpy(imDataPtr.get(), HoloIntervention::GetDataFromIBuffer(imageData), imageData->Length * sizeof(byte));
       entry->SetImageData(imDataPtr, width, height, pixelFormat);
-      entry->m_showing = true;
 
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
       m_slices.push_back(entry);
@@ -130,7 +128,6 @@ namespace HoloIntervention
       entry->m_id = m_nextUnusedSliceId;
 
       entry->SetImageData(fileName);
-      entry->m_showing = true;
 
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
       m_slices.push_back(entry);
@@ -184,7 +181,7 @@ namespace HoloIntervention
       std::shared_ptr<SliceEntry> entry;
       if (FindSlice(sliceToken, entry))
       {
-        entry->m_showing = true;
+        entry->SetVisible(true);
       }
     }
 
@@ -195,7 +192,7 @@ namespace HoloIntervention
       std::shared_ptr<SliceEntry> entry;
       if (FindSlice(sliceToken, entry))
       {
-        entry->m_showing = false;
+        entry->SetVisible(false);
       }
     }
 
@@ -206,7 +203,7 @@ namespace HoloIntervention
       std::shared_ptr<SliceEntry> entry;
       if (FindSlice(sliceToken, entry))
       {
-        entry->m_showing = show;
+        entry->SetVisible(show);
       }
     }
 

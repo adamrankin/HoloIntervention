@@ -267,6 +267,12 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    void SliceEntry::SetVisible(bool visible)
+    {
+      m_showing = visible;
+    }
+
+    //----------------------------------------------------------------------------
     void SliceEntry::SetHeadlocked(bool headLocked)
     {
       m_headLocked = headLocked;

@@ -39,6 +39,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 // DirectXTK includes
 #include <WICTextureLoader.h>
 
+// Unnecessary, but removes intellisense errors
+#include <WindowsNumerics.h>
+
 using namespace Concurrency;
 using namespace Windows::Storage;
 using namespace Windows::Foundation::Numerics;
@@ -50,8 +53,6 @@ namespace HoloIntervention
   namespace System
   {
     const float SplashSystem::LERP_RATE = 4.0;
-    const float SplashSystem::NOTIFICATION_DISTANCE_OFFSET = 2.0f;
-    const float3 SplashSystem::NOTIFICATION_SCREEN_OFFSET = float3(0.f, -0.11f, 0.f);
 
     //----------------------------------------------------------------------------
     float3 SplashSystem::GetStabilizedPosition() const
@@ -85,6 +86,9 @@ namespace HoloIntervention
     {
       m_sliceToken = m_sliceRenderer.AddSlice(m_splashImageFilename);
       m_sliceEntry = m_sliceRenderer.GetSlice(m_sliceToken);
+
+      // Don't affect the actual loading of the system
+      m_componentReady = true;
     }
 
     //----------------------------------------------------------------------------
@@ -95,6 +99,8 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void SplashSystem::Update(const DX::StepTimer& timer, SpatialCoordinateSystem^ hmdCoordinateSystem, SpatialPointerPose^ headPose)
     {
+      const float NOTIFICATION_DISTANCE_OFFSET = 2.f;
+
       // Calculate world pose, ahead of face, centered
       const float& deltaTime = static_cast<float>(timer.GetElapsedSeconds());
 
@@ -102,10 +108,15 @@ namespace HoloIntervention
       {
         // Get the gaze direction relative to the given coordinate system.
         const float3 headPosition = headPose->Head->Position;
-        const float3 headDirection = headPose->Head->ForwardDirection;
 
         // Offset the view to centered, lower quadrant
-        const float3 offsetFromGazeAtTwoMeters = headPosition + (float3(NOTIFICATION_DISTANCE_OFFSET) * (headDirection + NOTIFICATION_SCREEN_OFFSET));
+        const float3 offsetFromGazeAtTwoMeters = headPosition + (float3(NOTIFICATION_DISTANCE_OFFSET) * headPose->Head->ForwardDirection);
+        const float4x4 worldTransform = make_float4x4_world(offsetFromGazeAtTwoMeters, -headPose->Head->ForwardDirection, headPose->Head->UpDirection);
+
+        // Slice is -0.5 -- 0.5 in x,y
+        const float4x4 scaleTransform = make_float4x4_scale(0.6f, 0.3f, 1.f); // 60cm x 30cm
+
+        m_sliceEntry->SetDesiredPose(worldTransform * scaleTransform);
       }
     }
   }

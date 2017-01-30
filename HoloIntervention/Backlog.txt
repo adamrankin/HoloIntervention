@@ -1,10 +1,11 @@
 Major implementation details remaining:
 
+Network search on startup
 Stabilization plane
 Volume rendering
 Registration
 Loading screen
+*Splash screen
 App running indicator
-Splash screen
 Voice feedback
 UI for IP setting
