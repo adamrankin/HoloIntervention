@@ -345,7 +345,7 @@ namespace HoloIntervention
       auto worldAnchor = m_cameraRegistration->GetWorldAnchor();
       if (worldAnchor == nullptr)
       {
-        return float4x4::identity();
+        throw std::exception("World anchor doesn't exist.");
       }
 
       auto trackerToWorldAnchor = m_cameraRegistration->GetReferenceToWorldAnchorTransformation();
@@ -354,7 +354,7 @@ namespace HoloIntervention
         Platform::IBox<float4x4>^ anchorToRequestedBox = worldAnchor->CoordinateSystem->TryGetTransformTo(requestedCoordinateSystem);
         if (anchorToRequestedBox == nullptr)
         {
-          return float4x4::identity();
+          throw std::exception("AnchorToCoordSystem IBox is empty.");
         }
         return trackerToWorldAnchor * anchorToRequestedBox->Value;
       }

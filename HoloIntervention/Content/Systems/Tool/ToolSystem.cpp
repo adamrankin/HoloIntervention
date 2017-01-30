@@ -195,10 +195,18 @@ namespace HoloIntervention
     void ToolSystem::Update(UWPOpenIGTLink::TrackedFrame^ frame, const DX::StepTimer& timer, SpatialCoordinateSystem^ hmdCoordinateSystem)
     {
       // Update the transform repository with the latest registration
-      float4x4 trackerToRendering = m_registrationSystem.GetTrackerToCoordinateSystemTransformation(hmdCoordinateSystem);
-      m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD"), trackerToRendering, true);
+      float4x4 trackerToRendering(float4x4::identity());
+      try
+      {
+        float4x4 trackerToRendering = m_registrationSystem.GetTrackerToCoordinateSystemTransformation(hmdCoordinateSystem);
+      }
+      catch (const std::exception& e)
+      {
+        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, std::string("Unable to retrieve tracker to coord system transform: ") + e.what());
+      }
 
       m_transformRepository->SetTransforms(frame);
+      m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD"), trackerToRendering, true);
 
       for (auto entry : m_toolEntries)
       {

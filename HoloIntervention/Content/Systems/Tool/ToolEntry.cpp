@@ -119,6 +119,18 @@ namespace HoloIntervention
         m_modelEntry->RenderDefault();
 
         m_modelEntry->SetWorld(transform);
+#if _DEBUG
+        {
+          static int x = 0;
+          if (x == 0)
+          {
+            std::stringstream ss;
+            ss << transform;
+            HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_INFO, std::string("transform: ") + ss.str());
+            x = 1;
+          }
+        }
+#endif
       }
       catch (Platform::Exception^ e)
       {

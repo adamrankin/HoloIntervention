@@ -559,6 +559,13 @@ namespace HoloIntervention
 
       assert(m_sphereInAnchorResults.size() == m_sphereInReferenceResults.size());
 
+#if _DEBUG
+      {
+        std::stringstream ss;
+        ss << m_sphereInAnchorResults.size();
+        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_INFO, std::string("m_sphereInAnchorResults.size() ") + ss.str());
+      }
+#endif
       VecFloat3 sphereInReferenceResults;
       VecFloat3 sphereInAnchorResults;
       for (auto& frame : m_sphereInReferenceResults)
@@ -582,6 +589,13 @@ namespace HoloIntervention
       bool resultValid(false);
       m_landmarkRegistration->CalculateTransformationAsync().then([this, &calcFinished, &resultValid](float4x4 referenceToAnchorTransformation)
       {
+#if _DEBUG
+        {
+          std::stringstream ss;
+          ss << referenceToAnchorTransformation;
+          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_INFO, std::string("referenceToAnchorTransformation: ") + ss.str());
+        }
+#endif
         if (referenceToAnchorTransformation == float4x4::identity())
         {
           resultValid = false;

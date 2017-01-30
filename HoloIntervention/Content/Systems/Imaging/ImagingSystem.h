@@ -86,9 +86,9 @@ namespace HoloIntervention
       UWPOpenIGTLink::TransformRepository^  m_transformRepository = ref new UWPOpenIGTLink::TransformRepository();
 
       // Slice system
-      std::wstring                          m_imageFromCoordFrame = L"Image";
-      std::wstring                          m_imageToCoordFrame = L"HMD";
-      UWPOpenIGTLink::TransformName^        m_imageToHMDName = ref new UWPOpenIGTLink::TransformName(ref new Platform::String(m_imageFromCoordFrame.c_str()), ref new Platform::String(m_imageToCoordFrame.c_str()));
+      std::wstring                          m_sliceFromCoordFrame = L"Image";
+      std::wstring                          m_sliceToCoordFrame = L"HMD";
+      UWPOpenIGTLink::TransformName^        m_sliceToHMDName = ref new UWPOpenIGTLink::TransformName(ref new Platform::String(m_sliceFromCoordFrame.c_str()), ref new Platform::String(m_sliceToCoordFrame.c_str()));
       uint64                                m_sliceToken = INVALID_TOKEN;
       double                                m_lastSliceTimestamp = 0.0;
       std::atomic_bool                      m_sliceValid = false;

@@ -61,8 +61,17 @@ namespace HoloIntervention
       // Validate asset location
       Platform::String^ mainFolderLocation = Windows::ApplicationModel::Package::Current->InstalledLocation->Path;
 
-      auto folderTask = create_task(StorageFolder::GetFolderFromPathAsync(mainFolderLocation)).then([this](StorageFolder ^ folder)
+      auto folderTask = create_task(StorageFolder::GetFolderFromPathAsync(mainFolderLocation)).then([this](task<StorageFolder^> folderTask)
       {
+        StorageFolder^ folder(nullptr);
+        try
+        {
+          folder = folderTask.get();
+        }
+        catch (const std::exception&)
+        {
+          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Unable to locate installed folder path.");
+        }
         std::string asset(m_assetLocation.begin(), m_assetLocation.end());
 
         char drive[32];
@@ -85,10 +94,12 @@ namespace HoloIntervention
           }
           catch (Platform::InvalidArgumentException^ e)
           {
+            HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, L"InvalidArgumentException: " + e->Message);
             return;
           }
-          catch (const std::exception&)
+          catch (const std::exception& e)
           {
+            HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, std::string("Unable to get subfolder: ") + e.what());
             return;
           }
           std::string filename(nameStr);

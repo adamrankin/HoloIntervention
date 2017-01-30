@@ -148,7 +148,7 @@ namespace HoloIntervention
     m_engineComponents.push_back(m_splashSystem.get());
 
     // TODO : remove temp code
-    m_IGTConnector->SetHostname(L"192.168.0.102");
+    m_IGTConnector->SetHostname(L"192.168.0.103");
 
     try
     {
@@ -260,38 +260,40 @@ namespace HoloIntervention
       if (!m_engineReady)
       {
         m_splashSystem->Update(m_timer, hmdCoordinateSystem, headPose);
-        return;
-      }
-
-      if (m_IGTConnector->IsConnected())
-      {
-        if (m_IGTConnector->GetTrackedFrame(m_latestFrame, &m_latestTimestamp))
-        {
-          m_latestTimestamp = m_latestFrame->Timestamp;
-          // TODO : extract system logic from volume renderer and move to imaging system
-          if (headPose != nullptr)
-          {
-            m_volumeRenderer->Update(m_latestFrame, m_timer, cameraResources, hmdCoordinateSystem, headPose);
-          }
-          m_imagingSystem->Update(m_latestFrame, m_timer, hmdCoordinateSystem);
-          m_toolSystem->Update(m_latestFrame, m_timer, hmdCoordinateSystem);
-        }
-      }
-
-      m_physicsAPI->Update(hmdCoordinateSystem);
-
-      if (headPose != nullptr)
-      {
-        m_registrationSystem->Update(m_timer, hmdCoordinateSystem, headPose);
-        m_gazeSystem->Update(m_timer, hmdCoordinateSystem, headPose);
-        m_iconSystem->Update(m_timer, headPose);
-        m_soundAPI->Update(m_timer, hmdCoordinateSystem);
         m_sliceRenderer->Update(headPose, m_timer);
-        m_notificationSystem->Update(headPose, m_timer);
       }
+      else
+      {
+        if (m_IGTConnector->IsConnected())
+        {
+          if (m_IGTConnector->GetTrackedFrame(m_latestFrame, &m_latestTimestamp))
+          {
+            m_latestTimestamp = m_latestFrame->Timestamp;
+            // TODO : extract system logic from volume renderer and move to imaging system
+            if (headPose != nullptr)
+            {
+              m_volumeRenderer->Update(m_latestFrame, m_timer, cameraResources, hmdCoordinateSystem, headPose);
+            }
+            m_imagingSystem->Update(m_latestFrame, m_timer, hmdCoordinateSystem);
+            m_toolSystem->Update(m_latestFrame, m_timer, hmdCoordinateSystem);
+          }
+        }
 
-      m_meshRenderer->Update(vp, m_timer, hmdCoordinateSystem);
-      m_modelRenderer->Update(m_timer, vp);
+        m_physicsAPI->Update(hmdCoordinateSystem);
+
+        if (headPose != nullptr)
+        {
+          m_registrationSystem->Update(m_timer, hmdCoordinateSystem, headPose);
+          m_gazeSystem->Update(m_timer, hmdCoordinateSystem, headPose);
+          m_iconSystem->Update(m_timer, headPose);
+          m_soundAPI->Update(m_timer, hmdCoordinateSystem);
+          m_sliceRenderer->Update(headPose, m_timer);
+          m_notificationSystem->Update(headPose, m_timer);
+        }
+
+        m_meshRenderer->Update(vp, m_timer, hmdCoordinateSystem);
+        m_modelRenderer->Update(m_timer, vp);
+      }
     });
 
     SetHolographicFocusPoint(prediction, holographicFrame, hmdCoordinateSystem);

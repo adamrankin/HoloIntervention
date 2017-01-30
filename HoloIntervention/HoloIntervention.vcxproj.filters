@@ -630,6 +630,9 @@
     <None Include="Assets\Models\camera_icon.cmo">
       <Filter>Assets\Models</Filter>
     </None>
+    <None Include="Assets\Models\Tools\hemisphere_stylus.cmo">
+      <Filter>Assets\Models\Tools</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Content">

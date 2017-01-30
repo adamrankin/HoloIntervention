@@ -196,28 +196,31 @@ namespace HoloIntervention
       {
         GetXmlDocumentFromFileAsync(L"Assets\\Data\\configuration.xml").then([this](XmlDocument ^ doc)
         {
-          auto xpath = ref new Platform::String(L"/HoloIntervention/VolumeRendering");
-          if (doc->SelectNodes(xpath)->Length != 1)
+          auto fromToFunction = [this, doc](Platform::String^ xpath, std::wstring& m_from, std::wstring& m_to, UWPOpenIGTLink::TransformName^& name)
           {
-            // No configuration found, use defaults
-            return;
-          }
+            if (doc->SelectNodes(xpath)->Length != 1)
+            {
+              // No configuration found, use defaults
+              return;
+            }
 
-          IXmlNode^ volRendering = doc->SelectNodes(xpath)->Item(0);
-          Platform::String^ fromAttribute = dynamic_cast<Platform::String^>(volRendering->Attributes->GetNamedItem(L"From")->NodeValue);
-          Platform::String^ toAttribute = dynamic_cast<Platform::String^>(volRendering->Attributes->GetNamedItem(L"To")->NodeValue);
-          if (fromAttribute->IsEmpty() || toAttribute->IsEmpty())
-          {
-            return;
-          }
-          else
-          {
-            m_volumeFromCoordFrame = std::wstring(fromAttribute->Data());
-            m_volumeToCoordFrame = std::wstring(toAttribute->Data());
-            m_volumeToHMDName = ref new UWPOpenIGTLink::TransformName(fromAttribute, toAttribute);
-          }
+            IXmlNode^ node = doc->SelectNodes(xpath)->Item(0);
+            Platform::String^ fromAttribute = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"From")->NodeValue);
+            Platform::String^ toAttribute = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"To")->NodeValue);
+            if (fromAttribute->IsEmpty() || toAttribute->IsEmpty())
+            {
+              return;
+            }
+            else
+            {
+              m_from = std::wstring(fromAttribute->Data());
+              m_to = std::wstring(toAttribute->Data());
+              name = ref new UWPOpenIGTLink::TransformName(fromAttribute, toAttribute);
+            }
+          };
 
-          // TODO : slice entries in config
+          fromToFunction(L"/HoloIntervention/VolumeRendering", m_volumeFromCoordFrame, m_volumeToCoordFrame, m_volumeToHMDName);
+          fromToFunction(L"/HoloIntervention/SliceRendering", m_sliceFromCoordFrame, m_sliceToCoordFrame, m_sliceToHMDName);
         });
       }
       catch (Platform::Exception^ e)
