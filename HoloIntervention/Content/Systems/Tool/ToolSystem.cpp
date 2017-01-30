@@ -198,12 +198,9 @@ namespace HoloIntervention
       float4x4 trackerToRendering(float4x4::identity());
       try
       {
-        float4x4 trackerToRendering = m_registrationSystem.GetTrackerToCoordinateSystemTransformation(hmdCoordinateSystem);
+        trackerToRendering = m_registrationSystem.GetTrackerToCoordinateSystemTransformation(hmdCoordinateSystem);
       }
-      catch (const std::exception& e)
-      {
-        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, std::string("Unable to retrieve tracker to coord system transform: ") + e.what());
-      }
+      catch (const std::exception&){}
 
       m_transformRepository->SetTransforms(frame);
       m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD"), trackerToRendering, true);

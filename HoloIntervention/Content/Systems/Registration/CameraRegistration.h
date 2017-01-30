@@ -183,7 +183,7 @@ namespace HoloIntervention
       std::shared_ptr<LandmarkRegistration>                                 m_landmarkRegistration = std::make_shared<LandmarkRegistration>();
 
       static const uint32                                                   PHANTOM_SPHERE_COUNT = 5;
-      static const uint32                                                   NUMBER_OF_FRAMES_FOR_CALIBRATION = 90;
+      static const uint32                                                   NUMBER_OF_FRAMES_FOR_CALIBRATION = 30;
       static const float                                                    VISUALIZATION_SPHERE_RADIUS;
     };
   }

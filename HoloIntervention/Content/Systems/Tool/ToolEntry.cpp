@@ -108,12 +108,33 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ToolEntry::Update(const DX::StepTimer& timer)
     {
-      // Transform repository has already been initialized with the transforms for this update
+      // m_transformRepository has already been initialized with the transforms for this update
 
       bool isValid;
       float4x4 transform;
       try
       {
+        transform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"StylusTip", L"Stylus"), &isValid);
+        {
+          std::stringstream ss;
+          ss << transform;
+          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_INFO, std::string("StylusTipToStylus: ") + ss.str());
+        }
+
+        transform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"Stylus", L"Reference"), &isValid);
+        {
+          std::stringstream ss;
+          ss << transform;
+          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_INFO, std::string("StylusToReference: ") + ss.str());
+        }
+
+        transform = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD"), &isValid);
+        {
+          std::stringstream ss;
+          ss << transform;
+          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_INFO, std::string("ReferenceToHMD: ") + ss.str());
+        }
+
         transform = m_transformRepository->GetTransform(m_coordinateFrame, &isValid);
         m_isValid = isValid;
         m_modelEntry->RenderDefault();
@@ -126,7 +147,7 @@ namespace HoloIntervention
           {
             std::stringstream ss;
             ss << transform;
-            HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_INFO, std::string("transform: ") + ss.str());
+            HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_INFO, std::string("stylus transform: ") + ss.str());
             x = 1;
           }
         }

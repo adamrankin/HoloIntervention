@@ -520,11 +520,6 @@ namespace HoloIntervention
               {
                 // If visualizing, update the latest known poses of the spheres
                 m_sphereToAnchorPoses[i] = sphereToAnchorPose;
-#if _DEBUG
-                std::stringstream ss;
-                ss << i;
-                HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_DEBUG, std::string("m_sphereToAnchorPoses[") + ss.str() + "]: " + ToString(m_sphereToAnchorPoses[i]));
-#endif
                 i++;
               }
             }
@@ -832,10 +827,6 @@ namespace HoloIntervention
           cvToD3D.m33 = -1.f;
           phantomToCameraTransform = transpose(phantomToCameraTransform) * cvToD3D; // Output is in column-major format, OpenCV produces row-major
 
-#if _DEBUG
-          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_DEBUG, std::string("phantomToCameraTransform: ") + ToString(phantomToCameraTransform));
-#endif
-
           result = true;
         }
 done:
@@ -888,11 +879,6 @@ done:
           {
             hasError = true;
           }
-#if _DEBUG
-          std::stringstream ss;
-          ss << i;
-          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_DEBUG, std::string("m_sphereToPhantomPoses[") + ss.str() + "]: " + ToString(m_sphereToPhantomPoses[i]));
-#endif
         }
 
         if (!hasError)
