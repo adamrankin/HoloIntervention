@@ -40,6 +40,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 using namespace Concurrency;
 using namespace Windows::Media::SpeechRecognition;
+using namespace Windows::Networking::Connectivity;
+using namespace Windows::Networking;
 
 namespace HoloIntervention
 {
@@ -53,6 +55,23 @@ namespace HoloIntervention
     IGTConnector::IGTConnector(System::NotificationSystem& notificationSystem)
       : m_notificationSystem(notificationSystem)
     {
+      auto hostNames = NetworkInformation::GetHostNames();
+      HostName^ hostName(nullptr);
+
+      for (auto host : hostNames)
+      {
+        if (host->Type == HostNameType::Ipv4)
+        {
+          hostName = host;
+          break;
+        }
+      }
+
+      if (hostName != nullptr)
+      {
+        OutputDebugStringW(hostName->ToString()->Data());
+      }
+
       m_componentReady = true;
     }
 
@@ -100,6 +119,19 @@ namespace HoloIntervention
     HoloIntervention::Network::ConnectionState IGTConnector::GetConnectionState() const
     {
       return m_connectionState;
+    }
+
+    //----------------------------------------------------------------------------
+    task<std::vector<std::string>> IGTConnector::FindServersAsync()
+    {
+      return create_task([this]()
+      {
+        std::vector<std::string> results;
+
+
+
+        return results;
+      });
     }
 
     //----------------------------------------------------------------------------

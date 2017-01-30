@@ -106,14 +106,8 @@ namespace HoloIntervention
 
       if (headPose != nullptr)
       {
-        // Get the gaze direction relative to the given coordinate system.
-        const float3 headPosition = headPose->Head->Position;
-
-        // Offset the view to centered, lower quadrant
-        const float3 offsetFromGazeAtTwoMeters = headPosition + (float3(NOTIFICATION_DISTANCE_OFFSET) * headPose->Head->ForwardDirection);
+        const float3 offsetFromGazeAtTwoMeters = headPose->Head->Position + (float3(NOTIFICATION_DISTANCE_OFFSET) * headPose->Head->ForwardDirection);
         const float4x4 worldTransform = make_float4x4_world(offsetFromGazeAtTwoMeters, -headPose->Head->ForwardDirection, headPose->Head->UpDirection);
-
-        // Slice is -0.5 -- 0.5 in x,y
         const float4x4 scaleTransform = make_float4x4_scale(0.6f, 0.3f, 1.f); // 60cm x 30cm
 
         m_sliceEntry->SetDesiredPose(worldTransform * scaleTransform);

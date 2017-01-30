@@ -145,7 +145,6 @@ namespace HoloIntervention
     m_engineComponents.push_back(m_registrationSystem.get());
     m_engineComponents.push_back(m_imagingSystem.get());
     m_engineComponents.push_back(m_iconSystem.get());
-    m_engineComponents.push_back(m_splashSystem.get());
 
     // TODO : remove temp code
     m_IGTConnector->SetHostname(L"192.168.0.103");

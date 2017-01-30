@@ -735,6 +735,9 @@ namespace HoloIntervention
               if (circle.z / radiusMean < 0.85f || circle.z / radiusMean > 1.15f)
               {
                 result = false;
+#if _DEBUG
+                HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_DEBUG, "Circles not within mean.");
+#endif
                 goto done;
               }
 
@@ -745,11 +748,17 @@ namespace HoloIntervention
           {
             // TODO : is it possible to make our code more robust by identifying 5 circles that make sense? pixel center distances? radii? etc...
             result = false;
+#if _DEBUG
+            HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_DEBUG, "Too many circles detected.");
+#endif
             goto done;
           }
           else
           {
             result = false;
+#if _DEBUG
+            HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_DEBUG, "Not enough circles detected.");
+#endif
             goto done;
           }
 
@@ -777,6 +786,9 @@ namespace HoloIntervention
           if (!SortCorrespondence(hsv, phantomFiducialsCv, circles))
           {
             result = false;
+#if _DEBUG
+            HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_DEBUG, "Cannot sort correspondence.");
+#endif
             goto done;
           }
 
@@ -787,6 +799,9 @@ namespace HoloIntervention
             if (!cv::solvePnP(phantomFiducialsCv, circleCentersPixel, intrinsic, distCoeffs, rvec, tvec, false, cv::SOLVEPNP_DLS))
             {
               result = false;
+#if _DEBUG
+              HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_DEBUG, "Cannot solve initial PnP.");
+#endif
               goto done;
             }
           }
@@ -795,6 +810,9 @@ namespace HoloIntervention
           if (!cv::solvePnP(phantomFiducialsCv, circleCentersPixel, intrinsic, distCoeffs, rvec, tvec, true))
           {
             result = false;
+#if _DEBUG
+            HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_DEBUG, "Cannot solve iterative PnP.");
+#endif
             goto done;
           }
 
