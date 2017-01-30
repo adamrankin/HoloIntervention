@@ -68,6 +68,7 @@ namespace HoloIntervention
       bool IsConnected();
       ConnectionState GetConnectionState() const;
 
+      Concurrency::task<std::vector<std::string>> FindServersAsync();
       void SetHostname(const std::wstring& hostname);
       std::wstring GetHostname() const;
 
