@@ -126,13 +126,14 @@ namespace HoloIntervention
         m_sendList.pop_front();
         try
         {
-          SendMessageAsync(item.first, item.second).then([this, item](bool result)
+          auto sendTask = SendMessageAsync(item.first, item.second).then([this, item](bool result)
           {
             if (!result)
             {
               m_sendList.push_front(item);
             }
           });
+          sendTask.wait();
         }
         catch (const std::exception& e)
         {
