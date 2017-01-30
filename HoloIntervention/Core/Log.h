@@ -33,6 +33,11 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 namespace HoloIntervention
 {
+  namespace Network
+  {
+    class IGTConnector;
+  }
+
   class Log : public IEngineComponent
   {
   public:
@@ -58,7 +63,9 @@ namespace HoloIntervention
     uint32 GetPort() const;
 
     void SetHostname(const std::wstring& hostname);
-    std::wstring GetHostname()const;;
+    std::wstring GetHostname()const;
+
+    void SetIGTConnector(Network::IGTConnector& connector);
 
   protected:
     Concurrency::task<void> DataSenderAsync();
@@ -72,6 +79,8 @@ namespace HoloIntervention
     Log();
     ~Log();
 
+  protected:
+    Network::IGTConnector*                            m_IGTConnector;
     Concurrency::cancellation_token_source            m_tokenSource;
     Windows::Networking::Sockets::StreamSocket^       m_socket = ref new Windows::Networking::Sockets::StreamSocket();
     std::atomic_bool                                  m_connected = false;

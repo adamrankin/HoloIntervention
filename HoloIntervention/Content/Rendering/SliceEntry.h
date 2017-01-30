@@ -23,6 +23,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
+// Local includes
+#include "IStabilizedComponent.h"
+
 namespace DX
 {
   class DeviceResources;
@@ -40,8 +43,14 @@ namespace HoloIntervention
 
     static_assert((sizeof(SliceConstantBuffer) % (sizeof(float) * 4)) == 0, "Slice constant buffer size must be 16-byte aligned (16 bytes is the length of four floats).");
 
-    class SliceEntry
+    class SliceEntry : public IStabilizedComponent
     {
+    public:
+      virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition() const;
+      virtual Windows::Foundation::Numerics::float3 GetStabilizedNormal() const;
+      virtual Windows::Foundation::Numerics::float3 GetStabilizedVelocity() const;
+      virtual float GetStabilizePriority() const;
+
     public:
       SliceEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources);
       ~SliceEntry();
@@ -49,11 +58,13 @@ namespace HoloIntervention
       void Update(Windows::UI::Input::Spatial::SpatialPointerPose^ pose, const DX::StepTimer& timer);
       void Render(uint32 indexCount);
 
+      void SetImageData(const std::wstring& fileName);
       void SetImageData(std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat);
       std::shared_ptr<byte> GetImageData() const;
 
       void SetDesiredPose(const Windows::Foundation::Numerics::float4x4& matrix);
-      Windows::Foundation::Numerics::float3 GetSliceVelocity() const;
+      const Windows::Foundation::Numerics::float4x4& GetCurrentPose() const;
+
       void SetHeadlocked(bool headLocked);
 
       // D3D device related controls
@@ -79,6 +90,7 @@ namespace HoloIntervention
       Microsoft::WRL::ComPtr<ID3D11Buffer>                m_sliceConstantBuffer;
 
       // Rendering behavior vars
+      std::atomic_bool                                    m_sliceValid = false;
       std::atomic_bool                                    m_headLocked = false;
       float                                               m_scalingFactor = 1.f;
 

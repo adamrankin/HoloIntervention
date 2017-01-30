@@ -33,7 +33,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "StepTimer.h"
 
 // Network includes
-#include "IGTLinkIF.h"
+#include "IGTConnector.h"
 
 // System includes
 #include "NotificationSystem.h"
@@ -51,7 +51,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 using namespace Concurrency;
 using namespace DirectX;
-using namespace Windows::Data::Xml::Dom;
 using namespace Windows::Foundation::Numerics;
 using namespace Windows::Perception::Spatial;
 using namespace Windows::UI::Input::Spatial;
@@ -106,50 +105,10 @@ namespace HoloIntervention
       , m_frontPositionSRV(frontPositionSRV)
       , m_backPositionSRV(backPositionSRV)
     {
-      try
-      {
-        InitializeTransformRepositoryAsync(m_transformRepository, L"Assets\\Data\\configuration.xml");
-      }
-      catch (Platform::Exception^ e)
-      {
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(e->Message);
-      }
-
       ControlPointList points;
       points.push_back(ControlPoint(0.f, float4(0.f, 0.f, 0.f, 0.f)));
       points.push_back(ControlPoint(255.f, float4(0.f, 0.f, 0.f, 1.f)));
       SetOpacityTransferFunctionTypeAsync(TransferFunction_Piecewise_Linear, 512, points);
-
-      try
-      {
-        GetXmlDocumentFromFileAsync(L"Assets\\Data\\configuration.xml").then([this](XmlDocument ^ doc)
-        {
-          auto xpath = ref new Platform::String(L"/HoloIntervention/VolumeRendering");
-          if (doc->SelectNodes(xpath)->Length != 1)
-          {
-            // No configuration found, use defaults
-            return;
-          }
-
-          IXmlNode^ volRendering = doc->SelectNodes(xpath)->Item(0);
-          Platform::String^ fromAttribute = dynamic_cast<Platform::String^>(volRendering->Attributes->GetNamedItem(L"From")->NodeValue);
-          Platform::String^ toAttribute = dynamic_cast<Platform::String^>(volRendering->Attributes->GetNamedItem(L"To")->NodeValue);
-          if (fromAttribute->IsEmpty() || toAttribute->IsEmpty())
-          {
-            return;
-          }
-          else
-          {
-            m_fromCoordFrame = std::wstring(fromAttribute->Data());
-            m_toCoordFrame = std::wstring(toAttribute->Data());
-            m_imageToHMDName = ref new UWPOpenIGTLink::TransformName(fromAttribute, toAttribute);
-          }
-        });
-      }
-      catch (Platform::Exception^ e)
-      {
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(e->Message);
-      }
 
       CreateDeviceDependentResources();
     }
@@ -162,7 +121,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void VolumeEntry::Update(const DX::StepTimer& timer, DX::CameraResources* cameraResources, SpatialCoordinateSystem^ hmdCoordinateSystem, SpatialPointerPose^ headPose)
+    void VolumeEntry::Update(const DX::StepTimer& timer)
     {
       if (!m_tfResourcesReady)
       {
@@ -172,16 +131,6 @@ namespace HoloIntervention
 
       auto context = m_deviceResources->GetD3DDeviceContext();
       auto device = m_deviceResources->GetD3DDevice();
-
-      // Retrieve the current registration from reference to HMD
-      float4x4 trackerToHMD = HoloIntervention::instance()->GetRegistrationSystem().GetTrackerToCoordinateSystemTransformation(hmdCoordinateSystem);
-      m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD"), transpose(trackerToHMD), true);
-      bool isValid;
-      float4x4 transform = transpose(m_transformRepository->GetTransform(m_imageToHMDName, &isValid));
-      if (!isValid)
-      {
-        return;
-      }
 
       const float& deltaTime = static_cast<float>(timer.GetElapsedSeconds());
 
@@ -293,15 +242,6 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void VolumeEntry::SetTransforms(UWPOpenIGTLink::TrackedFrame^ frame)
-    {
-      if (m_transformRepository != nullptr)
-      {
-        m_transformRepository->SetTransforms(frame);
-      }
-    }
-
-    //----------------------------------------------------------------------------
     void VolumeEntry::SetImageData(std::shared_ptr<byte> imageData, uint16 width, uint16 height, uint16 depth, DXGI_FORMAT pixelFormat)
     {
       if (depth < 2)
@@ -347,6 +287,12 @@ namespace HoloIntervention
     void VolumeEntry::SetDesiredPose(const Windows::Foundation::Numerics::float4x4& matrix)
     {
       m_desiredPose = matrix;
+    }
+
+    //----------------------------------------------------------------------------
+    const float4x4& VolumeEntry::GetCurrentPose() const
+    {
+      return m_currentPose;
     }
 
     //----------------------------------------------------------------------------
@@ -491,15 +437,15 @@ namespace HoloIntervention
         delete m_opacityTransferFunction;
         switch (functionType)
         {
-          case VolumeEntry::TransferFunction_Piecewise_Linear:
-          {
-            m_opacityTFType = VolumeEntry::TransferFunction_Piecewise_Linear;
-            m_opacityTransferFunction = new PiecewiseLinearTransferFunction();
-            break;
-          }
-          default:
-            throw std::invalid_argument("Function type not recognized.");
-            break;
+        case VolumeEntry::TransferFunction_Piecewise_Linear:
+        {
+          m_opacityTFType = VolumeEntry::TransferFunction_Piecewise_Linear;
+          m_opacityTransferFunction = new PiecewiseLinearTransferFunction();
+          break;
+        }
+        default:
+          throw std::invalid_argument("Function type not recognized.");
+          break;
         }
 
         for (auto& point : controlPoints)

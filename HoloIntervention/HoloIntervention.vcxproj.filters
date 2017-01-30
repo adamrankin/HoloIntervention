@@ -1,12 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="Common\CameraResources.cpp">
-      <Filter>Common</Filter>
-    </ClCompile>
-    <ClCompile Include="Common\DeviceResources.cpp">
-      <Filter>Common</Filter>
-    </ClCompile>
     <ClCompile Include="Content\Sound\CardioidSound.cpp">
       <Filter>Content\Sound</Filter>
     </ClCompile>
@@ -49,9 +43,6 @@
     <ClCompile Include="Content\Rendering\ModelEntry.cpp">
       <Filter>Content\Rendering\ModelRenderer</Filter>
     </ClCompile>
-    <ClCompile Include="Content\Network\IGTLinkIF.cpp">
-      <Filter>Content\Network</Filter>
-    </ClCompile>
     <ClCompile Include="Content\Rendering\DirectXTK\InstancedEffectCommon.cpp">
       <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
     </ClCompile>
@@ -67,14 +58,8 @@
     <ClCompile Include="Content\Rendering\SpatialMesh.cpp">
       <Filter>Content\Rendering\SpatialMeshRenderer</Filter>
     </ClCompile>
-    <ClCompile Include="Content\Sound\SoundManager.cpp">
-      <Filter>Content\Sound</Filter>
-    </ClCompile>
     <ClCompile Include="Content\Rendering\DirectXTK\InstancedGeometricPrimitive.cpp">
       <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
-    </ClCompile>
-    <ClCompile Include="Common\Common.cpp">
-      <Filter>Common</Filter>
     </ClCompile>
     <ClCompile Include="Content\Systems\Registration\RegistrationSystem.cpp">
       <Filter>Content\Systems\Registration</Filter>
@@ -88,9 +73,6 @@
     <ClCompile Include="Content\Systems\Notification\NotificationSystem.cpp">
       <Filter>Content\Systems\Notification</Filter>
     </ClCompile>
-    <ClCompile Include="Content\Systems\Spatial\SpatialSystem.cpp">
-      <Filter>Content\Systems\Spatial</Filter>
-    </ClCompile>
     <ClCompile Include="Content\Systems\Tool\ToolEntry.cpp">
       <Filter>Content\Systems\Tools</Filter>
     </ClCompile>
@@ -99,9 +81,6 @@
     </ClCompile>
     <ClCompile Include="Content\Systems\Registration\CameraRegistration.cpp">
       <Filter>Content\Systems\Registration\Camera</Filter>
-    </ClCompile>
-    <ClCompile Include="Content\Systems\Registration\NetworkPCLRegistration.cpp">
-      <Filter>Content\Systems\Registration\NetworkPCL</Filter>
     </ClCompile>
     <ClCompile Include="Content\Capture\VideoFrameProcessor.cpp">
       <Filter>Content\Capture</Filter>
@@ -142,20 +121,27 @@
     <ClCompile Include="Core\Log.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="Core\Common.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Rendering\CameraResources.cpp">
+      <Filter>Core\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Rendering\DeviceResources.cpp">
+      <Filter>Core\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Network\IGTConnector.cpp">
+      <Filter>Content\Network</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Sound\SoundAPI.cpp">
+      <Filter>Content\Sound</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Physics\SurfaceAPI.cpp">
+      <Filter>Content\Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Systems\Splash\SplashSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Common\CameraResources.h">
-      <Filter>Common</Filter>
-    </ClInclude>
-    <ClInclude Include="Common\DeviceResources.h">
-      <Filter>Common</Filter>
-    </ClInclude>
-    <ClInclude Include="Common\DirectXHelper.h">
-      <Filter>Common</Filter>
-    </ClInclude>
-    <ClInclude Include="Common\StepTimer.h">
-      <Filter>Common</Filter>
-    </ClInclude>
     <ClInclude Include="Content\Sound\OmnidirectionalSound.h">
       <Filter>Content\Sound</Filter>
     </ClInclude>
@@ -176,9 +162,6 @@
     </ClInclude>
     <ClInclude Include="Content\SpatialMapping\SpatialSurfaceCollection.h">
       <Filter>Content\Spatial</Filter>
-    </ClInclude>
-    <ClInclude Include="Common\Common.h">
-      <Filter>Common</Filter>
     </ClInclude>
     <ClInclude Include="Content\Rendering\SliceRenderer.h">
       <Filter>Content\Rendering\SliceRenderer</Filter>
@@ -201,9 +184,6 @@
     <ClInclude Include="Content\Rendering\ModelEntry.h">
       <Filter>Content\Rendering\ModelRenderer</Filter>
     </ClInclude>
-    <ClInclude Include="Content\Network\IGTLinkIF.h">
-      <Filter>Content\Network</Filter>
-    </ClInclude>
     <ClInclude Include="Content\Rendering\DirectXTK\InstancedEffectFactory.h">
       <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
     </ClInclude>
@@ -218,9 +198,6 @@
     </ClInclude>
     <ClInclude Include="Content\Rendering\SpatialMesh.h">
       <Filter>Content\Rendering\SpatialMeshRenderer</Filter>
-    </ClInclude>
-    <ClInclude Include="Content\Sound\SoundManager.h">
-      <Filter>Content\Sound</Filter>
     </ClInclude>
     <ClInclude Include="Content\Rendering\DirectXTK\InstancedGeometricPrimitive.h">
       <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
@@ -237,9 +214,6 @@
     <ClInclude Include="Content\Systems\Notification\NotificationSystem.h">
       <Filter>Content\Systems\Notification</Filter>
     </ClInclude>
-    <ClInclude Include="Content\Systems\Spatial\SpatialSystem.h">
-      <Filter>Content\Systems\Spatial</Filter>
-    </ClInclude>
     <ClInclude Include="Content\Systems\Tool\ToolEntry.h">
       <Filter>Content\Systems\Tools</Filter>
     </ClInclude>
@@ -248,9 +222,6 @@
     </ClInclude>
     <ClInclude Include="Content\Systems\Registration\CameraRegistration.h">
       <Filter>Content\Systems\Registration\Camera</Filter>
-    </ClInclude>
-    <ClInclude Include="Content\Systems\Registration\NetworkPCLRegistration.h">
-      <Filter>Content\Systems\Registration\NetworkPCL</Filter>
     </ClInclude>
     <ClInclude Include="Content\Capture\VideoFrameProcessor.h">
       <Filter>Content\Capture</Filter>
@@ -306,6 +277,34 @@
     <ClInclude Include="Core\Log.h">
       <Filter>Core</Filter>
     </ClInclude>
+    <ClInclude Include="Core\IStabilizedComponent.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\StepTimer.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Common.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Rendering\DirectXHelper.h">
+      <Filter>Core\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Rendering\CameraResources.h">
+      <Filter>Core\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Rendering\DeviceResources.h">
+      <Filter>Core\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Network\IGTConnector.h">
+      <Filter>Content\Network</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Sound\SoundAPI.h">
+      <Filter>Content\Sound</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Physics\SurfaceAPI.h">
+      <Filter>Content\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Systems\Splash\SplashSystem.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\LockScreenLogo.scale-200.png">
@@ -333,6 +332,9 @@
       <Filter>Assets\Images</Filter>
     </Image>
     <Image Include="Assets\SplashScreen.scale-100.png">
+      <Filter>Assets\Images</Filter>
+    </Image>
+    <Image Include="Assets\Images\HoloIntervention.png">
       <Filter>Assets\Images</Filter>
     </Image>
   </ItemGroup>
@@ -633,9 +635,6 @@
     <Filter Include="Content">
       <UniqueIdentifier>{507ac04a-d4d2-4268-8c32-6a5cc166065b}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Common">
-      <UniqueIdentifier>{0eb88fd4-8091-49ac-98ab-63580abfdeaf}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Assets">
       <UniqueIdentifier>{74ca8f7e-e0f6-4d44-97fc-967ebecfdfea}</UniqueIdentifier>
     </Filter>
@@ -680,9 +679,6 @@
     </Filter>
     <Filter Include="Content\Systems">
       <UniqueIdentifier>{7e576baa-03cd-4bc3-ba22-2a7062c2289f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Content\Systems\Spatial">
-      <UniqueIdentifier>{519ea7d3-90f9-408f-ae20-9195036249a7}</UniqueIdentifier>
     </Filter>
     <Filter Include="Content\Systems\Notification">
       <UniqueIdentifier>{828d142c-791a-453d-9db1-729b679a943c}</UniqueIdentifier>
@@ -735,9 +731,6 @@
     <Filter Include="Content\Systems\Imaging">
       <UniqueIdentifier>{4a1cdeda-e9eb-485e-8933-79c8c9ef49b4}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Content\Systems\Registration\NetworkPCL">
-      <UniqueIdentifier>{a81ad6cb-8eb5-4f89-9e6b-a994cf084957}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Content\Systems\Registration\Camera">
       <UniqueIdentifier>{51115ad3-67e3-4e0f-8bc0-c4d42023c829}</UniqueIdentifier>
     </Filter>
@@ -773,6 +766,15 @@
     </Filter>
     <Filter Include="Content\Systems\Icon">
       <UniqueIdentifier>{fe11c5fa-8399-4d3e-b999-11f76d17b462}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Rendering">
+      <UniqueIdentifier>{95d794f9-895c-466e-a741-249b2e0914d8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Physics">
+      <UniqueIdentifier>{7d845063-76f8-4271-82e4-85d9f6fdfb5d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Systems\Splash">
+      <UniqueIdentifier>{a1eddbb3-f563-4909-b006-e303e4ec04ac}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

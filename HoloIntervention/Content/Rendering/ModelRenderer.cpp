@@ -25,9 +25,13 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "pch.h"
 #include "DirectXHelper.h"
 #include "ModelRenderer.h"
+#include "DeviceResources.h"
 
 // Windows includes
 #include <comdef.h>
+
+// DirectXTK includes
+#include "InstancedGeometricPrimitive.h"
 
 using namespace Concurrency;
 using namespace DirectX;
@@ -128,8 +132,16 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    uint64 ModelRenderer::AddGeometricPrimitive(std::unique_ptr<DirectX::InstancedGeometricPrimitive> primitive)
+    uint64 ModelRenderer::AddPrimitive(PrimitiveType type, float diameter, size_t tessellation, bool rhcoords, bool invertn)
     {
+      std::unique_ptr<DirectX::InstancedGeometricPrimitive> primitive(nullptr);
+      switch (type)
+      {
+      case PrimitiveType_SPHERE:
+        primitive = std::move(DirectX::InstancedGeometricPrimitive::CreateSphere(m_deviceResources->GetD3DDeviceContext(), diameter, tessellation, rhcoords, invertn));
+        break;
+      }
+
       std::shared_ptr<PrimitiveEntry> entry = std::make_shared<PrimitiveEntry>(m_deviceResources, std::move(primitive));
       entry->SetId(m_nextUnusedId);
       entry->SetVisible(true);

@@ -28,6 +28,11 @@ namespace DX
 
 namespace HoloIntervention
 {
+  namespace System
+  {
+    class NotificationSystem;
+  }
+
   namespace Rendering
   {
     class SpatialMeshRenderer : public Sound::IVoiceInput, public IEngineComponent
@@ -35,7 +40,7 @@ namespace HoloIntervention
       typedef std::map<Platform::Guid, SpatialMesh> GuidMeshMap;
 
     public:
-      SpatialMeshRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources);
+      SpatialMeshRenderer(System::NotificationSystem& notificationSystem, const std::shared_ptr<DX::DeviceResources>& deviceResources);
 
       void Update(DX::ViewProjection& vp, DX::StepTimer const& timer, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem);
       void Render();
@@ -70,6 +75,7 @@ namespace HoloIntervention
     protected:
       // Cached pointer to device resources.
       std::shared_ptr<DX::DeviceResources>            m_deviceResources;
+      System::NotificationSystem&                     m_notificationSystem;
 
       // Direct3D resources for SR mesh rendering pipeline.
       Microsoft::WRL::ComPtr<ID3D11InputLayout>       m_inputLayout;

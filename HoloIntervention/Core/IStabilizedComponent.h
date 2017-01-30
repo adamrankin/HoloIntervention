@@ -23,21 +23,25 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-// STL includes
-#include <atomic>
+// Local includes
+#include "IEngineComponent.h"
 
 namespace HoloIntervention
 {
-  class IEngineComponent
+  class IStabilizedComponent : public IEngineComponent
   {
   public:
-    virtual bool IsReady();
+    virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition() const = 0;
+    virtual Windows::Foundation::Numerics::float3 GetStabilizedNormal() const = 0;
+    virtual Windows::Foundation::Numerics::float3 GetStabilizedVelocity() const = 0;
+    virtual float GetStabilizePriority() const = 0;
+    inline bool IsStabilizationActive() { return GetStabilizePriority() > PRIORITY_NOT_ACTIVE; }
 
   protected:
-    IEngineComponent() {};
-    virtual ~IEngineComponent() {};
+    const float PRIORITY_NOT_ACTIVE = 0.f;
 
   protected:
-    std::atomic_bool      m_componentReady = false;
+    IStabilizedComponent() {};
+    virtual ~IStabilizedComponent() {};
   };
 }

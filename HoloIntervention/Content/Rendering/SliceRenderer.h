@@ -42,6 +42,11 @@ namespace DX
 
 namespace HoloIntervention
 {
+  namespace System
+  {
+    class NotificationSystem;
+  }
+
   namespace Rendering
   {
     struct VertexPositionTexture
@@ -59,12 +64,14 @@ namespace HoloIntervention
       SliceRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources);
       ~SliceRenderer();
 
+      uint64 AddSlice(const std::wstring& fileName);
       uint64 AddSlice();
-      uint64 AddSlice(std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 imageToTrackerTransform, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);
-      uint64 AddSlice(Windows::Storage::Streams::IBuffer^ imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 imageToTrackerTransform, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);
+      uint64 AddSlice(std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 desiredPose);
+      uint64 AddSlice(Windows::Storage::Streams::IBuffer^ imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 desiredPose);
       void RemoveSlice(uint64 sliceToken);
+      std::shared_ptr<SliceEntry> GetSlice(uint64 sliceToken);
 
-      void UpdateSlice(uint64 sliceToken, std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 imageToTrackerTransform, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);
+      void UpdateSlice(uint64 sliceToken, std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 desiredPose);
 
       void ShowSlice(uint64 sliceToken);
       void HideSlice(uint64 sliceToken);

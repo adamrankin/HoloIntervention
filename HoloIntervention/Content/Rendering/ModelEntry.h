@@ -27,19 +27,19 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "InstancedEffectFactory.h"
 #include "InstancedEffects.h"
 
-// Common includes
-#include "Common.h"
-#include "CameraResources.h"
-
-// DirectXTK includes
-#include <CommonStates.h>
-#include <Effects.h>
-#include <Model.h>
+namespace DirectX
+{
+  class ModelMesh;
+  class ModelMeshPart;
+  class Model;
+  class CommonStates;
+}
 
 namespace DX
 {
   class DeviceResources;
   class StepTimer;
+  struct ViewProjection;
 }
 
 namespace HoloIntervention
@@ -66,11 +66,17 @@ namespace HoloIntervention
       void SetVisible(bool enable);
       void ToggleVisible();
       bool IsVisible() const;
+
       void SetRenderingState(ModelRenderingState state);
-      void SetWorld(const Windows::Foundation::Numerics::float4x4& world);
       void EnableLighting(bool enable);
+
       void EnablePoseLerp(bool enable);
       void SetPoseLerpRate(float lerpRate);
+
+      void SetWorld(const Windows::Foundation::Numerics::float4x4& world);
+      const Windows::Foundation::Numerics::float4x4& GetWorld() const;
+
+      const Windows::Foundation::Numerics::float3& GetVelocity() const;
 
       uint64 GetId() const;
       void SetId(uint64 id);
@@ -99,19 +105,21 @@ namespace HoloIntervention
       std::unique_ptr<DirectX::InstancedEffectFactory>    m_effectFactory = nullptr;
       std::shared_ptr<DirectX::Model>                     m_model = nullptr;
 
-      DX::ViewProjection                                  m_viewProjection;
+      std::unique_ptr<DX::ViewProjection>                 m_viewProjection = nullptr;
       Windows::Foundation::Numerics::float4x4             m_worldMatrix = Windows::Foundation::Numerics::float4x4::identity();
       std::array<float, 6>                                m_modelBounds = { -1.f };
       std::wstring                                        m_assetLocation;
       DirectX::XMFLOAT4                                   m_defaultColour;
       std::atomic_bool                                    m_enableLerp;
       float                                               m_poseLerpRate = 4.f;
+      Windows::Foundation::Numerics::float3               m_velocity;
+      Windows::Foundation::Numerics::float4x4             m_lastPose = Windows::Foundation::Numerics::float4x4::identity();
       Windows::Foundation::Numerics::float4x4             m_currentPose = Windows::Foundation::Numerics::float4x4::identity();
       Windows::Foundation::Numerics::float4x4             m_desiredPose = Windows::Foundation::Numerics::float4x4::identity();
 
       // Model related behavior
       std::atomic_bool                                    m_visible = false;
-      uint64                                              m_id = INVALID_ENTRY;
+      uint64                                              m_id = INVALID_TOKEN;
       ModelRenderingState                                 m_renderingState = RENDERING_DEFAULT;
 
       // Variables used with the rendering loop.

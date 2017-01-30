@@ -24,7 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "pch.h"
 #include "AppView.h"
-#include "IGTLinkIF.h"
+#include "IGTConnector.h"
 #include "NotificationSystem.h"
 
 // Windows includes
@@ -45,23 +45,24 @@ namespace HoloIntervention
 {
   namespace Network
   {
-    const double IGTLinkIF::CONNECT_TIMEOUT_SEC = 3.0;
-    const uint32_t IGTLinkIF::RECONNECT_RETRY_DELAY_MSEC = 100;
-    const uint32_t IGTLinkIF::RECONNECT_RETRY_COUNT = 10;
+    const double IGTConnector::CONNECT_TIMEOUT_SEC = 3.0;
+    const uint32_t IGTConnector::RECONNECT_RETRY_DELAY_MSEC = 100;
+    const uint32_t IGTConnector::RECONNECT_RETRY_COUNT = 10;
 
     //----------------------------------------------------------------------------
-    IGTLinkIF::IGTLinkIF()
+    IGTConnector::IGTConnector(System::NotificationSystem& notificationSystem)
+      : m_notificationSystem(notificationSystem)
     {
       m_componentReady = true;
     }
 
     //----------------------------------------------------------------------------
-    IGTLinkIF::~IGTLinkIF()
+    IGTConnector::~IGTConnector()
     {
     }
 
     //----------------------------------------------------------------------------
-    task<bool> IGTLinkIF::ConnectAsync(double timeoutSec, task_options& options)
+    task<bool> IGTConnector::ConnectAsync(double timeoutSec, task_options& options)
     {
       m_connectionState = CONNECTION_STATE_CONNECTING;
 
@@ -83,54 +84,54 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void IGTLinkIF::Disconnect()
+    void IGTConnector::Disconnect()
     {
       m_igtClient->Disconnect();
       m_connectionState = CONNECTION_STATE_DISCONNECTED;
     }
 
     //----------------------------------------------------------------------------
-    bool IGTLinkIF::IsConnected()
+    bool IGTConnector::IsConnected()
     {
       return m_connectionState == CONNECTION_STATE_CONNECTED;
     }
 
     //----------------------------------------------------------------------------
-    HoloIntervention::Network::ConnectionState IGTLinkIF::GetConnectionState() const
+    HoloIntervention::Network::ConnectionState IGTConnector::GetConnectionState() const
     {
       return m_connectionState;
     }
 
     //----------------------------------------------------------------------------
-    void IGTLinkIF::SetHostname(const std::wstring& hostname)
+    void IGTConnector::SetHostname(const std::wstring& hostname)
     {
       std::lock_guard<std::mutex> guard(m_clientMutex);
       m_igtClient->ServerHost = ref new Platform::String(hostname.c_str());
     }
 
     //----------------------------------------------------------------------------
-    std::wstring IGTLinkIF::GetHostname() const
+    std::wstring IGTConnector::GetHostname() const
     {
       std::lock_guard<std::mutex> guard(m_clientMutex);
       return std::wstring(m_igtClient->ServerHost->Data());
     }
 
     //----------------------------------------------------------------------------
-    void IGTLinkIF::SetPort(int32 port)
+    void IGTConnector::SetPort(int32 port)
     {
       std::lock_guard<std::mutex> guard(m_clientMutex);
       m_igtClient->ServerPort = port;
     }
 
     //----------------------------------------------------------------------------
-    int32 IGTLinkIF::GetPort() const
+    int32 IGTConnector::GetPort() const
     {
       std::lock_guard<std::mutex> guard(m_clientMutex);
       return m_igtClient->ServerPort;
     }
 
     //----------------------------------------------------------------------------
-    bool IGTLinkIF::GetTrackedFrame(UWPOpenIGTLink::TrackedFrame^& frame, double* latestTimestamp)
+    bool IGTConnector::GetTrackedFrame(UWPOpenIGTLink::TrackedFrame^& frame, double* latestTimestamp)
     {
       double ts = latestTimestamp == nullptr ? 0.0 : *latestTimestamp;
       auto latestFrame = m_igtClient->GetTrackedFrame(ts);
@@ -144,7 +145,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool IGTLinkIF::GetCommand(UWPOpenIGTLink::Command^& cmd, double* latestTimestamp)
+    bool IGTConnector::GetCommand(UWPOpenIGTLink::Command^& cmd, double* latestTimestamp)
     {
       double ts = latestTimestamp == nullptr ? 0.0 : *latestTimestamp;
       auto latestCommand =  m_igtClient->GetCommand(ts);
@@ -158,21 +159,21 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void IGTLinkIF::RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap)
+    void IGTConnector::RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap)
     {
       callbackMap[L"connect"] = [this](SpeechRecognitionResult ^ result)
       {
-        uint64 connectMessageId = HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Connecting...");
+        uint64 connectMessageId = m_notificationSystem.QueueMessage(L"Connecting...");
         ConnectAsync(4.0).then([this, connectMessageId](bool result)
         {
-          HoloIntervention::instance()->GetNotificationSystem().RemoveMessage(connectMessageId);
+          m_notificationSystem.RemoveMessage(connectMessageId);
           if (result)
           {
-            HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Connection successful.");
+            m_notificationSystem.QueueMessage(L"Connection successful.");
           }
           else
           {
-            HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Connection failed.");
+            m_notificationSystem.QueueMessage(L"Connection failed.");
           }
 
           if (result)
@@ -191,18 +192,18 @@ namespace HoloIntervention
         }
 
         Disconnect();
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Disconnected.");
+        m_notificationSystem.QueueMessage(L"Disconnected.");
       };
     }
 
     //----------------------------------------------------------------------------
-    std::shared_ptr<byte> IGTLinkIF::GetSharedImagePtr(UWPOpenIGTLink::TrackedFrame^ frame)
+    std::shared_ptr<byte> IGTConnector::GetSharedImagePtr(UWPOpenIGTLink::TrackedFrame^ frame)
     {
       return *(std::shared_ptr<byte>*)frame->ImageDataSharedPtr;
     }
 
     //----------------------------------------------------------------------------
-    task<void> IGTLinkIF::KeepAliveAsync()
+    task<void> IGTConnector::KeepAliveAsync()
     {
       m_keepAliveTokenSource = cancellation_token_source();
       auto token = m_keepAliveTokenSource.get_token();
@@ -260,7 +261,7 @@ namespace HoloIntervention
                 {
                   m_keepAliveTokenSource.cancel();
                   m_keepAliveTask = nullptr;
-                  HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Connection lost. Check server.");
+                  m_notificationSystem.QueueMessage(L"Connection lost. Check server.");
                   return;
                 }
               }
@@ -269,7 +270,7 @@ namespace HoloIntervention
                 // Don't reconnect on drop
                 m_keepAliveTokenSource.cancel();
                 m_keepAliveTask = nullptr;
-                HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Connection lost. Check server.");
+                m_notificationSystem.QueueMessage(L"Connection lost. Check server.");
                 return;
               }
             }

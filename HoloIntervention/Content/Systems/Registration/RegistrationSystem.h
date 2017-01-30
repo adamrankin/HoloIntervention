@@ -27,7 +27,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <vector>
 
 // Local includes
-#include "IEngineComponent.h"
+#include "IStabilizedComponent.h"
 #include "IVoiceInput.h"
 
 // WinRT includes
@@ -35,21 +35,37 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Registration method includes
 #include "CameraRegistration.h"
-#include "NetworkPCLRegistration.h"
 
 namespace HoloIntervention
 {
+  namespace Physics
+  {
+    class SurfaceAPI;
+  }
   namespace Rendering
   {
     class ModelEntry;
   }
+  namespace Network
+  {
+    class IGTConnector;
+  }
 
   namespace System
   {
-    class RegistrationSystem : public Sound::IVoiceInput, public IEngineComponent
+    class NotificationSystem;
+
+    class RegistrationSystem : public Sound::IVoiceInput, public IStabilizedComponent
     {
     public:
-      RegistrationSystem(const std::shared_ptr<DX::DeviceResources>& deviceResources);
+      // IStabilizedComponent methods
+      virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition() const;
+      virtual Windows::Foundation::Numerics::float3 GetStabilizedNormal() const;
+      virtual Windows::Foundation::Numerics::float3 GetStabilizedVelocity() const;
+      virtual float GetStabilizePriority() const;
+
+    public:
+      RegistrationSystem(Network::IGTConnector& igtConnector, Physics::SurfaceAPI& physicsAPI, NotificationSystem& notificationSystem, Rendering::ModelRenderer& modelRenderer);
       ~RegistrationSystem();
 
       void Update(DX::StepTimer& timer, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem, Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
@@ -62,7 +78,9 @@ namespace HoloIntervention
 
     protected:
       // Cached references
-      std::shared_ptr<DX::DeviceResources>            m_deviceResources;
+      NotificationSystem&                             m_notificationSystem;
+      Rendering::ModelRenderer&                       m_modelRenderer;
+      Physics::SurfaceAPI&                            m_physicsAPI;
 
       // Anchor variables
       std::atomic_bool                                m_registrationActive = false;

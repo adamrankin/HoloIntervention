@@ -23,15 +23,20 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "pch.h"
-#include "SliceEntry.h"
-
-// Common includes
+#include "Common.h"
 #include "DeviceResources.h"
 #include "DirectXHelper.h"
+#include "SliceEntry.h"
 #include "StepTimer.h"
 
 // DirectXTex includes
 #include <DirectXTex.h>
+
+// DirectXTK includes
+#include <WICTextureLoader.h>
+
+// Direct3D includes
+#include <d3d11_4.h>
 
 // Unnecessary, but reduces intellisense errors
 #include <WindowsNumerics.h>
@@ -73,6 +78,31 @@ namespace HoloIntervention
     const float SliceEntry::LOCKED_SLICE_DISTANCE_OFFSET = 2.1f;
     const float SliceEntry::LOCKED_SLICE_SCALE_FACTOR = 10.f;
     const float SliceEntry::LERP_RATE = 2.5f;
+
+    //----------------------------------------------------------------------------
+    Windows::Foundation::Numerics::float3 SliceEntry::GetStabilizedPosition() const
+    {
+      return transform(float3(0.f, 0.f, 0.f), m_currentPose);
+    }
+
+    //----------------------------------------------------------------------------
+    Windows::Foundation::Numerics::float3 SliceEntry::GetStabilizedNormal() const
+    {
+      return ExtractNormal(m_currentPose);
+    }
+
+    //----------------------------------------------------------------------------
+    Windows::Foundation::Numerics::float3 SliceEntry::GetStabilizedVelocity() const
+    {
+      return m_velocity;
+    }
+
+    //----------------------------------------------------------------------------
+    float SliceEntry::GetStabilizePriority() const
+    {
+      // Priority is determined by systems that use this slice entry
+      return PRIORITY_NOT_ACTIVE;
+    }
 
     //----------------------------------------------------------------------------
     SliceEntry::SliceEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources)
@@ -150,7 +180,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void SliceEntry::Render(uint32 indexCount)
     {
-      if (!m_showing || m_imageData == nullptr)
+      if (!m_showing || !m_sliceValid)
       {
         return;
       }
@@ -198,6 +228,27 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    void SliceEntry::SetImageData(const std::wstring& fileName)
+    {
+      TexMetadata metadata;
+      GetMetadataFromWICFile(fileName.c_str(), WIC_FLAGS_NONE, metadata);
+
+      if (metadata.width != m_width || metadata.height != m_height || metadata.format != m_pixelFormat)
+      {
+        m_width = static_cast<uint16>(metadata.width);
+        m_height = static_cast<uint16>(metadata.height);
+        m_pixelFormat = metadata.format;
+        ReleaseDeviceDependentResources();
+        CreateDeviceDependentResources();
+      }
+
+      m_imageTexture.Reset();
+      m_imageData = nullptr;
+
+      CreateWICTextureFromFile(m_deviceResources->GetD3DDevice(), m_deviceResources->GetD3DDeviceContext(), fileName.c_str(), (ID3D11Resource**)m_imageTexture.GetAddressOf(), nullptr);
+    }
+
+    //----------------------------------------------------------------------------
     std::shared_ptr<byte> SliceEntry::GetImageData() const
     {
       return m_imageData;
@@ -210,9 +261,9 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    float3 SliceEntry::GetSliceVelocity() const
+    const float4x4& SliceEntry::GetCurrentPose() const
     {
-      return m_velocity;
+      return m_currentPose;
     }
 
     //----------------------------------------------------------------------------
@@ -246,11 +297,14 @@ namespace HoloIntervention
         DX::ThrowIfFailed(device->CreateTexture2D(&textureDesc, nullptr, &m_imageTexture));
         DX::ThrowIfFailed(device->CreateShaderResourceView(m_imageTexture.Get(), nullptr, &m_shaderResourceView));
       }
+
+      m_sliceValid = true;
     }
 
     //----------------------------------------------------------------------------
     void SliceEntry::ReleaseDeviceDependentResources()
     {
+      m_sliceValid = false;
       m_sliceConstantBuffer.Reset();
       m_shaderResourceView.Reset();
       m_imageTexture.Reset();

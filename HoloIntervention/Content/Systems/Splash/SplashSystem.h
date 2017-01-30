@@ -25,28 +25,23 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "IStabilizedComponent.h"
-#include "IVoiceInput.h"
+
+namespace DX
+{
+  class StepTimer;
+}
 
 namespace HoloIntervention
 {
   namespace Rendering
   {
-    class ModelRenderer;
-  }
-
-  class TransformName;
-
-  namespace Tools
-  {
-    class ToolEntry;
+    class SliceEntry;
+    class SliceRenderer;
   }
 
   namespace System
   {
-    class NotificationSystem;
-    class RegistrationSystem;
-
-    class ToolSystem : public Sound::IVoiceInput, public IStabilizedComponent
+    class SplashSystem : public IStabilizedComponent
     {
     public:
       virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition() const;
@@ -55,29 +50,24 @@ namespace HoloIntervention
       virtual float GetStabilizePriority() const;
 
     public:
-      ToolSystem(NotificationSystem& notificationSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer);
-      ~ToolSystem();
+      SplashSystem(Rendering::SliceRenderer& sliceRenderer);
+      ~SplashSystem();
 
-      uint64 RegisterTool(const std::wstring& modelName, UWPOpenIGTLink::TransformName^ coordinateFrame);
-      void UnregisterTool(uint64 toolToken);
-      void ClearTools();
-
-      void Update(UWPOpenIGTLink::TrackedFrame^ frame, const DX::StepTimer& timer, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);
-
-      // IVoiceInput functions
-      virtual void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap);
-
-    protected:
-      Concurrency::task<void> InitAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
+      void Update(const DX::StepTimer& timer, Windows::Perception::Spatial::SpatialCoordinateSystem^ hmdCoordinateSystem, Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
 
     protected:
       // Cached entries
-      NotificationSystem&                               m_notificationSystem;
-      RegistrationSystem&                               m_registrationSystem;
-      Rendering::ModelRenderer&                         m_modelRenderer;
+      Rendering::SliceRenderer&                           m_sliceRenderer;
 
-      std::vector<std::shared_ptr<Tools::ToolEntry>>    m_toolEntries;
-      UWPOpenIGTLink::TransformRepository^              m_transformRepository;
+      uint64                                              m_sliceToken = INVALID_TOKEN;
+      std::shared_ptr<Rendering::SliceEntry>              m_sliceEntry = nullptr;
+
+      Windows::Foundation::Numerics::float3               m_position;
+      static const float                                  LERP_RATE;
+      static const Windows::Foundation::Numerics::float3  NOTIFICATION_SCREEN_OFFSET;
+      static const float                                  NOTIFICATION_DISTANCE_OFFSET;
+
+      std::wstring                                        m_splashImageFilename = L"Assets\\Images\\HoloIntervention.png";
     };
   }
 }

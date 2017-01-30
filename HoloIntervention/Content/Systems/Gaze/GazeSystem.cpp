@@ -23,18 +23,18 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "pch.h"
-#include "AppView.h"
-#include "GazeSystem.h"
-
-// Common includes
 #include "Common.h"
+#include "GazeSystem.h"
 #include "StepTimer.h"
 
+// Physics includes
+#include "SurfaceAPI.h"
+
 // Rendering includes
+#include "ModelEntry.h"
 #include "ModelRenderer.h"
 
 // System includes
-#include "SpatialSystem.h"
 #include "NotificationSystem.h"
 
 // WinRT includes
@@ -53,12 +53,39 @@ namespace HoloIntervention
     const float GazeSystem::LERP_RATE = 6.f;
 
     //----------------------------------------------------------------------------
-    GazeSystem::GazeSystem()
-      : m_modelEntry(nullptr)
+    Windows::Foundation::Numerics::float3 GazeSystem::GetStabilizedPosition() const
+    {
+      return transform(float3(0.f, 0.f, 0.f), m_modelEntry->GetWorld());
+    }
+
+    //----------------------------------------------------------------------------
+    Windows::Foundation::Numerics::float3 GazeSystem::GetStabilizedNormal() const
+    {
+      return ExtractNormal(m_modelEntry->GetWorld());
+    }
+
+    //----------------------------------------------------------------------------
+    Windows::Foundation::Numerics::float3 GazeSystem::GetStabilizedVelocity() const
+    {
+      return m_modelEntry->GetVelocity();
+    }
+
+    //----------------------------------------------------------------------------
+    float GazeSystem::GetStabilizePriority() const
+    {
+      return IsCursorEnabled() ? 1.f : PRIORITY_NOT_ACTIVE;
+    }
+
+    //----------------------------------------------------------------------------
+    GazeSystem::GazeSystem(NotificationSystem& notificationSystem, Physics::SurfaceAPI& physicsAPI, Rendering::ModelRenderer& modelRenderer)
+      : m_modelRenderer(modelRenderer)
+      , m_notificationSystem(notificationSystem)
+      , m_physicsAPI(physicsAPI)
+      , m_modelEntry(nullptr)
       , m_modelToken(0)
     {
-      m_modelToken = HoloIntervention::instance()->GetModelRenderer().AddModel(GAZE_CURSOR_ASSET_LOCATION);
-      m_modelEntry = HoloIntervention::instance()->GetModelRenderer().GetModel(m_modelToken);
+      m_modelToken = m_modelRenderer.AddModel(GAZE_CURSOR_ASSET_LOCATION);
+      m_modelEntry = m_modelRenderer.GetModel(m_modelToken);
       m_modelEntry->SetVisible(false);
       m_componentReady = true;
     }
@@ -82,7 +109,7 @@ namespace HoloIntervention
       float3 outHitPosition;
       float3 outHitNormal;
       float3 outHitEdge;
-      bool hit = HoloIntervention::instance()->GetSpatialSystem().TestRayIntersection(currentCoordinateSystem,
+      bool hit = m_physicsAPI.TestRayIntersection(currentCoordinateSystem,
                  headPose->Head->Position,
                  headPose->Head->ForwardDirection,
                  outHitPosition,
@@ -124,15 +151,13 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void GazeSystem::EnableCursor(bool enable)
     {
-      m_systemEnabled = enable;
-
       m_modelEntry->SetVisible(enable);
     }
 
     //----------------------------------------------------------------------------
-    bool GazeSystem::IsCursorEnabled()
+    bool GazeSystem::IsCursorEnabled() const
     {
-      return m_systemEnabled;
+      return m_modelEntry->IsVisible();
     }
 
     //----------------------------------------------------------------------------
@@ -159,13 +184,13 @@ namespace HoloIntervention
       callbackMap[L"show cursor"] = [this](SpeechRecognitionResult ^ result)
       {
         EnableCursor(true);
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Cursor on.");
+        m_notificationSystem.QueueMessage(L"Cursor on.");
       };
 
       callbackMap[L"hide cursor"] = [this](SpeechRecognitionResult ^ result)
       {
         EnableCursor(false);
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Cursor off.");
+        m_notificationSystem.QueueMessage(L"Cursor off.");
       };
     }
 

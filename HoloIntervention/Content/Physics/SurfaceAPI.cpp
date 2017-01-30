@@ -24,7 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "pch.h"
 #include "AppView.h"
-#include "SpatialSystem.h"
+#include "SurfaceAPI.h"
 
 // Common includes
 #include "DeviceResources.h"
@@ -61,21 +61,21 @@ using namespace Windows::UI::Input::Spatial;
 
 namespace HoloIntervention
 {
-  namespace System
+  namespace Physics
   {
-    const uint32 SpatialSystem::INIT_SURFACE_RETRY_DELAY_MS = 100;
+    const uint32 SurfaceAPI::INIT_SURFACE_RETRY_DELAY_MS = 100;
 
     //----------------------------------------------------------------------------
-    SpatialSystem::SpatialSystem(const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer)
+    SurfaceAPI::SurfaceAPI(System::NotificationSystem& notificationSystem, const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer)
       : m_deviceResources(deviceResources)
+      , m_notificationSystem(notificationSystem)
       , m_stepTimer(stepTimer)
     {
-      m_surfaceCollection = std::make_unique<Spatial::SpatialSurfaceCollection>(m_deviceResources, stepTimer);
-
+      m_surfaceCollection = std::make_unique<Spatial::SpatialSurfaceCollection>(m_notificationSystem, m_deviceResources, stepTimer);
     }
 
     //----------------------------------------------------------------------------
-    SpatialSystem::~SpatialSystem()
+    SurfaceAPI::~SurfaceAPI()
     {
       if (m_surfaceObserver != nullptr)
       {
@@ -86,7 +86,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SpatialSystem::Update(SpatialCoordinateSystem^ coordinateSystem)
+    void SurfaceAPI::Update(SpatialCoordinateSystem^ coordinateSystem)
     {
       // Keep the surface observer positioned at the device's location.
       UpdateSurfaceObserverPosition(coordinateSystem);
@@ -95,7 +95,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SpatialSystem::CreateDeviceDependentResources()
+    void SurfaceAPI::CreateDeviceDependentResources()
     {
       try
       {
@@ -106,19 +106,19 @@ namespace HoloIntervention
       }
       catch (const std::exception&)
       {
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage("Unable to start spatial system.");
+        m_notificationSystem.QueueMessage("Unable to start spatial system.");
       }
     }
 
     //----------------------------------------------------------------------------
-    void SpatialSystem::ReleaseDeviceDependentResources()
+    void SurfaceAPI::ReleaseDeviceDependentResources()
     {
       m_componentReady = false;
       m_surfaceCollection->ReleaseDeviceDependentResources();
     }
 
     //----------------------------------------------------------------------------
-    void SpatialSystem::OnSurfacesChanged(SpatialSurfaceObserver^ sender, Object^ args)
+    void SurfaceAPI::OnSurfacesChanged(SpatialSurfaceObserver^ sender, Object^ args)
     {
       IMapView<Guid, SpatialSurfaceInfo^>^ const& surfaceCollection = sender->GetObservedSurfaces();
 
@@ -147,7 +147,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SpatialSystem::UpdateSurfaceObserverPosition(SpatialCoordinateSystem^ coordinateSystem)
+    void SurfaceAPI::UpdateSurfaceObserverPosition(SpatialCoordinateSystem^ coordinateSystem)
     {
       // 20 meters wide, and 5 meters tall, centered at the origin of coordinateSystem.
       SpatialBoundingBox aabb =
@@ -164,13 +164,13 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool SpatialSystem::TestRayIntersection(SpatialCoordinateSystem^ desiredCoordinateSystem, const float3 rayOrigin, const float3 rayDirection, float3& outHitPosition, float3& outHitNormal, float3& outHitEdge)
+    bool SurfaceAPI::TestRayIntersection(SpatialCoordinateSystem^ desiredCoordinateSystem, const float3 rayOrigin, const float3 rayDirection, float3& outHitPosition, float3& outHitNormal, float3& outHitEdge)
     {
       return m_surfaceCollection->TestRayIntersection(desiredCoordinateSystem, rayOrigin, rayDirection, outHitPosition, outHitNormal, outHitEdge);
     }
 
     //----------------------------------------------------------------------------
-    bool SpatialSystem::GetLastHitPosition(_Out_ float3& position, _In_ bool considerOldHits /*= false*/)
+    bool SurfaceAPI::GetLastHitPosition(_Out_ float3& position, _In_ bool considerOldHits /*= false*/)
     {
       if (m_surfaceCollection == nullptr)
       {
@@ -180,7 +180,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool SpatialSystem::GetLastHitNormal(_Out_ float3& normal, _In_ bool considerOldHits /*= false*/)
+    bool SurfaceAPI::GetLastHitNormal(_Out_ float3& normal, _In_ bool considerOldHits /*= false*/)
     {
       if (m_surfaceCollection == nullptr)
       {
@@ -190,19 +190,19 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    std::shared_ptr<HoloIntervention::Spatial::SurfaceMesh> SpatialSystem::GetLastHitMesh()
+    std::shared_ptr<HoloIntervention::Spatial::SurfaceMesh> SurfaceAPI::GetLastHitMesh()
     {
       return m_surfaceCollection->GetLastHitMesh();
     }
 
     //----------------------------------------------------------------------------
-    Platform::Guid SpatialSystem::GetLastHitMeshGuid()
+    Platform::Guid SurfaceAPI::GetLastHitMeshGuid()
     {
       return m_surfaceCollection->GetLastHitMeshGuid();
     }
 
     //----------------------------------------------------------------------------
-    task<bool> SpatialSystem::InitializeSurfaceObserverAsync(SpatialCoordinateSystem^ coordinateSystem)
+    task<bool> SurfaceAPI::InitializeSurfaceObserverAsync(SpatialCoordinateSystem^ coordinateSystem)
     {
       if (m_surfaceObserver != nullptr)
       {
@@ -215,62 +215,62 @@ namespace HoloIntervention
       {
         switch (status)
         {
-          case SpatialPerceptionAccessStatus::Allowed:
-          {
-            m_surfaceMeshOptions = ref new SpatialSurfaceMeshOptions();
+        case SpatialPerceptionAccessStatus::Allowed:
+        {
+          m_surfaceMeshOptions = ref new SpatialSurfaceMeshOptions();
 
-            IVectorView<DirectXPixelFormat>^ supportedVertexPositionFormats = m_surfaceMeshOptions->SupportedVertexPositionFormats;
-            unsigned int formatIndex = 0;
-            if (supportedVertexPositionFormats->IndexOf(DirectXPixelFormat::R32G32B32Float, &formatIndex))
-            {
-              m_surfaceMeshOptions->VertexPositionFormat = DirectXPixelFormat::R32G32B32Float;
-            }
-            else if (supportedVertexPositionFormats->IndexOf(DirectXPixelFormat::R32G32B32A32Float, &formatIndex))
-            {
-              m_surfaceMeshOptions->VertexPositionFormat = DirectXPixelFormat::R32G32B32A32Float;
-            }
-            else
-            {
-              HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_WARNING, "Cannot load desired vertex position format.");
-            }
+          IVectorView<DirectXPixelFormat>^ supportedVertexPositionFormats = m_surfaceMeshOptions->SupportedVertexPositionFormats;
+          unsigned int formatIndex = 0;
+          if (supportedVertexPositionFormats->IndexOf(DirectXPixelFormat::R32G32B32Float, &formatIndex))
+          {
+            m_surfaceMeshOptions->VertexPositionFormat = DirectXPixelFormat::R32G32B32Float;
+          }
+          else if (supportedVertexPositionFormats->IndexOf(DirectXPixelFormat::R32G32B32A32Float, &formatIndex))
+          {
+            m_surfaceMeshOptions->VertexPositionFormat = DirectXPixelFormat::R32G32B32A32Float;
+          }
+          else
+          {
+            HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_WARNING, "Cannot load desired vertex position format.");
+          }
 
-            // Our shader pipeline can handle a variety of triangle index formats
-            IVectorView<DirectXPixelFormat>^ supportedTriangleIndexFormats = m_surfaceMeshOptions->SupportedTriangleIndexFormats;
-            if (supportedTriangleIndexFormats->IndexOf(DirectXPixelFormat::R32UInt, &formatIndex))
-            {
-              m_surfaceMeshOptions->TriangleIndexFormat = DirectXPixelFormat::R32UInt;
-            }
-            else
-            {
-              HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_WARNING, "Cannot load desired index format.");
-            }
+          // Our shader pipeline can handle a variety of triangle index formats
+          IVectorView<DirectXPixelFormat>^ supportedTriangleIndexFormats = m_surfaceMeshOptions->SupportedTriangleIndexFormats;
+          if (supportedTriangleIndexFormats->IndexOf(DirectXPixelFormat::R32UInt, &formatIndex))
+          {
+            m_surfaceMeshOptions->TriangleIndexFormat = DirectXPixelFormat::R32UInt;
+          }
+          else
+          {
+            HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_WARNING, "Cannot load desired index format.");
+          }
 
-            if (m_surfaceObserver == nullptr)
-            {
-              m_surfaceObserver = ref new SpatialSurfaceObserver();
-              UpdateSurfaceObserverPosition(coordinateSystem);
-            }
-          }
-          break;
-          case SpatialPerceptionAccessStatus::DeniedBySystem:
+          if (m_surfaceObserver == nullptr)
           {
-            HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Error: Cannot initialize surface observer because the system denied access to the spatialPerception capability.");
+            m_surfaceObserver = ref new SpatialSurfaceObserver();
+            UpdateSurfaceObserverPosition(coordinateSystem);
           }
+        }
+        break;
+        case SpatialPerceptionAccessStatus::DeniedBySystem:
+        {
+          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Error: Cannot initialize surface observer because the system denied access to the spatialPerception capability.");
+        }
+        break;
+        case SpatialPerceptionAccessStatus::DeniedByUser:
+        {
+          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Error: Cannot initialize surface observer because the user denied access to the spatialPerception capability.");
+        }
+        break;
+        case SpatialPerceptionAccessStatus::Unspecified:
+        {
+          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Error: Cannot initialize surface observer. Access was denied for an unspecified reason.");
+        }
+        break;
+        default:
+          // unreachable
+          assert(false);
           break;
-          case SpatialPerceptionAccessStatus::DeniedByUser:
-          {
-            HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Error: Cannot initialize surface observer because the user denied access to the spatialPerception capability.");
-          }
-          break;
-          case SpatialPerceptionAccessStatus::Unspecified:
-          {
-            HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Error: Cannot initialize surface observer. Access was denied for an unspecified reason.");
-          }
-          break;
-          default:
-            // unreachable
-            assert(false);
-            break;
         }
 
         if (m_surfaceObserver != nullptr)
@@ -297,7 +297,7 @@ namespace HoloIntervention
             }
 
             m_surfaceObserverEventToken = m_surfaceObserver->ObservedSurfacesChanged +=
-            ref new Windows::Foundation::TypedEventHandler<SpatialSurfaceObserver^, Platform::Object^>(std::bind(&SpatialSystem::OnSurfacesChanged, this, std::placeholders::_1, std::placeholders::_2));
+            ref new Windows::Foundation::TypedEventHandler<SpatialSurfaceObserver^, Platform::Object^>(std::bind(&SurfaceAPI::OnSurfacesChanged, this, std::placeholders::_1, std::placeholders::_2));
 
             CreateDeviceDependentResources();
 
@@ -312,7 +312,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<void> SpatialSystem::SaveAppStateAsync()
+    task<void> SurfaceAPI::SaveAppStateAsync()
     {
       return task<SpatialAnchorStore^>(SpatialAnchorManager::RequestStoreAsync()).then([ = ](SpatialAnchorStore ^ store)
       {
@@ -326,14 +326,14 @@ namespace HoloIntervention
         {
           if (!store->TrySave(pair.first, pair.second))
           {
-            HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Unable to save spatial anchor " + pair.first);
+            m_notificationSystem.QueueMessage(L"Unable to save spatial anchor " + pair.first);
           }
         }
       });
     }
 
     //----------------------------------------------------------------------------
-    task<void> SpatialSystem::LoadAppStateAsync()
+    task<void> SurfaceAPI::LoadAppStateAsync()
     {
       m_spatialAnchors.clear();
 
@@ -355,27 +355,27 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool SpatialSystem::DropAnchorAtIntersectionHit(Platform::String^ anchorName, SpatialCoordinateSystem^ coordinateSystem, SpatialPointerPose^ headPose)
+    bool SurfaceAPI::DropAnchorAtIntersectionHit(Platform::String^ anchorName, SpatialCoordinateSystem^ coordinateSystem, SpatialPointerPose^ headPose)
     {
       if (anchorName == nullptr)
       {
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Unable to create anchor. No name specified.");
+        m_notificationSystem.QueueMessage(L"Unable to create anchor. No name specified.");
         return false;
       }
 
       float3 outHitPosition;
       float3 outHitNormal;
       float3 outHitEdge;
-      bool hit = HoloIntervention::instance()->GetSpatialSystem().TestRayIntersection(coordinateSystem,
-                 headPose->Head->Position,
-                 headPose->Head->ForwardDirection,
-                 outHitPosition,
-                 outHitNormal,
-                 outHitEdge);
+      bool hit = TestRayIntersection(coordinateSystem,
+                                     headPose->Head->Position,
+                                     headPose->Head->ForwardDirection,
+                                     outHitPosition,
+                                     outHitNormal,
+                                     outHitEdge);
 
       if (!hit)
       {
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Unable to compute mesh intersection hit.");
+        m_notificationSystem.QueueMessage(L"Unable to compute mesh intersection hit.");
         return false;
       }
 
@@ -385,34 +385,34 @@ namespace HoloIntervention
       float3 scale;
       if (!decompose(anchorMatrix, &scale, &rotation, &translation))
       {
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Unable to determine coordinate system of anchor. Please try again.");
+        m_notificationSystem.QueueMessage(L"Unable to determine coordinate system of anchor. Please try again.");
         return false;
       }
       SpatialAnchor^ anchor = SpatialAnchor::TryCreateRelativeTo(coordinateSystem, translation, rotation);
 
       if (anchor == nullptr)
       {
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Unable to create anchor.");
+        m_notificationSystem.QueueMessage(L"Unable to create anchor.");
         return false;
       }
 
       std::lock_guard<std::mutex> lock(m_anchorMutex);
       m_spatialAnchors[anchorName] = anchor;
 
-      HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Anchor " + anchorName + L" created.");
+      m_notificationSystem.QueueMessage(L"Anchor " + anchorName + L" created.");
 
       return true;
     }
 
     //----------------------------------------------------------------------------
-    size_t SpatialSystem::RemoveAnchor(Platform::String^ name)
+    size_t SurfaceAPI::RemoveAnchor(Platform::String^ name)
     {
       std::lock_guard<std::mutex> lock(m_anchorMutex);
       return m_spatialAnchors.erase(name);
     }
 
     //----------------------------------------------------------------------------
-    SpatialAnchor^ SpatialSystem::GetAnchor(Platform::String^ anchorName)
+    SpatialAnchor^ SurfaceAPI::GetAnchor(Platform::String^ anchorName)
     {
       if (HasAnchor(anchorName))
       {
@@ -423,13 +423,13 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool SpatialSystem::HasAnchor(Platform::String^ anchorName)
+    bool SurfaceAPI::HasAnchor(Platform::String^ anchorName)
     {
       return m_spatialAnchors.find(anchorName) != m_spatialAnchors.end();
     }
 
     //----------------------------------------------------------------------------
-    void SpatialSystem::RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap)
+    void SurfaceAPI::RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap)
     {
 
     }

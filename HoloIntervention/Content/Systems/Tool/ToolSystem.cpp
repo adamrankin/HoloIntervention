@@ -25,10 +25,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "pch.h"
-#include "AppView.h"
+#include "ToolEntry.h"
 #include "ToolSystem.h"
-
-// Common includes
 #include "Common.h"
 
 // Rendering includes
@@ -49,8 +47,92 @@ namespace HoloIntervention
   namespace System
   {
     //----------------------------------------------------------------------------
-    ToolSystem::ToolSystem()
-      : m_transformRepository(ref new UWPOpenIGTLink::TransformRepository())
+    float3 ToolSystem::GetStabilizedPosition() const
+    {
+      std::shared_ptr<Tools::ToolEntry> maxEntry(nullptr);
+      float maxPriority(PRIORITY_NOT_ACTIVE);
+      for (auto& entry : m_toolEntries)
+      {
+        if (entry->GetStabilizePriority() > maxPriority)
+        {
+          maxPriority = entry->GetStabilizePriority();
+          maxEntry = entry;
+        }
+      }
+
+      if (maxEntry != nullptr)
+      {
+        return maxEntry->GetStabilizedPosition();
+      }
+
+      return float3(0.f, 0.f, 0.f);
+    }
+
+    //----------------------------------------------------------------------------
+    float3 ToolSystem::GetStabilizedNormal() const
+    {
+      std::shared_ptr<Tools::ToolEntry> maxEntry(nullptr);
+      float maxPriority(PRIORITY_NOT_ACTIVE);
+      for (auto& entry : m_toolEntries)
+      {
+        if (entry->GetStabilizePriority() > maxPriority)
+        {
+          maxPriority = entry->GetStabilizePriority();
+          maxEntry = entry;
+        }
+      }
+
+      if (maxEntry != nullptr)
+      {
+        return maxEntry->GetStabilizedNormal();
+      }
+
+      return float3(0.f, 1.f, 0.f);
+    }
+
+    //----------------------------------------------------------------------------
+    float3 ToolSystem::GetStabilizedVelocity() const
+    {
+      std::shared_ptr<Tools::ToolEntry> maxEntry(nullptr);
+      float maxPriority(PRIORITY_NOT_ACTIVE);
+      for (auto& entry : m_toolEntries)
+      {
+        if (entry->GetStabilizePriority() > maxPriority)
+        {
+          maxPriority = entry->GetStabilizePriority();
+          maxEntry = entry;
+        }
+      }
+
+      if (maxEntry != nullptr)
+      {
+        return maxEntry->GetStabilizedVelocity();
+      }
+
+      return float3(0.f, 0.f, 0.f);
+    }
+
+    //----------------------------------------------------------------------------
+    float ToolSystem::GetStabilizePriority() const
+    {
+      float maxPriority(PRIORITY_NOT_ACTIVE);
+      for (auto& entry : m_toolEntries)
+      {
+        if (entry->GetStabilizePriority() > maxPriority)
+        {
+          maxPriority = entry->GetStabilizePriority();
+        }
+      }
+
+      return maxPriority;
+    }
+
+    //----------------------------------------------------------------------------
+    ToolSystem::ToolSystem(NotificationSystem& notificationSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer)
+      : m_notificationSystem(notificationSystem)
+      , m_registrationSystem(registrationSystem)
+      , m_modelRenderer(modelRenderer)
+      , m_transformRepository(ref new UWPOpenIGTLink::TransformRepository())
     {
       try
       {
@@ -58,7 +140,7 @@ namespace HoloIntervention
       }
       catch (Platform::Exception^ e)
       {
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(e->Message);
+        m_notificationSystem.QueueMessage(e->Message);
       }
 
       try
@@ -73,7 +155,7 @@ namespace HoloIntervention
       }
       catch (Platform::Exception^ e)
       {
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(e->Message);
+        m_notificationSystem.QueueMessage(e->Message);
       }
     }
 
@@ -85,7 +167,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     uint64 ToolSystem::RegisterTool(const std::wstring& modelName, UWPOpenIGTLink::TransformName^ coordinateFrame)
     {
-      std::shared_ptr<Tools::ToolEntry> entry = std::make_shared<Tools::ToolEntry>(coordinateFrame, modelName, m_transformRepository);
+      std::shared_ptr<Tools::ToolEntry> entry = std::make_shared<Tools::ToolEntry>(m_modelRenderer, coordinateFrame, modelName, m_transformRepository);
       m_toolEntries.push_back(entry);
       return entry->GetId();
     }
@@ -113,7 +195,7 @@ namespace HoloIntervention
     void ToolSystem::Update(UWPOpenIGTLink::TrackedFrame^ frame, const DX::StepTimer& timer, SpatialCoordinateSystem^ hmdCoordinateSystem)
     {
       // Update the transform repository with the latest registration
-      float4x4 trackerToRendering = HoloIntervention::instance()->GetRegistrationSystem().GetTrackerToCoordinateSystemTransformation(hmdCoordinateSystem);
+      float4x4 trackerToRendering = m_registrationSystem.GetTrackerToCoordinateSystemTransformation(hmdCoordinateSystem);
       m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD"), trackerToRendering, true);
 
       m_transformRepository->SetTransforms(frame);

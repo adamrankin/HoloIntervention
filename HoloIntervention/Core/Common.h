@@ -36,10 +36,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 namespace HoloIntervention
 {
-  namespace Rendering
-  {
-    static const uint64 INVALID_ENTRY = 0;
-  }
+  static const uint64 INVALID_TOKEN = 0;
 
   //------------------------------------------------------------------------
   template<class T>
@@ -140,7 +137,8 @@ namespace HoloIntervention
   Concurrency::task<void> InitializeTransformRepositoryAsync(UWPOpenIGTLink::TransformRepository^ transformRepository, Platform::String^ fileName);
   Concurrency::task<Windows::Data::Xml::Dom::XmlDocument^> GetXmlDocumentFromFileAsync(Platform::String^ fileName);
 
-  std::string toString(const Windows::Foundation::Numerics::float4x4& matrix);
+  std::string ToString(const Windows::Foundation::Numerics::float4x4& matrix);
+  Windows::Foundation::Numerics::float3 ExtractNormal(const Windows::Foundation::Numerics::float4x4& matrix);
 
   int IsLittleEndian();
 }

@@ -23,6 +23,12 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
+// Local includes
+#include "IStabilizedComponent.h"
+
+// STL includes
+#include <atomic>
+
 namespace DX
 {
   class StepTimer;
@@ -34,28 +40,37 @@ namespace HoloIntervention
   namespace Rendering
   {
     class ModelEntry;
+    class ModelRenderer;
   }
 
   namespace Tools
   {
-    class ToolEntry
+    class ToolEntry : public IStabilizedComponent
     {
     public:
-      ToolEntry( UWPOpenIGTLink::TransformName^ coordinateFrame, const std::wstring& modelName, UWPOpenIGTLink::TransformRepository^ transformRepository);
-      ToolEntry( const std::wstring& coordinateFrame, const std::wstring& modelName, UWPOpenIGTLink::TransformRepository^ transformRepository);
+      virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition() const;
+      virtual Windows::Foundation::Numerics::float3 GetStabilizedNormal() const;
+      virtual Windows::Foundation::Numerics::float3 GetStabilizedVelocity() const;
+      virtual float GetStabilizePriority() const;
+
+    public:
+      ToolEntry(Rendering::ModelRenderer& modelRenderer, UWPOpenIGTLink::TransformName^ coordinateFrame, const std::wstring& modelName, UWPOpenIGTLink::TransformRepository^ transformRepository);
+      ToolEntry(Rendering::ModelRenderer& modelRenderer, const std::wstring& coordinateFrame, const std::wstring& modelName, UWPOpenIGTLink::TransformRepository^ transformRepository);
       ~ToolEntry();
 
-      void Update( const DX::StepTimer& timer );
+      void Update(const DX::StepTimer& timer);
 
       uint64 GetId() const;
 
     protected:
-      void CreateModel( const std::wstring& modelName );
+      void CreateModel(const std::wstring& modelName);
 
     protected:
-      // Cache the transform repository
+      // Cached links to system resources
+      Rendering::ModelRenderer&               m_modelRenderer;
       UWPOpenIGTLink::TransformRepository^    m_transformRepository;
 
+      std::atomic_bool                        m_isValid;
       UWPOpenIGTLink::TransformName^          m_coordinateFrame;
       std::shared_ptr<Rendering::ModelEntry>  m_modelEntry;
     };

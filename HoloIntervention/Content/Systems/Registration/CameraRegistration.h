@@ -24,6 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
+#include "IStabilizedComponent.h"
 #include "LandmarkRegistration.h"
 
 // Capture includes
@@ -54,9 +55,21 @@ namespace DirectX
 
 namespace HoloIntervention
 {
+  namespace Rendering
+  {
+    class ModelRenderer;
+  }
+
+  namespace Network
+  {
+    class IGTConnector;
+  }
+
   namespace System
   {
-    class CameraRegistration
+    class NotificationSystem;
+
+    class CameraRegistration : public IStabilizedComponent
     {
       typedef std::vector<uint32> ColourToCircleList;
 
@@ -83,7 +96,13 @@ namespace HoloIntervention
       typedef std::vector<VecFloat3> DetectionFrames;
 
     public:
-      CameraRegistration(const std::shared_ptr<DX::DeviceResources>& deviceResources);
+      virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition() const;
+      virtual Windows::Foundation::Numerics::float3 GetStabilizedNormal() const;
+      virtual Windows::Foundation::Numerics::float3 GetStabilizedVelocity() const;
+      virtual float GetStabilizePriority() const;
+
+    public:
+      CameraRegistration(NotificationSystem& notificationSystem, Network::IGTConnector& igtConnector, Rendering::ModelRenderer& modelRenderer);
       ~CameraRegistration();
 
       void Update(Platform::IBox<Windows::Foundation::Numerics::float4x4>^ anchorToRequestedBox);
@@ -121,8 +140,11 @@ namespace HoloIntervention
       inline void RemoveResultFromList(ColourToCircleList& circleLinkResult, int32 centerSphereIndex);
 
     protected:
-      // Cached pointer to device resources.
-      std::shared_ptr<DX::DeviceResources>                                  m_deviceResources;
+      // Cached entries
+      Rendering::ModelRenderer&                                             m_modelRenderer;
+      NotificationSystem&                                                   m_notificationSystem;
+      Network::IGTConnector&                                                m_igtConnector;
+
       std::mutex                                                            m_processorLock;
       std::shared_ptr<Capture::VideoFrameProcessor>                         m_videoFrameProcessor = nullptr;
       Concurrency::task<std::shared_ptr<Capture::VideoFrameProcessor>>*     m_createTask = nullptr;

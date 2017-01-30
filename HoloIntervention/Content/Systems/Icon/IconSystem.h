@@ -24,10 +24,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
-#include "IEngineComponent.h"
+#include "IStabilizedComponent.h"
 
 // Network includes
-#include "IGTLinkIF.h"
+#include "IGTConnector.h"
 
 // Rendering includes
 #include "ModelEntry.h"
@@ -39,16 +39,34 @@ namespace DX
 
 namespace HoloIntervention
 {
+  namespace Rendering
+  {
+    class ModelRenderer;
+  }
+
+  namespace Network
+  {
+    class IGTConnector;
+  }
+
   namespace System
   {
     class IconEntry;
+    class NotificationSystem;
+    class RegistrationSystem;
 
     typedef std::vector<std::shared_ptr<IconEntry>> IconEntryList;
 
-    class IconSystem : public IEngineComponent
+    class IconSystem : public IStabilizedComponent
     {
     public:
-      IconSystem();
+      virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition() const;
+      virtual Windows::Foundation::Numerics::float3 GetStabilizedNormal() const;
+      virtual Windows::Foundation::Numerics::float3 GetStabilizedVelocity() const;
+      virtual float GetStabilizePriority() const;
+
+    public:
+      IconSystem(NotificationSystem& notificationSystem, RegistrationSystem& registrationSystem, Network::IGTConnector& igtConnector, Rendering::ModelRenderer& modelRenderer);
       ~IconSystem();
 
       void Update(DX::StepTimer& timer, Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
@@ -64,6 +82,12 @@ namespace HoloIntervention
     protected:
       uint64                          m_nextValidEntry = 0;
       IconEntryList                   m_iconEntries;
+
+      // Cached entries to model renderer
+      Rendering::ModelRenderer&       m_modelRenderer;
+      NotificationSystem&             m_notificationSystem;
+      RegistrationSystem&             m_registrationSystem;
+      Network::IGTConnector&          m_IGTConnector;
 
       // Icons that this subsystem manages
       std::shared_ptr<IconEntry>      m_networkIcon = nullptr;

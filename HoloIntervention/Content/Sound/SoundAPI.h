@@ -46,13 +46,13 @@ namespace HoloIntervention
     class OmnidirectionalSound;
     class CardioidSound;
 
-    class SoundManager : public IEngineComponent
+    class SoundAPI : public IEngineComponent
     {
       template <class T> using SoundList = std::map<std::wstring, std::vector<T>>;
       typedef std::map<std::wstring, std::shared_ptr<AudioFileReader>> SoundDataList;
 
     public:
-      virtual ~SoundManager();
+      virtual ~SoundAPI();
 
       Concurrency::task<HRESULT> InitializeAsync();
 

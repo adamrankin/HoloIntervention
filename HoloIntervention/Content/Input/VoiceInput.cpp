@@ -35,7 +35,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <vccorlib.h>
 
 // Sound includes
-#include "SoundManager.h"
+#include "SoundAPI.h"
 
 using namespace Concurrency;
 using namespace Windows::Foundation;
@@ -46,9 +46,11 @@ namespace HoloIntervention
   namespace Input
   {
     //----------------------------------------------------------------------------
-    VoiceInput::VoiceInput()
+    VoiceInput::VoiceInput(System::NotificationSystem& notificationSystem, Sound::SoundAPI& soundAPI)
+      : m_notificationSystem(notificationSystem)
+      , m_speechRecognizer(ref new SpeechRecognizer())
+      , m_soundAPI(soundAPI)
     {
-      m_speechRecognizer = ref new SpeechRecognizer();
       m_speechRecognizer->Constraints->Clear();
     }
 
@@ -101,7 +103,7 @@ namespace HoloIntervention
         }
         else
         {
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Unable to compile speech patterns.");
+          m_notificationSystem.QueueMessage(L"Unable to compile speech patterns.");
           return create_task([]() {});
         }
       }).then([this, callbacks]()
@@ -113,7 +115,7 @@ namespace HoloIntervention
         }
         else
         {
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Cannot start speech recognition.");
+          m_notificationSystem.QueueMessage(L"Cannot start speech recognition.");
           return false;
         }
       });
@@ -129,7 +131,7 @@ namespace HoloIntervention
 
       if (args->Result->RawConfidence > MINIMUM_CONFIDENCE_FOR_DETECTION)
       {
-        HoloIntervention::instance()->GetSoundManager().PlayOmniSoundOnce(L"input_ok");
+        m_soundAPI.PlayOmniSoundOnce(L"input_ok");
 
         // Search the map for the detected command, if matched, call the function
         auto iterator = m_callbacks.find(args->Result->Text->Data());

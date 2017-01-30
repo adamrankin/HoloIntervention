@@ -37,7 +37,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "NotificationSystem.h"
 
 // Network includes
-#include "IGTLinkIF.h"
+#include "IGTConnector.h"
 
 // DirectX includes
 #include <d3d11_3.h>
@@ -109,7 +109,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    uint64 VolumeRenderer::AddVolume(std::shared_ptr<byte> imageData, uint16 width, uint16 height, uint16 depth, DXGI_FORMAT pixelFormat, float4x4 imageToTrackerTransform, SpatialCoordinateSystem^ coordSystem)
+    uint64 VolumeRenderer::AddVolume(std::shared_ptr<byte> imageData, uint16 width, uint16 height, uint16 depth, DXGI_FORMAT pixelFormat, float4x4 desiredPose)
     {
       if (!m_componentReady)
       {
@@ -132,9 +132,7 @@ namespace HoloIntervention
                                            m_backPositionRTV.Get(),
                                            m_frontPositionSRV.Get(),
                                            m_backPositionSRV.Get());
-      float4x4 trackerToHMD = HoloIntervention::instance()->GetRegistrationSystem().GetTrackerToCoordinateSystemTransformation(coordSystem);
-      float4x4 imageToHMD = imageToTrackerTransform * trackerToHMD;
-      entry->SetDesiredPose(imageToHMD);
+      entry->SetDesiredPose(desiredPose);
       entry->SetImageData(imageData, width, height, depth, pixelFormat);
       entry->SetShowing(true);
 
@@ -164,15 +162,21 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void VolumeRenderer::UpdateVolume(uint64 volumeToken, std::shared_ptr<byte> imageData, uint16 width, uint16 height, uint16 depth, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 imageToTrackerTransform, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem)
+    std::shared_ptr<VolumeEntry> VolumeRenderer::GetVolume(uint64 volumeToken)
+    {
+      std::shared_ptr<VolumeEntry> entry(nullptr);
+      FindVolume(volumeToken, entry);
+      return entry;
+    }
+
+    //----------------------------------------------------------------------------
+    void VolumeRenderer::UpdateVolume(uint64 volumeToken, std::shared_ptr<byte> imageData, uint16 width, uint16 height, uint16 depth, DXGI_FORMAT pixelFormat, float4x4 desiredPose)
     {
       std::lock_guard<std::mutex> guard(m_volumeMapMutex);
       std::shared_ptr<VolumeEntry> entry;
       if (FindVolume(volumeToken, entry))
       {
-        float4x4 trackerToHMD = HoloIntervention::instance()->GetRegistrationSystem().GetTrackerToCoordinateSystemTransformation(coordSystem);
-        float4x4 imageToHMD = imageToTrackerTransform * trackerToHMD;
-        entry->SetDesiredPose(imageToHMD);
+        entry->SetDesiredPose(desiredPose);
         entry->SetImageData(imageData, width, height, depth, pixelFormat);
       }
     }
@@ -278,9 +282,8 @@ namespace HoloIntervention
 
       for (auto& volEntry : m_volumes)
       {
-        volEntry->SetTransforms(frame);
-        volEntry->SetImageData(Network::IGTLinkIF::GetSharedImagePtr(frame), frame->FrameSize->GetAt(0), frame->FrameSize->GetAt(1), frame->FrameSize->GetAt(2), (DXGI_FORMAT)frame->GetPixelFormat(true));
-        volEntry->Update(timer, cameraResources, hmdCoordinateSystem, headPose);
+        volEntry->SetImageData(Network::IGTConnector::GetSharedImagePtr(frame), frame->FrameSize->GetAt(0), frame->FrameSize->GetAt(1), frame->FrameSize->GetAt(2), (DXGI_FORMAT)frame->GetPixelFormat(true));
+        volEntry->Update(timer);
       }
     }
 

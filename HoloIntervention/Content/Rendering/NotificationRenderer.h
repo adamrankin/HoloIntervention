@@ -59,7 +59,7 @@ namespace HoloIntervention
       NotificationRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources);
       ~NotificationRenderer();
 
-      void Update(NotificationConstantBuffer& buffer);
+      void Update(const Windows::Foundation::Numerics::float4x4& worldMatrix, const Windows::Foundation::Numerics::float4& hologramColorFadeMultiplier);
 
       void Render();
       void RenderText(const std::wstring& message);
@@ -79,7 +79,7 @@ namespace HoloIntervention
       Microsoft::WRL::ComPtr<ID3D11VertexShader>          m_vertexShader;
       Microsoft::WRL::ComPtr<ID3D11GeometryShader>        m_geometryShader;
       Microsoft::WRL::ComPtr<ID3D11PixelShader>           m_pixelShader;
-      Microsoft::WRL::ComPtr<ID3D11Buffer>                m_modelConstantBuffer;
+      Microsoft::WRL::ComPtr<ID3D11Buffer>                m_constantBuffer;
       Microsoft::WRL::ComPtr<ID3D11BlendState>            m_blendState;
 
       // Direct3D resources for the texture.

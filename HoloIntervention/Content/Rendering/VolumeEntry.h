@@ -89,16 +89,16 @@ namespace HoloIntervention
                   ID3D11ShaderResourceView* backPositionSRV);
       ~VolumeEntry();
 
-      void Update(const DX::StepTimer& timer, DX::CameraResources* cameraResources, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem, Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
+      void Update(const DX::StepTimer& timer);
       void Render(uint32 indexCount);
 
-      void SetTransforms(UWPOpenIGTLink::TrackedFrame^ frame);
       void SetImageData(std::shared_ptr<byte> imageData, uint16 width, uint16 height, uint16 depth, DXGI_FORMAT pixelFormat);
       std::shared_ptr<byte> GetImageData() const;
       void SetShowing(bool showing);
       uint64 GetToken() const;
 
       void SetDesiredPose(const Windows::Foundation::Numerics::float4x4& matrix);
+      const Windows::Foundation::Numerics::float4x4& GetCurrentPose() const;
       Windows::Foundation::Numerics::float3 GetVelocity() const;
 
       Concurrency::task<void> SetOpacityTransferFunctionTypeAsync(VolumeEntry::TransferFunctionType type, uint32 tableSize, const VolumeEntry::ControlPointList& controlPoints);
@@ -123,7 +123,6 @@ namespace HoloIntervention
     protected:
       // Cached pointer to device resources.
       std::shared_ptr<DX::DeviceResources>              m_deviceResources;
-      DX::CameraResources*                              m_cameraResources = nullptr;
 
       // Cached pointers to re-used D3D resources
       ID3D11Buffer*                                     m_cwIndexBuffer;
@@ -159,12 +158,6 @@ namespace HoloIntervention
       mutable std::mutex                                m_opacityTFMutex;
       TransferFunctionType                              m_opacityTFType = TransferFunction_Unknown;
       BaseTransferFunction*                             m_opacityTransferFunction = nullptr;
-
-      // IGT frame resources
-      std::wstring                                      m_fromCoordFrame = L"Image";
-      std::wstring                                      m_toCoordFrame = L"HMD";
-      UWPOpenIGTLink::TransformName^                    m_imageToHMDName = ref new UWPOpenIGTLink::TransformName(ref new Platform::String(m_fromCoordFrame.c_str()), ref new Platform::String(m_toCoordFrame.c_str()));
-      UWPOpenIGTLink::TransformRepository^              m_transformRepository = ref new UWPOpenIGTLink::TransformRepository();
 
       // CPU resources for volume rendering
       VolumeEntryConstantBuffer                         m_constantBuffer;

@@ -26,10 +26,11 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "AppView.h"
 #include "Common.h"
 #include "NotificationSystem.h"
-
-// Common includes
 #include "DeviceResources.h"
 #include "StepTimer.h"
+
+// Rendering includes
+#include "NotificationRenderer.h"
 
 // Unnecessary, but reduces intellisense errors
 #include <WindowsNumerics.h>
@@ -42,8 +43,8 @@ namespace HoloIntervention
 {
   namespace System
   {
-    const XMFLOAT4 NotificationSystem::HIDDEN_ALPHA_VALUE = XMFLOAT4(0.f, 0.f, 0.f, 0.f);
-    const XMFLOAT4 NotificationSystem::SHOWING_ALPHA_VALUE = XMFLOAT4(1.f, 1.f, 1.f, 1.f);
+    const float4 NotificationSystem::HIDDEN_ALPHA_VALUE = float4(0.f, 0.f, 0.f, 0.f);
+    const float4 NotificationSystem::SHOWING_ALPHA_VALUE = float4(1.f, 1.f, 1.f, 1.f);
     const double NotificationSystem::DEFAULT_NOTIFICATION_DURATION_SEC = 1.5;
     const double NotificationSystem::MAXIMUM_REQUESTED_DURATION_SEC = 10.0;
     const float NotificationSystem::LERP_RATE = 4.0;
@@ -52,21 +53,10 @@ namespace HoloIntervention
     const float3 NotificationSystem::NOTIFICATION_SCREEN_OFFSET = float3(0.f, -0.11f, 0.f);
 
     //----------------------------------------------------------------------------
-    NotificationSystem::NotificationSystem(const std::shared_ptr<DX::DeviceResources>& deviceResources)
-      : m_deviceResources(deviceResources)
-      , m_notificationRenderer(std::make_unique<Rendering::NotificationRenderer>(deviceResources))
+    NotificationSystem::NotificationSystem(Rendering::NotificationRenderer& notificationRenderer)
+      : m_notificationRenderer(notificationRenderer)
     {
-      try
-      {
-        m_notificationRenderer->CreateDeviceDependentResourcesAsync().then([this]()
-        {
-          m_componentReady = true;
-        });
-      }
-      catch (const std::exception&)
-      {
-        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Unable to initialize notification system.");
-      }
+      m_componentReady = true;
     }
 
     //----------------------------------------------------------------------------
@@ -204,13 +194,13 @@ namespace HoloIntervention
         CalculateVelocity(1.f / static_cast<float>(timer.GetElapsedSeconds()));
       }
 
-      m_notificationRenderer->Update(m_constantBuffer);
+      m_notificationRenderer.Update(m_worldMatrix, m_hologramColorFadeMultiplier);
     }
 
     //----------------------------------------------------------------------------
     void NotificationSystem::CreateDeviceDependentResources()
     {
-      m_notificationRenderer->CreateDeviceDependentResourcesAsync().then([this]()
+      m_notificationRenderer.CreateDeviceDependentResourcesAsync().then([this]()
       {
         m_componentReady = true;
       });
@@ -220,7 +210,7 @@ namespace HoloIntervention
     void NotificationSystem::ReleaseDeviceDependentResources()
     {
       m_componentReady = false;
-      m_notificationRenderer->ReleaseDeviceDependentResources();
+      m_notificationRenderer.ReleaseDeviceDependentResources();
     }
 
     //----------------------------------------------------------------------------
@@ -234,18 +224,18 @@ namespace HoloIntervention
         if (m_animationState == FADING_IN)
         {
           const float fadeLerp = 1.f - (m_fadeTime / MAX_FADE_TIME);
-          m_constantBuffer.hologramColorFadeMultiplier = XMFLOAT4(fadeLerp, fadeLerp, fadeLerp, 1.f);
+          m_hologramColorFadeMultiplier = float4(fadeLerp, fadeLerp, fadeLerp, 1.f);
         }
         else
         {
           const float fadeLerp = (m_fadeTime / MAX_FADE_TIME);
-          m_constantBuffer.hologramColorFadeMultiplier = XMFLOAT4(fadeLerp, fadeLerp, fadeLerp, 1.f);
+          m_hologramColorFadeMultiplier = float4(fadeLerp, fadeLerp, fadeLerp, 1.f);
         }
         m_fadeTime -= deltaTime;
       }
       else
       {
-        m_constantBuffer.hologramColorFadeMultiplier = (m_animationState == SHOWING ? SHOWING_ALPHA_VALUE : HIDDEN_ALPHA_VALUE);
+        m_hologramColorFadeMultiplier = (m_animationState == SHOWING ? SHOWING_ALPHA_VALUE : HIDDEN_ALPHA_VALUE);
       }
     }
 
@@ -259,7 +249,7 @@ namespace HoloIntervention
       // Construct the 4x4 rotation matrix.
       XMMATRIX rotationMatrix = XMMATRIX(xAxisRotation, yAxisRotation, facingNormal, XMVectorSet(0.f, 0.f, 0.f, 1.f));
       const XMMATRIX modelTranslation = XMMatrixTranslationFromVector(XMLoadFloat3(&m_position));
-      XMStoreFloat4x4(&m_constantBuffer.worldMatrix, rotationMatrix * modelTranslation);
+      XMStoreFloat4x4(&m_worldMatrix, rotationMatrix * modelTranslation);
     }
 
     //----------------------------------------------------------------------------
@@ -272,7 +262,7 @@ namespace HoloIntervention
       m_currentMessage = m_messages.front();
       m_messages.pop_front();
 
-      m_notificationRenderer->RenderText(m_currentMessage.message);
+      m_notificationRenderer.RenderText(m_currentMessage.message);
     }
 
     //----------------------------------------------------------------------------
@@ -317,12 +307,6 @@ namespace HoloIntervention
       const float3 headDirection = pointerPose->Head->ForwardDirection;
 
       m_lastPosition = m_position = headPosition + (float3(NOTIFICATION_DISTANCE_OFFSET) * (headDirection + NOTIFICATION_SCREEN_OFFSET));
-    }
-
-    //----------------------------------------------------------------------------
-    std::unique_ptr<Rendering::NotificationRenderer>& NotificationSystem::GetRenderer()
-    {
-      return m_notificationRenderer;
     }
 
     //----------------------------------------------------------------------------

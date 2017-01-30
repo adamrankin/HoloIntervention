@@ -24,7 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "pch.h"
 #include "AppView.h"
-#include "SoundManager.h"
+#include "SoundAPI.h"
 #include "OmnidirectionalSound.h"
 #include "CardioidSound.h"
 
@@ -59,7 +59,7 @@ namespace HoloIntervention
     };
 
     //----------------------------------------------------------------------------
-    SoundManager::~SoundManager()
+    SoundAPI::~SoundAPI()
     {
       m_componentReady = false;
       m_cardioidSounds.clear();
@@ -81,7 +81,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<HRESULT> SoundManager::InitializeAsync()
+    task<HRESULT> SoundAPI::InitializeAsync()
     {
       return create_task([this]() -> HRESULT
       {
@@ -89,7 +89,7 @@ namespace HoloIntervention
 
         if (FAILED(hr))
         {
-          HoloIntervention::instance()->GetNotificationSystem().QueueMessage(L"Cannot initialize audio system.");
+          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Cannot initialize audio system.");
           return hr;
         }
 
@@ -135,7 +135,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SoundManager::PlayOmniSoundOnce(const std::wstring& assetName, SpatialCoordinateSystem^ coordinateSystem, const float3& position, HrtfEnvironment env /* = HrtfEnvironment::Small */)
+    void SoundAPI::PlayOmniSoundOnce(const std::wstring& assetName, SpatialCoordinateSystem^ coordinateSystem, const float3& position, HrtfEnvironment env /* = HrtfEnvironment::Small */)
     {
       if (m_audioAssets.find(assetName) == m_audioAssets.end()
           || m_coordinateSystem == nullptr)
@@ -143,7 +143,7 @@ namespace HoloIntervention
         return;
       }
 
-      auto omniSound = std::make_shared<HoloIntervention::Sound::OmnidirectionalSound>(*m_audioAssets[assetName].get());
+      auto omniSound = std::make_shared<OmnidirectionalSound>(*m_audioAssets[assetName].get());
 
       float3 positionCopy = position;
       if (coordinateSystem != nullptr)
@@ -167,7 +167,7 @@ namespace HoloIntervention
       }
       catch (Platform::Exception^ e)
       {
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(e->Message);
+        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e->Message);
         omniSound = nullptr;
       }
 
@@ -193,7 +193,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SoundManager::PlayCarioidSoundOnce(const std::wstring& assetName, SpatialCoordinateSystem^ coordinateSystem, const float3& position, const float3& pitchYawRoll, HrtfEnvironment env /*= HrtfEnvironment::Small */)
+    void SoundAPI::PlayCarioidSoundOnce(const std::wstring& assetName, SpatialCoordinateSystem^ coordinateSystem, const float3& position, const float3& pitchYawRoll, HrtfEnvironment env /*= HrtfEnvironment::Small */)
     {
       if (m_audioAssets.find(assetName) == m_audioAssets.end()
           || m_coordinateSystem == nullptr)
@@ -225,7 +225,7 @@ namespace HoloIntervention
       }
       catch (Platform::Exception^ e)
       {
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(e->Message);
+        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e->Message);
         cardioidSound = nullptr;
       }
 
@@ -251,7 +251,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SoundManager::Update(DX::StepTimer& stepTimer, SpatialCoordinateSystem^ coordinateSystem)
+    void SoundAPI::Update(DX::StepTimer& stepTimer, SpatialCoordinateSystem^ coordinateSystem)
     {
       m_coordinateSystem = coordinateSystem;
 
@@ -291,7 +291,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    HRESULT SoundManager::CreateSubmixParentVoices()
+    HRESULT SoundAPI::CreateSubmixParentVoices()
     {
       // Omni
       XAUDIO2_VOICE_SENDS sends = {};
