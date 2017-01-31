@@ -79,7 +79,7 @@ namespace
     float4x4 transformation = float4x4::identity();
     try
     {
-      phantomFiducialPose = transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(from, to), &isValid);
+      phantomFiducialPose = transpose(transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(from, to), &isValid));
     }
     catch (Platform::Exception^ e)
     {
@@ -850,7 +850,7 @@ done:
         bool isValid(false);
         for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
         {
-          redXToReferenceTransform[i] = m_transformRepository->GetTransform(m_sphereCoordinateNames[i], &isValid);
+          redXToReferenceTransform[i] = transpose(m_transformRepository->GetTransform(m_sphereCoordinateNames[i], &isValid));
           if (!isValid)
           {
             return false;

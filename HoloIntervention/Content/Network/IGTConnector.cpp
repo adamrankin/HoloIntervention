@@ -50,7 +50,6 @@ namespace HoloIntervention
     const double IGTConnector::CONNECT_TIMEOUT_SEC = 3.0;
     const uint32_t IGTConnector::RECONNECT_RETRY_DELAY_MSEC = 100;
     const uint32_t IGTConnector::RECONNECT_RETRY_COUNT = 10;
-    const uint32 IGTConnector::PROCESSED_FRAMES_MAX_SIZE = 1024;
 
     //----------------------------------------------------------------------------
     IGTConnector::IGTConnector(System::NotificationSystem& notificationSystem)
@@ -172,23 +171,6 @@ namespace HoloIntervention
       {
         return false;
       }
-
-      // Using timestamps isn't perfect, but you can't have ref pointers (^) used as indexes in STL containers
-      if (m_processedFrames.find(latestFrame->Timestamp) == m_processedFrames.end())
-      {
-        // Convert from row-major to column-major
-        latestFrame->TransposeTransforms();
-
-        m_processedFrames[latestFrame->Timestamp] = true;
-
-        if (m_processedFrames.size() > PROCESSED_FRAMES_MAX_SIZE)
-        {
-          auto eraseIter = m_processedFrames.begin();
-          std::advance(eraseIter, PROCESSED_FRAMES_MAX_SIZE / 4);
-          m_processedFrames.erase(m_processedFrames.begin(), eraseIter);
-        }
-      }
-
       frame = latestFrame;
       *latestTimestamp = frame->Timestamp;
       return true;

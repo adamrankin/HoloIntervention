@@ -5,13 +5,6 @@
     <Tool Model="hemisphere_stylus" Transform="StylusTipToHMD"/>
   </Tools>
   <CoordinateDefinitions>
-    <Transform From="StylusTip" To="Stylus"
-          Matrix="
-              0.999688    -0.00028736  -0.0249609    0.0
-              0.0          0.999934    -0.0115117    0.0
-              0.0249626    0.0115081    0.999622     0.0
-              0.00198826   0.000916616  0.0796197    1.0"
-       Error="0.115965" Date="013017_102345" />
   </CoordinateDefinitions>
 
   <SliceRendering From="Image" To="HMD" />
