@@ -513,9 +513,6 @@
     <None Include="Assets\Models\anchor.cmo">
       <Filter>Assets\Models</Filter>
     </None>
-    <None Include="..\OpenCV-bin\bin\Debug\opencv_videoio310d.dll">
-      <Filter>OpenCV\Debug</Filter>
-    </None>
     <None Include="..\OpenCV-bin\bin\Debug\opencv_core310d.dll">
       <Filter>OpenCV\Debug</Filter>
     </None>
@@ -525,31 +522,10 @@
     <None Include="..\OpenCV-bin\bin\Debug\opencv_flann310d.dll">
       <Filter>OpenCV\Debug</Filter>
     </None>
-    <None Include="..\OpenCV-bin\bin\Debug\opencv_highgui310d.dll">
-      <Filter>OpenCV\Debug</Filter>
-    </None>
-    <None Include="..\OpenCV-bin\bin\Debug\opencv_imgcodecs310d.dll">
-      <Filter>OpenCV\Debug</Filter>
-    </None>
     <None Include="..\OpenCV-bin\bin\Debug\opencv_imgproc310d.dll">
       <Filter>OpenCV\Debug</Filter>
     </None>
     <None Include="..\OpenCV-bin\bin\Debug\opencv_ml310d.dll">
-      <Filter>OpenCV\Debug</Filter>
-    </None>
-    <None Include="..\OpenCV-bin\bin\Debug\opencv_objdetect310d.dll">
-      <Filter>OpenCV\Debug</Filter>
-    </None>
-    <None Include="..\OpenCV-bin\bin\Debug\opencv_photo310d.dll">
-      <Filter>OpenCV\Debug</Filter>
-    </None>
-    <None Include="..\OpenCV-bin\bin\Debug\opencv_shape310d.dll">
-      <Filter>OpenCV\Debug</Filter>
-    </None>
-    <None Include="..\OpenCV-bin\bin\Debug\opencv_superres310d.dll">
-      <Filter>OpenCV\Debug</Filter>
-    </None>
-    <None Include="..\OpenCV-bin\bin\Debug\opencv_video310d.dll">
       <Filter>OpenCV\Debug</Filter>
     </None>
     <None Include="..\OpenCV-bin\bin\Release\opencv_core310.dll">
@@ -561,34 +537,10 @@
     <None Include="..\OpenCV-bin\bin\Release\opencv_flann310.dll">
       <Filter>OpenCV\Release</Filter>
     </None>
-    <None Include="..\OpenCV-bin\bin\Release\opencv_highgui310.dll">
-      <Filter>OpenCV\Release</Filter>
-    </None>
-    <None Include="..\OpenCV-bin\bin\Release\opencv_imgcodecs310.dll">
-      <Filter>OpenCV\Release</Filter>
-    </None>
     <None Include="..\OpenCV-bin\bin\Release\opencv_imgproc310.dll">
       <Filter>OpenCV\Release</Filter>
     </None>
     <None Include="..\OpenCV-bin\bin\Release\opencv_ml310.dll">
-      <Filter>OpenCV\Release</Filter>
-    </None>
-    <None Include="..\OpenCV-bin\bin\Release\opencv_objdetect310.dll">
-      <Filter>OpenCV\Release</Filter>
-    </None>
-    <None Include="..\OpenCV-bin\bin\Release\opencv_photo310.dll">
-      <Filter>OpenCV\Release</Filter>
-    </None>
-    <None Include="..\OpenCV-bin\bin\Release\opencv_shape310.dll">
-      <Filter>OpenCV\Release</Filter>
-    </None>
-    <None Include="..\OpenCV-bin\bin\Release\opencv_superres310.dll">
-      <Filter>OpenCV\Release</Filter>
-    </None>
-    <None Include="..\OpenCV-bin\bin\Release\opencv_video310.dll">
-      <Filter>OpenCV\Release</Filter>
-    </None>
-    <None Include="..\OpenCV-bin\bin\Release\opencv_videoio310.dll">
       <Filter>OpenCV\Release</Filter>
     </None>
     <None Include="..\OpenCV-bin\bin\Debug\opencv_calib3d310d.dll">
