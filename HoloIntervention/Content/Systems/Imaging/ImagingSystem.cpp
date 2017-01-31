@@ -356,7 +356,7 @@ namespace HoloIntervention
                                                 frame->FrameSize->GetAt(0),
                                                 frame->FrameSize->GetAt(1),
                                                 (DXGI_FORMAT)frame->GetPixelFormat(true),
-                                                transpose(frame->EmbeddedImageTransform));
+                                                frame->EmbeddedImageTransform);
       }
       else
       {
@@ -365,7 +365,7 @@ namespace HoloIntervention
                                     frame->Width,
                                     frame->Height,
                                     (DXGI_FORMAT)frame->GetPixelFormat(true),
-                                    transpose(frame->EmbeddedImageTransform));
+                                    frame->EmbeddedImageTransform);
       }
     }
 
@@ -383,7 +383,7 @@ namespace HoloIntervention
                         frame->Height,
                         frame->Depth,
                         (DXGI_FORMAT)frame->GetPixelFormat(true),
-                        transpose(frame->EmbeddedImageTransform));
+                        frame->EmbeddedImageTransform);
       }
       else
       {
@@ -393,7 +393,7 @@ namespace HoloIntervention
                                       frame->Height,
                                       frame->Depth,
                                       (DXGI_FORMAT)frame->GetPixelFormat(true),
-                                      transpose(frame->EmbeddedImageTransform));
+                                      frame->EmbeddedImageTransform);
       }
     }
   }

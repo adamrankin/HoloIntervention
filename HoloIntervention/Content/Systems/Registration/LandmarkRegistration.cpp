@@ -28,6 +28,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 // OpenCV includes
 #include <opencv2/core.hpp>
 
+// Unnecessary, but reduces intellisense errors
+#include "Log.h"
+#include <WindowsNumerics.h>
+
 using namespace Concurrency;
 using namespace Windows::Foundation::Numerics;
 
