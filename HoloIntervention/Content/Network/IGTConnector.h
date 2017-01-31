@@ -102,8 +102,9 @@ namespace HoloIntervention
 
       // Constants relating to IGT behavior
       static const double                           CONNECT_TIMEOUT_SEC;
-      static const uint32_t                         RECONNECT_RETRY_DELAY_MSEC;
-      static const uint32_t                         RECONNECT_RETRY_COUNT;
+      static const uint32                           RECONNECT_RETRY_DELAY_MSEC;
+      static const uint32                           RECONNECT_RETRY_COUNT;
+      static const uint32                           PROCESSED_FRAMES_MAX_SIZE;
     };
   }
 }
