@@ -196,7 +196,7 @@ namespace HoloIntervention
       {
         GetXmlDocumentFromFileAsync(L"Assets\\Data\\configuration.xml").then([this](XmlDocument ^ doc)
         {
-          auto fromToFunction = [this, doc](Platform::String^ xpath, std::wstring& m_from, std::wstring& m_to, UWPOpenIGTLink::TransformName^& name)
+          auto fromToFunction = [this, doc](Platform::String ^ xpath, std::wstring & m_from, std::wstring & m_to, UWPOpenIGTLink::TransformName^& name)
           {
             if (doc->SelectNodes(xpath)->Length != 1)
             {
@@ -356,7 +356,7 @@ namespace HoloIntervention
                                                 frame->FrameSize->GetAt(0),
                                                 frame->FrameSize->GetAt(1),
                                                 (DXGI_FORMAT)frame->GetPixelFormat(true),
-                                                frame->EmbeddedImageTransform);
+                                                transpose(frame->EmbeddedImageTransform));
       }
       else
       {
@@ -365,7 +365,7 @@ namespace HoloIntervention
                                     frame->Width,
                                     frame->Height,
                                     (DXGI_FORMAT)frame->GetPixelFormat(true),
-                                    frame->EmbeddedImageTransform);
+                                    transpose(frame->EmbeddedImageTransform));
       }
     }
 
@@ -383,7 +383,7 @@ namespace HoloIntervention
                         frame->Height,
                         frame->Depth,
                         (DXGI_FORMAT)frame->GetPixelFormat(true),
-                        frame->EmbeddedImageTransform);
+                        transpose(frame->EmbeddedImageTransform));
       }
       else
       {
@@ -393,7 +393,7 @@ namespace HoloIntervention
                                       frame->Height,
                                       frame->Depth,
                                       (DXGI_FORMAT)frame->GetPixelFormat(true),
-                                      frame->EmbeddedImageTransform);
+                                      transpose(frame->EmbeddedImageTransform));
       }
     }
   }

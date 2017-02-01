@@ -206,7 +206,7 @@ namespace HoloIntervention
       }
 
       m_transformRepository->SetTransforms(frame);
-      m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD"), trackerToRendering, true);
+      m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD"), transpose(trackerToRendering), true);
 
       for (auto entry : m_toolEntries)
       {

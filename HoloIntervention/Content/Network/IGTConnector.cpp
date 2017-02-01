@@ -171,16 +171,6 @@ namespace HoloIntervention
       {
         return false;
       }
-
-      // Using timestamps isn't perfect, but you can't have ref pointers (^) used as indexes in STL containers
-      if (m_processedFrames.find(latestFrame->Timestamp) == m_processedFrames.end())
-      {
-        // Convert from row-major to column-major
-        latestFrame->TransposeTransforms();
-
-        m_processedFrames[latestFrame->Timestamp] = true;
-      }
-
       frame = latestFrame;
       *latestTimestamp = frame->Timestamp;
       return true;

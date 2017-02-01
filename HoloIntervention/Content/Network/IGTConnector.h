@@ -92,7 +92,6 @@ namespace HoloIntervention
       // Cached entries
       System::NotificationSystem&                   m_notificationSystem;
 
-      std::map<double, bool>                        m_processedFrames;
       UWPOpenIGTLink::IGTLinkClient^                m_igtClient = ref new UWPOpenIGTLink::IGTLinkClient();
       ConnectionState                               m_connectionState = CONNECTION_STATE_UNKNOWN;
       mutable std::mutex                            m_clientMutex;
@@ -102,8 +101,8 @@ namespace HoloIntervention
 
       // Constants relating to IGT behavior
       static const double                           CONNECT_TIMEOUT_SEC;
-      static const uint32_t                         RECONNECT_RETRY_DELAY_MSEC;
-      static const uint32_t                         RECONNECT_RETRY_COUNT;
+      static const uint32                           RECONNECT_RETRY_DELAY_MSEC;
+      static const uint32                           RECONNECT_RETRY_COUNT;
     };
   }
 }
