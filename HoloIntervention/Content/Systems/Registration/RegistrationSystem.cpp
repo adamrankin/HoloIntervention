@@ -234,6 +234,11 @@ namespace HoloIntervention
         m_regAnchorRequested = false;
       }
 
+      if (m_cameraRegistration->HasRegistration())
+      {
+        m_cachedRegistrationTransform = m_cameraRegistration->GetReferenceToWorldAnchorTransformation();
+      }
+
       Platform::IBox<float4x4>^ transformContainer(nullptr);
       // Anchor model position update logic
       if (m_regAnchor != nullptr)
@@ -342,6 +347,11 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float4x4 RegistrationSystem::GetTrackerToCoordinateSystemTransformation(SpatialCoordinateSystem^ requestedCoordinateSystem)
     {
+      if (m_cachedRegistrationTransform == float4x4::identity())
+      {
+        throw std::exception("Registration not completed.");
+      }
+
       auto worldAnchor = m_cameraRegistration->GetWorldAnchor();
       if (worldAnchor == nullptr)
       {

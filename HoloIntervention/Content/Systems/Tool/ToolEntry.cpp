@@ -109,7 +109,6 @@ namespace HoloIntervention
     void ToolEntry::Update(const DX::StepTimer& timer)
     {
       // m_transformRepository has already been initialized with the transforms for this update
-
       bool isValid;
       float4x4 transform;
       try
@@ -137,21 +136,18 @@ namespace HoloIntervention
 
         transform = m_transformRepository->GetTransform(m_coordinateFrame, &isValid);
         m_isValid = isValid;
-        m_modelEntry->RenderDefault();
+        if (m_isValid)
+        {
+          m_modelEntry->RenderDefault();
+        }
+
+        {
+          std::stringstream ss;
+          ss << transform;
+          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_INFO, std::string("StylusTipToHMD: ") + ss.str());
+        }
 
         m_modelEntry->SetWorld(transform);
-#if _DEBUG
-        {
-          static int x = 0;
-          if (x == 0)
-          {
-            std::stringstream ss;
-            ss << transform;
-            HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_INFO, std::string("stylus transform: ") + ss.str());
-            x = 1;
-          }
-        }
-#endif
       }
       catch (Platform::Exception^ e)
       {
