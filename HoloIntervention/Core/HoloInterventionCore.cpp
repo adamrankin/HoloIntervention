@@ -145,9 +145,10 @@ namespace HoloIntervention
     m_engineComponents.push_back(m_registrationSystem.get());
     m_engineComponents.push_back(m_imagingSystem.get());
     m_engineComponents.push_back(m_iconSystem.get());
+    m_engineComponents.push_back(m_splashSystem.get());
 
     // TODO : remove temp code
-    m_IGTConnector->SetHostname(L"192.168.0.103");
+    m_IGTConnector->SetHostname(L"192.168.0.102");
 
     try
     {
@@ -258,6 +259,7 @@ namespace HoloIntervention
 
       if (!m_engineReady)
       {
+        // Show our welcome screen until it is ready!
         m_splashSystem->Update(m_timer, hmdCoordinateSystem, headPose);
         m_sliceRenderer->Update(headPose, m_timer);
       }
@@ -301,9 +303,6 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
-  // Renders the current frame to each holographic camera, according to the
-  // current application and spatial positioning state. Returns true if the
-  // frame was rendered to at least one camera.
   bool HoloInterventionCore::Render(Windows::Graphics::Holographic::HolographicFrame^ holographicFrame)
   {
     if (m_timer.GetFrameCount() == 0 || !m_engineReady)
@@ -312,25 +311,21 @@ namespace HoloIntervention
     }
 
     // Lock the set of holographic camera resources, then draw to each camera in this frame.
-    return m_deviceResources->UseHolographicCameraResources<bool>(
-             [this, holographicFrame](std::map<UINT32, std::unique_ptr<DX::CameraResources>>& cameraResourceMap) -> bool
+    return m_deviceResources->UseHolographicCameraResources<bool>([this, holographicFrame](std::map<UINT32, std::unique_ptr<DX::CameraResources>>& cameraResourceMap) -> bool
     {
       holographicFrame->UpdateCurrentPrediction();
       HolographicFramePrediction^ prediction = holographicFrame->CurrentPrediction;
 
-      SpatialCoordinateSystem^ currentCoordinateSystem =
-      m_attachedReferenceFrame->GetStationaryCoordinateSystemAtTimestamp(prediction->Timestamp);
+      SpatialCoordinateSystem^ currentCoordinateSystem = m_attachedReferenceFrame->GetStationaryCoordinateSystemAtTimestamp(prediction->Timestamp);
 
       bool atLeastOneCameraRendered = false;
       for (auto cameraPose : prediction->CameraPoses)
       {
-        // This represents the device-based resources for a HolographicCamera.
         DX::CameraResources* pCameraResources = cameraResourceMap[cameraPose->HolographicCamera->Id].get();
 
         const auto context = m_deviceResources->GetD3DDeviceContext();
         const auto depthStencilView = pCameraResources->GetDepthStencilView();
 
-        // Set render targets to the current holographic camera.
         ID3D11RenderTargetView* const targets[1] = { pCameraResources->GetBackBufferRenderTargetView() };
         context->OMSetRenderTargets(1, targets, depthStencilView);
 
@@ -474,16 +469,16 @@ namespace HoloIntervention
     m_physicsAPI->ReleaseDeviceDependentResources();
     m_modelRenderer->ReleaseDeviceDependentResources();
     m_sliceRenderer->ReleaseDeviceDependentResources();
-    m_notificationSystem->ReleaseDeviceDependentResources();
+    m_notificationRenderer->ReleaseDeviceDependentResources();
   }
 
   //----------------------------------------------------------------------------
   void HoloInterventionCore::OnDeviceRestored()
   {
+    m_notificationRenderer->CreateDeviceDependentResourcesAsync();
     m_meshRenderer->CreateDeviceDependentResources();
     m_modelRenderer->CreateDeviceDependentResources();
     m_sliceRenderer->CreateDeviceDependentResources();
-    m_notificationSystem->CreateDeviceDependentResources();
     m_physicsAPI->CreateDeviceDependentResources();
   }
 

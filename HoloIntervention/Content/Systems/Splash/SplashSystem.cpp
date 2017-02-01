@@ -52,7 +52,8 @@ namespace HoloIntervention
 {
   namespace System
   {
-    const float SplashSystem::LERP_RATE = 4.0;
+    const float SplashSystem::LERP_RATE = 4.f;
+    const float SplashSystem::WELCOME_DISPLAY_TIME_SEC = 10.f;
 
     //----------------------------------------------------------------------------
     float3 SplashSystem::GetStabilizedPosition() const
@@ -86,9 +87,6 @@ namespace HoloIntervention
     {
       m_sliceToken = m_sliceRenderer.AddSlice(m_splashImageFilename);
       m_sliceEntry = m_sliceRenderer.GetSlice(m_sliceToken);
-
-      // Don't affect the actual loading of the system
-      m_componentReady = true;
     }
 
     //----------------------------------------------------------------------------
@@ -103,6 +101,14 @@ namespace HoloIntervention
 
       // Calculate world pose, ahead of face, centered
       const float& deltaTime = static_cast<float>(timer.GetElapsedSeconds());
+
+      m_welcomeTimerSec += deltaTime;
+
+      if (m_welcomeTimerSec >= WELCOME_DISPLAY_TIME_SEC)
+      {
+        m_componentReady = true;
+        return;
+      }
 
       if (headPose != nullptr)
       {

@@ -198,7 +198,7 @@ namespace HoloIntervention
       float4x4 trackerToRendering(float4x4::identity());
       try
       {
-        trackerToRendering = m_registrationSystem.GetTrackerToCoordinateSystemTransformation(hmdCoordinateSystem);
+        trackerToRendering = m_registrationSystem.GetReferenceToCoordinateSystemTransformation(hmdCoordinateSystem);
       }
       catch (const std::exception&)
       {

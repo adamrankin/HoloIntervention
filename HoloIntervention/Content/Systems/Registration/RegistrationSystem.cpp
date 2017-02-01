@@ -344,7 +344,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    float4x4 RegistrationSystem::GetTrackerToCoordinateSystemTransformation(SpatialCoordinateSystem^ requestedCoordinateSystem)
+    float4x4 RegistrationSystem::GetReferenceToCoordinateSystemTransformation(SpatialCoordinateSystem^ requestedCoordinateSystem)
     {
       if (m_cachedRegistrationTransform == float4x4::identity())
       {

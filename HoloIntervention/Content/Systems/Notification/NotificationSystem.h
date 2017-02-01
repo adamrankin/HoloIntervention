@@ -84,9 +84,6 @@ namespace HoloIntervention
       void Initialize(Windows::UI::Input::Spatial::SpatialPointerPose^ pointerPose);
       void Update(Windows::UI::Input::Spatial::SpatialPointerPose^ pointerPose, const DX::StepTimer& timer);
 
-      void CreateDeviceDependentResources();
-      void ReleaseDeviceDependentResources();
-
       // Accessors
       bool IsShowingNotification() const;
       const Windows::Foundation::Numerics::float3& GetPosition() const;

@@ -63,9 +63,12 @@ namespace HoloIntervention
       std::shared_ptr<Rendering::SliceEntry>              m_sliceEntry = nullptr;
 
       Windows::Foundation::Numerics::float3               m_position;
-      static const float                                  LERP_RATE;
 
+      double                                              m_welcomeTimerSec = 0.f;
       std::wstring                                        m_splashImageFilename = L"Assets\\Images\\HoloIntervention.png";
+
+      static const float                                  LERP_RATE;
+      static const float                                  WELCOME_DISPLAY_TIME_SEC;
     };
   }
 }
