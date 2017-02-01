@@ -194,8 +194,7 @@ namespace HoloIntervention
       {
         try
         {
-          bool isValid;
-          m_cachedRegistrationTransform = transpose(repo->GetTransform(trName, &isValid));
+          m_cachedRegistrationTransform = transpose(repo->GetTransform(trName));
         }
         catch (Platform::Exception^ e)
         {
@@ -345,7 +344,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    float4x4 RegistrationSystem::GetTrackerToCoordinateSystemTransformation(SpatialCoordinateSystem^ requestedCoordinateSystem)
+    float4x4 RegistrationSystem::GetReferenceToCoordinateSystemTransformation(SpatialCoordinateSystem^ requestedCoordinateSystem)
     {
       if (m_cachedRegistrationTransform == float4x4::identity())
       {
@@ -358,7 +357,6 @@ namespace HoloIntervention
         throw std::exception("World anchor doesn't exist.");
       }
 
-      auto trackerToWorldAnchor = m_cameraRegistration->GetReferenceToWorldAnchorTransformation();
       try
       {
         Platform::IBox<float4x4>^ anchorToRequestedBox = worldAnchor->CoordinateSystem->TryGetTransformTo(requestedCoordinateSystem);
@@ -366,7 +364,7 @@ namespace HoloIntervention
         {
           throw std::exception("AnchorToCoordSystem IBox is empty.");
         }
-        return trackerToWorldAnchor * anchorToRequestedBox->Value;
+        return m_cachedRegistrationTransform * anchorToRequestedBox->Value;
       }
       catch (Platform::Exception^ e)
       {

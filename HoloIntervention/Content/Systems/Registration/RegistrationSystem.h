@@ -74,7 +74,7 @@ namespace HoloIntervention
       bool IsCameraActive() const;
       virtual void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbacks);
 
-      Windows::Foundation::Numerics::float4x4 GetTrackerToCoordinateSystemTransformation(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem);
+      Windows::Foundation::Numerics::float4x4 GetReferenceToCoordinateSystemTransformation(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem);
 
     protected:
       // Cached references

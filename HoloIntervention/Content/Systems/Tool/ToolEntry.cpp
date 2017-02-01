@@ -109,52 +109,62 @@ namespace HoloIntervention
     void ToolEntry::Update(const DX::StepTimer& timer)
     {
       // m_transformRepository has already been initialized with the transforms for this update
-      bool isValid;
       float4x4 transform;
+#if _DEBUG
       try
       {
-        transform = transpose(m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"StylusTip", L"Stylus"), &isValid));
-        {
-          std::stringstream ss;
-          ss << transform;
-          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_INFO, std::string("StylusTipToStylus: ") + ss.str());
-        }
-
-        transform = transpose(m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"Stylus", L"Reference"), &isValid));
-        {
-          std::stringstream ss;
-          ss << transform;
-          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_INFO, std::string("StylusToReference: ") + ss.str());
-        }
-
-        transform = transpose(m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD"), &isValid));
-        {
-          std::stringstream ss;
-          ss << transform;
-          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_INFO, std::string("ReferenceToHMD: ") + ss.str());
-        }
-
-        transform = transpose(m_transformRepository->GetTransform(m_coordinateFrame, &isValid));
-        m_isValid = isValid;
-        if (m_isValid)
-        {
-          m_modelEntry->RenderDefault();
-        }
-
-        {
-          std::stringstream ss;
-          ss << transform;
-          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_INFO, std::string("StylusTipToHMD: ") + ss.str());
-        }
-
-        m_modelEntry->SetWorld(transform);
+        transform = transpose(m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"StylusTip", L"Stylus")));
+        std::stringstream ss;
+        ss << transform;
+        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_INFO, std::string("StylusTipToStylus: ") + ss.str());
       }
       catch (Platform::Exception^ e)
       {
-        // Fail gracefully, it's possible that this transform wasn't available this frame
-        m_modelEntry->RenderGreyscale();
-        return;
+        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_INFO, "StylusTipToStylus: invalid");
       }
+
+      try
+      {
+        transform = transpose(m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"Stylus", L"Reference")));
+        std::stringstream ss;
+        ss << transform;
+        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_INFO, std::string("StylusToReference: ") + ss.str());
+      }
+      catch (Platform::Exception^ e)
+      {
+        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_INFO, "StylusToReference: invalid");
+      }
+
+      try
+      {
+        transform = transpose(m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD")));
+        std::stringstream ss;
+        ss << transform;
+        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_INFO, std::string("ReferenceToHMD: ") + ss.str());
+      }
+      catch (Platform::Exception^ e)
+      {
+        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_INFO, "ReferenceToHMD: invalid");
+      }
+#endif
+
+      try
+      {
+        transform = transpose(m_transformRepository->GetTransform(m_coordinateFrame));
+        m_isValid = true;
+        m_modelEntry->RenderDefault();
+      }
+      catch (const std::exception&)
+      {
+        m_isValid = false;
+        m_modelEntry->RenderGreyscale();
+      }
+
+      std::stringstream ss;
+      ss << transform;
+      HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_INFO, std::string("StylusTipToHMD: ") + ss.str());
+
+      m_modelEntry->SetWorld(transform);
     }
 
     //----------------------------------------------------------------------------

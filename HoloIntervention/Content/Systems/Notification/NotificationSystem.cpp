@@ -198,22 +198,6 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void NotificationSystem::CreateDeviceDependentResources()
-    {
-      m_notificationRenderer.CreateDeviceDependentResourcesAsync().then([this]()
-      {
-        m_componentReady = true;
-      });
-    }
-
-    //----------------------------------------------------------------------------
-    void NotificationSystem::ReleaseDeviceDependentResources()
-    {
-      m_componentReady = false;
-      m_notificationRenderer.ReleaseDeviceDependentResources();
-    }
-
-    //----------------------------------------------------------------------------
     void NotificationSystem::CalculateAlpha(const DX::StepTimer& timer)
     {
       const float deltaTime = static_cast<float>(timer.GetElapsedSeconds());
