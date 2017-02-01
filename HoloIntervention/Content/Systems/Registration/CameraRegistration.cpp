@@ -74,12 +74,11 @@ namespace
   //----------------------------------------------------------------------------
   bool ExtractPhantomToFiducialPose(float4x4& phantomFiducialPose, UWPOpenIGTLink::TransformRepository^ transformRepository, Platform::String^ from, Platform::String^ to)
   {
-    bool isValid;
     float4 origin = { 0.f, 0.f, 0.f, 1.f };
     float4x4 transformation = float4x4::identity();
     try
     {
-      phantomFiducialPose = transpose(transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(from, to), &isValid));
+      phantomFiducialPose = transpose(transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(from, to)));
     }
     catch (Platform::Exception^ e)
     {
@@ -846,18 +845,27 @@ done:
     //----------------------------------------------------------------------------
     bool CameraRegistration::RetrieveTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame, CameraRegistration::VecFloat3& outSphereInReferenceResults, std::array<float4x4, 5>& outSphereToPhantomPoses)
     {
-      m_transformRepository->SetTransforms(trackedFrame);
+      try
+      {
+        m_transformRepository->SetTransforms(trackedFrame);
+      }
+      catch (const std::exception&)
+      {
+
+      }
 
       float4x4 redXToReferenceTransform[PHANTOM_SPHERE_COUNT];
 
       // Calculate world position from transforms in tracked frame
       try
       {
-        bool isValid(false);
         for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
         {
-          redXToReferenceTransform[i] = transpose(m_transformRepository->GetTransform(m_sphereCoordinateNames[i], &isValid));
-          if (!isValid)
+          try
+          {
+            redXToReferenceTransform[i] = transpose(m_transformRepository->GetTransform(m_sphereCoordinateNames[i]));
+          }
+          catch (Platform::Exception^ e)
           {
             return false;
           }

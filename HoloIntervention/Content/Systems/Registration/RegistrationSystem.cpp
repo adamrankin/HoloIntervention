@@ -194,8 +194,7 @@ namespace HoloIntervention
       {
         try
         {
-          bool isValid;
-          m_cachedRegistrationTransform = transpose(repo->GetTransform(trName, &isValid));
+          m_cachedRegistrationTransform = transpose(repo->GetTransform(trName));
         }
         catch (Platform::Exception^ e)
         {
