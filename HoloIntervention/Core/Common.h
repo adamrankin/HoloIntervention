@@ -130,10 +130,6 @@ namespace HoloIntervention
   }
 
   std::vector<std::vector<uint32>> NChooseR(uint32 n, uint32 r);
-  std::ostream& operator<<(std::ostream& out, const Windows::Foundation::Numerics::float4x4& matrix);
-  std::ostream& operator<<(std::ostream& out, const Windows::Foundation::Numerics::float4& vec);
-  std::ostream& operator<<(std::ostream& out, const Windows::Foundation::Numerics::float3& vec);
-  std::ostream& operator<<(std::ostream& out, const Windows::Foundation::Numerics::float2& vec);
   Concurrency::task<void> InitializeTransformRepositoryAsync(UWPOpenIGTLink::TransformRepository^ transformRepository, Platform::String^ fileName);
   Concurrency::task<Windows::Data::Xml::Dom::XmlDocument^> GetXmlDocumentFromFileAsync(Platform::String^ fileName);
 
@@ -142,3 +138,8 @@ namespace HoloIntervention
 
   int IsLittleEndian();
 }
+
+std::ostream& operator<<(std::ostream& out, const Windows::Foundation::Numerics::float4x4& matrix);
+std::ostream& operator<<(std::ostream& out, const Windows::Foundation::Numerics::float4& vec);
+std::ostream& operator<<(std::ostream& out, const Windows::Foundation::Numerics::float3& vec);
+std::ostream& operator<<(std::ostream& out, const Windows::Foundation::Numerics::float2& vec);

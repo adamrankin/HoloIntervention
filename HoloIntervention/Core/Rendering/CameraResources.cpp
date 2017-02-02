@@ -21,6 +21,11 @@
 // Unnecessary, but reduces intellisense errors
 #include <WindowsNumerics.h>
 
+#if _DEBUG
+#include <string>
+#include <sstream>
+#endif
+
 using namespace DirectX;
 using namespace Microsoft::WRL;
 using namespace Windows::Foundation::Numerics;
@@ -136,6 +141,12 @@ namespace DX
 
       XMStoreFloat4x4(&vp.view[0], XMLoadFloat4x4(&viewCoordinateSystemTransform.Left));
       XMStoreFloat4x4(&vp.view[1], XMLoadFloat4x4(&viewCoordinateSystemTransform.Right));
+
+#if _DEBUG
+      std::stringstream ss;
+      ss << viewCoordinateSystemTransform.Left;
+      HoloIntervention::Log::instance().LogMessage(HoloIntervention::Log::LOG_LEVEL_INFO, std::string("viewCoordinateSystemTransform.Left: ") + ss.str());
+#endif
 
       XMStoreFloat4x4(&vp.projection[0], XMLoadFloat4x4(&cameraProjectionTransform.Left));
       XMStoreFloat4x4(&vp.projection[1], XMLoadFloat4x4(&cameraProjectionTransform.Right));
