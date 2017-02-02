@@ -305,7 +305,7 @@ namespace HoloIntervention
   //----------------------------------------------------------------------------
   bool HoloInterventionCore::Render(Windows::Graphics::Holographic::HolographicFrame^ holographicFrame)
   {
-    if (m_timer.GetFrameCount() == 0 || !m_engineReady)
+    if (m_timer.GetFrameCount() == 0)
     {
       return false;
     }
@@ -338,18 +338,26 @@ namespace HoloIntervention
 
         if (activeCamera)
         {
-          m_meshRenderer->Render();
-          m_modelRenderer->Render();
-          m_sliceRenderer->Render();
-          m_volumeRenderer->Render();
-        }
+          if (m_engineReady)
+          {
+            m_meshRenderer->Render();
+            m_modelRenderer->Render();
+            m_sliceRenderer->Render();
+            m_volumeRenderer->Render();
 
-        if (m_notificationSystem->IsShowingNotification())
-        {
-          m_notificationRenderer->Render();
-        }
+            if (m_notificationSystem->IsShowingNotification())
+            {
+              m_notificationRenderer->Render();
+            }
+          }
+          else
+          {
+            // Show our welcome screen until it is ready!
+            m_sliceRenderer->Render();
+          }
 
-        atLeastOneCameraRendered = true;
+          atLeastOneCameraRendered = true;
+        }
       }
 
       return atLeastOneCameraRendered;
