@@ -245,6 +245,9 @@ namespace HoloIntervention
         transformContainer = m_regAnchor->CoordinateSystem->TryGetTransformTo(coordinateSystem);
         if (transformContainer != nullptr)
         {
+          std::stringstream ss;
+          ss << transformContainer->Value;
+          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_INFO, std::string("regAnchorToHMD: ") + ss.str());
           m_regAnchorModel->SetWorld(transformContainer->Value);
         }
       }
@@ -357,7 +360,6 @@ namespace HoloIntervention
         throw std::exception("World anchor doesn't exist.");
       }
 
-      auto referenceToWorldAnchor = m_cameraRegistration->GetReferenceToWorldAnchorTransformation();
       try
       {
         Platform::IBox<float4x4>^ anchorToRequestedBox = worldAnchor->CoordinateSystem->TryGetTransformTo(requestedCoordinateSystem);
@@ -366,11 +368,11 @@ namespace HoloIntervention
           throw std::exception("AnchorToCoordSystem IBox is empty.");
         }
 #if _DEBUG
-        {
-          std::stringstream ss;
-          ss << referenceToWorldAnchor;
-          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_INFO, std::string("trackerToWorldAnchor: ") + ss.str());
-        }
+        //{
+        //std::stringstream ss;
+        //ss << m_cachedRegistrationTransform;
+        //HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_INFO, std::string("trackerToWorldAnchor: ") + ss.str());
+        //}
         {
           std::stringstream ss;
           ss << anchorToRequestedBox->Value;
@@ -378,7 +380,7 @@ namespace HoloIntervention
         }
 #endif
 
-        return referenceToWorldAnchor * anchorToRequestedBox->Value;
+        return m_cachedRegistrationTransform * anchorToRequestedBox->Value;
       }
       catch (Platform::Exception^ e)
       {
