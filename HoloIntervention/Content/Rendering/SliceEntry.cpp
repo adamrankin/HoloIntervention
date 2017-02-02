@@ -121,15 +121,8 @@ namespace HoloIntervention
     {
       const float& deltaTime = static_cast<float>(timer.GetElapsedSeconds());
 
-      float3 currentScale;
-      quaternion currentRotation;
-      float3 currentTranslation;
-      decompose(m_currentPose, &currentScale, &currentRotation, &currentTranslation);
-
-      float3 lastScale;
-      quaternion lastRotation;
-      float3 lastTranslation;
-      decompose(m_lastPose, &lastScale, &lastRotation, &lastTranslation);
+      float3 currentTranslation = { m_currentPose.m41, m_currentPose.m42, m_currentPose.m43 };
+      float3 lastTranslation = { m_lastPose.m41, m_lastPose.m42, m_lastPose.m43 };
 
       const float3 deltaPosition = currentTranslation - lastTranslation; // meters
       m_velocity = deltaPosition * (1.f / deltaTime); // meters per second
@@ -138,16 +131,7 @@ namespace HoloIntervention
       // Calculate new smoothed currentPose
       if (!m_headLocked)
       {
-        float3 desiredScale;
-        quaternion desiredRotation;
-        float3 desiredTranslation;
-        decompose(m_desiredPose, &desiredScale, &desiredRotation, &desiredTranslation);
-
-        float3 smoothedScale = lerp(currentScale, desiredScale, deltaTime * LERP_RATE);
-        quaternion smoothedRotation = slerp(currentRotation, desiredRotation, deltaTime * LERP_RATE);
-        float3 smoothedTranslation = lerp(currentTranslation, desiredTranslation, deltaTime * LERP_RATE);
-
-        m_currentPose = MatrixCompose(smoothedTranslation, smoothedRotation, smoothedScale, true);
+        m_currentPose = lerp(m_currentPose, m_desiredPose, deltaTime * LERP_RATE);
       }
       else
       {
@@ -159,8 +143,7 @@ namespace HoloIntervention
         const float3 offsetFromGaze = headPosition + (float3(LOCKED_SLICE_DISTANCE_OFFSET) * (headDirection + LOCKED_SLICE_SCREEN_OFFSET));
 
         // Use linear interpolation to smooth the position over time
-        float3 f3_currentTranslation = { currentTranslation.x, currentTranslation.y, currentTranslation.z };
-        const float3 smoothedPosition = lerp(f3_currentTranslation, offsetFromGaze, deltaTime * LERP_RATE);
+        const float3 smoothedPosition = lerp(currentTranslation, offsetFromGaze, deltaTime * LERP_RATE);
 
         XMVECTOR facingNormal = XMVector3Normalize(-XMLoadFloat3(&smoothedPosition));
         XMVECTOR xAxisRotation = XMVector3Normalize(XMVectorSet(XMVectorGetZ(facingNormal), 0.f, -XMVectorGetX(facingNormal), 0.f));

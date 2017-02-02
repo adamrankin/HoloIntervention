@@ -104,13 +104,16 @@ namespace HoloIntervention
 
       m_welcomeTimerSec += deltaTime;
 
-      if (m_welcomeTimerSec >= WELCOME_DISPLAY_TIME_SEC)
+      if (!m_componentReady && m_welcomeTimerSec >= WELCOME_DISPLAY_TIME_SEC)
       {
+        m_welcomeTimerSec = 0.0;
         m_componentReady = true;
+        m_sliceEntry = nullptr;
+        m_sliceRenderer.RemoveSlice(m_sliceToken);
         return;
       }
 
-      if (headPose != nullptr)
+      if (headPose != nullptr && m_sliceEntry != nullptr)
       {
         const float3 offsetFromGazeAtTwoMeters = headPose->Head->Position + (float3(NOTIFICATION_DISTANCE_OFFSET) * headPose->Head->ForwardDirection);
         const float4x4 worldTransform = make_float4x4_world(offsetFromGazeAtTwoMeters, -headPose->Head->ForwardDirection, headPose->Head->UpDirection);

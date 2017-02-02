@@ -68,7 +68,6 @@ namespace HoloIntervention
       void SetVisible(bool visible);
       void SetHeadlocked(bool headLocked);
 
-      // D3D device related controls
       void CreateDeviceDependentResources();
       void ReleaseDeviceDependentResources();
 
@@ -95,7 +94,7 @@ namespace HoloIntervention
       std::atomic_bool                                    m_showing = true;
       float                                               m_scalingFactor = 1.f;
 
-      // image data vars
+      // Image data vars
       std::shared_ptr<byte>                               m_imageData = nullptr;
       uint16                                              m_width = 0;
       uint16                                              m_height = 0;
