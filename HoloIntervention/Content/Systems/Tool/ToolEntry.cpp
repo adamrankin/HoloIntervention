@@ -111,6 +111,7 @@ namespace HoloIntervention
       // m_transformRepository has already been initialized with the transforms for this update
       float4x4 transform;
 #if _DEBUG
+      /*
       try
       {
         transform = transpose(m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"StylusTip", L"Stylus")));
@@ -146,6 +147,7 @@ namespace HoloIntervention
       {
         HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_INFO, "ReferenceToHMD: invalid");
       }
+      */
 #endif
 
       try
@@ -160,9 +162,11 @@ namespace HoloIntervention
         m_modelEntry->RenderGreyscale();
       }
 
+      /*
       std::stringstream ss;
       ss << transform;
       HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_INFO, std::string("StylusTipToHMD: ") + ss.str());
+      */
 
       m_modelEntry->SetWorld(transform);
     }
