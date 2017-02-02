@@ -79,8 +79,18 @@ namespace HoloIntervention
 
         Platform::Agile<MediaCapture> mediaCapture(ref new MediaCapture());
 
-        return create_task(mediaCapture->InitializeAsync(settings)).then([ = ]()
+        return create_task(mediaCapture->InitializeAsync(settings)).then([ = ](task<void> previousTask)
         {
+          try
+          {
+            previousTask.wait();
+          }
+          catch (const std::exception& e)
+          {
+            HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, std::string("Unable to initialize media capture:") + e.what());
+            return task_from_result(std::shared_ptr<VideoFrameProcessor>(nullptr));
+          }
+
           MediaFrameSource^ selectedSource = mediaCapture->FrameSources->Lookup(selectedSourceInfo->Id);
           auto formats = selectedSource->SupportedFormats;
 

@@ -6,5 +6,6 @@ Network search on startup
 Volume rendering
 *Registration
 *Splash screen
+Log system bug
 Voice feedback
 UI for IP setting

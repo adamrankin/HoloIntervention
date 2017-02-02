@@ -36,6 +36,11 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Registration method includes
 #include "CameraRegistration.h"
 
+namespace DX
+{
+  struct ViewProjectionConstantBuffer;
+}
+
 namespace HoloIntervention
 {
   namespace Physics
@@ -68,13 +73,13 @@ namespace HoloIntervention
       RegistrationSystem(Network::IGTConnector& igtConnector, Physics::SurfaceAPI& physicsAPI, NotificationSystem& notificationSystem, Rendering::ModelRenderer& modelRenderer);
       ~RegistrationSystem();
 
-      void Update(DX::StepTimer& timer, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem, Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
+      void Update(DX::StepTimer& timer, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem, Windows::UI::Input::Spatial::SpatialPointerPose^ headPose, DX::ViewProjectionConstantBuffer& vp);
 
       Concurrency::task<void> LoadAppStateAsync();
       bool IsCameraActive() const;
       virtual void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbacks);
 
-      Windows::Foundation::Numerics::float4x4 GetReferenceToCoordinateSystemTransformation(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem);
+      bool GetReferenceToCoordinateSystemTransformation(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem, Windows::Foundation::Numerics::float4x4& outTransform);
 
     protected:
       // Cached references

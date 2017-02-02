@@ -68,7 +68,10 @@ namespace HoloIntervention
   void Log::LogMessage(LogLevelType level, const std::wstring& message)
   {
     std::lock_guard<std::mutex> guard(m_sendListMutex);
-    m_sendList.push_back(std::pair<LogLevelType, std::wstring>(level, message));
+    // TODO : not sending correct data... or not receiving correct data?
+    //m_sendList.push_back(std::pair<LogLevelType, std::wstring>(level, message));
+    std::wstring messageNC = message + L"\n";
+    OutputDebugStringW(messageNC.c_str());
   }
 
   //----------------------------------------------------------------------------

@@ -284,7 +284,7 @@ namespace HoloIntervention
 
         if (headPose != nullptr)
         {
-          m_registrationSystem->Update(m_timer, hmdCoordinateSystem, headPose);
+          m_registrationSystem->Update(m_timer, hmdCoordinateSystem, headPose, vp);
           m_gazeSystem->Update(m_timer, hmdCoordinateSystem, headPose);
           m_iconSystem->Update(m_timer, headPose);
           m_soundAPI->Update(m_timer, hmdCoordinateSystem);

@@ -845,13 +845,9 @@ done:
     //----------------------------------------------------------------------------
     bool CameraRegistration::RetrieveTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame, CameraRegistration::VecFloat3& outSphereInReferenceResults, std::array<float4x4, 5>& outSphereToPhantomPoses)
     {
-      try
+      if (!m_transformRepository->SetTransforms(trackedFrame))
       {
-        m_transformRepository->SetTransforms(trackedFrame);
-      }
-      catch (const std::exception&)
-      {
-
+        return false;
       }
 
       float4x4 redXToReferenceTransform[PHANTOM_SPHERE_COUNT];

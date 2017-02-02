@@ -196,17 +196,20 @@ namespace HoloIntervention
     {
       // Update the transform repository with the latest registration
       float4x4 referenceToHMD(float4x4::identity());
-      try
-      {
-        referenceToHMD = m_registrationSystem.GetReferenceToCoordinateSystemTransformation(hmdCoordinateSystem);
-      }
-      catch (const std::exception&)
+      if (!m_registrationSystem.GetReferenceToCoordinateSystemTransformation(hmdCoordinateSystem, referenceToHMD))
       {
         return;
       }
 
-      m_transformRepository->SetTransforms(frame);
-      m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD"), transpose(referenceToHMD), true);
+      if (!m_transformRepository->SetTransforms(frame))
+      {
+        return;
+      }
+
+      if (!m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD"), transpose(referenceToHMD), true))
+      {
+        return;
+      }
 
       for (auto entry : m_toolEntries)
       {
