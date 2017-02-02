@@ -67,6 +67,7 @@ namespace HoloIntervention
   //----------------------------------------------------------------------------
   void Log::LogMessage(LogLevelType level, const std::wstring& message)
   {
+    std::lock_guard<std::mutex> guard(m_sendListMutex);
     m_sendList.push_back(std::pair<LogLevelType, std::wstring>(level, message));
   }
 
@@ -128,14 +129,19 @@ namespace HoloIntervention
           continue;
         }
 
-        std::pair<LogLevelType, std::wstring> item = m_sendList.front();
-        m_sendList.pop_front();
+        std::pair<LogLevelType, std::wstring> item;
+        {
+          std::lock_guard<std::mutex> guard(m_sendListMutex);
+          item = m_sendList.front();
+          m_sendList.pop_front();
+        }
         try
         {
           auto sendTask = SendMessageAsync(item.first, item.second).then([this, item](bool result)
           {
             if (!result)
             {
+              std::lock_guard<std::mutex> guard(m_sendListMutex);
               m_sendList.push_front(item);
             }
           });

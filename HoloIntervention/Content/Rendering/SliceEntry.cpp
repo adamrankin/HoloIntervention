@@ -129,7 +129,7 @@ namespace HoloIntervention
       float3 lastScale;
       quaternion lastRotation;
       float3 lastTranslation;
-      decompose(m_currentPose, &lastScale, &lastRotation, &lastTranslation);
+      decompose(m_lastPose, &lastScale, &lastRotation, &lastTranslation);
 
       const float3 deltaPosition = currentTranslation - lastTranslation; // meters
       m_velocity = deltaPosition * (1.f / deltaTime); // meters per second

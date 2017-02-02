@@ -78,7 +78,7 @@ namespace HoloIntervention
     float SplashSystem::GetStabilizePriority() const
     {
       // Ultra high, this should be stabilized during loading
-      return 4.f;
+      return !m_componentReady ? 4.f : PRIORITY_NOT_ACTIVE;
     }
 
     //----------------------------------------------------------------------------

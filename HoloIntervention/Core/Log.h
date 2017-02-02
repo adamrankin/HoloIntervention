@@ -89,6 +89,7 @@ namespace HoloIntervention
     Platform::String^                                 m_hostname = nullptr;
     uint32                                            m_port = 8484;
 
+    mutable std::mutex                                m_sendListMutex;
     std::deque<std::pair<LogLevelType, std::wstring>> m_sendList;
   };
 }

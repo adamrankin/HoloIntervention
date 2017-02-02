@@ -148,7 +148,7 @@ namespace HoloIntervention
     m_engineComponents.push_back(m_splashSystem.get());
 
     // TODO : remove temp code
-    m_IGTConnector->SetHostname(L"192.168.0.102");
+    m_IGTConnector->SetHostname(L"192.168.0.103");
 
     try
     {
@@ -565,6 +565,7 @@ namespace HoloIntervention
       IStabilizedComponent* stabilizedComponent = dynamic_cast<IStabilizedComponent*>(component);
       if (stabilizedComponent != nullptr && stabilizedComponent->GetStabilizePriority() > maxPriority)
       {
+        maxPriority = stabilizedComponent->GetStabilizePriority();
         winningComponent = stabilizedComponent;
       }
     }
