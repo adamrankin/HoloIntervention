@@ -226,9 +226,11 @@ namespace HoloIntervention
       }
 
       m_imageTexture.Reset();
+      m_shaderResourceView.Reset();
       m_imageData = nullptr;
 
       CreateWICTextureFromFile(m_deviceResources->GetD3DDevice(), m_deviceResources->GetD3DDeviceContext(), fileName.c_str(), (ID3D11Resource**)m_imageTexture.GetAddressOf(), nullptr);
+      DX::ThrowIfFailed(m_deviceResources->GetD3DDevice()->CreateShaderResourceView(m_imageTexture.Get(), nullptr, &m_shaderResourceView));
     }
 
     //----------------------------------------------------------------------------
