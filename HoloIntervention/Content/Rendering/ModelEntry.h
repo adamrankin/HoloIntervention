@@ -39,7 +39,7 @@ namespace DX
 {
   class DeviceResources;
   class StepTimer;
-  struct ViewProjection;
+  struct ViewProjectionConstantBuffer;
 }
 
 namespace HoloIntervention
@@ -57,7 +57,7 @@ namespace HoloIntervention
       ModelEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, const std::wstring& assetLocation);
       ~ModelEntry();
 
-      void Update(const DX::StepTimer& timer, const DX::ViewProjection& vp);
+      void Update(const DX::StepTimer& timer, const DX::ViewProjectionConstantBuffer& vp);
       void Render();
 
       void CreateDeviceDependentResources();
@@ -73,8 +73,8 @@ namespace HoloIntervention
       void EnablePoseLerp(bool enable);
       void SetPoseLerpRate(float lerpRate);
 
-      void SetWorld(const Windows::Foundation::Numerics::float4x4& world);
-      const Windows::Foundation::Numerics::float4x4& GetWorld() const;
+      void SetDesiredPose(const Windows::Foundation::Numerics::float4x4& world);
+      const Windows::Foundation::Numerics::float4x4& GetCurrentPose() const;
 
       const Windows::Foundation::Numerics::float3& GetVelocity() const;
 
@@ -105,7 +105,7 @@ namespace HoloIntervention
       std::unique_ptr<DirectX::InstancedEffectFactory>    m_effectFactory = nullptr;
       std::shared_ptr<DirectX::Model>                     m_model = nullptr;
 
-      std::unique_ptr<DX::ViewProjection>                 m_viewProjection = nullptr;
+      std::unique_ptr<DX::ViewProjectionConstantBuffer>   m_viewProjection = nullptr;
       Windows::Foundation::Numerics::float4x4             m_worldMatrix = Windows::Foundation::Numerics::float4x4::identity();
       std::array<float, 6>                                m_modelBounds = { -1.f };
       std::wstring                                        m_assetLocation;

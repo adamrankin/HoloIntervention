@@ -1,11 +1,10 @@
 Major implementation details remaining:
 
+Model frustrum culling
 Network search on startup
-Stabilization plane
+*Stabilization plane
 Volume rendering
-Registration
-Loading screen
+*Registration
 *Splash screen
-App running indicator
 Voice feedback
 UI for IP setting

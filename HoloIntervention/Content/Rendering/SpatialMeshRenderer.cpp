@@ -54,7 +54,7 @@ namespace HoloIntervention
 
     //----------------------------------------------------------------------------
     // Called once per frame, maintains and updates the mesh collection.
-    void SpatialMeshRenderer::Update(DX::ViewProjection& vp, DX::StepTimer const& timer, SpatialCoordinateSystem^ coordinateSystem)
+    void SpatialMeshRenderer::Update(const DX::StepTimer& timer, SpatialCoordinateSystem^ coordinateSystem)
     {
       if (!m_renderEnabled)
       {
@@ -84,7 +84,7 @@ namespace HoloIntervention
         auto& surfaceMesh = pair.second;
 
         // Update the surface mesh.
-        surfaceMesh.Update(vp, timer, coordinateSystem);
+        surfaceMesh.Update(timer, coordinateSystem);
 
         // Check to see if the mesh has expired.
         float lastActiveTime = surfaceMesh.GetLastActiveTime();

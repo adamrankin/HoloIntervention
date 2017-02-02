@@ -46,7 +46,7 @@ namespace HoloIntervention
     {
       if (m_modelEntry != nullptr)
       {
-        return transform(float3(0.f, 0.f, 0.f), m_modelEntry->GetWorld());
+        return transform(float3(0.f, 0.f, 0.f), m_modelEntry->GetCurrentPose());
       }
       return float3(0.f, 0.f, 0.f);
     }
@@ -56,7 +56,7 @@ namespace HoloIntervention
     {
       if (m_modelEntry != nullptr)
       {
-        return ExtractNormal(m_modelEntry->GetWorld());
+        return ExtractNormal(m_modelEntry->GetCurrentPose());
       }
       return float3(0.f, 1.f, 0.f);
     }
@@ -168,7 +168,7 @@ namespace HoloIntervention
       HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_INFO, std::string("StylusTipToHMD: ") + ss.str());
       */
 
-      m_modelEntry->SetWorld(transform);
+      m_modelEntry->SetDesiredPose(transform);
     }
 
     //----------------------------------------------------------------------------

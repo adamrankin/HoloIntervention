@@ -23,9 +23,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "pch.h"
+#include "CameraResources.h"
+#include "DeviceResources.h"
 #include "DirectXHelper.h"
 #include "ModelRenderer.h"
-#include "DeviceResources.h"
 
 // Windows includes
 #include <comdef.h>
@@ -59,7 +60,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ModelRenderer::Update(const DX::StepTimer& timer, const DX::ViewProjection& vp)
+    void ModelRenderer::Update(const DX::StepTimer& timer, const DX::ViewProjectionConstantBuffer& vp)
     {
       for (auto& model : m_models)
       {

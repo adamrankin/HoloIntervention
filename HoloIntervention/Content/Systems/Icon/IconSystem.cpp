@@ -55,13 +55,13 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float3 IconSystem::GetStabilizedPosition() const
     {
-      return (transform(float3(0.f, 0.f, 0.f), m_networkIcon->GetModelEntry()->GetWorld()) + transform(float3(0.f, 0.f, 0.f), m_cameraIcon->GetModelEntry()->GetWorld())) / 2.f;
+      return (transform(float3(0.f, 0.f, 0.f), m_networkIcon->GetModelEntry()->GetCurrentPose()) + transform(float3(0.f, 0.f, 0.f), m_cameraIcon->GetModelEntry()->GetCurrentPose())) / 2.f;
     }
 
     //----------------------------------------------------------------------------
     float3 IconSystem::GetStabilizedNormal() const
     {
-      return (ExtractNormal(m_networkIcon->GetModelEntry()->GetWorld()) + ExtractNormal(m_cameraIcon->GetModelEntry()->GetWorld())) / 2.f;
+      return (ExtractNormal(m_networkIcon->GetModelEntry()->GetCurrentPose()) + ExtractNormal(m_cameraIcon->GetModelEntry()->GetCurrentPose())) / 2.f;
     }
 
     //----------------------------------------------------------------------------
@@ -157,7 +157,7 @@ namespace HoloIntervention
       for (auto& entry : m_iconEntries)
       {
         float4x4 scaleToWorldTransform = make_float4x4_scale(entry->GetScaleFactor());
-        entry->GetModelEntry()->SetWorld(scaleToWorldTransform * worldToRotatedTransform * make_float4x4_rotation_y(angle) * make_float4x4_rotation_x(UP_ANGLE));
+        entry->GetModelEntry()->SetDesiredPose(scaleToWorldTransform * worldToRotatedTransform * make_float4x4_rotation_y(angle) * make_float4x4_rotation_x(UP_ANGLE));
         angle -= (ANGLE_BETWEEN_ICONS_DEG / 180.f * PI);
       }
     }

@@ -43,7 +43,7 @@ namespace HoloIntervention
     PrimitiveEntry::PrimitiveEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, std::unique_ptr<DirectX::InstancedGeometricPrimitive> primitive)
       : m_deviceResources(deviceResources)
       , m_primitive(std::move(primitive))
-      , m_viewProjection(std::make_unique<DX::ViewProjection>())
+      , m_viewProjection(std::make_unique<DX::ViewProjectionConstantBuffer>())
     {
 
     }
@@ -54,7 +54,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void PrimitiveEntry::Update(const DX::StepTimer& timer, const DX::ViewProjection& vp)
+    void PrimitiveEntry::Update(const DX::StepTimer& timer, const DX::ViewProjectionConstantBuffer& vp)
     {
       m_viewProjection->view[0] = vp.view[0];
       m_viewProjection->view[1] = vp.view[1];

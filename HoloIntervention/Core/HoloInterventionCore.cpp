@@ -226,7 +226,7 @@ namespace HoloIntervention
 
     SpatialCoordinateSystem^ hmdCoordinateSystem = m_attachedReferenceFrame->GetStationaryCoordinateSystemAtTimestamp(prediction->Timestamp);
 
-    DX::ViewProjection vp;
+    DX::ViewProjectionConstantBuffer vp;
     DX::CameraResources* cameraResources(nullptr);
     m_deviceResources->UseHolographicCameraResources<bool>([this, holographicFrame, prediction, hmdCoordinateSystem, &vp, &cameraResources](std::map<UINT32, std::unique_ptr<DX::CameraResources>>& cameraResourceMap)
     {
@@ -292,7 +292,7 @@ namespace HoloIntervention
           m_notificationSystem->Update(headPose, m_timer);
         }
 
-        m_meshRenderer->Update(vp, m_timer, hmdCoordinateSystem);
+        m_meshRenderer->Update(m_timer, hmdCoordinateSystem);
         m_modelRenderer->Update(m_timer, vp);
       }
     });
@@ -332,7 +332,7 @@ namespace HoloIntervention
         context->ClearRenderTargetView(targets[0], DirectX::Colors::Transparent);
         context->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-        DX::ViewProjection throwAway;
+        DX::ViewProjectionConstantBuffer throwAway;
         pCameraResources->UpdateViewProjectionBuffer(m_deviceResources, cameraPose, currentCoordinateSystem, throwAway);
         bool activeCamera = pCameraResources->AttachViewProjectionBuffer(m_deviceResources);
 

@@ -11,9 +11,6 @@
 
 #pragma once
 
-// Common includes
-#include "CameraResources.h"
-
 // DirectX includes
 #include <dxgiformat.h>
 #include <d3d11.h>
@@ -64,7 +61,7 @@ namespace HoloIntervention
 
       void UpdateSurface(Windows::Perception::Spatial::Surfaces::SpatialSurfaceMesh^ surface);
       void UpdateDeviceBasedResources();
-      void Update(DX::ViewProjection& vp, DX::StepTimer const& timer, Windows::Perception::Spatial::SpatialCoordinateSystem^ baseCoordinateSystem);
+      void Update(const DX::StepTimer& timer, Windows::Perception::Spatial::SpatialCoordinateSystem^ baseCoordinateSystem);
 
       void Render(bool usingVprtShaders);
 
@@ -85,8 +82,6 @@ namespace HoloIntervention
 
       // Cached device resources
       std::shared_ptr<DX::DeviceResources>                          m_deviceResources;
-      // Cached view/projection
-      DX::ViewProjection                                            m_viewProjection;
 
       Microsoft::WRL::ComPtr<ID3D11Buffer>                          m_vertexPositions;
       Microsoft::WRL::ComPtr<ID3D11Buffer>                          m_vertexNormals;

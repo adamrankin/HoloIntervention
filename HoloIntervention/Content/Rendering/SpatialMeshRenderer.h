@@ -42,7 +42,7 @@ namespace HoloIntervention
     public:
       SpatialMeshRenderer(System::NotificationSystem& notificationSystem, const std::shared_ptr<DX::DeviceResources>& deviceResources);
 
-      void Update(DX::ViewProjection& vp, DX::StepTimer const& timer, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem);
+      void Update(const DX::StepTimer& timer, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem);
       void Render();
 
       void SetEnabled(bool arg);

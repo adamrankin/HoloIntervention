@@ -40,7 +40,7 @@ namespace DX
 {
   class DeviceResources;
   class StepTimer;
-  struct ViewProjection;
+  struct ViewProjectionConstantBuffer;
 }
 
 namespace HoloIntervention
@@ -53,7 +53,7 @@ namespace HoloIntervention
       PrimitiveEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, std::unique_ptr<DirectX::InstancedGeometricPrimitive> primitive);
       ~PrimitiveEntry();
 
-      void Update(const DX::StepTimer& timer, const DX::ViewProjection& vp);
+      void Update(const DX::StepTimer& timer, const DX::ViewProjectionConstantBuffer& vp);
       void Render();
 
       // Primitive enable control
@@ -78,7 +78,7 @@ namespace HoloIntervention
     protected:
       // Cached pointer to device resources.
       std::shared_ptr<DX::DeviceResources>                  m_deviceResources;
-      std::unique_ptr<DX::ViewProjection>                   m_viewProjection;
+      std::unique_ptr<DX::ViewProjectionConstantBuffer>     m_viewProjection;
 
       // Primitive resources
       std::unique_ptr<DirectX::InstancedGeometricPrimitive> m_primitive = nullptr;

@@ -126,14 +126,13 @@ namespace DX
     std::shared_ptr<DX::DeviceResources> deviceResources,
     HolographicCameraPose^ cameraPose,
     SpatialCoordinateSystem^ coordinateSystem,
-    DX::ViewProjection& vp
+    DX::ViewProjectionConstantBuffer& vp
   )
   {
     m_d3dViewport = CD3D11_VIEWPORT(cameraPose->Viewport.Left, cameraPose->Viewport.Top, cameraPose->Viewport.Width, cameraPose->Viewport.Height);
     HolographicStereoTransform cameraProjectionTransform = cameraPose->ProjectionTransform;
     Platform::IBox<HolographicStereoTransform>^ viewTransformContainer = cameraPose->TryGetViewTransform(coordinateSystem);
 
-    ViewProjectionConstantBuffer viewProjectionConstantBufferData;
     bool viewTransformAcquired = viewTransformContainer != nullptr;
     if (viewTransformAcquired)
     {
@@ -142,28 +141,31 @@ namespace DX
       XMStoreFloat4x4(&vp.view[0], XMLoadFloat4x4(&viewCoordinateSystemTransform.Left));
       XMStoreFloat4x4(&vp.view[1], XMLoadFloat4x4(&viewCoordinateSystemTransform.Right));
 
-#if _DEBUG
-      std::stringstream ss;
-      ss << viewCoordinateSystemTransform.Left;
-      HoloIntervention::Log::instance().LogMessage(HoloIntervention::Log::LOG_LEVEL_INFO, std::string("viewCoordinateSystemTransform.Left: ") + ss.str());
-#endif
-
       XMStoreFloat4x4(&vp.projection[0], XMLoadFloat4x4(&cameraProjectionTransform.Left));
       XMStoreFloat4x4(&vp.projection[1], XMLoadFloat4x4(&cameraProjectionTransform.Right));
 
-      XMStoreFloat4x4(&viewProjectionConstantBufferData.viewProjection[0], XMLoadFloat4x4(&viewCoordinateSystemTransform.Left) * XMLoadFloat4x4(&cameraProjectionTransform.Left));
-      XMStoreFloat4x4(&viewProjectionConstantBufferData.viewProjection[1], XMLoadFloat4x4(&viewCoordinateSystemTransform.Right) * XMLoadFloat4x4(&cameraProjectionTransform.Right));
+      XMStoreFloat4x4(&vp.viewProjection[0], XMLoadFloat4x4(&viewCoordinateSystemTransform.Left) * XMLoadFloat4x4(&cameraProjectionTransform.Left));
+      XMStoreFloat4x4(&vp.viewProjection[1], XMLoadFloat4x4(&viewCoordinateSystemTransform.Right) * XMLoadFloat4x4(&cameraProjectionTransform.Right));
 
       float4x4 viewInverse;
       bool invertible = Windows::Foundation::Numerics::invert(viewCoordinateSystemTransform.Left, &viewInverse);
       if (invertible)
       {
-        // For the purposes of this app, use the left camera position as a light source.
         float4 cameraPosition = float4(viewInverse.m41, viewInverse.m42, viewInverse.m43, 0.f);
         float4 lightPosition = cameraPosition + float4(0.f, 0.25f, 0.f, 0.f);
 
-        XMStoreFloat4(&viewProjectionConstantBufferData.cameraPosition, DirectX::XMLoadFloat4(&cameraPosition));
-        XMStoreFloat4(&viewProjectionConstantBufferData.lightPosition, DirectX::XMLoadFloat4(&lightPosition));
+        XMStoreFloat4(&vp.cameraPosition[0], DirectX::XMLoadFloat4(&cameraPosition));
+        XMStoreFloat4(&vp.lightPosition[0], DirectX::XMLoadFloat4(&lightPosition));
+      }
+
+      invertible = Windows::Foundation::Numerics::invert(viewCoordinateSystemTransform.Right, &viewInverse);
+      if (invertible)
+      {
+        float4 cameraPosition = float4(viewInverse.m41, viewInverse.m42, viewInverse.m43, 0.f);
+        float4 lightPosition = cameraPosition + float4(0.f, 0.25f, 0.f, 0.f);
+
+        XMStoreFloat4(&vp.cameraPosition[1], DirectX::XMLoadFloat4(&cameraPosition));
+        XMStoreFloat4(&vp.lightPosition[1], DirectX::XMLoadFloat4(&lightPosition));
       }
     }
 
@@ -176,7 +178,7 @@ namespace DX
     }
     else
     {
-      context->UpdateSubresource(m_viewProjectionConstantBuffer.Get(), 0, nullptr, &viewProjectionConstantBufferData, 0, 0);
+      context->UpdateSubresource(m_viewProjectionConstantBuffer.Get(), 0, nullptr, &vp, 0, 0);
       m_framePending = true;
       return true;
     }

@@ -68,11 +68,11 @@ namespace HoloIntervention
     {
       if (m_cameraRegistration->IsStabilizationActive() && m_regAnchorModelId != INVALID_TOKEN)
       {
-        return (m_cameraRegistration->GetStabilizedPosition() + transform(float3(0.f, 0.f, 0.f), m_regAnchorModel->GetWorld())) / 2.f;
+        return (m_cameraRegistration->GetStabilizedPosition() + transform(float3(0.f, 0.f, 0.f), m_regAnchorModel->GetCurrentPose())) / 2.f;
       }
       else if (!m_cameraRegistration->IsStabilizationActive() && m_regAnchorModelId != INVALID_TOKEN)
       {
-        return transform(float3(0.f, 0.f, 0.f), m_regAnchorModel->GetWorld());
+        return transform(float3(0.f, 0.f, 0.f), m_regAnchorModel->GetCurrentPose());
       }
       else if (m_cameraRegistration->IsStabilizationActive() && m_regAnchorModelId == INVALID_TOKEN)
       {
@@ -93,11 +93,11 @@ namespace HoloIntervention
     {
       if (m_cameraRegistration->IsStabilizationActive() && m_regAnchorModelId != INVALID_TOKEN)
       {
-        return (m_cameraRegistration->GetStabilizedNormal() + ExtractNormal(m_regAnchorModel->GetWorld())) / 2.f;
+        return (m_cameraRegistration->GetStabilizedNormal() + ExtractNormal(m_regAnchorModel->GetCurrentPose())) / 2.f;
       }
       else if (!m_cameraRegistration->IsStabilizationActive() && m_regAnchorModelId != INVALID_TOKEN)
       {
-        return ExtractNormal(m_regAnchorModel->GetWorld());
+        return ExtractNormal(m_regAnchorModel->GetCurrentPose());
       }
       else if (m_cameraRegistration->IsStabilizationActive() && m_regAnchorModelId == INVALID_TOKEN)
       {
@@ -248,7 +248,7 @@ namespace HoloIntervention
           std::stringstream ss;
           ss << transformContainer->Value;
           HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_INFO, std::string("regAnchorToHMD: ") + ss.str());
-          m_regAnchorModel->SetWorld(transformContainer->Value);
+          m_regAnchorModel->SetDesiredPose(transformContainer->Value);
         }
       }
 

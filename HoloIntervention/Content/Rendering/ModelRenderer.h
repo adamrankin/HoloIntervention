@@ -32,6 +32,7 @@ namespace DX
 {
   class DeviceResources;
   class StepTimer;
+  struct ViewProjectionConstantBuffer;
 }
 
 namespace DirectX
@@ -61,7 +62,7 @@ namespace HoloIntervention
       void CreateDeviceDependentResources();
       void ReleaseDeviceDependentResources();
 
-      void Update(const DX::StepTimer& timer, const DX::ViewProjection& vp);
+      void Update(const DX::StepTimer& timer, const DX::ViewProjectionConstantBuffer& vp);
       void Render();
 
       uint64 AddModel(const std::wstring& assetLocation);

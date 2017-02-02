@@ -30,11 +30,14 @@ cbuffer VolumeConstantBuffer : register(b0)
   uint c_numIterations;
 };
 
+// A constant buffer that stores each set of view and projection matrices in column-major format.
 cbuffer ViewProjectionConstantBuffer : register(b1)
 {
-  float4 cameraPosition;
-  float4 lightPosition;
-  float4x4 viewProjection[2];
+  float4    cameraPosition[2];
+  float4    lightPosition[2];
+  float4x4  view[2];
+  float4x4  projection[2];
+  float4x4  viewProjection[2];
 };
 
 cbuffer VolumeRendererConstantBuffer : register(b2)

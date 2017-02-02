@@ -15,18 +15,14 @@ namespace DX
 {
   struct ViewProjectionConstantBuffer
   {
-    DirectX::XMFLOAT4   cameraPosition; // TODO : this should be array of size two, one for each camera
-    DirectX::XMFLOAT4   lightPosition;  // TODO : this should be array of size two, one for each camera
+    DirectX::XMFLOAT4   cameraPosition[2];
+    DirectX::XMFLOAT4   lightPosition[2];
+    DirectX::XMFLOAT4X4 view[2];
+    DirectX::XMFLOAT4X4 projection[2];
     DirectX::XMFLOAT4X4 viewProjection[2];
   };
 
   static_assert((sizeof(ViewProjectionConstantBuffer) % (sizeof(float) * 4)) == 0, "View/projection constant buffer size must be 16-byte aligned (16 bytes is the length of four floats).");
-
-  struct ViewProjection
-  {
-    DirectX::XMFLOAT4X4   view[2];
-    DirectX::XMFLOAT4X4   projection[2];
-  };
 
   class DeviceResources;
 
@@ -39,7 +35,7 @@ namespace DX
     void ReleaseResourcesForBackBuffer(DX::DeviceResources* pDeviceResources);
 
     bool UpdateViewProjectionBuffer(std::shared_ptr<DX::DeviceResources> deviceResources, Windows::Graphics::Holographic::HolographicCameraPose^ cameraPose,
-                                    Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem, DX::ViewProjection& vp);
+                                    Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem, DX::ViewProjectionConstantBuffer& vp);
     bool AttachViewProjectionBuffer(std::shared_ptr<DX::DeviceResources> deviceResources);
 
     // Direct3D device resources.

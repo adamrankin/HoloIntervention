@@ -55,13 +55,13 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     Windows::Foundation::Numerics::float3 GazeSystem::GetStabilizedPosition() const
     {
-      return transform(float3(0.f, 0.f, 0.f), m_modelEntry->GetWorld());
+      return transform(float3(0.f, 0.f, 0.f), m_modelEntry->GetCurrentPose());
     }
 
     //----------------------------------------------------------------------------
     Windows::Foundation::Numerics::float3 GazeSystem::GetStabilizedNormal() const
     {
-      return ExtractNormal(m_modelEntry->GetWorld());
+      return ExtractNormal(m_modelEntry->GetCurrentPose());
     }
 
     //----------------------------------------------------------------------------
@@ -143,7 +143,7 @@ namespace HoloIntervention
       float3 jVec = -cross(iVec, kVec);
       iVec = normalize(iVec);
       float4x4 matrix = make_float4x4_world(m_currentPosition, kVec, jVec);
-      m_modelEntry->SetWorld(matrix);
+      m_modelEntry->SetDesiredPose(matrix);
 
       CalculateVelocity(1.f / static_cast<float>(timer.GetElapsedSeconds()));
     }

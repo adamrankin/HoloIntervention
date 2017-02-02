@@ -79,7 +79,7 @@ namespace HoloIntervention
 
     //----------------------------------------------------------------------------
     // Spatial Mapping surface meshes each have a transform. This transform is updated every frame.
-    void SpatialMesh::Update(DX::ViewProjection& vp, DX::StepTimer const& timer, SpatialCoordinateSystem^ baseCoordinateSystem)
+    void SpatialMesh::Update(const DX::StepTimer& timer, SpatialCoordinateSystem^ baseCoordinateSystem)
     {
       if (m_surfaceMesh == nullptr)
       {
@@ -102,8 +102,6 @@ namespace HoloIntervention
           m_updateReady = false;
         }
       }
-
-      m_viewProjection = vp;
 
       // If the surface is active this frame, we need to update its transform.
       XMMATRIX transform;

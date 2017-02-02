@@ -39,6 +39,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <algorithm>
 
 // Unnecessary, but removes intellisense errors
+#include "Log.h"
 #include <WindowsNumerics.h>
 
 using namespace Concurrency;
@@ -56,7 +57,7 @@ namespace HoloIntervention
     ModelEntry::ModelEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, const std::wstring& assetLocation)
       : m_deviceResources(deviceResources)
       , m_assetLocation(assetLocation)
-      , m_viewProjection(std::make_unique<DX::ViewProjection>())
+      , m_viewProjection(std::make_unique<DX::ViewProjectionConstantBuffer>())
     {
       // Validate asset location
       Platform::String^ mainFolderLocation = Windows::ApplicationModel::Package::Current->InstalledLocation->Path;
@@ -131,7 +132,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ModelEntry::Update(const DX::StepTimer& timer, const DX::ViewProjection& vp)
+    void ModelEntry::Update(const DX::StepTimer& timer, const DX::ViewProjectionConstantBuffer& vp)
     {
       m_viewProjection->view[0] = vp.view[0];
       m_viewProjection->view[1] = vp.view[1];
@@ -248,7 +249,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ModelEntry::SetWorld(const float4x4& world)
+    void ModelEntry::SetDesiredPose(const float4x4& world)
     {
       if (m_enableLerp)
       {
@@ -261,7 +262,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    const Windows::Foundation::Numerics::float4x4& ModelEntry::GetWorld() const
+    const Windows::Foundation::Numerics::float4x4& ModelEntry::GetCurrentPose() const
     {
       return m_currentPose;
     }
