@@ -64,6 +64,7 @@ namespace HoloIntervention
 
       Windows::Foundation::Numerics::float3               m_position;
 
+      std::atomic_bool                                    m_firstFrame = true;
       float                                               m_welcomeTimerSec = 0.f;
       std::wstring                                        m_splashImageFilename = L"Assets\\Images\\HoloIntervention.png";
 

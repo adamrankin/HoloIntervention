@@ -9,14 +9,14 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="3293.4277"
+   width="3480.6211"
    height="1109.2518"
-   viewBox="0 0 929.47851 313.05551"
+   viewBox="0 0 982.30864 313.05551"
    id="svg3448"
    version="1.1"
    inkscape:version="0.91 r13725"
-   sodipodi:docname="Robarts-VASST-logo.svg"
-   inkscape:export-filename="C:\Users\arankin\Downloads\holoIntervention.png"
+   sodipodi:docname="HoloIntervention.svg"
+   inkscape:export-filename="C:\Users\arankin\Downloads\HoloIntervention.png"
    inkscape:export-xdpi="90"
    inkscape:export-ydpi="90">
   <defs
@@ -103,8 +103,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="0.21707918"
-     inkscape:cx="1005.2855"
-     inkscape:cy="62.662583"
+     inkscape:cx="1205.4849"
+     inkscape:cy="62.662638"
      inkscape:current-layer="layer7"
      id="namedview3452"
      showgrid="false"
@@ -242,26 +242,6 @@
   </g>
   <g
      inkscape:groupmode="layer"
-     id="layer6"
-     inkscape:label="vasst text bg"
-     style="display:inline"
-     transform="translate(-11.700797,2e-6)">
-    <text
-       xml:space="preserve"
-       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:620.22546387px;line-height:125%;font-family:Rokkitt;-inkscape-font-specification:'Rokkitt Bold';letter-spacing:0px;word-spacing:0px;display:inline;opacity:1;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       x="38.645203"
-       y="209.38132"
-       id="text4313-0"
-       sodipodi:linespacing="125%"
-       transform="scale(0.94788527,1.05498)"><tspan
-         sodipodi:role="line"
-         id="tspan4315-6"
-         x="38.645203"
-         y="209.38132"
-         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:141.26795959px;line-height:125%;font-family:Rokkitt;-inkscape-font-specification:'Rokkitt, Bold';text-align:start;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;fill-opacity:1">HoloIntevention</tspan></text>
-  </g>
-  <g
-     inkscape:groupmode="layer"
      id="layer7"
      inkscape:label="vasst text"
      style="display:inline"
@@ -278,6 +258,6 @@
          id="tspan4315"
          x="-74.647881"
          y="158.74034"
-         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:141.26795959px;line-height:125%;font-family:Rokkitt;-inkscape-font-specification:'Rokkitt, Bold';text-align:start;writing-mode:lr-tb;text-anchor:start">HoloIntevention</tspan></text>
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:141.26795959px;line-height:125%;font-family:Rokkitt;-inkscape-font-specification:'Rokkitt, Bold';text-align:start;writing-mode:lr-tb;text-anchor:start">HoloIntervention</tspan></text>
   </g>
 </svg>

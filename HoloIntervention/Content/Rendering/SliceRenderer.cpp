@@ -366,11 +366,6 @@ namespace HoloIntervention
         CD3D11_SAMPLER_DESC desc(D3D11_FILTER_ANISOTROPIC, D3D11_TEXTURE_ADDRESS_CLAMP, D3D11_TEXTURE_ADDRESS_CLAMP, D3D11_TEXTURE_ADDRESS_CLAMP, 0.f, 3, D3D11_COMPARISON_NEVER, borderColour, 0, 3);
         DX::ThrowIfFailed(m_deviceResources->GetD3DDevice()->CreateSamplerState(&desc, &m_quadTextureSamplerState));
 
-        for (auto slice : m_slices)
-        {
-          slice->CreateDeviceDependentResources();
-        }
-
         m_componentReady = true;
       });
     }

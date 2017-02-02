@@ -10,7 +10,7 @@
 //*********************************************************
 
 // A constant buffer that stores the model transform.
-cbuffer ModelConstantBuffer : register(b0)
+cbuffer SliceConstantBuffer : register(b0)
 {
   float4x4      model;
 };

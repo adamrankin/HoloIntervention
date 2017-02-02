@@ -38,5 +38,5 @@ min16float4 main(PixelShaderInput input) : SV_TARGET
   // Read both distance function values.
   float4 textureValue = tex.Sample(textureSampler, input.texCoord);
 
-  return min16float4(textureValue.x, textureValue.x, textureValue.x, 1.h);
+  return min16float4(textureValue.x, textureValue.y, textureValue.z, textureValue.a);
 }

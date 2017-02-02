@@ -108,6 +108,7 @@ namespace HoloIntervention
       {
         m_welcomeTimerSec = 0.0;
         m_componentReady = true;
+        m_sliceEntry->SetVisible(false);
         m_sliceEntry = nullptr;
         m_sliceRenderer.RemoveSlice(m_sliceToken);
         return;
@@ -116,10 +117,18 @@ namespace HoloIntervention
       if (headPose != nullptr && m_sliceEntry != nullptr)
       {
         const float3 offsetFromGazeAtTwoMeters = headPose->Head->Position + (float3(NOTIFICATION_DISTANCE_OFFSET) * headPose->Head->ForwardDirection);
-        const float4x4 worldTransform = make_float4x4_world(offsetFromGazeAtTwoMeters, -headPose->Head->ForwardDirection, headPose->Head->UpDirection);
+        const float4x4 worldTransform = make_float4x4_world(offsetFromGazeAtTwoMeters, headPose->Head->ForwardDirection, headPose->Head->UpDirection);
         const float4x4 scaleTransform = make_float4x4_scale(0.6f, 0.3f, 1.f); // 60cm x 30cm
 
-        m_sliceEntry->SetDesiredPose(worldTransform * scaleTransform);
+        if (m_firstFrame)
+        {
+          m_sliceEntry->SetCurrentPose(scaleTransform * worldTransform);
+          m_firstFrame = false;
+        }
+        else
+        {
+          m_sliceEntry->SetDesiredPose(scaleTransform * worldTransform);
+        }
       }
     }
   }

@@ -231,6 +231,9 @@ namespace HoloIntervention
 
       CreateWICTextureFromFile(m_deviceResources->GetD3DDevice(), m_deviceResources->GetD3DDeviceContext(), fileName.c_str(), (ID3D11Resource**)m_imageTexture.GetAddressOf(), nullptr);
       DX::ThrowIfFailed(m_deviceResources->GetD3DDevice()->CreateShaderResourceView(m_imageTexture.Get(), nullptr, &m_shaderResourceView));
+#if _DEBUG
+      m_shaderResourceView->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strnlen_s("sliceEntrySRVFilename", MAX_PATH)), "sliceEntrySRVFilename");
+#endif
     }
 
     //----------------------------------------------------------------------------
@@ -243,6 +246,12 @@ namespace HoloIntervention
     void SliceEntry::SetDesiredPose(const Windows::Foundation::Numerics::float4x4& matrix)
     {
       m_desiredPose = matrix;
+    }
+
+    //----------------------------------------------------------------------------
+    void SliceEntry::SetCurrentPose(const Windows::Foundation::Numerics::float4x4& matrix)
+    {
+      m_currentPose = m_desiredPose = matrix;
     }
 
     //----------------------------------------------------------------------------
@@ -287,6 +296,9 @@ namespace HoloIntervention
         textureDesc = CD3D11_TEXTURE2D_DESC(m_pixelFormat, m_width, m_height, 1, 0, D3D11_BIND_SHADER_RESOURCE);
         DX::ThrowIfFailed(device->CreateTexture2D(&textureDesc, nullptr, &m_imageTexture));
         DX::ThrowIfFailed(device->CreateShaderResourceView(m_imageTexture.Get(), nullptr, &m_shaderResourceView));
+#if _DEBUG
+        m_shaderResourceView->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strnlen_s("sliceEntrySRV", MAX_PATH)), "sliceEntrySRV");
+#endif
       }
 
       m_sliceValid = true;
