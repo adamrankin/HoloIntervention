@@ -74,6 +74,7 @@ namespace HoloIntervention
       void SetPoseLerpRate(float lerpRate);
 
       void SetDesiredPose(const Windows::Foundation::Numerics::float4x4& world);
+      void SetCurrentPose(const Windows::Foundation::Numerics::float4x4& world);
       const Windows::Foundation::Numerics::float4x4& GetCurrentPose() const;
 
       const Windows::Foundation::Numerics::float3& GetVelocity() const;

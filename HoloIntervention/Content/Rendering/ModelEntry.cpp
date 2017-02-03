@@ -262,6 +262,12 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    void ModelEntry::SetCurrentPose(const Windows::Foundation::Numerics::float4x4& world)
+    {
+      m_currentPose = m_desiredPose = world;
+    }
+
+    //----------------------------------------------------------------------------
     const Windows::Foundation::Numerics::float4x4& ModelEntry::GetCurrentPose() const
     {
       return m_currentPose;

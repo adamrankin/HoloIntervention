@@ -24,6 +24,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
+#include <atomic>
+
 namespace HoloIntervention
 {
   namespace Rendering
@@ -48,8 +50,12 @@ namespace HoloIntervention
       std::shared_ptr<Rendering::ModelEntry> GetModelEntry() const;
       void SetModelEntry(std::shared_ptr<Rendering::ModelEntry> entry);
 
+      bool GetFirstFrame() const;
+      void SetFirstFrame(bool firstFrame);
+
     protected:
       uint64                                          m_id;
+      std::atomic_bool                                m_firstFrame = true;
       std::shared_ptr<Rendering::ModelEntry>          m_modelEntry;
       float                                           m_scaleFactor = 1.f;
     };

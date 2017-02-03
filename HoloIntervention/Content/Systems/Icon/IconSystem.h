@@ -104,6 +104,7 @@ namespace HoloIntervention
       float                           m_cameraBlinkTimer = 0.f;
       static const float              CAMERA_BLINK_TIME_SEC;
 
+      // Shared variables
       static const float              ANGLE_BETWEEN_ICONS_DEG;
       static const float              ICON_SIZE_METER;
     };

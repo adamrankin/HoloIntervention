@@ -157,7 +157,15 @@ namespace HoloIntervention
       for (auto& entry : m_iconEntries)
       {
         float4x4 scaleToWorldTransform = make_float4x4_scale(entry->GetScaleFactor());
-        entry->GetModelEntry()->SetDesiredPose(scaleToWorldTransform * worldToRotatedTransform * make_float4x4_rotation_y(angle) * make_float4x4_rotation_x(UP_ANGLE));
+        if (entry->GetFirstFrame())
+        {
+          entry->GetModelEntry()->SetCurrentPose(scaleToWorldTransform * worldToRotatedTransform * make_float4x4_rotation_y(angle) * make_float4x4_rotation_x(UP_ANGLE));
+          entry->SetFirstFrame(false);
+        }
+        else
+        {
+          entry->GetModelEntry()->SetDesiredPose(scaleToWorldTransform * worldToRotatedTransform * make_float4x4_rotation_y(angle) * make_float4x4_rotation_x(UP_ANGLE));
+        }
         angle -= (ANGLE_BETWEEN_ICONS_DEG / 180.f * PI);
       }
     }

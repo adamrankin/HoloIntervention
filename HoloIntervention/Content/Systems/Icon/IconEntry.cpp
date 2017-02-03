@@ -78,5 +78,17 @@ namespace HoloIntervention
       m_modelEntry = entry;
     }
 
+    //----------------------------------------------------------------------------
+    bool IconEntry::GetFirstFrame() const
+    {
+      return m_firstFrame;
+    }
+
+    //----------------------------------------------------------------------------
+    void IconEntry::SetFirstFrame(bool firstFrame)
+    {
+      m_firstFrame = firstFrame;
+    }
+
   }
 }
