@@ -30,6 +30,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Windows includes
 #include <ppltasks.h>
 #include <vccorlib.h>
+#include <ppl.h>
 
 // UWPOpenIGT includes
 #include <IGTCommon.h>
@@ -37,6 +38,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 // IGT includes
 #include <igtlMessageBase.h>
 #include <igtlStatusMessage.h>
+
+// STL includes
+#include <numeric>
 
 using namespace Concurrency;
 using namespace Windows::Media::SpeechRecognition;
@@ -55,22 +59,10 @@ namespace HoloIntervention
     IGTConnector::IGTConnector(System::NotificationSystem& notificationSystem)
       : m_notificationSystem(notificationSystem)
     {
-      auto hostNames = NetworkInformation::GetHostNames();
-      HostName^ hostName(nullptr);
-
-      for (auto host : hostNames)
+      FindServersAsync().then([this](std::vector<std::wstring> servers)
       {
-        if (host->Type == HostNameType::Ipv4)
-        {
-          hostName = host;
-          break;
-        }
-      }
 
-      if (hostName != nullptr)
-      {
-        OutputDebugStringW(hostName->ToString()->Data());
-      }
+      });
 
       m_componentReady = true;
     }
@@ -122,13 +114,55 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<std::vector<std::string>> IGTConnector::FindServersAsync()
+    task<std::vector<std::wstring>> IGTConnector::FindServersAsync()
     {
       return create_task([this]()
       {
-        std::vector<std::string> results;
+        std::vector<std::wstring> results;
 
+        auto hostNames = NetworkInformation::GetHostNames();
 
+        for (auto host : hostNames)
+        {
+          if (host->Type == HostNameType::Ipv4)
+          {
+            std::wstring hostIP(host->ToString()->Data());
+            std::wstring machineIP = hostIP.substr(hostIP.find_last_of(L'.') + 1);
+            std::wstring prefix = hostIP.substr(0, hostIP.find_last_of(L'.'));
+
+            // Given a subnet, ping all other IPs
+            for (int i = 0; i < 256; ++i)
+            {
+              std::wstringstream ss;
+              ss << i;
+              if (ss.str() == machineIP)
+              {
+                continue;
+              }
+
+              UWPOpenIGTLink::IGTLinkClient^ client = ref new UWPOpenIGTLink::IGTLinkClient();
+              client->ServerHost = ref new Platform::String((prefix + L"." + ss.str()).c_str());
+              client->ServerPort = 18944;
+
+              task<bool> connectTask = create_task(client->ConnectAsync(0.5));
+              bool result(false);
+              try
+              {
+                result = connectTask.get();
+              }
+              catch (const std::exception&)
+              {
+                continue;
+              }
+
+              if (result)
+              {
+                client->Disconnect();
+                results.push_back(prefix + L"." + ss.str());
+              }
+            }
+          }
+        }
 
         return results;
       });
