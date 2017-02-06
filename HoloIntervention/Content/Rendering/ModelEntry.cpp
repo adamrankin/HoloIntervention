@@ -46,8 +46,9 @@ using namespace Concurrency;
 using namespace DirectX;
 using namespace Microsoft::WRL;
 using namespace Windows::Foundation::Numerics;
-using namespace Windows::UI::Input::Spatial;
+using namespace Windows::Perception::Spatial;
 using namespace Windows::Storage;
+using namespace Windows::UI::Input::Spatial;
 
 namespace HoloIntervention
 {
@@ -57,7 +58,6 @@ namespace HoloIntervention
     ModelEntry::ModelEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, const std::wstring& assetLocation)
       : m_deviceResources(deviceResources)
       , m_assetLocation(assetLocation)
-      , m_viewProjection(std::make_unique<DX::ViewProjectionConstantBuffer>())
     {
       // Validate asset location
       Platform::String^ mainFolderLocation = Windows::ApplicationModel::Package::Current->InstalledLocation->Path;
@@ -132,12 +132,9 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ModelEntry::Update(const DX::StepTimer& timer, const DX::ViewProjectionConstantBuffer& vp)
+    void ModelEntry::Update(const DX::StepTimer& timer, const DX::CameraResources* cameraResources)
     {
-      m_viewProjection->view[0] = vp.view[0];
-      m_viewProjection->view[1] = vp.view[1];
-      m_viewProjection->projection[0] = vp.projection[0];
-      m_viewProjection->projection[1] = vp.projection[1];
+      m_cameraResources = cameraResources;
 
       if (m_enableLerp)
       {
@@ -161,8 +158,6 @@ namespace HoloIntervention
       }
 
       const auto context = m_deviceResources->GetD3DDeviceContext();
-
-      // TODO : add in frustrum culling
 
       // Draw opaque parts
       for (auto it = m_model->meshes.cbegin(); it != m_model->meshes.cend(); ++it)
@@ -346,6 +341,39 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    bool ModelEntry::IsInFrustum(const SpatialBoundingFrustum& frustum) const
+    {
+      std::array<float3, 8> points
+      {
+        float3(m_modelBounds[0], m_modelBounds[2], m_modelBounds[4]),
+        float3(m_modelBounds[1], m_modelBounds[2], m_modelBounds[4]),
+        float3(m_modelBounds[0], m_modelBounds[2], m_modelBounds[4]),
+        float3(m_modelBounds[1], m_modelBounds[2], m_modelBounds[5]),
+        float3(m_modelBounds[0], m_modelBounds[3], m_modelBounds[4]),
+        float3(m_modelBounds[1], m_modelBounds[3], m_modelBounds[4]),
+        float3(m_modelBounds[0], m_modelBounds[3], m_modelBounds[4]),
+        float3(m_modelBounds[1], m_modelBounds[3], m_modelBounds[5])
+      };
+
+      bool inside(true);
+      for (auto& point : points)
+      {
+        XMVECTOR transformedPoint = XMLoadFloat3(&transform(point, m_currentPose));
+
+        // check if point inside frustum (behind all planes)
+        for (auto& entry : { frustum.Left, frustum.Right, frustum.Bottom, frustum.Top, frustum.Near, frustum.Far })
+        {
+          XMVECTOR plane = XMLoadPlane(&entry);
+          XMVECTOR dotProduct = XMPlaneDotCoord(plane, transformedPoint);
+          bool isBehind = XMVectorGetX(dotProduct) < 0.f;
+          inside &= isBehind;
+        }
+      }
+
+      return inside;
+    }
+
+    //----------------------------------------------------------------------------
     void ModelEntry::DrawMesh(const DirectX::ModelMesh& mesh, bool alpha, std::function<void __cdecl(std::shared_ptr<DirectX::IEffect>)> setCustomState)
     {
       assert(m_deviceResources->GetD3DDeviceContext() != 0);
@@ -364,10 +392,18 @@ namespace HoloIntervention
         auto imatrices = dynamic_cast<DirectX::IStereoEffectMatrices*>(part->effect.get());
         if (imatrices)
         {
-          DirectX::XMMATRIX view[2] = { DirectX::XMLoadFloat4x4(&m_viewProjection->view[0]), DirectX::XMLoadFloat4x4(&m_viewProjection->view[1]) };
-          DirectX::XMMATRIX proj[2] = { DirectX::XMLoadFloat4x4(&m_viewProjection->projection[0]), DirectX::XMLoadFloat4x4(&m_viewProjection->projection[1]) };
+          FXMMATRIX view[2] =
+          {
+            XMLoadFloat4x4(&(m_cameraResources->GetLatestViewProjectionBuffer().view[0])),
+            XMLoadFloat4x4(&(m_cameraResources->GetLatestViewProjectionBuffer().view[1]))
+          };
+          FXMMATRIX projection[2] =
+          {
+            XMLoadFloat4x4(&(m_cameraResources->GetLatestViewProjectionBuffer().projection[0])),
+            XMLoadFloat4x4(&(m_cameraResources->GetLatestViewProjectionBuffer().projection[1]))
+          };
 
-          imatrices->SetMatrices(DirectX::XMLoadFloat4x4(&m_worldMatrix), view, proj);
+          imatrices->SetMatrices(DirectX::XMLoadFloat4x4(&m_worldMatrix), view, projection);
         }
 
         DrawMeshPart(*part, setCustomState);
@@ -389,7 +425,7 @@ namespace HoloIntervention
       InstancedBasicEffect* basicEffect = dynamic_cast<InstancedBasicEffect*>(part.effect.get());
       if (basicEffect != nullptr && m_renderingState == RENDERING_GREYSCALE)
       {
-        basicEffect->SetColorAndAlpha(XMLoadFloat4(&XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f)));
+        basicEffect->SetColorAndAlpha(XMLoadFloat4(&float4(0.8f, 0.8f, 0.8f, 1.0f)));
       }
       else if (basicEffect != nullptr && m_renderingState == RENDERING_DEFAULT)
       {
@@ -433,14 +469,14 @@ namespace HoloIntervention
       for (auto& mesh : m_model->meshes)
       {
         auto bbox = mesh->boundingBox;
-        m_modelBounds[0] = min(m_modelBounds[0], mesh->boundingBox.Center.x - mesh->boundingBox.Extents.x);
-        m_modelBounds[1] = max(m_modelBounds[1], mesh->boundingBox.Center.x + mesh->boundingBox.Extents.x);
+        m_modelBounds[0] = std::fmin(m_modelBounds[0], mesh->boundingBox.Center.x - mesh->boundingBox.Extents.x);
+        m_modelBounds[1] = std::fmax(m_modelBounds[1], mesh->boundingBox.Center.x + mesh->boundingBox.Extents.x);
 
-        m_modelBounds[2] = min(m_modelBounds[2], mesh->boundingBox.Center.y - mesh->boundingBox.Extents.y);
-        m_modelBounds[3] = max(m_modelBounds[3], mesh->boundingBox.Center.y + mesh->boundingBox.Extents.y);
+        m_modelBounds[2] = std::fmin(m_modelBounds[2], mesh->boundingBox.Center.y - mesh->boundingBox.Extents.y);
+        m_modelBounds[3] = std::fmax(m_modelBounds[3], mesh->boundingBox.Center.y + mesh->boundingBox.Extents.y);
 
-        m_modelBounds[4] = min(m_modelBounds[4], mesh->boundingBox.Center.z - mesh->boundingBox.Extents.z);
-        m_modelBounds[5] = max(m_modelBounds[5], mesh->boundingBox.Center.z + mesh->boundingBox.Extents.z);
+        m_modelBounds[4] = std::fmin(m_modelBounds[4], mesh->boundingBox.Center.z - mesh->boundingBox.Extents.z);
+        m_modelBounds[5] = std::fmax(m_modelBounds[5], mesh->boundingBox.Center.z + mesh->boundingBox.Extents.z);
       }
     }
   }

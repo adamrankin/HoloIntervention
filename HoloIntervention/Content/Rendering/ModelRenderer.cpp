@@ -37,6 +37,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 using namespace Concurrency;
 using namespace DirectX;
 using namespace Windows::Foundation;
+using namespace Windows::Perception::Spatial;
 using namespace Windows::Storage::Streams;
 using namespace Windows::Storage;
 using namespace Windows::UI::Input::Spatial;
@@ -47,7 +48,7 @@ namespace HoloIntervention
   {
     //----------------------------------------------------------------------------
     // Loads vertex and pixel shaders from files and instantiates the cube geometry.
-    ModelRenderer::ModelRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources)
+    ModelRenderer::ModelRenderer(const std::shared_ptr<DX::DeviceResources> deviceResources)
       : m_deviceResources(deviceResources)
     {
       CreateDeviceDependentResources();
@@ -60,31 +61,38 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ModelRenderer::Update(const DX::StepTimer& timer, const DX::ViewProjectionConstantBuffer& vp)
+    void ModelRenderer::Update(const DX::StepTimer& timer, const DX::CameraResources* cameraResources)
     {
+      assert(cameraResources != nullptr);
+
+      m_cameraResources = cameraResources;
+
       for (auto& model : m_models)
       {
-        model->Update(timer, vp);
+        model->Update(timer, cameraResources);
       }
       for (auto& primitive : m_primitives)
       {
-        primitive->Update(timer, vp);
+        primitive->Update(timer, cameraResources);
       }
     }
 
     //----------------------------------------------------------------------------
     void ModelRenderer::Render()
     {
+      SpatialBoundingFrustum frustum;
+      m_cameraResources->GetLatestSpatialBoundingFrustum(frustum);
+
       for (auto& model : m_models)
       {
-        if (model->IsVisible())
+        if (model->IsVisible() && model->IsInFrustum(frustum))
         {
           model->Render();
         }
       }
       for (auto& primitive : m_primitives)
       {
-        if (primitive->IsVisible())
+        if (primitive->IsVisible() && primitive->IsInFrustum(frustum))
         {
           primitive->Render();
         }

@@ -37,9 +37,9 @@ namespace DirectX
 
 namespace DX
 {
+  class CameraResources;
   class DeviceResources;
   class StepTimer;
-  struct ViewProjectionConstantBuffer;
 }
 
 namespace HoloIntervention
@@ -57,7 +57,7 @@ namespace HoloIntervention
       ModelEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, const std::wstring& assetLocation);
       ~ModelEntry();
 
-      void Update(const DX::StepTimer& timer, const DX::ViewProjectionConstantBuffer& vp);
+      void Update(const DX::StepTimer& timer, const DX::CameraResources* cameraResources);
       void Render();
 
       void CreateDeviceDependentResources();
@@ -66,6 +66,7 @@ namespace HoloIntervention
       void SetVisible(bool enable);
       void ToggleVisible();
       bool IsVisible() const;
+      bool IsInFrustum(const Windows::Perception::Spatial::SpatialBoundingFrustum& frustum) const;
 
       void SetRenderingState(ModelRenderingState state);
       void EnableLighting(bool enable);
@@ -100,13 +101,13 @@ namespace HoloIntervention
     protected:
       // Cached pointer to device resources.
       std::shared_ptr<DX::DeviceResources>                m_deviceResources = nullptr;
+      const DX::CameraResources*                          m_cameraResources = nullptr;
 
       // DirectXTK resources
       std::unique_ptr<DirectX::CommonStates>              m_states = nullptr;
       std::unique_ptr<DirectX::InstancedEffectFactory>    m_effectFactory = nullptr;
       std::shared_ptr<DirectX::Model>                     m_model = nullptr;
 
-      std::unique_ptr<DX::ViewProjectionConstantBuffer>   m_viewProjection = nullptr;
       Windows::Foundation::Numerics::float4x4             m_worldMatrix = Windows::Foundation::Numerics::float4x4::identity();
       std::array<float, 6>                                m_modelBounds = { -1.f };
       std::wstring                                        m_assetLocation;

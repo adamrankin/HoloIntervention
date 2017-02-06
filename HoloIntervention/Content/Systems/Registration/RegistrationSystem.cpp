@@ -47,7 +47,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 // System includes
 #include "NotificationSystem.h"
 
-// Unnecessary, but removes fake errors
+// Unnecessary, but removes intellisense errors
+#include "Log.h"
 #include <WindowsNumerics.h>
 
 using namespace Concurrency;
@@ -215,7 +216,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void RegistrationSystem::Update(DX::StepTimer& timer, SpatialCoordinateSystem^ coordinateSystem, SpatialPointerPose^ headPose, DX::ViewProjectionConstantBuffer& vp)
+    void RegistrationSystem::Update(DX::StepTimer& timer, SpatialCoordinateSystem^ coordinateSystem, SpatialPointerPose^ headPose)
     {
       // Anchor placement logic
       if (m_regAnchorRequested)

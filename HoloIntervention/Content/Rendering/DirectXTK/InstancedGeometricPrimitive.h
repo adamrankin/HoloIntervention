@@ -61,13 +61,16 @@ namespace DirectX
     static void __cdecl CreateIcosahedron(std::vector<VertexPositionNormalTexture>& vertices, std::vector<uint16_t>& indices, float size = 1, bool rhcoords = true);
     static void __cdecl CreateTeapot(std::vector<VertexPositionNormalTexture>& vertices, std::vector<uint16_t>& indices, float size = 1, size_t tessellation = 8, bool rhcoords = true);
 
+    // Get the primitive bounds
+    const std::array<float, 6>& XM_CALLCONV GetBounds() const;
+
     // Draw the primitive.
     void XM_CALLCONV Draw(FXMMATRIX world, FXMMATRIX view[2], FXMMATRIX projection[2], FXMVECTOR color = Colors::White, _In_opt_ ID3D11ShaderResourceView* texture = nullptr, bool wireframe = false,
-      _In_opt_ std::function<void __cdecl()> setCustomState = nullptr);
+                          _In_opt_ std::function<void __cdecl()> setCustomState = nullptr);
 
     // Draw the primitive using a custom effect.
     void __cdecl Draw(_In_ IEffect* effect, _In_ ID3D11InputLayout* inputLayout, bool alpha = false, bool wireframe = false,
-      _In_opt_ std::function<void __cdecl()> setCustomState = nullptr);
+                      _In_opt_ std::function<void __cdecl()> setCustomState = nullptr);
 
     // Create input layout for drawing with a custom effect.
     void __cdecl CreateInputLayout(_In_ IEffect* effect, _Outptr_ ID3D11InputLayout** inputLayout);

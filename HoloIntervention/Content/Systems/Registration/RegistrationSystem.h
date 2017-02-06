@@ -70,10 +70,15 @@ namespace HoloIntervention
       virtual float GetStabilizePriority() const;
 
     public:
-      RegistrationSystem(Network::IGTConnector& igtConnector, Physics::SurfaceAPI& physicsAPI, NotificationSystem& notificationSystem, Rendering::ModelRenderer& modelRenderer);
+      RegistrationSystem(Network::IGTConnector& igtConnector,
+                         Physics::SurfaceAPI& physicsAPI,
+                         NotificationSystem& notificationSystem,
+                         Rendering::ModelRenderer& modelRenderer);
       ~RegistrationSystem();
 
-      void Update(DX::StepTimer& timer, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem, Windows::UI::Input::Spatial::SpatialPointerPose^ headPose, DX::ViewProjectionConstantBuffer& vp);
+      void Update(DX::StepTimer& timer,
+                  Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem,
+                  Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
 
       Concurrency::task<void> LoadAppStateAsync();
       bool IsCameraActive() const;

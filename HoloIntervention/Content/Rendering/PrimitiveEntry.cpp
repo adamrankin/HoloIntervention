@@ -32,6 +32,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 using namespace DirectX;
 using namespace Windows::Foundation::Numerics;
+using namespace Windows::Perception::Spatial;
 
 namespace HoloIntervention
 {
@@ -43,7 +44,6 @@ namespace HoloIntervention
     PrimitiveEntry::PrimitiveEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, std::unique_ptr<DirectX::InstancedGeometricPrimitive> primitive)
       : m_deviceResources(deviceResources)
       , m_primitive(std::move(primitive))
-      , m_viewProjection(std::make_unique<DX::ViewProjectionConstantBuffer>())
     {
 
     }
@@ -54,12 +54,9 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void PrimitiveEntry::Update(const DX::StepTimer& timer, const DX::ViewProjectionConstantBuffer& vp)
+    void PrimitiveEntry::Update(const DX::StepTimer& timer, const DX::CameraResources* cameraResources)
     {
-      m_viewProjection->view[0] = vp.view[0];
-      m_viewProjection->view[1] = vp.view[1];
-      m_viewProjection->projection[0] = vp.projection[0];
-      m_viewProjection->projection[1] = vp.projection[1];
+      m_cameraResources = cameraResources;
 
       const float& deltaTime = static_cast<float>(timer.GetElapsedSeconds());
 
@@ -76,8 +73,16 @@ namespace HoloIntervention
     {
       if (m_visible)
       {
-        FXMMATRIX view[2] = { XMLoadFloat4x4(&m_viewProjection->view[0]), XMLoadFloat4x4(&m_viewProjection->view[1]) };
-        FXMMATRIX projection[2] = { XMLoadFloat4x4(&m_viewProjection->projection[0]), XMLoadFloat4x4(&m_viewProjection->projection[1]) };
+        FXMMATRIX view[2] =
+        {
+          XMLoadFloat4x4(&(m_cameraResources->GetLatestViewProjectionBuffer().view[0])),
+          XMLoadFloat4x4(&(m_cameraResources->GetLatestViewProjectionBuffer().view[1]))
+        };
+        FXMMATRIX projection[2] =
+        {
+          XMLoadFloat4x4(&(m_cameraResources->GetLatestViewProjectionBuffer().projection[0])),
+          XMLoadFloat4x4(&(m_cameraResources->GetLatestViewProjectionBuffer().projection[1]))
+        };
         m_primitive->Draw(XMLoadFloat4x4(&m_currentPose), view, projection, XMLoadFloat4(&m_colour));
       }
     }
@@ -98,6 +103,40 @@ namespace HoloIntervention
     bool PrimitiveEntry::IsVisible() const
     {
       return m_visible;
+    }
+
+    //----------------------------------------------------------------------------
+    bool PrimitiveEntry::IsInFrustum(const SpatialBoundingFrustum& frustum) const
+    {
+      auto bounds = GetBounds();
+      std::array<float3, 8> points
+      {
+        float3(bounds[0], bounds[2], bounds[4]),
+        float3(bounds[1], bounds[2], bounds[4]),
+        float3(bounds[0], bounds[2], bounds[4]),
+        float3(bounds[1], bounds[2], bounds[5]),
+        float3(bounds[0], bounds[3], bounds[4]),
+        float3(bounds[1], bounds[3], bounds[4]),
+        float3(bounds[0], bounds[3], bounds[4]),
+        float3(bounds[1], bounds[3], bounds[5])
+      };
+
+      bool inside(true);
+      for (auto& point : points)
+      {
+        XMVECTOR transformedPoint = XMLoadFloat3(&transform(point, m_currentPose));
+
+        // check if point inside frustum (behind all planes)
+        for (auto& entry : { frustum.Left, frustum.Right, frustum.Bottom, frustum.Top, frustum.Near, frustum.Far })
+        {
+          XMVECTOR plane = XMLoadPlane(&entry);
+          XMVECTOR dotProduct = XMPlaneDotCoord(plane, transformedPoint);
+          bool isBehind = XMVectorGetX(dotProduct) < 0.f;
+          inside &= isBehind;
+        }
+      }
+
+      return inside;
     }
 
     //----------------------------------------------------------------------------
@@ -128,6 +167,12 @@ namespace HoloIntervention
     const float3& PrimitiveEntry::GetVelocity() const
     {
       return m_velocity;
+    }
+
+    //----------------------------------------------------------------------------
+    const std::array<float, 6>& PrimitiveEntry::GetBounds() const
+    {
+      return m_primitive->GetBounds();
     }
 
     //----------------------------------------------------------------------------

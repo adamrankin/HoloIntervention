@@ -226,14 +226,13 @@ namespace HoloIntervention
 
     SpatialCoordinateSystem^ hmdCoordinateSystem = m_attachedReferenceFrame->GetStationaryCoordinateSystemAtTimestamp(prediction->Timestamp);
 
-    DX::ViewProjectionConstantBuffer vp;
     DX::CameraResources* cameraResources(nullptr);
-    m_deviceResources->UseHolographicCameraResources<bool>([this, holographicFrame, prediction, hmdCoordinateSystem, &vp, &cameraResources](std::map<UINT32, std::unique_ptr<DX::CameraResources>>& cameraResourceMap)
+    m_deviceResources->UseHolographicCameraResources<bool>([this, holographicFrame, prediction, hmdCoordinateSystem, &cameraResources](std::map<UINT32, std::unique_ptr<DX::CameraResources>>& cameraResourceMap)
     {
       for (auto cameraPose : prediction->CameraPoses)
       {
         cameraResources = cameraResourceMap[cameraPose->HolographicCamera->Id].get();
-        auto result = cameraResources->UpdateViewProjectionBuffer(m_deviceResources, cameraPose, hmdCoordinateSystem, vp);
+        auto result = cameraResources->Update(m_deviceResources, cameraPose, hmdCoordinateSystem);
       }
       return true;
     });
@@ -284,7 +283,7 @@ namespace HoloIntervention
 
         if (headPose != nullptr)
         {
-          m_registrationSystem->Update(m_timer, hmdCoordinateSystem, headPose, vp);
+          m_registrationSystem->Update(m_timer, hmdCoordinateSystem, headPose);
           m_gazeSystem->Update(m_timer, hmdCoordinateSystem, headPose);
           m_iconSystem->Update(m_timer, headPose);
           m_soundAPI->Update(m_timer, hmdCoordinateSystem);
@@ -293,7 +292,7 @@ namespace HoloIntervention
         }
 
         m_meshRenderer->Update(m_timer, hmdCoordinateSystem);
-        m_modelRenderer->Update(m_timer, vp);
+        m_modelRenderer->Update(m_timer, cameraResources);
       }
     });
 
@@ -332,9 +331,8 @@ namespace HoloIntervention
         context->ClearRenderTargetView(targets[0], DirectX::Colors::Transparent);
         context->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-        DX::ViewProjectionConstantBuffer throwAway;
-        pCameraResources->UpdateViewProjectionBuffer(m_deviceResources, cameraPose, currentCoordinateSystem, throwAway);
-        bool activeCamera = pCameraResources->AttachViewProjectionBuffer(m_deviceResources);
+        pCameraResources->Update(m_deviceResources, cameraPose, currentCoordinateSystem);
+        bool activeCamera = pCameraResources->Attach(m_deviceResources);
 
         if (activeCamera)
         {

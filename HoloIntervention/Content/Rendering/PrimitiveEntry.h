@@ -38,9 +38,9 @@ namespace DirectX
 
 namespace DX
 {
+  class CameraResources;
   class DeviceResources;
   class StepTimer;
-  struct ViewProjectionConstantBuffer;
 }
 
 namespace HoloIntervention
@@ -53,13 +53,14 @@ namespace HoloIntervention
       PrimitiveEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, std::unique_ptr<DirectX::InstancedGeometricPrimitive> primitive);
       ~PrimitiveEntry();
 
-      void Update(const DX::StepTimer& timer, const DX::ViewProjectionConstantBuffer& vp);
+      void Update(const DX::StepTimer& timer, const DX::CameraResources* cameraResources);
       void Render();
 
       // Primitive enable control
       void SetVisible(bool enable);
       void ToggleVisible();
       bool IsVisible() const;
+      bool IsInFrustum(const Windows::Perception::Spatial::SpatialBoundingFrustum& frustum) const;
 
       // Colour control
       void SetColour(Windows::Foundation::Numerics::float3 newColour);
@@ -71,6 +72,8 @@ namespace HoloIntervention
 
       const Windows::Foundation::Numerics::float3& GetVelocity() const;
 
+      const std::array<float, 6>& GetBounds() const;
+
       // Accessors
       uint64 GetId() const;
       void SetId(uint64 id);
@@ -78,7 +81,7 @@ namespace HoloIntervention
     protected:
       // Cached pointer to device resources.
       std::shared_ptr<DX::DeviceResources>                  m_deviceResources;
-      std::unique_ptr<DX::ViewProjectionConstantBuffer>     m_viewProjection;
+      const DX::CameraResources*                            m_cameraResources = nullptr;
 
       // Primitive resources
       std::unique_ptr<DirectX::InstancedGeometricPrimitive> m_primitive = nullptr;
