@@ -1,10 +1,8 @@
 Major implementation details remaining:
 
 Network search on startup
-*Stabilization plane
 Volume rendering
 *Registration
-*Splash screen
 Log system bug
 Voice feedback
 UI for IP setting

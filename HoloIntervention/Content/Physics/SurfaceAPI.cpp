@@ -379,7 +379,12 @@ namespace HoloIntervention
         return false;
       }
 
+#if _DEBUG
+      float4x4 anchorMatrix = make_float4x4_translation(outHitPosition);
+#else
       float4x4 anchorMatrix = make_float4x4_world(outHitPosition, outHitEdge, -outHitNormal);
+#endif
+
       quaternion rotation;
       float3 translation;
       float3 scale;

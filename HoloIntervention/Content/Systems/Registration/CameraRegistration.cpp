@@ -462,8 +462,8 @@ namespace HoloIntervention
         {
           float4x4 cameraToRawWorldAnchor = float4x4::identity();
 
-          m_latestTimestamp = l_latestTrackedFrame->Timestamp;
           l_latestCameraFrame = cameraFrame;
+          m_latestTimestamp = l_latestTrackedFrame->Timestamp;
           if (l_latestCameraFrame->CoordinateSystem != nullptr)
           {
             std::lock_guard<std::mutex> guard(m_anchorMutex);
@@ -480,6 +480,11 @@ namespace HoloIntervention
             if (cameraToRawWorldAnchorBox != nullptr)
             {
               cameraToRawWorldAnchor = cameraToRawWorldAnchorBox->Value;
+#if _DEBUG
+              std::stringstream ss;
+              ss << "cameraToRawWorldAnchor: " << cameraToRawWorldAnchor << std::endl;
+              OutputDebugStringA(ss.str().c_str());
+#endif
             }
           }
 
