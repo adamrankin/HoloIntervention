@@ -118,7 +118,7 @@ namespace HoloIntervention
       {
         const float3 offsetFromGazeAtTwoMeters = headPose->Head->Position + (float3(NOTIFICATION_DISTANCE_OFFSET) * headPose->Head->ForwardDirection);
         const float4x4 worldTransform = make_float4x4_world(offsetFromGazeAtTwoMeters, headPose->Head->ForwardDirection, float3(0.f, 1.f, 0.f));
-        const float4x4 scaleTransform = make_float4x4_scale(1.0f, 0.36254f, 1.f); // Keep aspect ratio of 3721x1349
+        const float4x4 scaleTransform = make_float4x4_scale(1.f, 1349.f / 3836.f, 1.f); // Keep aspect ratio of 3836x1349
 
         if (m_firstFrame)
         {
