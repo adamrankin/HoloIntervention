@@ -53,7 +53,7 @@ namespace HoloIntervention
   namespace System
   {
     const float SplashSystem::LERP_RATE = 4.f;
-    const float SplashSystem::WELCOME_DISPLAY_TIME_SEC = 10.f;
+    const float SplashSystem::WELCOME_DISPLAY_TIME_SEC = 6.f;
 
     //----------------------------------------------------------------------------
     float3 SplashSystem::GetStabilizedPosition() const
@@ -97,7 +97,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void SplashSystem::Update(const DX::StepTimer& timer, SpatialCoordinateSystem^ hmdCoordinateSystem, SpatialPointerPose^ headPose)
     {
-      const float NOTIFICATION_DISTANCE_OFFSET = 2.f;
+      const float NOTIFICATION_DISTANCE_OFFSET = 2.5f;
 
       // Calculate world pose, ahead of face, centered
       const float& deltaTime = static_cast<float>(timer.GetElapsedSeconds());
@@ -117,7 +117,7 @@ namespace HoloIntervention
       if (headPose != nullptr && m_sliceEntry != nullptr)
       {
         const float3 offsetFromGazeAtTwoMeters = headPose->Head->Position + (float3(NOTIFICATION_DISTANCE_OFFSET) * headPose->Head->ForwardDirection);
-        const float4x4 worldTransform = make_float4x4_world(offsetFromGazeAtTwoMeters, headPose->Head->ForwardDirection, headPose->Head->UpDirection);
+        const float4x4 worldTransform = make_float4x4_world(offsetFromGazeAtTwoMeters, headPose->Head->ForwardDirection, float3(0.f, 1.f, 0.f));
         const float4x4 scaleTransform = make_float4x4_scale(1.0f, 0.36254f, 1.f); // Keep aspect ratio of 3721x1349
 
         if (m_firstFrame)

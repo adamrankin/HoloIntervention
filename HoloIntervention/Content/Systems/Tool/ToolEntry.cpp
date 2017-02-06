@@ -74,9 +74,9 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float ToolEntry::GetStabilizePriority() const
     {
-      // TODO : affect priority based on proximity to center of view frustrum?
+      // TODO : affect priority based on proximity to center of view frustum?
       // TODO : stabilizer values?
-      return m_isValid ? 2.5f : 0.75f;
+      return m_isValid ? 2.5f : 0.25f;
     }
 
     //----------------------------------------------------------------------------
@@ -110,45 +110,6 @@ namespace HoloIntervention
     {
       // m_transformRepository has already been initialized with the transforms for this update
       float4x4 transform;
-#if _DEBUG
-      /*
-      try
-      {
-        transform = transpose(m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"StylusTip", L"Stylus")));
-        std::stringstream ss;
-        ss << transform;
-        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_INFO, std::string("StylusTipToStylus: ") + ss.str());
-      }
-      catch (Platform::Exception^ e)
-      {
-        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_INFO, "StylusTipToStylus: invalid");
-      }
-
-      try
-      {
-        transform = transpose(m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"Stylus", L"Reference")));
-        std::stringstream ss;
-        ss << transform;
-        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_INFO, std::string("StylusToReference: ") + ss.str());
-      }
-      catch (Platform::Exception^ e)
-      {
-        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_INFO, "StylusToReference: invalid");
-      }
-
-      try
-      {
-        transform = transpose(m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD")));
-        std::stringstream ss;
-        ss << transform;
-        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_INFO, std::string("ReferenceToHMD: ") + ss.str());
-      }
-      catch (Platform::Exception^ e)
-      {
-        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_INFO, "ReferenceToHMD: invalid");
-      }
-      */
-#endif
 
       try
       {
@@ -161,12 +122,6 @@ namespace HoloIntervention
         m_isValid = false;
         m_modelEntry->RenderGreyscale();
       }
-
-      /*
-      std::stringstream ss;
-      ss << transform;
-      HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_INFO, std::string("StylusTipToHMD: ") + ss.str());
-      */
 
       m_modelEntry->SetDesiredPose(transform);
     }

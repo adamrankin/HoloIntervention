@@ -59,9 +59,17 @@ namespace HoloIntervention
     IGTConnector::IGTConnector(System::NotificationSystem& notificationSystem)
       : m_notificationSystem(notificationSystem)
     {
-      FindServersAsync().then([this](std::vector<std::wstring> servers)
+      FindServersAsync().then([this](task<std::vector<std::wstring>> findServerTask)
       {
-
+        std::vector<std::wstring> servers;
+        try
+        {
+          servers = findServerTask.get();
+        }
+        catch (const std::exception& e)
+        {
+          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, std::string("IGTConnector failed to find servers: ") + e.what());
+        }
       });
 
       m_componentReady = true;
@@ -80,8 +88,19 @@ namespace HoloIntervention
       std::lock_guard<std::mutex> guard(m_clientMutex);
       auto connectTask = create_task(m_igtClient->ConnectAsync(timeoutSec), options);
 
-      return connectTask.then([this](bool result)
+      return connectTask.then([this](task<bool> connectTask)
       {
+        bool result(false);
+        try
+        {
+          result = connectTask.get();
+        }
+        catch (const std::exception& e)
+        {
+          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, std::string("IGTConnector failed to connect: ") + e.what());
+          return false;
+        }
+
         if (result)
         {
           m_connectionState = CONNECTION_STATE_CONNECTED;
@@ -245,6 +264,17 @@ namespace HoloIntervention
           if (result)
           {
             m_keepAliveTask = &KeepAliveAsync();
+            m_keepAliveTask->then([this](task<void> keepAliveTask)
+            {
+              try
+              {
+                keepAliveTask.wait();
+              }
+              catch (const std::exception& e)
+              {
+                HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, std::string("KeepAliveTask exception: ") + e.what());
+              }
+            });
           }
         }, concurrency::task_continuation_context::use_arbitrary());
       };

@@ -1,6 +1,5 @@
 Major implementation details remaining:
 
-Model frustrum culling
 Network search on startup
 *Stabilization plane
 Volume rendering

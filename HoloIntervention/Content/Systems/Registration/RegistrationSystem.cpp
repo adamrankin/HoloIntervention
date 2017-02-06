@@ -68,15 +68,15 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float3 RegistrationSystem::GetStabilizedPosition() const
     {
-      if (m_cameraRegistration->IsStabilizationActive() && m_regAnchorModelId != INVALID_TOKEN)
+      if (m_cameraRegistration->IsStabilizationActive() && m_regAnchor != nullptr)
       {
         return (m_cameraRegistration->GetStabilizedPosition() + transform(float3(0.f, 0.f, 0.f), m_regAnchorModel->GetCurrentPose())) / 2.f;
       }
-      else if (!m_cameraRegistration->IsStabilizationActive() && m_regAnchorModelId != INVALID_TOKEN)
+      else if (!m_cameraRegistration->IsStabilizationActive() && m_regAnchor != nullptr)
       {
         return transform(float3(0.f, 0.f, 0.f), m_regAnchorModel->GetCurrentPose());
       }
-      else if (m_cameraRegistration->IsStabilizationActive() && m_regAnchorModelId == INVALID_TOKEN)
+      else if (m_cameraRegistration->IsStabilizationActive() && m_regAnchor != nullptr)
       {
         // This shouldn't be possible, camReg needs anchor
         assert(false);
@@ -93,15 +93,15 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float3 RegistrationSystem::GetStabilizedNormal() const
     {
-      if (m_cameraRegistration->IsStabilizationActive() && m_regAnchorModelId != INVALID_TOKEN)
+      if (m_cameraRegistration->IsStabilizationActive() && m_regAnchor != nullptr)
       {
         return (m_cameraRegistration->GetStabilizedNormal() + ExtractNormal(m_regAnchorModel->GetCurrentPose())) / 2.f;
       }
-      else if (!m_cameraRegistration->IsStabilizationActive() && m_regAnchorModelId != INVALID_TOKEN)
+      else if (!m_cameraRegistration->IsStabilizationActive() && m_regAnchor != nullptr)
       {
         return ExtractNormal(m_regAnchorModel->GetCurrentPose());
       }
-      else if (m_cameraRegistration->IsStabilizationActive() && m_regAnchorModelId == INVALID_TOKEN)
+      else if (m_cameraRegistration->IsStabilizationActive() && m_regAnchor != nullptr)
       {
         // This shouldn't be possible, camReg needs anchor
         assert(false);
@@ -118,15 +118,15 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float3 RegistrationSystem::GetStabilizedVelocity() const
     {
-      if (m_cameraRegistration->IsStabilizationActive() && m_regAnchorModelId != INVALID_TOKEN)
+      if (m_cameraRegistration->IsStabilizationActive() && m_regAnchor != nullptr)
       {
         return (m_cameraRegistration->GetStabilizedVelocity() + m_regAnchorModel->GetVelocity()) / 2.f;
       }
-      else if (!m_cameraRegistration->IsStabilizationActive() && m_regAnchorModelId != INVALID_TOKEN)
+      else if (!m_cameraRegistration->IsStabilizationActive() && m_regAnchor != nullptr)
       {
         return m_regAnchorModel->GetVelocity();
       }
-      else if (m_cameraRegistration->IsStabilizationActive() && m_regAnchorModelId == INVALID_TOKEN)
+      else if (m_cameraRegistration->IsStabilizationActive() && m_regAnchor != nullptr)
       {
         // This shouldn't be possible, camReg needs anchor
         assert(false);
@@ -143,17 +143,17 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float RegistrationSystem::GetStabilizePriority() const
     {
-      if (m_cameraRegistration->IsStabilizationActive() && m_regAnchorModelId != INVALID_TOKEN)
+      if (m_cameraRegistration->IsStabilizationActive() && m_regAnchor != nullptr)
       {
         // TODO : stabilization values?
         return std::fmaxf(m_cameraRegistration->GetStabilizePriority(), 3.f);
       }
-      else if (!m_cameraRegistration->IsStabilizationActive() && m_regAnchorModelId != INVALID_TOKEN)
+      else if (!m_cameraRegistration->IsStabilizationActive() && m_regAnchor != nullptr)
       {
         // TODO : stabilization values?
         return 3.f;
       }
-      else if (m_cameraRegistration->IsStabilizationActive() && m_regAnchorModelId == INVALID_TOKEN)
+      else if (m_cameraRegistration->IsStabilizationActive() && m_regAnchor != nullptr)
       {
         // This shouldn't be possible, camReg needs anchor
         assert(false);
@@ -161,8 +161,6 @@ namespace HoloIntervention
       }
       else
       {
-        // Nothing completed yet, this shouldn't even be called because in this case, priority returns not active
-        assert(false);
         return PRIORITY_NOT_ACTIVE;
       }
     }

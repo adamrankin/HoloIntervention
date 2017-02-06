@@ -148,25 +148,26 @@ namespace HoloIntervention
 
       // Calculate forward vector 2m ahead
       float3 basePosition = headPose->Head->Position + (float3(2.f) * headPose->Head->ForwardDirection);
-      float4x4 worldToRotatedTransform = make_float4x4_world(basePosition, headPose->Head->ForwardDirection, headPose->Head->UpDirection);
-
-      int32 i = 0;
-      const float PI = 3.14159265359f;
-      const float UP_ANGLE = 6.f / 180.f * PI;
-      float angle = 12.f / 180.f * PI;
+      float4x4 translation = make_float4x4_translation(basePosition);
+      uint32 i = 0;
       for (auto& entry : m_iconEntries)
       {
-        float4x4 scaleToWorldTransform = make_float4x4_scale(entry->GetScaleFactor());
+        float4x4 scale = make_float4x4_scale(entry->GetScaleFactor());
+        float4x4 rotate = make_float4x4_from_axis_angle(headPose->Head->UpDirection, 0.225f - i * 0.035f) * make_float4x4_from_axis_angle(cross(headPose->Head->UpDirection, -headPose->Head->ForwardDirection), 0.1f);
+        float4x4 transformed = translation * rotate;
+        float4x4 world = make_float4x4_world(float3(transformed.m41, transformed.m42, transformed.m43), headPose->Head->ForwardDirection, headPose->Head->UpDirection);
+
         if (entry->GetFirstFrame())
         {
-          entry->GetModelEntry()->SetCurrentPose(scaleToWorldTransform * worldToRotatedTransform * make_float4x4_rotation_y(angle) * make_float4x4_rotation_x(UP_ANGLE));
+          entry->GetModelEntry()->SetCurrentPose(scale * world);
           entry->SetFirstFrame(false);
         }
         else
         {
-          entry->GetModelEntry()->SetDesiredPose(scaleToWorldTransform * worldToRotatedTransform * make_float4x4_rotation_y(angle) * make_float4x4_rotation_x(UP_ANGLE));
+          entry->GetModelEntry()->SetDesiredPose(scale * world);
         }
-        angle -= (ANGLE_BETWEEN_ICONS_DEG / 180.f * PI);
+
+        ++i;
       }
     }
 

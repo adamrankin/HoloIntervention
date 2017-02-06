@@ -70,7 +70,7 @@ namespace HoloIntervention
       Rendering::ModelRenderer&               m_modelRenderer;
       UWPOpenIGTLink::TransformRepository^    m_transformRepository;
 
-      std::atomic_bool                        m_isValid;
+      std::atomic_bool                        m_isValid = false;
       UWPOpenIGTLink::TransformName^          m_coordinateFrame;
       std::shared_ptr<Rendering::ModelEntry>  m_modelEntry;
     };
