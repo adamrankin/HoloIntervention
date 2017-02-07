@@ -322,8 +322,13 @@ namespace HoloIntervention
         }
         else // points are not collinear
         {
-          w = eigenvectors.row(0).at<float>(0);
-          xProd = { eigenvectors.row(1).at<float>(0), eigenvectors.row(2).at<float>(0), eigenvectors.row(3).at<float>(0) };
+          w = ((float*)eigenvectors.data)[0];
+          xProd =
+          {
+            ((float*)eigenvectors.data)[1],
+            ((float*)eigenvectors.data)[2],
+            ((float*)eigenvectors.data)[3]
+          };
         }
 
         // convert quaternion to a rotation matrix
@@ -366,6 +371,12 @@ namespace HoloIntervention
         calibrationMatrix.m14 = target_centroid.x - sx;
         calibrationMatrix.m24 = target_centroid.y - sy;
         calibrationMatrix.m34 = target_centroid.z - sz;
+
+        // fill the bottom row of the 4x4 matrix
+        calibrationMatrix.m41 = 0.0f;
+        calibrationMatrix.m42 = 0.0f;
+        calibrationMatrix.m43 = 0.0f;
+        calibrationMatrix.m44 = 1.0f;
 
         return transpose(calibrationMatrix);
       });
