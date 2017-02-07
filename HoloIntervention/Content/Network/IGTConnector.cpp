@@ -59,6 +59,8 @@ namespace HoloIntervention
     IGTConnector::IGTConnector(System::NotificationSystem& notificationSystem)
       : m_notificationSystem(notificationSystem)
     {
+      /*
+      disabled, currently crashes
       FindServersAsync().then([this](task<std::vector<std::wstring>> findServerTask)
       {
         std::vector<std::wstring> servers;
@@ -71,6 +73,7 @@ namespace HoloIntervention
           HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, std::string("IGTConnector failed to find servers: ") + e.what());
         }
       });
+      */
 
       m_componentReady = true;
     }

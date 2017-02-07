@@ -120,9 +120,7 @@ namespace HoloIntervention
     protected:
       void ProcessAvailableFrames(Concurrency::cancellation_token token);
       void PerformLandmarkRegistration();
-      bool CameraRegistration::RetrieveTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame,
-          VecFloat3& outSphereInReferenceResults,
-          std::array<Windows::Foundation::Numerics::float4x4, 5>& outSphereToPhantomPoses);
+      bool CameraRegistration::RetrieveTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame, VecFloat3& outSphereInReferencePositions);
       bool ComputePhantomToCameraTransform(Windows::Media::Capture::Frames::VideoMediaFrame^ videoFrame, bool& initialized, int32_t& height, int32_t& width,
                                            cv::Mat& hsv, cv::Mat& redMat, cv::Mat& redMatWrap, cv::Mat& imageRGB, cv::Mat& mask, cv::Mat& rvec,
                                            cv::Mat& tvec, cv::Mat& cannyOutput, Windows::Foundation::Numerics::float4x4& modelToCameraTransform);
@@ -163,15 +161,15 @@ namespace HoloIntervention
       std::mutex                                                            m_framesLock;
       Windows::Media::Capture::Frames::MediaFrameReference^                 m_currentFrame = nullptr;
       Windows::Media::Capture::Frames::MediaFrameReference^                 m_nextFrame = nullptr;
-      DetectionFrames                                                       m_sphereInAnchorResults;
+      DetectionFrames                                                       m_sphereInAnchorResultFrames;
 
       // IGT link
       UWPOpenIGTLink::TransformRepository^                                  m_transformRepository = ref new UWPOpenIGTLink::TransformRepository();
       std::atomic_bool                                                      m_transformsAvailable = false;
       double                                                                m_latestTimestamp = 0.0;
-      DetectionFrames                                                       m_sphereInReferenceResults;
+      DetectionFrames                                                       m_sphereInReferenceResultFrames;
       std::array<Windows::Foundation::Numerics::float4x4, 5>                m_sphereToPhantomPoses;
-      std::atomic_bool                                                      m_hasTrackerSpherePoses = false;
+      std::atomic_bool                                                      m_hasSphereToPhantomPoses = false;
       std::array<UWPOpenIGTLink::TransformName^, 5>                         m_sphereCoordinateNames;
 
       // State variables

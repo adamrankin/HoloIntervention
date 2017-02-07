@@ -133,6 +133,7 @@ namespace HoloIntervention
   Concurrency::task<void> InitializeTransformRepositoryAsync(UWPOpenIGTLink::TransformRepository^ transformRepository, Platform::String^ fileName);
   Concurrency::task<Windows::Data::Xml::Dom::XmlDocument^> GetXmlDocumentFromFileAsync(Platform::String^ fileName);
 
+  std::string ToString(const Windows::Foundation::Numerics::float3& vector);
   std::string ToString(const Windows::Foundation::Numerics::float4x4& matrix);
   Windows::Foundation::Numerics::float3 ExtractNormal(const Windows::Foundation::Numerics::float4x4& matrix);
 
