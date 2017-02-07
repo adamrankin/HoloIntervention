@@ -1,6 +1,6 @@
 Major implementation details remaining:
 
-Network search on startup
+*Network search on startup
 Volume rendering
 *Registration
 Log system bug
