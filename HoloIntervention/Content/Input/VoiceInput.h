@@ -30,13 +30,13 @@ OTHER DEALINGS IN THE SOFTWARE.
 // STL includes
 #include <functional>
 #include <map>
+#include <mutex>
 #include <string>
 
 namespace HoloIntervention
 {
   namespace Sound
   {
-    class VoiceInputCallbackMap;
     class SoundAPI;
   }
 
@@ -56,14 +56,17 @@ namespace HoloIntervention
 
       Concurrency::task<bool> CompileCallbacksAsync(Sound::VoiceInputCallbackMap& callbacks);
 
-      uint32 RegisterDictationMatcher(std::function<bool(const std::wstring& text)> func);
-      void RemoveDictationMatcher(uint32 token);
+      uint64 RegisterDictationMatcher(std::function<bool(const std::wstring& text)> func);
+      void RemoveDictationMatcher(uint64 token);
 
     protected:
       Concurrency::task<bool> SwitchRecognitionAsync(Windows::Media::SpeechRecognition::SpeechRecognizer^ desiredRecognizer);
 
       void OnResultGenerated(Windows::Media::SpeechRecognition::SpeechContinuousRecognitionSession^ sender, Windows::Media::SpeechRecognition::SpeechContinuousRecognitionResultGeneratedEventArgs^ args);
       void OnHypothesisGenerated(Windows::Media::SpeechRecognition::SpeechRecognizer^ sender, Windows::Media::SpeechRecognition::SpeechRecognitionHypothesisGeneratedEventArgs^ args);
+
+      void HandleCommandResult(Windows::Media::SpeechRecognition::SpeechContinuousRecognitionResultGeneratedEventArgs^ args);
+      void HandleDictationResult(Windows::Media::SpeechRecognition::SpeechContinuousRecognitionResultGeneratedEventArgs^ args);
 
     protected:
       // Cached entries
@@ -79,7 +82,9 @@ namespace HoloIntervention
       Windows::Foundation::EventRegistrationToken                       m_commandDetectedEventToken;
 
       Windows::Media::SpeechRecognition::SpeechRecognizer^              m_dictationRecognizer = ref new Windows::Media::SpeechRecognition::SpeechRecognizer();
-      std::map<uint32, std::function<bool(const std::wstring& text)>>   m_dictationMatchers;
+      uint64                                                            m_nextToken = INVALID_TOKEN;
+      std::mutex                                                        m_dictationMatcherMutex;
+      std::map<uint64, std::function<bool(const std::wstring& text)>>   m_dictationMatchers;
       Windows::Foundation::EventRegistrationToken                       m_dictationDetectedEventToken;
       Windows::Foundation::EventRegistrationToken                       m_dictationHypothesisGeneratedToken;
 

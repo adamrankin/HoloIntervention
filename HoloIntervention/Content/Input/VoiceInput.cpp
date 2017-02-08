@@ -73,6 +73,10 @@ namespace HoloIntervention
 
         if (compilationResult->Status == SpeechRecognitionResultStatus::Success)
         {
+          m_dictationDetectedEventToken = m_dictationRecognizer->ContinuousRecognitionSession->ResultGenerated +=
+                                            ref new TypedEventHandler<SpeechContinuousRecognitionSession^, SpeechContinuousRecognitionResultGeneratedEventArgs^>(
+                                              std::bind(&VoiceInput::OnResultGenerated, this, std::placeholders::_1, std::placeholders::_2));
+
           m_dictationHypothesisGeneratedToken = m_dictationRecognizer->HypothesisGenerated += ref new TypedEventHandler<SpeechRecognizer^, SpeechRecognitionHypothesisGeneratedEventArgs^>(
                                                   std::bind(&VoiceInput::OnHypothesisGenerated, this, std::placeholders::_1, std::placeholders::_2));
         }
@@ -96,7 +100,7 @@ namespace HoloIntervention
         else if (m_activeRecognizer == m_dictationRecognizer)
         {
           m_dictationRecognizer->HypothesisGenerated -= m_dictationHypothesisGeneratedToken;
-          m_dictationRecognizer->ContinuousRecognitionSession->ResultGenerated -= m_dictationHypothesisGeneratedToken;
+          m_dictationRecognizer->ContinuousRecognitionSession->ResultGenerated -= m_dictationDetectedEventToken;
           m_dictationRecognizer->ContinuousRecognitionSession->StopAsync();
         }
       }
@@ -185,15 +189,24 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    uint32 VoiceInput::RegisterDictationMatcher(std::function<bool(const std::wstring& text)> func)
+    uint64 VoiceInput::RegisterDictationMatcher(std::function<bool(const std::wstring& text)> func)
     {
-
+      std::lock_guard<std::mutex> guard(m_dictationMatcherMutex);
+      m_nextToken++;
+      m_dictationMatchers[m_nextToken] = func;
+      return m_nextToken;
     }
 
     //----------------------------------------------------------------------------
-    void VoiceInput::RemoveDictationMatcher(uint32 token)
+    void VoiceInput::RemoveDictationMatcher(uint64 token)
     {
-
+      std::lock_guard<std::mutex> guard(m_dictationMatcherMutex);
+      auto iter = m_dictationMatchers.find(token);
+      if (iter != m_dictationMatchers.end())
+      {
+        m_dictationMatchers.erase(iter);
+      }
+      return;
     }
 
     //----------------------------------------------------------------------------
@@ -277,15 +290,13 @@ namespace HoloIntervention
         return;
       }
 
-      if (args->Result->RawConfidence > MINIMUM_CONFIDENCE_FOR_DETECTION)
+      if (m_activeRecognizer == m_commandRecognizer)
       {
-        // Search the map for the detected command, if matched, call the function
-        auto iterator = m_callbacks.find(args->Result->Text->Data());
-        if (iterator != m_callbacks.end())
-        {
-          m_soundAPI.PlayOmniSoundOnce(L"input_ok");
-          iterator->second(args->Result);
-        }
+        HandleCommandResult(args);
+      }
+      else if (m_activeRecognizer == m_dictationRecognizer)
+      {
+        HandleDictationResult(args);
       }
     }
 
@@ -295,6 +306,30 @@ namespace HoloIntervention
       if (!m_speechBeingDetected)
       {
         return;
+      }
+    }
+
+    //----------------------------------------------------------------------------
+    void VoiceInput::HandleCommandResult(SpeechContinuousRecognitionResultGeneratedEventArgs^ args)
+    {
+      if (args->Result->RawConfidence > MINIMUM_CONFIDENCE_FOR_DETECTION)
+      {
+        // Search the map for the detected command, if matched, call the function
+        auto iterator = m_callbacks->find(args->Result->Text->Data());
+        if (iterator != m_callbacks->end())
+        {
+          m_soundAPI.PlayOmniSoundOnce(L"input_ok");
+          iterator->second(args->Result);
+        }
+      }
+    }
+
+    //----------------------------------------------------------------------------
+    void VoiceInput::HandleDictationResult(SpeechContinuousRecognitionResultGeneratedEventArgs^ args)
+    {
+      for (auto pair : m_dictationMatchers)
+      {
+        pair.second(std::wstring(args->Result->Text->Data()));
       }
     }
   }

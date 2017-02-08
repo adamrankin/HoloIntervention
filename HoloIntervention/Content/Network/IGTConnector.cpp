@@ -248,7 +248,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void IGTConnector::RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap)
+    void IGTConnector::RegisterVoiceCallbacks(Sound::VoiceInputCallbackMap& callbackMap)
     {
       callbackMap[L"connect"] = [this](SpeechRecognitionResult ^ result)
       {
@@ -276,7 +276,7 @@ namespace HoloIntervention
               }
               catch (const std::exception& e)
               {
-                HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, std::string("KeepAliveTask exception: ") + e.what());
+                Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, std::string("KeepAliveTask exception: ") + e.what());
               }
             });
           }
@@ -285,6 +285,23 @@ namespace HoloIntervention
 
       callbackMap[L"set IP"] = [this](SpeechRecognitionResult ^ result)
       {
+        m_dictationMatcherToken = m_voiceInput.RegisterDictationMatcher([this](const std::wstring & text)
+        {
+          bool matchedText(false);
+
+          m_accumulatedDictationResult += text;
+
+          if (matchedText)
+          {
+            m_voiceInput.RemoveDictationMatcher(m_dictationMatcherToken);
+            m_voiceInput.SwitchToCommandRecognitionAsync();
+            return true;
+          }
+          else
+          {
+            return false;
+          }
+        });
         m_voiceInput.SwitchToDictationRecognitionAsync();
       };
 

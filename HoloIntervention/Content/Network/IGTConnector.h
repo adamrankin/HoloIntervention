@@ -83,7 +83,7 @@ namespace HoloIntervention
       bool GetCommand(UWPOpenIGTLink::Command^& cmd, double* latestTimestamp = nullptr);
 
       /// IVoiceInput functions
-      void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap);
+      void RegisterVoiceCallbacks(Sound::VoiceInputCallbackMap& callbackMap);
 
     public:
       // Static helper functions
@@ -96,7 +96,8 @@ namespace HoloIntervention
       // Cached entries
       System::NotificationSystem&                   m_notificationSystem;
       Input::VoiceInput&                            m_voiceInput;
-
+      std::wstring                                  m_accumulatedDictationResult;
+      uint64                                        m_dictationMatcherToken;
       UWPOpenIGTLink::IGTLinkClient^                m_igtClient = ref new UWPOpenIGTLink::IGTLinkClient();
       ConnectionState                               m_connectionState = CONNECTION_STATE_UNKNOWN;
       mutable std::mutex                            m_clientMutex;
