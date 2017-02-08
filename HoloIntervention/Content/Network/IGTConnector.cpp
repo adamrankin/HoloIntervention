@@ -23,9 +23,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "pch.h"
-#include "AppView.h"
 #include "IGTConnector.h"
 #include "NotificationSystem.h"
+#include "VoiceInput.h"
 
 // Windows includes
 #include <ppltasks.h>
@@ -56,8 +56,9 @@ namespace HoloIntervention
     const uint32_t IGTConnector::RECONNECT_RETRY_COUNT = 10;
 
     //----------------------------------------------------------------------------
-    IGTConnector::IGTConnector(System::NotificationSystem& notificationSystem)
+    IGTConnector::IGTConnector(System::NotificationSystem& notificationSystem, Input::VoiceInput& input)
       : m_notificationSystem(notificationSystem)
+      , m_voiceInput(input)
     {
       /*
       disabled, currently crashes
@@ -280,6 +281,11 @@ namespace HoloIntervention
             });
           }
         }, concurrency::task_continuation_context::use_arbitrary());
+      };
+
+      callbackMap[L"set IP"] = [this](SpeechRecognitionResult ^ result)
+      {
+        m_voiceInput.SwitchToDictationRecognitionAsync();
       };
 
       callbackMap[L"disconnect"] = [this](SpeechRecognitionResult ^ result)

@@ -48,10 +48,39 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     VoiceInput::VoiceInput(System::NotificationSystem& notificationSystem, Sound::SoundAPI& soundAPI)
       : m_notificationSystem(notificationSystem)
-      , m_speechRecognizer(ref new SpeechRecognizer())
       , m_soundAPI(soundAPI)
+      , m_callbacks(std::make_unique<Sound::VoiceInputCallbackMap>())
     {
-      m_speechRecognizer->Constraints->Clear();
+      // Apply the dictation topic constraint to optimize for dictated freeform speech.
+      auto dictationConstraint = ref new SpeechRecognitionTopicConstraint(SpeechRecognitionScenario::Dictation, "dictation");
+      m_dictationRecognizer->Constraints->Append(dictationConstraint);
+
+      create_task(m_dictationRecognizer->CompileConstraintsAsync()).then([this](task<SpeechRecognitionCompilationResult^> compilationTask)
+      {
+        SpeechRecognitionCompilationResult^ compilationResult(nullptr);
+        try
+        {
+          compilationResult = compilationTask.get();
+        }
+        catch (Platform::Exception^ e)
+        {
+          OutputDebugStringW(e->Message->Data());
+        }
+        catch (const std::exception& e)
+        {
+          OutputDebugStringA(e.what());
+        }
+
+        if (compilationResult->Status == SpeechRecognitionResultStatus::Success)
+        {
+          m_dictationHypothesisGeneratedToken = m_dictationRecognizer->HypothesisGenerated += ref new TypedEventHandler<SpeechRecognizer^, SpeechRecognitionHypothesisGeneratedEventArgs^>(
+                                                  std::bind(&VoiceInput::OnHypothesisGenerated, this, std::placeholders::_1, std::placeholders::_2));
+        }
+        else
+        {
+          m_dictationRecognizer = nullptr;
+        }
+      });
     }
 
     //----------------------------------------------------------------------------
@@ -59,8 +88,17 @@ namespace HoloIntervention
     {
       if (m_componentReady)
       {
-        m_speechRecognizer->ContinuousRecognitionSession->ResultGenerated -= m_speechDetectedEventToken;
-        m_speechRecognizer->ContinuousRecognitionSession->StopAsync();
+        if (m_activeRecognizer == m_commandRecognizer)
+        {
+          m_commandRecognizer->ContinuousRecognitionSession->ResultGenerated -= m_commandDetectedEventToken;
+          m_commandRecognizer->ContinuousRecognitionSession->StopAsync();
+        }
+        else if (m_activeRecognizer == m_dictationRecognizer)
+        {
+          m_dictationRecognizer->HypothesisGenerated -= m_dictationHypothesisGeneratedToken;
+          m_dictationRecognizer->ContinuousRecognitionSession->ResultGenerated -= m_dictationHypothesisGeneratedToken;
+          m_dictationRecognizer->ContinuousRecognitionSession->StopAsync();
+        }
       }
     }
 
@@ -77,7 +115,19 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<bool> VoiceInput::CompileCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbacks)
+    task<bool> VoiceInput::SwitchToCommandRecognitionAsync()
+    {
+      return SwitchRecognitionAsync(m_commandRecognizer);
+    }
+
+    //----------------------------------------------------------------------------
+    task<bool> VoiceInput::SwitchToDictationRecognitionAsync()
+    {
+      return SwitchRecognitionAsync(m_dictationRecognizer);
+    }
+
+    //----------------------------------------------------------------------------
+    task<bool> VoiceInput::CompileCallbacksAsync(Sound::VoiceInputCallbackMap& callbacks)
     {
       Platform::Collections::Vector<Platform::String^ >^ speechCommandList = ref new Platform::Collections::Vector<Platform::String^ >();
       for (auto entry : callbacks)
@@ -85,38 +135,136 @@ namespace HoloIntervention
         speechCommandList->Append(ref new Platform::String(std::get<0>(entry).c_str()));
       }
 
-      SpeechRecognitionListConstraint^ spConstraint = ref new SpeechRecognitionListConstraint(speechCommandList);
-      m_speechRecognizer->Constraints->Clear();
-      m_speechRecognizer->Constraints->Append(spConstraint);
+      SpeechRecognitionListConstraint^ listConstraint = ref new SpeechRecognitionListConstraint(speechCommandList);
+      m_commandRecognizer->Constraints->Clear();
+      m_commandRecognizer->Constraints->Append(listConstraint);
 
-      return create_task(m_speechRecognizer->CompileConstraintsAsync()).then([this](SpeechRecognitionCompilationResult ^ compilationResult)
+      return create_task(m_commandRecognizer->CompileConstraintsAsync()).then([this](task<SpeechRecognitionCompilationResult^> compilationTask)
       {
+        SpeechRecognitionCompilationResult^ compilationResult(nullptr);
+        try
+        {
+          compilationResult = compilationTask.get();
+        }
+        catch (Platform::Exception^ e)
+        {
+          OutputDebugStringW(e->Message->Data());
+        }
+        catch (const std::exception& e)
+        {
+          OutputDebugStringA(e.what());
+        }
+
         if (compilationResult->Status == SpeechRecognitionResultStatus::Success)
         {
-          m_speechDetectedEventToken = m_speechRecognizer->ContinuousRecognitionSession->ResultGenerated +=
-                                         ref new TypedEventHandler<SpeechContinuousRecognitionSession^, SpeechContinuousRecognitionResultGeneratedEventArgs^>(
-                                           std::bind(&VoiceInput::OnResultGenerated, this, std::placeholders::_1, std::placeholders::_2));
-          return create_task(m_speechRecognizer->ContinuousRecognitionSession->StartAsync()).then([this]()
-          {
-            m_componentReady = true;
-          });
+          m_commandDetectedEventToken = m_commandRecognizer->ContinuousRecognitionSession->ResultGenerated +=
+                                          ref new TypedEventHandler<SpeechContinuousRecognitionSession^, SpeechContinuousRecognitionResultGeneratedEventArgs^>(
+                                            std::bind(&VoiceInput::OnResultGenerated, this, std::placeholders::_1, std::placeholders::_2));
+
+          m_componentReady = true;
         }
         else
         {
           m_notificationSystem.QueueMessage(L"Unable to compile speech patterns.");
-          return create_task([]() {});
         }
-      }).then([this, callbacks]()
+
+        return m_componentReady ? true : false;
+      }).then([this, callbacks](bool success)
       {
-        if (m_componentReady)
+        if (success)
         {
-          m_callbacks = callbacks;
+          *m_callbacks = callbacks;
           return true;
         }
         else
         {
           m_notificationSystem.QueueMessage(L"Cannot start speech recognition.");
           return false;
+        }
+      });
+    }
+
+    //----------------------------------------------------------------------------
+    uint32 VoiceInput::RegisterDictationMatcher(std::function<bool(const std::wstring& text)> func)
+    {
+
+    }
+
+    //----------------------------------------------------------------------------
+    void VoiceInput::RemoveDictationMatcher(uint32 token)
+    {
+
+    }
+
+    //----------------------------------------------------------------------------
+    task<bool> VoiceInput::SwitchRecognitionAsync(SpeechRecognizer^ desiredRecognizer)
+    {
+      return create_task([this, desiredRecognizer]()
+      {
+        if (m_activeRecognizer == desiredRecognizer)
+        {
+          return task_from_result(true);
+        }
+
+        if (m_activeRecognizer != nullptr)
+        {
+          return create_task(m_activeRecognizer->ContinuousRecognitionSession->StopAsync()).then([this, desiredRecognizer](task<void> stopTask) -> task<bool>
+          {
+            try
+            {
+              stopTask.wait();
+              m_activeRecognizer = nullptr;
+            }
+            catch (const std::exception& e)
+            {
+              Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, std::string("Failed to stop current recognizer: ") + e.what());
+              return task_from_result(false);
+            }
+
+            if (desiredRecognizer == nullptr)
+            {
+              return task_from_result(true);
+            }
+
+            return create_task(desiredRecognizer->ContinuousRecognitionSession->StartAsync()).then([this, desiredRecognizer](task<void> startTask)
+            {
+              try
+              {
+                startTask.wait();
+                m_activeRecognizer = desiredRecognizer;
+              }
+              catch (const std::exception& e)
+              {
+                Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, std::string("Failed to start desired recognizer: ") + e.what());
+                return false;
+              }
+
+              return true;
+            });
+          });
+        }
+        else
+        {
+          if (desiredRecognizer == nullptr)
+          {
+            return task_from_result(true);
+          }
+
+          return create_task(desiredRecognizer->ContinuousRecognitionSession->StartAsync()).then([this, desiredRecognizer](task<void> startTask)
+          {
+            try
+            {
+              startTask.wait();
+              m_activeRecognizer = desiredRecognizer;
+            }
+            catch (const std::exception& e)
+            {
+              Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, std::string("Failed to start command recognizer: ") + e.what());
+              return false;
+            }
+
+            return true;
+          });
         }
       });
     }
@@ -131,14 +279,22 @@ namespace HoloIntervention
 
       if (args->Result->RawConfidence > MINIMUM_CONFIDENCE_FOR_DETECTION)
       {
-        m_soundAPI.PlayOmniSoundOnce(L"input_ok");
-
         // Search the map for the detected command, if matched, call the function
         auto iterator = m_callbacks.find(args->Result->Text->Data());
         if (iterator != m_callbacks.end())
         {
+          m_soundAPI.PlayOmniSoundOnce(L"input_ok");
           iterator->second(args->Result);
         }
+      }
+    }
+
+    //----------------------------------------------------------------------------
+    void VoiceInput::OnHypothesisGenerated(SpeechRecognizer^ sender, SpeechRecognitionHypothesisGeneratedEventArgs^ args)
+    {
+      if (!m_speechBeingDetected)
+      {
+        return;
       }
     }
   }

@@ -146,7 +146,6 @@ namespace HoloIntervention
         return;
       }
       m_modelEntry = m_modelRenderer.GetModel(modelToken);
-      m_modelEntry->SetVisible(false);
     }
   }
 }

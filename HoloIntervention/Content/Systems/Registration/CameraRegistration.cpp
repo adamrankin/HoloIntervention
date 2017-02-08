@@ -157,7 +157,7 @@ namespace HoloIntervention
       if (m_visualizationEnabled && m_spherePrimitiveIds[0] != INVALID_TOKEN && m_sphereInAnchorResultFrames.size() > 0)
       {
         // TODO : priority values?
-        return 2.f;
+        return 3.f;
       }
 
       return PRIORITY_NOT_ACTIVE;
@@ -169,23 +169,7 @@ namespace HoloIntervention
       , m_notificationSystem(notificationSystem)
       , m_igtConnector(igtConnector)
     {
-      try
-      {
-        InitializeTransformRepositoryAsync(m_transformRepository, L"Assets\\Data\\configuration.xml").then([this]()
-        {
-          m_transformsAvailable = true;
-        });
-      }
-      catch (Platform::Exception^ e)
-      {
-        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e->Message);
-      }
-
-      m_sphereCoordinateNames[0] = ref new UWPOpenIGTLink::TransformName(L"RedSphere1", L"Reference");
-      m_sphereCoordinateNames[1] = ref new UWPOpenIGTLink::TransformName(L"RedSphere2", L"Reference");
-      m_sphereCoordinateNames[2] = ref new UWPOpenIGTLink::TransformName(L"RedSphere3", L"Reference");
-      m_sphereCoordinateNames[3] = ref new UWPOpenIGTLink::TransformName(L"RedSphere4", L"Reference");
-      m_sphereCoordinateNames[4] = ref new UWPOpenIGTLink::TransformName(L"RedSphere5", L"Reference");
+      Init();
     }
 
     //----------------------------------------------------------------------------
@@ -228,6 +212,8 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     task<bool> CameraRegistration::StopCameraAsync()
     {
+      SetVisualization(false);
+
       if (m_videoFrameProcessor != nullptr && m_videoFrameProcessor->IsStarted())
       {
         m_tokenSource.cancel();
@@ -243,6 +229,7 @@ namespace HoloIntervention
           m_nextFrame = nullptr;
           m_workerTask = nullptr;
           m_notificationSystem.QueueMessage(L"Capturing stopped.");
+          Init();
           return true;
         });
       }
@@ -258,6 +245,8 @@ namespace HoloIntervention
       std::lock_guard<std::mutex> frameGuard(m_framesLock);
       m_sphereInAnchorResultFrames.clear();
       m_sphereInReferenceResultFrames.clear();
+
+      SetVisualization(true);
 
       return StopCameraAsync().then([this](bool result)
       {
@@ -1263,6 +1252,28 @@ done:
       {
         circleLinkResult.pop_back();
       }
+    }
+
+    //----------------------------------------------------------------------------
+    void CameraRegistration::Init()
+    {
+      try
+      {
+        InitializeTransformRepositoryAsync(m_transformRepository, L"Assets\\Data\\configuration.xml").then([this]()
+        {
+          m_transformsAvailable = true;
+        });
+      }
+      catch (Platform::Exception^ e)
+      {
+        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e->Message);
+      }
+
+      m_sphereCoordinateNames[0] = ref new UWPOpenIGTLink::TransformName(L"RedSphere1", L"Reference");
+      m_sphereCoordinateNames[1] = ref new UWPOpenIGTLink::TransformName(L"RedSphere2", L"Reference");
+      m_sphereCoordinateNames[2] = ref new UWPOpenIGTLink::TransformName(L"RedSphere3", L"Reference");
+      m_sphereCoordinateNames[3] = ref new UWPOpenIGTLink::TransformName(L"RedSphere4", L"Reference");
+      m_sphereCoordinateNames[4] = ref new UWPOpenIGTLink::TransformName(L"RedSphere5", L"Reference");
     }
   }
 }

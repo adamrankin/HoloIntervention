@@ -118,6 +118,8 @@ namespace HoloIntervention
       Windows::Foundation::Numerics::float4x4 GetReferenceToWorldAnchorTransformation() const;
 
     protected:
+      void Init();
+
       void ProcessAvailableFrames(Concurrency::cancellation_token token);
       void PerformLandmarkRegistration();
       bool CameraRegistration::RetrieveTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame, VecFloat3& outSphereInReferencePositions);

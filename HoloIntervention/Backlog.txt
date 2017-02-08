@@ -2,7 +2,7 @@ Major implementation details remaining:
 
 *Network search on startup
 Volume rendering
-*Registration
+Registration drift
 Log system bug
 Voice feedback
 UI for IP setting

@@ -37,6 +37,10 @@ namespace igtl
 
 namespace HoloIntervention
 {
+  namespace Input
+  {
+    class VoiceInput;
+  }
   namespace System
   {
     class NotificationSystem;
@@ -57,7 +61,7 @@ namespace HoloIntervention
     class IGTConnector : public Sound::IVoiceInput, public IEngineComponent
     {
     public:
-      IGTConnector(System::NotificationSystem& notificationSystem);
+      IGTConnector(System::NotificationSystem& notificationSystem, Input::VoiceInput& input);
       ~IGTConnector();
 
       /// Connect to the server specified by SetHostname() and SetPort()
@@ -91,6 +95,7 @@ namespace HoloIntervention
     protected:
       // Cached entries
       System::NotificationSystem&                   m_notificationSystem;
+      Input::VoiceInput&                            m_voiceInput;
 
       UWPOpenIGTLink::IGTLinkClient^                m_igtClient = ref new UWPOpenIGTLink::IGTLinkClient();
       ConnectionState                               m_connectionState = CONNECTION_STATE_UNKNOWN;

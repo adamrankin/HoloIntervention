@@ -119,7 +119,7 @@ namespace HoloIntervention
     m_spatialInput = std::make_unique<Input::SpatialInput>();
     m_voiceInput = std::make_unique<Input::VoiceInput>(*m_notificationSystem.get(), *m_soundAPI.get());
 
-    m_IGTConnector = std::make_unique<Network::IGTConnector>(*m_notificationSystem.get());
+    m_IGTConnector = std::make_unique<Network::IGTConnector>(*m_notificationSystem.get(), *m_voiceInput.get());
     HoloIntervention::Log::instance().SetIGTConnector(*m_IGTConnector.get());
     m_physicsAPI = std::make_unique<Physics::SurfaceAPI>(*m_notificationSystem.get(), m_deviceResources, m_timer);
 
@@ -148,7 +148,7 @@ namespace HoloIntervention
     m_engineComponents.push_back(m_splashSystem.get());
 
     // TODO : remove temp code
-    m_IGTConnector->SetHostname(L"192.168.0.103");
+    m_IGTConnector->SetHostname(L"192.168.0.102");
 
     try
     {
@@ -558,7 +558,19 @@ namespace HoloIntervention
     m_meshRenderer->RegisterVoiceCallbacks(callbacks);
     m_registrationSystem->RegisterVoiceCallbacks(callbacks);
 
-    auto task = m_voiceInput->CompileCallbacks(callbacks);
+    m_voiceInput->CompileCallbacksAsync(callbacks).then([this](task<bool> compileTask)
+    {
+      bool result;
+      try
+      {
+        result = compileTask.get();
+        m_voiceInput->SwitchToCommandRecognitionAsync();
+      }
+      catch (const std::exception& e)
+      {
+        Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, std::string("Failed to compile callbacks: ") + e.what());
+      }
+    });
   }
 
   //----------------------------------------------------------------------------

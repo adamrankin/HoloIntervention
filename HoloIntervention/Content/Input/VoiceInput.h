@@ -36,6 +36,7 @@ namespace HoloIntervention
 {
   namespace Sound
   {
+    class VoiceInputCallbackMap;
     class SoundAPI;
   }
 
@@ -50,22 +51,39 @@ namespace HoloIntervention
       void EnableVoiceAnalysis(bool enable);
       bool IsVoiceEnabled() const;
 
-      Concurrency::task<bool> CompileCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbacks);
+      Concurrency::task<bool> SwitchToCommandRecognitionAsync();
+      Concurrency::task<bool> SwitchToDictationRecognitionAsync();
+
+      Concurrency::task<bool> CompileCallbacksAsync(Sound::VoiceInputCallbackMap& callbacks);
+
+      uint32 RegisterDictationMatcher(std::function<bool(const std::wstring& text)> func);
+      void RemoveDictationMatcher(uint32 token);
 
     protected:
+      Concurrency::task<bool> SwitchRecognitionAsync(Windows::Media::SpeechRecognition::SpeechRecognizer^ desiredRecognizer);
+
       void OnResultGenerated(Windows::Media::SpeechRecognition::SpeechContinuousRecognitionSession^ sender, Windows::Media::SpeechRecognition::SpeechContinuousRecognitionResultGeneratedEventArgs^ args);
+      void OnHypothesisGenerated(Windows::Media::SpeechRecognition::SpeechRecognizer^ sender, Windows::Media::SpeechRecognition::SpeechRecognitionHypothesisGeneratedEventArgs^ args);
 
     protected:
       // Cached entries
-      System::NotificationSystem&                           m_notificationSystem;
-      Sound::SoundAPI&                                      m_soundAPI;
+      System::NotificationSystem&                                       m_notificationSystem;
+      Sound::SoundAPI&                                                  m_soundAPI;
 
-      std::atomic_bool                                      m_speechBeingDetected = false;
-      Windows::Media::SpeechRecognition::SpeechRecognizer^  m_speechRecognizer = nullptr;
-      HoloIntervention::Sound::VoiceInputCallbackMap        m_callbacks;
-      Windows::Foundation::EventRegistrationToken           m_speechDetectedEventToken;
+      std::atomic_bool                                                  m_speechBeingDetected = false;
 
-      const float                                           MINIMUM_CONFIDENCE_FOR_DETECTION = 0.4f; // [0,1]
+      Windows::Media::SpeechRecognition::SpeechRecognizer^              m_activeRecognizer = nullptr;
+
+      Windows::Media::SpeechRecognition::SpeechRecognizer^              m_commandRecognizer = ref new Windows::Media::SpeechRecognition::SpeechRecognizer();
+      std::unique_ptr<Sound::VoiceInputCallbackMap>                     m_callbacks;
+      Windows::Foundation::EventRegistrationToken                       m_commandDetectedEventToken;
+
+      Windows::Media::SpeechRecognition::SpeechRecognizer^              m_dictationRecognizer = ref new Windows::Media::SpeechRecognition::SpeechRecognizer();
+      std::map<uint32, std::function<bool(const std::wstring& text)>>   m_dictationMatchers;
+      Windows::Foundation::EventRegistrationToken                       m_dictationDetectedEventToken;
+      Windows::Foundation::EventRegistrationToken                       m_dictationHypothesisGeneratedToken;
+
+      const float                                                       MINIMUM_CONFIDENCE_FOR_DETECTION = 0.4f; // [0,1]
     };
   }
 }
