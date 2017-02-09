@@ -23,7 +23,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "pch.h"
-#include "AppView.h"
+#include "Common.h"
 #include "SurfaceAPI.h"
 
 // Common includes
@@ -231,7 +231,7 @@ namespace HoloIntervention
           }
           else
           {
-            HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_WARNING, "Cannot load desired vertex position format.");
+            Log::instance().LogMessage(Log::LOG_LEVEL_WARNING, "Cannot load desired vertex position format.");
           }
 
           // Our shader pipeline can handle a variety of triangle index formats
@@ -242,7 +242,7 @@ namespace HoloIntervention
           }
           else
           {
-            HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_WARNING, "Cannot load desired index format.");
+            Log::instance().LogMessage(Log::LOG_LEVEL_WARNING, "Cannot load desired index format.");
           }
 
           if (m_surfaceObserver == nullptr)
@@ -254,17 +254,17 @@ namespace HoloIntervention
         break;
         case SpatialPerceptionAccessStatus::DeniedBySystem:
         {
-          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Error: Cannot initialize surface observer because the system denied access to the spatialPerception capability.");
+          Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Error: Cannot initialize surface observer because the system denied access to the spatialPerception capability.");
         }
         break;
         case SpatialPerceptionAccessStatus::DeniedByUser:
         {
-          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Error: Cannot initialize surface observer because the user denied access to the spatialPerception capability.");
+          Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Error: Cannot initialize surface observer because the user denied access to the spatialPerception capability.");
         }
         break;
         case SpatialPerceptionAccessStatus::Unspecified:
         {
-          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Error: Cannot initialize surface observer. Access was denied for an unspecified reason.");
+          Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Error: Cannot initialize surface observer. Access was denied for an unspecified reason.");
         }
         break;
         default:
@@ -277,14 +277,7 @@ namespace HoloIntervention
         {
           return create_task([this]() -> bool
           {
-            uint32 msCount(0);
-            while (m_surfaceObserver->GetObservedSurfaces()->Size == 0 && msCount < 5000)
-            {
-              msCount += 100;
-              std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            }
-
-            if (msCount >= 5000)
+            if (!wait_until_condition([this]() {return m_surfaceObserver->GetObservedSurfaces()->Size > 0; }, 5000))
             {
               return false;
             }

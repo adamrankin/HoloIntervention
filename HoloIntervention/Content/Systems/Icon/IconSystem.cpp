@@ -32,11 +32,15 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "NotificationSystem.h"
 #include "RegistrationSystem.h"
 
+// Input includes
+#include "VoiceInput.h"
+
 // Rendering includes
 #include "ModelRenderer.h"
 
 // Unnecessary, but removes intellisense errors
 #include <WindowsNumerics.h>
+#include "Log.h"
 
 using namespace Concurrency;
 using namespace Windows::Foundation::Numerics;
@@ -49,7 +53,10 @@ namespace HoloIntervention
   {
     const float IconSystem::NETWORK_BLINK_TIME_SEC = 0.75;
     const float IconSystem::CAMERA_BLINK_TIME_SEC = 1.25f;
-    const float IconSystem::ANGLE_BETWEEN_ICONS_DEG = 1.25f;
+    const float IconSystem::MICROPHONE_BLINK_TIME_SEC = 1.f;
+    const float IconSystem::ANGLE_BETWEEN_ICONS_RAD = 0.035f;
+    const float IconSystem::ICON_START_ANGLE = 0.225f;
+    const float IconSystem::ICON_UP_ANGLE = 0.1f;
     const float IconSystem::ICON_SIZE_METER = 0.025f;
 
     //----------------------------------------------------------------------------
@@ -78,11 +85,12 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    IconSystem::IconSystem(NotificationSystem& notificationSystem, RegistrationSystem& registrationSystem, Network::IGTConnector& igtConnector, Rendering::ModelRenderer& modelRenderer)
+    IconSystem::IconSystem(NotificationSystem& notificationSystem, RegistrationSystem& registrationSystem, Network::IGTConnector& igtConnector, Input::VoiceInput& voiceInput, Rendering::ModelRenderer& modelRenderer)
       : m_modelRenderer(modelRenderer)
       , m_notificationSystem(notificationSystem)
       , m_registrationSystem(registrationSystem)
       , m_IGTConnector(igtConnector)
+      , m_voiceInput(voiceInput)
     {
       // Create network icon
       m_networkIcon = AddEntry(L"Assets/Models/network_icon.cmo");
@@ -90,16 +98,12 @@ namespace HoloIntervention
       // Create camera icon
       m_cameraIcon = AddEntry(L"Assets/Models/camera_icon.cmo");
 
+      // Create microphone icon
+      m_microphoneIcon = AddEntry(L"Assets/Models/microphone_icon.cmo");
+
       create_task([this]()
       {
-        uint32 msCount(0);
-        while (!m_networkIcon->GetModelEntry()->IsLoaded() && !m_cameraIcon->GetModelEntry()->IsLoaded() && msCount < 5000)
-        {
-          std::this_thread::sleep_for(std::chrono::milliseconds(100));
-          msCount += 100;
-        }
-
-        if (msCount >= 5000)
+        if (!wait_until_condition([this]() {return m_networkIcon->GetModelEntry()->IsLoaded() && m_cameraIcon->GetModelEntry()->IsLoaded() && m_microphoneIcon->GetModelEntry()->IsLoaded();}, 5000))
         {
           m_notificationSystem.QueueMessage(L"Icon models failed to load after 5s.");
           return false;
@@ -108,12 +112,20 @@ namespace HoloIntervention
         // Determine scale factors for both models
         {
           auto& bounds = m_networkIcon->GetModelEntry()->GetBounds();
-          m_networkIcon->SetScaleFactor(ICON_SIZE_METER / (bounds[1] - bounds[0]));
+          auto scale = ICON_SIZE_METER / (bounds[1] - bounds[0]);
+          m_networkIcon->SetScaleFactor(scale);
         }
 
         {
           auto& bounds = m_cameraIcon->GetModelEntry()->GetBounds();
-          m_cameraIcon->SetScaleFactor(ICON_SIZE_METER / (bounds[1] - bounds[0]));
+          auto scale = ICON_SIZE_METER / (bounds[1] - bounds[0]);
+          m_cameraIcon->SetScaleFactor(scale);
+        }
+
+        {
+          auto& bounds = m_microphoneIcon->GetModelEntry()->GetBounds();
+          auto scale = ICON_SIZE_METER / (bounds[1] - bounds[0]);
+          m_microphoneIcon->SetScaleFactor(scale);
         }
 
         return true;
@@ -123,9 +135,12 @@ namespace HoloIntervention
         m_networkIcon->GetModelEntry()->SetPoseLerpRate(8.f);
         m_cameraIcon->GetModelEntry()->EnablePoseLerp(true);
         m_cameraIcon->GetModelEntry()->SetPoseLerpRate(8.f);
+        m_microphoneIcon->GetModelEntry()->EnablePoseLerp(true);
+        m_microphoneIcon->GetModelEntry()->SetPoseLerpRate(8.f);
 
         m_iconEntries.push_back(m_networkIcon);
         m_iconEntries.push_back(m_cameraIcon);
+        m_iconEntries.push_back(m_microphoneIcon);
         m_componentReady = loaded;
       });
     }
@@ -145,6 +160,7 @@ namespace HoloIntervention
 
       ProcessNetworkLogic(timer);
       ProcessCameraLogic(timer);
+      ProcessMicrophoneLogic(timer);
 
       // Calculate forward vector 2m ahead
       float3 basePosition = headPose->Head->Position + (float3(2.f) * headPose->Head->ForwardDirection);
@@ -153,7 +169,7 @@ namespace HoloIntervention
       for (auto& entry : m_iconEntries)
       {
         float4x4 scale = make_float4x4_scale(entry->GetScaleFactor());
-        float4x4 rotate = make_float4x4_from_axis_angle(headPose->Head->UpDirection, 0.225f - i * 0.035f) * make_float4x4_from_axis_angle(cross(headPose->Head->UpDirection, -headPose->Head->ForwardDirection), 0.1f);
+        float4x4 rotate = make_float4x4_from_axis_angle(headPose->Head->UpDirection, ICON_START_ANGLE - i * ANGLE_BETWEEN_ICONS_RAD) * make_float4x4_from_axis_angle(cross(headPose->Head->UpDirection, -headPose->Head->ForwardDirection), ICON_UP_ANGLE);
         float4x4 transformed = translation * rotate;
         float4x4 world = make_float4x4_world(float3(transformed.m41, transformed.m42, transformed.m43), headPose->Head->ForwardDirection, headPose->Head->UpDirection);
 
@@ -279,6 +295,20 @@ namespace HoloIntervention
       {
         m_cameraIcon->GetModelEntry()->SetVisible(true);
         m_cameraIcon->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
+      }
+    }
+
+    //----------------------------------------------------------------------------
+    void IconSystem::ProcessMicrophoneLogic(DX::StepTimer& timer)
+    {
+      if (m_voiceInput.IsRecognitionActive())
+      {
+        // TODO : microphone model, animation?
+      }
+      else
+      {
+        m_networkIcon->GetModelEntry()->SetVisible(true);
+        m_networkIcon->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
       }
     }
   }

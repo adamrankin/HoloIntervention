@@ -109,6 +109,7 @@ namespace HoloIntervention
       static const double                           CONNECT_TIMEOUT_SEC;
       static const uint32                           RECONNECT_RETRY_DELAY_MSEC;
       static const uint32                           RECONNECT_RETRY_COUNT;
+      static const UINT32                           DICTATION_TIMEOUT_DELAY_MSEC;
     };
   }
 }

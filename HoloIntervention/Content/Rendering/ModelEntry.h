@@ -29,10 +29,11 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 namespace DirectX
 {
+  class CommonStates;
+  class IEffect;
+  class Model;
   class ModelMesh;
   class ModelMeshPart;
-  class Model;
-  class CommonStates;
 }
 
 namespace DX
@@ -51,6 +52,7 @@ namespace HoloIntervention
       RENDERING_DEFAULT,
       RENDERING_GREYSCALE,
     };
+
     class ModelEntry
     {
     public:
@@ -68,9 +70,6 @@ namespace HoloIntervention
       bool IsVisible() const;
       bool IsInFrustum(const Windows::Perception::Spatial::SpatialBoundingFrustum& frustum) const;
 
-      void SetRenderingState(ModelRenderingState state);
-      void EnableLighting(bool enable);
-
       void EnablePoseLerp(bool enable);
       void SetPoseLerpRate(float lerpRate);
 
@@ -87,6 +86,10 @@ namespace HoloIntervention
       // Alternate rendering options
       void RenderGreyscale();
       void RenderDefault();
+      void SetWireframe(bool wireframe);
+      void SetRenderingState(ModelRenderingState state);
+      void EnableLighting(bool enable);
+      void SetCullMode(D3D11_CULL_MODE mode);
 
       bool IsLoaded() const;
 
@@ -108,21 +111,21 @@ namespace HoloIntervention
       std::unique_ptr<DirectX::InstancedEffectFactory>    m_effectFactory = nullptr;
       std::shared_ptr<DirectX::Model>                     m_model = nullptr;
 
-      Windows::Foundation::Numerics::float4x4             m_worldMatrix = Windows::Foundation::Numerics::float4x4::identity();
+      // Model state
       std::array<float, 6>                                m_modelBounds = { -1.f };
       std::wstring                                        m_assetLocation;
-      DirectX::XMFLOAT4                                   m_defaultColour;
-      std::atomic_bool                                    m_enableLerp;
-      float                                               m_poseLerpRate = 4.f;
+      std::map<DirectX::IEffect*, DirectX::XMFLOAT4>      m_defaultColours;
+      std::atomic_bool                                    m_wireframe;
       Windows::Foundation::Numerics::float3               m_velocity;
       Windows::Foundation::Numerics::float4x4             m_lastPose = Windows::Foundation::Numerics::float4x4::identity();
       Windows::Foundation::Numerics::float4x4             m_currentPose = Windows::Foundation::Numerics::float4x4::identity();
       Windows::Foundation::Numerics::float4x4             m_desiredPose = Windows::Foundation::Numerics::float4x4::identity();
 
-      // Model related behavior
+      // Model behavior
       std::atomic_bool                                    m_visible = false;
+      std::atomic_bool                                    m_enableLerp;
+      float                                               m_poseLerpRate = 4.f;
       uint64                                              m_id = INVALID_TOKEN;
-      ModelRenderingState                                 m_renderingState = RENDERING_DEFAULT;
 
       // Variables used with the rendering loop.
       std::atomic_bool                                    m_loadingComplete = false;

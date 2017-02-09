@@ -109,13 +109,31 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void VoiceInput::EnableVoiceAnalysis(bool enable)
     {
-      m_speechBeingDetected = enable;
+      m_inputEnabled = enable;
     }
 
     //----------------------------------------------------------------------------
     bool VoiceInput::IsVoiceEnabled() const
     {
-      return m_speechBeingDetected;
+      return m_inputEnabled;
+    }
+
+    //----------------------------------------------------------------------------
+    bool VoiceInput::IsRecognitionActive() const
+    {
+      return m_activeRecognizer != nullptr && m_activeRecognizer->State != SpeechRecognizerState::Paused && m_activeRecognizer->State != SpeechRecognizerState::Paused;
+    }
+
+    //----------------------------------------------------------------------------
+    bool VoiceInput::IsCommandRecognitionActive() const
+    {
+      return m_activeRecognizer == m_commandRecognizer;
+    }
+
+    //----------------------------------------------------------------------------
+    bool VoiceInput::IsDictationRecognitionActive() const
+    {
+      return m_activeRecognizer == m_dictationRecognizer;
     }
 
     //----------------------------------------------------------------------------
@@ -285,7 +303,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void VoiceInput::OnResultGenerated(SpeechContinuousRecognitionSession^ sender, SpeechContinuousRecognitionResultGeneratedEventArgs^ args)
     {
-      if (!m_speechBeingDetected)
+      if (!m_inputEnabled)
       {
         return;
       }
@@ -303,7 +321,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void VoiceInput::OnHypothesisGenerated(SpeechRecognizer^ sender, SpeechRecognitionHypothesisGeneratedEventArgs^ args)
     {
-      if (!m_speechBeingDetected)
+      if (!m_inputEnabled)
       {
         return;
       }

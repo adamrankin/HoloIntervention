@@ -44,6 +44,11 @@ namespace HoloIntervention
     class ModelRenderer;
   }
 
+  namespace Input
+  {
+    class VoiceInput;
+  }
+
   namespace Network
   {
     class IGTConnector;
@@ -66,7 +71,7 @@ namespace HoloIntervention
       virtual float GetStabilizePriority() const;
 
     public:
-      IconSystem(NotificationSystem& notificationSystem, RegistrationSystem& registrationSystem, Network::IGTConnector& igtConnector, Rendering::ModelRenderer& modelRenderer);
+      IconSystem(NotificationSystem& notificationSystem, RegistrationSystem& registrationSystem, Network::IGTConnector& igtConnector, Input::VoiceInput& voiceInput, Rendering::ModelRenderer& modelRenderer);
       ~IconSystem();
 
       void Update(DX::StepTimer& timer, Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
@@ -78,6 +83,7 @@ namespace HoloIntervention
     protected:
       void ProcessNetworkLogic(DX::StepTimer&);
       void ProcessCameraLogic(DX::StepTimer&);
+      void ProcessMicrophoneLogic(DX::StepTimer&);
 
     protected:
       uint64                          m_nextValidEntry = 0;
@@ -88,10 +94,12 @@ namespace HoloIntervention
       NotificationSystem&             m_notificationSystem;
       RegistrationSystem&             m_registrationSystem;
       Network::IGTConnector&          m_IGTConnector;
+      Input::VoiceInput&              m_voiceInput;
 
       // Icons that this subsystem manages
       std::shared_ptr<IconEntry>      m_networkIcon = nullptr;
       std::shared_ptr<IconEntry>      m_cameraIcon = nullptr;
+      std::shared_ptr<IconEntry>      m_microphoneIcon = nullptr;
 
       // Network logic variables
       bool                            m_networkIsBlinking = true;
@@ -104,8 +112,14 @@ namespace HoloIntervention
       float                           m_cameraBlinkTimer = 0.f;
       static const float              CAMERA_BLINK_TIME_SEC;
 
+      // Microphone logic variables
+      float                           m_microphoneBlinkTimer = 0.f;
+      static const float              MICROPHONE_BLINK_TIME_SEC;
+
       // Shared variables
-      static const float              ANGLE_BETWEEN_ICONS_DEG;
+      static const float              ANGLE_BETWEEN_ICONS_RAD;
+      static const float              ICON_START_ANGLE;
+      static const float              ICON_UP_ANGLE;
       static const float              ICON_SIZE_METER;
     };
   }

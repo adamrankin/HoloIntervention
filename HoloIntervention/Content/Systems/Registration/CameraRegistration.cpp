@@ -611,14 +611,7 @@ namespace HoloIntervention
         calcFinished = true;
       });
 
-      uint32 msCount(0);
-      while (!calcFinished && msCount <= 5000)
-      {
-        msCount += 100;
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-      }
-
-      if (!calcFinished)
+      if (!wait_until_condition([this, &calcFinished]() {return calcFinished == true ? true : false; }, 5000))
       {
         assert(false);
       }

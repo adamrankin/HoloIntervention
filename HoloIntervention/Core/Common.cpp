@@ -40,6 +40,19 @@ using namespace Windows::Storage;
 namespace HoloIntervention
 {
   //----------------------------------------------------------------------------
+  bool wait_until_condition(std::function<bool()> func, unsigned int timeoutMs)
+  {
+    uint32 msCount(0);
+    while (!func() && msCount < timeoutMs)
+    {
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      msCount += 100;
+    }
+
+    return msCount < timeoutMs;
+  }
+
+  //----------------------------------------------------------------------------
   task<void> complete_after(unsigned int timeoutMs)
   {
     // A task completion event that is set when a timer fires.
@@ -47,6 +60,7 @@ namespace HoloIntervention
 
     // Create a non-repeating timer.
     auto fire_once = new timer<int>(timeoutMs, 0, nullptr, false);
+
     // Create a call object that sets the completion event after the timer fires.
     auto callback = new call<int>([tce](int)
     {

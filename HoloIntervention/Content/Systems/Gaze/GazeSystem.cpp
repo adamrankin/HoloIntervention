@@ -119,24 +119,21 @@ namespace HoloIntervention
       if (hit)
       {
         // Update the gaze system with the pose to render
-        m_goalHitNormal = outHitNormal;
-        m_goalHitPosition = outHitPosition;
-        m_goalHitEdge = outHitEdge;
+        m_currentNormal = outHitNormal;
+        m_currentPosition = outHitPosition;
+        m_currentEdge = outHitEdge;
         m_modelEntry->RenderDefault();
       }
       else
       {
         // Couldn't find a hit, throw the cursor where the gaze head vector is at 2m depth, and turn the model grey
-        m_goalHitPosition = headPose->Head->Position + (2.f * (headPose->Head->ForwardDirection));
-        m_goalHitNormal = -headPose->Head->ForwardDirection;
-        m_goalHitEdge = { 1.f, 0.f, 0.f }; // right relative to head pose
+        m_currentPosition = headPose->Head->Position + (2.f * (headPose->Head->ForwardDirection));
+        m_currentNormal = -headPose->Head->ForwardDirection;
+        m_currentEdge = { 1.f, 0.f, 0.f }; // right relative to head pose
         m_modelEntry->RenderGreyscale();
       }
 
       m_lastPosition = m_currentPosition;
-      m_currentPosition = lerp(m_currentPosition, m_goalHitPosition, deltaTime * LERP_RATE);
-      m_currentNormal = lerp(m_currentNormal, m_goalHitNormal, deltaTime * LERP_RATE);
-      m_currentEdge = lerp(m_currentEdge, m_goalHitEdge, deltaTime * LERP_RATE);
 
       float3 iVec(m_currentEdge);
       float3 kVec(m_currentNormal);
@@ -145,7 +142,9 @@ namespace HoloIntervention
       float4x4 matrix = make_float4x4_world(m_currentPosition, kVec, jVec);
       m_modelEntry->SetDesiredPose(matrix);
 
-      CalculateVelocity(1.f / static_cast<float>(timer.GetElapsedSeconds()));
+      auto oneOverDeltaTime = 1.f / static_cast<float>(timer.GetElapsedSeconds());
+      const float3 deltaPosition = m_currentPosition - m_lastPosition; // meters
+      m_velocity = deltaPosition * oneOverDeltaTime; // meters per second
     }
 
     //----------------------------------------------------------------------------
@@ -163,13 +162,13 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     const float3& GazeSystem::GetHitPosition() const
     {
-      return m_goalHitPosition;
+      return m_currentPosition;
     }
 
     //----------------------------------------------------------------------------
     const float3& GazeSystem::GetHitNormal() const
     {
-      return m_goalHitNormal;
+      return m_currentNormal;
     }
 
     //----------------------------------------------------------------------------
@@ -192,13 +191,6 @@ namespace HoloIntervention
         EnableCursor(false);
         m_notificationSystem.QueueMessage(L"Cursor off.");
       };
-    }
-
-    //----------------------------------------------------------------------------
-    void GazeSystem::CalculateVelocity(float oneOverDeltaTime)
-    {
-      const float3 deltaPosition = m_currentPosition - m_lastPosition; // meters
-      m_velocity = deltaPosition * oneOverDeltaTime; // meters per second
     }
   }
 }

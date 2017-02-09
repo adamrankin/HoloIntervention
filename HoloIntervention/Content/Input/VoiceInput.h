@@ -50,6 +50,9 @@ namespace HoloIntervention
 
       void EnableVoiceAnalysis(bool enable);
       bool IsVoiceEnabled() const;
+      bool IsRecognitionActive() const;
+      bool IsCommandRecognitionActive() const;
+      bool IsDictationRecognitionActive() const;
 
       Concurrency::task<bool> SwitchToCommandRecognitionAsync();
       Concurrency::task<bool> SwitchToDictationRecognitionAsync();
@@ -73,15 +76,15 @@ namespace HoloIntervention
       System::NotificationSystem&                                       m_notificationSystem;
       Sound::SoundAPI&                                                  m_soundAPI;
 
-      std::atomic_bool                                                  m_speechBeingDetected = false;
+      std::atomic_bool                                                  m_inputEnabled = false;
 
       Windows::Media::SpeechRecognition::SpeechRecognizer^              m_activeRecognizer = nullptr;
 
-      Windows::Media::SpeechRecognition::SpeechRecognizer^              m_commandRecognizer = ref new Windows::Media::SpeechRecognition::SpeechRecognizer();
+      Windows::Media::SpeechRecognition::SpeechRecognizer^              m_commandRecognizer = ref new Windows::Media::SpeechRecognition::SpeechRecognizer(Windows::Media::SpeechRecognition::SpeechRecognizer::SystemSpeechLanguage);
       std::unique_ptr<Sound::VoiceInputCallbackMap>                     m_callbacks;
       Windows::Foundation::EventRegistrationToken                       m_commandDetectedEventToken;
 
-      Windows::Media::SpeechRecognition::SpeechRecognizer^              m_dictationRecognizer = ref new Windows::Media::SpeechRecognition::SpeechRecognizer();
+      Windows::Media::SpeechRecognition::SpeechRecognizer^              m_dictationRecognizer = ref new Windows::Media::SpeechRecognition::SpeechRecognizer(Windows::Media::SpeechRecognition::SpeechRecognizer::SystemSpeechLanguage);
       uint64                                                            m_nextToken = INVALID_TOKEN;
       std::mutex                                                        m_dictationMatcherMutex;
       std::map<uint64, std::function<bool(const std::wstring& text)>>   m_dictationMatchers;

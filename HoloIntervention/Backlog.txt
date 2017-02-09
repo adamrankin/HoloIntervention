@@ -1,8 +1,9 @@
 Major implementation details remaining:
 
+Frustum check, bounding box outside still ok
 *Network search on startup
 Volume rendering
 Registration drift
 Log system bug
 Voice feedback
-UI for IP setting
+UI for IP setting - Dictation*

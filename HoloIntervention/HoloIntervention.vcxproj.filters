@@ -342,19 +342,91 @@
     <None Include="HoloIntervention_TemporaryKey.pfx">
       <Filter>Infrastructure</Filter>
     </None>
-    <None Include="Content\Rendering\Shaders\InstancedCommon.fxh">
-      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders</Filter>
-    </None>
-    <None Include="Content\Rendering\Shaders\InstancedLighting.fxh">
-      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders</Filter>
-    </None>
-    <None Include="Content\Rendering\Shaders\InstancedStructures.fxh">
-      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders</Filter>
-    </None>
     <None Include="Content\Rendering\Shaders\InstancedBasicEffect.fx">
       <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders</Filter>
     </None>
     <None Include="Assets\Models\gaze_cursor.cmo">
+      <Filter>Assets\Models</Filter>
+    </None>
+    <None Include="Assets\Models\Tools\needle.cmo">
+      <Filter>Assets\Models\Tools</Filter>
+    </None>
+    <None Include="Assets\Models\anchor.cmo">
+      <Filter>Assets\Models</Filter>
+    </None>
+    <None Include="..\OpenCV-bin\bin\Debug\opencv_core310d.dll">
+      <Filter>OpenCV\Debug</Filter>
+    </None>
+    <None Include="..\OpenCV-bin\bin\Debug\opencv_features2d310d.dll">
+      <Filter>OpenCV\Debug</Filter>
+    </None>
+    <None Include="..\OpenCV-bin\bin\Debug\opencv_flann310d.dll">
+      <Filter>OpenCV\Debug</Filter>
+    </None>
+    <None Include="..\OpenCV-bin\bin\Debug\opencv_imgproc310d.dll">
+      <Filter>OpenCV\Debug</Filter>
+    </None>
+    <None Include="..\OpenCV-bin\bin\Debug\opencv_ml310d.dll">
+      <Filter>OpenCV\Debug</Filter>
+    </None>
+    <None Include="..\OpenCV-bin\bin\Release\opencv_core310.dll">
+      <Filter>OpenCV\Release</Filter>
+    </None>
+    <None Include="..\OpenCV-bin\bin\Release\opencv_features2d310.dll">
+      <Filter>OpenCV\Release</Filter>
+    </None>
+    <None Include="..\OpenCV-bin\bin\Release\opencv_flann310.dll">
+      <Filter>OpenCV\Release</Filter>
+    </None>
+    <None Include="..\OpenCV-bin\bin\Release\opencv_imgproc310.dll">
+      <Filter>OpenCV\Release</Filter>
+    </None>
+    <None Include="..\OpenCV-bin\bin\Release\opencv_ml310.dll">
+      <Filter>OpenCV\Release</Filter>
+    </None>
+    <None Include="..\OpenCV-bin\bin\Debug\opencv_calib3d310d.dll">
+      <Filter>OpenCV\Debug</Filter>
+    </None>
+    <None Include="..\OpenCV-bin\bin\Release\opencv_calib3d310.dll">
+      <Filter>OpenCV\Release</Filter>
+    </None>
+    <None Include="..\DllDependencies\vcruntime140d.dll">
+      <Filter>OpenCV\Debug\Dependencies</Filter>
+    </None>
+    <None Include="..\DllDependencies\concrt140d.dll">
+      <Filter>OpenCV\Debug\Dependencies</Filter>
+    </None>
+    <None Include="..\DllDependencies\msvcp140d.dll">
+      <Filter>OpenCV\Debug\Dependencies</Filter>
+    </None>
+    <None Include="..\DllDependencies\vccorlib140d.dll">
+      <Filter>OpenCV\Debug\Dependencies</Filter>
+    </None>
+    <None Include="..\DllDependencies\vcruntime140.dll">
+      <Filter>OpenCV\Release\Dependencies</Filter>
+    </None>
+    <None Include="..\DllDependencies\concrt140.dll">
+      <Filter>OpenCV\Release\Dependencies</Filter>
+    </None>
+    <None Include="..\DllDependencies\msvcp140.dll">
+      <Filter>OpenCV\Release\Dependencies</Filter>
+    </None>
+    <None Include="..\DllDependencies\ucrtbase.dll">
+      <Filter>OpenCV\Release\Dependencies</Filter>
+    </None>
+    <None Include="..\DllDependencies\vccorlib140.dll">
+      <Filter>OpenCV\Release\Dependencies</Filter>
+    </None>
+    <None Include="Assets\Models\network_icon.cmo">
+      <Filter>Assets\Models</Filter>
+    </None>
+    <None Include="Assets\Models\camera_icon.cmo">
+      <Filter>Assets\Models</Filter>
+    </None>
+    <None Include="Assets\Models\Tools\hemisphere_stylus.cmo">
+      <Filter>Assets\Models\Tools</Filter>
+    </None>
+    <None Include="Assets\Models\microphone_icon.cmo">
       <Filter>Assets\Models</Filter>
     </None>
     <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicVertexLightingVc_VPRT.inc">
@@ -507,83 +579,14 @@
     <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicVertexLightingVc.inc">
       <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Compiled</Filter>
     </None>
-    <None Include="Assets\Models\Tools\needle.cmo">
-      <Filter>Assets\Models\Tools</Filter>
+    <None Include="Content\Rendering\Shaders\InstancedCommon.fxh">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Shared</Filter>
     </None>
-    <None Include="Assets\Models\anchor.cmo">
-      <Filter>Assets\Models</Filter>
+    <None Include="Content\Rendering\Shaders\InstancedLighting.fxh">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Shared</Filter>
     </None>
-    <None Include="..\OpenCV-bin\bin\Debug\opencv_core310d.dll">
-      <Filter>OpenCV\Debug</Filter>
-    </None>
-    <None Include="..\OpenCV-bin\bin\Debug\opencv_features2d310d.dll">
-      <Filter>OpenCV\Debug</Filter>
-    </None>
-    <None Include="..\OpenCV-bin\bin\Debug\opencv_flann310d.dll">
-      <Filter>OpenCV\Debug</Filter>
-    </None>
-    <None Include="..\OpenCV-bin\bin\Debug\opencv_imgproc310d.dll">
-      <Filter>OpenCV\Debug</Filter>
-    </None>
-    <None Include="..\OpenCV-bin\bin\Debug\opencv_ml310d.dll">
-      <Filter>OpenCV\Debug</Filter>
-    </None>
-    <None Include="..\OpenCV-bin\bin\Release\opencv_core310.dll">
-      <Filter>OpenCV\Release</Filter>
-    </None>
-    <None Include="..\OpenCV-bin\bin\Release\opencv_features2d310.dll">
-      <Filter>OpenCV\Release</Filter>
-    </None>
-    <None Include="..\OpenCV-bin\bin\Release\opencv_flann310.dll">
-      <Filter>OpenCV\Release</Filter>
-    </None>
-    <None Include="..\OpenCV-bin\bin\Release\opencv_imgproc310.dll">
-      <Filter>OpenCV\Release</Filter>
-    </None>
-    <None Include="..\OpenCV-bin\bin\Release\opencv_ml310.dll">
-      <Filter>OpenCV\Release</Filter>
-    </None>
-    <None Include="..\OpenCV-bin\bin\Debug\opencv_calib3d310d.dll">
-      <Filter>OpenCV\Debug</Filter>
-    </None>
-    <None Include="..\OpenCV-bin\bin\Release\opencv_calib3d310.dll">
-      <Filter>OpenCV\Release</Filter>
-    </None>
-    <None Include="..\DllDependencies\vcruntime140d.dll">
-      <Filter>OpenCV\Debug\Dependencies</Filter>
-    </None>
-    <None Include="..\DllDependencies\concrt140d.dll">
-      <Filter>OpenCV\Debug\Dependencies</Filter>
-    </None>
-    <None Include="..\DllDependencies\msvcp140d.dll">
-      <Filter>OpenCV\Debug\Dependencies</Filter>
-    </None>
-    <None Include="..\DllDependencies\vccorlib140d.dll">
-      <Filter>OpenCV\Debug\Dependencies</Filter>
-    </None>
-    <None Include="..\DllDependencies\vcruntime140.dll">
-      <Filter>OpenCV\Release\Dependencies</Filter>
-    </None>
-    <None Include="..\DllDependencies\concrt140.dll">
-      <Filter>OpenCV\Release\Dependencies</Filter>
-    </None>
-    <None Include="..\DllDependencies\msvcp140.dll">
-      <Filter>OpenCV\Release\Dependencies</Filter>
-    </None>
-    <None Include="..\DllDependencies\ucrtbase.dll">
-      <Filter>OpenCV\Release\Dependencies</Filter>
-    </None>
-    <None Include="..\DllDependencies\vccorlib140.dll">
-      <Filter>OpenCV\Release\Dependencies</Filter>
-    </None>
-    <None Include="Assets\Models\network_icon.cmo">
-      <Filter>Assets\Models</Filter>
-    </None>
-    <None Include="Assets\Models\camera_icon.cmo">
-      <Filter>Assets\Models</Filter>
-    </None>
-    <None Include="Assets\Models\Tools\hemisphere_stylus.cmo">
-      <Filter>Assets\Models\Tools</Filter>
+    <None Include="Content\Rendering\Shaders\InstancedStructures.fxh">
+      <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Shared</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -730,6 +733,9 @@
     </Filter>
     <Filter Include="Content\Systems\Splash">
       <UniqueIdentifier>{a1eddbb3-f563-4909-b006-e303e4ec04ac}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Rendering\ModelRenderer\DirectXTK\Shaders\Shared">
+      <UniqueIdentifier>{e5233e13-6feb-4cc7-af44-36c19f22a110}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

@@ -140,8 +140,7 @@ namespace HoloIntervention
       {
         const float deltaTime = static_cast<float>(timer.GetElapsedSeconds());
 
-        m_worldMatrix = lerp(m_currentPose, m_desiredPose, deltaTime * m_poseLerpRate);
-        m_currentPose = m_worldMatrix;
+        m_currentPose = lerp(m_currentPose, m_desiredPose, deltaTime * m_poseLerpRate);
 
         const float3 deltaPosition = transform(float3(0.f, 0.f, 0.f), m_currentPose - m_lastPose); // meters
         m_velocity = deltaPosition * (1.f / deltaTime); // meters per second
@@ -165,7 +164,7 @@ namespace HoloIntervention
         auto mesh = it->get();
         assert(mesh != 0);
 
-        mesh->PrepareForRendering(context, *m_states, false, false);
+        mesh->PrepareForRendering(context, *m_states, false, m_wireframe);
 
         DrawMesh(*mesh, false);
       }
@@ -176,7 +175,7 @@ namespace HoloIntervention
         auto mesh = it->get();
         assert(mesh != 0);
 
-        mesh->PrepareForRendering(context, *m_states, true, false);
+        mesh->PrepareForRendering(context, *m_states, true, m_wireframe);
 
         DrawMesh(*mesh, true);
       }
@@ -195,13 +194,17 @@ namespace HoloIntervention
       m_effectFactory->SetSharing(false);   // Disable re-use of effect shaders, as this prevents us from rendering different colours
       m_model = std::shared_ptr<DirectX::Model>(std::move(DirectX::Model::CreateFromCMO(m_deviceResources->GetD3DDevice(), m_assetLocation.c_str(), *m_effectFactory)));
       CalculateBounds();
+
+      // Cache default effect colours
       m_model->UpdateEffects([this](IEffect * effect)
       {
         InstancedBasicEffect* basicEffect = dynamic_cast<InstancedBasicEffect*>(effect);
         if (basicEffect != nullptr)
         {
-          XMStoreFloat4(&m_defaultColour, basicEffect->GetDiffuseColor());
-          m_defaultColour.w = basicEffect->GetAlpha();
+          XMFLOAT4 temp(0.f, 0.f, 0.f, 1.f);
+          XMStoreFloat4(&temp, basicEffect->GetDiffuseColor());
+          temp.w = basicEffect->GetAlpha();
+          m_defaultColours[effect] = temp;
         }
       });
 
@@ -240,20 +243,24 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ModelEntry::SetRenderingState(ModelRenderingState state)
     {
-      m_renderingState = state;
+      if (state == RENDERING_GREYSCALE)
+      {
+        RenderGreyscale();
+      }
+      else if (state == RENDERING_DEFAULT)
+      {
+        RenderDefault();
+      }
+      else
+      {
+        Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Unknown render state requested.");
+      }
     }
 
     //----------------------------------------------------------------------------
     void ModelEntry::SetDesiredPose(const float4x4& world)
     {
-      if (m_enableLerp)
-      {
-        m_desiredPose = world;
-      }
-      else
-      {
-        m_worldMatrix = world;
-      }
+      m_desiredPose = world;
     }
 
     //----------------------------------------------------------------------------
@@ -293,9 +300,22 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ModelEntry::EnablePoseLerp(bool enable)
+    void ModelEntry::SetCullMode(D3D11_CULL_MODE mode)
     {
-      m_enableLerp = enable;
+      if (mode == D3D11_CULL_FRONT)
+      {
+        for (auto& mesh : m_model->meshes)
+        {
+          mesh->ccw = false;
+        }
+      }
+      else if (mode == D3D11_CULL_BACK)
+      {
+        for (auto& mesh : m_model->meshes)
+        {
+          mesh->ccw = true;
+        }
+      }
     }
 
     //----------------------------------------------------------------------------
@@ -325,13 +345,33 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ModelEntry::RenderGreyscale()
     {
-      m_renderingState = RENDERING_GREYSCALE;
+      m_model->UpdateEffects([this](IEffect * effect)
+      {
+        InstancedBasicEffect* basicEffect = dynamic_cast<InstancedBasicEffect*>(effect);
+        if (basicEffect != nullptr)
+        {
+          basicEffect->SetColorAndAlpha(XMLoadFloat4(&float4(0.8f, 0.8f, 0.8f, 1.0f)));
+        }
+      });
     }
 
     //----------------------------------------------------------------------------
     void ModelEntry::RenderDefault()
     {
-      m_renderingState = RENDERING_DEFAULT;
+      m_model->UpdateEffects([this](IEffect * effect)
+      {
+        InstancedBasicEffect* basicEffect = dynamic_cast<InstancedBasicEffect*>(effect);
+        if (basicEffect != nullptr)
+        {
+          basicEffect->SetColorAndAlpha(XMLoadFloat4(&m_defaultColours[effect]));
+        }
+      });
+    }
+
+    //----------------------------------------------------------------------------
+    void ModelEntry::SetWireframe(bool wireframe)
+    {
+      m_wireframe = wireframe;
     }
 
     //----------------------------------------------------------------------------
@@ -343,6 +383,8 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     bool ModelEntry::IsInFrustum(const SpatialBoundingFrustum& frustum) const
     {
+      // TODO : not correct, bounding box can be outside frustum but model still inside...
+
       std::array<float3, 8> points
       {
         float3(m_modelBounds[0], m_modelBounds[2], m_modelBounds[4]),
@@ -355,10 +397,10 @@ namespace HoloIntervention
         float3(m_modelBounds[1], m_modelBounds[3], m_modelBounds[5])
       };
 
-      bool inside(true);
       for (auto& point : points)
       {
         XMVECTOR transformedPoint = XMLoadFloat3(&transform(point, m_currentPose));
+        bool pointInside(true);
 
         // check if point inside frustum (behind all planes)
         for (auto& entry : { frustum.Left, frustum.Right, frustum.Bottom, frustum.Top, frustum.Near, frustum.Far })
@@ -366,11 +408,22 @@ namespace HoloIntervention
           XMVECTOR plane = XMLoadPlane(&entry);
           XMVECTOR dotProduct = XMPlaneDotCoord(plane, transformedPoint);
           bool isBehind = XMVectorGetX(dotProduct) < 0.f;
-          inside &= isBehind;
+          pointInside &= isBehind;
+        }
+
+        if (pointInside)
+        {
+          return true;
         }
       }
 
-      return inside;
+      return false;
+    }
+
+    //----------------------------------------------------------------------------
+    void ModelEntry::EnablePoseLerp(bool enable)
+    {
+      m_enableLerp = enable;
     }
 
     //----------------------------------------------------------------------------
@@ -403,7 +456,7 @@ namespace HoloIntervention
             XMLoadFloat4x4(&(m_cameraResources->GetLatestViewProjectionBuffer().projection[1]))
           };
 
-          imatrices->SetMatrices(DirectX::XMLoadFloat4x4(&m_worldMatrix), view, projection);
+          imatrices->SetMatrices(DirectX::XMLoadFloat4x4(&m_currentPose), view, projection);
         }
 
         DrawMeshPart(*part, setCustomState);
@@ -421,16 +474,6 @@ namespace HoloIntervention
       m_deviceResources->GetD3DDeviceContext()->IASetVertexBuffers(0, 1, &vb, &vbStride, &vbOffset);
       m_deviceResources->GetD3DDeviceContext()->IASetIndexBuffer(part.indexBuffer.Get(), part.indexFormat, 0);
 
-      assert(part.effect != nullptr);
-      InstancedBasicEffect* basicEffect = dynamic_cast<InstancedBasicEffect*>(part.effect.get());
-      if (basicEffect != nullptr && m_renderingState == RENDERING_GREYSCALE)
-      {
-        basicEffect->SetColorAndAlpha(XMLoadFloat4(&float4(0.8f, 0.8f, 0.8f, 1.0f)));
-      }
-      else if (basicEffect != nullptr && m_renderingState == RENDERING_DEFAULT)
-      {
-        basicEffect->SetColorAndAlpha(XMLoadFloat4(&m_defaultColour));
-      }
       part.effect->Apply(m_deviceResources->GetD3DDeviceContext());
 
       // Hook lets the caller replace our shaders or state settings with whatever else they see fit.

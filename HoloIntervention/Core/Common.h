@@ -82,17 +82,29 @@ namespace HoloIntervention
   }
 
   //------------------------------------------------------------------------
-  template<typename Functor>
-  void RunFunctionAfterDelay(uint32 delayMs, Functor function)
+  template <class T>
+  void call_after(const T& callback, unsigned int timeoutMs)
   {
-    // Convert ms to 100-nanosecond
-    int64 delay100ns = delayMs * 10000;
+    Concurrency::task_completion_event<void> tce;
+    auto call = new Concurrency::call<int>([callback, tce](int)
+    {
+      callback();
+      tce.set();
+    });
 
-    TimeSpan ts;
-    ts.Duration = 10000000;
-    TimerElapsedHandler^ handler = ref new TimerElapsedHandler(function);
-    ThreadPoolTimer^ timer = ThreadPoolTimer::CreateTimer(handler, ts);
+    auto timer = new Concurrency::timer<int>(timeoutMs, 0, call, false);
+    concurrency::task<void> event_set(tce);
+    event_set.then([timer, call]()
+    {
+      delete call;
+      delete timer;
+    });
+
+    timer->start();
   }
+
+  //-----------------------------------------------------------------------
+  bool wait_until_condition(std::function<bool()> func, unsigned int timeoutMs);
 
   //------------------------------------------------------------------------
   Concurrency::task<void> complete_after(unsigned int timeoutMs);

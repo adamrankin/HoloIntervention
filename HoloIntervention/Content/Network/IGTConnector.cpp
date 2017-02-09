@@ -54,6 +54,7 @@ namespace HoloIntervention
     const double IGTConnector::CONNECT_TIMEOUT_SEC = 3.0;
     const uint32_t IGTConnector::RECONNECT_RETRY_DELAY_MSEC = 100;
     const uint32_t IGTConnector::RECONNECT_RETRY_COUNT = 10;
+    const uint32 IGTConnector::DICTATION_TIMEOUT_DELAY_MSEC = 8000;
 
     //----------------------------------------------------------------------------
     IGTConnector::IGTConnector(System::NotificationSystem& notificationSystem, Input::VoiceInput& input)
@@ -290,6 +291,7 @@ namespace HoloIntervention
           bool matchedText(false);
 
           m_accumulatedDictationResult += text;
+          OutputDebugStringW((m_accumulatedDictationResult + L"\n").c_str());
 
           if (matchedText)
           {
@@ -303,6 +305,13 @@ namespace HoloIntervention
           }
         });
         m_voiceInput.SwitchToDictationRecognitionAsync();
+        call_after([this]()
+        {
+          m_voiceInput.RemoveDictationMatcher(m_dictationMatcherToken);
+          m_dictationMatcherToken = INVALID_TOKEN;
+          m_voiceInput.SwitchToCommandRecognitionAsync();
+          m_accumulatedDictationResult.clear();
+        }, DICTATION_TIMEOUT_DELAY_MSEC);
       };
 
       callbackMap[L"disconnect"] = [this](SpeechRecognitionResult ^ result)

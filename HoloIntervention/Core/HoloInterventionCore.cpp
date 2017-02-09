@@ -124,7 +124,7 @@ namespace HoloIntervention
     m_physicsAPI = std::make_unique<Physics::SurfaceAPI>(*m_notificationSystem.get(), m_deviceResources, m_timer);
 
     m_registrationSystem = std::make_unique<System::RegistrationSystem>(*m_IGTConnector.get(), *m_physicsAPI.get(), *m_notificationSystem.get(), *m_modelRenderer.get());
-    m_iconSystem = std::make_unique<System::IconSystem>(*m_notificationSystem.get(), *m_registrationSystem.get(), *m_IGTConnector.get(), *m_modelRenderer.get());
+    m_iconSystem = std::make_unique<System::IconSystem>(*m_notificationSystem.get(), *m_registrationSystem.get(), *m_IGTConnector.get(), *m_voiceInput.get(), *m_modelRenderer.get());
     m_gazeSystem = std::make_unique<System::GazeSystem>(*m_notificationSystem.get(), *m_physicsAPI.get(), *m_modelRenderer.get());
     m_toolSystem = std::make_unique<System::ToolSystem>(*m_notificationSystem.get(), *m_registrationSystem.get(), *m_modelRenderer.get());
     m_imagingSystem = std::make_unique<System::ImagingSystem>(*m_registrationSystem.get(), *m_notificationSystem.get(), *m_sliceRenderer.get(), *m_volumeRenderer.get());
@@ -590,7 +590,7 @@ namespace HoloIntervention
 
     if (winningComponent == nullptr)
     {
-      HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_WARNING, "No component returned a stabilization request.");
+      Log::instance().LogMessage(Log::LOG_LEVEL_WARNING, "No component returned a stabilization request.");
       return;
     }
 
@@ -615,7 +615,7 @@ namespace HoloIntervention
         }
         catch (Platform::Exception^ e)
         {
-          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e->Message);
+          Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e->Message);
         }
       }
     }

@@ -85,9 +85,6 @@ namespace HoloIntervention
       std::shared_ptr<Rendering::ModelEntry>    m_modelEntry;
       uint64                                    m_modelToken;
 
-      Windows::Foundation::Numerics::float3     m_goalHitPosition;
-      Windows::Foundation::Numerics::float3     m_goalHitNormal;
-      Windows::Foundation::Numerics::float3     m_goalHitEdge;
       Windows::Foundation::Numerics::float3     m_currentPosition = { 0.f, 0.f, 0.f };
       Windows::Foundation::Numerics::float3     m_currentNormal = { 0.f, 0.f, 0.f };
       Windows::Foundation::Numerics::float3     m_currentEdge = { 0.f, 0.f, 0.f };

@@ -168,6 +168,7 @@ namespace HoloIntervention
     uint64 ToolSystem::RegisterTool(const std::wstring& modelName, UWPOpenIGTLink::TransformName^ coordinateFrame)
     {
       std::shared_ptr<Tools::ToolEntry> entry = std::make_shared<Tools::ToolEntry>(m_modelRenderer, coordinateFrame, modelName, m_transformRepository);
+      entry->GetModelEntry()->SetVisible(false);
       m_toolEntries.push_back(entry);
       return entry->GetId();
     }
@@ -213,6 +214,7 @@ namespace HoloIntervention
 
       for (auto entry : m_toolEntries)
       {
+        entry->GetModelEntry()->SetVisible(true);
         entry->Update(timer);
       }
     }

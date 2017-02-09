@@ -191,8 +191,7 @@ namespace DirectX
       {
         worldConstant = matrices.world;
 
-        auto worldInverse = XMMatrixInverse(nullptr, matrices.world);
-        auto worldInverseTranspose = XMMatrixTranspose(worldInverse);
+        auto worldInverseTranspose = XMMatrixInverse(nullptr, XMMatrixTranspose(matrices.world));
 
         worldInverseTransposeConstant[0] = worldInverseTranspose.r[0];
         worldInverseTransposeConstant[1] = worldInverseTranspose.r[1];

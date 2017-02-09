@@ -60,6 +60,8 @@ namespace HoloIntervention
 
       void Update(const DX::StepTimer& timer);
 
+      std::shared_ptr<Rendering::ModelEntry> GetModelEntry();;
+
       uint64 GetId() const;
 
     protected:

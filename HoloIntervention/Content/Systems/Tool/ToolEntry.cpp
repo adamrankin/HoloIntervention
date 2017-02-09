@@ -127,6 +127,12 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    std::shared_ptr<HoloIntervention::Rendering::ModelEntry> ToolEntry::GetModelEntry()
+    {
+      return m_modelEntry;
+    }
+
+    //----------------------------------------------------------------------------
     uint64 ToolEntry::GetId() const
     {
       if (m_modelEntry == nullptr)
