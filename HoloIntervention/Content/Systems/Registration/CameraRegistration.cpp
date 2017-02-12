@@ -210,6 +210,12 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    void CameraRegistration::RegisterCompletedCallback(std::function<void(float4x4)> function)
+    {
+      m_completeCallback = function;
+    }
+
+    //----------------------------------------------------------------------------
     task<bool> CameraRegistration::StopCameraAsync()
     {
       SetVisualization(false);
@@ -246,10 +252,10 @@ namespace HoloIntervention
       m_sphereInAnchorResultFrames.clear();
       m_sphereInReferenceResultFrames.clear();
 
-      SetVisualization(true);
-
       return StopCameraAsync().then([this](bool result)
       {
+        SetVisualization(true);
+
         std::lock_guard<std::mutex> guard(m_processorLock);
         if (m_videoFrameProcessor == nullptr)
         {
@@ -294,7 +300,7 @@ namespace HoloIntervention
                   catch (const std::exception& e)
                   {
                     m_notificationSystem.QueueMessage(L"Registration failed. Please retry.");
-                    HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e.what());
+                    Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e.what());
                     m_tokenSource.cancel();
                     return;
                   }
@@ -341,7 +347,7 @@ namespace HoloIntervention
         return;
       }
 
-      if (enabled && m_spherePrimitiveIds[0] == INVALID_TOKEN)
+      if (m_spherePrimitiveIds[0] == INVALID_TOKEN)
       {
         for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
         {
@@ -351,8 +357,8 @@ namespace HoloIntervention
           entry->SetColour(float3(0.803921640f, 0.360784322f, 0.360784322f));
           entry->SetDesiredPose(float4x4::identity());
         }
-        m_visualizationEnabled = true;
       }
+      m_visualizationEnabled = true;
     }
 
     //----------------------------------------------------------------------------
@@ -387,7 +393,7 @@ namespace HoloIntervention
           }
           catch (Platform::Exception^ e)
           {
-            HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e->Message);
+            Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e->Message);
           }
           if (worldAnchorToNewAnchorBox != nullptr)
           {
@@ -429,7 +435,7 @@ namespace HoloIntervention
 
       if (!m_transformsAvailable)
       {
-        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Unable to process frames. Transform repository was not properly initialized.");
+        Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Unable to process frames. Transform repository was not properly initialized.");
         return;
       }
 
@@ -463,7 +469,7 @@ namespace HoloIntervention
             }
             catch (Platform::Exception^ e)
             {
-              HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, L"Exception: " + e->Message);
+              Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, L"Exception: " + e->Message);
               continue;
             }
             if (cameraToRawWorldAnchorBox != nullptr)
@@ -561,13 +567,6 @@ namespace HoloIntervention
 
       assert(m_sphereInAnchorResultFrames.size() == m_sphereInReferenceResultFrames.size());
 
-#if _DEBUG
-      {
-        std::stringstream ss;
-        ss << m_sphereInAnchorResultFrames.size();
-        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_INFO, std::string("m_sphereInAnchorResults.size() ") + ss.str());
-      }
-#endif
       VecFloat3 sphereInReferenceResults;
       VecFloat3 sphereInAnchorResults;
       for (auto& frame : m_sphereInReferenceResultFrames)
@@ -591,13 +590,6 @@ namespace HoloIntervention
       bool resultValid(false);
       m_landmarkRegistration->CalculateTransformationAsync().then([this, &calcFinished, &resultValid](float4x4 referenceToAnchorTransformation)
       {
-#if _DEBUG
-        {
-          std::stringstream ss;
-          ss << referenceToAnchorTransformation;
-          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_INFO, std::string("referenceToAnchorTransformation: ") + ss.str());
-        }
-#endif
         if (referenceToAnchorTransformation == float4x4::identity())
         {
           resultValid = false;
@@ -607,6 +599,10 @@ namespace HoloIntervention
           m_hasRegistration = true;
           resultValid = true;
           m_referenceToAnchor = referenceToAnchorTransformation;
+          if (m_completeCallback)
+          {
+            m_completeCallback(referenceToAnchorTransformation);
+          }
         }
         calcFinished = true;
       });
@@ -648,7 +644,7 @@ namespace HoloIntervention
     {
       if (m_sphereToPhantomPoses.size() != PHANTOM_SPHERE_COUNT)
       {
-        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Phantom coordinates haven't been received. Can't determine 3D sphere coordinates.");
+        Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Phantom coordinates haven't been received. Can't determine 3D sphere coordinates.");
         return false;
       }
 
@@ -657,14 +653,14 @@ namespace HoloIntervention
       {
         if (videoFrame == nullptr || videoFrame->CameraIntrinsics == nullptr)
         {
-          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Camera intrinsics not available. Cannot continue.");
+          Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Camera intrinsics not available. Cannot continue.");
           return false;
         }
         cameraIntrinsics = videoFrame->CameraIntrinsics;
       }
       catch (Platform::Exception^ e)
       {
-        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e->Message);
+        Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e->Message);
         return false;
       }
 
@@ -730,9 +726,6 @@ namespace HoloIntervention
               if (circle.z / radiusMean < 0.85f || circle.z / radiusMean > 1.15f)
               {
                 result = false;
-#if _DEBUG
-                HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_DEBUG, "Circles not within mean.");
-#endif
                 goto done;
               }
 
@@ -743,17 +736,11 @@ namespace HoloIntervention
           {
             // TODO : is it possible to make our code more robust by identifying 5 circles that make sense? pixel center distances? radii? etc...
             result = false;
-#if _DEBUG
-            HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_DEBUG, "Too many circles detected.");
-#endif
             goto done;
           }
           else
           {
             result = false;
-#if _DEBUG
-            HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_DEBUG, "Not enough circles detected.");
-#endif
             goto done;
           }
 
@@ -1056,7 +1043,7 @@ done:
 
       if (centerSphereIndex == -1)
       {
-        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "No index common to all lists.");
+        Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "No index common to all lists.");
         return false;
       }
 
@@ -1259,7 +1246,7 @@ done:
       }
       catch (Platform::Exception^ e)
       {
-        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e->Message);
+        Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e->Message);
       }
 
       m_sphereCoordinateNames[0] = ref new UWPOpenIGTLink::TransformName(L"RedSphere1", L"Reference");

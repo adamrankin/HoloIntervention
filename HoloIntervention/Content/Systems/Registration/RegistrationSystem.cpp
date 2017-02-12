@@ -170,6 +170,12 @@ namespace HoloIntervention
       {
         m_componentReady = true;
       });
+
+      m_cameraRegistration->RegisterCompletedCallback([this](float4x4 registrationTransform)
+      {
+        m_cachedRegistrationTransform = registrationTransform;
+        m_registrationActive = false;
+      });
     }
 
     //----------------------------------------------------------------------------
@@ -199,11 +205,6 @@ namespace HoloIntervention
         m_regAnchorRequested = false;
       }
 
-      if (m_cameraRegistration->HasRegistration())
-      {
-        m_cachedRegistrationTransform = m_cameraRegistration->GetReferenceToWorldAnchorTransformation();
-      }
-
       Platform::IBox<float4x4>^ transformContainer(nullptr);
       // Anchor model position update logic
       if (m_regAnchor != nullptr)
@@ -215,7 +216,10 @@ namespace HoloIntervention
         }
       }
 
-      m_cameraRegistration->Update(transformContainer);
+      if (m_registrationActive)
+      {
+        m_cameraRegistration->Update(transformContainer);
+      }
     }
 
     //----------------------------------------------------------------------------
@@ -330,18 +334,6 @@ namespace HoloIntervention
         {
           return false;
         }
-#if _DEBUG
-        {
-          std::stringstream ss;
-          ss << m_cachedRegistrationTransform;
-          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_INFO, std::string("trackerToWorldAnchor: ") + ss.str());
-        }
-        {
-          std::stringstream ss;
-          ss << anchorToRequestedBox->Value;
-          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_INFO, std::string("anchorToRequested: ") + ss.str());
-        }
-#endif
 
         outTransform = m_cachedRegistrationTransform * anchorToRequestedBox->Value;
         return true;

@@ -117,6 +117,8 @@ namespace HoloIntervention
       bool HasRegistration() const;
       Windows::Foundation::Numerics::float4x4 GetReferenceToWorldAnchorTransformation() const;
 
+      void RegisterCompletedCallback(std::function<void(Windows::Foundation::Numerics::float4x4)> function);
+
     protected:
       void Init();
 
@@ -145,6 +147,7 @@ namespace HoloIntervention
       NotificationSystem&                                                   m_notificationSystem;
       Network::IGTConnector&                                                m_igtConnector;
 
+      std::function<void(Windows::Foundation::Numerics::float4x4)>          m_completeCallback;
       std::mutex                                                            m_processorLock;
       std::shared_ptr<Capture::VideoFrameProcessor>                         m_videoFrameProcessor = nullptr;
       Concurrency::task<std::shared_ptr<Capture::VideoFrameProcessor>>*     m_createTask = nullptr;
