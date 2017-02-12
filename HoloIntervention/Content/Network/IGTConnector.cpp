@@ -72,7 +72,7 @@ namespace HoloIntervention
         }
         catch (const std::exception& e)
         {
-          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, std::string("IGTConnector failed to find servers: ") + e.what());
+          Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, std::string("IGTConnector failed to find servers: ") + e.what());
         }
       });
       */
@@ -102,7 +102,7 @@ namespace HoloIntervention
         }
         catch (const std::exception& e)
         {
-          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, std::string("IGTConnector failed to connect: ") + e.what());
+          Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, std::string("IGTConnector failed to connect: ") + e.what());
           return false;
         }
 
@@ -132,7 +132,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    HoloIntervention::Network::ConnectionState IGTConnector::GetConnectionState() const
+    Network::ConnectionState IGTConnector::GetConnectionState() const
     {
       return m_connectionState;
     }
@@ -268,8 +268,7 @@ namespace HoloIntervention
 
           if (result)
           {
-            m_keepAliveTask = &KeepAliveAsync();
-            m_keepAliveTask->then([this](task<void> keepAliveTask)
+            KeepAliveAsync().then([this](task<void> keepAliveTask)
             {
               try
               {
@@ -281,7 +280,7 @@ namespace HoloIntervention
               }
             });
           }
-        }, concurrency::task_continuation_context::use_arbitrary());
+        });
       };
 
       callbackMap[L"set IP"] = [this](SpeechRecognitionResult ^ result)
@@ -316,11 +315,7 @@ namespace HoloIntervention
 
       callbackMap[L"disconnect"] = [this](SpeechRecognitionResult ^ result)
       {
-        if (m_keepAliveTask != nullptr)
-        {
-          m_keepAliveTokenSource.cancel();
-          m_keepAliveTask = nullptr;
-        }
+        m_keepAliveTokenSource.cancel();
 
         Disconnect();
         m_notificationSystem.QueueMessage(L"Disconnected.");
@@ -363,7 +358,7 @@ namespace HoloIntervention
                 while (m_connectionState != CONNECTION_STATE_CONNECTED && retryCount < RECONNECT_RETRY_COUNT)
                 {
                   // Either it's up and running and it can connect right away, or it's down and will never connect
-                  auto connectTask = ConnectAsync(0.1, task_options(task_continuation_context::use_arbitrary())).then([this, &retryCount](task<bool> previousTask)
+                  auto connectTask = ConnectAsync(0.1).then([this, &retryCount](task<bool> previousTask)
                   {
                     bool result = previousTask.get();
 
@@ -372,7 +367,7 @@ namespace HoloIntervention
                       std::this_thread::sleep_for(std::chrono::milliseconds(RECONNECT_RETRY_DELAY_MSEC));
                       retryCount++;
                     }
-                  }, task_continuation_context::use_arbitrary());
+                  });
 
                   try
                   {
@@ -380,18 +375,18 @@ namespace HoloIntervention
                   }
                   catch (const std::exception& e)
                   {
-                    HoloIntervention::Log::instance().LogMessage(HoloIntervention::Log::LOG_LEVEL_ERROR, e.what());
+                    Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e.what());
                   }
                   catch (Platform::Exception^ e)
                   {
-                    HoloIntervention::Log::instance().LogMessage(HoloIntervention::Log::LOG_LEVEL_ERROR, e->Message);
+                    Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e->Message);
                   }
                 }
 
                 if (m_connectionState != CONNECTION_STATE_CONNECTED)
                 {
                   m_keepAliveTokenSource.cancel();
-                  m_keepAliveTask = nullptr;
+                  m_keepAliveTokenSource = cancellation_token_source();
                   m_notificationSystem.QueueMessage(L"Connection lost. Check server.");
                   return;
                 }
@@ -400,7 +395,7 @@ namespace HoloIntervention
               {
                 // Don't reconnect on drop
                 m_keepAliveTokenSource.cancel();
-                m_keepAliveTask = nullptr;
+                m_keepAliveTokenSource = cancellation_token_source();
                 m_notificationSystem.QueueMessage(L"Connection lost. Check server.");
                 return;
               }
@@ -408,11 +403,11 @@ namespace HoloIntervention
           }
           else
           {
-            HoloIntervention::Log::instance().LogMessage(HoloIntervention::Log::LOG_LEVEL_ERROR, "Keep alive running unconnected but token not canceled.");
+            Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Keep alive running unconnected but token not canceled.");
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
           }
         }
-      }, task_options(token, task_continuation_context::use_arbitrary()));
+      }, token);
     }
   }
 }

@@ -87,6 +87,7 @@ namespace HoloIntervention
     m_main = std::make_unique<HoloInterventionCore>(m_deviceResources);
   }
 
+  //----------------------------------------------------------------------------
   // Called when the CoreWindow object is created (or re-created).
   void AppView::SetWindow(CoreWindow^ window)
   {

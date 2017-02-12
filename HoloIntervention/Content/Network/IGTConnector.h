@@ -101,7 +101,6 @@ namespace HoloIntervention
       UWPOpenIGTLink::IGTLinkClient^                m_igtClient = ref new UWPOpenIGTLink::IGTLinkClient();
       ConnectionState                               m_connectionState = CONNECTION_STATE_UNKNOWN;
       mutable std::mutex                            m_clientMutex;
-      Concurrency::task<void>*                      m_keepAliveTask = nullptr;
       Concurrency::cancellation_token_source        m_keepAliveTokenSource;
       bool                                          m_reconnectOnDrop = true;
 

@@ -148,7 +148,7 @@ namespace HoloIntervention
     m_engineComponents.push_back(m_splashSystem.get());
 
     // TODO : remove temp code
-    m_IGTConnector->SetHostname(L"192.168.0.102");
+    m_IGTConnector->SetHostname(L"192.168.1.26");
 
     try
     {
@@ -495,21 +495,21 @@ namespace HoloIntervention
 
     switch (sender->Locatability)
     {
-    case SpatialLocatability::Unavailable:
-    {
-      m_notificationSystem->QueueMessage(L"Warning! Positional tracking is unavailable.");
-    }
-    break;
-
-    case SpatialLocatability::PositionalTrackingActivating:
-    case SpatialLocatability::OrientationOnly:
-    case SpatialLocatability::PositionalTrackingInhibited:
-      // Gaze-locked content still valid
+      case SpatialLocatability::Unavailable:
+      {
+        m_notificationSystem->QueueMessage(L"Warning! Positional tracking is unavailable.");
+      }
       break;
 
-    case SpatialLocatability::PositionalTrackingActive:
-      m_notificationSystem->QueueMessage(L"Positional tracking is active.");
-      break;
+      case SpatialLocatability::PositionalTrackingActivating:
+      case SpatialLocatability::OrientationOnly:
+      case SpatialLocatability::PositionalTrackingInhibited:
+        // Gaze-locked content still valid
+        break;
+
+      case SpatialLocatability::PositionalTrackingActive:
+        m_notificationSystem->QueueMessage(L"Positional tracking is active.");
+        break;
     }
   }
 
@@ -578,7 +578,7 @@ namespace HoloIntervention
   {
     float maxPriority(-1.f);
     IStabilizedComponent* winningComponent(nullptr);
-    for (auto& component : m_engineComponents)
+    for (auto component : m_engineComponents)
     {
       IStabilizedComponent* stabilizedComponent = dynamic_cast<IStabilizedComponent*>(component);
       if (stabilizedComponent != nullptr && stabilizedComponent->GetStabilizePriority() > maxPriority)
