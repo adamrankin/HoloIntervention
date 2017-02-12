@@ -108,35 +108,42 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     bool PrimitiveEntry::IsInFrustum(const SpatialBoundingFrustum& frustum) const
     {
+      // The normals for the 6 planes each face out from the frustum, defining its volume
       auto bounds = GetBounds();
       std::array<float3, 8> points
       {
-        float3(bounds[0], bounds[2], bounds[4]),
-        float3(bounds[1], bounds[2], bounds[4]),
-        float3(bounds[0], bounds[2], bounds[4]),
-        float3(bounds[1], bounds[2], bounds[5]),
-        float3(bounds[0], bounds[3], bounds[4]),
-        float3(bounds[1], bounds[3], bounds[4]),
-        float3(bounds[0], bounds[3], bounds[4]),
-        float3(bounds[1], bounds[3], bounds[5])
+        transform(float3(bounds[0], bounds[2], bounds[4]), m_currentPose),
+        transform(float3(bounds[1], bounds[2], bounds[4]), m_currentPose),
+        transform(float3(bounds[0], bounds[2], bounds[4]), m_currentPose),
+        transform(float3(bounds[1], bounds[2], bounds[5]), m_currentPose),
+        transform(float3(bounds[0], bounds[3], bounds[4]), m_currentPose),
+        transform(float3(bounds[1], bounds[3], bounds[4]), m_currentPose),
+        transform(float3(bounds[0], bounds[3], bounds[4]), m_currentPose),
+        transform(float3(bounds[1], bounds[3], bounds[5]), m_currentPose)
       };
 
-      bool inside(true);
-      for (auto& point : points)
+      // For each plane, check to see if all 8 points are in front, if so, obj is outside
+      for (auto& entry : { frustum.Left, frustum.Right, frustum.Bottom, frustum.Top, frustum.Near, frustum.Far })
       {
-        XMVECTOR transformedPoint = XMLoadFloat3(&transform(point, m_currentPose));
+        XMVECTOR plane = XMLoadPlane(&entry);
 
-        // check if point inside frustum (behind all planes)
-        for (auto& entry : { frustum.Left, frustum.Right, frustum.Bottom, frustum.Top, frustum.Near, frustum.Far })
+        bool objFullyInFront(true);
+        for (auto& point : points)
         {
-          XMVECTOR plane = XMLoadPlane(&entry);
-          XMVECTOR dotProduct = XMPlaneDotCoord(plane, transformedPoint);
-          bool isBehind = XMVectorGetX(dotProduct) < 0.f;
-          inside &= isBehind;
+          XMVECTOR dotProduct = XMPlaneDotCoord(plane, XMLoadFloat3(&point));
+          if (XMVectorGetX(dotProduct) < 0.f)
+          {
+            objFullyInFront = false;
+            break;
+          }
+        }
+        if (objFullyInFront)
+        {
+          return false;
         }
       }
 
-      return inside;
+      return true;
     }
 
     //----------------------------------------------------------------------------

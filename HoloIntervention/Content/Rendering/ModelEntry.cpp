@@ -383,41 +383,41 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     bool ModelEntry::IsInFrustum(const SpatialBoundingFrustum& frustum) const
     {
-      // TODO : not correct, bounding box can be outside frustum but model still inside...
-
+      // The normals for the 6 planes each face out from the frustum, defining its volume
       std::array<float3, 8> points
       {
-        float3(m_modelBounds[0], m_modelBounds[2], m_modelBounds[4]),
-        float3(m_modelBounds[1], m_modelBounds[2], m_modelBounds[4]),
-        float3(m_modelBounds[0], m_modelBounds[2], m_modelBounds[4]),
-        float3(m_modelBounds[1], m_modelBounds[2], m_modelBounds[5]),
-        float3(m_modelBounds[0], m_modelBounds[3], m_modelBounds[4]),
-        float3(m_modelBounds[1], m_modelBounds[3], m_modelBounds[4]),
-        float3(m_modelBounds[0], m_modelBounds[3], m_modelBounds[4]),
-        float3(m_modelBounds[1], m_modelBounds[3], m_modelBounds[5])
+        transform(float3(m_modelBounds[0], m_modelBounds[2], m_modelBounds[4]), m_currentPose),
+        transform(float3(m_modelBounds[1], m_modelBounds[2], m_modelBounds[4]), m_currentPose),
+        transform(float3(m_modelBounds[0], m_modelBounds[2], m_modelBounds[4]), m_currentPose),
+        transform(float3(m_modelBounds[1], m_modelBounds[2], m_modelBounds[5]), m_currentPose),
+        transform(float3(m_modelBounds[0], m_modelBounds[3], m_modelBounds[4]), m_currentPose),
+        transform(float3(m_modelBounds[1], m_modelBounds[3], m_modelBounds[4]), m_currentPose),
+        transform(float3(m_modelBounds[0], m_modelBounds[3], m_modelBounds[4]), m_currentPose),
+        transform(float3(m_modelBounds[1], m_modelBounds[3], m_modelBounds[5]), m_currentPose)
       };
 
-      for (auto& point : points)
+      // For each plane, check to see if all 8 points are in front, if so, obj is outside
+      for (auto& entry : { frustum.Left, frustum.Right, frustum.Bottom, frustum.Top, frustum.Near, frustum.Far })
       {
-        XMVECTOR transformedPoint = XMLoadFloat3(&transform(point, m_currentPose));
-        bool pointInside(true);
+        XMVECTOR plane = XMLoadPlane(&entry);
 
-        // check if point inside frustum (behind all planes)
-        for (auto& entry : { frustum.Left, frustum.Right, frustum.Bottom, frustum.Top, frustum.Near, frustum.Far })
+        bool objFullyInFront(true);
+        for (auto& point : points)
         {
-          XMVECTOR plane = XMLoadPlane(&entry);
-          XMVECTOR dotProduct = XMPlaneDotCoord(plane, transformedPoint);
-          bool isBehind = XMVectorGetX(dotProduct) < 0.f;
-          pointInside &= isBehind;
+          XMVECTOR dotProduct = XMPlaneDotCoord(plane, XMLoadFloat3(&point));
+          if (XMVectorGetX(dotProduct) < 0.f)
+          {
+            objFullyInFront = false;
+            break;
+          }
         }
-
-        if (pointInside)
+        if (objFullyInFront)
         {
-          return true;
+          return false;
         }
       }
 
-      return false;
+      return true;
     }
 
     //----------------------------------------------------------------------------
