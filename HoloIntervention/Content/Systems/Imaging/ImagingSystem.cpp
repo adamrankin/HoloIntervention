@@ -33,6 +33,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // System includes
 #include "NotificationSystem.h"
+#include "RegistrationSystem.h"
 
 // Rendering includes
 #include "VolumeRenderer.h"
@@ -238,13 +239,15 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ImagingSystem::Update(UWPOpenIGTLink::TrackedFrame^ frame, const DX::StepTimer& timer, SpatialCoordinateSystem^ coordSystem)
     {
+      m_transformRepository->SetTransforms(frame);
+
       if (frame->HasImage())
       {
-        if (frame->FrameSize->GetAt(2) == 1)
+        if (frame->Frame->FrameSize[2] == 1)
         {
           Process2DFrame(frame, coordSystem);
         }
-        else if (frame->FrameSize->GetAt(2) > 1)
+        else if (frame->Frame->FrameSize[2] > 1)
         {
           Process3DFrame(frame, coordSystem);
         }
@@ -344,56 +347,80 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ImagingSystem::Process2DFrame(UWPOpenIGTLink::TrackedFrame^ frame, SpatialCoordinateSystem^ coordSystem)
+    void ImagingSystem::Process2DFrame(UWPOpenIGTLink::TrackedFrame^ frame, SpatialCoordinateSystem^ hmdCoordinateSystem)
     {
       m_lastSliceTimestamp = frame->Timestamp;
 
-      // TODO : apply registration to incoming transform
+      // Update the transform repository with the latest registration
+      float4x4 referenceToHMD(float4x4::identity());
+      if (!m_registrationSystem.GetReferenceToCoordinateSystemTransformation(hmdCoordinateSystem, referenceToHMD))
+      {
+        return;
+      }
+
+      if (!m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD"), transpose(referenceToHMD), true))
+      {
+        return;
+      }
+
+      float4x4 sliceToHMD(float4x4::identity());
+      try
+      {
+        sliceToHMD = m_transformRepository->GetTransform(m_sliceToHMDName);
+      }
+      catch (const std::exception&)
+      {
+        Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, L"Unable to retrieve " + m_sliceToHMDName->GetTransformName() + L" from repository.");
+        return;
+      }
+
       if (!HasSlice())
       {
         // For now, our slice renderer only draws one slice, in the future, it should be able to draw more
-        m_sliceToken = m_sliceRenderer.AddSlice(Network::IGTConnector::GetSharedImagePtr(frame),
-                                                frame->FrameSize->GetAt(0),
-                                                frame->FrameSize->GetAt(1),
-                                                (DXGI_FORMAT)frame->GetPixelFormat(true),
-                                                transpose(frame->EmbeddedImageTransform));
+        m_sliceToken = m_sliceRenderer.AddSlice(frame, sliceToHMD);
       }
       else
       {
-        m_sliceRenderer.UpdateSlice(m_sliceToken,
-                                    Network::IGTConnector::GetSharedImagePtr(frame),
-                                    frame->Width,
-                                    frame->Height,
-                                    (DXGI_FORMAT)frame->GetPixelFormat(true),
-                                    transpose(frame->EmbeddedImageTransform));
+        m_sliceRenderer.UpdateSlice(m_sliceToken, frame, sliceToHMD);
       }
     }
 
     //----------------------------------------------------------------------------
-    void ImagingSystem::Process3DFrame(UWPOpenIGTLink::TrackedFrame^ frame, SpatialCoordinateSystem^ coordSystem)
+    void ImagingSystem::Process3DFrame(UWPOpenIGTLink::TrackedFrame^ frame, SpatialCoordinateSystem^ hmdCoordinateSystem)
     {
       m_lastVolumeTimestamp = frame->Timestamp;
 
-      // TODO : apply registration to incoming transform
+      // Update the transform repository with the latest registration
+      float4x4 referenceToHMD(float4x4::identity());
+      if (!m_registrationSystem.GetReferenceToCoordinateSystemTransformation(hmdCoordinateSystem, referenceToHMD))
+      {
+        return;
+      }
+
+      if (!m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD"), transpose(referenceToHMD), true))
+      {
+        return;
+      }
+
+      float4x4 volumeToHMD(float4x4::identity());
+      try
+      {
+        volumeToHMD = m_transformRepository->GetTransform(m_volumeToHMDName);
+      }
+      catch (const std::exception&)
+      {
+        Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, L"Unable to retrieve " + m_volumeToHMDName->GetTransformName() + L" from repository.");
+        return;
+      }
+
       if (!HasVolume())
       {
         // For now, our slice renderer only draws one slice, in the future, it should be able to draw more
-        m_volumeToken = m_volumeRenderer.AddVolume(Network::IGTConnector::GetSharedImagePtr(frame),
-                        frame->Width,
-                        frame->Height,
-                        frame->Depth,
-                        (DXGI_FORMAT)frame->GetPixelFormat(true),
-                        transpose(frame->EmbeddedImageTransform));
+        m_volumeToken = m_volumeRenderer.AddVolume(frame, volumeToHMD);
       }
       else
       {
-        m_volumeRenderer.UpdateVolume(m_volumeToken,
-                                      Network::IGTConnector::GetSharedImagePtr(frame),
-                                      frame->Width,
-                                      frame->Height,
-                                      frame->Depth,
-                                      (DXGI_FORMAT)frame->GetPixelFormat(true),
-                                      transpose(frame->EmbeddedImageTransform));
+        m_volumeRenderer.UpdateVolume(m_volumeToken, frame, volumeToHMD);
       }
     }
   }

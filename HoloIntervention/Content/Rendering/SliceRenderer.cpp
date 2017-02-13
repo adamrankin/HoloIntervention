@@ -69,6 +69,11 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     uint64 SliceRenderer::AddSlice()
     {
+      if (!m_componentReady)
+      {
+        throw std::exception("System not ready.");
+      }
+
       std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources);
       entry->m_id = m_nextUnusedSliceId;
       entry->SetVisible(false);
@@ -86,6 +91,11 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     uint64 SliceRenderer::AddSlice(std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, float4x4 desiredPose)
     {
+      if (!m_componentReady)
+      {
+        throw std::exception("System not ready.");
+      }
+
       std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources);
       entry->m_id = m_nextUnusedSliceId;
 
@@ -104,6 +114,11 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     uint64 SliceRenderer::AddSlice(IBuffer^ imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, float4x4 desiredPose)
     {
+      if (!m_componentReady)
+      {
+        throw std::exception("System not ready.");
+      }
+
       std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources);
       entry->m_id = m_nextUnusedSliceId;
 
@@ -122,12 +137,37 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    uint64 SliceRenderer::AddSlice(const std::wstring& fileName)
+    uint64 SliceRenderer::AddSlice(const std::wstring& fileName, float4x4 desiredPose)
     {
+      if (!m_componentReady)
+      {
+        throw std::exception("System not ready.");
+      }
+
       std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources);
       entry->m_id = m_nextUnusedSliceId;
-
+      entry->SetDesiredPose(desiredPose);
       entry->SetImageData(fileName);
+
+      std::lock_guard<std::mutex> guard(m_sliceMapMutex);
+      m_slices.push_back(entry);
+
+      m_nextUnusedSliceId++;
+      return m_nextUnusedSliceId - 1;
+    }
+
+    //----------------------------------------------------------------------------
+    uint64 SliceRenderer::AddSlice(UWPOpenIGTLink::TrackedFrame^ frame, float4x4 desiredPose)
+    {
+      if (!m_componentReady)
+      {
+        throw std::exception("System not ready.");
+      }
+
+      std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources);
+      entry->m_id = m_nextUnusedSliceId;
+      entry->SetDesiredPose(desiredPose);
+      entry->SetFrame(frame);
 
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
       m_slices.push_back(entry);
@@ -171,6 +211,18 @@ namespace HoloIntervention
       {
         entry->SetDesiredPose(desiredPose);
         entry->SetImageData(imageData, width, height, pixelFormat);
+      }
+    }
+
+    //----------------------------------------------------------------------------
+    void SliceRenderer::UpdateSlice(uint64 sliceToken, UWPOpenIGTLink::TrackedFrame^ frame, float4x4 desiredPose)
+    {
+      std::lock_guard<std::mutex> guard(m_sliceMapMutex);
+      std::shared_ptr<SliceEntry> entry;
+      if (FindSlice(sliceToken, entry))
+      {
+        entry->SetDesiredPose(desiredPose);
+        entry->SetFrame(frame);
       }
     }
 

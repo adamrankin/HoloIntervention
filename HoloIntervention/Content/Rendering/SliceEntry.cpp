@@ -177,6 +177,48 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    void SliceEntry::SetFrame(UWPOpenIGTLink::TrackedFrame^ frame)
+    {
+      byte* imageRaw = GetDataFromIBuffer<byte>(m_frame->Frame->ImageData);
+      if (imageRaw == nullptr)
+      {
+        Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Unable to access image buffer.");
+        return;
+      }
+
+      auto frameSize = frame->Frame->FrameSize;
+      auto format = (DXGI_FORMAT)m_frame->Frame->GetPixelFormat(true);
+      if (frameSize[0] != m_width || frameSize[1] != m_height || format != m_pixelFormat)
+      {
+        m_width = frameSize[0];
+        m_height = frameSize[1];
+        m_pixelFormat = format;
+        ReleaseDeviceDependentResources();
+        CreateDeviceDependentResources();
+      }
+
+      m_frame = frame;
+
+      auto context = m_deviceResources->GetD3DDeviceContext();
+
+      auto bytesPerPixel = BitsPerPixel(m_pixelFormat) / 8;
+
+      D3D11_MAPPED_SUBRESOURCE mappedResource;
+      context->Map(m_imageStagingTexture.Get(), 0, D3D11_MAP_READ_WRITE, 0, &mappedResource);
+      byte* mappedData = reinterpret_cast<byte*>(mappedResource.pData);
+      for (uint32 i = 0; i < m_height; ++i)
+      {
+        memcpy(mappedData, imageRaw, m_width * bytesPerPixel);
+        mappedData += mappedResource.RowPitch;
+        imageRaw += m_width * bytesPerPixel;
+      }
+
+      context->Unmap(m_imageStagingTexture.Get(), 0);
+
+      context->CopyResource(m_imageTexture.Get(), m_imageStagingTexture.Get());
+    }
+
+    //----------------------------------------------------------------------------
     void SliceEntry::SetImageData(std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat)
     {
       if (width != m_width || height != m_height || pixelFormat != m_pixelFormat)

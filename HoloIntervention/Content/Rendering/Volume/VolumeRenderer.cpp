@@ -109,7 +109,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    uint64 VolumeRenderer::AddVolume(std::shared_ptr<byte> imageData, uint16 width, uint16 height, uint16 depth, DXGI_FORMAT pixelFormat, float4x4 desiredPose)
+    uint64 VolumeRenderer::AddVolume(UWPOpenIGTLink::TrackedFrame^ frame, Windows::Foundation::Numerics::float4x4 desiredPose)
     {
       if (!m_componentReady)
       {
@@ -133,7 +133,7 @@ namespace HoloIntervention
                                            m_frontPositionSRV.Get(),
                                            m_backPositionSRV.Get());
       entry->SetDesiredPose(desiredPose);
-      entry->SetImageData(imageData, width, height, depth, pixelFormat);
+      entry->SetFrame(frame);
       entry->SetShowing(true);
 
       std::lock_guard<std::mutex> guard(m_volumeMapMutex);
@@ -170,14 +170,14 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void VolumeRenderer::UpdateVolume(uint64 volumeToken, std::shared_ptr<byte> imageData, uint16 width, uint16 height, uint16 depth, DXGI_FORMAT pixelFormat, float4x4 desiredPose)
+    void VolumeRenderer::UpdateVolume(uint64 volumeToken, UWPOpenIGTLink::TrackedFrame^ frame, Windows::Foundation::Numerics::float4x4 desiredPose)
     {
       std::lock_guard<std::mutex> guard(m_volumeMapMutex);
       std::shared_ptr<VolumeEntry> entry;
       if (FindVolume(volumeToken, entry))
       {
         entry->SetDesiredPose(desiredPose);
-        entry->SetImageData(imageData, width, height, depth, pixelFormat);
+        entry->SetFrame(frame);
       }
     }
 
@@ -282,7 +282,7 @@ namespace HoloIntervention
 
       for (auto& volEntry : m_volumes)
       {
-        volEntry->SetImageData(Network::IGTConnector::GetSharedImagePtr(frame), frame->FrameSize->GetAt(0), frame->FrameSize->GetAt(1), frame->FrameSize->GetAt(2), (DXGI_FORMAT)frame->GetPixelFormat(true));
+        volEntry->SetFrame(frame);
         volEntry->Update(timer);
       }
     }

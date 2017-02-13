@@ -58,6 +58,7 @@ namespace HoloIntervention
       void Update(Windows::UI::Input::Spatial::SpatialPointerPose^ pose, const DX::StepTimer& timer);
       void Render(uint32 indexCount);
 
+      void SetFrame(UWPOpenIGTLink::TrackedFrame^ frame);
       void SetImageData(const std::wstring& fileName);
       void SetImageData(std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat);
       std::shared_ptr<byte> GetImageData() const;
@@ -96,6 +97,7 @@ namespace HoloIntervention
       float                                               m_scalingFactor = 1.f;
 
       // Image data vars
+      UWPOpenIGTLink::TrackedFrame^                       m_frame = nullptr;
       std::shared_ptr<byte>                               m_imageData = nullptr;
       uint16                                              m_width = 0;
       uint16                                              m_height = 0;

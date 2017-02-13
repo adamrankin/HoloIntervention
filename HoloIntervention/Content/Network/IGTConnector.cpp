@@ -323,12 +323,6 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    std::shared_ptr<byte> IGTConnector::GetSharedImagePtr(UWPOpenIGTLink::TrackedFrame^ frame)
-    {
-      return *(std::shared_ptr<byte>*)frame->ImageDataSharedPtr;
-    }
-
-    //----------------------------------------------------------------------------
     task<void> IGTConnector::KeepAliveAsync()
     {
       m_keepAliveTokenSource = cancellation_token_source();

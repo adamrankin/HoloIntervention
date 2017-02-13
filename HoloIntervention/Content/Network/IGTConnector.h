@@ -85,10 +85,6 @@ namespace HoloIntervention
       /// IVoiceInput functions
       void RegisterVoiceCallbacks(Sound::VoiceInputCallbackMap& callbackMap);
 
-    public:
-      // Static helper functions
-      static std::shared_ptr<byte> GetSharedImagePtr(UWPOpenIGTLink::TrackedFrame^ frame);
-
     protected:
       Concurrency::task<void> KeepAliveAsync();
 

@@ -92,8 +92,8 @@ namespace HoloIntervention
       void Update(const DX::StepTimer& timer);
       void Render(uint32 indexCount);
 
-      void SetImageData(std::shared_ptr<byte> imageData, uint16 width, uint16 height, uint16 depth, DXGI_FORMAT pixelFormat);
-      std::shared_ptr<byte> GetImageData() const;
+      void SetFrame(UWPOpenIGTLink::TrackedFrame^ frame);
+      UWPOpenIGTLink::TrackedFrame^ GetFrame() const;
       void SetShowing(bool showing);
       uint64 GetToken() const;
 
@@ -161,11 +161,9 @@ namespace HoloIntervention
 
       // CPU resources for volume rendering
       VolumeEntryConstantBuffer                         m_constantBuffer;
-      std::shared_ptr<byte>                             m_imageData = nullptr;
-      std::shared_ptr<byte>                             m_onGPUImageData = nullptr;
-      uint16                                            m_frameSize[3] = { 0, 0, 0 };
+      UWPOpenIGTLink::TrackedFrame^                     m_frame;
+      UWPOpenIGTLink::TrackedFrame^                     m_onGPUFrame;
       mutable std::mutex                                m_imageAccessMutex;
-      DXGI_FORMAT                                       m_pixelFormat = DXGI_FORMAT_UNKNOWN;
       float                                             m_stepScale = 1.f;  // Increasing this reduces the number of steps taken per pixel
 
       // State

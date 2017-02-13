@@ -47,6 +47,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <DirectXColors.h>
 
 // Unnecessary, but reduces intellisense errors
+#include "Log.h"
 #include <WindowsNumerics.h>
 
 using namespace Concurrency;
@@ -167,7 +168,7 @@ namespace HoloIntervention
         m_volumeUpdateNeeded = false;
       }
 
-      if (m_onGPUImageData != m_imageData)
+      if (m_onGPUFrame != m_frame)
       {
         UpdateGPUImageData();
       }
@@ -242,33 +243,38 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void VolumeEntry::SetImageData(std::shared_ptr<byte> imageData, uint16 width, uint16 height, uint16 depth, DXGI_FORMAT pixelFormat)
+    void VolumeEntry::SetFrame(UWPOpenIGTLink::TrackedFrame^ frame)
     {
-      if (depth < 2)
+      auto frameSize = frame->Frame->FrameSize;
+      if (frameSize[2] < 1)
       {
         return;
       }
-
-      m_frameSize[0] = width;
-      m_frameSize[1] = height;
-      m_frameSize[2] = depth;
-      m_pixelFormat = pixelFormat;
-      m_imageData = imageData;
 
       if (!m_volumeReady)
       {
         m_volumeUpdateNeeded = true;
       }
-      else if (width != m_frameSize[0] || height != m_frameSize[1] || depth != m_frameSize[2])
+      else if (m_frame != nullptr)
       {
-        m_volumeUpdateNeeded = true;
+        if (m_frame != nullptr)
+        {
+          auto myFrameSize = m_frame->Frame->FrameSize;
+          if (myFrameSize[0] != frameSize[0] || myFrameSize[1] != frameSize[1] || myFrameSize[2] != frameSize[2])
+          {
+            // GPU needs to be reallocated
+            m_volumeUpdateNeeded = true;
+          }
+        }
       }
+
+      m_frame = frame;
     }
 
     //----------------------------------------------------------------------------
-    std::shared_ptr<byte> VolumeEntry::GetImageData() const
+    UWPOpenIGTLink::TrackedFrame^ VolumeEntry::GetFrame() const
     {
-      return m_imageData;
+      return m_frame;
     }
 
     //----------------------------------------------------------------------------
@@ -306,27 +312,35 @@ namespace HoloIntervention
     {
       const auto context = m_deviceResources->GetD3DDeviceContext();
 
-      auto bytesPerPixel = BitsPerPixel(m_pixelFormat) / 8;
+      auto bytesPerPixel = BitsPerPixel((DXGI_FORMAT)m_frame->Frame->GetPixelFormat(true)) / 8;
+
+      byte* imageRaw = GetDataFromIBuffer<byte>(m_frame->Frame->ImageData);
+      if (imageRaw == nullptr)
+      {
+        Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Unable to access image buffer.");
+        return;
+      }
+
+      auto frameSize = m_frame->Frame->FrameSize;
 
       // Map image resource and update data
       D3D11_MAPPED_SUBRESOURCE mappedResource;
       context->Map(m_volumeStagingTexture.Get(), 0, D3D11_MAP_READ_WRITE, 0, &mappedResource);
-      byte* imageData = m_imageData.get();
       byte* mappedData = reinterpret_cast<byte*>(mappedResource.pData);
-      for (uint32 j = 0; j < m_frameSize[2]; ++j)
+      for (uint32 j = 0; j < frameSize[2]; ++j)
       {
-        for (uint32 i = 0; i < m_frameSize[1]; ++i)
+        for (uint32 i = 0; i < frameSize[1]; ++i)
         {
-          memcpy(mappedData, imageData, m_frameSize[0] * bytesPerPixel);
+          memcpy(mappedData, imageRaw, frameSize[0] * bytesPerPixel);
           mappedData += mappedResource.RowPitch;
-          imageData += m_frameSize[0] * bytesPerPixel;
+          imageRaw += frameSize[0] * bytesPerPixel;
         }
       }
       context->Unmap(m_volumeStagingTexture.Get(), 0);
 
       context->CopyResource(m_volumeTexture.Get(), m_volumeStagingTexture.Get());
 
-      m_onGPUImageData = m_imageData;
+      m_onGPUFrame = m_frame;
     }
 
     //----------------------------------------------------------------------------
@@ -340,7 +354,7 @@ namespace HoloIntervention
         CreateTFResources();
       }
 
-      if (m_imageData != nullptr)
+      if (m_frame != nullptr)
       {
         CreateVolumeResources();
       }
@@ -369,29 +383,38 @@ namespace HoloIntervention
     {
       const auto device = m_deviceResources->GetD3DDevice();
 
-      if (m_imageData == nullptr)
+      if (m_frame == nullptr)
       {
         return;
       }
 
-      auto bytesPerPixel = BitsPerPixel(m_pixelFormat) / 8;
+      auto format = (DXGI_FORMAT)m_frame->Frame->GetPixelFormat(true);
+      auto bytesPerPixel = BitsPerPixel(format) / 8;
+      byte* imageRaw = GetDataFromIBuffer<byte>(m_frame->Frame->ImageData);
+      if (imageRaw == nullptr)
+      {
+        Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Unable to access image buffer.");
+        return;
+      }
+
+      auto frameSize = m_frame->Frame->FrameSize;
 
       // Create a staging texture that will be used to copy data from the CPU to the GPU,
       // the staging texture will then copy to the render texture
-      CD3D11_TEXTURE3D_DESC textureDesc(m_pixelFormat, m_frameSize[0], m_frameSize[1], m_frameSize[2], 1, 0, D3D11_USAGE_STAGING, D3D11_CPU_ACCESS_WRITE | D3D11_CPU_ACCESS_READ);
+      CD3D11_TEXTURE3D_DESC textureDesc(format, frameSize[0], frameSize[1], frameSize[2], 1, 0, D3D11_USAGE_STAGING, D3D11_CPU_ACCESS_WRITE | D3D11_CPU_ACCESS_READ);
       D3D11_SUBRESOURCE_DATA imgData;
-      imgData.pSysMem = m_imageData.get();
-      imgData.SysMemPitch = m_frameSize[0] * bytesPerPixel;
-      imgData.SysMemSlicePitch = m_frameSize[0] * m_frameSize[1] * bytesPerPixel;
+      imgData.pSysMem = imageRaw;
+      imgData.SysMemPitch = frameSize[0] * bytesPerPixel;
+      imgData.SysMemSlicePitch = frameSize[0] * frameSize[1] * bytesPerPixel;
       DX::ThrowIfFailed(device->CreateTexture3D(&textureDesc, &imgData, m_volumeStagingTexture.GetAddressOf()));
 
       // Create the texture that will be used by the shader to access the current volume to be rendered
-      textureDesc = CD3D11_TEXTURE3D_DESC(m_pixelFormat, m_frameSize[0], m_frameSize[1], m_frameSize[2], 1);
+      textureDesc = CD3D11_TEXTURE3D_DESC(format, frameSize[0], frameSize[1], frameSize[2], 1);
       DX::ThrowIfFailed(device->CreateTexture3D(&textureDesc, &imgData, m_volumeTexture.GetAddressOf()));
 #if _DEBUG
       m_volumeTexture->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("VolumeTexture") - 1, "VolumeTexture");
 #endif
-      CD3D11_SHADER_RESOURCE_VIEW_DESC srvDesc(m_volumeTexture.Get(), m_pixelFormat);
+      CD3D11_SHADER_RESOURCE_VIEW_DESC srvDesc(m_volumeTexture.Get(), format);
       DX::ThrowIfFailed(device->CreateShaderResourceView(m_volumeTexture.Get(), &srvDesc, m_volumeSRV.GetAddressOf()));
 #if _DEBUG
       m_volumeSRV->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("VolumeSRV") - 1, "VolumeSRV");
@@ -399,10 +422,10 @@ namespace HoloIntervention
 
       // Compute the step size and number of iterations to use
       //    The step size for each component needs to be a ratio of the largest component
-      float maxSize = std::max(m_frameSize[0], std::max(m_frameSize[1], m_frameSize[2]));
-      float3 stepSize = float3(1.0f / (m_frameSize[0] * (maxSize / m_frameSize[0])),
-                               1.0f / (m_frameSize[1] * (maxSize / m_frameSize[1])),
-                               1.0f / (m_frameSize[2] * (maxSize / m_frameSize[2])));
+      float maxSize = std::max(frameSize[0], std::max(frameSize[1], frameSize[2]));
+      float3 stepSize = float3(1.0f / (frameSize[0] * (maxSize / frameSize[0])),
+                               1.0f / (frameSize[1] * (maxSize / frameSize[1])),
+                               1.0f / (frameSize[2] * (maxSize / frameSize[2])));
 
       XMStoreFloat3(&m_constantBuffer.stepSize, XMLoadFloat3(&(stepSize * m_stepScale)));
       m_constantBuffer.numIterations = static_cast<uint32>(maxSize * (1.0f / m_stepScale));
@@ -437,15 +460,15 @@ namespace HoloIntervention
         delete m_opacityTransferFunction;
         switch (functionType)
         {
-        case VolumeEntry::TransferFunction_Piecewise_Linear:
-        {
-          m_opacityTFType = VolumeEntry::TransferFunction_Piecewise_Linear;
-          m_opacityTransferFunction = new PiecewiseLinearTransferFunction();
-          break;
-        }
-        default:
-          throw std::invalid_argument("Function type not recognized.");
-          break;
+          case VolumeEntry::TransferFunction_Piecewise_Linear:
+          {
+            m_opacityTFType = VolumeEntry::TransferFunction_Piecewise_Linear;
+            m_opacityTransferFunction = new PiecewiseLinearTransferFunction();
+            break;
+          }
+          default:
+            throw std::invalid_argument("Function type not recognized.");
+            break;
         }
 
         for (auto& point : controlPoints)
