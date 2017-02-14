@@ -368,7 +368,7 @@ namespace HoloIntervention
       {
         sliceToHMD = m_transformRepository->GetTransform(m_sliceToHMDName);
       }
-      catch (const std::exception&)
+      catch (Platform::Exception^)
       {
         Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, L"Unable to retrieve " + m_sliceToHMDName->GetTransformName() + L" from repository.");
         return;
@@ -407,7 +407,7 @@ namespace HoloIntervention
       {
         volumeToHMD = m_transformRepository->GetTransform(m_volumeToHMDName);
       }
-      catch (const std::exception&)
+      catch (Platform::Exception^)
       {
         Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, L"Unable to retrieve " + m_volumeToHMDName->GetTransformName() + L" from repository.");
         return;

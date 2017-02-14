@@ -48,6 +48,11 @@ using namespace Windows::Foundation::Numerics;
 using namespace Windows::UI::Input::Spatial;
 using namespace Windows::Perception::Spatial;
 
+namespace
+{
+  static const float NOTIFICATION_DISTANCE_OFFSET = 2.5f;
+}
+
 namespace HoloIntervention
 {
   namespace System
@@ -77,6 +82,11 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float SplashSystem::GetStabilizePriority() const
     {
+      if (m_sliceEntry == nullptr)
+      {
+        return PRIORITY_NOT_ACTIVE;
+      }
+
       // Ultra high, this should be stabilized during loading
       return !m_componentReady ? 4.f : PRIORITY_NOT_ACTIVE;
     }
@@ -85,8 +95,22 @@ namespace HoloIntervention
     SplashSystem::SplashSystem(Rendering::SliceRenderer& sliceRenderer)
       : m_sliceRenderer(sliceRenderer)
     {
-      m_sliceToken = m_sliceRenderer.AddSlice(m_splashImageFilename);
-      m_sliceEntry = m_sliceRenderer.GetSlice(m_sliceToken);
+      create_task([this]()
+      {
+        while (true)
+        {
+          try
+          {
+            m_sliceToken = m_sliceRenderer.AddSlice(m_splashImageFilename);
+            m_sliceEntry = m_sliceRenderer.GetSlice(m_sliceToken);
+            return;
+          }
+          catch (const std::exception&)
+          {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+          }
+        }
+      });
     }
 
     //----------------------------------------------------------------------------
@@ -97,10 +121,14 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void SplashSystem::Update(const DX::StepTimer& timer, SpatialCoordinateSystem^ hmdCoordinateSystem, SpatialPointerPose^ headPose)
     {
-      const float NOTIFICATION_DISTANCE_OFFSET = 2.5f;
-
       // Calculate world pose, ahead of face, centered
       const float& deltaTime = static_cast<float>(timer.GetElapsedSeconds());
+
+      if (m_sliceEntry == nullptr)
+      {
+        // Slice hasn't been loaded yet
+        return;
+      }
 
       m_welcomeTimerSec += deltaTime;
 
