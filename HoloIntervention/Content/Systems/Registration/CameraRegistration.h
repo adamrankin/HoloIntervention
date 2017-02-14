@@ -150,7 +150,6 @@ namespace HoloIntervention
       std::function<void(Windows::Foundation::Numerics::float4x4)>          m_completeCallback;
       std::mutex                                                            m_processorLock;
       std::shared_ptr<Capture::VideoFrameProcessor>                         m_videoFrameProcessor = nullptr;
-      Concurrency::task<std::shared_ptr<Capture::VideoFrameProcessor>>*     m_createTask = nullptr;
 
       // Anchor resources
       std::mutex                                                            m_anchorMutex;
@@ -178,7 +177,6 @@ namespace HoloIntervention
       std::array<UWPOpenIGTLink::TransformName^, 5>                         m_sphereCoordinateNames;
 
       // State variables
-      Concurrency::task<void>*                                              m_workerTask = nullptr;
       Concurrency::cancellation_token_source                                m_tokenSource;
       std::atomic_bool                                                      m_hasRegistration = false;
 

@@ -87,7 +87,7 @@ namespace HoloIntervention
           }
           catch (const std::exception& e)
           {
-            HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, std::string("Unable to initialize media capture:") + e.what());
+            Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, std::string("Unable to initialize media capture:") + e.what());
             return task_from_result(std::shared_ptr<VideoFrameProcessor>(nullptr));
           }
 

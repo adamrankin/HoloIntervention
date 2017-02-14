@@ -224,16 +224,26 @@ namespace HoloIntervention
       {
         m_tokenSource.cancel();
         std::lock_guard<std::mutex> processorGuard(m_processorLock);
-        return m_videoFrameProcessor->StopAsync().then([this]() -> bool
+        return m_videoFrameProcessor->StopAsync().then([this](task<void> stopTask)
         {
+          try
+          {
+            stopTask.wait();
+          }
+          catch (const std::exception& e)
+          {
+            OutputDebugStringA(e.what());
+          }
+          catch (Platform::Exception^ e)
+          {
+            OutputDebugStringW(e->Message->Data());
+          }
           m_videoFrameProcessor = nullptr;
-          m_createTask = nullptr;
           m_transformsAvailable = false;
           m_latestTimestamp = 0.0;
           m_tokenSource = cancellation_token_source();
           m_currentFrame = nullptr;
           m_nextFrame = nullptr;
-          m_workerTask = nullptr;
           m_notificationSystem.QueueMessage(L"Capturing stopped.");
           Init();
           return true;
@@ -259,23 +269,51 @@ namespace HoloIntervention
         std::lock_guard<std::mutex> guard(m_processorLock);
         if (m_videoFrameProcessor == nullptr)
         {
-          m_createTask = &Capture::VideoFrameProcessor::CreateAsync();
-          return m_createTask->then([this](std::shared_ptr<Capture::VideoFrameProcessor> processor)
+          return Capture::VideoFrameProcessor::CreateAsync().then([this](task<std::shared_ptr<Capture::VideoFrameProcessor>> createTask)
           {
-            std::lock_guard<std::mutex> guard(m_processorLock);
+            std::shared_ptr<Capture::VideoFrameProcessor> processor = nullptr;
+            try
+            {
+              processor = createTask.get();
+            }
+            catch (Platform::Exception^ e)
+            {
+              OutputDebugStringW(e->Message->Data());
+              return false;
+            }
+
             if (processor == nullptr)
             {
               m_notificationSystem.QueueMessage(L"Unable to initialize capture system.");
             }
             else
             {
+              std::lock_guard<std::mutex> guard(m_processorLock);
               m_videoFrameProcessor = processor;
             }
-          }).then([this]()
+
+            return true;
+          }).then([this](bool result)
           {
-            std::lock_guard<std::mutex> guard(m_processorLock);
-            return m_videoFrameProcessor->StartAsync().then([this](MediaFrameReaderStartStatus status)
+            if (!result)
             {
+              return task_from_result(result);
+            }
+
+            std::lock_guard<std::mutex> guard(m_processorLock);
+            return m_videoFrameProcessor->StartAsync().then([this](task<MediaFrameReaderStartStatus> startTask)
+            {
+              MediaFrameReaderStartStatus status;
+              try
+              {
+                status = startTask.get();
+              }
+              catch (Platform::Exception^ e)
+              {
+                OutputDebugStringW(e->Message->Data());
+                return false;
+              }
+
               if (status == MediaFrameReaderStartStatus::Success)
               {
                 m_notificationSystem.QueueMessage(L"Capturing...");
@@ -284,40 +322,50 @@ namespace HoloIntervention
               {
                 m_notificationSystem.QueueMessage(L"Unable to start capturing.");
               }
-              m_createTask = nullptr;
-            }).then([this](task<void> previousTask)
+
+              return true;
+            }).then([this](bool result)
             {
-              if (m_videoFrameProcessor != nullptr)
+              if (!result)
               {
-                m_tokenSource = cancellation_token_source();
-                auto token = m_tokenSource.get_token();
-                m_workerTask = &create_task([this, token]()
-                {
-                  try
-                  {
-                    ProcessAvailableFrames(token);
-                  }
-                  catch (const std::exception& e)
-                  {
-                    m_notificationSystem.QueueMessage(L"Registration failed. Please retry.");
-                    Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e.what());
-                    m_tokenSource.cancel();
-                    return;
-                  }
-                }).then([this]()
-                {
-                  m_workerTask = nullptr;
-                });
-                return true;
+                return result;
               }
-              return false;
+
+              std::lock_guard<std::mutex> guard(m_processorLock);
+              m_tokenSource = cancellation_token_source();
+              create_task([this]()
+              {
+                try
+                {
+                  ProcessAvailableFrames(m_tokenSource.get_token());
+                }
+                catch (const std::exception& e)
+                {
+                  m_notificationSystem.QueueMessage(L"Registration failed. Please retry.");
+                  Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e.what());
+                  m_tokenSource.cancel();
+                  return;
+                }
+              });
+              return true;
             });
           });
         }
         else
         {
-          return m_videoFrameProcessor->StartAsync().then([this](MediaFrameReaderStartStatus status) -> bool
+          return m_videoFrameProcessor->StartAsync().then([this](task<MediaFrameReaderStartStatus> startTask)
           {
+            MediaFrameReaderStartStatus status;
+            try
+            {
+              status = startTask.get();
+            }
+            catch (Platform::Exception^ e)
+            {
+              OutputDebugStringW(e->Message->Data());
+              return false;
+            }
+
             return status == MediaFrameReaderStartStatus::Success;
           });
         }
@@ -372,7 +420,7 @@ namespace HoloIntervention
     void CameraRegistration::SetWorldAnchor(Windows::Perception::Spatial::SpatialAnchor^ worldAnchor)
     {
       std::lock_guard<std::mutex> guard(m_anchorMutex);
-      if (m_workerTask != nullptr)
+      if (IsCameraActive())
       {
         // World anchor changed during registration, invalidate the registration session.
         StopCameraAsync().then([this](bool result)
@@ -442,13 +490,13 @@ namespace HoloIntervention
       uint64 lastMessageId(std::numeric_limits<uint64>::max());
       while (!token.is_canceled())
       {
+        std::lock_guard<std::mutex> guard(m_processorLock);
         if (m_videoFrameProcessor == nullptr || !m_igtConnector.IsConnected())
         {
           std::this_thread::sleep_for(std::chrono::milliseconds(100));
           continue;
         }
 
-        std::lock_guard<std::mutex> frameGuard(m_framesLock);
         UWPOpenIGTLink::TrackedFrame^ trackedFrame(nullptr);
         MediaFrameReference^ cameraFrame(m_videoFrameProcessor->GetLatestFrame());
         if (m_igtConnector.GetTrackedFrame(l_latestTrackedFrame, &m_latestTimestamp) &&
@@ -537,8 +585,11 @@ namespace HoloIntervention
               }
               x = 1;
             }
+
+            std::lock_guard<std::mutex> frameGuard(m_framesLock);
             m_sphereInAnchorResultFrames.push_back(sphereInAnchorResults);
             m_sphereInReferenceResultFrames.push_back(sphereInReferenceResults);
+
             if (lastMessageId != std::numeric_limits<uint64>::max())
             {
               m_notificationSystem.RemoveMessage(lastMessageId);
@@ -883,7 +934,7 @@ done:
         m_referenceToAnchor = m_referenceToAnchor * args->OldRawCoordinateSystemToNewRawCoordinateSystemTransform;
       }
 
-      if (m_workerTask != nullptr)
+      if (IsCameraActive())
       {
         // Registration is active, apply this to all m_rawWorldAnchorResults results, to adjust raw anchor coordinate system that they depend on
         std::lock_guard<std::mutex> frameGuard(m_framesLock);
