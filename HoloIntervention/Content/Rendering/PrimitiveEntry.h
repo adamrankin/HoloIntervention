@@ -50,10 +50,10 @@ namespace HoloIntervention
     class PrimitiveEntry
     {
     public:
-      PrimitiveEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, std::unique_ptr<DirectX::InstancedGeometricPrimitive> primitive);
+      PrimitiveEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, std::unique_ptr<DirectX::InstancedGeometricPrimitive> primitive, DX::StepTimer& timer);
       ~PrimitiveEntry();
 
-      void Update(const DX::StepTimer& timer, const DX::CameraResources* cameraResources);
+      void Update(const DX::CameraResources* cameraResources);
       void Render();
 
       // Primitive enable control
@@ -82,6 +82,11 @@ namespace HoloIntervention
       // Cached pointer to device resources.
       std::shared_ptr<DX::DeviceResources>                  m_deviceResources;
       const DX::CameraResources*                            m_cameraResources = nullptr;
+      DX::StepTimer&                                        m_timer;
+
+      // Frustum checking
+      mutable std::atomic_bool                              m_isInFrustum;
+      mutable uint64                                        m_frustumCheckFrameNumber;
 
       // Primitive resources
       std::unique_ptr<DirectX::InstancedGeometricPrimitive> m_primitive = nullptr;

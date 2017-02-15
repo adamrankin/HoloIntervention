@@ -109,7 +109,7 @@ namespace HoloIntervention
     // Initialize the system components
     m_notificationRenderer = std::make_unique<Rendering::NotificationRenderer>(m_deviceResources);
     m_notificationSystem = std::make_unique<System::NotificationSystem>(*m_notificationRenderer.get());
-    m_modelRenderer = std::make_unique<Rendering::ModelRenderer>(m_deviceResources);
+    m_modelRenderer = std::make_unique<Rendering::ModelRenderer>(m_deviceResources, m_timer);
     m_sliceRenderer = std::make_unique<Rendering::SliceRenderer>(m_deviceResources);
     m_volumeRenderer = std::make_unique<Rendering::VolumeRenderer>(m_deviceResources);
     m_meshRenderer = std::make_unique<Rendering::SpatialMeshRenderer>(*m_notificationSystem.get(), m_deviceResources);
@@ -120,7 +120,7 @@ namespace HoloIntervention
     m_voiceInput = std::make_unique<Input::VoiceInput>(*m_notificationSystem.get(), *m_soundAPI.get());
 
     m_IGTConnector = std::make_unique<Network::IGTConnector>(*m_notificationSystem.get(), *m_voiceInput.get());
-    HoloIntervention::Log::instance().SetIGTConnector(*m_IGTConnector.get());
+    Log::instance().SetIGTConnector(*m_IGTConnector.get());
     m_physicsAPI = std::make_unique<Physics::SurfaceAPI>(*m_notificationSystem.get(), m_deviceResources, m_timer);
 
     m_registrationSystem = std::make_unique<System::RegistrationSystem>(*m_IGTConnector.get(), *m_physicsAPI.get(), *m_notificationSystem.get(), *m_modelRenderer.get());
@@ -292,7 +292,7 @@ namespace HoloIntervention
         }
 
         m_meshRenderer->Update(m_timer, hmdCoordinateSystem);
-        m_modelRenderer->Update(m_timer, cameraResources);
+        m_modelRenderer->Update(cameraResources);
       }
     });
 

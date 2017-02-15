@@ -55,9 +55,10 @@ namespace HoloIntervention
   namespace Rendering
   {
     //----------------------------------------------------------------------------
-    ModelEntry::ModelEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, const std::wstring& assetLocation)
+    ModelEntry::ModelEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, const std::wstring& assetLocation, DX::StepTimer& timer)
       : m_deviceResources(deviceResources)
       , m_assetLocation(assetLocation)
+      , m_timer(timer)
     {
       // Validate asset location
       Platform::String^ mainFolderLocation = Windows::ApplicationModel::Package::Current->InstalledLocation->Path;
@@ -132,13 +133,13 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ModelEntry::Update(const DX::StepTimer& timer, const DX::CameraResources* cameraResources)
+    void ModelEntry::Update(const DX::CameraResources* cameraResources)
     {
       m_cameraResources = cameraResources;
 
       if (m_enableLerp)
       {
-        const float deltaTime = static_cast<float>(timer.GetElapsedSeconds());
+        const float deltaTime = static_cast<float>(m_timer.GetElapsedSeconds());
 
         m_currentPose = lerp(m_currentPose, m_desiredPose, deltaTime * m_poseLerpRate);
 
@@ -383,6 +384,11 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     bool ModelEntry::IsInFrustum(const SpatialBoundingFrustum& frustum) const
     {
+      if (m_timer.GetFrameCount() == m_frustumCheckFrameNumber)
+      {
+        return m_isInFrustum;
+      }
+
       // The normals for the 6 planes each face out from the frustum, defining its volume
       std::array<float3, 8> points
       {
@@ -413,10 +419,14 @@ namespace HoloIntervention
         }
         if (objFullyInFront)
         {
+          m_isInFrustum = false;
+          m_frustumCheckFrameNumber = m_timer.GetFrameCount();
           return false;
         }
       }
 
+      m_isInFrustum = true;
+      m_frustumCheckFrameNumber = m_timer.GetFrameCount();
       return true;
     }
 

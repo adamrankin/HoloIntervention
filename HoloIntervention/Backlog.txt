@@ -1,12 +1,11 @@
 Major implementation details remaining:
 
-*Remove message notification not right
 *Network search on startup
 Volume rendering
 Registration drift
 Registration restart, stop, start
 Network connect, disconnect, connect, connection lost
-Log system bug
+*Log system bug
 Voice feedback
 UI for IP setting - Dictation*
 Registration feedback (move around, etc...)

@@ -55,14 +55,14 @@ namespace HoloIntervention
       typedef std::list<std::shared_ptr<PrimitiveEntry>> PrimitiveList;
 
     public:
-      ModelRenderer(const std::shared_ptr<DX::DeviceResources> deviceResources);
+      ModelRenderer(const std::shared_ptr<DX::DeviceResources> deviceResources, DX::StepTimer& timer);
       ~ModelRenderer();
 
       // D3D resources
       void CreateDeviceDependentResources();
       void ReleaseDeviceDependentResources();
 
-      void Update(const DX::StepTimer& timer, const DX::CameraResources* cameraResources);
+      void Update(const DX::CameraResources* cameraResources);
       void Render();
 
       uint64 AddModel(const std::wstring& assetLocation);
@@ -81,6 +81,7 @@ namespace HoloIntervention
       // Cached pointer to device resources.
       std::shared_ptr<DX::DeviceResources>            m_deviceResources = nullptr;
       const DX::CameraResources*                      m_cameraResources = nullptr;
+      DX::StepTimer&                                  m_timer;
 
       // Lock protection when accessing image list
       std::mutex                                      m_modelListMutex;

@@ -27,6 +27,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "InstancedEffectFactory.h"
 #include "InstancedEffects.h"
 
+// STL includes
+#include <atomic>
+
 namespace DirectX
 {
   class CommonStates;
@@ -56,10 +59,10 @@ namespace HoloIntervention
     class ModelEntry
     {
     public:
-      ModelEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, const std::wstring& assetLocation);
+      ModelEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, const std::wstring& assetLocation, DX::StepTimer& timer);
       ~ModelEntry();
 
-      void Update(const DX::StepTimer& timer, const DX::CameraResources* cameraResources);
+      void Update(const DX::CameraResources* cameraResources);
       void Render();
 
       void CreateDeviceDependentResources();
@@ -105,11 +108,16 @@ namespace HoloIntervention
       // Cached pointer to device resources.
       std::shared_ptr<DX::DeviceResources>                m_deviceResources = nullptr;
       const DX::CameraResources*                          m_cameraResources = nullptr;
+      DX::StepTimer&                                      m_timer;
 
       // DirectXTK resources
       std::unique_ptr<DirectX::CommonStates>              m_states = nullptr;
       std::unique_ptr<DirectX::InstancedEffectFactory>    m_effectFactory = nullptr;
       std::shared_ptr<DirectX::Model>                     m_model = nullptr;
+
+      // Frustum checking
+      mutable std::atomic_bool                            m_isInFrustum;
+      mutable uint64                                      m_frustumCheckFrameNumber;
 
       // Model state
       std::array<float, 6>                                m_modelBounds = { -1.f };

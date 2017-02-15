@@ -49,7 +49,7 @@ namespace HoloIntervention
   Log::Log()
     : m_IGTConnector(nullptr)
   {
-    DataSenderAsync();
+    //DataSenderAsync();
   }
 
   //----------------------------------------------------------------------------
@@ -67,11 +67,10 @@ namespace HoloIntervention
   //----------------------------------------------------------------------------
   void Log::LogMessage(LogLevelType level, const std::wstring& message)
   {
-    std::lock_guard<std::mutex> guard(m_sendListMutex);
+    //std::lock_guard<std::mutex> guard(m_sendListMutex);
     // TODO : not sending correct data... or not receiving correct data?
     //m_sendList.push_back(std::pair<LogLevelType, std::wstring>(level, message));
-    std::wstring messageNC = message + L"\n";
-    OutputDebugStringW(messageNC.c_str());
+    OutputDebugStringW((message + L"\n").c_str());
   }
 
   //----------------------------------------------------------------------------
@@ -261,24 +260,24 @@ namespace HoloIntervention
   {
     switch (type)
     {
-    case HoloIntervention::Log::LOG_LEVEL_ERROR:
-      return L"ERROR";
-      break;
-    case HoloIntervention::Log::LOG_LEVEL_WARNING:
-      return L"WARNING";
-      break;
-    case HoloIntervention::Log::LOG_LEVEL_INFO:
-      return L"INFO";
-      break;
-    case HoloIntervention::Log::LOG_LEVEL_DEBUG:
-      return L"DEBUG";
-      break;
-    case HoloIntervention::Log::LOG_LEVEL_TRACE:
-      return L"TRACE";
-      break;
-    default:
-      return L"UNKNOWN";
-      break;
+      case HoloIntervention::Log::LOG_LEVEL_ERROR:
+        return L"ERROR";
+        break;
+      case HoloIntervention::Log::LOG_LEVEL_WARNING:
+        return L"WARNING";
+        break;
+      case HoloIntervention::Log::LOG_LEVEL_INFO:
+        return L"INFO";
+        break;
+      case HoloIntervention::Log::LOG_LEVEL_DEBUG:
+        return L"DEBUG";
+        break;
+      case HoloIntervention::Log::LOG_LEVEL_TRACE:
+        return L"TRACE";
+        break;
+      default:
+        return L"UNKNOWN";
+        break;
     }
   }
 

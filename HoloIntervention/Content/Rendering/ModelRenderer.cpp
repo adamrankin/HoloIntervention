@@ -48,8 +48,9 @@ namespace HoloIntervention
   {
     //----------------------------------------------------------------------------
     // Loads vertex and pixel shaders from files and instantiates the cube geometry.
-    ModelRenderer::ModelRenderer(const std::shared_ptr<DX::DeviceResources> deviceResources)
+    ModelRenderer::ModelRenderer(const std::shared_ptr<DX::DeviceResources> deviceResources, DX::StepTimer& timer)
       : m_deviceResources(deviceResources)
+      , m_timer(timer)
     {
       CreateDeviceDependentResources();
     }
@@ -61,7 +62,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ModelRenderer::Update(const DX::StepTimer& timer, const DX::CameraResources* cameraResources)
+    void ModelRenderer::Update(const DX::CameraResources* cameraResources)
     {
       assert(cameraResources != nullptr);
 
@@ -69,11 +70,11 @@ namespace HoloIntervention
 
       for (auto& model : m_models)
       {
-        model->Update(timer, cameraResources);
+        model->Update(cameraResources);
       }
       for (auto& primitive : m_primitives)
       {
-        primitive->Update(timer, cameraResources);
+        primitive->Update(cameraResources);
       }
     }
 
@@ -102,7 +103,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     uint64 ModelRenderer::AddModel(const std::wstring& assetLocation)
     {
-      std::shared_ptr<ModelEntry> entry = std::make_shared<ModelEntry>(m_deviceResources, assetLocation);
+      std::shared_ptr<ModelEntry> entry = std::make_shared<ModelEntry>(m_deviceResources, assetLocation, m_timer);
       entry->SetId(m_nextUnusedId);
       entry->SetVisible(true);
 
@@ -146,12 +147,12 @@ namespace HoloIntervention
       std::unique_ptr<DirectX::InstancedGeometricPrimitive> primitive(nullptr);
       switch (type)
       {
-      case PrimitiveType_SPHERE:
-        primitive = std::move(DirectX::InstancedGeometricPrimitive::CreateSphere(m_deviceResources->GetD3DDeviceContext(), diameter, tessellation, rhcoords, invertn));
-        break;
+        case PrimitiveType_SPHERE:
+          primitive = std::move(DirectX::InstancedGeometricPrimitive::CreateSphere(m_deviceResources->GetD3DDeviceContext(), diameter, tessellation, rhcoords, invertn));
+          break;
       }
 
-      std::shared_ptr<PrimitiveEntry> entry = std::make_shared<PrimitiveEntry>(m_deviceResources, std::move(primitive));
+      std::shared_ptr<PrimitiveEntry> entry = std::make_shared<PrimitiveEntry>(m_deviceResources, std::move(primitive), m_timer);
       entry->SetId(m_nextUnusedId);
       entry->SetVisible(true);
 
