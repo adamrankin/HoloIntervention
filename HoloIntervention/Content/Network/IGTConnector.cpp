@@ -329,14 +329,15 @@ namespace HoloIntervention
       auto token = m_keepAliveTokenSource.get_token();
       return create_task([this, token]()
       {
+        igtl::StatusMessage::Pointer statusMsg = igtl::StatusMessage::New();
+        statusMsg->SetCode(igtl::StatusMessage::STATUS_OK);
+        statusMsg->Pack();
+
         while (!token.is_canceled())
         {
           if (m_connectionState == CONNECTION_STATE_CONNECTED)
           {
             // send keep alive message
-            igtl::StatusMessage::Pointer statusMsg = igtl::StatusMessage::New();
-            statusMsg->SetCode(igtl::StatusMessage::STATUS_OK);
-            statusMsg->Pack();
             bool result(false);
             {
               std::lock_guard<std::mutex> guard(m_clientMutex);

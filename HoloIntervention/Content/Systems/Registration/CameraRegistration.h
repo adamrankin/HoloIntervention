@@ -149,7 +149,7 @@ namespace HoloIntervention
       Network::IGTConnector&                                                m_igtConnector;
 
       std::function<void(Windows::Foundation::Numerics::float4x4)>          m_completeCallback;
-      std::mutex                                                            m_processorLock;
+      mutable std::mutex                                                    m_processorLock;
       std::shared_ptr<Capture::VideoFrameProcessor>                         m_videoFrameProcessor = nullptr;
 
       // Anchor resources
@@ -163,6 +163,7 @@ namespace HoloIntervention
       std::array<Windows::Foundation::Numerics::float4x4, 5>                m_sphereToAnchorPoses;
 
       // Camera
+      std::atomic_bool                                                      m_cameraActive = false;
       Windows::Foundation::EventRegistrationToken                           m_anchorUpdatedToken;
       std::mutex                                                            m_framesLock;
       Windows::Media::Capture::Frames::MediaFrameReference^                 m_currentFrame = nullptr;

@@ -194,8 +194,7 @@ namespace HoloIntervention
         // Only do this if we've enabled visualization, the sphere primitives have been created, and we've analyzed at least 1 frame
         for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
         {
-          auto entry = m_modelRenderer.GetPrimitive(m_spherePrimitiveIds[i]);
-          entry->SetDesiredPose(m_sphereToAnchorPoses[i] * anchorToRequestedBox->Value);
+          m_spherePrimitives[i]->SetDesiredPose(m_sphereToAnchorPoses[i] * anchorToRequestedBox->Value);
         }
       }
     }
@@ -223,25 +222,26 @@ namespace HoloIntervention
     {
       SetVisualization(false);
 
-      if (m_videoFrameProcessor != nullptr && m_videoFrameProcessor->IsStarted())
+      if (IsCameraActive())
       {
         m_tokenSource.cancel();
-        std::lock_guard<std::mutex> processorGuard(m_processorLock);
+        std::lock_guard<std::mutex> guard(m_processorLock);
         return m_videoFrameProcessor->StopAsync().then([this](task<void> stopTask)
         {
           try
           {
             stopTask.wait();
           }
-          catch (const std::exception& e)
-          {
-            OutputDebugStringA(e.what());
-          }
           catch (Platform::Exception^ e)
           {
             OutputDebugStringW(e->Message->Data());
           }
-          m_videoFrameProcessor = nullptr;
+
+          m_cameraActive = false;
+          {
+            std::lock_guard<std::mutex> processorGuard(m_processorLock);
+            m_videoFrameProcessor = nullptr;
+          }
           m_transformsAvailable = false;
           m_latestTimestamp = 0.0;
           m_tokenSource = cancellation_token_source();
@@ -326,6 +326,7 @@ namespace HoloIntervention
                 m_notificationSystem.QueueMessage(L"Unable to start capturing.");
               }
 
+              m_cameraActive = true;
               return true;
             }).then([this](bool result)
             {
@@ -334,7 +335,6 @@ namespace HoloIntervention
                 return result;
               }
 
-              std::lock_guard<std::mutex> guard(m_processorLock);
               m_tokenSource = cancellation_token_source();
               create_task([this]()
               {
@@ -356,6 +356,7 @@ namespace HoloIntervention
         }
         else
         {
+          std::lock_guard<std::mutex> processorGuard(m_processorLock);
           return m_videoFrameProcessor->StartAsync().then([this](task<MediaFrameReaderStartStatus> startTask)
           {
             MediaFrameReaderStartStatus status;
@@ -378,7 +379,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     bool CameraRegistration::IsCameraActive() const
     {
-      return m_videoFrameProcessor != nullptr && m_videoFrameProcessor->IsStarted();
+      return m_cameraActive;
     }
 
     //----------------------------------------------------------------------------
@@ -493,123 +494,105 @@ namespace HoloIntervention
       uint64 lastMessageId(std::numeric_limits<uint64>::max());
       while (!token.is_canceled())
       {
-        std::lock_guard<std::mutex> guard(m_processorLock);
-        if (m_videoFrameProcessor == nullptr || !m_igtConnector.IsConnected())
         {
-          std::this_thread::sleep_for(std::chrono::milliseconds(100));
-          continue;
-        }
-
-        UWPOpenIGTLink::TrackedFrame^ trackedFrame(nullptr);
-        MediaFrameReference^ cameraFrame(m_videoFrameProcessor->GetLatestFrame());
-        if (m_igtConnector.GetTrackedFrame(l_latestTrackedFrame, &m_latestTimestamp) &&
-            cameraFrame != nullptr &&
-            cameraFrame != l_latestCameraFrame)
-        {
-          float4x4 cameraToRawWorldAnchor = float4x4::identity();
-
-          l_latestCameraFrame = cameraFrame;
-          m_latestTimestamp = l_latestTrackedFrame->Timestamp;
-          if (l_latestCameraFrame->CoordinateSystem != nullptr)
+          std::lock_guard<std::mutex> guard(m_processorLock);
+          if (m_videoFrameProcessor == nullptr || !m_igtConnector.IsConnected())
           {
-            std::lock_guard<std::mutex> guard(m_anchorMutex);
-            Platform::IBox<float4x4>^ cameraToRawWorldAnchorBox;
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            continue;
+          }
+
+          UWPOpenIGTLink::TrackedFrame^ trackedFrame(nullptr);
+          MediaFrameReference^ cameraFrame(m_videoFrameProcessor->GetLatestFrame());
+          if (m_igtConnector.GetTrackedFrame(l_latestTrackedFrame, &m_latestTimestamp) &&
+              cameraFrame != nullptr &&
+              cameraFrame != l_latestCameraFrame)
+          {
+            float4x4 cameraToRawWorldAnchor = float4x4::identity();
+
+            l_latestCameraFrame = cameraFrame;
+            m_latestTimestamp = l_latestTrackedFrame->Timestamp;
+            if (l_latestCameraFrame->CoordinateSystem != nullptr)
+            {
+              std::lock_guard<std::mutex> guard(m_anchorMutex);
+              Platform::IBox<float4x4>^ cameraToRawWorldAnchorBox;
+              try
+              {
+                cameraToRawWorldAnchorBox = l_latestCameraFrame->CoordinateSystem->TryGetTransformTo(m_worldAnchor->RawCoordinateSystem);
+              }
+              catch (Platform::Exception^ e)
+              {
+                Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, L"Exception: " + e->Message);
+                continue;
+              }
+              if (cameraToRawWorldAnchorBox != nullptr)
+              {
+                cameraToRawWorldAnchor = cameraToRawWorldAnchorBox->Value;
+              }
+            }
+
+            if (cameraToRawWorldAnchor == float4x4::identity())
+            {
+              continue;
+            }
+
+            VecFloat3 sphereInReferenceResults;
+            if (!RetrieveTrackerFrameLocations(l_latestTrackedFrame, sphereInReferenceResults))
+            {
+              continue;
+            }
+
+            VideoMediaFrame^ frame(nullptr);
+            float4x4 phantomToCameraTransform;
             try
             {
-              cameraToRawWorldAnchorBox = l_latestCameraFrame->CoordinateSystem->TryGetTransformTo(m_worldAnchor->RawCoordinateSystem);
+              frame = l_latestCameraFrame->VideoMediaFrame;
             }
             catch (Platform::Exception^ e)
             {
-              Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, L"Exception: " + e->Message);
               continue;
             }
-            if (cameraToRawWorldAnchorBox != nullptr)
+            if (ComputePhantomToCameraTransform(frame, l_initialized, l_height, l_width, l_hsv, l_redMat, l_redMatWrap, l_imageRGB, l_mask, l_rvec, l_tvec, l_canny_output, phantomToCameraTransform))
             {
-              cameraToRawWorldAnchor = cameraToRawWorldAnchorBox->Value;
-            }
-          }
-
-          if (cameraToRawWorldAnchor == float4x4::identity())
-          {
-            continue;
-          }
-
-          VecFloat3 sphereInReferenceResults;
-          if (!RetrieveTrackerFrameLocations(l_latestTrackedFrame, sphereInReferenceResults))
-          {
-            continue;
-          }
-
-          VideoMediaFrame^ frame(nullptr);
-          float4x4 phantomToCameraTransform;
-          try
-          {
-            frame = l_latestCameraFrame->VideoMediaFrame;
-          }
-          catch (Platform::Exception^ e)
-          {
-            continue;
-          }
-          if (ComputePhantomToCameraTransform(frame, l_initialized, l_height, l_width, l_hsv, l_redMat, l_redMatWrap, l_imageRGB, l_mask, l_rvec, l_tvec, l_canny_output, phantomToCameraTransform))
-          {
-            // Transform points in model space to anchor space
-            VecFloat3 sphereInAnchorResults;
-            int i = 0;
-            for (auto& sphereToPhantom : m_sphereToPhantomPoses)
-            {
-              float4x4 sphereToAnchorPose = sphereToPhantom * phantomToCameraTransform * cameraToRawWorldAnchor;
-
-              sphereInAnchorResults.push_back(float3(sphereToAnchorPose.m41, sphereToAnchorPose.m42, sphereToAnchorPose.m43));
-
-              if (m_visualizationEnabled)
+              // Transform points in model space to anchor space
+              VecFloat3 sphereInAnchorResults;
+              int i = 0;
+              for (auto& sphereToPhantom : m_sphereToPhantomPoses)
               {
-                // If visualizing, update the latest known poses of the spheres
-                m_sphereToAnchorPoses[i] = sphereToAnchorPose;
-                i++;
-              }
-            }
+                float4x4 sphereToAnchorPose = sphereToPhantom * phantomToCameraTransform * cameraToRawWorldAnchor;
 
-            static int x = 0;
-            if (x == 0)
-            {
-              OutputDebugStringA("sphereInAnchorResults: \n");
-              for (auto& entry : sphereInAnchorResults)
+                sphereInAnchorResults.push_back(float3(sphereToAnchorPose.m41, sphereToAnchorPose.m42, sphereToAnchorPose.m43));
+
+                if (m_visualizationEnabled)
+                {
+                  // If visualizing, update the latest known poses of the spheres
+                  m_sphereToAnchorPoses[i] = sphereToAnchorPose;
+                  i++;
+                }
+              }
+
+              std::lock_guard<std::mutex> frameGuard(m_framesLock);
+              m_sphereInAnchorResultFrames.push_back(sphereInAnchorResults);
+              m_sphereInReferenceResultFrames.push_back(sphereInReferenceResults);
+
+              if (lastMessageId != std::numeric_limits<uint64>::max())
               {
-                std::stringstream ss;
-                ss << "  " << entry << std::endl;
-                OutputDebugStringA(ss.str().c_str());
+                m_notificationSystem.RemoveMessage(lastMessageId);
               }
-              OutputDebugStringA("sphereInReferenceResults: \n");
-              for (auto& entry : sphereInReferenceResults)
-              {
-                std::stringstream ss;
-                ss << "  " << entry << std::endl;
-                OutputDebugStringA(ss.str().c_str());
-              }
-              x = 1;
+              lastMessageId = m_notificationSystem.QueueMessage(L"Acquired " + m_sphereInAnchorResultFrames.size().ToString() + L"/" + NUMBER_OF_FRAMES_FOR_CALIBRATION.ToString() + " frames.");
             }
-
-            std::lock_guard<std::mutex> frameGuard(m_framesLock);
-            m_sphereInAnchorResultFrames.push_back(sphereInAnchorResults);
-            m_sphereInReferenceResultFrames.push_back(sphereInReferenceResults);
-
-            if (lastMessageId != std::numeric_limits<uint64>::max())
-            {
-              m_notificationSystem.RemoveMessage(lastMessageId);
-            }
-            lastMessageId = m_notificationSystem.QueueMessage(L"Acquired " + m_sphereInAnchorResultFrames.size().ToString() + L"/" + NUMBER_OF_FRAMES_FOR_CALIBRATION.ToString() + " frames.");
           }
-
-          // If we've acquired enough frames, perform the registration
-          if (m_sphereInAnchorResultFrames.size() == NUMBER_OF_FRAMES_FOR_CALIBRATION)
+          else
           {
-            PerformLandmarkRegistration();
+            // No new frame
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
           }
         }
-        else
+
+        // If we've acquired enough frames, perform the registration
+        if (m_sphereInAnchorResultFrames.size() == NUMBER_OF_FRAMES_FOR_CALIBRATION)
         {
-          // No new frame
-          std::this_thread::sleep_for(std::chrono::milliseconds(100));
+          PerformLandmarkRegistration();
         }
       }
     }
@@ -619,6 +602,7 @@ namespace HoloIntervention
     {
       m_notificationSystem.QueueMessage(L"Calculating registration...");
 
+      std::lock_guard<std::mutex> frameGuard(m_framesLock);
       assert(m_sphereInAnchorResultFrames.size() == m_sphereInReferenceResultFrames.size());
 
       VecFloat3 sphereInReferenceResults;

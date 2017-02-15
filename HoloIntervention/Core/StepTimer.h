@@ -18,15 +18,15 @@ namespace DX
   {
   public:
     StepTimer() :
-      m_elapsedTicks( 0 ),
-      m_totalTicks( 0 ),
-      m_leftOverTicks( 0 ),
-      m_frameCount( 0 ),
-      m_framesPerSecond( 0 ),
-      m_framesThisSecond( 0 ),
-      m_qpcSecondCounter( 0 ),
-      m_isFixedTimeStep( false ),
-      m_targetElapsedTicks( TicksPerSecond / 60 )
+      m_elapsedTicks(0),
+      m_totalTicks(0),
+      m_leftOverTicks(0),
+      m_frameCount(0),
+      m_framesPerSecond(0),
+      m_framesThisSecond(0),
+      m_qpcSecondCounter(0),
+      m_isFixedTimeStep(false),
+      m_targetElapsedTicks(TicksPerSecond / 60)
     {
       m_qpcFrequency = GetPerformanceFrequency();
 
@@ -41,7 +41,7 @@ namespace DX
     }
     double GetElapsedSeconds() const
     {
-      return TicksToSeconds( m_elapsedTicks );
+      return TicksToSeconds(m_elapsedTicks);
     }
 
     // Get total time since the start of the program.
@@ -51,7 +51,7 @@ namespace DX
     }
     double GetTotalSeconds() const
     {
-      return TicksToSeconds( m_totalTicks );
+      return TicksToSeconds(m_totalTicks);
     }
 
     // Get total number of updates since start of the program.
@@ -67,31 +67,31 @@ namespace DX
     }
 
     // Set whether to use fixed or variable timestep mode.
-    void SetFixedTimeStep( bool isFixedTimestep )
+    void SetFixedTimeStep(bool isFixedTimestep)
     {
       m_isFixedTimeStep = isFixedTimestep;
     }
 
     // Set how often to call Update when in fixed timestep mode.
-    void SetTargetElapsedTicks( uint64 targetElapsed )
+    void SetTargetElapsedTicks(uint64 targetElapsed)
     {
       m_targetElapsedTicks = targetElapsed;
     }
-    void SetTargetElapsedSeconds( double targetElapsed )
+    void SetTargetElapsedSeconds(double targetElapsed)
     {
-      m_targetElapsedTicks = SecondsToTicks( targetElapsed );
+      m_targetElapsedTicks = SecondsToTicks(targetElapsed);
     }
 
     // Integer format represents time using 10,000,000 ticks per second.
     static const uint64 TicksPerSecond = 10'000'000;
 
-    static double TicksToSeconds( uint64 ticks )
+    static double TicksToSeconds(uint64 ticks)
     {
-      return static_cast<double>( ticks ) / TicksPerSecond;
+      return static_cast<double>(ticks) / TicksPerSecond;
     }
-    static uint64 SecondsToTicks( double seconds )
+    static uint64 SecondsToTicks(double seconds)
     {
-      return static_cast<uint64>( seconds * TicksPerSecond );
+      return static_cast<uint64>(seconds * TicksPerSecond);
     }
 
     // Convenient wrapper for QueryPerformanceFrequency. Throws an exception if
@@ -99,7 +99,7 @@ namespace DX
     static inline uint64 GetPerformanceFrequency()
     {
       LARGE_INTEGER freq;
-      if ( !QueryPerformanceFrequency( &freq ) )
+      if (!QueryPerformanceFrequency(&freq))
       {
         throw ref new Platform::FailureException();
       }
@@ -111,7 +111,7 @@ namespace DX
     static inline int64 GetTicks()
     {
       LARGE_INTEGER ticks;
-      if ( !QueryPerformanceCounter( &ticks ) )
+      if (!QueryPerformanceCounter(&ticks))
       {
         throw ref new Platform::FailureException();
       }
@@ -134,7 +134,7 @@ namespace DX
 
     // Update timer state, calling the specified Update function the appropriate number of times.
     template<typename TUpdate>
-    void Tick( const TUpdate& update )
+    void Tick(const TUpdate& update)
     {
       // Query the current time.
       uint64 currentTime = GetTicks();
@@ -144,7 +144,7 @@ namespace DX
       m_qpcSecondCounter += timeDelta;
 
       // Clamp excessively large time deltas (e.g. after paused in the debugger).
-      if ( timeDelta > m_qpcMaxDelta )
+      if (timeDelta > m_qpcMaxDelta)
       {
         timeDelta = m_qpcMaxDelta;
       }
@@ -155,7 +155,7 @@ namespace DX
 
       uint64 lastFrameCount = m_frameCount;
 
-      if ( m_isFixedTimeStep )
+      if (m_isFixedTimeStep)
       {
         // Fixed timestep update logic
 
@@ -166,14 +166,14 @@ namespace DX
         // accumulate enough tiny errors that it would drop a frame. It is better to just round
         // small deviations down to zero to leave things running smoothly.
 
-        if ( abs( static_cast<int64>( timeDelta - m_targetElapsedTicks ) ) < TicksPerSecond / 4000 )
+        if (abs(static_cast<int64>(timeDelta - m_targetElapsedTicks)) < TicksPerSecond / 4000)
         {
           timeDelta = m_targetElapsedTicks;
         }
 
         m_leftOverTicks += timeDelta;
 
-        while ( m_leftOverTicks >= m_targetElapsedTicks )
+        while (m_leftOverTicks >= m_targetElapsedTicks)
         {
           m_elapsedTicks   = m_targetElapsedTicks;
           m_totalTicks    += m_targetElapsedTicks;
@@ -195,12 +195,12 @@ namespace DX
       }
 
       // Track the current framerate.
-      if ( m_frameCount != lastFrameCount )
+      if (m_frameCount != lastFrameCount)
       {
         m_framesThisSecond++;
       }
 
-      if ( m_qpcSecondCounter >= static_cast<uint64>( m_qpcFrequency ) )
+      if (m_qpcSecondCounter >= static_cast<uint64>(m_qpcFrequency))
       {
         m_framesPerSecond   = m_framesThisSecond;
         m_framesThisSecond  = 0;
