@@ -104,8 +104,7 @@ namespace HoloIntervention
         // Only do this if we've enabled visualization, the sphere primitives have been created, and we've analyzed at least 1 frame
         for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
         {
-          auto entry = m_modelRenderer.GetPrimitive(m_spherePrimitiveIds[i]);
-          position += transform(float3(0.f, 0.f, 0.f), entry->GetCurrentPose());
+          position += transform(float3(0.f, 0.f, 0.f), m_spherePrimitives[i]->GetCurrentPose());
         }
         position /= static_cast<float>(PHANTOM_SPHERE_COUNT);
       }
@@ -122,8 +121,7 @@ namespace HoloIntervention
         // Only do this if we've enabled visualization, the sphere primitives have been created, and we've analyzed at least 1 frame
         for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
         {
-          auto entry = m_modelRenderer.GetPrimitive(m_spherePrimitiveIds[i]);
-          normal += ExtractNormal(entry->GetCurrentPose());
+          normal += ExtractNormal(m_spherePrimitives[i]->GetCurrentPose());
         }
         normal /= static_cast<float>(PHANTOM_SPHERE_COUNT);
         return normal;
@@ -141,8 +139,7 @@ namespace HoloIntervention
         // Only do this if we've enabled visualization, the sphere primitives have been created, and we've analyzed at least 1 frame
         for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
         {
-          auto entry = m_modelRenderer.GetPrimitive(m_spherePrimitiveIds[i]);
-          velocity += entry->GetVelocity();
+          velocity += m_spherePrimitives[i]->GetVelocity();
         }
         velocity /= static_cast<float>(PHANTOM_SPHERE_COUNT);
         return velocity;
@@ -156,8 +153,14 @@ namespace HoloIntervention
     {
       if (m_visualizationEnabled && m_spherePrimitiveIds[0] != INVALID_TOKEN && m_sphereInAnchorResultFrames.size() > 0)
       {
+        bool anyInFrustum(false);
+        for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
+        {
+          anyInFrustum |= m_spherePrimitives[i]->IsInFrustum();
+        }
+
         // TODO : priority values?
-        return 3.f;
+        return anyInFrustum ? 3.f : PRIORITY_NOT_ACTIVE;
       }
 
       return PRIORITY_NOT_ACTIVE;
@@ -400,10 +403,10 @@ namespace HoloIntervention
         for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
         {
           m_spherePrimitiveIds[i] = m_modelRenderer.AddPrimitive(Rendering::PrimitiveType_SPHERE, VISUALIZATION_SPHERE_RADIUS, 30);
-          auto entry = m_modelRenderer.GetPrimitive(m_spherePrimitiveIds[i]);
-          entry->SetVisible(true);
-          entry->SetColour(float3(0.803921640f, 0.360784322f, 0.360784322f));
-          entry->SetDesiredPose(float4x4::identity());
+          m_spherePrimitives[i] = m_modelRenderer.GetPrimitive(m_spherePrimitiveIds[i]);
+          m_spherePrimitives[i]->SetVisible(true);
+          m_spherePrimitives[i]->SetColour(float3(0.803921640f, 0.360784322f, 0.360784322f));
+          m_spherePrimitives[i]->SetDesiredPose(float4x4::identity());
         }
       }
       m_visualizationEnabled = true;

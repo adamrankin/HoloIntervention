@@ -45,7 +45,7 @@ namespace HoloIntervention
 {
   namespace Physics
   {
-    class SurfaceAPI;
+    class PhysicsAPI;
   }
   namespace Rendering
   {
@@ -71,7 +71,7 @@ namespace HoloIntervention
 
     public:
       RegistrationSystem(Network::IGTConnector& igtConnector,
-                         Physics::SurfaceAPI& physicsAPI,
+                         Physics::PhysicsAPI& physicsAPI,
                          NotificationSystem& notificationSystem,
                          Rendering::ModelRenderer& modelRenderer);
       ~RegistrationSystem();
@@ -90,7 +90,7 @@ namespace HoloIntervention
       // Cached references
       NotificationSystem&                             m_notificationSystem;
       Rendering::ModelRenderer&                       m_modelRenderer;
-      Physics::SurfaceAPI&                            m_physicsAPI;
+      Physics::PhysicsAPI&                            m_physicsAPI;
 
       // Anchor variables
       std::atomic_bool                                m_registrationActive = false;

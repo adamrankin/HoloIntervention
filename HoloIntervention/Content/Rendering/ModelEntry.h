@@ -71,6 +71,7 @@ namespace HoloIntervention
       void SetVisible(bool enable);
       void ToggleVisible();
       bool IsVisible() const;
+      bool IsInFrustum() const;
       bool IsInFrustum(const Windows::Perception::Spatial::SpatialBoundingFrustum& frustum) const;
 
       void EnablePoseLerp(bool enable);

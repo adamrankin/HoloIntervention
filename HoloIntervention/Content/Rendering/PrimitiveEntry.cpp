@@ -157,6 +157,12 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    bool PrimitiveEntry::IsInFrustum() const
+    {
+      return m_isInFrustum;
+    }
+
+    //----------------------------------------------------------------------------
     void PrimitiveEntry::SetColour(float3 newColour)
     {
       m_colour = float4(newColour.x, newColour.y, newColour.z, 1.f);

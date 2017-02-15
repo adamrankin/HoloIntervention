@@ -39,7 +39,7 @@ namespace HoloIntervention
 
   namespace Physics
   {
-    class SurfaceAPI;
+    class PhysicsAPI;
   }
 
   namespace System
@@ -112,7 +112,7 @@ namespace HoloIntervention
     System::SplashSystem& GetSplashSystem();
 
     // Provide access to the physics system
-    Physics::SurfaceAPI& GetSurfaceAPI();
+    Physics::PhysicsAPI& GetSurfaceAPI();
 
     // Provide access to the sound manager
     Sound::SoundAPI& GetSoundAPI();
@@ -206,7 +206,7 @@ namespace HoloIntervention
     std::unique_ptr<System::ToolSystem>                   m_toolSystem;
 
     // Physics
-    std::unique_ptr<Physics::SurfaceAPI>                  m_physicsAPI;
+    std::unique_ptr<Physics::PhysicsAPI>                  m_physicsAPI;
 
     // Sound
     std::unique_ptr<Sound::SoundAPI>                      m_soundAPI;

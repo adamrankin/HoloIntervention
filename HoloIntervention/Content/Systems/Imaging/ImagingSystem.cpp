@@ -165,6 +165,8 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float ImagingSystem::GetStabilizePriority() const
     {
+      // TODO : are they in frustum?
+
       if (m_sliceValid || m_volumeValid)
       {
         // TODO : stabilizer values?

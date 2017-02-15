@@ -42,7 +42,7 @@ namespace HoloIntervention
 
   namespace Physics
   {
-    class SurfaceAPI;
+    class PhysicsAPI;
   }
 
   namespace System
@@ -58,7 +58,7 @@ namespace HoloIntervention
       virtual float GetStabilizePriority() const;
 
     public:
-      GazeSystem(NotificationSystem& notificationSystem, Physics::SurfaceAPI& physicsAPI, Rendering::ModelRenderer& modelRenderer);
+      GazeSystem(NotificationSystem& notificationSystem, Physics::PhysicsAPI& physicsAPI, Rendering::ModelRenderer& modelRenderer);
       ~GazeSystem();
 
       void Update(const DX::StepTimer& timer, Windows::Perception::Spatial::SpatialCoordinateSystem^ currentCoordinateSystem, Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
@@ -80,7 +80,7 @@ namespace HoloIntervention
       // Cached entries
       Rendering::ModelRenderer&                 m_modelRenderer;
       NotificationSystem&                       m_notificationSystem;
-      Physics::SurfaceAPI&                      m_physicsAPI;
+      Physics::PhysicsAPI&                      m_physicsAPI;
 
       std::shared_ptr<Rendering::ModelEntry>    m_modelEntry;
       uint64                                    m_modelToken;

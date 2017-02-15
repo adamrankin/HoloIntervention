@@ -42,7 +42,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "IGTConnector.h"
 
 // Physics includes
-#include "SurfaceAPI.h"
+#include "PhysicsAPI.h"
 
 // System includes
 #include "NotificationSystem.h"
@@ -127,14 +127,14 @@ namespace HoloIntervention
       if (m_regAnchor != nullptr)
       {
         // TODO : stabilization values?
-        return 1.f;
+        return m_regAnchorModel->IsInFrustum() ? 1.f : PRIORITY_NOT_ACTIVE;
       }
 
       return PRIORITY_NOT_ACTIVE;
     }
 
     //----------------------------------------------------------------------------
-    RegistrationSystem::RegistrationSystem(Network::IGTConnector& igtConnector, Physics::SurfaceAPI& physicsAPI, NotificationSystem& notificationSystem, Rendering::ModelRenderer& modelRenderer)
+    RegistrationSystem::RegistrationSystem(Network::IGTConnector& igtConnector, Physics::PhysicsAPI& physicsAPI, NotificationSystem& notificationSystem, Rendering::ModelRenderer& modelRenderer)
       : m_notificationSystem(notificationSystem)
       , m_modelRenderer(modelRenderer)
       , m_physicsAPI(physicsAPI)

@@ -24,7 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "pch.h"
 #include "Common.h"
-#include "SurfaceAPI.h"
+#include "PhysicsAPI.h"
 
 // Common includes
 #include "DeviceResources.h"
@@ -63,10 +63,10 @@ namespace HoloIntervention
 {
   namespace Physics
   {
-    const uint32 SurfaceAPI::INIT_SURFACE_RETRY_DELAY_MS = 100;
+    const uint32 PhysicsAPI::INIT_SURFACE_RETRY_DELAY_MS = 100;
 
     //----------------------------------------------------------------------------
-    SurfaceAPI::SurfaceAPI(System::NotificationSystem& notificationSystem, const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer)
+    PhysicsAPI::PhysicsAPI(System::NotificationSystem& notificationSystem, const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer)
       : m_deviceResources(deviceResources)
       , m_notificationSystem(notificationSystem)
       , m_stepTimer(stepTimer)
@@ -75,7 +75,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    SurfaceAPI::~SurfaceAPI()
+    PhysicsAPI::~PhysicsAPI()
     {
       if (m_surfaceObserver != nullptr)
       {
@@ -86,7 +86,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SurfaceAPI::Update(SpatialCoordinateSystem^ coordinateSystem)
+    void PhysicsAPI::Update(SpatialCoordinateSystem^ coordinateSystem)
     {
       // Keep the surface observer positioned at the device's location.
       UpdateSurfaceObserverPosition(coordinateSystem);
@@ -95,7 +95,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SurfaceAPI::CreateDeviceDependentResources()
+    void PhysicsAPI::CreateDeviceDependentResources()
     {
       try
       {
@@ -111,14 +111,14 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SurfaceAPI::ReleaseDeviceDependentResources()
+    void PhysicsAPI::ReleaseDeviceDependentResources()
     {
       m_componentReady = false;
       m_surfaceCollection->ReleaseDeviceDependentResources();
     }
 
     //----------------------------------------------------------------------------
-    void SurfaceAPI::OnSurfacesChanged(SpatialSurfaceObserver^ sender, Object^ args)
+    void PhysicsAPI::OnSurfacesChanged(SpatialSurfaceObserver^ sender, Object^ args)
     {
       IMapView<Guid, SpatialSurfaceInfo^>^ const& surfaceCollection = sender->GetObservedSurfaces();
 
@@ -147,7 +147,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SurfaceAPI::UpdateSurfaceObserverPosition(SpatialCoordinateSystem^ coordinateSystem)
+    void PhysicsAPI::UpdateSurfaceObserverPosition(SpatialCoordinateSystem^ coordinateSystem)
     {
       // 20 meters wide, and 5 meters tall, centered at the origin of coordinateSystem.
       SpatialBoundingBox aabb =
@@ -164,13 +164,13 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool SurfaceAPI::TestRayIntersection(SpatialCoordinateSystem^ desiredCoordinateSystem, const float3 rayOrigin, const float3 rayDirection, float3& outHitPosition, float3& outHitNormal, float3& outHitEdge)
+    bool PhysicsAPI::TestRayIntersection(SpatialCoordinateSystem^ desiredCoordinateSystem, const float3 rayOrigin, const float3 rayDirection, float3& outHitPosition, float3& outHitNormal, float3& outHitEdge)
     {
       return m_surfaceCollection->TestRayIntersection(desiredCoordinateSystem, rayOrigin, rayDirection, outHitPosition, outHitNormal, outHitEdge);
     }
 
     //----------------------------------------------------------------------------
-    bool SurfaceAPI::GetLastHitPosition(_Out_ float3& position, _In_ bool considerOldHits /*= false*/)
+    bool PhysicsAPI::GetLastHitPosition(_Out_ float3& position, _In_ bool considerOldHits /*= false*/)
     {
       if (m_surfaceCollection == nullptr)
       {
@@ -180,7 +180,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool SurfaceAPI::GetLastHitNormal(_Out_ float3& normal, _In_ bool considerOldHits /*= false*/)
+    bool PhysicsAPI::GetLastHitNormal(_Out_ float3& normal, _In_ bool considerOldHits /*= false*/)
     {
       if (m_surfaceCollection == nullptr)
       {
@@ -190,19 +190,19 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    std::shared_ptr<HoloIntervention::Spatial::SurfaceMesh> SurfaceAPI::GetLastHitMesh()
+    std::shared_ptr<HoloIntervention::Spatial::SurfaceMesh> PhysicsAPI::GetLastHitMesh()
     {
       return m_surfaceCollection->GetLastHitMesh();
     }
 
     //----------------------------------------------------------------------------
-    Platform::Guid SurfaceAPI::GetLastHitMeshGuid()
+    Platform::Guid PhysicsAPI::GetLastHitMeshGuid()
     {
       return m_surfaceCollection->GetLastHitMeshGuid();
     }
 
     //----------------------------------------------------------------------------
-    task<bool> SurfaceAPI::InitializeSurfaceObserverAsync(SpatialCoordinateSystem^ coordinateSystem)
+    task<bool> PhysicsAPI::InitializeSurfaceObserverAsync(SpatialCoordinateSystem^ coordinateSystem)
     {
       if (m_surfaceObserver != nullptr)
       {
@@ -290,7 +290,7 @@ namespace HoloIntervention
             }
 
             m_surfaceObserverEventToken = m_surfaceObserver->ObservedSurfacesChanged +=
-            ref new Windows::Foundation::TypedEventHandler<SpatialSurfaceObserver^, Platform::Object^>(std::bind(&SurfaceAPI::OnSurfacesChanged, this, std::placeholders::_1, std::placeholders::_2));
+            ref new Windows::Foundation::TypedEventHandler<SpatialSurfaceObserver^, Platform::Object^>(std::bind(&PhysicsAPI::OnSurfacesChanged, this, std::placeholders::_1, std::placeholders::_2));
 
             CreateDeviceDependentResources();
 
@@ -305,7 +305,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<void> SurfaceAPI::SaveAppStateAsync()
+    task<void> PhysicsAPI::SaveAppStateAsync()
     {
       return task<SpatialAnchorStore^>(SpatialAnchorManager::RequestStoreAsync()).then([ = ](SpatialAnchorStore ^ store)
       {
@@ -326,7 +326,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<void> SurfaceAPI::LoadAppStateAsync()
+    task<void> PhysicsAPI::LoadAppStateAsync()
     {
       m_spatialAnchors.clear();
 
@@ -348,7 +348,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool SurfaceAPI::DropAnchorAtIntersectionHit(Platform::String^ anchorName, SpatialCoordinateSystem^ coordinateSystem, SpatialPointerPose^ headPose)
+    bool PhysicsAPI::DropAnchorAtIntersectionHit(Platform::String^ anchorName, SpatialCoordinateSystem^ coordinateSystem, SpatialPointerPose^ headPose)
     {
       if (anchorName == nullptr)
       {
@@ -403,14 +403,14 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    size_t SurfaceAPI::RemoveAnchor(Platform::String^ name)
+    size_t PhysicsAPI::RemoveAnchor(Platform::String^ name)
     {
       std::lock_guard<std::mutex> lock(m_anchorMutex);
       return m_spatialAnchors.erase(name);
     }
 
     //----------------------------------------------------------------------------
-    SpatialAnchor^ SurfaceAPI::GetAnchor(Platform::String^ anchorName)
+    SpatialAnchor^ PhysicsAPI::GetAnchor(Platform::String^ anchorName)
     {
       if (HasAnchor(anchorName))
       {
@@ -421,13 +421,13 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool SurfaceAPI::HasAnchor(Platform::String^ anchorName)
+    bool PhysicsAPI::HasAnchor(Platform::String^ anchorName)
     {
       return m_spatialAnchors.find(anchorName) != m_spatialAnchors.end();
     }
 
     //----------------------------------------------------------------------------
-    void SurfaceAPI::RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap)
+    void PhysicsAPI::RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap)
     {
 
     }

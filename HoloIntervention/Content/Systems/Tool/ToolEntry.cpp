@@ -74,7 +74,10 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float ToolEntry::GetStabilizePriority() const
     {
-      // TODO : affect priority based on proximity to center of view frustum?
+      if (!m_modelEntry->IsInFrustum())
+      {
+        return PRIORITY_NOT_ACTIVE;
+      }
       // TODO : stabilizer values?
       return m_isValid ? 2.5f : 0.25f;
     }

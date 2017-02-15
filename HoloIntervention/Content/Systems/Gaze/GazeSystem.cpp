@@ -28,7 +28,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "StepTimer.h"
 
 // Physics includes
-#include "SurfaceAPI.h"
+#include "PhysicsAPI.h"
 
 // Rendering includes
 #include "ModelEntry.h"
@@ -73,11 +73,15 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float GazeSystem::GetStabilizePriority() const
     {
+      if (IsCursorEnabled() && !m_modelEntry->IsInFrustum())
+      {
+        return PRIORITY_NOT_ACTIVE;
+      }
       return IsCursorEnabled() ? 1.f : PRIORITY_NOT_ACTIVE;
     }
 
     //----------------------------------------------------------------------------
-    GazeSystem::GazeSystem(NotificationSystem& notificationSystem, Physics::SurfaceAPI& physicsAPI, Rendering::ModelRenderer& modelRenderer)
+    GazeSystem::GazeSystem(NotificationSystem& notificationSystem, Physics::PhysicsAPI& physicsAPI, Rendering::ModelRenderer& modelRenderer)
       : m_modelRenderer(modelRenderer)
       , m_notificationSystem(notificationSystem)
       , m_physicsAPI(physicsAPI)

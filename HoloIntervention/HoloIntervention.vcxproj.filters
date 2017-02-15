@@ -136,10 +136,10 @@
     <ClCompile Include="Content\Sound\SoundAPI.cpp">
       <Filter>Content\Sound</Filter>
     </ClCompile>
-    <ClCompile Include="Content\Physics\SurfaceAPI.cpp">
+    <ClCompile Include="Content\Systems\Splash\SplashSystem.cpp" />
+    <ClCompile Include="Content\Physics\PhysicsAPI.cpp">
       <Filter>Content\Physics</Filter>
     </ClCompile>
-    <ClCompile Include="Content\Systems\Splash\SplashSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Content\Sound\OmnidirectionalSound.h">
@@ -301,10 +301,10 @@
     <ClInclude Include="Content\Sound\SoundAPI.h">
       <Filter>Content\Sound</Filter>
     </ClInclude>
-    <ClInclude Include="Content\Physics\SurfaceAPI.h">
+    <ClInclude Include="Content\Systems\Splash\SplashSystem.h" />
+    <ClInclude Include="Content\Physics\PhysicsAPI.h">
       <Filter>Content\Physics</Filter>
     </ClInclude>
-    <ClInclude Include="Content\Systems\Splash\SplashSystem.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\LockScreenLogo.scale-200.png">

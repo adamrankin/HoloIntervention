@@ -382,6 +382,13 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    bool ModelEntry::IsInFrustum() const
+    {
+      // TODO : this is a cached value, so in theory this could produce artifacts, bad enough to fix?
+      return m_isInFrustum;
+    }
+
+    //----------------------------------------------------------------------------
     bool ModelEntry::IsInFrustum(const SpatialBoundingFrustum& frustum) const
     {
       if (m_timer.GetFrameCount() == m_frustumCheckFrameNumber)

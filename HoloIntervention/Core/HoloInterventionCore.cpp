@@ -40,7 +40,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "ToolSystem.h"
 
 // Physics includes
-#include "SurfaceAPI.h"
+#include "PhysicsAPI.h"
 
 // Sound includes
 #include "SoundAPI.h"
@@ -121,7 +121,7 @@ namespace HoloIntervention
 
     m_IGTConnector = std::make_unique<Network::IGTConnector>(*m_notificationSystem.get(), *m_voiceInput.get());
     Log::instance().SetIGTConnector(*m_IGTConnector.get());
-    m_physicsAPI = std::make_unique<Physics::SurfaceAPI>(*m_notificationSystem.get(), m_deviceResources, m_timer);
+    m_physicsAPI = std::make_unique<Physics::PhysicsAPI>(*m_notificationSystem.get(), m_deviceResources, m_timer);
 
     m_registrationSystem = std::make_unique<System::RegistrationSystem>(*m_IGTConnector.get(), *m_physicsAPI.get(), *m_notificationSystem.get(), *m_modelRenderer.get());
     m_iconSystem = std::make_unique<System::IconSystem>(*m_notificationSystem.get(), *m_registrationSystem.get(), *m_IGTConnector.get(), *m_voiceInput.get(), *m_modelRenderer.get());
@@ -391,7 +391,7 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
-  Physics::SurfaceAPI& HoloInterventionCore::GetSurfaceAPI()
+  Physics::PhysicsAPI& HoloInterventionCore::GetSurfaceAPI()
   {
     return *m_physicsAPI.get();
   }
@@ -495,21 +495,21 @@ namespace HoloIntervention
 
     switch (sender->Locatability)
     {
-      case SpatialLocatability::Unavailable:
-      {
-        m_notificationSystem->QueueMessage(L"Warning! Positional tracking is unavailable.");
-      }
+    case SpatialLocatability::Unavailable:
+    {
+      m_notificationSystem->QueueMessage(L"Warning! Positional tracking is unavailable.");
+    }
+    break;
+
+    case SpatialLocatability::PositionalTrackingActivating:
+    case SpatialLocatability::OrientationOnly:
+    case SpatialLocatability::PositionalTrackingInhibited:
+      // Gaze-locked content still valid
       break;
 
-      case SpatialLocatability::PositionalTrackingActivating:
-      case SpatialLocatability::OrientationOnly:
-      case SpatialLocatability::PositionalTrackingInhibited:
-        // Gaze-locked content still valid
-        break;
-
-      case SpatialLocatability::PositionalTrackingActive:
-        m_notificationSystem->QueueMessage(L"Positional tracking is active.");
-        break;
+    case SpatialLocatability::PositionalTrackingActive:
+      m_notificationSystem->QueueMessage(L"Positional tracking is active.");
+      break;
     }
   }
 

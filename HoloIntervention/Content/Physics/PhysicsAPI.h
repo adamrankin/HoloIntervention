@@ -51,11 +51,11 @@ namespace HoloIntervention
 
   namespace Physics
   {
-    class SurfaceAPI : public Sound::IVoiceInput, public IEngineComponent
+    class PhysicsAPI : public Sound::IVoiceInput, public IEngineComponent
     {
     public:
-      SurfaceAPI(System::NotificationSystem& notificationSystem, const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer);
-      ~SurfaceAPI();
+      PhysicsAPI(System::NotificationSystem& notificationSystem, const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer);
+      ~PhysicsAPI();
 
       void Update(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem);
 
