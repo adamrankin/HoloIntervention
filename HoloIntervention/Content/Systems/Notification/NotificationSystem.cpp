@@ -94,8 +94,6 @@ namespace HoloIntervention
     {
       if (m_currentMessage.messageId == messageId)
       {
-        // Currently being displayed, terminate it
-        m_animationState = SHOWING;
         m_messageTimeElapsedSec = m_currentMessage.messageDuration + 0.5;
         return;
       }
