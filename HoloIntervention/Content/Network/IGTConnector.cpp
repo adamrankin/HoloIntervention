@@ -55,6 +55,7 @@ namespace HoloIntervention
     const uint32_t IGTConnector::RECONNECT_RETRY_DELAY_MSEC = 100;
     const uint32_t IGTConnector::RECONNECT_RETRY_COUNT = 10;
     const uint32 IGTConnector::DICTATION_TIMEOUT_DELAY_MSEC = 8000;
+    const uint32 IGTConnector::KEEP_ALIVE_INTERVAL_MSEC = 1000;
 
     //----------------------------------------------------------------------------
     IGTConnector::IGTConnector(System::NotificationSystem& notificationSystem, Input::VoiceInput& input)
@@ -399,7 +400,7 @@ namespace HoloIntervention
           else
           {
             Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Keep alive running unconnected but token not canceled.");
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            std::this_thread::sleep_for(std::chrono::milliseconds(KEEP_ALIVE_INTERVAL_MSEC));
           }
         }
       }, token);

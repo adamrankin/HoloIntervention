@@ -79,13 +79,13 @@ namespace HoloIntervention
 
       void SetDesiredPose(const Windows::Foundation::Numerics::float4x4& world);
       void SetCurrentPose(const Windows::Foundation::Numerics::float4x4& world);
-      const Windows::Foundation::Numerics::float4x4& GetCurrentPose() const;
+      Windows::Foundation::Numerics::float4x4 GetCurrentPose() const;
 
-      const Windows::Foundation::Numerics::float3& GetVelocity() const;
+      Windows::Foundation::Numerics::float3 GetVelocity() const;
 
       uint64 GetId() const;
       void SetId(uint64 id);
-      const std::array<float, 6>& GetBounds() const;
+      std::array<float, 6> GetBounds() const;
 
       // Alternate rendering options
       void RenderGreyscale();

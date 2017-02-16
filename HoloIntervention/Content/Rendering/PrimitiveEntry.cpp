@@ -151,7 +151,7 @@ namespace HoloIntervention
         }
       }
 
-      m_isInFrustum = false;
+      m_isInFrustum = true;
       m_frustumCheckFrameNumber = m_timer.GetFrameCount();
       return m_isInFrustum;
     }
@@ -181,19 +181,19 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    const float4x4& PrimitiveEntry::GetCurrentPose() const
+    float4x4 PrimitiveEntry::GetCurrentPose() const
     {
       return m_currentPose;
     }
 
     //----------------------------------------------------------------------------
-    const float3& PrimitiveEntry::GetVelocity() const
+    float3 PrimitiveEntry::GetVelocity() const
     {
       return m_velocity;
     }
 
     //----------------------------------------------------------------------------
-    const std::array<float, 6>& PrimitiveEntry::GetBounds() const
+    std::array<float, 6> PrimitiveEntry::GetBounds() const
     {
       return m_primitive->GetBounds();
     }

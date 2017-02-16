@@ -39,7 +39,7 @@ namespace DX
                 Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem);
     bool Attach(std::shared_ptr<DX::DeviceResources> deviceResources);
 
-    const ViewProjectionConstantBuffer& GetLatestViewProjectionBuffer() const;
+    ViewProjectionConstantBuffer GetLatestViewProjectionBuffer() const;
     bool GetLatestSpatialBoundingFrustum(Windows::Perception::Spatial::SpatialBoundingFrustum& outFrustum) const;
 
     // Direct3D device resources.

@@ -66,8 +66,8 @@ namespace HoloIntervention
       void EnableCursor(bool enable);
       bool IsCursorEnabled() const;
 
-      const Windows::Foundation::Numerics::float3& GetHitPosition() const;
-      const Windows::Foundation::Numerics::float3& GetHitNormal() const;
+      Windows::Foundation::Numerics::float3 GetHitPosition() const;
+      Windows::Foundation::Numerics::float3 GetHitNormal() const;
       Windows::Foundation::Numerics::float3 GetHitVelocity() const;
 
       // IVoiceInput functions

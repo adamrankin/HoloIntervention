@@ -86,8 +86,8 @@ namespace HoloIntervention
 
       // Accessors
       bool IsShowingNotification() const;
-      const Windows::Foundation::Numerics::float3& GetPosition() const;
-      const Windows::Foundation::Numerics::float3& GetVelocity() const;
+      Windows::Foundation::Numerics::float3 GetPosition() const;
+      Windows::Foundation::Numerics::float3 GetVelocity() const;
 
       // Override the current lerp and force the position
       void SetPose(Windows::UI::Input::Spatial::SpatialPointerPose^ pointerPose);

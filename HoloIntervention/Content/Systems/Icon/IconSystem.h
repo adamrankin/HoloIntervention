@@ -102,18 +102,20 @@ namespace HoloIntervention
       std::shared_ptr<IconEntry>      m_microphoneIcon = nullptr;
 
       // Network logic variables
+      bool                            m_wasNetworkConnected = true;
       bool                            m_networkIsBlinking = true;
       Network::ConnectionState        m_networkPreviousState = Network::CONNECTION_STATE_UNKNOWN;
-      Rendering::ModelRenderingState  m_networkRenderState = Rendering::RENDERING_DEFAULT;
       float                           m_networkBlinkTimer = 0.f;
       static const float              NETWORK_BLINK_TIME_SEC;
 
       // Camera logic variables
       float                           m_cameraBlinkTimer = 0.f;
+      bool                            m_wasCameraOn = true;
       static const float              CAMERA_BLINK_TIME_SEC;
 
       // Microphone logic variables
       float                           m_microphoneBlinkTimer = 0.f;
+      bool                            m_wasHearingSound = true;
       static const float              MICROPHONE_BLINK_TIME_SEC;
 
       // Shared variables

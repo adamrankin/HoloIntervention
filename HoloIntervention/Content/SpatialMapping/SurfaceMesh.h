@@ -98,11 +98,11 @@ namespace HoloIntervention
 
       bool GetIsActive() const;
       float GetLastActiveTime() const;
-      const Windows::Foundation::DateTime& GetLastUpdateTime() const;
+      Windows::Foundation::DateTime GetLastUpdateTime() const;
 
-      const Windows::Foundation::Numerics::float3& GetLastHitPosition() const;
-      const Windows::Foundation::Numerics::float3& GetLastHitNormal() const;
-      const Windows::Foundation::Numerics::float3& GetLastHitEdge() const; // this and normal define a coordinate system
+      Windows::Foundation::Numerics::float3 GetLastHitPosition() const;
+      Windows::Foundation::Numerics::float3 GetLastHitNormal() const;
+      Windows::Foundation::Numerics::float3 GetLastHitEdge() const; // this and normal define a coordinate system
       uint64_t GetLastHitFrameNumber() const;
 
       void SetIsActive(const bool& isActive);

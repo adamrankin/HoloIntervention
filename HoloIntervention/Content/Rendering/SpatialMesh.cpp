@@ -341,7 +341,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    const Windows::Foundation::DateTime& SpatialMesh::GetLastUpdateTime() const
+    Windows::Foundation::DateTime SpatialMesh::GetLastUpdateTime() const
     {
       return m_lastUpdateTime;
     }

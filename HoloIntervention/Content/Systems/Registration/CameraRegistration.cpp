@@ -383,31 +383,34 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void CameraRegistration::SetVisualization(bool enabled)
+    void CameraRegistration::SetVisualization(bool on)
     {
-      if (!enabled)
+      if (!on)
       {
-        for (auto& sphereId : m_spherePrimitiveIds)
+        for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
         {
-          if (sphereId != INVALID_TOKEN)
+          if (m_spherePrimitiveIds[i] != INVALID_TOKEN)
           {
-            auto entry = m_modelRenderer.GetPrimitive(sphereId);
-            entry->SetVisible(false);
+            m_spherePrimitives[i]->SetVisible(false);
           }
         }
         m_visualizationEnabled = false;
         return;
       }
 
-      if (m_spherePrimitiveIds[0] == INVALID_TOKEN)
+      for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
       {
-        for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
+        if (m_spherePrimitiveIds[i] == INVALID_TOKEN)
         {
           m_spherePrimitiveIds[i] = m_modelRenderer.AddPrimitive(Rendering::PrimitiveType_SPHERE, VISUALIZATION_SPHERE_RADIUS, 30);
           m_spherePrimitives[i] = m_modelRenderer.GetPrimitive(m_spherePrimitiveIds[i]);
           m_spherePrimitives[i]->SetVisible(true);
           m_spherePrimitives[i]->SetColour(float3(0.803921640f, 0.360784322f, 0.360784322f));
           m_spherePrimitives[i]->SetDesiredPose(float4x4::identity());
+        }
+        else
+        {
+          m_spherePrimitives[i]->SetVisible(true);
         }
       }
       m_visualizationEnabled = true;

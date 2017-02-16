@@ -65,7 +65,7 @@ namespace HoloIntervention
 
       void SetDesiredPose(const Windows::Foundation::Numerics::float4x4& matrix);
       void SetCurrentPose(const Windows::Foundation::Numerics::float4x4& matrix);
-      const Windows::Foundation::Numerics::float4x4& GetCurrentPose() const;
+      Windows::Foundation::Numerics::float4x4 GetCurrentPose() const;
 
       void SetVisible(bool visible);
       void SetHeadlocked(bool headLocked);

@@ -298,13 +298,13 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    const float3& NotificationSystem::GetPosition() const
+    float3 NotificationSystem::GetPosition() const
     {
       return m_position;
     }
 
     //----------------------------------------------------------------------------
-    const float3& NotificationSystem::GetVelocity() const
+    float3 NotificationSystem::GetVelocity() const
     {
       return m_velocity;
     }

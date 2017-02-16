@@ -79,6 +79,10 @@ namespace HoloIntervention
 
           m_dictationHypothesisGeneratedToken = m_dictationRecognizer->HypothesisGenerated += ref new TypedEventHandler<SpeechRecognizer^, SpeechRecognitionHypothesisGeneratedEventArgs^>(
                                                   std::bind(&VoiceInput::OnHypothesisGenerated, this, std::placeholders::_1, std::placeholders::_2));
+
+          m_dictationStateChangedToken = m_dictationRecognizer->StateChanged +=
+                                           ref new TypedEventHandler<SpeechRecognizer^, SpeechRecognizerStateChangedEventArgs^>(
+                                             std::bind(&VoiceInput::OnStateChanged, this, std::placeholders::_1, std::placeholders::_2));
         }
         else
         {
@@ -90,19 +94,25 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     VoiceInput::~VoiceInput()
     {
-      if (m_componentReady)
+      m_commandRecognizer->StateChanged -= m_commandStateChangedToken;
+      m_commandRecognizer->ContinuousRecognitionSession->ResultGenerated -= m_commandDetectedEventToken;
+
+      m_dictationRecognizer->StateChanged -= m_dictationStateChangedToken;
+      m_dictationRecognizer->HypothesisGenerated -= m_dictationHypothesisGeneratedToken;
+      m_dictationRecognizer->ContinuousRecognitionSession->ResultGenerated -= m_dictationDetectedEventToken;
+
+      if (m_activeRecognizer == nullptr)
       {
-        if (m_activeRecognizer == m_commandRecognizer)
-        {
-          m_commandRecognizer->ContinuousRecognitionSession->ResultGenerated -= m_commandDetectedEventToken;
-          m_commandRecognizer->ContinuousRecognitionSession->StopAsync();
-        }
-        else if (m_activeRecognizer == m_dictationRecognizer)
-        {
-          m_dictationRecognizer->HypothesisGenerated -= m_dictationHypothesisGeneratedToken;
-          m_dictationRecognizer->ContinuousRecognitionSession->ResultGenerated -= m_dictationDetectedEventToken;
-          m_dictationRecognizer->ContinuousRecognitionSession->StopAsync();
-        }
+        return;
+      }
+
+      if (m_activeRecognizer == m_commandRecognizer)
+      {
+        m_commandRecognizer->ContinuousRecognitionSession->StopAsync();
+      }
+      else if (m_activeRecognizer == m_dictationRecognizer)
+      {
+        m_dictationRecognizer->ContinuousRecognitionSession->StopAsync();
       }
     }
 
@@ -116,6 +126,12 @@ namespace HoloIntervention
     bool VoiceInput::IsVoiceEnabled() const
     {
       return m_inputEnabled;
+    }
+
+    //----------------------------------------------------------------------------
+    bool VoiceInput::IsHearingSound() const
+    {
+      return m_hearingSound;
     }
 
     //----------------------------------------------------------------------------
@@ -172,16 +188,17 @@ namespace HoloIntervention
         {
           OutputDebugStringW(e->Message->Data());
         }
-        catch (const std::exception& e)
-        {
-          OutputDebugStringA(e.what());
-        }
 
         if (compilationResult->Status == SpeechRecognitionResultStatus::Success)
         {
           m_commandDetectedEventToken = m_commandRecognizer->ContinuousRecognitionSession->ResultGenerated +=
                                           ref new TypedEventHandler<SpeechContinuousRecognitionSession^, SpeechContinuousRecognitionResultGeneratedEventArgs^>(
                                             std::bind(&VoiceInput::OnResultGenerated, this, std::placeholders::_1, std::placeholders::_2));
+
+          m_commandStateChangedToken = m_commandRecognizer->StateChanged +=
+                                         ref new TypedEventHandler<SpeechRecognizer^, SpeechRecognizerStateChangedEventArgs^>(
+                                           std::bind(&VoiceInput::OnStateChanged, this, std::placeholders::_1, std::placeholders::_2));
+
 
           m_componentReady = true;
         }
@@ -246,9 +263,9 @@ namespace HoloIntervention
               stopTask.wait();
               m_activeRecognizer = nullptr;
             }
-            catch (const std::exception& e)
+            catch (Platform::Exception^ e)
             {
-              Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, std::string("Failed to stop current recognizer: ") + e.what());
+              Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, L"Failed to stop current recognizer: " + e->Message);
               return task_from_result(false);
             }
 
@@ -264,9 +281,9 @@ namespace HoloIntervention
                 startTask.wait();
                 m_activeRecognizer = desiredRecognizer;
               }
-              catch (const std::exception& e)
+              catch (Platform::Exception^ e)
               {
-                Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, std::string("Failed to start desired recognizer: ") + e.what());
+                Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, L"Failed to start desired recognizer: " + e->Message);
                 return false;
               }
 
@@ -288,9 +305,9 @@ namespace HoloIntervention
               startTask.wait();
               m_activeRecognizer = desiredRecognizer;
             }
-            catch (const std::exception& e)
+            catch (Platform::Exception^ e)
             {
-              Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, std::string("Failed to start command recognizer: ") + e.what());
+              Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, L"Failed to start command recognizer: " + e->Message);
               return false;
             }
 
@@ -324,6 +341,17 @@ namespace HoloIntervention
       if (!m_inputEnabled)
       {
         return;
+      }
+      OutputDebugStringW(L"hypothesis");
+    }
+
+    //----------------------------------------------------------------------------
+    void VoiceInput::OnStateChanged(SpeechRecognizer^ sender, SpeechRecognizerStateChangedEventArgs^ args)
+    {
+      m_hearingSound = false;
+      if (args->State == SpeechRecognizerState::SoundStarted)
+      {
+        m_hearingSound = true;
       }
     }
 

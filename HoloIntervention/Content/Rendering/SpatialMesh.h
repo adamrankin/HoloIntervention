@@ -72,7 +72,7 @@ namespace HoloIntervention
 
       bool GetIsActive() const;
       float GetLastActiveTime() const;
-      const Windows::Foundation::DateTime& GetLastUpdateTime() const;
+      Windows::Foundation::DateTime GetLastUpdateTime() const;
 
       void SetIsActive(const bool& isActive);
       void SetColorFadeTimer(const float& duration);

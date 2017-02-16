@@ -297,7 +297,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    const float4x4& SliceEntry::GetCurrentPose() const
+    float4x4 SliceEntry::GetCurrentPose() const
     {
       return m_currentPose;
     }

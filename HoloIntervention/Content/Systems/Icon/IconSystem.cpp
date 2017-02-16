@@ -251,39 +251,48 @@ namespace HoloIntervention
           }
         }
         m_networkIsBlinking = true;
-        if (state == Network::CONNECTION_STATE_CONNECTING)
-        {
-          m_networkRenderState = Rendering::RENDERING_GREYSCALE;
-        }
-        else
-        {
-          m_networkRenderState = Rendering::RENDERING_DEFAULT;
-        }
         break;
       case HoloIntervention::Network::CONNECTION_STATE_UNKNOWN:
       case HoloIntervention::Network::CONNECTION_STATE_DISCONNECTED:
       case HoloIntervention::Network::CONNECTION_STATE_CONNECTION_LOST:
         m_networkIcon->GetModelEntry()->SetVisible(true);
         m_networkIsBlinking = false;
-        m_networkRenderState = Rendering::RENDERING_GREYSCALE;
+        if (m_wasNetworkConnected)
+        {
+          m_networkIcon->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
+          m_wasNetworkConnected = false;
+        }
         break;
       case HoloIntervention::Network::CONNECTION_STATE_CONNECTED:
         m_networkIcon->GetModelEntry()->SetVisible(true);
         m_networkIsBlinking = false;
-        m_networkRenderState = Rendering::RENDERING_DEFAULT;
+        if (!m_wasNetworkConnected)
+        {
+          m_wasNetworkConnected = true;
+          m_networkIcon->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
+        }
         break;
       }
 
-      m_networkIcon->GetModelEntry()->SetRenderingState(m_networkRenderState);
       m_networkPreviousState = state;
     }
 
     //----------------------------------------------------------------------------
     void IconSystem::ProcessCameraLogic(DX::StepTimer& timer)
     {
-      if (m_registrationSystem.IsCameraActive())
+      if (!m_wasCameraOn && m_registrationSystem.IsCameraActive())
       {
+        m_wasCameraOn = true;
         m_cameraIcon->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
+      }
+      else if (m_wasCameraOn && !m_registrationSystem.IsCameraActive())
+      {
+        m_wasCameraOn = false;
+        m_cameraIcon->GetModelEntry()->SetVisible(true);
+        m_cameraIcon->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
+      }
+      else if (m_wasCameraOn && m_registrationSystem.IsCameraActive())
+      {
         m_cameraBlinkTimer += static_cast<float>(timer.GetElapsedSeconds());
         if (m_cameraBlinkTimer >= NETWORK_BLINK_TIME_SEC)
         {
@@ -291,24 +300,25 @@ namespace HoloIntervention
           m_cameraIcon->GetModelEntry()->ToggleVisible();
         }
       }
-      else
-      {
-        m_cameraIcon->GetModelEntry()->SetVisible(true);
-        m_cameraIcon->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
-      }
     }
 
     //----------------------------------------------------------------------------
     void IconSystem::ProcessMicrophoneLogic(DX::StepTimer& timer)
     {
-      if (m_voiceInput.IsRecognitionActive())
+      if (!m_wasHearingSound && m_voiceInput.IsHearingSound())
       {
-        // TODO : microphone model, animation?
+        // Colour!
+        m_wasHearingSound = true;
+        m_microphoneIcon->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
       }
-      else
+      else if (m_wasHearingSound && !m_voiceInput.IsHearingSound())
       {
-        m_networkIcon->GetModelEntry()->SetVisible(true);
-        m_networkIcon->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
+        m_wasHearingSound = false;
+        m_microphoneIcon->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
+      }
+      else if (m_wasHearingSound && m_voiceInput.IsHearingSound())
+      {
+        // blink!
       }
     }
   }

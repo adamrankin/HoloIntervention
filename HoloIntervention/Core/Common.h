@@ -40,7 +40,7 @@ namespace HoloIntervention
 
   //------------------------------------------------------------------------
   template<class T>
-  const T& clamp(const T& x, const T& upper, const T& lower)
+  T clamp(const T& x, const T& upper, const T& lower)
   {
     return min(upper, max(x, lower));
   }

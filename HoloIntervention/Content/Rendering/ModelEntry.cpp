@@ -271,13 +271,13 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    const Windows::Foundation::Numerics::float4x4& ModelEntry::GetCurrentPose() const
+    Windows::Foundation::Numerics::float4x4 ModelEntry::GetCurrentPose() const
     {
       return m_currentPose;
     }
 
     //----------------------------------------------------------------------------
-    const float3& ModelEntry::GetVelocity() const
+    float3 ModelEntry::GetVelocity() const
     {
       return m_velocity;
     }
@@ -338,7 +338,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    const std::array<float, 6>& ModelEntry::GetBounds() const
+    std::array<float, 6> ModelEntry::GetBounds() const
     {
       return m_modelBounds;
     }

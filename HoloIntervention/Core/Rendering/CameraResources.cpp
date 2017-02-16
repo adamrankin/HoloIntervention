@@ -206,7 +206,7 @@ namespace DX
   }
 
   //----------------------------------------------------------------------------
-  const DX::ViewProjectionConstantBuffer& CameraResources::GetLatestViewProjectionBuffer() const
+  DX::ViewProjectionConstantBuffer CameraResources::GetLatestViewProjectionBuffer() const
   {
     return m_cpuViewProjectionConstantBuffer;
   }

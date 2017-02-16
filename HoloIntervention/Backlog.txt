@@ -1,12 +1,12 @@
 Major implementation details remaining:
 
 *Network search on startup
+CPU cost of network
 Volume rendering
 Registration drift
-Registration restart, stop, start
+*Mic icon activity
 Network connect, disconnect, connect, connection lost
 *Log system bug
 Voice feedback
 UI for IP setting - Dictation*
 Registration feedback (move around, etc...)
-*Stabilization system, priorities based on objects in view or not (frustum check done anyways, record it)

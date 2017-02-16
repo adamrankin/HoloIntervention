@@ -164,13 +164,13 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    const float3& GazeSystem::GetHitPosition() const
+    float3 GazeSystem::GetHitPosition() const
     {
       return m_currentPosition;
     }
 
     //----------------------------------------------------------------------------
-    const float3& GazeSystem::GetHitNormal() const
+    float3 GazeSystem::GetHitNormal() const
     {
       return m_currentNormal;
     }

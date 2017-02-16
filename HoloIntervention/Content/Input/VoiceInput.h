@@ -50,6 +50,7 @@ namespace HoloIntervention
 
       void EnableVoiceAnalysis(bool enable);
       bool IsVoiceEnabled() const;
+      bool IsHearingSound() const;
       bool IsRecognitionActive() const;
       bool IsCommandRecognitionActive() const;
       bool IsDictationRecognitionActive() const;
@@ -67,6 +68,7 @@ namespace HoloIntervention
 
       void OnResultGenerated(Windows::Media::SpeechRecognition::SpeechContinuousRecognitionSession^ sender, Windows::Media::SpeechRecognition::SpeechContinuousRecognitionResultGeneratedEventArgs^ args);
       void OnHypothesisGenerated(Windows::Media::SpeechRecognition::SpeechRecognizer^ sender, Windows::Media::SpeechRecognition::SpeechRecognitionHypothesisGeneratedEventArgs^ args);
+      void OnStateChanged(Windows::Media::SpeechRecognition::SpeechRecognizer^ sender, Windows::Media::SpeechRecognition::SpeechRecognizerStateChangedEventArgs^ args);
 
       void HandleCommandResult(Windows::Media::SpeechRecognition::SpeechContinuousRecognitionResultGeneratedEventArgs^ args);
       void HandleDictationResult(Windows::Media::SpeechRecognition::SpeechContinuousRecognitionResultGeneratedEventArgs^ args);
@@ -76,6 +78,7 @@ namespace HoloIntervention
       System::NotificationSystem&                                       m_notificationSystem;
       Sound::SoundAPI&                                                  m_soundAPI;
 
+      std::atomic_bool                                                  m_hearingSound = false;
       std::atomic_bool                                                  m_inputEnabled = false;
 
       Windows::Media::SpeechRecognition::SpeechRecognizer^              m_activeRecognizer = nullptr;
@@ -83,6 +86,7 @@ namespace HoloIntervention
       Windows::Media::SpeechRecognition::SpeechRecognizer^              m_commandRecognizer = ref new Windows::Media::SpeechRecognition::SpeechRecognizer(Windows::Media::SpeechRecognition::SpeechRecognizer::SystemSpeechLanguage);
       std::unique_ptr<Sound::VoiceInputCallbackMap>                     m_callbacks;
       Windows::Foundation::EventRegistrationToken                       m_commandDetectedEventToken;
+      Windows::Foundation::EventRegistrationToken                       m_commandStateChangedToken;
 
       Windows::Media::SpeechRecognition::SpeechRecognizer^              m_dictationRecognizer = ref new Windows::Media::SpeechRecognition::SpeechRecognizer(Windows::Media::SpeechRecognition::SpeechRecognizer::SystemSpeechLanguage);
       uint64                                                            m_nextToken = INVALID_TOKEN;
@@ -90,6 +94,7 @@ namespace HoloIntervention
       std::map<uint64, std::function<bool(const std::wstring& text)>>   m_dictationMatchers;
       Windows::Foundation::EventRegistrationToken                       m_dictationDetectedEventToken;
       Windows::Foundation::EventRegistrationToken                       m_dictationHypothesisGeneratedToken;
+      Windows::Foundation::EventRegistrationToken                       m_dictationStateChangedToken;
 
       const float                                                       MINIMUM_CONFIDENCE_FOR_DETECTION = 0.4f; // [0,1]
     };

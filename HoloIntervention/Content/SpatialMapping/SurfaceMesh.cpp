@@ -364,13 +364,13 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    const Windows::Foundation::DateTime& SurfaceMesh::GetLastUpdateTime() const
+    Windows::Foundation::DateTime SurfaceMesh::GetLastUpdateTime() const
     {
       return m_lastUpdateTime;
     }
 
     //----------------------------------------------------------------------------
-    const Windows::Foundation::Numerics::float3& SurfaceMesh::GetLastHitPosition() const
+    Windows::Foundation::Numerics::float3 SurfaceMesh::GetLastHitPosition() const
     {
       if (m_hasLastComputedHit)
       {
@@ -381,13 +381,13 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    const float3& SurfaceMesh::GetLastHitNormal() const
+    float3 SurfaceMesh::GetLastHitNormal() const
     {
       return m_lastHitNormal;
     }
 
     //----------------------------------------------------------------------------
-    const Windows::Foundation::Numerics::float3& SurfaceMesh::GetLastHitEdge() const
+    Windows::Foundation::Numerics::float3 SurfaceMesh::GetLastHitEdge() const
     {
       return m_lastHitEdge;
     }

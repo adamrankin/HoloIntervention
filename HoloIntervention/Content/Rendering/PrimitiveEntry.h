@@ -69,11 +69,11 @@ namespace HoloIntervention
 
       // Primitive pose control
       void SetDesiredPose(const Windows::Foundation::Numerics::float4x4& world);
-      const Windows::Foundation::Numerics::float4x4& GetCurrentPose() const;
+      Windows::Foundation::Numerics::float4x4 GetCurrentPose() const;
 
-      const Windows::Foundation::Numerics::float3& GetVelocity() const;
+      Windows::Foundation::Numerics::float3 GetVelocity() const;
 
-      const std::array<float, 6>& GetBounds() const;
+      std::array<float, 6> GetBounds() const;
 
       // Accessors
       uint64 GetId() const;
