@@ -312,7 +312,7 @@ namespace HoloIntervention
     {
       const auto context = m_deviceResources->GetD3DDeviceContext();
 
-      auto bytesPerPixel = BitsPerPixel((DXGI_FORMAT)m_frame->Frame->GetPixelFormat(true)) / 8;
+      auto bytesPerPixel = BitsPerPixel((DXGI_FORMAT)m_frame->GetPixelFormat(true)) / 8;
 
       byte* imageRaw = GetDataFromIBuffer<byte>(m_frame->Frame->ImageData);
       if (imageRaw == nullptr)
@@ -388,7 +388,7 @@ namespace HoloIntervention
         return;
       }
 
-      auto format = (DXGI_FORMAT)m_frame->Frame->GetPixelFormat(true);
+      auto format = (DXGI_FORMAT)m_frame->GetPixelFormat(true);
       auto bytesPerPixel = BitsPerPixel(format) / 8;
       byte* imageRaw = GetDataFromIBuffer<byte>(m_frame->Frame->ImageData);
       if (imageRaw == nullptr)

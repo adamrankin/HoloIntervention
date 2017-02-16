@@ -1,7 +1,8 @@
 Major implementation details remaining:
 
 *Network search on startup
-CPU cost of network
+CPU cost of network/image-transforms separate
+  unpack on demand
 Volume rendering
 Registration drift
 *Mic icon activity

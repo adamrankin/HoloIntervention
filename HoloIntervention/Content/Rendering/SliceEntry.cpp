@@ -187,7 +187,7 @@ namespace HoloIntervention
       }
 
       auto frameSize = frame->Frame->FrameSize;
-      auto format = (DXGI_FORMAT)m_frame->Frame->GetPixelFormat(true);
+      auto format = (DXGI_FORMAT)m_frame->GetPixelFormat(true);
       if (frameSize[0] != m_width || frameSize[1] != m_height || format != m_pixelFormat)
       {
         m_width = frameSize[0];
