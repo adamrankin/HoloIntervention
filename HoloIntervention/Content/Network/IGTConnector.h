@@ -80,7 +80,6 @@ namespace HoloIntervention
       int32 GetPort() const;
 
       bool GetTrackedFrame(UWPOpenIGTLink::TrackedFrame^& frame, double* latestTimestamp = nullptr);
-      bool GetCommand(UWPOpenIGTLink::Command^& cmd, double* latestTimestamp = nullptr);
 
       /// IVoiceInput functions
       void RegisterVoiceCallbacks(Sound::VoiceInputCallbackMap& callbackMap);

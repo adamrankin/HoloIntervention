@@ -236,20 +236,6 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool IGTConnector::GetCommand(UWPOpenIGTLink::Command^& cmd, double* latestTimestamp)
-    {
-      double ts = latestTimestamp == nullptr ? 0.0 : *latestTimestamp;
-      auto latestCommand =  m_igtClient->GetCommand(ts);
-      if (latestCommand == nullptr)
-      {
-        return false;
-      }
-      cmd = latestCommand;
-      *latestTimestamp = cmd->Timestamp;
-      return true;
-    }
-
-    //----------------------------------------------------------------------------
     void IGTConnector::RegisterVoiceCallbacks(Sound::VoiceInputCallbackMap& callbackMap)
     {
       callbackMap[L"connect"] = [this](SpeechRecognitionResult ^ result)
