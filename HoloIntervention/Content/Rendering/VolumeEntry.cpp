@@ -245,7 +245,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void VolumeEntry::SetFrame(UWPOpenIGTLink::TrackedFrame^ frame)
     {
-      auto frameSize = frame->Frame->FrameSize;
+      auto frameSize = frame->Dimensions;
       if (frameSize[2] < 1)
       {
         return;
@@ -259,7 +259,7 @@ namespace HoloIntervention
       {
         if (m_frame != nullptr)
         {
-          auto myFrameSize = m_frame->Frame->FrameSize;
+          auto myFrameSize = m_frame->Dimensions;
           if (myFrameSize[0] != frameSize[0] || myFrameSize[1] != frameSize[1] || myFrameSize[2] != frameSize[2])
           {
             // GPU needs to be reallocated
@@ -321,7 +321,11 @@ namespace HoloIntervention
         return;
       }
 
-      auto frameSize = m_frame->Frame->FrameSize;
+      auto frameSize = m_frame->Dimensions;
+      if (frameSize[2] < 1)
+      {
+        return;
+      }
 
       // Map image resource and update data
       D3D11_MAPPED_SUBRESOURCE mappedResource;
@@ -397,7 +401,11 @@ namespace HoloIntervention
         return;
       }
 
-      auto frameSize = m_frame->Frame->FrameSize;
+      auto frameSize = m_frame->Dimensions;
+      if (frameSize[2] < 1)
+      {
+        return;
+      }
 
       // Create a staging texture that will be used to copy data from the CPU to the GPU,
       // the staging texture will then copy to the render texture

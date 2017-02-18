@@ -245,11 +245,11 @@ namespace HoloIntervention
 
       if (frame->HasImage())
       {
-        if (frame->Frame->FrameSize[2] == 1)
+        if (frame->Dimensions[2] == 1)
         {
           Process2DFrame(frame, coordSystem);
         }
-        else if (frame->Frame->FrameSize[2] > 1)
+        else if (frame->Dimensions[2] > 1)
         {
           Process3DFrame(frame, coordSystem);
         }

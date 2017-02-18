@@ -84,12 +84,6 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
-  void MillimetersToMeters(float4x4& transform)
-  {
-    transform = transform * make_float4x4_scale(0.001f);
-  }
-
-  //----------------------------------------------------------------------------
   std::vector<std::vector<uint32>> NChooseR(uint32 n, uint32 r)
   {
     std::vector<bool> v(n);
