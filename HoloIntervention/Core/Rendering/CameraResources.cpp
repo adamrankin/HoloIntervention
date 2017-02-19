@@ -21,11 +21,6 @@
 // Unnecessary, but reduces intellisense errors
 #include <WindowsNumerics.h>
 
-#if _DEBUG
-#include <string>
-#include <sstream>
-#endif
-
 using namespace DirectX;
 using namespace Microsoft::WRL;
 using namespace Windows::Foundation::Numerics;

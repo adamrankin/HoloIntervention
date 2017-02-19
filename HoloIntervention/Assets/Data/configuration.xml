@@ -2,7 +2,11 @@
 <HoloIntervention>
   <!-- HMD coordinate frame is the Hololens frame -->
   <Tools>
-    <Tool Model="hemisphere_stylus" Transform="StylusTipToHMD"/>
+    <Tool 
+      Model="hemisphere_stylus" 
+      Transform="StylusTipToHMD"
+      LerpRate="12.0"
+     />
   </Tools>
   <CoordinateDefinitions>
   </CoordinateDefinitions>

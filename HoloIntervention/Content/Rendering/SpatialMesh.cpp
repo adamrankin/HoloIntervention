@@ -204,33 +204,32 @@ namespace HoloIntervention
     {
       if (m_surfaceMesh == nullptr)
       {
-        // Not yet ready.
         m_isActive = false;
         return;
       }
 
       if (m_surfaceMesh->TriangleIndices->ElementCount < 3)
       {
-        // Not enough indices to draw a triangle.
         m_isActive = false;
         return;
       }
 
       auto device = m_deviceResources->GetD3DDevice();
 
-      // Surface mesh resources are created off-thread, so that they don't affect rendering latency.'
       auto taskOptions = Concurrency::task_options();
       auto task = concurrency::create_task([this, device]()
       {
-        // Create new Direct3D device resources for the updated buffers. These will be set aside
-        // for now, and then swapped into the active slot next time the render loop is ready to draw.
-
-        // First, we acquire the raw data buffers.
+        // TODO : sometimes this crashes...
+        if (m_surfaceMesh->VertexPositions == nullptr || m_surfaceMesh->VertexNormals == nullptr || m_surfaceMesh->TriangleIndices == nullptr)
+        {
+          OutputDebugStringA("Null vertex data.\n");
+          call_after(std::bind(&SpatialMesh::CreateVertexResources, this), 250);
+          return;
+        }
         IBuffer^ positions = m_surfaceMesh->VertexPositions->Data;
         IBuffer^ normals = m_surfaceMesh->VertexNormals->Data;
         IBuffer^ indices = m_surfaceMesh->TriangleIndices->Data;
 
-        // Then, we create Direct3D device buffers with the mesh data provided by HoloLens.
         ComPtr<ID3D11Buffer> updatedVertexPositions;
         ComPtr<ID3D11Buffer> updatedVertexNormals;
         ComPtr<ID3D11Buffer> updatedTriangleIndices;
@@ -238,25 +237,19 @@ namespace HoloIntervention
         CreateDirectXBuffer(*device, D3D11_BIND_VERTEX_BUFFER, normals, updatedVertexNormals.GetAddressOf());
         CreateDirectXBuffer(*device, D3D11_BIND_INDEX_BUFFER, indices, updatedTriangleIndices.GetAddressOf());
 
-        // Before updating the meshes, check to ensure that there wasn't a more recent update.
         std::lock_guard<std::mutex> lock(m_meshResourcesMutex);
-
         auto meshUpdateTime = m_surfaceMesh->SurfaceInfo->UpdateTime;
         if (meshUpdateTime.UniversalTime > m_lastUpdateTime.UniversalTime)
         {
-          // Prepare to swap in the new meshes.
-          // Here, we use ComPtr.Swap() to avoid unnecessary overhead from ref counting.
           m_updatedVertexPositions.Swap(updatedVertexPositions);
           m_updatedVertexNormals.Swap(updatedVertexNormals);
           m_updatedTriangleIndices.Swap(updatedTriangleIndices);
 
-          // Cache properties for the buffers we will now use.
           m_updatedMeshProperties.vertexStride = m_surfaceMesh->VertexPositions->Stride;
           m_updatedMeshProperties.normalStride = m_surfaceMesh->VertexNormals->Stride;
           m_updatedMeshProperties.indexCount = m_surfaceMesh->TriangleIndices->ElementCount;
           m_updatedMeshProperties.indexFormat = static_cast<DXGI_FORMAT>(m_surfaceMesh->TriangleIndices->Format);
 
-          // Send a signal to the render loop indicating that new resources are available to use.
           m_updateReady = true;
           m_lastUpdateTime = meshUpdateTime;
           m_loadingComplete = true;

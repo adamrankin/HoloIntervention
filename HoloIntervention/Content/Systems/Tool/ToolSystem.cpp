@@ -165,6 +165,19 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    std::shared_ptr<HoloIntervention::Tools::ToolEntry> ToolSystem::GetTool(uint64 token)
+    {
+      for (auto iter = m_toolEntries.begin(); iter != m_toolEntries.end(); ++iter)
+      {
+        if (token == (*iter)->GetId())
+        {
+          return *iter;
+        }
+      }
+      return nullptr;
+    }
+
+    //----------------------------------------------------------------------------
     uint64 ToolSystem::RegisterTool(const std::wstring& modelName, UWPOpenIGTLink::TransformName^ coordinateFrame)
     {
       std::shared_ptr<Tools::ToolEntry> entry = std::make_shared<Tools::ToolEntry>(m_modelRenderer, coordinateFrame, modelName, m_transformRepository);
@@ -260,7 +273,19 @@ namespace HoloIntervention
             throw ref new Platform::Exception(E_FAIL, L"Tool entry contains invalid transform name.");
           }
 
-          RegisterTool(std::wstring(modelString->Data()), trName);
+          auto token = RegisterTool(std::wstring(modelString->Data()), trName);
+          auto tool = GetTool(token);
+
+          if (toolNode->Attributes->GetNamedItem(L"LerpRate") != nullptr)
+          {
+            Platform::String^ lerpRate = dynamic_cast<Platform::String^>(toolNode->Attributes->GetNamedItem(L"LerpRate")->NodeValue);
+            try
+            {
+              float num = std::stof(std::wstring(begin(lerpRate), end(lerpRate)));
+              tool->GetModelEntry()->SetPoseLerpRate(num);
+            }
+            catch (const std::exception&) {}
+          }
         }
       });
     }

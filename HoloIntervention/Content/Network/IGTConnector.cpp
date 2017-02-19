@@ -382,6 +382,10 @@ namespace HoloIntervention
                 return;
               }
             }
+            else
+            {
+              std::this_thread::sleep_for(std::chrono::milliseconds(KEEP_ALIVE_INTERVAL_MSEC));
+            }
           }
           else
           {
