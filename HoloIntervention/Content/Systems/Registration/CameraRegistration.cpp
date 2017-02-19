@@ -246,6 +246,7 @@ namespace HoloIntervention
           m_latestTimestamp = 0.0;
           m_tokenSource = cancellation_token_source();
           m_currentFrame = nullptr;
+          m_pnpNeedsInit = true;
           m_nextFrame = nullptr;
           m_notificationSystem.QueueMessage(L"Capturing stopped.");
           Init();
@@ -813,7 +814,7 @@ namespace HoloIntervention
           }
 
           // Is this our first frame?
-          if (m_sphereInAnchorResultFrames.size() == 0)
+          if (m_pnpNeedsInit)
           {
             // Initialize rvec and tvec with a reasonable guess
             if (!cv::solvePnP(phantomFiducialsCv, circleCentersPixel, intrinsic, distCoeffs, rvec, tvec, false, cv::SOLVEPNP_DLS))
@@ -845,7 +846,15 @@ namespace HoloIntervention
           cvToD3D.m22 = -1.f;
           cvToD3D.m33 = -1.f;
           phantomToCameraTransform = transpose(phantomToCameraTransform) * cvToD3D; // Output is in column-major format, OpenCV produces row-major
-          result = true;
+
+          if (!IsPhantomToCameraSane(phantomToCameraTransform))
+          {
+            // Somethings gone wonky, let's try with a fresh start on the next frame
+            m_pnpNeedsInit = true;
+            return false;
+          }
+
+          return true;
         }
 done:
         delete buffer;
@@ -1295,6 +1304,26 @@ done:
       m_sphereCoordinateNames[2] = ref new UWPOpenIGTLink::TransformName(L"RedSphere3", L"Reference");
       m_sphereCoordinateNames[3] = ref new UWPOpenIGTLink::TransformName(L"RedSphere4", L"Reference");
       m_sphereCoordinateNames[4] = ref new UWPOpenIGTLink::TransformName(L"RedSphere5", L"Reference");
+    }
+
+    //----------------------------------------------------------------------------
+    bool CameraRegistration::IsPhantomToCameraSane(const float4x4& phantomToCameraTransform)
+    {
+      // This function contains all the rules for what validates a "sane" phantomToCamera (phantom pose)
+
+      // Is Z < 0 (forward?), is it more than ... 15cm away?
+      if (phantomToCameraTransform.m43 > -0.15f)
+      {
+        return false;
+      }
+
+      // X, Y, less than 1.3m from center?
+      if (fabs(phantomToCameraTransform.m42) > 1.3f || fabs(phantomToCameraTransform.m41) > 1.3f)
+      {
+        return false;
+      }
+
+      return true;
     }
   }
 }

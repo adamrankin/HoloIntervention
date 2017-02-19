@@ -123,6 +123,7 @@ namespace HoloIntervention
     protected:
       void Init();
 
+      bool IsPhantomToCameraSane(const Windows::Foundation::Numerics::float4x4& phantomToCameraTransform);
       void ProcessAvailableFrames(Concurrency::cancellation_token token);
       void PerformLandmarkRegistration();
       bool CameraRegistration::RetrieveTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame, VecFloat3& outSphereInReferencePositions);
@@ -182,12 +183,13 @@ namespace HoloIntervention
       // State variables
       Concurrency::cancellation_token_source                                m_tokenSource;
       std::atomic_bool                                                      m_hasRegistration = false;
+      std::atomic_bool                                                      m_pnpNeedsInit = true;
 
       Windows::Foundation::Numerics::float4x4                               m_referenceToAnchor = Windows::Foundation::Numerics::float4x4::identity(); // column-major order
       std::shared_ptr<LandmarkRegistration>                                 m_landmarkRegistration = std::make_shared<LandmarkRegistration>();
 
       static const uint32                                                   PHANTOM_SPHERE_COUNT = 5;
-      static const uint32                                                   NUMBER_OF_FRAMES_FOR_CALIBRATION = 10;
+      static const uint32                                                   NUMBER_OF_FRAMES_FOR_CALIBRATION = 25;
       static const float                                                    VISUALIZATION_SPHERE_RADIUS;
     };
   }
