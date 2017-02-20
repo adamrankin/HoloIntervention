@@ -38,6 +38,11 @@ namespace DX
 
 namespace HoloIntervention
 {
+  namespace Network
+  {
+    class IGTConnector;
+  }
+
   namespace Rendering
   {
     class SliceRenderer;
@@ -57,7 +62,7 @@ namespace HoloIntervention
       virtual float GetStabilizePriority() const;
 
     public:
-      ImagingSystem(RegistrationSystem& registrationSystem, NotificationSystem& notificationSystem, Rendering::SliceRenderer& sliceRenderer, Rendering::VolumeRenderer& volumeRenderer);
+      ImagingSystem(RegistrationSystem& registrationSystem, NotificationSystem& notificationSystem, Rendering::SliceRenderer& sliceRenderer, Rendering::VolumeRenderer& volumeRenderer, Network::IGTConnector& networkConnection);
       ~ImagingSystem();
 
       void Update(UWPOpenIGTLink::TrackedFrame^ frame, const DX::StepTimer& timer, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);
@@ -79,6 +84,7 @@ namespace HoloIntervention
       // Cached variables
       NotificationSystem&                   m_notificationSystem;
       RegistrationSystem&                   m_registrationSystem;
+      Network::IGTConnector&                m_igtConnection;
       Rendering::SliceRenderer&             m_sliceRenderer;
       Rendering::VolumeRenderer&            m_volumeRenderer;
 

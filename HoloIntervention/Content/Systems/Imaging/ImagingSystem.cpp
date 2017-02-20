@@ -177,11 +177,12 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    ImagingSystem::ImagingSystem(RegistrationSystem& registrationSystem, NotificationSystem& notificationSystem, Rendering::SliceRenderer& sliceRenderer, Rendering::VolumeRenderer& volumeRenderer)
+    ImagingSystem::ImagingSystem(RegistrationSystem& registrationSystem, NotificationSystem& notificationSystem, Rendering::SliceRenderer& sliceRenderer, Rendering::VolumeRenderer& volumeRenderer, Network::IGTConnector& networkConnection)
       : m_notificationSystem(notificationSystem)
       , m_registrationSystem(registrationSystem)
       , m_sliceRenderer(sliceRenderer)
       , m_volumeRenderer(volumeRenderer)
+      , m_igtConnection(networkConnection)
     {
       try
       {
@@ -224,6 +225,9 @@ namespace HoloIntervention
 
           fromToFunction(L"/HoloIntervention/VolumeRendering", m_volumeFromCoordFrame, m_volumeToCoordFrame, m_volumeToHMDName);
           fromToFunction(L"/HoloIntervention/SliceRendering", m_sliceFromCoordFrame, m_sliceToCoordFrame, m_sliceToHMDName);
+
+          // TODO : two connections, one for image, one for volume
+          m_igtConnection.SetEmbeddedImageTransformName(m_sliceToHMDName);
         });
       }
       catch (Platform::Exception^ e)

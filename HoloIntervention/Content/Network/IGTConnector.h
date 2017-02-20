@@ -64,6 +64,9 @@ namespace HoloIntervention
       IGTConnector(System::NotificationSystem& notificationSystem, Input::VoiceInput& input);
       ~IGTConnector();
 
+      UWPOpenIGTLink::TransformName^ GetEmbeddedImageTransformName() const;
+      void SetEmbeddedImageTransformName(UWPOpenIGTLink::TransformName^ name);
+
       /// Connect to the server specified by SetHostname() and SetPort()
       /// If connected to a server, disconnects first.
       Concurrency::task<bool> ConnectAsync(double timeoutSec = CONNECT_TIMEOUT_SEC, Concurrency::task_options& options = Concurrency::task_options());

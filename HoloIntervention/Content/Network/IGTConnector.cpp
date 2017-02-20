@@ -87,6 +87,18 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    UWPOpenIGTLink::TransformName^ IGTConnector::GetEmbeddedImageTransformName() const
+    {
+      return m_igtClient->EmbeddedImageTransformName;
+    }
+
+    //----------------------------------------------------------------------------
+    void IGTConnector::SetEmbeddedImageTransformName(UWPOpenIGTLink::TransformName^ name)
+    {
+      m_igtClient->EmbeddedImageTransformName = name;
+    }
+
+    //----------------------------------------------------------------------------
     task<bool> IGTConnector::ConnectAsync(double timeoutSec, task_options& options)
     {
       m_connectionState = CONNECTION_STATE_CONNECTING;
