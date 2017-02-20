@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <HoloIntervention>
-  <!-- HMD coordinate frame is the Hololens frame -->
+  <!-- HMD coordinate frame is the HoloLens rendering coordinate frame -->
   <Tools>
     <Tool 
       Model="hemisphere_stylus" 
@@ -8,10 +8,35 @@
       LerpRate="12.0"
      />
   </Tools>
+
   <CoordinateDefinitions>
   </CoordinateDefinitions>
 
-  <SliceRendering From="Image" To="HMD" />
-  <VolumeRendering From="Volume" To="HMD" />
+  <IGTConnections>
+    <Connection
+      Name="2DImage"
+      Host="192.168.0.103"
+      Port="18944"
+      EmbeddedImageTransformName="ImageToReference"
+      />
+    <Connection
+      Name="3DImage"
+      Host="192.168.0.103"
+      Port="18945"
+      EmbeddedImageTransformName="VolumeToReference"
+      />
+  </IGTConnections>
+
+  <SliceRendering 
+    From="Image" 
+    To="HMD"
+    IGTConnection="2DImage"
+    />
+
+  <VolumeRendering 
+    From="Volume" 
+    To="HMD"
+    IGTConnection="3DImage"
+    />
 
 </HoloIntervention>

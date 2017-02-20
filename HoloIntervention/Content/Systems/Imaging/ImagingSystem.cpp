@@ -227,7 +227,7 @@ namespace HoloIntervention
           fromToFunction(L"/HoloIntervention/SliceRendering", m_sliceFromCoordFrame, m_sliceToCoordFrame, m_sliceToHMDName);
 
           // TODO : two connections, one for image, one for volume
-          m_igtConnection.SetEmbeddedImageTransformName(m_sliceToHMDName);
+          m_igtConnection.SetEmbeddedImageTransformName(ref new Transform);
         });
       }
       catch (Platform::Exception^ e)
