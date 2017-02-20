@@ -143,7 +143,7 @@ namespace HoloIntervention
               connector->SetHostname(host->Data());
               try
               {
-                connector->SetPort(std::stoi(name->Data()));
+                connector->SetPort(std::stoi(port->Data()));
               }
               catch (const std::exception&) {}
 
@@ -169,6 +169,8 @@ namespace HoloIntervention
                   catch (Platform::Exception^) {}
                 }
               }
+
+              m_connectors.push_back(connector);
             }
 
             return true;

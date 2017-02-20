@@ -257,7 +257,23 @@ namespace HoloIntervention
     {
       return create_task([ = ]()
       {
-        auto xpath = ref new Platform::String(L"/HoloIntervention/Tools/Tool");
+        auto xpath = ref new Platform::String(L"/HoloIntervention/Tools");
+        if (doc->SelectNodes(xpath)->Length != 1)
+        {
+          throw ref new Platform::Exception(E_INVALIDARG, L"Invalid \"Tools\" tag in configuration.");
+        }
+        for (auto toolNode : doc->SelectNodes(xpath))
+        {
+          // model, transform
+          if (toolNode->Attributes->GetNamedItem(L"ConnectionName") == nullptr)
+          {
+            throw ref new Platform::Exception(E_FAIL, L"Tools configuration does not identify connection to receive transform from.");
+          }
+          Platform::String^ connectionName = dynamic_cast<Platform::String^>(toolNode->Attributes->GetNamedItem(L"ConnectionName")->NodeValue);
+          m_connectionName = std::wstring(connectionName->Data());
+        }
+
+        xpath = ref new Platform::String(L"/HoloIntervention/Tools/Tool");
         if (doc->SelectNodes(xpath)->Length == 0)
         {
           throw ref new Platform::Exception(E_INVALIDARG, L"No tools defined in the configuration file. Check for the existence of Tools/Tool");

@@ -2,7 +2,7 @@
 <HoloIntervention>
   <!-- HMD coordinate frame is the HoloLens rendering coordinate frame -->
   <!-- Reference coordinate frame is the reference coordinate system of the magnetic tracker -->
-  <Tools>
+  <Tools ConnectionName="2DImage">
     <Tool 
       Model="hemisphere_stylus" 
       Transform="StylusTipToHMD"
@@ -14,7 +14,7 @@
 
   <CameraRegistration
     IGTConnection="2DImage"
-    CaptureFrameCount="50" />
+    CaptureFrameCount="20" />
 
   <IGTConnections>
     <Connection

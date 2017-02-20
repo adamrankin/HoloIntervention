@@ -95,6 +95,8 @@ namespace HoloIntervention
     {
       // Create network icon
       m_networkIcon = AddEntry(L"Assets/Models/network_icon.cmo");
+      // TODO : multiple networks?
+      m_connectionName = L"2DImage";
 
       // Create camera icon
       m_cameraIcon = AddEntry(L"Assets/Models/camera_icon.cmo");
@@ -234,53 +236,51 @@ namespace HoloIntervention
     {
       // TODO how to show multiple connection icons?
 
-      /*
-      auto state = m_networkSystem.GetConnectionState();
+      auto connection = m_networkSystem.GetConnection(m_connectionName);
+      auto state = connection->GetConnectionState();
 
       switch (state)
       {
-        case HoloIntervention::Network::CONNECTION_STATE_CONNECTING:
-        case HoloIntervention::Network::CONNECTION_STATE_DISCONNECTING:
-          if (m_networkPreviousState != state)
+      case HoloIntervention::Network::CONNECTION_STATE_CONNECTING:
+      case HoloIntervention::Network::CONNECTION_STATE_DISCONNECTING:
+        if (m_networkPreviousState != state)
+        {
+          m_networkBlinkTimer = 0.f;
+        }
+        else
+        {
+          m_networkBlinkTimer += static_cast<float>(timer.GetElapsedSeconds());
+          if (m_networkBlinkTimer >= NETWORK_BLINK_TIME_SEC)
           {
             m_networkBlinkTimer = 0.f;
+            m_networkIcon->GetModelEntry()->ToggleVisible();
           }
-          else
-          {
-            m_networkBlinkTimer += static_cast<float>(timer.GetElapsedSeconds());
-            if (m_networkBlinkTimer >= NETWORK_BLINK_TIME_SEC)
-            {
-              m_networkBlinkTimer = 0.f;
-              m_networkIcon->GetModelEntry()->ToggleVisible();
-            }
-          }
-          m_networkIsBlinking = true;
-          break;
-        case HoloIntervention::Network::CONNECTION_STATE_UNKNOWN:
-        case HoloIntervention::Network::CONNECTION_STATE_DISCONNECTED:
-        case HoloIntervention::Network::CONNECTION_STATE_CONNECTION_LOST:
-          m_networkIcon->GetModelEntry()->SetVisible(true);
-          m_networkIsBlinking = false;
-          if (m_wasNetworkConnected)
-          {
-            m_networkIcon->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
-            m_wasNetworkConnected = false;
-          }
-          break;
-        case HoloIntervention::Network::CONNECTION_STATE_CONNECTED:
-          m_networkIcon->GetModelEntry()->SetVisible(true);
-          m_networkIsBlinking = false;
-          if (!m_wasNetworkConnected)
-          {
-            m_wasNetworkConnected = true;
-            m_networkIcon->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
-          }
-          break;
+        }
+        m_networkIsBlinking = true;
+        break;
+      case HoloIntervention::Network::CONNECTION_STATE_UNKNOWN:
+      case HoloIntervention::Network::CONNECTION_STATE_DISCONNECTED:
+      case HoloIntervention::Network::CONNECTION_STATE_CONNECTION_LOST:
+        m_networkIcon->GetModelEntry()->SetVisible(true);
+        m_networkIsBlinking = false;
+        if (m_wasNetworkConnected)
+        {
+          m_networkIcon->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
+          m_wasNetworkConnected = false;
+        }
+        break;
+      case HoloIntervention::Network::CONNECTION_STATE_CONNECTED:
+        m_networkIcon->GetModelEntry()->SetVisible(true);
+        m_networkIsBlinking = false;
+        if (!m_wasNetworkConnected)
+        {
+          m_wasNetworkConnected = true;
+          m_networkIcon->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
+        }
+        break;
       }
 
       m_networkPreviousState = state;
-
-      */
     }
 
     //----------------------------------------------------------------------------

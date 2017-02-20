@@ -56,7 +56,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <WindowsNumerics.h>
 
 #ifndef SUCCEEDED
-  #define SUCCEEDED(hr) (((HRESULT)(hr)) >= 0)
+#define SUCCEEDED(hr) (((HRESULT)(hr)) >= 0)
 #endif
 
 using namespace Concurrency;
@@ -497,7 +497,7 @@ namespace HoloIntervention
       }
 
       std::shared_ptr<Network::IGTConnector> connection = m_networkSystem.GetConnection(m_connectionName);
-      if( connection == nullptr )
+      if (connection == nullptr)
       {
         Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Unable to process frames. Connection is not available.");
         return;
@@ -1333,7 +1333,7 @@ done:
             if (capFrameCount != nullptr)
             {
               std::wstringstream ss;
-              ss << std::wstring(begin(igtConnectionName), end(igtConnectionName));
+              ss << std::wstring(begin(capFrameCount), end(capFrameCount));
               try
               {
                 m_captureFrameCount = std::stoi(ss.str());
