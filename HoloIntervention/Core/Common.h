@@ -150,6 +150,8 @@ namespace HoloIntervention
   Windows::Foundation::Numerics::float3 ExtractNormal(const Windows::Foundation::Numerics::float4x4& matrix);
 
   int IsLittleEndian();
+
+  bool IsEqualInsensitive(std::wstring const& a, std::wstring const& b);
 }
 
 std::ostream& operator<<(std::ostream& out, const Windows::Foundation::Numerics::float4x4& matrix);

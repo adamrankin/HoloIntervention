@@ -33,6 +33,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "DeviceResources.h"
 
 // System includes
+#include "NetworkSystem.h"
 #include "NotificationSystem.h"
 #include "ModelRenderer.h"
 
@@ -55,12 +56,13 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <WindowsNumerics.h>
 
 #ifndef SUCCEEDED
-#define SUCCEEDED(hr) (((HRESULT)(hr)) >= 0)
+  #define SUCCEEDED(hr) (((HRESULT)(hr)) >= 0)
 #endif
 
 using namespace Concurrency;
 using namespace DirectX;
 using namespace Microsoft::WRL;
+using namespace Windows::Data::Xml::Dom;
 using namespace Windows::Foundation::Numerics;
 using namespace Windows::Foundation;
 using namespace Windows::Graphics::Imaging;
@@ -74,7 +76,6 @@ namespace
   //----------------------------------------------------------------------------
   bool ExtractPhantomToFiducialPose(float4x4& phantomFiducialPose, UWPOpenIGTLink::TransformRepository^ transformRepository, Platform::String^ from, Platform::String^ to)
   {
-    float4 origin = { 0.f, 0.f, 0.f, 1.f };
     float4x4 transformation = float4x4::identity();
     try
     {
@@ -167,10 +168,10 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    CameraRegistration::CameraRegistration(NotificationSystem& notificationSystem, Network::IGTConnector& igtConnector, Rendering::ModelRenderer& modelRenderer)
+    CameraRegistration::CameraRegistration(NotificationSystem& notificationSystem, NetworkSystem& networkSystem, Rendering::ModelRenderer& modelRenderer)
       : m_modelRenderer(modelRenderer)
       , m_notificationSystem(notificationSystem)
-      , m_igtConnector(igtConnector)
+      , m_networkSystem(networkSystem)
     {
       Init();
     }
@@ -495,20 +496,26 @@ namespace HoloIntervention
         return;
       }
 
+      std::shared_ptr<Network::IGTConnector> connection = m_networkSystem.GetConnection(m_connectionName);
+      if( connection == nullptr )
+      {
+        Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Unable to process frames. Connection is not available.");
+        return;
+      }
+
       uint64 lastMessageId(std::numeric_limits<uint64>::max());
       while (!token.is_canceled())
       {
         {
           std::lock_guard<std::mutex> guard(m_processorLock);
-          if (m_videoFrameProcessor == nullptr || !m_igtConnector.IsConnected())
+          if (m_videoFrameProcessor == nullptr || !connection->IsConnected())
           {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
             continue;
           }
 
-          UWPOpenIGTLink::TrackedFrame^ trackedFrame(nullptr);
           MediaFrameReference^ cameraFrame(m_videoFrameProcessor->GetLatestFrame());
-          if (m_igtConnector.GetTrackedFrame(l_latestTrackedFrame, &m_latestTimestamp) &&
+          if (connection->GetTrackedFrame(l_latestTrackedFrame, &m_latestTimestamp) &&
               cameraFrame != nullptr &&
               cameraFrame != l_latestCameraFrame)
           {
@@ -583,7 +590,7 @@ namespace HoloIntervention
               {
                 m_notificationSystem.RemoveMessage(lastMessageId);
               }
-              lastMessageId = m_notificationSystem.QueueMessage(L"Acquired " + m_sphereInAnchorResultFrames.size().ToString() + L"/" + NUMBER_OF_FRAMES_FOR_CALIBRATION.ToString() + " frames.");
+              lastMessageId = m_notificationSystem.QueueMessage(L"Acquired " + m_sphereInAnchorResultFrames.size().ToString() + L"/" + m_captureFrameCount.ToString() + " frames.");
             }
           }
           else
@@ -594,7 +601,7 @@ namespace HoloIntervention
         }
 
         // If we've acquired enough frames, perform the registration
-        if (m_sphereInAnchorResultFrames.size() == NUMBER_OF_FRAMES_FOR_CALIBRATION)
+        if (m_sphereInAnchorResultFrames.size() == m_captureFrameCount)
         {
           PerformLandmarkRegistration();
         }
@@ -1297,6 +1304,48 @@ done:
       catch (Platform::Exception^ e)
       {
         Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e->Message);
+      }
+
+      try
+      {
+        GetXmlDocumentFromFileAsync(L"Assets\\Data\\configuration.xml").then([this](XmlDocument ^ doc)
+        {
+          auto xpath = ref new Platform::String(L"/HoloIntervention/CameraRegistration");
+          if (doc->SelectNodes(xpath)->Length == 0)
+          {
+            throw ref new Platform::Exception(E_INVALIDARG, L"No camera registration defined in the configuration file.");
+          }
+
+          for (auto node : doc->SelectNodes(xpath))
+          {
+            // model, transform
+            if (node->Attributes->GetNamedItem(L"IGTConnection") == nullptr)
+            {
+              throw ref new Platform::Exception(E_FAIL, L"Camera registration entry does not contain IGTConnection attribute.");
+            }
+            Platform::String^ igtConnectionName = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"IGTConnection")->NodeValue);
+            if (igtConnectionName != nullptr)
+            {
+              m_connectionName = std::wstring(begin(igtConnectionName), end(igtConnectionName));
+            }
+
+            Platform::String^ capFrameCount = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"CaptureFrameCount")->NodeValue);
+            if (capFrameCount != nullptr)
+            {
+              std::wstringstream ss;
+              ss << std::wstring(begin(igtConnectionName), end(igtConnectionName));
+              try
+              {
+                m_captureFrameCount = std::stoi(ss.str());
+              }
+              catch (const std::exception&) {}
+            }
+          }
+        });
+      }
+      catch (Platform::Exception^ e)
+      {
+        Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Unable to read configuration file.");
       }
 
       m_sphereCoordinateNames[0] = ref new UWPOpenIGTLink::TransformName(L"RedSphere1", L"Reference");

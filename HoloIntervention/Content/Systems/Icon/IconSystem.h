@@ -57,6 +57,7 @@ namespace HoloIntervention
   namespace System
   {
     class IconEntry;
+    class NetworkSystem;
     class NotificationSystem;
     class RegistrationSystem;
 
@@ -71,7 +72,7 @@ namespace HoloIntervention
       virtual float GetStabilizePriority() const;
 
     public:
-      IconSystem(NotificationSystem& notificationSystem, RegistrationSystem& registrationSystem, Network::IGTConnector& igtConnector, Input::VoiceInput& voiceInput, Rendering::ModelRenderer& modelRenderer);
+      IconSystem(NotificationSystem& notificationSystem, RegistrationSystem& registrationSystem, NetworkSystem& networkSystem, Input::VoiceInput& voiceInput, Rendering::ModelRenderer& modelRenderer);
       ~IconSystem();
 
       void Update(DX::StepTimer& timer, Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
@@ -93,7 +94,7 @@ namespace HoloIntervention
       Rendering::ModelRenderer&       m_modelRenderer;
       NotificationSystem&             m_notificationSystem;
       RegistrationSystem&             m_registrationSystem;
-      Network::IGTConnector&          m_IGTConnector;
+      NetworkSystem&                  m_networkSystem;
       Input::VoiceInput&              m_voiceInput;
 
       // Icons that this subsystem manages
@@ -102,6 +103,9 @@ namespace HoloIntervention
       std::shared_ptr<IconEntry>      m_microphoneIcon = nullptr;
 
       // Network logic variables
+      std::wstring                    m_connectionName;
+      UWPOpenIGTLink::TrackedFrame^   m_frame = ref new UWPOpenIGTLink::TrackedFrame();
+      double                          m_latestTimestamp = 0.0;
       bool                            m_wasNetworkConnected = true;
       bool                            m_networkIsBlinking = true;
       Network::ConnectionState        m_networkPreviousState = Network::CONNECTION_STATE_UNKNOWN;

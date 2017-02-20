@@ -136,10 +136,13 @@
     <ClCompile Include="Content\Sound\SoundAPI.cpp">
       <Filter>Content\Sound</Filter>
     </ClCompile>
-    <ClCompile Include="Content\Systems\Splash\SplashSystem.cpp" />
     <ClCompile Include="Content\Physics\PhysicsAPI.cpp">
       <Filter>Content\Physics</Filter>
     </ClCompile>
+    <ClCompile Include="Content\Systems\Splash\SplashSystem.cpp">
+      <Filter>Content\Systems\Splash</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Systems\Network\NetworkSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Content\Sound\OmnidirectionalSound.h">
@@ -301,10 +304,13 @@
     <ClInclude Include="Content\Sound\SoundAPI.h">
       <Filter>Content\Sound</Filter>
     </ClInclude>
-    <ClInclude Include="Content\Systems\Splash\SplashSystem.h" />
     <ClInclude Include="Content\Physics\PhysicsAPI.h">
       <Filter>Content\Physics</Filter>
     </ClInclude>
+    <ClInclude Include="Content\Systems\Splash\SplashSystem.h">
+      <Filter>Content\Systems\Splash</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Systems\Network\NetworkSystem.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\LockScreenLogo.scale-200.png">
@@ -736,6 +742,9 @@
     </Filter>
     <Filter Include="Content\Rendering\ModelRenderer\DirectXTK\Shaders\Shared">
       <UniqueIdentifier>{e5233e13-6feb-4cc7-af44-36c19f22a110}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Systems\Network">
+      <UniqueIdentifier>{551d6927-82ba-4055-b2ee-76c3fd3d5093}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

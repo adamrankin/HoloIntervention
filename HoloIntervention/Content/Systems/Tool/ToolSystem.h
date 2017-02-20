@@ -43,6 +43,7 @@ namespace HoloIntervention
 
   namespace System
   {
+    class NetworkSystem;
     class NotificationSystem;
     class RegistrationSystem;
 
@@ -55,7 +56,7 @@ namespace HoloIntervention
       virtual float GetStabilizePriority() const;
 
     public:
-      ToolSystem(NotificationSystem& notificationSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer);
+      ToolSystem(NotificationSystem& notificationSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer, NetworkSystem& networkSystem);
       ~ToolSystem();
 
       std::shared_ptr<Tools::ToolEntry> GetTool(uint64 token);
@@ -64,7 +65,7 @@ namespace HoloIntervention
       void UnregisterTool(uint64 toolToken);
       void ClearTools();
 
-      void Update(UWPOpenIGTLink::TrackedFrame^ frame, const DX::StepTimer& timer, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);
+      void Update(const DX::StepTimer& timer, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);
 
       // IVoiceInput functions
       virtual void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap);
@@ -76,8 +77,11 @@ namespace HoloIntervention
       // Cached entries
       NotificationSystem&                               m_notificationSystem;
       RegistrationSystem&                               m_registrationSystem;
+      NetworkSystem&                                    m_networkSystem;
       Rendering::ModelRenderer&                         m_modelRenderer;
 
+      std::wstring                                      m_connectionName;
+      double                                            m_latestTimestamp;
       std::vector<std::shared_ptr<Tools::ToolEntry>>    m_toolEntries;
       UWPOpenIGTLink::TransformRepository^              m_transformRepository;
     };

@@ -38,11 +38,6 @@ namespace DX
 
 namespace HoloIntervention
 {
-  namespace Network
-  {
-    class IGTConnector;
-  }
-
   namespace Rendering
   {
     class SliceRenderer;
@@ -51,6 +46,7 @@ namespace HoloIntervention
 
   namespace System
   {
+    class NetworkSystem;
     class NotificationSystem;
 
     class ImagingSystem : public Sound::IVoiceInput, public IStabilizedComponent
@@ -62,10 +58,10 @@ namespace HoloIntervention
       virtual float GetStabilizePriority() const;
 
     public:
-      ImagingSystem(RegistrationSystem& registrationSystem, NotificationSystem& notificationSystem, Rendering::SliceRenderer& sliceRenderer, Rendering::VolumeRenderer& volumeRenderer, Network::IGTConnector& networkConnection);
+      ImagingSystem(RegistrationSystem& registrationSystem, NotificationSystem& notificationSystem, Rendering::SliceRenderer& sliceRenderer, Rendering::VolumeRenderer& volumeRenderer, NetworkSystem& networkSystem);
       ~ImagingSystem();
 
-      void Update(UWPOpenIGTLink::TrackedFrame^ frame, const DX::StepTimer& timer, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);
+      void Update(const DX::StepTimer& timer, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);
 
       bool HasSlice() const;
       Windows::Foundation::Numerics::float4x4 GetSlicePose() const;
@@ -84,7 +80,7 @@ namespace HoloIntervention
       // Cached variables
       NotificationSystem&                   m_notificationSystem;
       RegistrationSystem&                   m_registrationSystem;
-      Network::IGTConnector&                m_igtConnection;
+      NetworkSystem&                        m_networkSystem;
       Rendering::SliceRenderer&             m_sliceRenderer;
       Rendering::VolumeRenderer&            m_volumeRenderer;
 
@@ -92,6 +88,7 @@ namespace HoloIntervention
       UWPOpenIGTLink::TransformRepository^  m_transformRepository = ref new UWPOpenIGTLink::TransformRepository();
 
       // Slice system
+      std::wstring                          m_sliceConnectionName;
       std::wstring                          m_sliceFromCoordFrame = L"Image";
       std::wstring                          m_sliceToCoordFrame = L"HMD";
       UWPOpenIGTLink::TransformName^        m_sliceToHMDName = ref new UWPOpenIGTLink::TransformName(ref new Platform::String(m_sliceFromCoordFrame.c_str()), ref new Platform::String(m_sliceToCoordFrame.c_str()));
@@ -100,6 +97,7 @@ namespace HoloIntervention
       std::atomic_bool                      m_sliceValid = false;
 
       // Volume system
+      std::wstring                          m_volumeConnectionName;
       std::wstring                          m_volumeFromCoordFrame = L"Volume";
       std::wstring                          m_volumeToCoordFrame = L"HMD";
       UWPOpenIGTLink::TransformName^        m_volumeToHMDName = ref new UWPOpenIGTLink::TransformName(ref new Platform::String(m_volumeFromCoordFrame.c_str()), ref new Platform::String(m_volumeToCoordFrame.c_str()));

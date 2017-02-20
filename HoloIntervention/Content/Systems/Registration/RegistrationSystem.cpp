@@ -134,11 +134,11 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    RegistrationSystem::RegistrationSystem(Network::IGTConnector& igtConnector, Physics::PhysicsAPI& physicsAPI, NotificationSystem& notificationSystem, Rendering::ModelRenderer& modelRenderer)
+    RegistrationSystem::RegistrationSystem(NetworkSystem& networkSystem, Physics::PhysicsAPI& physicsAPI, NotificationSystem& notificationSystem, Rendering::ModelRenderer& modelRenderer)
       : m_notificationSystem(notificationSystem)
       , m_modelRenderer(modelRenderer)
       , m_physicsAPI(physicsAPI)
-      , m_cameraRegistration(std::make_shared<CameraRegistration>(notificationSystem, igtConnector, modelRenderer))
+      , m_cameraRegistration(std::make_shared<CameraRegistration>(notificationSystem, networkSystem, modelRenderer))
     {
       m_regAnchorModelId = m_modelRenderer.AddModel(REGISTRATION_ANCHOR_MODEL_FILENAME);
       if (m_regAnchorModelId != INVALID_TOKEN)

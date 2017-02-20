@@ -43,7 +43,7 @@ namespace HoloIntervention
   {
     struct VolumeRendererConstantBuffer
     {
-      DirectX::XMFLOAT4     viewportDimensions;
+      DirectX::XMFLOAT4 viewportDimensions;
     };
     static_assert((sizeof(VolumeRendererConstantBuffer) % (sizeof(float) * 4)) == 0, "Volume constant buffer size must be 16-byte aligned (16 bytes is the length of four floats).");
 
@@ -72,7 +72,7 @@ namespace HoloIntervention
       void SetDesiredVolumePose(uint64 volumeToken, const Windows::Foundation::Numerics::float4x4& pose);
       Windows::Foundation::Numerics::float3 GetVolumeVelocity(uint64 volumeToken) const;
 
-      void Update(UWPOpenIGTLink::TrackedFrame^ frame, const DX::StepTimer& timer, DX::CameraResources* cameraResources, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem, Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
+      void Update(const DX::StepTimer& timer, DX::CameraResources* cameraResources, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem, Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
       void Render();
 
       // D3D device related controls

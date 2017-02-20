@@ -35,6 +35,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 // System includes
 #include "RegistrationSystem.h"
 #include "NotificationSystem.h"
+#include "NetworkSystem.h"
 
 using namespace Concurrency;
 using namespace Windows::Data::Xml::Dom;
@@ -128,19 +129,21 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    ToolSystem::ToolSystem(NotificationSystem& notificationSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer)
+    ToolSystem::ToolSystem(NotificationSystem& notificationSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer, NetworkSystem& networkSystem)
       : m_notificationSystem(notificationSystem)
       , m_registrationSystem(registrationSystem)
       , m_modelRenderer(modelRenderer)
       , m_transformRepository(ref new UWPOpenIGTLink::TransformRepository())
+      , m_networkSystem(networkSystem)
     {
       try
       {
         InitializeTransformRepositoryAsync(m_transformRepository, L"Assets\\Data\\configuration.xml");
       }
-      catch (Platform::Exception^ e)
+      catch (Platform::Exception^)
       {
-        m_notificationSystem.QueueMessage(e->Message);
+        m_notificationSystem.QueueMessage("Unable to initialize tool system.");
+        return;
       }
 
       try
@@ -153,9 +156,9 @@ namespace HoloIntervention
           });
         });
       }
-      catch (Platform::Exception^ e)
+      catch (Platform::Exception^)
       {
-        m_notificationSystem.QueueMessage(e->Message);
+        m_notificationSystem.QueueMessage("Unable to initialize tool system.");
       }
     }
 
@@ -206,8 +209,19 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ToolSystem::Update(UWPOpenIGTLink::TrackedFrame^ frame, const DX::StepTimer& timer, SpatialCoordinateSystem^ hmdCoordinateSystem)
+    void ToolSystem::Update(const DX::StepTimer& timer, SpatialCoordinateSystem^ hmdCoordinateSystem)
     {
+      UWPOpenIGTLink::TrackedFrame^ frame(nullptr);
+      std::shared_ptr<Network::IGTConnector> connection = m_networkSystem.GetConnection(m_connectionName);
+      if (connection == nullptr)
+      {
+        return;
+      }
+      if (!connection->GetTrackedFrame(frame, &m_latestTimestamp))
+      {
+        return;
+      }
+
       // Update the transform repository with the latest registration
       float4x4 referenceToHMD(float4x4::identity());
       if (!m_registrationSystem.GetReferenceToCoordinateSystemTransformation(hmdCoordinateSystem, referenceToHMD))

@@ -212,6 +212,28 @@ namespace HoloIntervention
     short a = 1;
     return ((char*)&a)[0];
   }
+
+  namespace
+  {
+    //----------------------------------------------------------------------------
+    bool icompare_pred(std::wstring::value_type a, std::wstring::value_type b)
+    {
+      return ::tolower(a) == ::tolower(b);
+    }
+  }
+
+  //----------------------------------------------------------------------------
+  bool IsEqualInsensitive(std::wstring const& a, std::wstring const& b)
+  {
+    if (a.length() == b.length())
+    {
+      return std::equal(b.begin(), b.end(), a.begin(), icompare_pred);
+    }
+    else
+    {
+      return false;
+    }
+  }
 }
 
 //----------------------------------------------------------------------------

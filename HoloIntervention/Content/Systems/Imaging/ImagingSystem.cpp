@@ -32,6 +32,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "IGTConnector.h"
 
 // System includes
+#include "NetworkSystem.h"
 #include "NotificationSystem.h"
 #include "RegistrationSystem.h"
 
@@ -177,12 +178,12 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    ImagingSystem::ImagingSystem(RegistrationSystem& registrationSystem, NotificationSystem& notificationSystem, Rendering::SliceRenderer& sliceRenderer, Rendering::VolumeRenderer& volumeRenderer, Network::IGTConnector& networkConnection)
+    ImagingSystem::ImagingSystem(RegistrationSystem& registrationSystem, NotificationSystem& notificationSystem, Rendering::SliceRenderer& sliceRenderer, Rendering::VolumeRenderer& volumeRenderer, NetworkSystem& networkSystem)
       : m_notificationSystem(notificationSystem)
       , m_registrationSystem(registrationSystem)
       , m_sliceRenderer(sliceRenderer)
       , m_volumeRenderer(volumeRenderer)
-      , m_igtConnection(networkConnection)
+      , m_networkSystem(networkSystem)
     {
       try
       {
@@ -200,7 +201,7 @@ namespace HoloIntervention
       {
         GetXmlDocumentFromFileAsync(L"Assets\\Data\\configuration.xml").then([this](XmlDocument ^ doc)
         {
-          auto fromToFunction = [this, doc](Platform::String ^ xpath, std::wstring & m_from, std::wstring & m_to, UWPOpenIGTLink::TransformName^& name)
+          auto fromToFunction = [this, doc](Platform::String ^ xpath, std::wstring & m_from, std::wstring & m_to, UWPOpenIGTLink::TransformName^& name, std::wstring & connectionName)
           {
             if (doc->SelectNodes(xpath)->Length != 1)
             {
@@ -221,13 +222,16 @@ namespace HoloIntervention
               m_to = std::wstring(toAttribute->Data());
               name = ref new UWPOpenIGTLink::TransformName(fromAttribute, toAttribute);
             }
+
+            Platform::String^ igtConnection = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"To")->NodeValue);
+            if (igtConnection != nullptr)
+            {
+              connectionName = std::wstring(begin(igtConnection), end(igtConnection));
+            }
           };
 
-          fromToFunction(L"/HoloIntervention/VolumeRendering", m_volumeFromCoordFrame, m_volumeToCoordFrame, m_volumeToHMDName);
-          fromToFunction(L"/HoloIntervention/SliceRendering", m_sliceFromCoordFrame, m_sliceToCoordFrame, m_sliceToHMDName);
-
-          // TODO : two connections, one for image, one for volume
-          m_igtConnection.SetEmbeddedImageTransformName(ref new Transform);
+          fromToFunction(L"/HoloIntervention/VolumeRendering", m_volumeFromCoordFrame, m_volumeToCoordFrame, m_volumeToHMDName, m_volumeConnectionName);
+          fromToFunction(L"/HoloIntervention/SliceRendering", m_sliceFromCoordFrame, m_sliceToCoordFrame, m_sliceToHMDName, m_sliceConnectionName);
         });
       }
       catch (Platform::Exception^ e)
@@ -243,19 +247,40 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ImagingSystem::Update(UWPOpenIGTLink::TrackedFrame^ frame, const DX::StepTimer& timer, SpatialCoordinateSystem^ coordSystem)
+    void ImagingSystem::Update(const DX::StepTimer& timer, SpatialCoordinateSystem^ coordSystem)
     {
-      m_transformRepository->SetTransforms(frame);
-
-      if (frame->HasImage())
+      UWPOpenIGTLink::TrackedFrame^ frame(nullptr);
+      std::shared_ptr<Network::IGTConnector> sliceConnection = m_networkSystem.GetConnection(m_sliceConnectionName);
+      if (sliceConnection == nullptr)
       {
-        if (frame->Dimensions[2] == 1)
+        return;
+      }
+      if (sliceConnection->GetTrackedFrame(frame, &m_lastSliceTimestamp))
+      {
+        if (frame->HasImage())
         {
-          Process2DFrame(frame, coordSystem);
+          if (frame->Dimensions[2] == 1)
+          {
+            m_transformRepository->SetTransforms(frame);
+            Process2DFrame(frame, coordSystem);
+          }
         }
-        else if (frame->Dimensions[2] > 1)
+      }
+
+      std::shared_ptr<Network::IGTConnector> volumeConnection = m_networkSystem.GetConnection(m_volumeConnectionName);
+      if (volumeConnection == nullptr)
+      {
+        return;
+      }
+      if (volumeConnection->GetTrackedFrame(frame, &m_lastVolumeTimestamp))
+      {
+        if (frame->HasImage())
         {
-          Process3DFrame(frame, coordSystem);
+          if (frame->Dimensions[2] > 1)
+          {
+            m_transformRepository->SetTransforms(frame);
+            Process3DFrame(frame, coordSystem);
+          }
         }
       }
     }

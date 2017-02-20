@@ -51,13 +51,10 @@ namespace HoloIntervention
   {
     class ModelEntry;
   }
-  namespace Network
-  {
-    class IGTConnector;
-  }
 
   namespace System
   {
+    class NetworkSystem;
     class NotificationSystem;
 
     class RegistrationSystem : public Sound::IVoiceInput, public IStabilizedComponent
@@ -70,7 +67,7 @@ namespace HoloIntervention
       virtual float GetStabilizePriority() const;
 
     public:
-      RegistrationSystem(Network::IGTConnector& igtConnector,
+      RegistrationSystem(NetworkSystem& networkSystem,
                          Physics::PhysicsAPI& physicsAPI,
                          NotificationSystem& notificationSystem,
                          Rendering::ModelRenderer& modelRenderer);

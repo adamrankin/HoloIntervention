@@ -1,42 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
 <HoloIntervention>
   <!-- HMD coordinate frame is the HoloLens rendering coordinate frame -->
+  <!-- Reference coordinate frame is the reference coordinate system of the magnetic tracker -->
   <Tools>
     <Tool 
       Model="hemisphere_stylus" 
       Transform="StylusTipToHMD"
-      LerpRate="12.0"
-     />
+      LerpRate="12.0" />
   </Tools>
 
   <CoordinateDefinitions>
   </CoordinateDefinitions>
+
+  <CameraRegistration
+    IGTConnection="2DImage"
+    CaptureFrameCount="50" />
 
   <IGTConnections>
     <Connection
       Name="2DImage"
       Host="192.168.0.103"
       Port="18944"
-      EmbeddedImageTransformName="ImageToReference"
-      />
-    <Connection
+      ReconnectOnDrop="true"
+      EmbeddedImageTransformName="ImageToReference" />
+    <xConnection
       Name="3DImage"
       Host="192.168.0.103"
       Port="18945"
-      EmbeddedImageTransformName="VolumeToReference"
-      />
+      ReconnectOnDrop="true"
+      EmbeddedImageTransformName="VolumeToReference" />
   </IGTConnections>
 
   <SliceRendering 
     From="Image" 
     To="HMD"
-    IGTConnection="2DImage"
-    />
+    IGTConnection="2DImage" />
 
   <VolumeRendering 
     From="Volume" 
     To="HMD"
-    IGTConnection="3DImage"
-    />
+    IGTConnection="3DImage" />
 
 </HoloIntervention>

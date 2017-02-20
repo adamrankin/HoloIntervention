@@ -37,10 +37,6 @@ namespace igtl
 
 namespace HoloIntervention
 {
-  namespace Input
-  {
-    class VoiceInput;
-  }
   namespace System
   {
     class NotificationSystem;
@@ -58,24 +54,29 @@ namespace HoloIntervention
       CONNECTION_STATE_CONNECTED
     };
 
-    class IGTConnector : public Sound::IVoiceInput, public IEngineComponent
+    class IGTConnector : public IEngineComponent
     {
     public:
-      IGTConnector(System::NotificationSystem& notificationSystem, Input::VoiceInput& input);
+      IGTConnector(System::NotificationSystem& notificationSystem);
       ~IGTConnector();
 
       UWPOpenIGTLink::TransformName^ GetEmbeddedImageTransformName() const;
       void SetEmbeddedImageTransformName(UWPOpenIGTLink::TransformName^ name);
 
+      std::wstring GetConnectionName() const;
+      void SetConnectionName(const std::wstring& name);
+
       /// Connect to the server specified by SetHostname() and SetPort()
       /// If connected to a server, disconnects first.
-      Concurrency::task<bool> ConnectAsync(double timeoutSec = CONNECT_TIMEOUT_SEC, Concurrency::task_options& options = Concurrency::task_options());
+      Concurrency::task<bool> ConnectAsync(bool reconnectOnDrop, double timeoutSec = CONNECT_TIMEOUT_SEC, Concurrency::task_options& options = Concurrency::task_options());
 
       void Disconnect();
       bool IsConnected();
       ConnectionState GetConnectionState() const;
 
-      Concurrency::task<std::vector<std::wstring>> FindServersAsync();
+      void SetReconnectOnDrop(bool arg);
+      bool GetReconnectOnDrop() const;
+
       void SetHostname(const std::wstring& hostname);
       std::wstring GetHostname() const;
 
@@ -84,16 +85,13 @@ namespace HoloIntervention
 
       bool GetTrackedFrame(UWPOpenIGTLink::TrackedFrame^& frame, double* latestTimestamp = nullptr);
 
-      /// IVoiceInput functions
-      void RegisterVoiceCallbacks(Sound::VoiceInputCallbackMap& callbackMap);
-
     protected:
       Concurrency::task<void> KeepAliveAsync();
 
     protected:
       // Cached entries
       System::NotificationSystem&                   m_notificationSystem;
-      Input::VoiceInput&                            m_voiceInput;
+      std::wstring                                  m_connectionName;
       std::wstring                                  m_accumulatedDictationResult;
       uint64                                        m_dictationMatcherToken;
       UWPOpenIGTLink::IGTLinkClient^                m_igtClient = ref new UWPOpenIGTLink::IGTLinkClient();

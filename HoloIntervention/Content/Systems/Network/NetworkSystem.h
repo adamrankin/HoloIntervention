@@ -1,4 +1,3 @@
-#pragma once
 /*====================================================================
 Copyright(c) 2016 Adam Rankin
 
@@ -22,55 +21,57 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 ====================================================================*/
 
+#pragma once
+
 // Local includes
 #include "IEngineComponent.h"
+#include "IVoiceInput.h"
 
-// WinRT includes
+// Network includes
+#include "IGTConnector.h"
+
+// OS includes
 #include <ppltasks.h>
-
-// STL includes
-#include <deque>
 
 namespace HoloIntervention
 {
+  namespace Input
+  {
+    class VoiceInput;
+  }
+
   namespace Network
   {
     class IGTConnector;
   }
 
-  class Log : public IEngineComponent
+  namespace System
   {
-  public:
-    enum LogLevelType
+    class NotificationSystem;
+
+    class NetworkSystem : public IEngineComponent, public Sound::IVoiceInput
     {
-      LOG_LEVEL_ERROR = 1,
-      LOG_LEVEL_WARNING = 2,
-      LOG_LEVEL_INFO = 3,
-      LOG_LEVEL_DEBUG = 4,
-      LOG_LEVEL_TRACE = 5,
+    public:
+      typedef std::vector<std::shared_ptr<Network::IGTConnector>> ConnectorList;
 
-      LOG_LEVEL_DEFAULT = LOG_LEVEL_INFO,
+    public:
+      NetworkSystem(System::NotificationSystem& notificationSystem, Input::VoiceInput& voiceInput);
+      virtual ~NetworkSystem();
+
+      bool IsConnected() const;
+      Concurrency::task<bool> InitAsync();
+      std::shared_ptr<Network::IGTConnector> GetConnection(const std::wstring& name) const;
+
+      /// IVoiceInput functions
+      void RegisterVoiceCallbacks(Sound::VoiceInputCallbackMap& callbackMap);
+
+    protected:
+      Concurrency::task<std::vector<std::wstring>> FindServersAsync();
+
+    protected:
+      System::NotificationSystem&   m_notificationSystem;
+      Input::VoiceInput&            m_voiceInput;
+      ConnectorList                 m_connectors;
     };
-
-  public:
-    static Log& instance();
-
-    void LogMessage(LogLevelType level, Platform::String^ message);
-    void LogMessage(LogLevelType level, const std::string& message);
-    void LogMessage(LogLevelType level, const std::wstring& message);
-
-  protected:
-    Concurrency::task<void> DataSenderAsync();
-    std::wstring LevelToString(LogLevelType type);
-
-  protected:
-    Log();
-    ~Log();
-
-  protected:
-    Concurrency::cancellation_token_source            m_tokenSource;
-
-    mutable std::mutex                                m_sendListMutex;
-    std::deque<std::pair<LogLevelType, std::wstring>> m_sendList;
-  };
+  }
 }

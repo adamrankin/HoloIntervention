@@ -29,6 +29,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "StepTimer.h"
 
 // System includes
+#include "NetworkSystem.h"
 #include "NotificationSystem.h"
 #include "RegistrationSystem.h"
 
@@ -85,11 +86,11 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    IconSystem::IconSystem(NotificationSystem& notificationSystem, RegistrationSystem& registrationSystem, Network::IGTConnector& igtConnector, Input::VoiceInput& voiceInput, Rendering::ModelRenderer& modelRenderer)
+    IconSystem::IconSystem(NotificationSystem& notificationSystem, RegistrationSystem& registrationSystem, NetworkSystem& networkSystem, Input::VoiceInput& voiceInput, Rendering::ModelRenderer& modelRenderer)
       : m_modelRenderer(modelRenderer)
       , m_notificationSystem(notificationSystem)
       , m_registrationSystem(registrationSystem)
-      , m_IGTConnector(igtConnector)
+      , m_networkSystem(networkSystem)
       , m_voiceInput(voiceInput)
     {
       // Create network icon
@@ -231,50 +232,55 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void IconSystem::ProcessNetworkLogic(DX::StepTimer& timer)
     {
-      auto state = m_IGTConnector.GetConnectionState();
+      // TODO how to show multiple connection icons?
+
+      /*
+      auto state = m_networkSystem.GetConnectionState();
 
       switch (state)
       {
-      case HoloIntervention::Network::CONNECTION_STATE_CONNECTING:
-      case HoloIntervention::Network::CONNECTION_STATE_DISCONNECTING:
-        if (m_networkPreviousState != state)
-        {
-          m_networkBlinkTimer = 0.f;
-        }
-        else
-        {
-          m_networkBlinkTimer += static_cast<float>(timer.GetElapsedSeconds());
-          if (m_networkBlinkTimer >= NETWORK_BLINK_TIME_SEC)
+        case HoloIntervention::Network::CONNECTION_STATE_CONNECTING:
+        case HoloIntervention::Network::CONNECTION_STATE_DISCONNECTING:
+          if (m_networkPreviousState != state)
           {
             m_networkBlinkTimer = 0.f;
-            m_networkIcon->GetModelEntry()->ToggleVisible();
           }
-        }
-        m_networkIsBlinking = true;
-        break;
-      case HoloIntervention::Network::CONNECTION_STATE_UNKNOWN:
-      case HoloIntervention::Network::CONNECTION_STATE_DISCONNECTED:
-      case HoloIntervention::Network::CONNECTION_STATE_CONNECTION_LOST:
-        m_networkIcon->GetModelEntry()->SetVisible(true);
-        m_networkIsBlinking = false;
-        if (m_wasNetworkConnected)
-        {
-          m_networkIcon->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
-          m_wasNetworkConnected = false;
-        }
-        break;
-      case HoloIntervention::Network::CONNECTION_STATE_CONNECTED:
-        m_networkIcon->GetModelEntry()->SetVisible(true);
-        m_networkIsBlinking = false;
-        if (!m_wasNetworkConnected)
-        {
-          m_wasNetworkConnected = true;
-          m_networkIcon->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
-        }
-        break;
+          else
+          {
+            m_networkBlinkTimer += static_cast<float>(timer.GetElapsedSeconds());
+            if (m_networkBlinkTimer >= NETWORK_BLINK_TIME_SEC)
+            {
+              m_networkBlinkTimer = 0.f;
+              m_networkIcon->GetModelEntry()->ToggleVisible();
+            }
+          }
+          m_networkIsBlinking = true;
+          break;
+        case HoloIntervention::Network::CONNECTION_STATE_UNKNOWN:
+        case HoloIntervention::Network::CONNECTION_STATE_DISCONNECTED:
+        case HoloIntervention::Network::CONNECTION_STATE_CONNECTION_LOST:
+          m_networkIcon->GetModelEntry()->SetVisible(true);
+          m_networkIsBlinking = false;
+          if (m_wasNetworkConnected)
+          {
+            m_networkIcon->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
+            m_wasNetworkConnected = false;
+          }
+          break;
+        case HoloIntervention::Network::CONNECTION_STATE_CONNECTED:
+          m_networkIcon->GetModelEntry()->SetVisible(true);
+          m_networkIsBlinking = false;
+          if (!m_wasNetworkConnected)
+          {
+            m_wasNetworkConnected = true;
+            m_networkIcon->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
+          }
+          break;
       }
 
       m_networkPreviousState = state;
+
+      */
     }
 
     //----------------------------------------------------------------------------

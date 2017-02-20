@@ -267,7 +267,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void VolumeRenderer::Update(UWPOpenIGTLink::TrackedFrame^ frame, const DX::StepTimer& timer, DX::CameraResources* cameraResources, SpatialCoordinateSystem^ hmdCoordinateSystem, SpatialPointerPose^ headPose)
+    void VolumeRenderer::Update(const DX::StepTimer& timer, DX::CameraResources* cameraResources, SpatialCoordinateSystem^ hmdCoordinateSystem, SpatialPointerPose^ headPose)
     {
       if (m_cameraResources != cameraResources)
       {
@@ -282,7 +282,6 @@ namespace HoloIntervention
 
       for (auto& volEntry : m_volumes)
       {
-        volEntry->SetFrame(frame);
         volEntry->Update(timer);
       }
     }

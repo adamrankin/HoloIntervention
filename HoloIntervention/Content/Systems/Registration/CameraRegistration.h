@@ -68,6 +68,7 @@ namespace HoloIntervention
 
   namespace System
   {
+    class NetworkSystem;
     class NotificationSystem;
 
     class CameraRegistration : public IStabilizedComponent
@@ -103,7 +104,7 @@ namespace HoloIntervention
       virtual float GetStabilizePriority() const;
 
     public:
-      CameraRegistration(NotificationSystem& notificationSystem, Network::IGTConnector& igtConnector, Rendering::ModelRenderer& modelRenderer);
+      CameraRegistration(NotificationSystem& notificationSystem, NetworkSystem& networkSystem, Rendering::ModelRenderer& modelRenderer);
       ~CameraRegistration();
 
       void Update(Platform::IBox<Windows::Foundation::Numerics::float4x4>^ anchorToRequestedBox);
@@ -147,7 +148,7 @@ namespace HoloIntervention
       // Cached entries
       Rendering::ModelRenderer&                                             m_modelRenderer;
       NotificationSystem&                                                   m_notificationSystem;
-      Network::IGTConnector&                                                m_igtConnector;
+      NetworkSystem&                                                        m_networkSystem;
 
       std::function<void(Windows::Foundation::Numerics::float4x4)>          m_completeCallback;
       mutable std::mutex                                                    m_processorLock;
@@ -170,8 +171,10 @@ namespace HoloIntervention
       Windows::Media::Capture::Frames::MediaFrameReference^                 m_currentFrame = nullptr;
       Windows::Media::Capture::Frames::MediaFrameReference^                 m_nextFrame = nullptr;
       DetectionFrames                                                       m_sphereInAnchorResultFrames;
+      uint32                                                                m_captureFrameCount = 20;
 
       // IGT link
+      std::wstring                                                          m_connectionName;
       UWPOpenIGTLink::TransformRepository^                                  m_transformRepository = ref new UWPOpenIGTLink::TransformRepository();
       std::atomic_bool                                                      m_transformsAvailable = false;
       double                                                                m_latestTimestamp = 0.0;
@@ -189,7 +192,6 @@ namespace HoloIntervention
       std::shared_ptr<LandmarkRegistration>                                 m_landmarkRegistration = std::make_shared<LandmarkRegistration>();
 
       static const uint32                                                   PHANTOM_SPHERE_COUNT = 5;
-      static const uint32                                                   NUMBER_OF_FRAMES_FOR_CALIBRATION = 50;
       static const float                                                    VISUALIZATION_SPHERE_RADIUS;
     };
   }

@@ -47,6 +47,7 @@ namespace HoloIntervention
     class GazeSystem;
     class IconSystem;
     class ImagingSystem;
+    class NetworkSystem;
     class NotificationSystem;
     class RegistrationSystem;
     class SplashSystem;
@@ -106,6 +107,7 @@ namespace HoloIntervention
     System::GazeSystem& GetGazeSystem();
     System::IconSystem& GetIconSystem();
     System::ImagingSystem& GetImagingSystem();
+    System::NetworkSystem& GetNetworkSystem();
     System::NotificationSystem& GetNotificationsSystem();
     System::RegistrationSystem& GetRegistrationSystem();
     System::ToolSystem& GetToolSystem();
@@ -116,9 +118,6 @@ namespace HoloIntervention
 
     // Provide access to the sound manager
     Sound::SoundAPI& GetSoundAPI();
-
-    // Provide access to the network link
-    Network::IGTConnector& GetIGTLink();
 
     // Provide access to the renderers
     bool HasModelRenderer() const;
@@ -164,11 +163,6 @@ namespace HoloIntervention
     std::unique_ptr<Input::SpatialInput>                  m_spatialInput;
     std::unique_ptr<Input::VoiceInput>                    m_voiceInput;
 
-    // Interface that manages a network connection to an IGT link server
-    std::unique_ptr<Network::IGTConnector>                m_IGTConnector;
-    UWPOpenIGTLink::TrackedFrame^                         m_latestFrame;
-    double                                                m_latestTimestamp;
-
     // Engine state
     std::atomic_bool                                      m_engineReady = false;
 
@@ -197,6 +191,7 @@ namespace HoloIntervention
     Windows::Perception::Spatial::SpatialLocatability     m_locatability;
 
     // System pointers
+    std::shared_ptr<System::NetworkSystem>                m_networkSystem;
     std::unique_ptr<System::GazeSystem>                   m_gazeSystem;
     std::unique_ptr<System::IconSystem>                   m_iconSystem;
     std::unique_ptr<System::ImagingSystem>                m_imagingSystem;

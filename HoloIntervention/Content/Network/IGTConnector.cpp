@@ -24,6 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "pch.h"
 #include "IGTConnector.h"
+#include "Log.h"
 #include "NotificationSystem.h"
 #include "VoiceInput.h"
 
@@ -58,26 +59,9 @@ namespace HoloIntervention
     const uint32 IGTConnector::KEEP_ALIVE_INTERVAL_MSEC = 1000;
 
     //----------------------------------------------------------------------------
-    IGTConnector::IGTConnector(System::NotificationSystem& notificationSystem, Input::VoiceInput& input)
+    IGTConnector::IGTConnector(System::NotificationSystem& notificationSystem)
       : m_notificationSystem(notificationSystem)
-      , m_voiceInput(input)
     {
-      /*
-      disabled, currently crashes
-      FindServersAsync().then([this](task<std::vector<std::wstring>> findServerTask)
-      {
-        std::vector<std::wstring> servers;
-        try
-        {
-          servers = findServerTask.get();
-        }
-        catch (const std::exception& e)
-        {
-          Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, std::string("IGTConnector failed to find servers: ") + e.what());
-        }
-      });
-      */
-
       m_componentReady = true;
     }
 
@@ -99,7 +83,19 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<bool> IGTConnector::ConnectAsync(double timeoutSec, task_options& options)
+    std::wstring IGTConnector::GetConnectionName() const
+    {
+      return m_connectionName;
+    }
+
+    //----------------------------------------------------------------------------
+    void IGTConnector::SetConnectionName(const std::wstring& name)
+    {
+      m_connectionName = name;
+    }
+
+    //----------------------------------------------------------------------------
+    task<bool> IGTConnector::ConnectAsync(bool keepAlive, double timeoutSec, task_options& options)
     {
       m_connectionState = CONNECTION_STATE_CONNECTING;
 
@@ -122,6 +118,20 @@ namespace HoloIntervention
         if (result)
         {
           m_connectionState = CONNECTION_STATE_CONNECTED;
+          if (result)
+          {
+            KeepAliveAsync().then([this](task<void> keepAliveTask)
+            {
+              try
+              {
+                keepAliveTask.wait();
+              }
+              catch (const std::exception& e)
+              {
+                Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, std::string("KeepAliveTask exception: ") + e.what());
+              }
+            });
+          }
         }
         else
         {
@@ -135,6 +145,8 @@ namespace HoloIntervention
     void IGTConnector::Disconnect()
     {
       m_igtClient->Disconnect();
+      m_keepAliveTokenSource.cancel();
+      m_keepAliveTokenSource = cancellation_token_source();
       m_connectionState = CONNECTION_STATE_DISCONNECTED;
     }
 
@@ -151,58 +163,15 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<std::vector<std::wstring>> IGTConnector::FindServersAsync()
+    void IGTConnector::SetReconnectOnDrop(bool arg)
     {
-      return create_task([this]()
-      {
-        std::vector<std::wstring> results;
+      m_reconnectOnDrop = arg;
+    }
 
-        auto hostNames = NetworkInformation::GetHostNames();
-
-        for (auto host : hostNames)
-        {
-          if (host->Type == HostNameType::Ipv4)
-          {
-            std::wstring hostIP(host->ToString()->Data());
-            std::wstring machineIP = hostIP.substr(hostIP.find_last_of(L'.') + 1);
-            std::wstring prefix = hostIP.substr(0, hostIP.find_last_of(L'.'));
-
-            // Given a subnet, ping all other IPs
-            for (int i = 0; i < 256; ++i)
-            {
-              std::wstringstream ss;
-              ss << i;
-              if (ss.str() == machineIP)
-              {
-                continue;
-              }
-
-              UWPOpenIGTLink::IGTLinkClient^ client = ref new UWPOpenIGTLink::IGTLinkClient();
-              client->ServerHost = ref new Platform::String((prefix + L"." + ss.str()).c_str());
-              client->ServerPort = 18944;
-
-              task<bool> connectTask = create_task(client->ConnectAsync(0.5));
-              bool result(false);
-              try
-              {
-                result = connectTask.get();
-              }
-              catch (const std::exception&)
-              {
-                continue;
-              }
-
-              if (result)
-              {
-                client->Disconnect();
-                results.push_back(prefix + L"." + ss.str());
-              }
-            }
-          }
-        }
-
-        return results;
-      });
+    //----------------------------------------------------------------------------
+    bool IGTConnector::GetReconnectOnDrop() const
+    {
+      return m_reconnectOnDrop;
     }
 
     //----------------------------------------------------------------------------
@@ -245,80 +214,6 @@ namespace HoloIntervention
       frame = latestFrame;
       *latestTimestamp = frame->Timestamp;
       return true;
-    }
-
-    //----------------------------------------------------------------------------
-    void IGTConnector::RegisterVoiceCallbacks(Sound::VoiceInputCallbackMap& callbackMap)
-    {
-      callbackMap[L"connect"] = [this](SpeechRecognitionResult ^ result)
-      {
-        uint64 connectMessageId = m_notificationSystem.QueueMessage(L"Connecting...");
-        ConnectAsync(4.0).then([this, connectMessageId](bool result)
-        {
-          m_notificationSystem.RemoveMessage(connectMessageId);
-          if (result)
-          {
-            m_notificationSystem.QueueMessage(L"Connection successful.");
-          }
-          else
-          {
-            m_notificationSystem.QueueMessage(L"Connection failed.");
-          }
-
-          if (result)
-          {
-            KeepAliveAsync().then([this](task<void> keepAliveTask)
-            {
-              try
-              {
-                keepAliveTask.wait();
-              }
-              catch (const std::exception& e)
-              {
-                Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, std::string("KeepAliveTask exception: ") + e.what());
-              }
-            });
-          }
-        });
-      };
-
-      callbackMap[L"set IP"] = [this](SpeechRecognitionResult ^ result)
-      {
-        m_dictationMatcherToken = m_voiceInput.RegisterDictationMatcher([this](const std::wstring & text)
-        {
-          bool matchedText(false);
-
-          m_accumulatedDictationResult += text;
-          OutputDebugStringW((m_accumulatedDictationResult + L"\n").c_str());
-
-          if (matchedText)
-          {
-            m_voiceInput.RemoveDictationMatcher(m_dictationMatcherToken);
-            m_voiceInput.SwitchToCommandRecognitionAsync();
-            return true;
-          }
-          else
-          {
-            return false;
-          }
-        });
-        m_voiceInput.SwitchToDictationRecognitionAsync();
-        call_after([this]()
-        {
-          m_voiceInput.RemoveDictationMatcher(m_dictationMatcherToken);
-          m_dictationMatcherToken = INVALID_TOKEN;
-          m_voiceInput.SwitchToCommandRecognitionAsync();
-          m_accumulatedDictationResult.clear();
-        }, DICTATION_TIMEOUT_DELAY_MSEC);
-      };
-
-      callbackMap[L"disconnect"] = [this](SpeechRecognitionResult ^ result)
-      {
-        m_keepAliveTokenSource.cancel();
-
-        Disconnect();
-        m_notificationSystem.QueueMessage(L"Disconnected.");
-      };
     }
 
     //----------------------------------------------------------------------------
