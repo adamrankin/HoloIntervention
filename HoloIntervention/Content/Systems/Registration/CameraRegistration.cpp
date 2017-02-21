@@ -47,9 +47,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "IGTConnector.h"
 
 // OpenCV includes
+#include <opencv2/calib3d.hpp>
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
-#include <opencv2/calib3d.hpp>
 
 // Unnecessary, but eliminates intellisense errors
 #include "Log.h"
@@ -756,7 +756,7 @@ namespace HoloIntervention
           cv::GaussianBlur(mask, mask, cv::Size(9, 9), 2, 2);
 
           // Apply the Hough Transform to find the circles
-          cv::HoughCircles(mask, circles, CV_HOUGH_GRADIENT, 2, mask.rows / 16, 255, 30, 30, 60);
+          cv::HoughCircles(mask, circles, CV_HOUGH_GRADIENT, 2, mask.rows / 16, 255, 30, 15, 60);
 
           if (circles.size() == PHANTOM_SPHERE_COUNT)
           {

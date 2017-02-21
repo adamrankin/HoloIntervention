@@ -575,7 +575,9 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="Assets\Data\configuration.xml" />
+    <Xml Include="Assets\Data\configuration.xml">
+      <SubType>Designer</SubType>
+    </Xml>
   </ItemGroup>
   <ItemGroup>
     <Text Include="Backlog.txt" />

@@ -103,28 +103,6 @@ namespace HoloIntervention
     // Global access to the current frame number
     uint64 GetCurrentFrameNumber() const;
 
-    // Provide access to the logic systems
-    System::GazeSystem& GetGazeSystem();
-    System::IconSystem& GetIconSystem();
-    System::ImagingSystem& GetImagingSystem();
-    System::NetworkSystem& GetNetworkSystem();
-    System::NotificationSystem& GetNotificationsSystem();
-    System::RegistrationSystem& GetRegistrationSystem();
-    System::ToolSystem& GetToolSystem();
-    System::SplashSystem& GetSplashSystem();
-
-    // Provide access to the physics system
-    Physics::PhysicsAPI& GetSurfaceAPI();
-
-    // Provide access to the sound manager
-    Sound::SoundAPI& GetSoundAPI();
-
-    // Provide access to the renderers
-    bool HasModelRenderer() const;
-    Rendering::ModelRenderer& GetModelRenderer();
-    Rendering::SliceRenderer& GetSliceRenderer();
-    Rendering::VolumeRenderer& GetVolumeRenderer();
-
     // IDeviceNotify
     virtual void OnDeviceLost();
     virtual void OnDeviceRestored();
@@ -164,6 +142,7 @@ namespace HoloIntervention
     std::unique_ptr<Input::VoiceInput>                    m_voiceInput;
 
     // Engine state
+    std::atomic_bool                                      m_engineBuilt = false;
     std::atomic_bool                                      m_engineReady = false;
     Windows::Storage::StorageFolder^                      m_configStorageFolder = nullptr;
 

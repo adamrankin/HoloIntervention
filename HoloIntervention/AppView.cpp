@@ -175,10 +175,7 @@ namespace HoloIntervention
       {
         m_main->LoadAppStateAsync();
       }
-      catch (const std::exception&)
-      {
-        m_main->GetNotificationsSystem().QueueMessage(L"Unable to load spatial anchor store. Please re-place anchors.");
-      }
+      catch (const std::exception& e) { OutputDebugStringA(e.what()); }
     }
   }
 
@@ -209,10 +206,7 @@ namespace HoloIntervention
       {
         m_main->LoadAppStateAsync();
       }
-      catch (const std::exception&)
-      {
-        m_main->GetNotificationsSystem().QueueMessage(L"Unable to load spatial anchor store. Please re-place anchors.");
-      }
+      catch (const std::exception& e) { OutputDebugStringA(e.what()); }
     }
   }
 }

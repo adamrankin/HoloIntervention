@@ -230,6 +230,10 @@ namespace HoloIntervention
           m_notificationSystem->QueueMessage("Unable to initialize surface observer.");
         }
       });
+
+      LoadAppStateAsync();
+
+      m_engineBuilt = true;
     });
   }
 
@@ -261,6 +265,11 @@ namespace HoloIntervention
   // Updates the application state once per frame.
   HolographicFrame^ HoloInterventionCore::Update()
   {
+    if (!m_engineBuilt)
+    {
+      return nullptr;
+    }
+
     HolographicFrame^ holographicFrame = m_holographicSpace->CreateNextFrame();
     HolographicFramePrediction^ prediction = holographicFrame->CurrentPrediction;
 
@@ -274,6 +283,10 @@ namespace HoloIntervention
       for (auto cameraPose : prediction->CameraPoses)
       {
         cameraResources = cameraResourceMap[cameraPose->HolographicCamera->Id].get();
+        if (cameraResources == nullptr)
+        {
+          return false;
+        }
         auto result = cameraResources->Update(m_deviceResources, cameraPose, hmdCoordinateSystem);
       }
       return true;
@@ -338,7 +351,7 @@ namespace HoloIntervention
   //----------------------------------------------------------------------------
   bool HoloInterventionCore::Render(Windows::Graphics::Holographic::HolographicFrame^ holographicFrame)
   {
-    if (m_timer.GetFrameCount() == 0)
+    if (!m_engineBuilt || m_timer.GetFrameCount() == 0)
     {
       return false;
     }
@@ -399,12 +412,22 @@ namespace HoloIntervention
   //----------------------------------------------------------------------------
   task<void> HoloInterventionCore::SaveAppStateAsync()
   {
+    if (!m_engineBuilt)
+    {
+      return create_task([]() {});
+    }
     return m_physicsAPI->SaveAppStateAsync();
   }
 
   //----------------------------------------------------------------------------
   task<void> HoloInterventionCore::LoadAppStateAsync()
   {
+    if (!m_engineBuilt)
+    {
+      // This can happen when the app is starting
+      return create_task([]() {});
+    }
+
     return m_physicsAPI->LoadAppStateAsync().then([ = ]()
     {
       // Registration must follow spatial due to anchor store
@@ -416,90 +439,6 @@ namespace HoloIntervention
   uint64 HoloInterventionCore::GetCurrentFrameNumber() const
   {
     return m_timer.GetFrameCount();
-  }
-
-  //----------------------------------------------------------------------------
-  System::NotificationSystem& HoloInterventionCore::GetNotificationsSystem()
-  {
-    return *m_notificationSystem.get();
-  }
-
-  //----------------------------------------------------------------------------
-  Physics::PhysicsAPI& HoloInterventionCore::GetSurfaceAPI()
-  {
-    return *m_physicsAPI.get();
-  }
-
-  //----------------------------------------------------------------------------
-  System::ToolSystem& HoloInterventionCore::GetToolSystem()
-  {
-    return *m_toolSystem.get();
-  }
-
-  //----------------------------------------------------------------------------
-  HoloIntervention::System::SplashSystem& HoloInterventionCore::GetSplashSystem()
-  {
-    return *m_splashSystem.get();
-  }
-
-  //----------------------------------------------------------------------------
-  System::IconSystem& HoloInterventionCore::GetIconSystem()
-  {
-    return *m_iconSystem.get();
-  }
-
-  //----------------------------------------------------------------------------
-  System::GazeSystem& HoloInterventionCore::GetGazeSystem()
-  {
-    return *m_gazeSystem.get();
-  }
-
-  //----------------------------------------------------------------------------
-  System::RegistrationSystem& HoloInterventionCore::GetRegistrationSystem()
-  {
-    return *m_registrationSystem.get();
-  }
-
-  //----------------------------------------------------------------------------
-  System::ImagingSystem& HoloInterventionCore::GetImagingSystem()
-  {
-    return *m_imagingSystem.get();
-  }
-
-  //----------------------------------------------------------------------------
-  System::NetworkSystem& HoloInterventionCore::GetNetworkSystem()
-  {
-    return *m_networkSystem.get();
-  }
-
-  //----------------------------------------------------------------------------
-  Sound::SoundAPI& HoloInterventionCore::GetSoundAPI()
-  {
-    return *m_soundAPI.get();
-  }
-
-  //----------------------------------------------------------------------------
-  bool HoloInterventionCore::HasModelRenderer() const
-  {
-    return m_modelRenderer != nullptr;
-  }
-
-  //----------------------------------------------------------------------------
-  Rendering::ModelRenderer& HoloInterventionCore::GetModelRenderer()
-  {
-    return *m_modelRenderer.get();
-  }
-
-  //----------------------------------------------------------------------------
-  Rendering::SliceRenderer& HoloInterventionCore::GetSliceRenderer()
-  {
-    return *m_sliceRenderer.get();
-  }
-
-  //----------------------------------------------------------------------------
-  Rendering::VolumeRenderer& HoloInterventionCore::GetVolumeRenderer()
-  {
-    return *m_volumeRenderer.get();
   }
 
   //----------------------------------------------------------------------------

@@ -243,6 +243,7 @@ namespace HoloIntervention
           m_forcePose = true;
           m_regAnchor = m_physicsAPI.GetAnchor(REGISTRATION_ANCHOR_NAME);
           m_regAnchorModel->SetVisible(true);
+          m_cameraRegistration->SetWorldAnchor(m_regAnchor);
         }
       });
     }

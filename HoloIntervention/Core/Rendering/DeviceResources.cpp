@@ -218,6 +218,10 @@ namespace DX
         HolographicCameraRenderingParameters^ renderingParameters = frame->GetRenderingParameters(pose);
         CameraResources* pCameraResources = cameraResourceMap[pose->HolographicCamera->Id].get();
 
+        if (pCameraResources == nullptr)
+        {
+          return;
+        }
         pCameraResources->CreateResourcesForBackBuffer(this, renderingParameters);
       }
     });
