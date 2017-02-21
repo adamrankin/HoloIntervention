@@ -75,11 +75,11 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    uint64 VolumeRenderer::AddVolume(UWPOpenIGTLink::TrackedFrame^ frame, Windows::Foundation::Numerics::float4x4 desiredPose)
+    uint64 VolumeRenderer::AddVolume(UWPOpenIGTLink::TrackedFrame^ frame, float4x4 desiredPose)
     {
       if (!m_componentReady)
       {
-        throw std::exception("System not ready.");
+        return INVALID_TOKEN;
       }
 
       std::shared_ptr<VolumeEntry> entry = std::make_shared<VolumeEntry>(m_deviceResources,
@@ -136,7 +136,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void VolumeRenderer::UpdateVolume(uint64 volumeToken, UWPOpenIGTLink::TrackedFrame^ frame, Windows::Foundation::Numerics::float4x4 desiredPose)
+    void VolumeRenderer::UpdateVolume(uint64 volumeToken, UWPOpenIGTLink::TrackedFrame^ frame, float4x4 desiredPose)
     {
       std::lock_guard<std::mutex> guard(m_volumeMapMutex);
       std::shared_ptr<VolumeEntry> entry;
@@ -181,7 +181,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void VolumeRenderer::SetVolumePose(uint64 volumeToken, const Windows::Foundation::Numerics::float4x4& pose)
+    void VolumeRenderer::SetVolumePose(uint64 volumeToken, const float4x4& pose)
     {
       std::lock_guard<std::mutex> guard(m_volumeMapMutex);
       std::shared_ptr<VolumeEntry> entry;
@@ -192,7 +192,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    Windows::Foundation::Numerics::float4x4 VolumeRenderer::GetVolumePose(uint64 volumeToken) const
+    float4x4 VolumeRenderer::GetVolumePose(uint64 volumeToken) const
     {
       std::lock_guard<std::mutex> guard(m_volumeMapMutex);
       std::shared_ptr<VolumeEntry> entry;
@@ -207,7 +207,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void VolumeRenderer::SetDesiredVolumePose(uint64 volumeToken, const Windows::Foundation::Numerics::float4x4& pose)
+    void VolumeRenderer::SetDesiredVolumePose(uint64 volumeToken, const float4x4& pose)
     {
       std::lock_guard<std::mutex> guard(m_volumeMapMutex);
       std::shared_ptr<VolumeEntry> entry;
@@ -218,7 +218,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    Windows::Foundation::Numerics::float3 VolumeRenderer::GetVolumeVelocity(uint64 volumeToken) const
+    float3 VolumeRenderer::GetVolumeVelocity(uint64 volumeToken) const
     {
       std::lock_guard<std::mutex> guard(m_volumeMapMutex);
       std::shared_ptr<VolumeEntry> entry;

@@ -179,7 +179,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void SliceEntry::SetFrame(UWPOpenIGTLink::TrackedFrame^ frame)
     {
-      byte* imageRaw = GetDataFromIBuffer<byte>(m_frame->Frame->ImageData);
+      byte* imageRaw = GetDataFromIBuffer<byte>(frame->Frame->ImageData);
       if (imageRaw == nullptr)
       {
         Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Unable to access image buffer.");
@@ -187,7 +187,7 @@ namespace HoloIntervention
       }
 
       auto frameSize = frame->Dimensions;
-      auto format = (DXGI_FORMAT)m_frame->GetPixelFormat(true);
+      auto format = (DXGI_FORMAT)frame->GetPixelFormat(true);
       if (frameSize[0] != m_width || frameSize[1] != m_height || format != m_pixelFormat)
       {
         m_width = frameSize[0];

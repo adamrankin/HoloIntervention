@@ -161,7 +161,7 @@ namespace HoloIntervention
     {
       if (!m_componentReady)
       {
-        throw std::exception("System not ready.");
+        return INVALID_TOKEN;
       }
 
       std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources);

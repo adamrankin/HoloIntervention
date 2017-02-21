@@ -115,19 +115,17 @@ namespace HoloIntervention
       // m_transformRepository has already been initialized with the transforms for this update
       float4x4 transform;
 
-      try
+      if (!m_transformRepository->GetTransform(m_coordinateFrame, &transform))
       {
-        transform = transpose(m_transformRepository->GetTransform(m_coordinateFrame));
+        m_modelEntry->RenderGreyscale();
+        return;
+      }
+      else
+      {
+        m_modelEntry->SetDesiredPose(transpose(transform));
         m_isValid = true;
         m_modelEntry->RenderDefault();
       }
-      catch (const std::exception&)
-      {
-        m_isValid = false;
-        m_modelEntry->RenderGreyscale();
-      }
-
-      m_modelEntry->SetDesiredPose(transform);
     }
 
     //----------------------------------------------------------------------------

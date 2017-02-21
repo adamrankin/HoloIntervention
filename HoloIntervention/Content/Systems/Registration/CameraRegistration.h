@@ -183,10 +183,11 @@ namespace HoloIntervention
       std::atomic_bool                                                      m_pnpNeedsInit = true;
       std::function<void(Windows::Foundation::Numerics::float4x4)>          m_completeCallback;
       Windows::Storage::StorageFolder^                                      m_configStorageFolder;
-      uint32                                                                m_lastRegistrationResultCount = 0;
+      uint32                                                                m_lastRegistrationResultCount = NUMBER_OF_FRAMES_BETWEEN_REGISTRATION;
       Windows::Foundation::Numerics::float4x4                               m_referenceToAnchor = Windows::Foundation::Numerics::float4x4::identity();
       std::shared_ptr<LandmarkRegistration>                                 m_landmarkRegistration = std::make_shared<LandmarkRegistration>();
 
+      static const uint32                                                   NUMBER_OF_FRAMES_BETWEEN_REGISTRATION = 3;
       static const uint32                                                   PHANTOM_SPHERE_COUNT = 5;
       static const float                                                    VISUALIZATION_SPHERE_RADIUS;
     };

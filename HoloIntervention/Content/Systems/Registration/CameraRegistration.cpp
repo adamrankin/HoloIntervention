@@ -56,7 +56,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <WindowsNumerics.h>
 
 #ifndef SUCCEEDED
-  #define SUCCEEDED(hr) (((HRESULT)(hr)) >= 0)
+#define SUCCEEDED(hr) (((HRESULT)(hr)) >= 0)
 #endif
 
 using namespace Concurrency;
@@ -78,17 +78,14 @@ namespace
   //----------------------------------------------------------------------------
   bool ExtractPhantomToFiducialPose(float4x4& phantomFiducialPose, UWPOpenIGTLink::TransformRepository^ transformRepository, Platform::String^ from, Platform::String^ to)
   {
-    float4x4 transformation = float4x4::identity();
-    try
+    float4x4 transformation;
+    if (transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(from, to), &transformation))
     {
-      phantomFiducialPose = transpose(transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(from, to)));
-    }
-    catch (Platform::Exception^ e)
-    {
-      return false;
+      phantomFiducialPose = transpose(transformation);
+      return true;
     }
 
-    return true;
+    return false;
   }
 }
 
@@ -420,7 +417,7 @@ namespace HoloIntervention
     void CameraRegistration::DiscardFrames()
     {
       m_outputFramesLock;
-      m_lastRegistrationResultCount = 0;
+      m_lastRegistrationResultCount = NUMBER_OF_FRAMES_BETWEEN_REGISTRATION;
       m_sphereInAnchorResultFrames.clear();
       m_sphereInReferenceResultFrames.clear();
     }
@@ -613,7 +610,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void CameraRegistration::PerformLandmarkRegistration(Concurrency::cancellation_token token)
     {
-      const uint32 NUMBER_OF_FRAMES_BETWEEN_REGISTRATION = 3;
+
 
       while (!token.is_canceled())
       {
@@ -882,13 +879,10 @@ done:
       {
         for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
         {
-          try
+          float4x4 transform;
+          if (m_transformRepository->GetTransform(m_sphereCoordinateNames[i], &transform))
           {
-            sphereXToReferenceTransform[i] = transpose(m_transformRepository->GetTransform(m_sphereCoordinateNames[i]));
-          }
-          catch (Platform::Exception^ e)
-          {
-            return false;
+            sphereXToReferenceTransform[i] = transpose(transform);
           }
         }
       }
