@@ -91,13 +91,6 @@ namespace HoloIntervention
       };
 
     public:
-      typedef std::vector<Windows::Foundation::Numerics::float2> VecFloat2;
-      typedef std::vector<Windows::Foundation::Numerics::float3> VecFloat3;
-      typedef std::vector<Windows::Foundation::Numerics::float4> VecFloat4;
-      typedef std::vector<Windows::Foundation::Numerics::float4x4> VecFloat4x4;
-      typedef std::vector<VecFloat3> DetectionFrames;
-
-    public:
       virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition() const;
       virtual Windows::Foundation::Numerics::float3 GetStabilizedNormal() const;
       virtual Windows::Foundation::Numerics::float3 GetStabilizedVelocity() const;
@@ -126,8 +119,8 @@ namespace HoloIntervention
 
       bool IsPhantomToCameraSane(const Windows::Foundation::Numerics::float4x4& phantomToCameraTransform);
       void ProcessAvailableFrames(Concurrency::cancellation_token token);
-      void PerformLandmarkRegistration();
-      bool CameraRegistration::RetrieveTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame, VecFloat3& outSphereInReferencePositions);
+      void PerformLandmarkRegistration(Concurrency::cancellation_token token);
+      bool CameraRegistration::RetrieveTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame, LandmarkRegistration::VecFloat3& outSphereInReferencePositions);
       bool ComputePhantomToCameraTransform(Windows::Media::Capture::Frames::VideoMediaFrame^ videoFrame, bool& initialized, int32_t& height, int32_t& width,
                                            cv::Mat& hsv, cv::Mat& redMat, cv::Mat& redMatWrap, cv::Mat& imageRGB, cv::Mat& mask, cv::Mat& rvec,
                                            cv::Mat& tvec, cv::Mat& cannyOutput, Windows::Foundation::Numerics::float4x4& modelToCameraTransform);
@@ -170,18 +163,19 @@ namespace HoloIntervention
       std::mutex                                                            m_framesLock;
       Windows::Media::Capture::Frames::MediaFrameReference^                 m_currentFrame = nullptr;
       Windows::Media::Capture::Frames::MediaFrameReference^                 m_nextFrame = nullptr;
-      DetectionFrames                                                       m_sphereInAnchorResultFrames;
-      uint32                                                                m_captureFrameCount = 20;
 
       // IGT link
       std::wstring                                                          m_connectionName;
       UWPOpenIGTLink::TransformRepository^                                  m_transformRepository = ref new UWPOpenIGTLink::TransformRepository();
       std::atomic_bool                                                      m_transformsAvailable = false;
       double                                                                m_latestTimestamp = 0.0;
-      DetectionFrames                                                       m_sphereInReferenceResultFrames;
       std::array<Windows::Foundation::Numerics::float4x4, 5>                m_sphereToPhantomPoses;
       std::atomic_bool                                                      m_hasSphereToPhantomPoses = false;
       std::array<UWPOpenIGTLink::TransformName^, 5>                         m_sphereCoordinateNames;
+
+      // Output
+      LandmarkRegistration::DetectionFrames                                 m_sphereInAnchorResultFrames;
+      LandmarkRegistration::DetectionFrames                                 m_sphereInReferenceResultFrames;
 
       // State variables
       Concurrency::cancellation_token_source                                m_tokenSource;

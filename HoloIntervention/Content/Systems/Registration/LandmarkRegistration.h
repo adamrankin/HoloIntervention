@@ -39,12 +39,19 @@ namespace HoloIntervention
     class LandmarkRegistration
     {
     public:
+      typedef std::vector<Windows::Foundation::Numerics::float2> VecFloat2;
+      typedef std::vector<Windows::Foundation::Numerics::float3> VecFloat3;
+      typedef std::vector<Windows::Foundation::Numerics::float4> VecFloat4;
+      typedef std::vector<Windows::Foundation::Numerics::float4x4> VecFloat4x4;
+      typedef std::vector<VecFloat3> DetectionFrames;
       typedef std::vector<Windows::Foundation::Numerics::float3> LandmarkList;
       typedef std::vector<cv::Point3f> LandmarkListCv;
 
       LandmarkRegistration();
       ~LandmarkRegistration();
 
+      void SetSourceLandmarks(const DetectionFrames& frames);
+      void SetTargetLandmarks(const DetectionFrames& frames);
       void SetSourceLandmarks(const LandmarkList& landmarks);
       void SetTargetLandmarks(const LandmarkList& landmarks);
       void SetSourceLandmarks(const LandmarkListCv& landmarks);

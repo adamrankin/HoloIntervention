@@ -63,19 +63,24 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float3 IconSystem::GetStabilizedPosition() const
     {
-      return (transform(float3(0.f, 0.f, 0.f), m_networkIcon->GetModelEntry()->GetCurrentPose()) + transform(float3(0.f, 0.f, 0.f), m_cameraIcon->GetModelEntry()->GetCurrentPose())) / 2.f;
+      auto networkPose = m_networkIcon->GetModelEntry()->GetCurrentPose();
+      auto cameraPose = m_cameraIcon->GetModelEntry()->GetCurrentPose();
+      auto micPose = m_microphoneIcon->GetModelEntry()->GetCurrentPose();
+      return (float3(networkPose.m41, networkPose.m42, networkPose.m43) +
+              float3(cameraPose.m41, cameraPose.m42, cameraPose.m43) +
+              float3(micPose.m41, micPose.m42, micPose.m43)) / 3.f;
     }
 
     //----------------------------------------------------------------------------
     float3 IconSystem::GetStabilizedNormal() const
     {
-      return (ExtractNormal(m_networkIcon->GetModelEntry()->GetCurrentPose()) + ExtractNormal(m_cameraIcon->GetModelEntry()->GetCurrentPose())) / 2.f;
+      return (ExtractNormal(m_networkIcon->GetModelEntry()->GetCurrentPose()) + ExtractNormal(m_cameraIcon->GetModelEntry()->GetCurrentPose()) + ExtractNormal(m_microphoneIcon->GetModelEntry()->GetCurrentPose())) / 3.f;
     }
 
     //----------------------------------------------------------------------------
     float3 IconSystem::GetStabilizedVelocity() const
     {
-      return (m_networkIcon->GetModelEntry()->GetVelocity() + m_networkIcon->GetModelEntry()->GetVelocity()) / 2.f;
+      return (m_networkIcon->GetModelEntry()->GetVelocity() + m_cameraIcon->GetModelEntry()->GetVelocity() + m_microphoneIcon->GetModelEntry()->GetVelocity()) / 3.f;
     }
 
     //----------------------------------------------------------------------------
@@ -112,38 +117,35 @@ namespace HoloIntervention
           return false;
         }
 
-        // Determine scale factors for both models
-        {
-          auto& bounds = m_networkIcon->GetModelEntry()->GetBounds();
-          auto scale = ICON_SIZE_METER / (bounds[1] - bounds[0]);
-          m_networkIcon->SetScaleFactor(scale);
-        }
+        // Determine scale factors for the models
+        auto& bounds = m_networkIcon->GetModelEntry()->GetBounds();
+        auto scale = ICON_SIZE_METER / (bounds[1] - bounds[0]);
+        m_networkIcon->SetScaleFactor(scale);
 
-        {
-          auto& bounds = m_cameraIcon->GetModelEntry()->GetBounds();
-          auto scale = ICON_SIZE_METER / (bounds[1] - bounds[0]);
-          m_cameraIcon->SetScaleFactor(scale);
-        }
+        bounds = m_cameraIcon->GetModelEntry()->GetBounds();
+        scale = ICON_SIZE_METER / (bounds[1] - bounds[0]);
+        m_cameraIcon->SetScaleFactor(scale);
 
-        {
-          auto& bounds = m_microphoneIcon->GetModelEntry()->GetBounds();
-          auto scale = ICON_SIZE_METER / (bounds[1] - bounds[0]);
-          m_microphoneIcon->SetScaleFactor(scale);
-        }
+        bounds = m_microphoneIcon->GetModelEntry()->GetBounds();
+        scale = ICON_SIZE_METER / (bounds[1] - bounds[0]);
+        m_microphoneIcon->SetScaleFactor(scale);
 
         return true;
       }).then([this](bool loaded)
       {
         m_networkIcon->GetModelEntry()->EnablePoseLerp(true);
         m_networkIcon->GetModelEntry()->SetPoseLerpRate(8.f);
+
         m_cameraIcon->GetModelEntry()->EnablePoseLerp(true);
         m_cameraIcon->GetModelEntry()->SetPoseLerpRate(8.f);
+
         m_microphoneIcon->GetModelEntry()->EnablePoseLerp(true);
         m_microphoneIcon->GetModelEntry()->SetPoseLerpRate(8.f);
 
         m_iconEntries.push_back(m_networkIcon);
         m_iconEntries.push_back(m_cameraIcon);
         m_iconEntries.push_back(m_microphoneIcon);
+
         m_componentReady = loaded;
       });
     }
@@ -241,43 +243,43 @@ namespace HoloIntervention
 
       switch (state)
       {
-      case HoloIntervention::Network::CONNECTION_STATE_CONNECTING:
-      case HoloIntervention::Network::CONNECTION_STATE_DISCONNECTING:
-        if (m_networkPreviousState != state)
-        {
-          m_networkBlinkTimer = 0.f;
-        }
-        else
-        {
-          m_networkBlinkTimer += static_cast<float>(timer.GetElapsedSeconds());
-          if (m_networkBlinkTimer >= NETWORK_BLINK_TIME_SEC)
+        case HoloIntervention::Network::CONNECTION_STATE_CONNECTING:
+        case HoloIntervention::Network::CONNECTION_STATE_DISCONNECTING:
+          if (m_networkPreviousState != state)
           {
             m_networkBlinkTimer = 0.f;
-            m_networkIcon->GetModelEntry()->ToggleVisible();
           }
-        }
-        m_networkIsBlinking = true;
-        break;
-      case HoloIntervention::Network::CONNECTION_STATE_UNKNOWN:
-      case HoloIntervention::Network::CONNECTION_STATE_DISCONNECTED:
-      case HoloIntervention::Network::CONNECTION_STATE_CONNECTION_LOST:
-        m_networkIcon->GetModelEntry()->SetVisible(true);
-        m_networkIsBlinking = false;
-        if (m_wasNetworkConnected)
-        {
-          m_networkIcon->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
-          m_wasNetworkConnected = false;
-        }
-        break;
-      case HoloIntervention::Network::CONNECTION_STATE_CONNECTED:
-        m_networkIcon->GetModelEntry()->SetVisible(true);
-        m_networkIsBlinking = false;
-        if (!m_wasNetworkConnected)
-        {
-          m_wasNetworkConnected = true;
-          m_networkIcon->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
-        }
-        break;
+          else
+          {
+            m_networkBlinkTimer += static_cast<float>(timer.GetElapsedSeconds());
+            if (m_networkBlinkTimer >= NETWORK_BLINK_TIME_SEC)
+            {
+              m_networkBlinkTimer = 0.f;
+              m_networkIcon->GetModelEntry()->ToggleVisible();
+            }
+          }
+          m_networkIsBlinking = true;
+          break;
+        case HoloIntervention::Network::CONNECTION_STATE_UNKNOWN:
+        case HoloIntervention::Network::CONNECTION_STATE_DISCONNECTED:
+        case HoloIntervention::Network::CONNECTION_STATE_CONNECTION_LOST:
+          m_networkIcon->GetModelEntry()->SetVisible(true);
+          m_networkIsBlinking = false;
+          if (m_wasNetworkConnected)
+          {
+            m_networkIcon->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
+            m_wasNetworkConnected = false;
+          }
+          break;
+        case HoloIntervention::Network::CONNECTION_STATE_CONNECTED:
+          m_networkIcon->GetModelEntry()->SetVisible(true);
+          m_networkIsBlinking = false;
+          if (!m_wasNetworkConnected)
+          {
+            m_wasNetworkConnected = true;
+            m_networkIcon->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
+          }
+          break;
       }
 
       m_networkPreviousState = state;

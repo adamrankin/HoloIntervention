@@ -348,10 +348,13 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void VoiceInput::OnStateChanged(SpeechRecognizer^ sender, SpeechRecognizerStateChangedEventArgs^ args)
     {
-      m_hearingSound = false;
       if (args->State == SpeechRecognizerState::SoundStarted)
       {
         m_hearingSound = true;
+      }
+      else if (args->State == SpeechRecognizerState::SoundEnded)
+      {
+        m_hearingSound = false;
       }
     }
 

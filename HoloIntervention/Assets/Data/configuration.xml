@@ -13,8 +13,7 @@
   </CoordinateDefinitions>
 
   <CameraRegistration
-    IGTConnection="2DImage"
-    CaptureFrameCount="20" />
+    IGTConnection="2DImage" />
 
   <IGTConnections>
     <Connection

@@ -56,7 +56,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <WindowsNumerics.h>
 
 #ifndef SUCCEEDED
-#define SUCCEEDED(hr) (((HRESULT)(hr)) >= 0)
+  #define SUCCEEDED(hr) (((HRESULT)(hr)) >= 0)
 #endif
 
 using namespace Concurrency;
@@ -346,7 +346,19 @@ namespace HoloIntervention
                 }
                 catch (const std::exception& e)
                 {
-                  m_notificationSystem.QueueMessage(L"Registration failed. Please retry.");
+                  Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e.what());
+                  m_tokenSource.cancel();
+                  return;
+                }
+              });
+              create_task([this]()
+              {
+                try
+                {
+                  PerformLandmarkRegistration(m_tokenSource.get_token());
+                }
+                catch (const std::exception& e)
+                {
                   Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e.what());
                   m_tokenSource.cancel();
                   return;
@@ -506,174 +518,158 @@ namespace HoloIntervention
       uint64 lastMessageId(std::numeric_limits<uint64>::max());
       while (!token.is_canceled())
       {
+        std::unique_lock<std::mutex> lock(m_processorLock);
+        if (m_videoFrameProcessor == nullptr || !connection->IsConnected())
         {
-          std::lock_guard<std::mutex> guard(m_processorLock);
-          if (m_videoFrameProcessor == nullptr || !connection->IsConnected())
+          lock.unlock();
+          std::this_thread::sleep_for(std::chrono::milliseconds(10));
+          continue;
+        }
+
+        MediaFrameReference^ cameraFrame(m_videoFrameProcessor->GetLatestFrame());
+        if (connection->GetTrackedFrame(l_latestTrackedFrame, &m_latestTimestamp) &&
+            cameraFrame != nullptr &&
+            cameraFrame != l_latestCameraFrame)
+        {
+          float4x4 cameraToRawWorldAnchor = float4x4::identity();
+
+          l_latestCameraFrame = cameraFrame;
+          m_latestTimestamp = l_latestTrackedFrame->Timestamp;
+          if (l_latestCameraFrame->CoordinateSystem != nullptr)
           {
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            continue;
-          }
-
-          MediaFrameReference^ cameraFrame(m_videoFrameProcessor->GetLatestFrame());
-          if (connection->GetTrackedFrame(l_latestTrackedFrame, &m_latestTimestamp) &&
-              cameraFrame != nullptr &&
-              cameraFrame != l_latestCameraFrame)
-          {
-            float4x4 cameraToRawWorldAnchor = float4x4::identity();
-
-            l_latestCameraFrame = cameraFrame;
-            m_latestTimestamp = l_latestTrackedFrame->Timestamp;
-            if (l_latestCameraFrame->CoordinateSystem != nullptr)
-            {
-              std::lock_guard<std::mutex> guard(m_anchorMutex);
-              Platform::IBox<float4x4>^ cameraToRawWorldAnchorBox;
-              try
-              {
-                cameraToRawWorldAnchorBox = l_latestCameraFrame->CoordinateSystem->TryGetTransformTo(m_worldAnchor->RawCoordinateSystem);
-              }
-              catch (Platform::Exception^ e)
-              {
-                Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, L"Exception: " + e->Message);
-                continue;
-              }
-              if (cameraToRawWorldAnchorBox != nullptr)
-              {
-                cameraToRawWorldAnchor = cameraToRawWorldAnchorBox->Value;
-              }
-            }
-
-            if (cameraToRawWorldAnchor == float4x4::identity())
-            {
-              continue;
-            }
-
-            VecFloat3 sphereInReferenceResults;
-            if (!RetrieveTrackerFrameLocations(l_latestTrackedFrame, sphereInReferenceResults))
-            {
-              continue;
-            }
-
-            VideoMediaFrame^ frame(nullptr);
-            float4x4 phantomToCameraTransform;
+            std::lock_guard<std::mutex> guard(m_anchorMutex);
+            Platform::IBox<float4x4>^ cameraToRawWorldAnchorBox;
             try
             {
-              frame = l_latestCameraFrame->VideoMediaFrame;
+              cameraToRawWorldAnchorBox = l_latestCameraFrame->CoordinateSystem->TryGetTransformTo(m_worldAnchor->RawCoordinateSystem);
             }
             catch (Platform::Exception^ e)
             {
+              Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, L"Exception: " + e->Message);
               continue;
             }
-            if (ComputePhantomToCameraTransform(frame, l_initialized, l_height, l_width, l_hsv, l_redMat, l_redMatWrap, l_imageRGB, l_mask, l_rvec, l_tvec, l_canny_output, phantomToCameraTransform))
+            if (cameraToRawWorldAnchorBox != nullptr)
             {
-              // Transform points in model space to anchor space
-              VecFloat3 sphereInAnchorResults;
-              int i = 0;
-              for (auto& sphereToPhantom : m_sphereToPhantomPoses)
-              {
-                float4x4 sphereToAnchorPose = sphereToPhantom * phantomToCameraTransform * cameraToRawWorldAnchor;
-
-                sphereInAnchorResults.push_back(float3(sphereToAnchorPose.m41, sphereToAnchorPose.m42, sphereToAnchorPose.m43));
-
-                if (m_visualizationEnabled)
-                {
-                  // If visualizing, update the latest known poses of the spheres
-                  m_sphereToAnchorPoses[i] = sphereToAnchorPose;
-                  i++;
-                }
-              }
-
-              std::lock_guard<std::mutex> frameGuard(m_framesLock);
-              m_sphereInAnchorResultFrames.push_back(sphereInAnchorResults);
-              m_sphereInReferenceResultFrames.push_back(sphereInReferenceResults);
-
-              if (lastMessageId != std::numeric_limits<uint64>::max())
-              {
-                m_notificationSystem.RemoveMessage(lastMessageId);
-              }
-              lastMessageId = m_notificationSystem.QueueMessage(L"Acquired " + m_sphereInAnchorResultFrames.size().ToString() + L"/" + m_captureFrameCount.ToString() + " frames.");
+              cameraToRawWorldAnchor = cameraToRawWorldAnchorBox->Value;
             }
           }
-          else
+
+          if (cameraToRawWorldAnchor == float4x4::identity())
           {
-            // No new frame
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            continue;
+          }
+
+          LandmarkRegistration::VecFloat3 sphereInReferenceResults;
+          if (!RetrieveTrackerFrameLocations(l_latestTrackedFrame, sphereInReferenceResults))
+          {
+            continue;
+          }
+
+          VideoMediaFrame^ frame(nullptr);
+          float4x4 phantomToCameraTransform;
+          try
+          {
+            frame = l_latestCameraFrame->VideoMediaFrame;
+          }
+          catch (Platform::Exception^ e)
+          {
+            continue;
+          }
+          if (ComputePhantomToCameraTransform(frame, l_initialized, l_height, l_width, l_hsv, l_redMat, l_redMatWrap, l_imageRGB, l_mask, l_rvec, l_tvec, l_canny_output, phantomToCameraTransform))
+          {
+            // Transform points in model space to anchor space
+            LandmarkRegistration::VecFloat3 sphereInAnchorResults;
+            int i = 0;
+            for (auto& sphereToPhantom : m_sphereToPhantomPoses)
+            {
+              float4x4 sphereToAnchorPose = sphereToPhantom * phantomToCameraTransform * cameraToRawWorldAnchor;
+
+              sphereInAnchorResults.push_back(float3(sphereToAnchorPose.m41, sphereToAnchorPose.m42, sphereToAnchorPose.m43));
+
+              if (m_visualizationEnabled)
+              {
+                // If visualizing, update the latest known poses of the spheres
+                m_sphereToAnchorPoses[i] = sphereToAnchorPose;
+                i++;
+              }
+            }
+
+            std::lock_guard<std::mutex> frameGuard(m_framesLock);
+            m_sphereInAnchorResultFrames.push_back(sphereInAnchorResults);
+            m_sphereInReferenceResultFrames.push_back(sphereInReferenceResults);
+
+            if (lastMessageId != std::numeric_limits<uint64>::max())
+            {
+              m_notificationSystem.RemoveMessage(lastMessageId);
+            }
+            lastMessageId = m_notificationSystem.QueueMessage(L"Acquired " + m_sphereInAnchorResultFrames.size().ToString() + " frames.");
           }
         }
-
-        // If we've acquired enough frames, perform the registration
-        if (m_sphereInAnchorResultFrames.size() == m_captureFrameCount)
+        else
         {
-          PerformLandmarkRegistration();
+          // No new frame
+          lock.unlock();
+          std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
       }
     }
 
     //----------------------------------------------------------------------------
-    void CameraRegistration::PerformLandmarkRegistration()
+    void CameraRegistration::PerformLandmarkRegistration(Concurrency::cancellation_token token)
     {
-      m_notificationSystem.QueueMessage(L"Calculating registration...");
+      uint32 lastRegistrationResultCount(0);
+      const uint32 NUMBER_OF_FRAMES_BETWEEN_REGISTRATION = 3;
 
-      std::lock_guard<std::mutex> frameGuard(m_framesLock);
-      assert(m_sphereInAnchorResultFrames.size() == m_sphereInReferenceResultFrames.size());
-
-      VecFloat3 sphereInReferenceResults;
-      VecFloat3 sphereInAnchorResults;
-      for (auto& frame : m_sphereInReferenceResultFrames)
+      while (!token.is_canceled())
       {
-        for (auto& sphereWorld : frame)
         {
-          sphereInReferenceResults.push_back(sphereWorld);
-        }
-      }
-      for (auto& frame : m_sphereInAnchorResultFrames)
-      {
-        for (auto& sphereWorld : frame)
-        {
-          sphereInAnchorResults.push_back(sphereWorld);
-        }
-      }
-      m_landmarkRegistration->SetSourceLandmarks(sphereInReferenceResults);
-      m_landmarkRegistration->SetTargetLandmarks(sphereInAnchorResults);
-
-      std::atomic_bool calcFinished(false);
-      bool resultValid(false);
-      m_landmarkRegistration->CalculateTransformationAsync().then([this, &calcFinished, &resultValid](float4x4 referenceToAnchorTransformation)
-      {
-        if (referenceToAnchorTransformation == float4x4::identity())
-        {
-          resultValid = false;
-        }
-        else
-        {
-          m_hasRegistration = true;
-          resultValid = true;
-          m_referenceToAnchor = referenceToAnchorTransformation;
-          if (m_completeCallback)
+          std::unique_lock<std::mutex> frameLock(m_framesLock);
+          if (m_sphereInAnchorResultFrames.size() < lastRegistrationResultCount + NUMBER_OF_FRAMES_BETWEEN_REGISTRATION)
           {
-            m_completeCallback(referenceToAnchorTransformation);
+            frameLock.unlock();
+            std::this_thread::sleep_for(std::chrono::milliseconds(33));
+            continue;
           }
+
+          assert(m_sphereInAnchorResultFrames.size() == m_sphereInReferenceResultFrames.size());
+
+          m_landmarkRegistration->SetSourceLandmarks(m_sphereInReferenceResultFrames);
+          m_landmarkRegistration->SetTargetLandmarks(m_sphereInAnchorResultFrames);
         }
-        calcFinished = true;
-      });
 
-      if (!wait_until_condition([this, &calcFinished]() {return calcFinished == true ? true : false; }, 5000))
-      {
-        assert(false);
-      }
+        std::atomic_bool calcFinished(false);
+        bool resultValid(false);
+        auto start = std::chrono::system_clock::now();
+        m_landmarkRegistration->CalculateTransformationAsync().then([this, &calcFinished, &resultValid](float4x4 referenceToAnchorTransformation)
+        {
+          if (referenceToAnchorTransformation == float4x4::identity())
+          {
+            resultValid = false;
+          }
+          else
+          {
+            m_hasRegistration = true;
+            resultValid = true;
+            m_referenceToAnchor = referenceToAnchorTransformation;
+            if (m_completeCallback)
+            {
+              m_completeCallback(referenceToAnchorTransformation);
+            }
+          }
+          calcFinished = true;
+        });
 
-      if (!resultValid)
-      {
-        m_notificationSystem.QueueMessage(L"Registration failed. Please repeat process.");
-        StopCameraAsync();
-      }
-      else
-      {
-        m_notificationSystem.QueueMessage(L"Registration complete.");
-        StopCameraAsync();
-      }
+        while (!calcFinished)
+        {
+          std::this_thread::sleep_for(std::chrono::milliseconds(33));
+        }
 
-      m_sphereInAnchorResultFrames.clear();
-      m_sphereInReferenceResultFrames.clear();
+        auto end = std::chrono::system_clock::now();
+        std::chrono::duration<double> diff = end - start;
+        std::stringstream ss;
+        ss << "Registration took " << diff.count() << "s.";
+        Log::instance().LogMessage(Log::LOG_LEVEL_WARNING, ss.str());
+      }
     }
 
     //----------------------------------------------------------------------------
@@ -872,7 +868,7 @@ done:
     }
 
     //----------------------------------------------------------------------------
-    bool CameraRegistration::RetrieveTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame, CameraRegistration::VecFloat3& outSphereInReferencePositions)
+    bool CameraRegistration::RetrieveTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame, LandmarkRegistration::VecFloat3& outSphereInReferencePositions)
     {
       if (!m_transformRepository->SetTransforms(trackedFrame))
       {
@@ -1327,18 +1323,6 @@ done:
             if (igtConnectionName != nullptr)
             {
               m_connectionName = std::wstring(begin(igtConnectionName), end(igtConnectionName));
-            }
-
-            Platform::String^ capFrameCount = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"CaptureFrameCount")->NodeValue);
-            if (capFrameCount != nullptr)
-            {
-              std::wstringstream ss;
-              ss << std::wstring(begin(capFrameCount), end(capFrameCount));
-              try
-              {
-                m_captureFrameCount = std::stoi(ss.str());
-              }
-              catch (const std::exception&) {}
             }
           }
         });

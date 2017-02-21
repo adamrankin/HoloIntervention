@@ -141,6 +141,16 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    void LandmarkRegistration::SetSourceLandmarks(const DetectionFrames& frames)
+    {
+      m_sourceLandmarks.clear();
+      for (auto& frame : frames)
+      {
+        m_sourceLandmarks.insert(end(m_sourceLandmarks), begin(frame), end(frame));
+      }
+    }
+
+    //----------------------------------------------------------------------------
     void LandmarkRegistration::SetTargetLandmarks(const LandmarkList& landmarks)
     {
       m_targetLandmarks = landmarks;
@@ -153,6 +163,16 @@ namespace HoloIntervention
       for (auto& point : landmarks)
       {
         m_targetLandmarks.push_back(float3(point.x, point.y, point.z));
+      }
+    }
+
+    //----------------------------------------------------------------------------
+    void LandmarkRegistration::SetTargetLandmarks(const DetectionFrames& frames)
+    {
+      m_targetLandmarks.clear();
+      for (auto& frame : frames)
+      {
+        m_targetLandmarks.insert(end(m_targetLandmarks), begin(frame), end(frame));
       }
     }
 

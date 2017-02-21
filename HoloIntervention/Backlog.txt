@@ -5,9 +5,7 @@ Major implementation details remaining:
 **unpack on demand
 Volume rendering
 Registration drift
-*Mic icon activity
 Network connect, disconnect, connect, connection lost
-*Log system bug
 Voice feedback
 UI for IP setting - Dictation*
 Registration feedback (move around, etc...)
