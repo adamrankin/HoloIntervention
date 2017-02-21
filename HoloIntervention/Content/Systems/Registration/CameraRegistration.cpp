@@ -56,7 +56,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <WindowsNumerics.h>
 
 #ifndef SUCCEEDED
-#define SUCCEEDED(hr) (((HRESULT)(hr)) >= 0)
+  #define SUCCEEDED(hr) (((HRESULT)(hr)) >= 0)
 #endif
 
 using namespace Concurrency;
@@ -71,6 +71,7 @@ using namespace Windows::Media::Devices::Core;
 using namespace Windows::Media::MediaProperties;
 using namespace Windows::Perception::Spatial;
 using namespace Windows::Storage;
+using namespace Windows::UI::Input::Spatial;
 
 namespace
 {
@@ -101,9 +102,10 @@ namespace HoloIntervention
     float3 CameraRegistration::GetStabilizedPosition() const
     {
       float3 position(0.f, 0.f, 0.f);
+      // Only do this if we've enabled visualization, the sphere primitives have been created, and we've analyzed at least 1 frame
       if (m_visualizationEnabled && m_spherePrimitiveIds[0] != INVALID_TOKEN && m_sphereInAnchorResultFrames.size() > 0)
       {
-        // Only do this if we've enabled visualization, the sphere primitives have been created, and we've analyzed at least 1 frame
+        // Take the mean position
         for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
         {
           position += transform(float3(0.f, 0.f, 0.f), m_spherePrimitives[i]->GetCurrentPose());
@@ -115,21 +117,9 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    float3 CameraRegistration::GetStabilizedNormal() const
+    float3 CameraRegistration::GetStabilizedNormal(SpatialPointerPose^ pose) const
     {
-      if (m_visualizationEnabled && m_spherePrimitiveIds[0] != INVALID_TOKEN && m_sphereInAnchorResultFrames.size() > 0)
-      {
-        float3 normal(0.f, 0.f, 0.f);
-        // Only do this if we've enabled visualization, the sphere primitives have been created, and we've analyzed at least 1 frame
-        for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
-        {
-          normal += ExtractNormal(m_spherePrimitives[i]->GetCurrentPose());
-        }
-        normal /= static_cast<float>(PHANTOM_SPHERE_COUNT);
-        return normal;
-      }
-
-      return float3(0.f, 1.f, 0.f);
+      return -pose->Head->ForwardDirection;
     }
 
     //----------------------------------------------------------------------------
@@ -137,14 +127,8 @@ namespace HoloIntervention
     {
       if (m_visualizationEnabled && m_spherePrimitiveIds[0] != INVALID_TOKEN && m_sphereInAnchorResultFrames.size() > 0)
       {
-        float3 velocity(0.f, 0.f, 0.f);
-        // Only do this if we've enabled visualization, the sphere primitives have been created, and we've analyzed at least 1 frame
-        for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
-        {
-          velocity += m_spherePrimitives[i]->GetVelocity();
-        }
-        velocity /= static_cast<float>(PHANTOM_SPHERE_COUNT);
-        return velocity;
+        // They all have the same velocity
+        return m_spherePrimitives[0]->GetVelocity();
       }
 
       return float3(0.f, 0.f, 0.f);

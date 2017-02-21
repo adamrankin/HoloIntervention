@@ -343,7 +343,8 @@ namespace HoloIntervention
       }
     });
 
-    SetHolographicFocusPoint(prediction, holographicFrame, hmdCoordinateSystem);
+    SpatialPointerPose^ headPose = SpatialPointerPose::TryGetAtTimestamp(hmdCoordinateSystem, prediction->Timestamp);
+    SetHolographicFocusPoint(prediction, holographicFrame, hmdCoordinateSystem, headPose);
 
     return holographicFrame;
   }
@@ -547,7 +548,10 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
-  void HoloInterventionCore::SetHolographicFocusPoint(HolographicFramePrediction^ prediction, HolographicFrame^ holographicFrame, SpatialCoordinateSystem^ currentCoordinateSystem)
+  void HoloInterventionCore::SetHolographicFocusPoint(HolographicFramePrediction^ prediction,
+      HolographicFrame^ holographicFrame,
+      SpatialCoordinateSystem^ currentCoordinateSystem,
+      SpatialPointerPose^ pose)
   {
     float maxPriority(-1.f);
     IStabilizedComponent* winningComponent(nullptr);
@@ -572,7 +576,7 @@ namespace HoloIntervention
       HolographicCameraRenderingParameters^ renderingParameters = holographicFrame->GetRenderingParameters(cameraPose);
 
       float3 focusPointPosition = winningComponent->GetStabilizedPosition();
-      float3 focusPointNormal = winningComponent->GetStabilizedNormal();
+      float3 focusPointNormal = winningComponent->GetStabilizedNormal(pose);
       float3 focusPointVelocity = winningComponent->GetStabilizedVelocity();
 
       if (focusPointNormal != float3::zero())

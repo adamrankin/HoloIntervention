@@ -124,7 +124,10 @@ namespace HoloIntervention
     void InitializeVoiceSystem();
 
     // Set the focus point depending on the state of all the systems
-    void SetHolographicFocusPoint(Windows::Graphics::Holographic::HolographicFramePrediction^ prediction, Windows::Graphics::Holographic::HolographicFrame^ holographicFrame, Windows::Perception::Spatial::SpatialCoordinateSystem^ currentCoordinateSystem);
+    void SetHolographicFocusPoint(Windows::Graphics::Holographic::HolographicFramePrediction^ prediction,
+                                  Windows::Graphics::Holographic::HolographicFrame^ holographicFrame,
+                                  Windows::Perception::Spatial::SpatialCoordinateSystem^ currentCoordinateSystem,
+                                  Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
 
   protected:
     // IEngineComponent list, used to query overall system status

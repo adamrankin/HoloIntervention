@@ -49,7 +49,7 @@ namespace HoloIntervention
     {
     public:
       virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition() const;
-      virtual Windows::Foundation::Numerics::float3 GetStabilizedNormal() const;
+      virtual Windows::Foundation::Numerics::float3 GetStabilizedNormal(Windows::UI::Input::Spatial::SpatialPointerPose^ pose) const;
       virtual Windows::Foundation::Numerics::float3 GetStabilizedVelocity() const;
       virtual float GetStabilizePriority() const;
 

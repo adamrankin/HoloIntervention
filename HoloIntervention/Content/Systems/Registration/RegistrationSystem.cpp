@@ -85,11 +85,11 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    float3 RegistrationSystem::GetStabilizedNormal() const
+    float3 RegistrationSystem::GetStabilizedNormal(SpatialPointerPose^ pose) const
     {
       if (m_cameraRegistration->IsStabilizationActive())
       {
-        m_cameraRegistration->GetStabilizedNormal();
+        m_cameraRegistration->GetStabilizedNormal(pose);
       }
       if (m_regAnchor != nullptr)
       {

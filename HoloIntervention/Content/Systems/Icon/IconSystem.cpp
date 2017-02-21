@@ -72,7 +72,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    float3 IconSystem::GetStabilizedNormal() const
+    float3 IconSystem::GetStabilizedNormal(SpatialPointerPose^ pose) const
     {
       return (ExtractNormal(m_networkIcon->GetModelEntry()->GetCurrentPose()) + ExtractNormal(m_cameraIcon->GetModelEntry()->GetCurrentPose()) + ExtractNormal(m_microphoneIcon->GetModelEntry()->GetCurrentPose())) / 3.f;
     }

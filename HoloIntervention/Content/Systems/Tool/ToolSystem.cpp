@@ -42,6 +42,7 @@ using namespace Windows::Data::Xml::Dom;
 using namespace Windows::Foundation::Numerics;
 using namespace Windows::Perception::Spatial;
 using namespace Windows::Storage;
+using namespace Windows::UI::Input::Spatial;
 
 namespace HoloIntervention
 {
@@ -70,7 +71,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    float3 ToolSystem::GetStabilizedNormal() const
+    float3 ToolSystem::GetStabilizedNormal(SpatialPointerPose^ pose) const
     {
       std::shared_ptr<Tools::ToolEntry> maxEntry(nullptr);
       float maxPriority(PRIORITY_NOT_ACTIVE);
@@ -85,7 +86,7 @@ namespace HoloIntervention
 
       if (maxEntry != nullptr)
       {
-        return maxEntry->GetStabilizedNormal();
+        return maxEntry->GetStabilizedNormal(pose);
       }
 
       return float3(0.f, 1.f, 0.f);

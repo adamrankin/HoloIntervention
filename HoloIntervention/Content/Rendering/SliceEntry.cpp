@@ -80,19 +80,19 @@ namespace HoloIntervention
     const float SliceEntry::LERP_RATE = 2.5f;
 
     //----------------------------------------------------------------------------
-    Windows::Foundation::Numerics::float3 SliceEntry::GetStabilizedPosition() const
+    float3 SliceEntry::GetStabilizedPosition() const
     {
       return transform(float3(0.f, 0.f, 0.f), m_currentPose);
     }
 
     //----------------------------------------------------------------------------
-    Windows::Foundation::Numerics::float3 SliceEntry::GetStabilizedNormal() const
+    float3 SliceEntry::GetStabilizedNormal(SpatialPointerPose^ pose) const
     {
       return ExtractNormal(m_currentPose);
     }
 
     //----------------------------------------------------------------------------
-    Windows::Foundation::Numerics::float3 SliceEntry::GetStabilizedVelocity() const
+    float3 SliceEntry::GetStabilizedVelocity() const
     {
       return m_velocity;
     }

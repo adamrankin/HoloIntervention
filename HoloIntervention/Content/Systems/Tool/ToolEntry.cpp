@@ -35,6 +35,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <sstream>
 
 using namespace Windows::Foundation::Numerics;
+using namespace Windows::UI::Input::Spatial;
 
 namespace HoloIntervention
 {
@@ -42,7 +43,7 @@ namespace HoloIntervention
   {
 
     //----------------------------------------------------------------------------
-    Windows::Foundation::Numerics::float3 ToolEntry::GetStabilizedPosition() const
+    float3 ToolEntry::GetStabilizedPosition() const
     {
       if (m_modelEntry != nullptr)
       {
@@ -52,7 +53,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    Windows::Foundation::Numerics::float3 ToolEntry::GetStabilizedNormal() const
+    float3 ToolEntry::GetStabilizedNormal(SpatialPointerPose^ pose) const
     {
       if (m_modelEntry != nullptr)
       {
@@ -62,7 +63,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    Windows::Foundation::Numerics::float3 ToolEntry::GetStabilizedVelocity() const
+    float3 ToolEntry::GetStabilizedVelocity() const
     {
       if (m_modelEntry != nullptr)
       {

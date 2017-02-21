@@ -68,7 +68,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    float3 SplashSystem::GetStabilizedNormal() const
+    float3 SplashSystem::GetStabilizedNormal(SpatialPointerPose^ pose) const
     {
       return ExtractNormal(m_sliceEntry->GetCurrentPose());
     }

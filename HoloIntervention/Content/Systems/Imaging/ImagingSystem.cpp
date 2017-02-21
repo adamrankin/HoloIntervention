@@ -57,7 +57,7 @@ namespace HoloIntervention
   {
 
     //----------------------------------------------------------------------------
-    Windows::Foundation::Numerics::float3 ImagingSystem::GetStabilizedPosition() const
+    float3 ImagingSystem::GetStabilizedPosition() const
     {
       std::shared_ptr<Rendering::SliceEntry> sliceEntry(nullptr);
       if (m_sliceValid)
@@ -93,7 +93,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    Windows::Foundation::Numerics::float3 ImagingSystem::GetStabilizedNormal() const
+    float3 ImagingSystem::GetStabilizedNormal(SpatialPointerPose^ pose) const
     {
       std::shared_ptr<Rendering::SliceEntry> sliceEntry(nullptr);
       if (m_sliceValid)
@@ -129,7 +129,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    Windows::Foundation::Numerics::float3 ImagingSystem::GetStabilizedVelocity() const
+    float3 ImagingSystem::GetStabilizedVelocity() const
     {
       std::shared_ptr<Rendering::SliceEntry> sliceEntry(nullptr);
       if (m_sliceValid)
