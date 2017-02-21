@@ -756,34 +756,53 @@ namespace HoloIntervention
           cv::GaussianBlur(mask, mask, cv::Size(9, 9), 2, 2);
 
           // Apply the Hough Transform to find the circles
-          cv::HoughCircles(mask, circles, CV_HOUGH_GRADIENT, 2, mask.rows / 16, 255, 30, 15, 60);
+          cv::HoughCircles(mask, circles, CV_HOUGH_GRADIENT, 2, mask.rows / 32, 255, 30, 8, 60);
 
-          if (circles.size() == PHANTOM_SPHERE_COUNT)
+          if (circles.size() >= PHANTOM_SPHERE_COUNT)
           {
-            float radiusMean(0.f);
-            for (auto& circle : circles)
+            auto allCirclesWithinMeanRadius = [this](const std::vector<cv::Point3f>& circles) -> bool
             {
-              radiusMean += circle.z;
-            }
-            radiusMean /= circles.size();
-
-            for (auto& circle : circles)
-            {
-              // Ensure radius of circle falls within 15% of mean
-              if (circle.z / radiusMean < 0.85f || circle.z / radiusMean > 1.15f)
+              float radiusMean(0.f);
+              for (auto& circle : circles)
               {
-                result = false;
-                goto done;
+                radiusMean += circle.z;
               }
+              radiusMean /= circles.size();
 
-              circleCentersPixel.push_back(cv::Point2f(circle.x, circle.y));
+              for (auto& circle : circles)
+              {
+                // Ensure radius of circle falls within 5% of mean
+                if (circle.z / radiusMean <= 0.95f || circle.z / radiusMean >= 1.05f)
+                {
+                  return false;
+                }
+              }
+              return true;
+            };
+
+            // Sort by radius size
+            std::sort(begin(circles), end(circles), [](const cv::Point3f & left, const cv::Point3f & right)
+            {
+              return left.z < right.z;
+            });
+
+            // Start center index is 2, end center index is circles.size() - 3
+            for (uint32 centerIndex = 2; centerIndex < circles.size() - 2; ++centerIndex)
+            {
+              std::vector<cv::Point3f> testCircles;
+              for (uint32 sphereIndex = -2; sphereIndex < PHANTOM_SPHERE_COUNT - 2; ++sphereIndex)
+              {
+                testCircles.push_back(circles[centerIndex + sphereIndex]);
+              }
+              if (allCirclesWithinMeanRadius(testCircles))
+              {
+                for (auto circle : testCircles)
+                {
+                  circleCentersPixel.push_back(cv::Point2f(circle.x, circle.y));
+                }
+                break;
+              }
             }
-          }
-          else if (circles.size() > PHANTOM_SPHERE_COUNT)
-          {
-            // TODO : is it possible to make our code more robust by identifying 5 circles that make sense? pixel center distances? radii? etc...
-            result = false;
-            goto done;
           }
           else
           {
