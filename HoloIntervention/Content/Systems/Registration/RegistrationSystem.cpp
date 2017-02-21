@@ -159,9 +159,10 @@ namespace HoloIntervention
       auto trName = ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD");
       InitializeTransformRepositoryAsync(L"configuration.xml", configStorageFolder, repo).then([this, repo, trName]()
       {
-        if (repo->GetTransform(trName, &m_cachedRegistrationTransform))
+        float4x4 temp;
+        if (repo->GetTransform(trName, &temp))
         {
-          m_cachedRegistrationTransform = transpose(m_cachedRegistrationTransform);
+          m_cachedRegistrationTransform = transpose(temp);
         }
       }).then([this]()
       {
