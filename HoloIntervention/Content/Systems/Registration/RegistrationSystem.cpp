@@ -172,10 +172,9 @@ namespace HoloIntervention
         m_componentReady = true;
       });
 
-      m_cameraRegistration->RegisterCompletedCallback([this](float4x4 registrationTransform)
+      m_cameraRegistration->RegisterTransformUpdatedCallback([this](float4x4 registrationTransform)
       {
         m_cachedRegistrationTransform = registrationTransform;
-        m_registrationActive = false;
       });
     }
 
@@ -311,6 +310,11 @@ namespace HoloIntervention
             m_registrationActive = false;
           }
         });
+      };
+
+      callbackMap[L"discard frames"] = [this](SpeechRecognitionResult ^ result)
+      {
+        m_cameraRegistration->DiscardFrames();
       };
 
       callbackMap[L"enable spheres"] = [this](SpeechRecognitionResult ^ result)

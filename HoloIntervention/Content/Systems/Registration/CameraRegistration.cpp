@@ -56,7 +56,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <WindowsNumerics.h>
 
 #ifndef SUCCEEDED
-  #define SUCCEEDED(hr) (((HRESULT)(hr)) >= 0)
+#define SUCCEEDED(hr) (((HRESULT)(hr)) >= 0)
 #endif
 
 using namespace Concurrency;
@@ -215,7 +215,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void CameraRegistration::RegisterCompletedCallback(std::function<void(float4x4)> function)
+    void CameraRegistration::RegisterTransformUpdatedCallback(std::function<void(float4x4)> function)
     {
       m_completeCallback = function;
     }
@@ -265,7 +265,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     task<bool> CameraRegistration::StartCameraAsync()
     {
-      std::lock_guard<std::mutex> frameGuard(m_framesLock);
+      std::lock_guard<std::mutex> frameGuard(m_outputFramesLock);
       m_sphereInAnchorResultFrames.clear();
       m_sphereInReferenceResultFrames.clear();
 
@@ -433,16 +433,25 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    void CameraRegistration::DiscardFrames()
+    {
+      m_outputFramesLock;
+      m_lastRegistrationResultCount = 0;
+      m_sphereInAnchorResultFrames.clear();
+      m_sphereInReferenceResultFrames.clear();
+    }
+
+    //----------------------------------------------------------------------------
     Windows::Perception::Spatial::SpatialAnchor^ CameraRegistration::GetWorldAnchor()
     {
-      std::lock_guard<std::mutex> guard(m_anchorMutex);
+      std::lock_guard<std::mutex> guard(m_anchorLock);
       return m_worldAnchor;
     }
 
     //----------------------------------------------------------------------------
     void CameraRegistration::SetWorldAnchor(Windows::Perception::Spatial::SpatialAnchor^ worldAnchor)
     {
-      std::lock_guard<std::mutex> guard(m_anchorMutex);
+      std::lock_guard<std::mutex> guard(m_anchorLock);
       if (IsCameraActive())
       {
         // World anchor changed during registration, invalidate the registration session.
@@ -529,7 +538,8 @@ namespace HoloIntervention
         }
 
         MediaFrameReference^ cameraFrame(m_videoFrameProcessor->GetLatestFrame());
-        if (connection->GetTrackedFrame(l_latestTrackedFrame, &m_latestTimestamp) &&
+        l_latestTrackedFrame = connection->GetTrackedFrame(&m_latestTimestamp);
+        if (l_latestTrackedFrame != nullptr &&
             cameraFrame != nullptr &&
             cameraFrame != l_latestCameraFrame)
         {
@@ -539,7 +549,7 @@ namespace HoloIntervention
           m_latestTimestamp = l_latestTrackedFrame->Timestamp;
           if (l_latestCameraFrame->CoordinateSystem != nullptr)
           {
-            std::lock_guard<std::mutex> guard(m_anchorMutex);
+            std::lock_guard<std::mutex> guard(m_anchorLock);
             Platform::IBox<float4x4>^ cameraToRawWorldAnchorBox;
             try
             {
@@ -596,7 +606,7 @@ namespace HoloIntervention
               }
             }
 
-            std::lock_guard<std::mutex> frameGuard(m_framesLock);
+            std::lock_guard<std::mutex> frameGuard(m_outputFramesLock);
             m_sphereInAnchorResultFrames.push_back(sphereInAnchorResults);
             m_sphereInReferenceResultFrames.push_back(sphereInReferenceResults);
 
@@ -604,7 +614,7 @@ namespace HoloIntervention
             {
               m_notificationSystem.RemoveMessage(lastMessageId);
             }
-            lastMessageId = m_notificationSystem.QueueMessage(L"Acquired " + m_sphereInAnchorResultFrames.size().ToString() + " frames.");
+            lastMessageId = m_notificationSystem.QueueMessage(L"Acquired " + m_sphereInAnchorResultFrames.size().ToString() + L" frame" + (m_sphereInAnchorResultFrames.size() > 1 ? L"s." : L"."));
           }
         }
         else
@@ -619,14 +629,14 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void CameraRegistration::PerformLandmarkRegistration(Concurrency::cancellation_token token)
     {
-      uint32 lastRegistrationResultCount(0);
       const uint32 NUMBER_OF_FRAMES_BETWEEN_REGISTRATION = 3;
 
       while (!token.is_canceled())
       {
+        uint32 size;
         {
-          std::unique_lock<std::mutex> frameLock(m_framesLock);
-          if (m_sphereInAnchorResultFrames.size() < lastRegistrationResultCount + NUMBER_OF_FRAMES_BETWEEN_REGISTRATION)
+          std::unique_lock<std::mutex> frameLock(m_outputFramesLock);
+          if (m_sphereInAnchorResultFrames.size() < m_lastRegistrationResultCount + NUMBER_OF_FRAMES_BETWEEN_REGISTRATION)
           {
             frameLock.unlock();
             std::this_thread::sleep_for(std::chrono::milliseconds(33));
@@ -637,6 +647,8 @@ namespace HoloIntervention
 
           m_landmarkRegistration->SetSourceLandmarks(m_sphereInReferenceResultFrames);
           m_landmarkRegistration->SetTargetLandmarks(m_sphereInAnchorResultFrames);
+
+          size = m_sphereInAnchorResultFrames.size();
         }
 
         std::atomic_bool calcFinished(false);
@@ -665,6 +677,8 @@ namespace HoloIntervention
         {
           std::this_thread::sleep_for(std::chrono::milliseconds(33));
         }
+
+        m_lastRegistrationResultCount = size;
 
         auto end = std::chrono::system_clock::now();
         std::chrono::duration<double> diff = end - start;
@@ -756,53 +770,34 @@ namespace HoloIntervention
           cv::GaussianBlur(mask, mask, cv::Size(9, 9), 2, 2);
 
           // Apply the Hough Transform to find the circles
-          cv::HoughCircles(mask, circles, CV_HOUGH_GRADIENT, 2, mask.rows / 32, 255, 30, 8, 60);
+          cv::HoughCircles(mask, circles, CV_HOUGH_GRADIENT, 2, mask.rows / 16, 255, 30, 15, 60);
 
-          if (circles.size() >= PHANTOM_SPHERE_COUNT)
+          if (circles.size() == PHANTOM_SPHERE_COUNT)
           {
-            auto allCirclesWithinMeanRadius = [this](const std::vector<cv::Point3f>& circles) -> bool
+            float radiusMean(0.f);
+            for (auto& circle : circles)
             {
-              float radiusMean(0.f);
-              for (auto& circle : circles)
-              {
-                radiusMean += circle.z;
-              }
-              radiusMean /= circles.size();
-
-              for (auto& circle : circles)
-              {
-                // Ensure radius of circle falls within 5% of mean
-                if (circle.z / radiusMean <= 0.95f || circle.z / radiusMean >= 1.05f)
-                {
-                  return false;
-                }
-              }
-              return true;
-            };
-
-            // Sort by radius size
-            std::sort(begin(circles), end(circles), [](const cv::Point3f & left, const cv::Point3f & right)
-            {
-              return left.z < right.z;
-            });
-
-            // Start center index is 2, end center index is circles.size() - 3
-            for (uint32 centerIndex = 2; centerIndex < circles.size() - 2; ++centerIndex)
-            {
-              std::vector<cv::Point3f> testCircles;
-              for (uint32 sphereIndex = -2; sphereIndex < PHANTOM_SPHERE_COUNT - 2; ++sphereIndex)
-              {
-                testCircles.push_back(circles[centerIndex + sphereIndex]);
-              }
-              if (allCirclesWithinMeanRadius(testCircles))
-              {
-                for (auto circle : testCircles)
-                {
-                  circleCentersPixel.push_back(cv::Point2f(circle.x, circle.y));
-                }
-                break;
-              }
+              radiusMean += circle.z;
             }
+            radiusMean /= circles.size();
+
+            for (auto& circle : circles)
+            {
+              // Ensure radius of circle falls within 15% of mean
+              if (circle.z / radiusMean < 0.85f || circle.z / radiusMean > 1.15f)
+              {
+                result = false;
+                goto done;
+              }
+
+              circleCentersPixel.push_back(cv::Point2f(circle.x, circle.y));
+            }
+          }
+          else if (circles.size() > PHANTOM_SPHERE_COUNT)
+          {
+            // TODO : is it possible to make our code more robust by identifying 5 circles that make sense? pixel center distances? radii? etc...
+            result = false;
+            goto done;
           }
           else
           {
@@ -960,7 +955,7 @@ done:
       if (IsCameraActive())
       {
         // Registration is active, apply this to all m_rawWorldAnchorResults results, to adjust raw anchor coordinate system that they depend on
-        std::lock_guard<std::mutex> frameGuard(m_framesLock);
+        std::lock_guard<std::mutex> frameGuard(m_outputFramesLock);
         for (auto& frame : m_sphereInAnchorResultFrames)
         {
           for (auto& point : frame)

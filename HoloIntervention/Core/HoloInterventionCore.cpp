@@ -134,7 +134,7 @@ namespace HoloIntervention
             try
             {
               StorageFile^ file = copyTask.get();
-              return create_task(ApplicationData::Current->LocalFolder->GetFolderAsync(L"Assets\\Data"));
+              return task_from_result(ApplicationData::Current->LocalFolder);
             }
             catch (Platform::Exception^)
             {

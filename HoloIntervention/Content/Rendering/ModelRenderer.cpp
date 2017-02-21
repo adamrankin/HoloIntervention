@@ -64,7 +64,13 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ModelRenderer::Update(const DX::CameraResources* cameraResources)
     {
-      assert(cameraResources != nullptr);
+#if defined(_DEBUG)
+      if (cameraResources == nullptr)
+      {
+        // When coming back from a breakpoint, this is sometimes null
+        return;
+      }
+#endif
 
       m_cameraResources = cameraResources;
 
@@ -147,9 +153,9 @@ namespace HoloIntervention
       std::unique_ptr<DirectX::InstancedGeometricPrimitive> primitive(nullptr);
       switch (type)
       {
-        case PrimitiveType_SPHERE:
-          primitive = std::move(DirectX::InstancedGeometricPrimitive::CreateSphere(m_deviceResources->GetD3DDeviceContext(), diameter, tessellation, rhcoords, invertn));
-          break;
+      case PrimitiveType_SPHERE:
+        primitive = std::move(DirectX::InstancedGeometricPrimitive::CreateSphere(m_deviceResources->GetD3DDeviceContext(), diameter, tessellation, rhcoords, invertn));
+        break;
       }
 
       std::shared_ptr<PrimitiveEntry> entry = std::make_shared<PrimitiveEntry>(m_deviceResources, std::move(primitive), m_timer);

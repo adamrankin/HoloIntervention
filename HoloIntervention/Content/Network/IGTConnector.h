@@ -83,7 +83,7 @@ namespace HoloIntervention
       void SetPort(int32 port);
       int32 GetPort() const;
 
-      bool GetTrackedFrame(UWPOpenIGTLink::TrackedFrame^& frame, double* latestTimestamp = nullptr);
+      UWPOpenIGTLink::TrackedFrame^ GetTrackedFrame(double* latestTimestamp = nullptr);
 
     protected:
       Concurrency::task<void> KeepAliveAsync();

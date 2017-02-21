@@ -98,7 +98,7 @@ namespace HoloIntervention
       std::wstring                          m_sliceToCoordFrame = L"HMD";
       UWPOpenIGTLink::TransformName^        m_sliceToHMDName = ref new UWPOpenIGTLink::TransformName(ref new Platform::String(m_sliceFromCoordFrame.c_str()), ref new Platform::String(m_sliceToCoordFrame.c_str()));
       uint64                                m_sliceToken = INVALID_TOKEN;
-      double                                m_lastSliceTimestamp = 0.0;
+      double                                m_latestSliceTimestamp = 0.0;
       std::atomic_bool                      m_sliceValid = false;
 
       // Volume system
@@ -107,7 +107,7 @@ namespace HoloIntervention
       std::wstring                          m_volumeToCoordFrame = L"HMD";
       UWPOpenIGTLink::TransformName^        m_volumeToHMDName = ref new UWPOpenIGTLink::TransformName(ref new Platform::String(m_volumeFromCoordFrame.c_str()), ref new Platform::String(m_volumeToCoordFrame.c_str()));
       uint64                                m_volumeToken = INVALID_TOKEN;
-      double                                m_lastVolumeTimestamp = 0.0;
+      double                                m_latestVolumeTimestamp = 0.0;
       std::atomic_bool                      m_volumeValid = false;
     };
   }

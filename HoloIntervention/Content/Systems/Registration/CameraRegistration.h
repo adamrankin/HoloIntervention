@@ -106,13 +106,15 @@ namespace HoloIntervention
       bool IsCameraActive() const;
       void SetVisualization(bool enabled);
 
+      void DiscardFrames();
+
       Windows::Perception::Spatial::SpatialAnchor^ GetWorldAnchor();
       void SetWorldAnchor(Windows::Perception::Spatial::SpatialAnchor^ worldAnchor);
 
       bool HasRegistration() const;
       Windows::Foundation::Numerics::float4x4 GetReferenceToWorldAnchorTransformation() const;
 
-      void RegisterCompletedCallback(std::function<void(Windows::Foundation::Numerics::float4x4)> function);
+      void RegisterTransformUpdatedCallback(std::function<void(Windows::Foundation::Numerics::float4x4)> function);
 
     protected:
       void Init();
@@ -143,13 +145,8 @@ namespace HoloIntervention
       NotificationSystem&                                                   m_notificationSystem;
       NetworkSystem&                                                        m_networkSystem;
 
-      std::function<void(Windows::Foundation::Numerics::float4x4)>          m_completeCallback;
-      mutable std::mutex                                                    m_processorLock;
-      std::shared_ptr<Capture::VideoFrameProcessor>                         m_videoFrameProcessor = nullptr;
-      Windows::Storage::StorageFolder^                                      m_configStorageFolder;
-
       // Anchor resources
-      std::mutex                                                            m_anchorMutex;
+      std::mutex                                                            m_anchorLock;
       Windows::Perception::Spatial::SpatialAnchor^                          m_worldAnchor = nullptr;
 
       // Visualization resources
@@ -161,9 +158,10 @@ namespace HoloIntervention
       // Camera
       std::atomic_bool                                                      m_cameraActive = false;
       Windows::Foundation::EventRegistrationToken                           m_anchorUpdatedToken;
-      std::mutex                                                            m_framesLock;
       Windows::Media::Capture::Frames::MediaFrameReference^                 m_currentFrame = nullptr;
       Windows::Media::Capture::Frames::MediaFrameReference^                 m_nextFrame = nullptr;
+      mutable std::mutex                                                    m_processorLock;
+      std::shared_ptr<Capture::VideoFrameProcessor>                         m_videoFrameProcessor = nullptr;
 
       // IGT link
       std::wstring                                                          m_connectionName;
@@ -175,15 +173,18 @@ namespace HoloIntervention
       std::array<UWPOpenIGTLink::TransformName^, 5>                         m_sphereCoordinateNames;
 
       // Output
+      std::mutex                                                            m_outputFramesLock;
       LandmarkRegistration::DetectionFrames                                 m_sphereInAnchorResultFrames;
       LandmarkRegistration::DetectionFrames                                 m_sphereInReferenceResultFrames;
 
-      // State variables
+      // State
       Concurrency::cancellation_token_source                                m_tokenSource;
       std::atomic_bool                                                      m_hasRegistration = false;
       std::atomic_bool                                                      m_pnpNeedsInit = true;
-
-      Windows::Foundation::Numerics::float4x4                               m_referenceToAnchor = Windows::Foundation::Numerics::float4x4::identity(); // column-major order
+      std::function<void(Windows::Foundation::Numerics::float4x4)>          m_completeCallback;
+      Windows::Storage::StorageFolder^                                      m_configStorageFolder;
+      uint32                                                                m_lastRegistrationResultCount = 0;
+      Windows::Foundation::Numerics::float4x4                               m_referenceToAnchor = Windows::Foundation::Numerics::float4x4::identity();
       std::shared_ptr<LandmarkRegistration>                                 m_landmarkRegistration = std::make_shared<LandmarkRegistration>();
 
       static const uint32                                                   PHANTOM_SPHERE_COUNT = 5;

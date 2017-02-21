@@ -217,7 +217,8 @@ namespace HoloIntervention
       {
         return;
       }
-      if (!connection->GetTrackedFrame(frame, &m_latestTimestamp))
+      frame = connection->GetTrackedFrame(&m_latestTimestamp);
+      if (frame == nullptr)
       {
         return;
       }

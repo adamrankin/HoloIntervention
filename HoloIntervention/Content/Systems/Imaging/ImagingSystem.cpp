@@ -76,7 +76,7 @@ namespace HoloIntervention
         // TODO : which one is close to the view frustrum?
         // TODO : which one is more recent?
         // TODO : other metrics?
-        return m_lastSliceTimestamp > m_lastVolumeTimestamp ? transform(float3(0.f, 0.f, 0.f), sliceEntry->GetCurrentPose()) : transform(float3(0.f, 0.f, 0.f), volumeEntry->GetCurrentPose());
+        return m_latestSliceTimestamp > m_latestVolumeTimestamp ? transform(float3(0.f, 0.f, 0.f), sliceEntry->GetCurrentPose()) : transform(float3(0.f, 0.f, 0.f), volumeEntry->GetCurrentPose());
       }
       else if (m_volumeValid)
       {
@@ -112,7 +112,7 @@ namespace HoloIntervention
         // TODO : which one is close to the view frustrum?
         // TODO : which one is more recent?
         // TODO : other metrics?
-        return m_lastSliceTimestamp > m_lastVolumeTimestamp ? ExtractNormal(sliceEntry->GetCurrentPose()) : ExtractNormal(volumeEntry->GetCurrentPose());
+        return m_latestSliceTimestamp > m_latestVolumeTimestamp ? ExtractNormal(sliceEntry->GetCurrentPose()) : ExtractNormal(volumeEntry->GetCurrentPose());
       }
       else if (m_volumeValid)
       {
@@ -148,7 +148,7 @@ namespace HoloIntervention
         // TODO : which one is close to the view frustrum?
         // TODO : which one is more recent?
         // TODO : other metrics?
-        return m_lastSliceTimestamp > m_lastVolumeTimestamp ? sliceEntry->GetStabilizedVelocity() : volumeEntry->GetVelocity();
+        return m_latestSliceTimestamp > m_latestVolumeTimestamp ? sliceEntry->GetStabilizedVelocity() : volumeEntry->GetVelocity();
       }
       else if (m_volumeValid)
       {
@@ -224,7 +224,7 @@ namespace HoloIntervention
               name = ref new UWPOpenIGTLink::TransformName(fromAttribute, toAttribute);
             }
 
-            Platform::String^ igtConnection = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"To")->NodeValue);
+            Platform::String^ igtConnection = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"IGTConnection")->NodeValue);
             if (igtConnection != nullptr)
             {
               connectionName = std::wstring(begin(igtConnection), end(igtConnection));
@@ -256,16 +256,11 @@ namespace HoloIntervention
       {
         return;
       }
-      if (sliceConnection->GetTrackedFrame(frame, &m_lastSliceTimestamp))
+      frame = sliceConnection->GetTrackedFrame(&m_latestSliceTimestamp);
+      if (frame != nullptr && frame->HasImage() && frame->Dimensions[2] == 1)
       {
-        if (frame->HasImage())
-        {
-          if (frame->Dimensions[2] == 1)
-          {
-            m_transformRepository->SetTransforms(frame);
-            Process2DFrame(frame, coordSystem);
-          }
-        }
+        m_transformRepository->SetTransforms(frame);
+        Process2DFrame(frame, coordSystem);
       }
 
       std::shared_ptr<Network::IGTConnector> volumeConnection = m_networkSystem.GetConnection(m_volumeConnectionName);
@@ -273,16 +268,11 @@ namespace HoloIntervention
       {
         return;
       }
-      if (volumeConnection->GetTrackedFrame(frame, &m_lastVolumeTimestamp))
+      frame = volumeConnection->GetTrackedFrame(&m_latestVolumeTimestamp);
+      if (frame != nullptr && frame->HasImage() && frame->Dimensions[2] > 1)
       {
-        if (frame->HasImage())
-        {
-          if (frame->Dimensions[2] > 1)
-          {
-            m_transformRepository->SetTransforms(frame);
-            Process3DFrame(frame, coordSystem);
-          }
-        }
+        m_transformRepository->SetTransforms(frame);
+        Process3DFrame(frame, coordSystem);
       }
     }
 
@@ -381,7 +371,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ImagingSystem::Process2DFrame(UWPOpenIGTLink::TrackedFrame^ frame, SpatialCoordinateSystem^ hmdCoordinateSystem)
     {
-      m_lastSliceTimestamp = frame->Timestamp;
+      m_latestSliceTimestamp = frame->Timestamp;
 
       // Update the transform repository with the latest registration
       float4x4 referenceToHMD(float4x4::identity());
@@ -420,7 +410,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ImagingSystem::Process3DFrame(UWPOpenIGTLink::TrackedFrame^ frame, SpatialCoordinateSystem^ hmdCoordinateSystem)
     {
-      m_lastVolumeTimestamp = frame->Timestamp;
+      m_latestVolumeTimestamp = frame->Timestamp;
 
       // Update the transform repository with the latest registration
       float4x4 referenceToHMD(float4x4::identity());
