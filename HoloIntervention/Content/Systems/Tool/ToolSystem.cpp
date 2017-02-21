@@ -129,7 +129,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    ToolSystem::ToolSystem(NotificationSystem& notificationSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer, NetworkSystem& networkSystem)
+    ToolSystem::ToolSystem(NotificationSystem& notificationSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer, NetworkSystem& networkSystem, StorageFolder^ configStorageFolder)
       : m_notificationSystem(notificationSystem)
       , m_registrationSystem(registrationSystem)
       , m_modelRenderer(modelRenderer)
@@ -138,7 +138,7 @@ namespace HoloIntervention
     {
       try
       {
-        InitializeTransformRepositoryAsync(m_transformRepository, L"Assets\\Data\\configuration.xml");
+        InitializeTransformRepositoryAsync(L"configuration.xml", configStorageFolder, m_transformRepository);
       }
       catch (Platform::Exception^)
       {
@@ -148,7 +148,7 @@ namespace HoloIntervention
 
       try
       {
-        GetXmlDocumentFromFileAsync(L"Assets\\Data\\configuration.xml").then([this](XmlDocument ^ doc)
+        LoadXmlDocumentAsync(L"configuration.xml", configStorageFolder).then([this](XmlDocument ^ doc)
         {
           return InitAsync(doc).then([this]()
           {

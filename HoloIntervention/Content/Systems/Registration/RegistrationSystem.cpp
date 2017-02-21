@@ -56,6 +56,7 @@ using namespace Windows::Data::Xml::Dom;
 using namespace Windows::Foundation::Numerics;
 using namespace Windows::Media::SpeechRecognition;
 using namespace Windows::Perception::Spatial;
+using namespace Windows::Storage;
 using namespace Windows::UI::Input::Spatial;
 
 namespace HoloIntervention
@@ -134,11 +135,11 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    RegistrationSystem::RegistrationSystem(NetworkSystem& networkSystem, Physics::PhysicsAPI& physicsAPI, NotificationSystem& notificationSystem, Rendering::ModelRenderer& modelRenderer)
+    RegistrationSystem::RegistrationSystem(NetworkSystem& networkSystem, Physics::PhysicsAPI& physicsAPI, NotificationSystem& notificationSystem, Rendering::ModelRenderer& modelRenderer, StorageFolder^ configStorageFolder)
       : m_notificationSystem(notificationSystem)
       , m_modelRenderer(modelRenderer)
       , m_physicsAPI(physicsAPI)
-      , m_cameraRegistration(std::make_shared<CameraRegistration>(notificationSystem, networkSystem, modelRenderer))
+      , m_cameraRegistration(std::make_shared<CameraRegistration>(notificationSystem, networkSystem, modelRenderer, configStorageFolder))
     {
       m_regAnchorModelId = m_modelRenderer.AddModel(REGISTRATION_ANCHOR_MODEL_FILENAME);
       if (m_regAnchorModelId != INVALID_TOKEN)
@@ -156,7 +157,7 @@ namespace HoloIntervention
 
       auto repo = ref new UWPOpenIGTLink::TransformRepository();
       auto trName = ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD");
-      InitializeTransformRepositoryAsync(repo, L"Assets\\Data\\configuration.xml").then([this, repo, trName]()
+      InitializeTransformRepositoryAsync(L"configuration.xml", configStorageFolder, repo).then([this, repo, trName]()
       {
         try
         {
@@ -201,6 +202,8 @@ namespace HoloIntervention
           }
 
           m_notificationSystem.QueueMessage(L"Anchor created.");
+
+          m_physicsAPI.SaveAppStateAsync();
         }
         m_regAnchorRequested = false;
       }
@@ -212,7 +215,15 @@ namespace HoloIntervention
         transformContainer = m_regAnchor->CoordinateSystem->TryGetTransformTo(coordinateSystem);
         if (transformContainer != nullptr)
         {
-          m_regAnchorModel->SetDesiredPose(transformContainer->Value);
+          if (m_forcePose)
+          {
+            m_regAnchorModel->SetCurrentPose(transformContainer->Value);
+            m_forcePose = false;
+          }
+          else
+          {
+            m_regAnchorModel->SetDesiredPose(transformContainer->Value);
+          }
         }
       }
 
@@ -229,6 +240,7 @@ namespace HoloIntervention
       {
         if (m_physicsAPI.HasAnchor(REGISTRATION_ANCHOR_NAME))
         {
+          m_forcePose = true;
           m_regAnchor = m_physicsAPI.GetAnchor(REGISTRATION_ANCHOR_NAME);
           m_regAnchorModel->SetVisible(true);
         }

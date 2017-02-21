@@ -70,7 +70,8 @@ namespace HoloIntervention
       RegistrationSystem(NetworkSystem& networkSystem,
                          Physics::PhysicsAPI& physicsAPI,
                          NotificationSystem& notificationSystem,
-                         Rendering::ModelRenderer& modelRenderer);
+                         Rendering::ModelRenderer& modelRenderer,
+                         Windows::Storage::StorageFolder^ configStorageFolder);
       ~RegistrationSystem();
 
       void Update(DX::StepTimer& timer,
@@ -88,6 +89,9 @@ namespace HoloIntervention
       NotificationSystem&                             m_notificationSystem;
       Rendering::ModelRenderer&                       m_modelRenderer;
       Physics::PhysicsAPI&                            m_physicsAPI;
+
+      // State variables
+      std::atomic_bool                                m_forcePose = false;
 
       // Anchor variables
       std::atomic_bool                                m_registrationActive = false;

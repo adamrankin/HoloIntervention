@@ -70,6 +70,7 @@ using namespace Windows::Media::Capture::Frames;
 using namespace Windows::Media::Devices::Core;
 using namespace Windows::Media::MediaProperties;
 using namespace Windows::Perception::Spatial;
+using namespace Windows::Storage;
 
 namespace
 {
@@ -168,10 +169,11 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    CameraRegistration::CameraRegistration(NotificationSystem& notificationSystem, NetworkSystem& networkSystem, Rendering::ModelRenderer& modelRenderer)
+    CameraRegistration::CameraRegistration(NotificationSystem& notificationSystem, NetworkSystem& networkSystem, Rendering::ModelRenderer& modelRenderer, StorageFolder^ configStorageFolder)
       : m_modelRenderer(modelRenderer)
       , m_notificationSystem(notificationSystem)
       , m_networkSystem(networkSystem)
+      , m_configStorageFolder(configStorageFolder)
     {
       Init();
     }
@@ -1292,7 +1294,7 @@ done:
     {
       try
       {
-        InitializeTransformRepositoryAsync(m_transformRepository, L"Assets\\Data\\configuration.xml").then([this]()
+        InitializeTransformRepositoryAsync(L"configuration.xml", m_configStorageFolder, m_transformRepository).then([this]()
         {
           m_transformsAvailable = true;
         });
@@ -1304,7 +1306,7 @@ done:
 
       try
       {
-        GetXmlDocumentFromFileAsync(L"Assets\\Data\\configuration.xml").then([this](XmlDocument ^ doc)
+        LoadXmlDocumentAsync(L"configuration.xml", m_configStorageFolder).then([this](XmlDocument ^ doc)
         {
           auto xpath = ref new Platform::String(L"/HoloIntervention/CameraRegistration");
           if (doc->SelectNodes(xpath)->Length == 0)

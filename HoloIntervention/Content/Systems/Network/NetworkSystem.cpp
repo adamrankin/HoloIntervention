@@ -40,17 +40,18 @@ using namespace Windows::Data::Xml::Dom;
 using namespace Windows::Media::SpeechRecognition;
 using namespace Windows::Networking::Connectivity;
 using namespace Windows::Networking;
+using namespace Windows::Storage;
 
 namespace HoloIntervention
 {
   namespace System
   {
     //----------------------------------------------------------------------------
-    NetworkSystem::NetworkSystem(System::NotificationSystem& notificationSystem, Input::VoiceInput& voiceInput)
+    NetworkSystem::NetworkSystem(System::NotificationSystem& notificationSystem, Input::VoiceInput& voiceInput, StorageFolder^ configStorageFolder)
       : m_notificationSystem(notificationSystem)
       , m_voiceInput(voiceInput)
     {
-      InitAsync().then([this](task<bool> initTask)
+      InitAsync(configStorageFolder).then([this](task<bool> initTask)
       {
         bool result;
 
@@ -100,13 +101,13 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<bool> NetworkSystem::InitAsync()
+    task<bool> NetworkSystem::InitAsync(StorageFolder^ configStorageFolder)
     {
-      return create_task([this]()
+      return create_task([this, configStorageFolder]()
       {
         try
         {
-          return GetXmlDocumentFromFileAsync(L"Assets\\Data\\configuration.xml").then([this](XmlDocument ^ doc)
+          return LoadXmlDocumentAsync(L"configuration.xml", configStorageFolder).then([this](XmlDocument ^ doc)
           {
             auto xpath = ref new Platform::String(L"/HoloIntervention/IGTConnections/Connection");
             if (doc->SelectNodes(xpath)->Length == 0)

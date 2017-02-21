@@ -55,11 +55,13 @@ namespace HoloIntervention
       typedef std::vector<std::shared_ptr<Network::IGTConnector>> ConnectorList;
 
     public:
-      NetworkSystem(System::NotificationSystem& notificationSystem, Input::VoiceInput& voiceInput);
+      NetworkSystem(System::NotificationSystem& notificationSystem,
+                    Input::VoiceInput& voiceInput,
+                    Windows::Storage::StorageFolder^ configStorageFolder);
       virtual ~NetworkSystem();
 
       bool IsConnected() const;
-      Concurrency::task<bool> InitAsync();
+      Concurrency::task<bool> InitAsync(Windows::Storage::StorageFolder^ configStorageFolder);
       std::shared_ptr<Network::IGTConnector> GetConnection(const std::wstring& name) const;
 
       /// IVoiceInput functions

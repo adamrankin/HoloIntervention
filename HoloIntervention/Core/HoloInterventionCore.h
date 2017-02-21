@@ -165,6 +165,7 @@ namespace HoloIntervention
 
     // Engine state
     std::atomic_bool                                      m_engineReady = false;
+    Windows::Storage::StorageFolder^                      m_configStorageFolder = nullptr;
 
     // Cached pointer to device resources.
     std::shared_ptr<DX::DeviceResources>                  m_deviceResources;

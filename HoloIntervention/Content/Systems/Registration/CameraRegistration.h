@@ -97,7 +97,7 @@ namespace HoloIntervention
       virtual float GetStabilizePriority() const;
 
     public:
-      CameraRegistration(NotificationSystem& notificationSystem, NetworkSystem& networkSystem, Rendering::ModelRenderer& modelRenderer);
+      CameraRegistration(NotificationSystem& notificationSystem, NetworkSystem& networkSystem, Rendering::ModelRenderer& modelRenderer, Windows::Storage::StorageFolder^ configFileFolder);
       ~CameraRegistration();
 
       void Update(Platform::IBox<Windows::Foundation::Numerics::float4x4>^ anchorToRequestedBox);
@@ -146,6 +146,7 @@ namespace HoloIntervention
       std::function<void(Windows::Foundation::Numerics::float4x4)>          m_completeCallback;
       mutable std::mutex                                                    m_processorLock;
       std::shared_ptr<Capture::VideoFrameProcessor>                         m_videoFrameProcessor = nullptr;
+      Windows::Storage::StorageFolder^                                      m_configStorageFolder;
 
       // Anchor resources
       std::mutex                                                            m_anchorMutex;

@@ -44,11 +44,12 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "Log.h"
 #include <WindowsNumerics.h>
 
-using namespace Windows::Foundation::Numerics;
-using namespace Windows::Perception::Spatial;
-using namespace Windows::UI::Input::Spatial;
-using namespace Windows::Media::SpeechRecognition;
 using namespace Windows::Data::Xml::Dom;
+using namespace Windows::Foundation::Numerics;
+using namespace Windows::Media::SpeechRecognition;
+using namespace Windows::Perception::Spatial;
+using namespace Windows::Storage;
+using namespace Windows::UI::Input::Spatial;
 
 namespace HoloIntervention
 {
@@ -178,7 +179,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    ImagingSystem::ImagingSystem(RegistrationSystem& registrationSystem, NotificationSystem& notificationSystem, Rendering::SliceRenderer& sliceRenderer, Rendering::VolumeRenderer& volumeRenderer, NetworkSystem& networkSystem)
+    ImagingSystem::ImagingSystem(RegistrationSystem& registrationSystem, NotificationSystem& notificationSystem, Rendering::SliceRenderer& sliceRenderer, Rendering::VolumeRenderer& volumeRenderer, NetworkSystem& networkSystem, StorageFolder^ configStorageFolder)
       : m_notificationSystem(notificationSystem)
       , m_registrationSystem(registrationSystem)
       , m_sliceRenderer(sliceRenderer)
@@ -187,7 +188,7 @@ namespace HoloIntervention
     {
       try
       {
-        InitializeTransformRepositoryAsync(m_transformRepository, L"Assets\\Data\\configuration.xml").then([this]()
+        InitializeTransformRepositoryAsync(L"configuration.xml", configStorageFolder, m_transformRepository).then([this]()
         {
           m_componentReady = true;
         });
@@ -199,7 +200,7 @@ namespace HoloIntervention
 
       try
       {
-        GetXmlDocumentFromFileAsync(L"Assets\\Data\\configuration.xml").then([this](XmlDocument ^ doc)
+        LoadXmlDocumentAsync(L"configuration.xml", configStorageFolder).then([this](XmlDocument ^ doc)
         {
           auto fromToFunction = [this, doc](Platform::String ^ xpath, std::wstring & m_from, std::wstring & m_to, UWPOpenIGTLink::TransformName^& name, std::wstring & connectionName)
           {

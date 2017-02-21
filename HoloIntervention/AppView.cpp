@@ -36,16 +36,15 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "NotificationSystem.h"
 
 using namespace Concurrency;
-using namespace Windows::ApplicationModel;
 using namespace Windows::ApplicationModel::Activation;
 using namespace Windows::ApplicationModel::Core;
+using namespace Windows::ApplicationModel;
 using namespace Windows::Foundation;
 using namespace Windows::Graphics::Holographic;
+using namespace Windows::Storage;
 using namespace Windows::UI::Core;
 
 //----------------------------------------------------------------------------
-// The main function is only used to initialize our IFrameworkView class.
-// Under most circumstances, you should not need to modify this function.
 [Platform::MTAThread]
 int main(Platform::Array<Platform::String^>^)
 {
@@ -76,12 +75,11 @@ namespace HoloIntervention
     // Register event handlers for app lifecycle.
     CoreApplication::Suspending +=
       ref new EventHandler<SuspendingEventArgs^>(this, &AppView::OnSuspending);
-
     CoreApplication::Resuming +=
       ref new EventHandler<Platform::Object^>(this, &AppView::OnResuming);
+    CoreApplication::LeavingBackground +=
+      ref new EventHandler<LeavingBackgroundEventArgs^>(this, &AppView::OnLeavingBackground);
 
-    // At this point we have access to the device and we can create device-dependent
-    // resources.
     m_deviceResources = std::make_shared<DX::DeviceResources>();
 
     m_main = std::make_unique<HoloInterventionCore>(m_deviceResources);
@@ -91,15 +89,10 @@ namespace HoloIntervention
   // Called when the CoreWindow object is created (or re-created).
   void AppView::SetWindow(CoreWindow^ window)
   {
-    // Register for keypress notifications.
     window->KeyDown +=
       ref new TypedEventHandler<CoreWindow^, KeyEventArgs^>(this, &AppView::OnKeyPressed);
-
-    // Register for notification that the app window is being closed.
     window->Closed +=
       ref new TypedEventHandler<CoreWindow^, CoreWindowEventArgs^>(this, &AppView::OnWindowClosed);
-
-    // Register for notifications that the app window is losing focus.
     window->VisibilityChanged +=
       ref new TypedEventHandler<CoreWindow^, VisibilityChangedEventArgs^>(this, &AppView::OnVisibilityChanged);
 
@@ -126,8 +119,6 @@ namespace HoloIntervention
 
         if (m_main->Render(holographicFrame))
         {
-          // The holographic frame has an API that presents the swap chain for each
-          // holographic camera.
           m_deviceResources->Present(holographicFrame);
         }
       }
@@ -147,17 +138,12 @@ namespace HoloIntervention
   //----------------------------------------------------------------------------
   void AppView::OnViewActivated(CoreApplicationView^ sender, IActivatedEventArgs^ args)
   {
-    // Run() won't start until the CoreWindow is activated.
     sender->CoreWindow->Activate();
   }
 
   //----------------------------------------------------------------------------
   void AppView::OnSuspending(Platform::Object^ sender, SuspendingEventArgs^ args)
   {
-    // Save app state asynchronously after requesting a deferral. Holding a deferral
-    // indicates that the application is busy performing suspending operations. Be
-    // aware that a deferral may not be held indefinitely; after about five seconds,
-    // the app will be forced to exit.
     SuspendingDeferral^ deferral = args->SuspendingOperation->GetDeferral();
 
     create_task([this, deferral]()
@@ -172,7 +158,7 @@ namespace HoloIntervention
         }
         catch (const std::exception& e)
         {
-          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_WARNING, e.what());
+          Log::instance().LogMessage(Log::LOG_LEVEL_WARNING, e.what());
         }
       }
 
@@ -212,5 +198,21 @@ namespace HoloIntervention
   void AppView::OnKeyPressed(CoreWindow^ sender, KeyEventArgs^ args)
   {
     // TODO: Bluetooth keyboards are supported by HoloLens.
+  }
+
+  //----------------------------------------------------------------------------
+  void AppView::OnLeavingBackground(Platform::Object^ sender, Windows::ApplicationModel::LeavingBackgroundEventArgs^ args)
+  {
+    if (m_main != nullptr)
+    {
+      try
+      {
+        m_main->LoadAppStateAsync();
+      }
+      catch (const std::exception&)
+      {
+        m_main->GetNotificationsSystem().QueueMessage(L"Unable to load spatial anchor store. Please re-place anchors.");
+      }
+    }
   }
 }

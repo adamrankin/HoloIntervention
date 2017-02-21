@@ -66,40 +66,6 @@ namespace HoloIntervention
       : m_deviceResources(deviceResources)
     {
       CreateDeviceDependentResourcesAsync();
-
-      // TODO : change this to read N volume configurations
-      /*
-      try
-      {
-        GetXmlDocumentFromFileAsync(L"Assets\\Data\\configuration.xml").then([this](XmlDocument ^ doc)
-        {
-          auto xpath = ref new Platform::String(L"/HoloIntervention/VolumeRendering");
-          if (doc->SelectNodes(xpath)->Length != 1)
-          {
-            // No configuration found, use defaults
-            return;
-          }
-
-          IXmlNode^ volRendering = doc->SelectNodes(xpath)->Item(0);
-          Platform::String^ fromAttribute = dynamic_cast<Platform::String^>(volRendering->Attributes->GetNamedItem(L"From")->NodeValue);
-          Platform::String^ toAttribute = dynamic_cast<Platform::String^>(volRendering->Attributes->GetNamedItem(L"To")->NodeValue);
-          if (fromAttribute->IsEmpty() || toAttribute->IsEmpty())
-          {
-            return;
-          }
-          else
-          {
-            m_fromCoordFrame = std::wstring(fromAttribute->Data());
-            m_toCoordFrame = std::wstring(toAttribute->Data());
-            m_imageToHMDName = ref new UWPOpenIGTLink::TransformName(fromAttribute, toAttribute);
-          }
-        });
-      }
-      catch (Platform::Exception^ e)
-      {
-        HoloIntervention::instance()->GetNotificationSystem().QueueMessage(e->Message);
-      }
-      */
     }
 
     //----------------------------------------------------------------------------

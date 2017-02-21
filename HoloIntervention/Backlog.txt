@@ -1,11 +1,12 @@
 Major implementation details remaining:
 
-*Network search on startup
-*CPU cost of network/image-transforms separate
-**unpack on demand
+Network search on startup
+CPU cost of network/image-transforms separate
+  unpack on demand
 Volume rendering
-Registration drift
+*Registration
+**Smarter circle detection, find 5 within similar mean radius, etc...
 Network connect, disconnect, connect, connection lost
 Voice feedback
-UI for IP setting - Dictation*
+UI for IP setting - Dictation
 Registration feedback (move around, etc...)

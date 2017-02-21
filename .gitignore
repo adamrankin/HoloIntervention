@@ -1,6 +1,7 @@
 /.vs
 /Debug
 /Release
+/HoloIntervention/BundleArtifacts
 /HoloIntervention/*.user
 /HoloIntervention/Debug/*.cache
 /HoloIntervention/Release/*.cache
@@ -16,3 +17,4 @@
 /LocatableMediaCapture/Debug
 /LocatableMediaCapture/Release
 /OpenCV-bin/*
+/AppPackages

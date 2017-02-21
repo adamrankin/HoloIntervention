@@ -56,7 +56,11 @@ namespace HoloIntervention
       virtual float GetStabilizePriority() const;
 
     public:
-      ToolSystem(NotificationSystem& notificationSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer, NetworkSystem& networkSystem);
+      ToolSystem(NotificationSystem& notificationSystem,
+                 RegistrationSystem& registrationSystem,
+                 Rendering::ModelRenderer& modelRenderer,
+                 NetworkSystem& networkSystem,
+                 Windows::Storage::StorageFolder^ configStorageFolder);
       ~ToolSystem();
 
       std::shared_ptr<Tools::ToolEntry> GetTool(uint64 token);

@@ -109,49 +109,27 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
-  task<void> InitializeTransformRepositoryAsync(UWPOpenIGTLink::TransformRepository^ transformRepository, Platform::String^ fileName)
+  task<void> InitializeTransformRepositoryAsync(Platform::String^ fileName, StorageFolder^ fileStorageFolder, UWPOpenIGTLink::TransformRepository^ transformRepository)
   {
-    return create_task(Windows::ApplicationModel::Package::Current->InstalledLocation->GetFileAsync(fileName)).then([transformRepository](task<StorageFile^> previousTask)
+    return create_task(LoadXmlDocumentAsync(fileName, fileStorageFolder)).then([transformRepository](task<XmlDocument^> previousTask)
     {
-      StorageFile^ file = nullptr;
+      XmlDocument^ file = nullptr;
       try
       {
         file = previousTask.get();
+        transformRepository->ReadConfiguration(file);
       }
       catch (Platform::Exception^ e)
       {
-        throw ref new Platform::Exception(STG_E_FILENOTFOUND, L"Unable to locate system configuration file.");
+        throw ref new Platform::Exception(E_INVALIDARG, L"Invalid layout in coordinate definitions configuration area.");
       }
-
-      XmlDocument^ doc = ref new XmlDocument();
-      return create_task(doc->LoadFromFileAsync(file)).then([transformRepository](task<XmlDocument^> previousTask)
-      {
-        XmlDocument^ doc = nullptr;
-        try
-        {
-          doc = previousTask.get();
-        }
-        catch (Platform::Exception^ e)
-        {
-          throw ref new Platform::Exception(E_INVALIDARG, L"System configuration file did not contain valid XML.");
-        }
-
-        try
-        {
-          transformRepository->ReadConfiguration(doc);
-        }
-        catch (Platform::Exception^ e)
-        {
-          throw ref new Platform::Exception(E_INVALIDARG, L"Invalid layout in coordinate definitions configuration area.");
-        }
-      });
     });
   }
 
   //----------------------------------------------------------------------------
-  Concurrency::task<Windows::Data::Xml::Dom::XmlDocument^> GetXmlDocumentFromFileAsync(Platform::String^ fileName)
+  Concurrency::task<XmlDocument^> LoadXmlDocumentAsync(Platform::String^ fileName, StorageFolder^ configStorageFolder)
   {
-    return create_task(Windows::ApplicationModel::Package::Current->InstalledLocation->GetFileAsync(L"Assets\\Data\\configuration.xml")).then([](task<StorageFile^> previousTask)
+    return create_task(configStorageFolder->GetFileAsync(fileName)).then([](task<StorageFile^> previousTask)
     {
       StorageFile^ file = nullptr;
       try

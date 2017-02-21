@@ -72,6 +72,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 using namespace Concurrency;
 using namespace Platform;
+using namespace Windows::ApplicationModel;
 using namespace Windows::Foundation::Collections;
 using namespace Windows::Foundation::Numerics;
 using namespace Windows::Foundation;
@@ -80,6 +81,7 @@ using namespace Windows::Graphics::Holographic;
 using namespace Windows::Media::SpeechRecognition;
 using namespace Windows::Perception::Spatial::Surfaces;
 using namespace Windows::Perception::Spatial;
+using namespace Windows::Storage;
 using namespace Windows::System::Threading;
 using namespace Windows::UI::Input::Spatial;
 
@@ -110,84 +112,124 @@ namespace HoloIntervention
 
     m_holographicSpace = holographicSpace;
 
-    // Initialize the system components
-    m_notificationRenderer = std::make_unique<Rendering::NotificationRenderer>(m_deviceResources);
-    m_notificationSystem = std::make_unique<System::NotificationSystem>(*m_notificationRenderer.get());
-    m_modelRenderer = std::make_unique<Rendering::ModelRenderer>(m_deviceResources, m_timer);
-    m_sliceRenderer = std::make_unique<Rendering::SliceRenderer>(m_deviceResources);
-    m_volumeRenderer = std::make_unique<Rendering::VolumeRenderer>(m_deviceResources);
-    m_meshRenderer = std::make_unique<Rendering::SpatialMeshRenderer>(*m_notificationSystem.get(), m_deviceResources);
-
-    m_soundAPI = std::make_unique<Sound::SoundAPI>();
-
-    m_spatialInput = std::make_unique<Input::SpatialInput>();
-    m_voiceInput = std::make_unique<Input::VoiceInput>(*m_notificationSystem.get(), *m_soundAPI.get());
-
-    m_networkSystem = std::make_unique<System::NetworkSystem>(*m_notificationSystem.get(), *m_voiceInput.get());
-    m_physicsAPI = std::make_unique<Physics::PhysicsAPI>(*m_notificationSystem.get(), m_deviceResources, m_timer);
-
-    m_registrationSystem = std::make_unique<System::RegistrationSystem>(*m_networkSystem.get(), *m_physicsAPI.get(), *m_notificationSystem.get(), *m_modelRenderer.get());
-    m_iconSystem = std::make_unique<System::IconSystem>(*m_notificationSystem.get(), *m_registrationSystem.get(), *m_networkSystem.get(), *m_voiceInput.get(), *m_modelRenderer.get());
-    m_gazeSystem = std::make_unique<System::GazeSystem>(*m_notificationSystem.get(), *m_physicsAPI.get(), *m_modelRenderer.get());
-    m_toolSystem = std::make_unique<System::ToolSystem>(*m_notificationSystem.get(), *m_registrationSystem.get(), *m_modelRenderer.get(), *m_networkSystem.get());
-    m_imagingSystem = std::make_unique<System::ImagingSystem>(*m_registrationSystem.get(), *m_notificationSystem.get(), *m_sliceRenderer.get(), *m_volumeRenderer.get(), *m_networkSystem.get());
-    m_splashSystem = std::make_unique<System::SplashSystem>(*m_sliceRenderer.get());
-
-    m_engineComponents.push_back(m_modelRenderer.get());
-    m_engineComponents.push_back(m_sliceRenderer.get());
-    m_engineComponents.push_back(m_volumeRenderer.get());
-    m_engineComponents.push_back(m_meshRenderer.get());
-    m_engineComponents.push_back(m_soundAPI.get());
-    m_engineComponents.push_back(m_notificationSystem.get());
-    m_engineComponents.push_back(m_spatialInput.get());
-    m_engineComponents.push_back(m_voiceInput.get());
-    m_engineComponents.push_back(m_physicsAPI.get());
-    m_engineComponents.push_back(m_networkSystem.get());
-    m_engineComponents.push_back(m_gazeSystem.get());
-    m_engineComponents.push_back(m_toolSystem.get());
-    m_engineComponents.push_back(m_registrationSystem.get());
-    m_engineComponents.push_back(m_imagingSystem.get());
-    m_engineComponents.push_back(m_iconSystem.get());
-    m_engineComponents.push_back(m_splashSystem.get());
-
-    try
+    auto createMainTask = create_task(ApplicationData::Current->LocalFolder->TryGetItemAsync(L"configuration.xml")).then([this](IStorageItem ^ file)
     {
-      m_soundAPI->InitializeAsync();
-    }
-    catch (Platform::Exception^ e)
-    {
-      m_notificationSystem->QueueMessage(L"Unable to initialize audio system. See log.");
-      OutputDebugStringW((L"Audio Error" + e->Message)->Data());
-    }
-
-    InitializeVoiceSystem();
-
-    // Use the default SpatialLocator to track the motion of the device.
-    m_locator = SpatialLocator::GetDefault();
-
-    m_locatabilityChangedToken = m_locator->LocatabilityChanged +=
-                                   ref new Windows::Foundation::TypedEventHandler<SpatialLocator^, Object^>(std::bind(&HoloInterventionCore::OnLocatabilityChanged, this, std::placeholders::_1, std::placeholders::_2));
-
-    m_cameraAddedToken = m_holographicSpace->CameraAdded +=
-                           ref new Windows::Foundation::TypedEventHandler<HolographicSpace^, HolographicSpaceCameraAddedEventArgs^>(std::bind(&HoloInterventionCore::OnCameraAdded, this, std::placeholders::_1, std::placeholders::_2));
-
-    m_cameraRemovedToken = m_holographicSpace->CameraRemoved +=
-                             ref new Windows::Foundation::TypedEventHandler<HolographicSpace^, HolographicSpaceCameraRemovedEventArgs^>(std::bind(&HoloInterventionCore::OnCameraRemoved, this, std::placeholders::_1, std::placeholders::_2));
-
-    m_attachedReferenceFrame = m_locator->CreateAttachedFrameOfReferenceAtCurrentHeading();
-
-    // Initialize the notification system with a bogus frame to grab sensor data
-    HolographicFrame^ holographicFrame = m_holographicSpace->CreateNextFrame();
-    SpatialCoordinateSystem^ currentCoordinateSystem = m_attachedReferenceFrame->GetStationaryCoordinateSystemAtTimestamp(holographicFrame->CurrentPrediction->Timestamp);
-    SpatialPointerPose^ pose = SpatialPointerPose::TryGetAtTimestamp(currentCoordinateSystem, holographicFrame->CurrentPrediction->Timestamp);
-    m_notificationSystem->Initialize(pose);
-    m_physicsAPI->InitializeSurfaceObserverAsync(currentCoordinateSystem).then([this](bool result)
-    {
-      if (!result)
+      if (file == nullptr)
       {
-        // TODO : add more robust error handling
-        m_notificationSystem->QueueMessage("Unable to initialize surface observer.");
+        return create_task(Package::Current->InstalledLocation->GetFileAsync(L"Assets\\Data\\configuration.xml")).then([this](task<StorageFile^> getTask)
+        {
+          StorageFile^ file;
+          try
+          {
+            file = getTask.get();
+          }
+          catch (Platform::Exception^)
+          {
+            // Not local, not installed... what happened!?
+            assert(false);
+          }
+
+          return create_task(file->CopyAsync(ApplicationData::Current->LocalFolder, L"configuration.xml")).then([this](task<StorageFile^> copyTask)
+          {
+            try
+            {
+              StorageFile^ file = copyTask.get();
+              return create_task(ApplicationData::Current->LocalFolder->GetFolderAsync(L"Assets\\Data"));
+            }
+            catch (Platform::Exception^)
+            {
+              return task_from_result(Package::Current->InstalledLocation);
+            }
+          });
+        });
       }
+      else
+      {
+        return task_from_result(ApplicationData::Current->LocalFolder);
+      }
+    }).then([this](task<StorageFolder^> configTask)
+    {
+      m_configStorageFolder = configTask.get();
+
+      // Initialize the system components
+      m_notificationRenderer = std::make_unique<Rendering::NotificationRenderer>(m_deviceResources);
+      m_notificationSystem = std::make_unique<System::NotificationSystem>(*m_notificationRenderer.get());
+      m_modelRenderer = std::make_unique<Rendering::ModelRenderer>(m_deviceResources, m_timer);
+      m_sliceRenderer = std::make_unique<Rendering::SliceRenderer>(m_deviceResources);
+      m_volumeRenderer = std::make_unique<Rendering::VolumeRenderer>(m_deviceResources);
+      m_meshRenderer = std::make_unique<Rendering::SpatialMeshRenderer>(*m_notificationSystem.get(), m_deviceResources);
+
+      m_soundAPI = std::make_unique<Sound::SoundAPI>();
+
+      m_spatialInput = std::make_unique<Input::SpatialInput>();
+      m_voiceInput = std::make_unique<Input::VoiceInput>(*m_notificationSystem.get(), *m_soundAPI.get());
+
+      m_networkSystem = std::make_unique<System::NetworkSystem>(*m_notificationSystem.get(), *m_voiceInput.get(), m_configStorageFolder);
+      m_physicsAPI = std::make_unique<Physics::PhysicsAPI>(*m_notificationSystem.get(), m_deviceResources, m_timer);
+
+      m_registrationSystem = std::make_unique<System::RegistrationSystem>(*m_networkSystem.get(), *m_physicsAPI.get(), *m_notificationSystem.get(), *m_modelRenderer.get(), m_configStorageFolder);
+      m_iconSystem = std::make_unique<System::IconSystem>(*m_notificationSystem.get(), *m_registrationSystem.get(), *m_networkSystem.get(), *m_voiceInput.get(), *m_modelRenderer.get());
+      m_gazeSystem = std::make_unique<System::GazeSystem>(*m_notificationSystem.get(), *m_physicsAPI.get(), *m_modelRenderer.get());
+      m_toolSystem = std::make_unique<System::ToolSystem>(*m_notificationSystem.get(), *m_registrationSystem.get(), *m_modelRenderer.get(), *m_networkSystem.get(), m_configStorageFolder);
+      m_imagingSystem = std::make_unique<System::ImagingSystem>(*m_registrationSystem.get(), *m_notificationSystem.get(), *m_sliceRenderer.get(), *m_volumeRenderer.get(), *m_networkSystem.get(), m_configStorageFolder);
+      m_splashSystem = std::make_unique<System::SplashSystem>(*m_sliceRenderer.get());
+
+      m_engineComponents.push_back(m_modelRenderer.get());
+      m_engineComponents.push_back(m_sliceRenderer.get());
+      m_engineComponents.push_back(m_volumeRenderer.get());
+      m_engineComponents.push_back(m_meshRenderer.get());
+      m_engineComponents.push_back(m_soundAPI.get());
+      m_engineComponents.push_back(m_notificationSystem.get());
+      m_engineComponents.push_back(m_spatialInput.get());
+      m_engineComponents.push_back(m_voiceInput.get());
+      m_engineComponents.push_back(m_physicsAPI.get());
+      m_engineComponents.push_back(m_networkSystem.get());
+      m_engineComponents.push_back(m_gazeSystem.get());
+      m_engineComponents.push_back(m_toolSystem.get());
+      m_engineComponents.push_back(m_registrationSystem.get());
+      m_engineComponents.push_back(m_imagingSystem.get());
+      m_engineComponents.push_back(m_iconSystem.get());
+      m_engineComponents.push_back(m_splashSystem.get());
+
+      try
+      {
+        m_soundAPI->InitializeAsync();
+      }
+      catch (Platform::Exception^ e)
+      {
+        m_notificationSystem->QueueMessage(L"Unable to initialize audio system. See log.");
+        OutputDebugStringW((L"Audio Error" + e->Message)->Data());
+      }
+
+      InitializeVoiceSystem();
+
+      // Use the default SpatialLocator to track the motion of the device.
+      m_locator = SpatialLocator::GetDefault();
+
+      m_locatabilityChangedToken = m_locator->LocatabilityChanged +=
+                                     ref new Windows::Foundation::TypedEventHandler<SpatialLocator^, Object^>(std::bind(&HoloInterventionCore::OnLocatabilityChanged, this, std::placeholders::_1, std::placeholders::_2));
+
+      m_cameraAddedToken = m_holographicSpace->CameraAdded +=
+                             ref new Windows::Foundation::TypedEventHandler<HolographicSpace^, HolographicSpaceCameraAddedEventArgs^>(std::bind(&HoloInterventionCore::OnCameraAdded, this, std::placeholders::_1, std::placeholders::_2));
+
+      m_cameraRemovedToken = m_holographicSpace->CameraRemoved +=
+                               ref new Windows::Foundation::TypedEventHandler<HolographicSpace^, HolographicSpaceCameraRemovedEventArgs^>(std::bind(&HoloInterventionCore::OnCameraRemoved, this, std::placeholders::_1, std::placeholders::_2));
+
+      m_attachedReferenceFrame = m_locator->CreateAttachedFrameOfReferenceAtCurrentHeading();
+
+      // Initialize the notification system with a bogus frame to grab sensor data
+      HolographicFrame^ holographicFrame = m_holographicSpace->CreateNextFrame();
+      SpatialCoordinateSystem^ currentCoordinateSystem = m_attachedReferenceFrame->GetStationaryCoordinateSystemAtTimestamp(holographicFrame->CurrentPrediction->Timestamp);
+      SpatialPointerPose^ pose = SpatialPointerPose::TryGetAtTimestamp(currentCoordinateSystem, holographicFrame->CurrentPrediction->Timestamp);
+      m_notificationSystem->Initialize(pose);
+      m_physicsAPI->InitializeSurfaceObserverAsync(currentCoordinateSystem).then([this](bool result)
+      {
+        if (!result)
+        {
+          // TODO : add more robust error handling
+          m_notificationSystem->QueueMessage("Unable to initialize surface observer.");
+        }
+      });
     });
   }
 

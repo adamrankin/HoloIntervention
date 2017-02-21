@@ -58,7 +58,12 @@ namespace HoloIntervention
       virtual float GetStabilizePriority() const;
 
     public:
-      ImagingSystem(RegistrationSystem& registrationSystem, NotificationSystem& notificationSystem, Rendering::SliceRenderer& sliceRenderer, Rendering::VolumeRenderer& volumeRenderer, NetworkSystem& networkSystem);
+      ImagingSystem(RegistrationSystem& registrationSystem,
+                    NotificationSystem& notificationSystem,
+                    Rendering::SliceRenderer& sliceRenderer,
+                    Rendering::VolumeRenderer& volumeRenderer,
+                    NetworkSystem& networkSystem,
+                    Windows::Storage::StorageFolder^ configStorageFolder);
       ~ImagingSystem();
 
       void Update(const DX::StepTimer& timer, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);

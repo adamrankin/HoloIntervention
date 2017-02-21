@@ -142,8 +142,8 @@ namespace HoloIntervention
   }
 
   std::vector<std::vector<uint32>> NChooseR(uint32 n, uint32 r);
-  Concurrency::task<void> InitializeTransformRepositoryAsync(UWPOpenIGTLink::TransformRepository^ transformRepository, Platform::String^ fileName);
-  Concurrency::task<Windows::Data::Xml::Dom::XmlDocument^> GetXmlDocumentFromFileAsync(Platform::String^ fileName);
+  Concurrency::task<void> InitializeTransformRepositoryAsync(Platform::String^ fileName, Windows::Storage::StorageFolder^ configStorageFolder, UWPOpenIGTLink::TransformRepository^ transformRepository);
+  Concurrency::task<Windows::Data::Xml::Dom::XmlDocument^> LoadXmlDocumentAsync(Platform::String^ fileName, Windows::Storage::StorageFolder^ configStorageFolder);
 
   std::string ToString(const Windows::Foundation::Numerics::float3& vector);
   std::string ToString(const Windows::Foundation::Numerics::float4x4& matrix);
