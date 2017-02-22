@@ -115,9 +115,6 @@ namespace HoloIntervention
       // m_transformRepository has already been initialized with the transforms for this update
       float4x4 transform;
 
-      static auto startTime = std::chrono::system_clock::now();
-      static double updateCount(0);
-
       auto isTransformValid = m_transformRepository->GetTransform(m_coordinateFrame, &transform);
       if (!isTransformValid && m_wasValid)
       {
@@ -135,15 +132,6 @@ namespace HoloIntervention
 
         m_modelEntry->SetDesiredPose(transpose(transform));
         m_wasValid = true;
-      }
-
-      updateCount++;
-      auto diff = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - startTime);
-      if (fmod(updateCount, 20) == 0.0)
-      {
-        std::stringstream ss;
-        ss << "ups: " << updateCount / diff.count() << std::endl;
-        OutputDebugStringA(ss.str().c_str());
       }
     }
 

@@ -219,10 +219,8 @@ namespace HoloIntervention
       auto taskOptions = Concurrency::task_options();
       auto task = concurrency::create_task([this, device]()
       {
-        // TODO : sometimes this crashes...
         if (m_surfaceMesh->VertexPositions == nullptr || m_surfaceMesh->VertexNormals == nullptr || m_surfaceMesh->TriangleIndices == nullptr)
         {
-          OutputDebugStringA("Null vertex data.\n");
           call_after(std::bind(&SpatialMesh::CreateVertexResources, this), 250);
           return;
         }
