@@ -56,7 +56,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <WindowsNumerics.h>
 
 #ifndef SUCCEEDED
-#define SUCCEEDED(hr) (((HRESULT)(hr)) >= 0)
+  #define SUCCEEDED(hr) (((HRESULT)(hr)) >= 0)
 #endif
 
 using namespace Concurrency;
@@ -628,6 +628,37 @@ namespace HoloIntervention
 
           assert(m_sphereInAnchorResultFrames.size() == m_sphereInReferenceResultFrames.size());
 
+          // TODO : determine why astronomical values
+          for (uint32 i = 0; i < m_sphereInReferenceResultFrames.size();)
+          {
+            auto ref = m_sphereInReferenceResultFrames[i];
+            auto anc = m_sphereInAnchorResultFrames[i];
+
+            bool remove(false);
+            for (auto point : ref)
+            {
+              if (abs(point.x) > 100.0 || abs(point.y) > 100.0 || abs(point.z) > 100)
+              {
+                remove = true;
+              }
+            }
+            for (auto point : anc)
+            {
+              if (abs(point.x) > 100.0 || abs(point.y) > 100.0 || abs(point.z) > 100)
+              {
+                remove = true;
+              }
+            }
+            if (remove)
+            {
+              m_sphereInReferenceResultFrames.erase(m_sphereInReferenceResultFrames.begin() + i);
+              m_sphereInAnchorResultFrames.erase(m_sphereInAnchorResultFrames.begin() + i);
+            }
+            else
+            {
+              ++i;
+            }
+          }
           m_landmarkRegistration->SetSourceLandmarks(m_sphereInReferenceResultFrames);
           m_landmarkRegistration->SetTargetLandmarks(m_sphereInAnchorResultFrames);
 
