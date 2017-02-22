@@ -18,13 +18,13 @@
   <IGTConnections>
     <Connection
       Name="2DImage"
-      Host="192.168.0.103"
+      Host="192.168.0.102"
       Port="18944"
       ReconnectOnDrop="true"
       EmbeddedImageTransformName="ImageToReference" />
     <xConnection
       Name="3DImage"
-      Host="192.168.0.103"
+      Host="192.168.0.102"
       Port="18945"
       ReconnectOnDrop="true"
       EmbeddedImageTransformName="VolumeToReference" />

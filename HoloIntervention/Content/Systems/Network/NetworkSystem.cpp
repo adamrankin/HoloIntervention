@@ -289,7 +289,7 @@ namespace HoloIntervention
                 continue;
               }
 
-              UWPOpenIGTLink::IGTLinkClient^ client = ref new UWPOpenIGTLink::IGTLinkClient();
+              UWPOpenIGTLink::IGTClient^ client = ref new UWPOpenIGTLink::IGTClient();
               client->ServerHost = ref new Platform::String((prefix + L"." + ss.str()).c_str());
               client->ServerPort = 18944;
 

@@ -80,7 +80,7 @@ namespace HoloIntervention
         return PRIORITY_NOT_ACTIVE;
       }
       // TODO : stabilizer values?
-      return m_isValid ? 2.5f : 0.25f;
+      return m_wasValid ? 2.5f : 0.25f;
     }
 
     //----------------------------------------------------------------------------
@@ -115,16 +115,35 @@ namespace HoloIntervention
       // m_transformRepository has already been initialized with the transforms for this update
       float4x4 transform;
 
-      if (!m_transformRepository->GetTransform(m_coordinateFrame, &transform))
+      static auto startTime = std::chrono::system_clock::now();
+      static double updateCount(0);
+
+      auto isTransformValid = m_transformRepository->GetTransform(m_coordinateFrame, &transform);
+      if (!isTransformValid && m_wasValid)
       {
+        m_wasValid = false;
         m_modelEntry->RenderGreyscale();
         return;
       }
-      else
+
+      if (isTransformValid)
       {
+        if (!m_wasValid)
+        {
+          m_modelEntry->RenderDefault();
+        }
+
         m_modelEntry->SetDesiredPose(transpose(transform));
-        m_isValid = true;
-        m_modelEntry->RenderDefault();
+        m_wasValid = true;
+      }
+
+      updateCount++;
+      auto diff = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - startTime);
+      if (fmod(updateCount, 20) == 0.0)
+      {
+        std::stringstream ss;
+        ss << "ups: " << updateCount / diff.count() << std::endl;
+        OutputDebugStringA(ss.str().c_str());
       }
     }
 

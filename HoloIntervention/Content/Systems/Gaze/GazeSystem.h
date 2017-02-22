@@ -74,9 +74,6 @@ namespace HoloIntervention
       virtual void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap);
 
     protected:
-      void CalculateVelocity(float oneOverDeltaTime);
-
-    protected:
       // Cached entries
       Rendering::ModelRenderer&                 m_modelRenderer;
       NotificationSystem&                       m_notificationSystem;
@@ -85,6 +82,7 @@ namespace HoloIntervention
       std::shared_ptr<Rendering::ModelEntry>    m_modelEntry;
       uint64                                    m_modelToken;
 
+      std::atomic_bool                          m_hadHit = false;
       Windows::Foundation::Numerics::float3     m_currentPosition = { 0.f, 0.f, 0.f };
       Windows::Foundation::Numerics::float3     m_currentNormal = { 0.f, 0.f, 0.f };
       Windows::Foundation::Numerics::float3     m_currentEdge = { 0.f, 0.f, 0.f };

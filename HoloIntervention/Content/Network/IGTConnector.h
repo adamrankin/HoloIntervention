@@ -94,7 +94,7 @@ namespace HoloIntervention
       std::wstring                                  m_connectionName;
       std::wstring                                  m_accumulatedDictationResult;
       uint64                                        m_dictationMatcherToken;
-      UWPOpenIGTLink::IGTLinkClient^                m_igtClient = ref new UWPOpenIGTLink::IGTLinkClient();
+      UWPOpenIGTLink::IGTClient^                    m_igtClient = ref new UWPOpenIGTLink::IGTClient();
       ConnectionState                               m_connectionState = CONNECTION_STATE_UNKNOWN;
       mutable std::mutex                            m_clientMutex;
       Concurrency::cancellation_token_source        m_keepAliveTokenSource;

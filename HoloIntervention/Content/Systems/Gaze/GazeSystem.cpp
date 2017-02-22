@@ -122,19 +122,25 @@ namespace HoloIntervention
 
       if (hit)
       {
+        if (!m_hadHit)
+        {
+          m_modelEntry->RenderDefault();
+        }
         // Update the gaze system with the pose to render
         m_currentNormal = outHitNormal;
         m_currentPosition = outHitPosition;
         m_currentEdge = outHitEdge;
-        m_modelEntry->RenderDefault();
       }
       else
       {
+        if (m_hadHit)
+        {
+          m_modelEntry->RenderGreyscale();
+        }
         // Couldn't find a hit, throw the cursor where the gaze head vector is at 2m depth, and turn the model grey
         m_currentPosition = headPose->Head->Position + (2.f * (headPose->Head->ForwardDirection));
         m_currentNormal = -headPose->Head->ForwardDirection;
         m_currentEdge = { 1.f, 0.f, 0.f }; // right relative to head pose
-        m_modelEntry->RenderGreyscale();
       }
 
       m_lastPosition = m_currentPosition;

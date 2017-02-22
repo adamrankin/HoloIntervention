@@ -60,7 +60,7 @@ namespace HoloIntervention
 
       void Update(const DX::StepTimer& timer);
 
-      std::shared_ptr<Rendering::ModelEntry> GetModelEntry();;
+      std::shared_ptr<Rendering::ModelEntry> GetModelEntry();
 
       uint64 GetId() const;
 
@@ -72,7 +72,7 @@ namespace HoloIntervention
       Rendering::ModelRenderer&               m_modelRenderer;
       UWPOpenIGTLink::TransformRepository^    m_transformRepository;
 
-      std::atomic_bool                        m_isValid = false;
+      std::atomic_bool                        m_wasValid = false;
       UWPOpenIGTLink::TransformName^          m_coordinateFrame;
       std::shared_ptr<Rendering::ModelEntry>  m_modelEntry;
     };
