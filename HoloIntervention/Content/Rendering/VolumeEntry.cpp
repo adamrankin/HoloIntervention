@@ -314,8 +314,8 @@ namespace HoloIntervention
 
       auto bytesPerPixel = BitsPerPixel((DXGI_FORMAT)m_frame->GetPixelFormat(true)) / 8;
 
-      byte* imageRaw = GetDataFromIBuffer<byte>(m_frame->Frame->ImageData);
-      if (imageRaw == nullptr)
+      std::shared_ptr<byte> image = *(std::shared_ptr<byte>*)(m_frame->GetImageData());
+      if (image == nullptr)
       {
         Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Unable to access image buffer.");
         return;
@@ -328,6 +328,7 @@ namespace HoloIntervention
       }
 
       // Map image resource and update data
+      byte* imageRaw = image.get();
       D3D11_MAPPED_SUBRESOURCE mappedResource;
       context->Map(m_volumeStagingTexture.Get(), 0, D3D11_MAP_READ_WRITE, 0, &mappedResource);
       byte* mappedData = reinterpret_cast<byte*>(mappedResource.pData);

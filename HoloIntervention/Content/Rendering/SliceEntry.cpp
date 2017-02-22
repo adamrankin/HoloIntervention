@@ -179,8 +179,8 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void SliceEntry::SetFrame(UWPOpenIGTLink::TrackedFrame^ frame)
     {
-      byte* imageRaw = GetDataFromIBuffer<byte>(frame->Frame->ImageData);
-      if (imageRaw == nullptr)
+      std::shared_ptr<byte> image = *(std::shared_ptr<byte>*)(frame->GetImageData());
+      if (image == nullptr)
       {
         Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Unable to access image buffer.");
         return;
@@ -203,6 +203,7 @@ namespace HoloIntervention
 
       auto bytesPerPixel = BitsPerPixel(m_pixelFormat) / 8;
 
+      byte* imageRaw = image.get();
       D3D11_MAPPED_SUBRESOURCE mappedResource;
       context->Map(m_imageStagingTexture.Get(), 0, D3D11_MAP_READ_WRITE, 0, &mappedResource);
       byte* mappedData = reinterpret_cast<byte*>(mappedResource.pData);

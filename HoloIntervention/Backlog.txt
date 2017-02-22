@@ -11,3 +11,4 @@ Voice feedback
 UI for IP setting - Dictation
 Registration feedback (move around, etc...)
 cameraregistration stabilization normal should be -headgaze
+trackedframe sometimes disposed

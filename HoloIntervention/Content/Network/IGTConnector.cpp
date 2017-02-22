@@ -211,7 +211,11 @@ namespace HoloIntervention
       {
         return nullptr;
       }
-      *latestTimestamp = latestFrame->Timestamp;
+      try
+      {
+        *latestTimestamp = latestFrame->Timestamp;
+      }
+      catch (Platform::ObjectDisposedException^) { return nullptr; }
       return latestFrame;
     }
 

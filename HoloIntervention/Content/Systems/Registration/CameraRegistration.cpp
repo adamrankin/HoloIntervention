@@ -416,8 +416,10 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void CameraRegistration::DiscardFrames()
     {
-      m_outputFramesLock;
+      std::lock_guard<std::mutex> guard(m_outputFramesLock);
       m_lastRegistrationResultCount = NUMBER_OF_FRAMES_BETWEEN_REGISTRATION;
+      m_referenceToAnchor = float4x4::identity();
+      m_pnpNeedsInit = true;
       m_sphereInAnchorResultFrames.clear();
       m_sphereInReferenceResultFrames.clear();
     }
