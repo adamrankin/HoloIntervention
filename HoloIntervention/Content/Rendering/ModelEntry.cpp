@@ -137,16 +137,19 @@ namespace HoloIntervention
     {
       m_cameraResources = cameraResources;
 
+      const float deltaTime = static_cast<float>(m_timer.GetElapsedSeconds());
+
       if (m_enableLerp)
       {
-        const float deltaTime = static_cast<float>(m_timer.GetElapsedSeconds());
-
-        m_currentPose = lerp(m_currentPose, m_desiredPose, deltaTime * m_poseLerpRate);
-
-        const float3 deltaPosition = transform(float3(0.f, 0.f, 0.f), m_currentPose - m_lastPose); // meters
-        m_velocity = deltaPosition * (1.f / deltaTime); // meters per second
-        m_lastPose = m_currentPose;
+        m_currentPose = lerp(m_currentPose, m_desiredPose, std::fmin(deltaTime * m_poseLerpRate, 1.f));
       }
+      else
+      {
+        m_currentPose = m_desiredPose;
+      }
+      const float3 deltaPosition = transform(float3(0.f, 0.f, 0.f), m_currentPose - m_lastPose); // meters
+      m_velocity = deltaPosition * (1.f / deltaTime); // meters per second
+      m_lastPose = m_currentPose;
     }
 
     //----------------------------------------------------------------------------

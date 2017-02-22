@@ -256,7 +256,7 @@ namespace HoloIntervention
       {
         return;
       }
-      frame = sliceConnection->GetTrackedFrame(&m_latestSliceTimestamp);
+      frame = sliceConnection->GetTrackedFrame(m_latestSliceTimestamp);
       if (frame != nullptr && frame->HasImage() && frame->Dimensions[2] == 1)
       {
         m_transformRepository->SetTransforms(frame);
@@ -268,7 +268,7 @@ namespace HoloIntervention
       {
         return;
       }
-      frame = volumeConnection->GetTrackedFrame(&m_latestVolumeTimestamp);
+      frame = volumeConnection->GetTrackedFrame(m_latestVolumeTimestamp);
       if (frame != nullptr && frame->HasImage() && frame->Dimensions[2] > 1)
       {
         m_transformRepository->SetTransforms(frame);

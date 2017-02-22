@@ -521,7 +521,7 @@ namespace HoloIntervention
         }
 
         MediaFrameReference^ cameraFrame(m_videoFrameProcessor->GetLatestFrame());
-        l_latestTrackedFrame = connection->GetTrackedFrame(&m_latestTimestamp);
+        l_latestTrackedFrame = connection->GetTrackedFrame(m_latestTimestamp);
         if (l_latestTrackedFrame != nullptr &&
             cameraFrame != nullptr &&
             cameraFrame != l_latestCameraFrame)

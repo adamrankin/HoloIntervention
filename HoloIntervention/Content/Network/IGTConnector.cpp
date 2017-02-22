@@ -203,17 +203,16 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    UWPOpenIGTLink::TrackedFrame^ IGTConnector::GetTrackedFrame(double* latestTimestamp)
+    UWPOpenIGTLink::TrackedFrame^ IGTConnector::GetTrackedFrame(double& latestTimestamp)
     {
-      double ts = (latestTimestamp == nullptr ? 0.0 : *latestTimestamp);
-      auto latestFrame = m_igtClient->GetTrackedFrame(ts);
+      auto latestFrame = m_igtClient->GetTrackedFrame(latestTimestamp);
       if (latestFrame == nullptr)
       {
         return nullptr;
       }
       try
       {
-        *latestTimestamp = latestFrame->Timestamp;
+        latestTimestamp = latestFrame->Timestamp;
       }
       catch (Platform::ObjectDisposedException^) { return nullptr; }
       return latestFrame;
