@@ -1341,16 +1341,12 @@ done:
 
           for (auto node : doc->SelectNodes(xpath))
           {
-            // model, transform
-            if (node->Attributes->GetNamedItem(L"IGTConnection") == nullptr)
+            if (!HasAttribute(L"IGTConnection", node))
             {
-              throw ref new Platform::Exception(E_FAIL, L"Camera registration entry does not contain IGTConnection attribute.");
+              throw ref new Platform::Exception(E_FAIL, L"Camera registration entry does not contain \"IGTConnection\" attribute.");
             }
             Platform::String^ igtConnectionName = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"IGTConnection")->NodeValue);
-            if (igtConnectionName != nullptr)
-            {
-              m_connectionName = std::wstring(begin(igtConnectionName), end(igtConnectionName));
-            }
+            m_connectionName = std::wstring(begin(igtConnectionName), end(igtConnectionName));
           }
         });
       }

@@ -362,6 +362,7 @@
     <None Include="Content\Rendering\Shaders\InstancedCommon.fxh" />
     <None Include="Content\Rendering\Shaders\InstancedLighting.fxh" />
     <None Include="Content\Rendering\Shaders\InstancedStructures.fxh" />
+    <None Include="Core\Common.txx" />
     <None Include="HoloIntervention_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>

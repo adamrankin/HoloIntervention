@@ -212,6 +212,39 @@ namespace HoloIntervention
       return false;
     }
   }
+
+  //----------------------------------------------------------------------------
+  bool HasAttribute(const std::wstring& attributeName, Windows::Data::Xml::Dom::IXmlNode^ node)
+  {
+    if (node->Attributes->GetNamedItem(ref new Platform::String(attributeName.c_str())) == nullptr)
+    {
+      return false;
+    }
+    return true;
+  }
+
+  //----------------------------------------------------------------------------
+  bool GetBooleanAttribute(const std::wstring& attributeName, Windows::Data::Xml::Dom::IXmlNode^ node, bool& outValue)
+  {
+    auto attribute = node->Attributes->GetNamedItem(ref new Platform::String(attributeName.c_str()));
+    if (attribute != nullptr)
+    {
+      Platform::String^ attributeContent = dynamic_cast<Platform::String^>(attribute->NodeValue);
+      if (IsEqualInsensitive(std::wstring(attributeContent->Data()), L"true"))
+      {
+        outValue = true;
+        return true;
+      }
+      else if (IsEqualInsensitive(std::wstring(attributeContent->Data()), L"false"))
+      {
+        outValue = false;
+        return true;
+      }
+      return false;
+    }
+
+    return false;
+  }
 }
 
 //----------------------------------------------------------------------------

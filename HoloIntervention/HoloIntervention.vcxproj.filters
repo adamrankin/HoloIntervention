@@ -142,9 +142,7 @@
     <ClCompile Include="Content\Systems\Splash\SplashSystem.cpp">
       <Filter>Content\Systems\Splash</Filter>
     </ClCompile>
-    <ClCompile Include="Content\Systems\Network\NetworkSystem.cpp">
-      <Filter>Content\Systems\Network</Filter>
-    </ClCompile>
+    <ClCompile Include="Content\Systems\Network\NetworkSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Content\Sound\OmnidirectionalSound.h">
@@ -312,9 +310,7 @@
     <ClInclude Include="Content\Systems\Splash\SplashSystem.h">
       <Filter>Content\Systems\Splash</Filter>
     </ClInclude>
-    <ClInclude Include="Content\Systems\Network\NetworkSystem.h">
-      <Filter>Content\Systems\Network</Filter>
-    </ClInclude>
+    <ClInclude Include="Content\Systems\Network\NetworkSystem.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\LockScreenLogo.scale-200.png">
@@ -597,6 +593,9 @@
     </None>
     <None Include="Content\Rendering\Shaders\InstancedStructures.fxh">
       <Filter>Content\Rendering\ModelRenderer\DirectXTK\Shaders\Shared</Filter>
+    </None>
+    <None Include="Core\Common.txx">
+      <Filter>Core</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

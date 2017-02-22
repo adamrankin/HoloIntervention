@@ -264,14 +264,14 @@ namespace HoloIntervention
         {
           throw ref new Platform::Exception(E_INVALIDARG, L"Invalid \"Tools\" tag in configuration.");
         }
-        for (auto toolNode : doc->SelectNodes(xpath))
+
+        for (auto node : doc->SelectNodes(xpath))
         {
-          // model, transform
-          if (toolNode->Attributes->GetNamedItem(L"ConnectionName") == nullptr)
+          if (!HasAttribute(L"ConnectionName", node))
           {
-            throw ref new Platform::Exception(E_FAIL, L"Tools configuration does not identify connection to receive transform from.");
+            throw ref new Platform::Exception(E_FAIL, L"Tool configuration does not contain \"ConnectionName\" attribute.");
           }
-          Platform::String^ connectionName = dynamic_cast<Platform::String^>(toolNode->Attributes->GetNamedItem(L"ConnectionName")->NodeValue);
+          Platform::String^ connectionName = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"ConnectionName")->NodeValue);
           m_connectionName = std::wstring(connectionName->Data());
         }
 
@@ -281,19 +281,19 @@ namespace HoloIntervention
           throw ref new Platform::Exception(E_INVALIDARG, L"No tools defined in the configuration file. Check for the existence of Tools/Tool");
         }
 
-        for (auto toolNode : doc->SelectNodes(xpath))
+        for (auto node : doc->SelectNodes(xpath))
         {
           // model, transform
-          if (toolNode->Attributes->GetNamedItem(L"Model") == nullptr)
+          if (!HasAttribute(L"Model", node))
           {
             throw ref new Platform::Exception(E_FAIL, L"Tool entry does not contain model attribute.");
           }
-          if (toolNode->Attributes->GetNamedItem(L"Transform") == nullptr)
+          if (!HasAttribute(L"Transform", node))
           {
             throw ref new Platform::Exception(E_FAIL, L"Tool entry does not contain transform attribute.");
           }
-          Platform::String^ modelString = dynamic_cast<Platform::String^>(toolNode->Attributes->GetNamedItem(L"Model")->NodeValue);
-          Platform::String^ transformString = dynamic_cast<Platform::String^>(toolNode->Attributes->GetNamedItem(L"Transform")->NodeValue);
+          Platform::String^ modelString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Model")->NodeValue);
+          Platform::String^ transformString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Transform")->NodeValue);
           if (modelString->IsEmpty() || transformString->IsEmpty())
           {
             throw ref new Platform::Exception(E_FAIL, L"Tool entry contains an empty attribute.");
@@ -308,15 +308,16 @@ namespace HoloIntervention
           auto token = RegisterTool(std::wstring(modelString->Data()), trName);
           auto tool = GetTool(token);
 
-          if (toolNode->Attributes->GetNamedItem(L"LerpRate") != nullptr)
+          bool lerpEnabled;
+          if (GetBooleanAttribute(L"LerpEnabled", node, lerpEnabled))
           {
-            Platform::String^ lerpRate = dynamic_cast<Platform::String^>(toolNode->Attributes->GetNamedItem(L"LerpRate")->NodeValue);
-            try
-            {
-              float num = std::stof(std::wstring(begin(lerpRate), end(lerpRate)));
-              tool->GetModelEntry()->SetPoseLerpRate(num);
-            }
-            catch (const std::exception&) {}
+            tool->GetModelEntry()->EnablePoseLerp(lerpEnabled);
+          }
+
+          float lerpRate;
+          if (GetScalarAttribute<float>(L"LerpRate", node, lerpRate))
+          {
+            tool->GetModelEntry()->SetPoseLerpRate(lerpRate);
           }
         }
       });

@@ -152,7 +152,14 @@ namespace HoloIntervention
   int IsLittleEndian();
 
   bool IsEqualInsensitive(std::wstring const& a, std::wstring const& b);
+
+  // XML helper functions
+  bool HasAttribute(const std::wstring& attributeName, Windows::Data::Xml::Dom::IXmlNode^ node);
+  bool GetBooleanAttribute(const std::wstring& attributeName, Windows::Data::Xml::Dom::IXmlNode^ node, bool& outValue);
+  template<typename T> bool GetScalarAttribute(const std::wstring& attributeName, Windows::Data::Xml::Dom::IXmlNode^ node, T& outValue);
 }
+
+#include "Common.txx"
 
 std::ostream& operator<<(std::ostream& out, const Windows::Foundation::Numerics::float4x4& matrix);
 std::ostream& operator<<(std::ostream& out, const Windows::Foundation::Numerics::float4& vec);

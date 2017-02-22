@@ -117,16 +117,15 @@ namespace HoloIntervention
 
             for (auto node : doc->SelectNodes(xpath))
             {
-              // model, transform
-              if (node->Attributes->GetNamedItem(L"Name") == nullptr)
+              if (!HasAttribute(L"Name", node))
               {
                 return false;
               }
-              if (node->Attributes->GetNamedItem(L"Host") == nullptr)
+              if (!HasAttribute(L"Host", node))
               {
                 return false;
               }
-              if (node->Attributes->GetNamedItem(L"Port") == nullptr)
+              if (!HasAttribute(L"Port", node))
               {
                 return false;
               }
@@ -148,16 +147,13 @@ namespace HoloIntervention
               }
               catch (const std::exception&) {}
 
-              if (node->Attributes->GetNamedItem(L"ReconnectOnDrop") != nullptr)
+              bool reconnectOnDrop;
+              if (GetBooleanAttribute(L"ReconnectOnDrop", node, reconnectOnDrop))
               {
-                Platform::String^ reconnectOnDrop = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"ReconnectOnDrop")->NodeValue);
-                if (!reconnectOnDrop->IsEmpty())
-                {
-                  connector->SetReconnectOnDrop(IsEqualInsensitive(reconnectOnDrop->Data(), L"true"));
-                }
+                connector->SetReconnectOnDrop(reconnectOnDrop);
               }
 
-              if (node->Attributes->GetNamedItem(L"EmbeddedImageTransformName") != nullptr)
+              if (HasAttribute(L"EmbeddedImageTransformName", node))
               {
                 Platform::String^ embeddedImageTransformName = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"EmbeddedImageTransformName")->NodeValue);
                 if (!embeddedImageTransformName->IsEmpty())
