@@ -784,7 +784,7 @@ namespace HoloIntervention
           cv::GaussianBlur(mask, mask, cv::Size(9, 9), 2, 2);
 
           // Apply the Hough Transform to find the circles
-          cv::HoughCircles(mask, circles, CV_HOUGH_GRADIENT, 2, mask.rows / 16, 255, 30, 15, 60);
+          cv::HoughCircles(mask, circles, CV_HOUGH_GRADIENT, 2, mask.rows / 16, 255, 30, 20, 60);
 
           if (circles.size() == PHANTOM_SPHERE_COUNT)
           {
