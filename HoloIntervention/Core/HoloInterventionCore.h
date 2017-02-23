@@ -107,6 +107,9 @@ namespace HoloIntervention
     virtual void OnDeviceLost();
     virtual void OnDeviceRestored();
 
+    void OnSuspending();
+    void OnResuming();
+
   protected:
     // Asynchronously creates resources for new holographic cameras.
     void OnCameraAdded(Windows::Graphics::Holographic::HolographicSpace^ sender, Windows::Graphics::Holographic::HolographicSpaceCameraAddedEventArgs^ args);

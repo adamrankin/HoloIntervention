@@ -45,8 +45,8 @@ namespace HoloIntervention
     uint32 msCount(0);
     while (!func() && msCount < timeoutMs)
     {
-      std::this_thread::sleep_for(std::chrono::milliseconds(100));
-      msCount += 100;
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+      msCount += 10;
     }
 
     return msCount < timeoutMs;

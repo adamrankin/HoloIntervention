@@ -64,10 +64,12 @@ namespace HoloIntervention
     void LogMessage(LogLevelType level, const std::string& message, const std::string& file, int32 line);
     void LogMessage(LogLevelType level, const std::wstring& message, const std::wstring& file, int32 line);
 
+    Concurrency::task<void> SuspendAsync();
+    Concurrency::task<void> ResumeAsync();
+
   protected:
     Concurrency::task<void> DataSenderAsync();
     Concurrency::task<void> PeriodicFlushAsync();
-    std::wstring LevelToString(LogLevelType type);
 
   protected:
     Log();

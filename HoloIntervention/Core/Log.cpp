@@ -86,6 +86,24 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
+  task<void> Log::SuspendAsync()
+  {
+    m_tokenSource.cancel();
+    return create_task(m_logWriter->FlushAsync()).then([this](bool result)
+    {
+      m_logWriter = nullptr;
+      m_logFile = nullptr;
+    });
+  }
+
+  //----------------------------------------------------------------------------
+  task<void> Log::ResumeAsync()
+  {
+    DataSenderAsync();
+    return create_task([]() {});
+  }
+
+  //----------------------------------------------------------------------------
   task<void> Log::DataSenderAsync()
   {
     return create_task([this, token = m_tokenSource.get_token()]() -> void

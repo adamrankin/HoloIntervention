@@ -73,12 +73,14 @@ namespace HoloIntervention
       ref new TypedEventHandler<CoreApplicationView^, IActivatedEventArgs^>(this, &AppView::OnViewActivated);
 
     // Register event handlers for app lifecycle.
-    CoreApplication::Suspending +=
-      ref new EventHandler<SuspendingEventArgs^>(this, &AppView::OnSuspending);
-    CoreApplication::Resuming +=
-      ref new EventHandler<Platform::Object^>(this, &AppView::OnResuming);
-    CoreApplication::LeavingBackground +=
-      ref new EventHandler<LeavingBackgroundEventArgs^>(this, &AppView::OnLeavingBackground);
+    m_suspendingToken = CoreApplication::Suspending +=
+                          ref new EventHandler<SuspendingEventArgs^>(this, &AppView::OnSuspending);
+    m_resumingToken = CoreApplication::Resuming +=
+                        ref new EventHandler<Platform::Object^>(this, &AppView::OnResuming);
+    m_leavingBackgoundToken = CoreApplication::LeavingBackground +=
+                                ref new EventHandler<LeavingBackgroundEventArgs^>(this, &AppView::OnLeavingBackground);
+    m_enteredBackgroundToken = CoreApplication::EnteredBackground +=
+                                 ref new EventHandler<EnteredBackgroundEventArgs^>(this, &AppView::OnEnteredBackground);
 
     m_deviceResources = std::make_shared<DX::DeviceResources>();
 
@@ -132,7 +134,13 @@ namespace HoloIntervention
   //----------------------------------------------------------------------------
   void AppView::Uninitialize()
   {
+    m_main = nullptr;
+    m_deviceResources = nullptr;
 
+    CoreApplication::Suspending -= m_suspendingToken;
+    CoreApplication::Resuming -= m_resumingToken;
+    CoreApplication::LeavingBackground -= m_leavingBackgoundToken;
+    CoreApplication::EnteredBackground -= m_enteredBackgroundToken;
   }
 
   //----------------------------------------------------------------------------
@@ -154,7 +162,7 @@ namespace HoloIntervention
       {
         try
         {
-          m_main->SaveAppStateAsync();
+          m_main->OnSuspending();
         }
         catch (const std::exception& e)
         {
@@ -173,7 +181,7 @@ namespace HoloIntervention
     {
       try
       {
-        m_main->LoadAppStateAsync();
+        m_main->OnResuming();
       }
       catch (const std::exception& e) { OutputDebugStringA(e.what()); }
     }
@@ -204,7 +212,20 @@ namespace HoloIntervention
     {
       try
       {
-        m_main->LoadAppStateAsync();
+        m_main->OnResuming();
+      }
+      catch (const std::exception& e) { OutputDebugStringA(e.what()); }
+    }
+  }
+
+  //----------------------------------------------------------------------------
+  void AppView::OnEnteredBackground(Platform::Object^ sender, Windows::ApplicationModel::EnteredBackgroundEventArgs^ args)
+  {
+    if (m_main != nullptr)
+    {
+      try
+      {
+        m_main->OnSuspending();
       }
       catch (const std::exception& e) { OutputDebugStringA(e.what()); }
     }

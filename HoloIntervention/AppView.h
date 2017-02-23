@@ -33,7 +33,6 @@ namespace DX
 
 namespace HoloIntervention
 {
-  // IFrameworkView class. Connects the app with the Windows shell and handles application lifecycle events.
   ref class AppView sealed : public Windows::ApplicationModel::Core::IFrameworkView
   {
   public:
@@ -52,6 +51,7 @@ namespace HoloIntervention
     void OnSuspending(Platform::Object^ sender, Windows::ApplicationModel::SuspendingEventArgs^ args);
     void OnResuming(Platform::Object^ sender, Platform::Object^ args);
     void OnLeavingBackground(Platform::Object^ sender, Windows::ApplicationModel::LeavingBackgroundEventArgs^ args);
+    void OnEnteredBackground(Platform::Object^ sender, Windows::ApplicationModel::EnteredBackgroundEventArgs^ args);
 
     // Window event handlers.
     void OnVisibilityChanged(Windows::UI::Core::CoreWindow^ sender, Windows::UI::Core::VisibilityChangedEventArgs^ args);
@@ -60,15 +60,20 @@ namespace HoloIntervention
     // CoreWindow input event handlers.
     void OnKeyPressed(Windows::UI::Core::CoreWindow^ sender, Windows::UI::Core::KeyEventArgs^ args);
 
-  private:
-    std::unique_ptr<HoloInterventionCore> m_main;
+  protected private:
+    std::unique_ptr<HoloInterventionCore>                   m_main;
 
-    std::shared_ptr<DX::DeviceResources> m_deviceResources;
-    bool m_windowClosed  = false;
-    bool m_windowVisible = true;
+    std::shared_ptr<DX::DeviceResources>                    m_deviceResources;
+    bool                                                    m_windowClosed  = false;
+    bool                                                    m_windowVisible = true;
 
-    // The holographic space the app will use for rendering.
-    Windows::Graphics::Holographic::HolographicSpace^ m_holographicSpace = nullptr;
+    Windows::Graphics::Holographic::HolographicSpace^       m_holographicSpace = nullptr;
+
+    // Tokens
+    Windows::Foundation::EventRegistrationToken             m_suspendingToken;
+    Windows::Foundation::EventRegistrationToken             m_resumingToken;
+    Windows::Foundation::EventRegistrationToken             m_leavingBackgoundToken;
+    Windows::Foundation::EventRegistrationToken             m_enteredBackgroundToken;
   };
 
   // The entry point for the app.

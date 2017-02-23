@@ -598,4 +598,30 @@ namespace HoloIntervention
       }
     }
   }
+
+  //----------------------------------------------------------------------------
+  void HoloInterventionCore::OnSuspending()
+  {
+    std::atomic_bool ready(false);
+    SaveAppStateAsync().then([&ready]()
+    {
+      ready = true;
+    });
+
+    wait_until_condition([&ready]() {bool x = ready; return x; }, 50);
+    Log::instance().SuspendAsync();
+  }
+
+  //----------------------------------------------------------------------------
+  void HoloInterventionCore::OnResuming()
+  {
+    std::atomic_bool ready(false);
+    Log::instance().ResumeAsync().then([&ready]()
+    {
+      ready = true;
+    });
+    LoadAppStateAsync();
+
+    wait_until_condition([&ready]() {bool x = ready; return x; }, 300);
+  }
 }
