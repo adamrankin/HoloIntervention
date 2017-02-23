@@ -89,7 +89,7 @@ namespace HoloIntervention
 
         if (FAILED(hr))
         {
-          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Cannot initialize audio system.");
+          LOG(LogLevelType::LOG_LEVEL_ERROR, "Cannot initialize audio system.");
           return hr;
         }
 
@@ -167,13 +167,13 @@ namespace HoloIntervention
       }
       catch (Platform::Exception^ e)
       {
-        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e->Message);
+        WLOG(LogLevelType::LOG_LEVEL_ERROR, e->Message);
         omniSound = nullptr;
       }
 
       if (FAILED(hr))
       {
-        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, std::wstring(L"Unable to initialize sound. ") + assetName);
+        WLOG(LogLevelType::LOG_LEVEL_ERROR, std::wstring(L"Unable to initialize sound. ") + assetName);
         omniSound = nullptr;
         return;
       }
@@ -182,7 +182,7 @@ namespace HoloIntervention
 
       if (FAILED(hr))
       {
-        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, std::wstring(L"Unable to set sound environment. ") + assetName);
+        WLOG(LogLevelType::LOG_LEVEL_ERROR, std::wstring(L"Unable to set sound environment. ") + assetName);
         omniSound = nullptr;
         return;
       }
@@ -225,13 +225,13 @@ namespace HoloIntervention
       }
       catch (Platform::Exception^ e)
       {
-        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e->Message);
+        WLOG(LogLevelType::LOG_LEVEL_ERROR, e->Message);
         cardioidSound = nullptr;
       }
 
       if (FAILED(hr))
       {
-        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, std::wstring(L"Unable to initialize sound. ") + assetName);
+        WLOG(LogLevelType::LOG_LEVEL_ERROR, std::wstring(L"Unable to initialize sound. ") + assetName);
         cardioidSound = nullptr;
         return;
       }
@@ -240,7 +240,7 @@ namespace HoloIntervention
 
       if (FAILED(hr))
       {
-        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, std::wstring(L"Unable to set sound environment. ") + assetName);
+        WLOG(LogLevelType::LOG_LEVEL_ERROR, std::wstring(L"Unable to set sound environment. ") + assetName);
         cardioidSound = nullptr;
         return;
       }

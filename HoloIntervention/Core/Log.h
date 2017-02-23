@@ -38,29 +38,35 @@ namespace HoloIntervention
     class IGTConnector;
   }
 
+  public enum class LogLevelType : int32
+  {
+    LOG_LEVEL_ERROR,
+    LOG_LEVEL_WARNING,
+    LOG_LEVEL_INFO,
+    LOG_LEVEL_DEBUG,
+    LOG_LEVEL_TRACE,
+  };
+
   class Log : public IEngineComponent
   {
-  public:
-    enum LogLevelType
+    struct MessageEntry
     {
-      LOG_LEVEL_ERROR = 1,
-      LOG_LEVEL_WARNING = 2,
-      LOG_LEVEL_INFO = 3,
-      LOG_LEVEL_DEBUG = 4,
-      LOG_LEVEL_TRACE = 5,
-
-      LOG_LEVEL_DEFAULT = LOG_LEVEL_INFO,
+      LogLevelType  Level;
+      std::wstring  Message;
+      std::wstring  File;
+      int32         Line;
     };
 
   public:
     static Log& instance();
 
-    void LogMessage(LogLevelType level, Platform::String^ message);
-    void LogMessage(LogLevelType level, const std::string& message);
-    void LogMessage(LogLevelType level, const std::wstring& message);
+    void LogMessage(LogLevelType level, Platform::String^ message, Platform::String^ file, int32 line);
+    void LogMessage(LogLevelType level, const std::string& message, const std::string& file, int32 line);
+    void LogMessage(LogLevelType level, const std::wstring& message, const std::wstring& file, int32 line);
 
   protected:
     Concurrency::task<void> DataSenderAsync();
+    Concurrency::task<void> PeriodicFlushAsync();
     std::wstring LevelToString(LogLevelType type);
 
   protected:
@@ -68,9 +74,15 @@ namespace HoloIntervention
     ~Log();
 
   protected:
-    Concurrency::cancellation_token_source            m_tokenSource;
+    Concurrency::cancellation_token_source  m_tokenSource;
 
-    mutable std::mutex                                m_sendListMutex;
-    std::deque<std::pair<LogLevelType, std::wstring>> m_sendList;
+    std::mutex                              m_writerMutex;
+    Windows::Storage::StorageFile^          m_logFile;
+    Windows::Storage::Streams::DataWriter^  m_logWriter;
+
+    std::mutex                              m_messagesMutex;
+    std::deque<MessageEntry>                m_messages;
+
+    const uint32                            FLUSH_PERIOD_MSEC = 2000;
   };
 }

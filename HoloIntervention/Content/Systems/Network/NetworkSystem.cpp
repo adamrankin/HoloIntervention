@@ -78,7 +78,7 @@ namespace HoloIntervention
       }
       catch (const std::exception& e)
       {
-      Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, std::string("IGTConnector failed to find servers: ") + e.what());
+      LOG(LogLevelType::LOG_LEVEL_ERROR, std::string("IGTConnector failed to find servers: ") + e.what());
       }
       });
       */

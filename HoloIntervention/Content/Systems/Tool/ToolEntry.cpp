@@ -157,7 +157,7 @@ namespace HoloIntervention
       uint64 modelToken = m_modelRenderer.AddModel(L"Assets\\Models\\Tools\\" + modelName + L".cmo");
       if (modelToken == INVALID_TOKEN)
       {
-        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_WARNING, std::wstring(L"Unable to create model with name: ") + modelName);
+        WLOG(LogLevelType::LOG_LEVEL_WARNING, std::wstring(L"Unable to create model with name: ") + modelName);
         return;
       }
       m_modelEntry = m_modelRenderer.GetModel(modelToken);

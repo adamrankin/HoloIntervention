@@ -329,7 +329,7 @@ namespace HoloIntervention
                 }
                 catch (const std::exception& e)
                 {
-                  Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e.what());
+                  LOG(LogLevelType::LOG_LEVEL_ERROR, e.what());
                   m_tokenSource.cancel();
                   return;
                 }
@@ -342,7 +342,7 @@ namespace HoloIntervention
                 }
                 catch (const std::exception& e)
                 {
-                  Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e.what());
+                  LOG(LogLevelType::LOG_LEVEL_ERROR, e.what());
                   m_tokenSource.cancel();
                   return;
                 }
@@ -456,7 +456,7 @@ namespace HoloIntervention
           }
           catch (Platform::Exception^ e)
           {
-            Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e->Message);
+            LOG(LogLevelType::LOG_LEVEL_ERROR, e->Message);
           }
           if (worldAnchorToNewAnchorBox != nullptr)
           {
@@ -498,14 +498,14 @@ namespace HoloIntervention
 
       if (!m_transformsAvailable)
       {
-        Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Unable to process frames. Transform repository was not properly initialized.");
+        LOG(LogLevelType::LOG_LEVEL_ERROR, "Unable to process frames. Transform repository was not properly initialized.");
         return;
       }
 
       std::shared_ptr<Network::IGTConnector> connection = m_networkSystem.GetConnection(m_connectionName);
       if (connection == nullptr)
       {
-        Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Unable to process frames. Connection is not available.");
+        LOG(LogLevelType::LOG_LEVEL_ERROR, "Unable to process frames. Connection is not available.");
         return;
       }
 
@@ -540,7 +540,7 @@ namespace HoloIntervention
             }
             catch (Platform::Exception^ e)
             {
-              Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, L"Exception: " + e->Message);
+              LOG(LogLevelType::LOG_LEVEL_ERROR, L"Exception: " + e->Message);
               continue;
             }
             if (cameraToRawWorldAnchorBox != nullptr)
@@ -698,7 +698,7 @@ namespace HoloIntervention
         std::chrono::duration<double> diff = end - start;
         std::stringstream ss;
         ss << "Registration took " << diff.count() << "s.";
-        Log::instance().LogMessage(Log::LOG_LEVEL_WARNING, ss.str());
+        LOG(LogLevelType::LOG_LEVEL_WARNING, ss.str());
       }
     }
 
@@ -719,7 +719,7 @@ namespace HoloIntervention
     {
       if (m_sphereToPhantomPoses.size() != PHANTOM_SPHERE_COUNT)
       {
-        Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Phantom coordinates haven't been received. Can't determine 3D sphere coordinates.");
+        LOG(LogLevelType::LOG_LEVEL_ERROR, "Phantom coordinates haven't been received. Can't determine 3D sphere coordinates.");
         return false;
       }
 
@@ -728,14 +728,14 @@ namespace HoloIntervention
       {
         if (videoFrame == nullptr || videoFrame->CameraIntrinsics == nullptr)
         {
-          Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Camera intrinsics not available. Cannot continue.");
+          LOG(LogLevelType::LOG_LEVEL_ERROR, "Camera intrinsics not available. Cannot continue.");
           return false;
         }
         cameraIntrinsics = videoFrame->CameraIntrinsics;
       }
       catch (Platform::Exception^ e)
       {
-        Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e->Message);
+        LOG(LogLevelType::LOG_LEVEL_ERROR, e->Message);
         return false;
       }
 
@@ -1123,7 +1123,7 @@ done:
 
       if (centerSphereIndex == -1)
       {
-        Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "No index common to all lists.");
+        LOG(LogLevelType::LOG_LEVEL_ERROR, "No index common to all lists.");
         return false;
       }
 
@@ -1326,7 +1326,7 @@ done:
       }
       catch (Platform::Exception^ e)
       {
-        Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e->Message);
+        LOG(LogLevelType::LOG_LEVEL_ERROR, e->Message);
       }
 
       try
@@ -1352,7 +1352,7 @@ done:
       }
       catch (Platform::Exception^ e)
       {
-        Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Unable to read configuration file.");
+        LOG(LogLevelType::LOG_LEVEL_ERROR, "Unable to read configuration file.");
       }
 
       m_sphereCoordinateNames[0] = ref new UWPOpenIGTLink::TransformName(L"RedSphere1", L"Reference");

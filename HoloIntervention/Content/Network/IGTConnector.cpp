@@ -23,8 +23,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "pch.h"
+#include "Common.h"
 #include "IGTConnector.h"
-#include "Log.h"
 #include "NotificationSystem.h"
 #include "VoiceInput.h"
 
@@ -111,7 +111,7 @@ namespace HoloIntervention
         }
         catch (const std::exception& e)
         {
-          Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, std::string("IGTConnector failed to connect: ") + e.what());
+          LOG(LogLevelType::LOG_LEVEL_ERROR, std::string("IGTConnector failed to connect: ") + e.what());
           return false;
         }
 
@@ -128,7 +128,7 @@ namespace HoloIntervention
               }
               catch (const std::exception& e)
               {
-                Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, std::string("KeepAliveTask exception: ") + e.what());
+                LOG(LogLevelType::LOG_LEVEL_ERROR, std::string("KeepAliveTask exception: ") + e.what());
               }
             });
           }
@@ -266,11 +266,11 @@ namespace HoloIntervention
                   }
                   catch (const std::exception& e)
                   {
-                    Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e.what());
+                    LOG(LogLevelType::LOG_LEVEL_ERROR, e.what());
                   }
                   catch (Platform::Exception^ e)
                   {
-                    Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e->Message);
+                    WLOG(LogLevelType::LOG_LEVEL_ERROR, e->Message);
                   }
                 }
 
@@ -298,7 +298,7 @@ namespace HoloIntervention
           }
           else
           {
-            Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Keep alive running unconnected but token not canceled.");
+            LOG(LogLevelType::LOG_LEVEL_ERROR, "Keep alive running unconnected but token not canceled.");
             std::this_thread::sleep_for(std::chrono::milliseconds(KEEP_ALIVE_INTERVAL_MSEC));
           }
         }

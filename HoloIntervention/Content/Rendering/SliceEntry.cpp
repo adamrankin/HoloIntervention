@@ -182,7 +182,7 @@ namespace HoloIntervention
       std::shared_ptr<byte> image = *(std::shared_ptr<byte>*)(frame->GetImageData());
       if (image == nullptr)
       {
-        Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Unable to access image buffer.");
+        LOG(LogLevelType::LOG_LEVEL_ERROR, "Unable to access image buffer.");
         return;
       }
 

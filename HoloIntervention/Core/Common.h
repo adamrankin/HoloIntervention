@@ -34,6 +34,13 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <robuffer.h>
 #include <windows.h>
 
+#define WIDE2(x) L##x
+#define WIDE1(x) WIDE2(x)
+#define WFILE WIDE1(__FILE__)
+
+#define LOG(level, msg) Log::instance().LogMessage(level, msg, __FILE__, __LINE__)
+#define WLOG(level, msg) Log::instance().LogMessage(level, msg, WFILE, __LINE__)
+
 namespace HoloIntervention
 {
   static const uint64 INVALID_TOKEN = 0;

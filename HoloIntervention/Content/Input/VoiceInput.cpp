@@ -265,7 +265,7 @@ namespace HoloIntervention
             }
             catch (Platform::Exception^ e)
             {
-              Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, L"Failed to stop current recognizer: " + e->Message);
+              LOG(LogLevelType::LOG_LEVEL_ERROR, L"Failed to stop current recognizer: " + e->Message);
               return task_from_result(false);
             }
 
@@ -283,7 +283,7 @@ namespace HoloIntervention
               }
               catch (Platform::Exception^ e)
               {
-                Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, L"Failed to start desired recognizer: " + e->Message);
+                LOG(LogLevelType::LOG_LEVEL_ERROR, L"Failed to start desired recognizer: " + e->Message);
                 return false;
               }
 
@@ -307,7 +307,7 @@ namespace HoloIntervention
             }
             catch (Platform::Exception^ e)
             {
-              Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, L"Failed to start command recognizer: " + e->Message);
+              LOG(LogLevelType::LOG_LEVEL_ERROR, L"Failed to start command recognizer: " + e->Message);
               return false;
             }
 

@@ -23,7 +23,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "pch.h"
-#include "AppView.h"
+#include "Common.h"
 #include "Log.h"
 
 // System includes
@@ -34,6 +34,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 using namespace Concurrency;
 using namespace Windows::Networking;
+using namespace Windows::Storage;
 using namespace Windows::Storage::Streams;
 
 namespace HoloIntervention
@@ -55,33 +56,65 @@ namespace HoloIntervention
   Log::~Log()
   {
     m_tokenSource.cancel();
+    std::lock_guard<std::mutex> guard(m_writerMutex);
+    m_logWriter->FlushAsync();
   }
 
   //----------------------------------------------------------------------------
-  void Log::LogMessage(LogLevelType level, const std::string& message)
+  void Log::LogMessage(LogLevelType level, const std::string& message, const std::string& file, int32 line)
   {
-    LogMessage(level, std::wstring(message.begin(), message.end()));
+    LogMessage(level, std::wstring(begin(message), end(message)), std::wstring(begin(file), end(file)), line);
   }
 
   //----------------------------------------------------------------------------
-  void Log::LogMessage(LogLevelType level, const std::wstring& message)
+  void Log::LogMessage(LogLevelType level, const std::wstring& message, const std::wstring& file, int32 line)
   {
-    std::lock_guard<std::mutex> guard(m_sendListMutex);
-    m_sendList.push_back(std::pair<LogLevelType, std::wstring>(level, message));
+    MessageEntry msgEntry;
+    msgEntry.Level = level;
+    msgEntry.Message = message;
+    msgEntry.File = file;
+    msgEntry.Line = line;
+
+    std::lock_guard<std::mutex> guard(m_messagesMutex);
+    m_messages.push_back(msgEntry);
   }
 
   //----------------------------------------------------------------------------
-  void Log::LogMessage(LogLevelType level, Platform::String^ message)
+  void Log::LogMessage(LogLevelType level, Platform::String^ message, Platform::String^ file, int32 line)
   {
-    LogMessage(level, std::wstring(message->Data()));
+    LogMessage(level, message->Data(), file->Data(), line);
   }
 
   //----------------------------------------------------------------------------
   task<void> Log::DataSenderAsync()
   {
-    auto token = m_tokenSource.get_token();
-    return create_task([this, token]()
+    return create_task([this, token = m_tokenSource.get_token()]() -> void
     {
+      auto userFolder = ApplicationData::Current->LocalFolder;
+      auto Calendar = ref new Windows::Globalization::Calendar();
+      Calendar->SetToNow();
+      auto fileName = L"HoloIntervention_" + Calendar->YearAsString() + L"-" + Calendar->MonthAsNumericString() + L"-" + Calendar->DayAsString() + L"T" + Calendar->HourAsPaddedString(2) + L"h" + Calendar->MinuteAsPaddedString(2) + L"m" + Calendar->SecondAsPaddedString(2) + L"s.txt";
+
+      std::atomic_bool fileReady(false);
+      create_task(userFolder->CreateFileAsync(fileName, CreationCollisionOption::GenerateUniqueName)).then([this, &fileReady](StorageFile ^ file)
+      {
+        m_logFile = file;
+        return create_task(m_logFile->OpenAsync(FileAccessMode::ReadWrite)).then([this, &fileReady](IRandomAccessStream ^ stream)
+        {
+          std::lock_guard<std::mutex> guard(m_writerMutex);
+          m_logWriter = ref new DataWriter(stream);
+          fileReady = true;
+        });
+      });
+
+      if (!wait_until_condition([&fileReady]() {bool x = fileReady; return x; }, 5000))
+      {
+        OutputDebugStringA("Cannot create log file. No logging possible.");
+        return;
+      }
+
+      PeriodicFlushAsync();
+
       while (true)
       {
         if (token.is_canceled())
@@ -89,54 +122,46 @@ namespace HoloIntervention
           return;
         }
 
-        if (m_sendList.size() == 0)
+        if (m_messages.size() == 0)
         {
-          std::this_thread::sleep_for(std::chrono::milliseconds(100));
+          std::this_thread::sleep_for(std::chrono::milliseconds(25));
           continue;
         }
 
-        std::pair<LogLevelType, std::wstring> item;
+        MessageEntry item;
         {
-          std::lock_guard<std::mutex> guard(m_sendListMutex);
-          item = m_sendList.front();
-          m_sendList.pop_front();
+          std::lock_guard<std::mutex> guard(m_messagesMutex);
+          item = m_messages.front();
+          m_messages.pop_front();
         }
 
         try
         {
-          OutputDebugStringW((item.second + L"\n").c_str());
+          std::lock_guard<std::mutex> guard(m_writerMutex);
+          auto output = L"|" + item.Level.ToString() + L"|" + ref new Platform::String(item.Message.c_str()) + L"|" + ref new Platform::String(item.File.c_str()) + L":" + item.Line.ToString();
+          m_logWriter->WriteString(output);
         }
-        catch (const std::exception& e)
-        {
-          OutputDebugStringA(e.what());
-        }
+        catch (Platform::Exception^) { try { m_logWriter->FlushAsync(); } catch (Platform::Exception^) { return; } return; }
       }
     });
   }
 
   //----------------------------------------------------------------------------
-  std::wstring Log::LevelToString(LogLevelType type)
+  Concurrency::task<void> Log::PeriodicFlushAsync()
   {
-    switch (type)
+    return create_task([this, token = m_tokenSource.get_token()]()
     {
-      case HoloIntervention::Log::LOG_LEVEL_ERROR:
-        return L"ERROR";
-        break;
-      case HoloIntervention::Log::LOG_LEVEL_WARNING:
-        return L"WARNING";
-        break;
-      case HoloIntervention::Log::LOG_LEVEL_INFO:
-        return L"INFO";
-        break;
-      case HoloIntervention::Log::LOG_LEVEL_DEBUG:
-        return L"DEBUG";
-        break;
-      case HoloIntervention::Log::LOG_LEVEL_TRACE:
-        return L"TRACE";
-        break;
-      default:
-        return L"UNKNOWN";
-        break;
-    }
+      while (!token.is_canceled())
+      {
+        uint32 accumulator = 0;
+        while (accumulator < FLUSH_PERIOD_MSEC)
+        {
+          std::this_thread::sleep_for(std::chrono::milliseconds(100));
+          accumulator += 100;
+        }
+        std::lock_guard<std::mutex> guard(m_writerMutex);
+        m_logWriter->FlushAsync();
+      }
+    });
   }
 }

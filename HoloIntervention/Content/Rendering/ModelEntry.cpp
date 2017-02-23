@@ -72,7 +72,7 @@ namespace HoloIntervention
         }
         catch (const std::exception&)
         {
-          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Unable to locate installed folder path.");
+          HoloIntervention::LOG(LogLevelType::LOG_LEVEL_ERROR, "Unable to locate installed folder path.");
         }
         std::string asset(m_assetLocation.begin(), m_assetLocation.end());
 
@@ -96,12 +96,12 @@ namespace HoloIntervention
           }
           catch (Platform::InvalidArgumentException^ e)
           {
-            HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, L"InvalidArgumentException: " + e->Message);
+            HoloIntervention::LOG(LogLevelType::LOG_LEVEL_ERROR, L"InvalidArgumentException: " + e->Message);
             return;
           }
           catch (const std::exception& e)
           {
-            HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, std::string("Unable to get subfolder: ") + e.what());
+            HoloIntervention::LOG(LogLevelType::LOG_LEVEL_ERROR, std::string("Unable to get subfolder: ") + e.what());
             return;
           }
           std::string filename(nameStr);
@@ -118,7 +118,7 @@ namespace HoloIntervention
               }
               catch (const std::exception& e)
               {
-                HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, std::string("Unable to load model. ") + e.what());
+                HoloIntervention::LOG(LogLevelType::LOG_LEVEL_ERROR, std::string("Unable to load model. ") + e.what());
               }
             }
           });
@@ -257,7 +257,7 @@ namespace HoloIntervention
       }
       else
       {
-        Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Unknown render state requested.");
+        LOG(LogLevelType::LOG_LEVEL_ERROR, "Unknown render state requested.");
       }
     }
 

@@ -77,7 +77,7 @@ namespace HoloIntervention
       }
       catch (const std::exception& e)
       {
-        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e.what());
+        HoloIntervention::LOG(LogLevelType::LOG_LEVEL_ERROR, e.what());
       }
     };
 
@@ -360,7 +360,7 @@ namespace HoloIntervention
         }
         catch (const std::exception& e)
         {
-          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e.what());
+          HoloIntervention::LOG(LogLevelType::LOG_LEVEL_ERROR, e.what());
           return false;
         }
 
@@ -390,7 +390,7 @@ namespace HoloIntervention
         }
         catch (const std::exception& e)
         {
-          HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e.what());
+          HoloIntervention::LOG(LogLevelType::LOG_LEVEL_ERROR, e.what());
           return false;
         }
 

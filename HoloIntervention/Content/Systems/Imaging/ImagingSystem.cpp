@@ -195,7 +195,7 @@ namespace HoloIntervention
       }
       catch (Platform::Exception^ e)
       {
-        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e->Message);
+        HoloIntervention::LOG(LogLevelType::LOG_LEVEL_ERROR, e->Message);
       }
 
       try
@@ -237,7 +237,7 @@ namespace HoloIntervention
       }
       catch (Platform::Exception^ e)
       {
-        HoloIntervention::Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e->Message);
+        HoloIntervention::LOG(LogLevelType::LOG_LEVEL_ERROR, e->Message);
       }
     }
 
@@ -388,7 +388,7 @@ namespace HoloIntervention
       float4x4 sliceToHMD;
       if (!m_transformRepository->GetTransform(m_sliceToHMDName, &sliceToHMD))
       {
-        Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, L"Unable to retrieve " + m_sliceToHMDName->GetTransformName() + L" from repository.");
+        LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to retrieve " + m_sliceToHMDName->GetTransformName() + L" from repository.");
         return;
       }
       sliceToHMD = transpose(sliceToHMD);
@@ -424,7 +424,7 @@ namespace HoloIntervention
       float4x4 volumeToHMD;
       if (!m_transformRepository->GetTransform(m_volumeToHMDName, &volumeToHMD))
       {
-        Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, L"Unable to retrieve " + m_volumeToHMDName->GetTransformName() + L" from repository.");
+        LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to retrieve " + m_volumeToHMDName->GetTransformName() + L" from repository.");
         return;
       }
       volumeToHMD = transpose(volumeToHMD);

@@ -158,7 +158,7 @@ namespace HoloIntervention
         }
         catch (const std::exception& e)
         {
-          Log::instance().LogMessage(Log::LOG_LEVEL_WARNING, e.what());
+          LOG(LogLevelType::LOG_LEVEL_WARNING, std::string("Unable to save app state: ") + e.what());
         }
       }
 

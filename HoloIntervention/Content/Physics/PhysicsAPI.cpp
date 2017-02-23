@@ -231,7 +231,7 @@ namespace HoloIntervention
             }
             else
             {
-              Log::instance().LogMessage(Log::LOG_LEVEL_WARNING, "Cannot load desired vertex position format.");
+              LOG(LogLevelType::LOG_LEVEL_WARNING, "Cannot load desired vertex position format.");
             }
 
             // Our shader pipeline can handle a variety of triangle index formats
@@ -242,7 +242,7 @@ namespace HoloIntervention
             }
             else
             {
-              Log::instance().LogMessage(Log::LOG_LEVEL_WARNING, "Cannot load desired index format.");
+              LOG(LogLevelType::LOG_LEVEL_WARNING, "Cannot load desired index format.");
             }
 
             if (m_surfaceObserver == nullptr)
@@ -254,17 +254,17 @@ namespace HoloIntervention
           break;
           case SpatialPerceptionAccessStatus::DeniedBySystem:
           {
-            Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Error: Cannot initialize surface observer because the system denied access to the spatialPerception capability.");
+            LOG(LogLevelType::LOG_LEVEL_ERROR, "Error: Cannot initialize surface observer because the system denied access to the spatialPerception capability.");
           }
           break;
           case SpatialPerceptionAccessStatus::DeniedByUser:
           {
-            Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Error: Cannot initialize surface observer because the user denied access to the spatialPerception capability.");
+            LOG(LogLevelType::LOG_LEVEL_ERROR, "Error: Cannot initialize surface observer because the user denied access to the spatialPerception capability.");
           }
           break;
           case SpatialPerceptionAccessStatus::Unspecified:
           {
-            Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, "Error: Cannot initialize surface observer. Access was denied for an unspecified reason.");
+            LOG(LogLevelType::LOG_LEVEL_ERROR, "Error: Cannot initialize surface observer. Access was denied for an unspecified reason.");
           }
           break;
           default:

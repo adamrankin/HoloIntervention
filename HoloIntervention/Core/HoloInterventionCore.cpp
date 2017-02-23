@@ -233,6 +233,7 @@ namespace HoloIntervention
 
       LoadAppStateAsync();
 
+      LOG(LogLevelType::LOG_LEVEL_INFO, "Engine started.");
       m_engineBuilt = true;
     });
   }
@@ -542,7 +543,7 @@ namespace HoloIntervention
       }
       catch (const std::exception& e)
       {
-        Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, std::string("Failed to compile callbacks: ") + e.what());
+        LOG(LogLevelType::LOG_LEVEL_ERROR, std::string("Failed to compile callbacks: ") + e.what());
       }
     });
   }
@@ -567,7 +568,7 @@ namespace HoloIntervention
 
     if (winningComponent == nullptr)
     {
-      Log::instance().LogMessage(Log::LOG_LEVEL_WARNING, "No component returned a stabilization request.");
+      LOG(LogLevelType::LOG_LEVEL_WARNING, "No component returned a stabilization request.");
       return;
     }
 
@@ -592,7 +593,7 @@ namespace HoloIntervention
         }
         catch (Platform::Exception^ e)
         {
-          Log::instance().LogMessage(Log::LOG_LEVEL_ERROR, e->Message);
+          LOG(LogLevelType::LOG_LEVEL_ERROR, e->Message);
         }
       }
     }
