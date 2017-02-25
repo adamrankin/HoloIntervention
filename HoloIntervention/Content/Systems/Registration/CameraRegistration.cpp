@@ -612,8 +612,6 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void CameraRegistration::PerformLandmarkRegistration(Concurrency::cancellation_token token)
     {
-
-
       while (!token.is_canceled())
       {
         uint32 size;
@@ -666,18 +664,11 @@ namespace HoloIntervention
         }
 
         std::atomic_bool calcFinished(false);
-        bool resultValid(false);
-        auto start = std::chrono::system_clock::now();
-        m_landmarkRegistration->CalculateTransformationAsync().then([this, &calcFinished, &resultValid](float4x4 referenceToAnchorTransformation)
+        m_landmarkRegistration->CalculateTransformationAsync().then([this, &calcFinished](float4x4 referenceToAnchorTransformation)
         {
-          if (referenceToAnchorTransformation == float4x4::identity())
-          {
-            resultValid = false;
-          }
-          else
+          if (referenceToAnchorTransformation != float4x4::identity())
           {
             m_hasRegistration = true;
-            resultValid = true;
             m_referenceToAnchor = referenceToAnchorTransformation;
             if (m_completeCallback)
             {
@@ -693,12 +684,6 @@ namespace HoloIntervention
         }
 
         m_lastRegistrationResultCount = size;
-
-        auto end = std::chrono::system_clock::now();
-        std::chrono::duration<double> diff = end - start;
-        std::stringstream ss;
-        ss << "Registration took " << diff.count() << "s.";
-        LOG(LogLevelType::LOG_LEVEL_WARNING, ss.str());
       }
     }
 

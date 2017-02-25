@@ -134,13 +134,7 @@ namespace HoloIntervention
   //----------------------------------------------------------------------------
   void AppView::Uninitialize()
   {
-    m_main = nullptr;
-    m_deviceResources = nullptr;
 
-    CoreApplication::Suspending -= m_suspendingToken;
-    CoreApplication::Resuming -= m_resumingToken;
-    CoreApplication::LeavingBackground -= m_leavingBackgoundToken;
-    CoreApplication::EnteredBackground -= m_enteredBackgroundToken;
   }
 
   //----------------------------------------------------------------------------
@@ -162,7 +156,7 @@ namespace HoloIntervention
       {
         try
         {
-          m_main->OnSuspending();
+          m_main->SaveAppStateAsync();
         }
         catch (const std::exception& e)
         {
@@ -181,7 +175,7 @@ namespace HoloIntervention
     {
       try
       {
-        m_main->OnResuming();
+        m_main->LoadAppStateAsync();
       }
       catch (const std::exception& e) { OutputDebugStringA(e.what()); }
     }
@@ -212,7 +206,7 @@ namespace HoloIntervention
     {
       try
       {
-        m_main->OnResuming();
+        m_main->LoadAppStateAsync();
       }
       catch (const std::exception& e) { OutputDebugStringA(e.what()); }
     }
@@ -225,7 +219,7 @@ namespace HoloIntervention
     {
       try
       {
-        m_main->OnSuspending();
+        m_main->SaveAppStateAsync();
       }
       catch (const std::exception& e) { OutputDebugStringA(e.what()); }
     }

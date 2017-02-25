@@ -49,7 +49,7 @@ namespace HoloIntervention
   //----------------------------------------------------------------------------
   Log::Log()
   {
-    DataSenderAsync();
+    DataWriterAsync();
   }
 
   //----------------------------------------------------------------------------
@@ -86,25 +86,27 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
-  task<void> Log::SuspendAsync()
+  Concurrency::task<void> Log::EndSessionAsync()
   {
     m_tokenSource.cancel();
-    return create_task(m_logWriter->FlushAsync()).then([this](bool result)
+    std::lock_guard<std::mutex> guard(m_writerMutex);
+    return create_task(m_logWriter->StoreAsync()).then([this](uint32 bytes)
     {
-      m_logWriter = nullptr;
-      m_logFile = nullptr;
+      return create_task(m_logStream->FlushAsync()).then([this](bool result)
+      {
+        std::lock_guard<std::mutex> guard(m_writerMutex);
+        m_logWriter->DetachStream();
+        m_logWriter = nullptr;
+        m_logFile = nullptr;
+        m_tokenSource = cancellation_token_source();
+
+        return DataWriterAsync();
+      });
     });
   }
 
   //----------------------------------------------------------------------------
-  task<void> Log::ResumeAsync()
-  {
-    DataSenderAsync();
-    return create_task([]() {});
-  }
-
-  //----------------------------------------------------------------------------
-  task<void> Log::DataSenderAsync()
+  task<void> Log::DataWriterAsync()
   {
     return create_task([this, token = m_tokenSource.get_token()]() -> void
     {
@@ -119,8 +121,9 @@ namespace HoloIntervention
         m_logFile = file;
         return create_task(m_logFile->OpenAsync(FileAccessMode::ReadWrite)).then([this, &fileReady](IRandomAccessStream ^ stream)
         {
+          m_logStream = stream;
           std::lock_guard<std::mutex> guard(m_writerMutex);
-          m_logWriter = ref new DataWriter(stream);
+          m_logWriter = ref new DataWriter(m_logStream->GetOutputStreamAt(0));
           fileReady = true;
         });
       });
@@ -133,33 +136,35 @@ namespace HoloIntervention
 
       PeriodicFlushAsync();
 
-      while (true)
+      while (!token.is_canceled())
       {
-        if (token.is_canceled())
+        bool wroteMessage(false);
+        std::unique_lock<std::mutex> guard(m_messagesMutex);
+        while (m_messages.size() > 0)
         {
-          return;
+          MessageEntry item;
+          {
+            item = m_messages.front();
+            m_messages.pop_front();
+          }
+
+          try
+          {
+            std::lock_guard<std::mutex> guard(m_writerMutex);
+            auto output = item.Level.ToString() + L"|" + ref new Platform::String(item.Message.c_str()) + L"|" + ref new Platform::String(item.File.c_str()) + L":" + item.Line.ToString() + L"\n";
+            m_logWriter->WriteString(output);
+            wroteMessage = true;
+          }
+          catch (Platform::Exception^) { try { m_logWriter->FlushAsync(); } catch (Platform::Exception^) { return; } return; }
         }
 
-        if (m_messages.size() == 0)
+        if (wroteMessage)
         {
-          std::this_thread::sleep_for(std::chrono::milliseconds(25));
-          continue;
+          m_logWriter->StoreAsync();
         }
 
-        MessageEntry item;
-        {
-          std::lock_guard<std::mutex> guard(m_messagesMutex);
-          item = m_messages.front();
-          m_messages.pop_front();
-        }
-
-        try
-        {
-          std::lock_guard<std::mutex> guard(m_writerMutex);
-          auto output = L"|" + item.Level.ToString() + L"|" + ref new Platform::String(item.Message.c_str()) + L"|" + ref new Platform::String(item.File.c_str()) + L":" + item.Line.ToString();
-          m_logWriter->WriteString(output);
-        }
-        catch (Platform::Exception^) { try { m_logWriter->FlushAsync(); } catch (Platform::Exception^) { return; } return; }
+        guard.unlock();
+        std::this_thread::sleep_for(std::chrono::milliseconds(25));
       }
     });
   }
@@ -178,7 +183,7 @@ namespace HoloIntervention
           accumulator += 100;
         }
         std::lock_guard<std::mutex> guard(m_writerMutex);
-        m_logWriter->FlushAsync();
+        m_logStream->FlushAsync();
       }
     });
   }
