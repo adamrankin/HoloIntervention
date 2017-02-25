@@ -97,15 +97,12 @@ namespace HoloIntervention
     {
       create_task([this]()
       {
-        while (true)
+        while (m_sliceToken == INVALID_TOKEN)
         {
-          try
-          {
-            m_sliceToken = m_sliceRenderer.AddSlice(m_splashImageFilename);
-            m_sliceEntry = m_sliceRenderer.GetSlice(m_sliceToken);
-            return;
-          }
-          catch (const std::exception&)
+          m_sliceToken = m_sliceRenderer.AddSlice(m_splashImageFilename);
+          m_sliceEntry = m_sliceRenderer.GetSlice(m_sliceToken);
+
+          if (m_sliceToken == INVALID_TOKEN)
           {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
           }

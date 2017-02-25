@@ -77,14 +77,15 @@ namespace HoloIntervention
       void CreateDeviceDependentResources();
       void ReleaseDeviceDependentResources();
 
+      DXGI_FORMAT GetPixelFormat() const;
+      void SetPixelFormat(DXGI_FORMAT val);
+
       uint64                                              m_id = 0;
       SliceConstantBuffer                                 m_constantBuffer;
       Windows::Foundation::Numerics::float4x4             m_desiredPose = Windows::Foundation::Numerics::float4x4::identity();
       Windows::Foundation::Numerics::float4x4             m_currentPose = Windows::Foundation::Numerics::float4x4::identity();
       Windows::Foundation::Numerics::float4x4             m_lastPose = Windows::Foundation::Numerics::float4x4::identity();
       Windows::Foundation::Numerics::float3               m_velocity = { 0.f, 0.f, 0.f };
-      DXGI_FORMAT                                         m_pixelFormat = DXGI_FORMAT_UNKNOWN;
-
     protected:
       // Cached pointer
       std::shared_ptr<DX::DeviceResources>                m_deviceResources;
@@ -102,6 +103,7 @@ namespace HoloIntervention
       std::atomic_bool                                    m_headLocked = false;
       std::atomic_bool                                    m_visible = true;
       float                                               m_scalingFactor = 1.f;
+      DXGI_FORMAT                                         m_pixelFormat = DXGI_FORMAT_UNKNOWN;
 
       // Image data vars
       UWPOpenIGTLink::TrackedFrame^                       m_frame = nullptr;

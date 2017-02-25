@@ -42,6 +42,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Unnecessary, but eliminates intellisense errors
 #include <WindowsNumerics.h>
 
+// DirectXTex includes
+#include <DirectXTex.h>
+
 using namespace Concurrency;
 using namespace DirectX;
 using namespace Windows::Foundation::Numerics;
@@ -67,12 +70,13 @@ namespace HoloIntervention
       ReleaseDeviceDependentResources();
     }
 
+    /*
     //----------------------------------------------------------------------------
     uint64 SliceRenderer::AddSlice()
     {
       if (!m_componentReady)
       {
-        throw std::exception("System not ready.");
+        return INVALID_TOKEN;
       }
 
       std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources, m_timer);
@@ -88,13 +92,14 @@ namespace HoloIntervention
       m_nextUnusedSliceId++;
       return m_nextUnusedSliceId - 1;
     }
+    */
 
     //----------------------------------------------------------------------------
     uint64 SliceRenderer::AddSlice(std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, float4x4 desiredPose)
     {
       if (!m_componentReady)
       {
-        throw std::exception("System not ready.");
+        return INVALID_TOKEN;
       }
 
       std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources, m_timer);
@@ -117,7 +122,7 @@ namespace HoloIntervention
     {
       if (!m_componentReady)
       {
-        throw std::exception("System not ready.");
+        return INVALID_TOKEN;
       }
 
       std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources, m_timer);
@@ -142,7 +147,7 @@ namespace HoloIntervention
     {
       if (!m_componentReady)
       {
-        throw std::exception("System not ready.");
+        return INVALID_TOKEN;
       }
 
       std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources, m_timer);
@@ -331,7 +336,8 @@ namespace HoloIntervention
       m_usingVprtShaders = m_deviceResources->GetDeviceSupportsVprt();
 
       task<std::vector<byte>> loadVSTask = DX::ReadDataAsync(m_usingVprtShaders ? L"ms-appx:///SliceVprtVertexShader.cso" : L"ms-appx:///SliceVertexShader.cso");
-      task<std::vector<byte>> loadPSTask = DX::ReadDataAsync(L"ms-appx:///SlicePixelShader.cso");
+      task<std::vector<byte>> loadColourPSTask = DX::ReadDataAsync(L"ms-appx:///SlicePixelShader.cso");
+      task<std::vector<byte>> loadGreyPSTask = DX::ReadDataAsync(L"ms-appx:///SlicePixelShaderGreyscale.cso");
 
       task<std::vector<byte>> loadGSTask;
       if (!m_usingVprtShaders)
@@ -354,9 +360,14 @@ namespace HoloIntervention
         DX::ThrowIfFailed(m_deviceResources->GetD3DDevice()->CreateInputLayout(vertexDesc.data(), vertexDesc.size(), fileData.data(), fileData.size(), &m_inputLayout));
       });
 
-      task<void> createPSTask = loadPSTask.then([this](const std::vector<byte>& fileData)
+      auto createColourPSTask = loadColourPSTask.then([this](const std::vector<byte>& fileData)
       {
-        DX::ThrowIfFailed(m_deviceResources->GetD3DDevice()->CreatePixelShader(fileData.data(), fileData.size(), nullptr, &m_pixelShader));
+        DX::ThrowIfFailed(m_deviceResources->GetD3DDevice()->CreatePixelShader(fileData.data(), fileData.size(), nullptr, &m_colourPixelShader));
+      });
+
+      auto createGreyPSTask = loadGreyPSTask.then([this](const std::vector<byte>& fileData)
+      {
+        DX::ThrowIfFailed(m_deviceResources->GetD3DDevice()->CreatePixelShader(fileData.data(), fileData.size(), nullptr, &m_greyPixelShader));
       });
 
       task<void> createGSTask;
@@ -390,7 +401,8 @@ namespace HoloIntervention
       const CD3D11_BUFFER_DESC vertexBufferDesc(sizeof(VertexPositionTexture) * quadVertices.size(), D3D11_BIND_VERTEX_BUFFER);
       DX::ThrowIfFailed(m_deviceResources->GetD3DDevice()->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &m_vertexBuffer));
 
-      task<void> shaderTaskGroup = m_usingVprtShaders ? (createPSTask && createVSTask) : (createPSTask && createVSTask && createGSTask);
+      auto psTask = createColourPSTask && createGreyPSTask;
+      task<void> shaderTaskGroup = m_usingVprtShaders ? (psTask && createVSTask) : (psTask && createVSTask && createGSTask);
       task<void> finishLoadingTask = shaderTaskGroup.then([this]()
       {
         constexpr std::array<unsigned short, 12> quadIndices =
@@ -432,7 +444,7 @@ namespace HoloIntervention
       m_vertexBuffer.Reset();
       m_vertexShader.Reset();
       m_geometryShader.Reset();
-      m_pixelShader.Reset();
+      m_colourPixelShader.Reset();
 
       for (auto slice : m_slices)
       {
@@ -475,7 +487,6 @@ namespace HoloIntervention
       {
         context->GSSetShader(m_geometryShader.Get(), nullptr, 0);
       }
-      context->PSSetShader(m_pixelShader.Get(), nullptr, 0);
       context->PSSetSamplers(0, 1, m_quadTextureSamplerState.GetAddressOf());
 
       SpatialBoundingFrustum frustum;
@@ -489,6 +500,15 @@ namespace HoloIntervention
       {
         if (sliceEntry->IsInFrustum(frustum) && sliceEntry->GetVisible())
         {
+          auto format = sliceEntry->GetPixelFormat();
+          if (BitsPerPixel(format) / BitsPerColor(format) == 1)
+          {
+            context->PSSetShader(m_greyPixelShader.Get(), nullptr, 0);
+          }
+          else
+          {
+            context->PSSetShader(m_colourPixelShader.Get(), nullptr, 0);
+          }
           sliceEntry->Render(m_indexCount);
         }
       }

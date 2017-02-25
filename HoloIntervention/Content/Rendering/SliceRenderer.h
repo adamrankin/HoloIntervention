@@ -66,7 +66,6 @@ namespace HoloIntervention
       ~SliceRenderer();
 
       uint64 AddSlice(const std::wstring& fileName, Windows::Foundation::Numerics::float4x4 desiredPose = Windows::Foundation::Numerics::float4x4::identity());
-      uint64 AddSlice();
       uint64 AddSlice(UWPOpenIGTLink::TrackedFrame^ frame, Windows::Foundation::Numerics::float4x4 desiredPose = Windows::Foundation::Numerics::float4x4::identity());
       uint64 AddSlice(std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 desiredPose);
       uint64 AddSlice(Windows::Storage::Streams::IBuffer^ imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 desiredPose);
@@ -107,7 +106,8 @@ namespace HoloIntervention
       Microsoft::WRL::ComPtr<ID3D11Buffer>                m_vertexBuffer;
       Microsoft::WRL::ComPtr<ID3D11VertexShader>          m_vertexShader;
       Microsoft::WRL::ComPtr<ID3D11GeometryShader>        m_geometryShader;
-      Microsoft::WRL::ComPtr<ID3D11PixelShader>           m_pixelShader;
+      Microsoft::WRL::ComPtr<ID3D11PixelShader>           m_colourPixelShader;
+      Microsoft::WRL::ComPtr<ID3D11PixelShader>           m_greyPixelShader;
 
       // Direct3D resources for the texture.
       Microsoft::WRL::ComPtr<ID3D11SamplerState>          m_quadTextureSamplerState;

@@ -829,6 +829,9 @@
     <FxCompile Include="Content\Rendering\Volume\FaceAnalysisPS.hlsl">
       <Filter>Content\Rendering\VolumeRenderer\Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="Content\Rendering\Shaders\SlicePixelShaderGreyscale.hlsl">
+      <Filter>Content\Rendering\SliceRenderer\Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest">

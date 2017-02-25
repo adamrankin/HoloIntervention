@@ -220,7 +220,7 @@ namespace HoloIntervention
 
       auto frameSize = frame->Dimensions;
       auto format = (DXGI_FORMAT)frame->GetPixelFormat(true);
-      if (frameSize[0] != m_width || frameSize[1] != m_height || format != m_pixelFormat)
+      if (frameSize[0] != m_width || frameSize[1] != m_height || format != GetPixelFormat())
       {
         m_width = frameSize[0];
         m_height = frameSize[1];
@@ -233,7 +233,7 @@ namespace HoloIntervention
 
       auto context = m_deviceResources->GetD3DDeviceContext();
 
-      auto bytesPerPixel = BitsPerPixel(m_pixelFormat) / 8;
+      auto bytesPerPixel = BitsPerPixel(GetPixelFormat()) / 8;
 
       byte* imageRaw = image.get();
       D3D11_MAPPED_SUBRESOURCE mappedResource;
@@ -291,7 +291,7 @@ namespace HoloIntervention
       TexMetadata metadata;
       GetMetadataFromWICFile(fileName.c_str(), WIC_FLAGS_NONE, metadata);
 
-      if (metadata.width != m_width || metadata.height != m_height || metadata.format != m_pixelFormat)
+      if (metadata.width != m_width || metadata.height != m_height || metadata.format != GetPixelFormat())
       {
         m_width = static_cast<uint16>(metadata.width);
         m_height = static_cast<uint16>(metadata.height);
@@ -369,12 +369,12 @@ namespace HoloIntervention
       const CD3D11_BUFFER_DESC constantBufferDesc(sizeof(SliceConstantBuffer), D3D11_BIND_CONSTANT_BUFFER);
       DX::ThrowIfFailed(device->CreateBuffer(&constantBufferDesc, nullptr, &m_sliceConstantBuffer));
 
-      if (m_pixelFormat != DXGI_FORMAT_UNKNOWN && m_width > 0 && m_height > 0)
+      if (GetPixelFormat() != DXGI_FORMAT_UNKNOWN && m_width > 0 && m_height > 0)
       {
-        CD3D11_TEXTURE2D_DESC textureDesc(m_pixelFormat, m_width, m_height, 1, 0, 0, D3D11_USAGE_STAGING, D3D11_CPU_ACCESS_WRITE | D3D11_CPU_ACCESS_READ);
+        CD3D11_TEXTURE2D_DESC textureDesc(GetPixelFormat(), m_width, m_height, 1, 0, 0, D3D11_USAGE_STAGING, D3D11_CPU_ACCESS_WRITE | D3D11_CPU_ACCESS_READ);
         DX::ThrowIfFailed(device->CreateTexture2D(&textureDesc, nullptr, &m_imageStagingTexture));
 
-        textureDesc = CD3D11_TEXTURE2D_DESC(m_pixelFormat, m_width, m_height, 1, 0, D3D11_BIND_SHADER_RESOURCE);
+        textureDesc = CD3D11_TEXTURE2D_DESC(GetPixelFormat(), m_width, m_height, 1, 0, D3D11_BIND_SHADER_RESOURCE);
         DX::ThrowIfFailed(device->CreateTexture2D(&textureDesc, nullptr, &m_imageTexture));
         DX::ThrowIfFailed(device->CreateShaderResourceView(m_imageTexture.Get(), nullptr, &m_shaderResourceView));
 #if _DEBUG
@@ -393,6 +393,18 @@ namespace HoloIntervention
       m_shaderResourceView.Reset();
       m_imageTexture.Reset();
       m_imageStagingTexture.Reset();
+    }
+
+    //----------------------------------------------------------------------------
+    DXGI_FORMAT SliceEntry::GetPixelFormat() const
+    {
+      return m_pixelFormat;
+    }
+
+    //----------------------------------------------------------------------------
+    void SliceEntry::SetPixelFormat(DXGI_FORMAT val)
+    {
+      m_pixelFormat = val;
     }
   }
 }
