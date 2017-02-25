@@ -36,6 +36,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 namespace DX
 {
+  class CameraResources;
   class DeviceResources;
   class StepTimer;
 }
@@ -61,7 +62,7 @@ namespace HoloIntervention
       typedef std::list<std::shared_ptr<SliceEntry>> SliceList;
 
     public:
-      SliceRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources);
+      SliceRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& timer);
       ~SliceRenderer();
 
       uint64 AddSlice(const std::wstring& fileName, Windows::Foundation::Numerics::float4x4 desiredPose = Windows::Foundation::Numerics::float4x4::identity());
@@ -88,7 +89,7 @@ namespace HoloIntervention
       void CreateDeviceDependentResources();
       void ReleaseDeviceDependentResources();
 
-      void Update(Windows::UI::Input::Spatial::SpatialPointerPose^ pose, const DX::StepTimer& timer);
+      void Update(Windows::UI::Input::Spatial::SpatialPointerPose^ pose, const DX::CameraResources* cameraResources);
       void Render();
 
     protected:
@@ -97,6 +98,8 @@ namespace HoloIntervention
     protected:
       // Cached pointer to device resources.
       std::shared_ptr<DX::DeviceResources>                m_deviceResources;
+      const DX::CameraResources*                          m_cameraResources = nullptr;
+      DX::StepTimer&                                      m_timer;
 
       // Direct3D resources
       Microsoft::WRL::ComPtr<ID3D11InputLayout>           m_inputLayout;

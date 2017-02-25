@@ -54,8 +54,9 @@ namespace HoloIntervention
   namespace Rendering
   {
     //----------------------------------------------------------------------------
-    SliceRenderer::SliceRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources)
+    SliceRenderer::SliceRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& timer)
       : m_deviceResources(deviceResources)
+      , m_timer(timer)
     {
       CreateDeviceDependentResources();
     }
@@ -74,7 +75,7 @@ namespace HoloIntervention
         throw std::exception("System not ready.");
       }
 
-      std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources);
+      std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources, m_timer);
       entry->m_id = m_nextUnusedSliceId;
       entry->SetVisible(false);
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
@@ -96,7 +97,7 @@ namespace HoloIntervention
         throw std::exception("System not ready.");
       }
 
-      std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources);
+      std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources, m_timer);
       entry->m_id = m_nextUnusedSliceId;
 
       XMStoreFloat4x4(&entry->m_constantBuffer.worldMatrix, DirectX::XMLoadFloat4x4(&desiredPose));
@@ -119,7 +120,7 @@ namespace HoloIntervention
         throw std::exception("System not ready.");
       }
 
-      std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources);
+      std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources, m_timer);
       entry->m_id = m_nextUnusedSliceId;
 
       XMStoreFloat4x4(&entry->m_constantBuffer.worldMatrix, DirectX::XMLoadFloat4x4(&desiredPose));
@@ -144,7 +145,7 @@ namespace HoloIntervention
         throw std::exception("System not ready.");
       }
 
-      std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources);
+      std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources, m_timer);
       entry->m_id = m_nextUnusedSliceId;
       entry->SetDesiredPose(desiredPose);
       entry->SetImageData(fileName);
@@ -164,7 +165,7 @@ namespace HoloIntervention
         return INVALID_TOKEN;
       }
 
-      std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources);
+      std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources, m_timer);
       entry->m_id = m_nextUnusedSliceId;
       entry->SetDesiredPose(desiredPose);
       entry->SetFrame(frame);
@@ -440,11 +441,13 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SliceRenderer::Update(SpatialPointerPose^ pose, const DX::StepTimer& timer)
+    void SliceRenderer::Update(SpatialPointerPose^ pose, const DX::CameraResources* cameraResources)
     {
+      m_cameraResources = cameraResources;
+
       for (auto slice : m_slices)
       {
-        slice->Update(pose, timer);
+        slice->Update(pose);
       }
     }
 
@@ -475,10 +478,19 @@ namespace HoloIntervention
       context->PSSetShader(m_pixelShader.Get(), nullptr, 0);
       context->PSSetSamplers(0, 1, m_quadTextureSamplerState.GetAddressOf());
 
+      SpatialBoundingFrustum frustum;
+      if (m_cameraResources != nullptr)
+      {
+        m_cameraResources->GetLatestSpatialBoundingFrustum(frustum);
+      }
+
       // TODO : implement instance rendering (instance of instance?)
       for (auto sliceEntry : m_slices)
       {
-        sliceEntry->Render(m_indexCount);
+        if (sliceEntry->IsInFrustum(frustum) && sliceEntry->GetVisible())
+        {
+          sliceEntry->Render(m_indexCount);
+        }
       }
 
       ID3D11ShaderResourceView* ppNullptr[1] = { nullptr };

@@ -43,32 +43,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 using namespace DirectX;
 using namespace Windows::Foundation::Numerics;
+using namespace Windows::Perception::Spatial;
 using namespace Windows::UI::Input::Spatial;
-
-namespace
-{
-  // Function taken from https://github.com/mrdooz/kumi/blob/master/animation_manager.cpp
-  float4x4 MatrixCompose(const float3& pos, const quaternion& rot, const float3& scale, bool transpose)
-  {
-    XMFLOAT3 zero = { 0, 0, 0 };
-    XMFLOAT4 id = { 0, 0, 0, 1 };
-    XMVECTOR vZero = XMLoadFloat3(&zero);
-    XMVECTOR qId = XMLoadFloat4(&id);
-    XMVECTOR qRot = XMLoadQuaternion(&rot);
-    XMVECTOR vPos = XMLoadFloat3(&pos);
-    XMVECTOR vScale = XMLoadFloat3(&scale);
-
-    XMMATRIX mtx = XMMatrixTransformation(vZero, qId, vScale, vZero, qRot, vPos);
-    if (transpose)
-    {
-      mtx = XMMatrixTranspose(mtx);
-    }
-    float4x4 res;
-    XMStoreFloat4x4(&res, mtx);
-
-    return res;
-  }
-}
 
 namespace HoloIntervention
 {
@@ -105,8 +81,9 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    SliceEntry::SliceEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources)
+    SliceEntry::SliceEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& timer)
       : m_deviceResources(deviceResources)
+      , m_timer(timer)
     {
     }
 
@@ -117,9 +94,64 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SliceEntry::Update(SpatialPointerPose^ pose, const DX::StepTimer& timer)
+    bool SliceEntry::IsInFrustum() const
     {
-      const float& deltaTime = static_cast<float>(timer.GetElapsedSeconds());
+      return m_isInFrustum;
+    }
+
+    //----------------------------------------------------------------------------
+    bool SliceEntry::IsInFrustum(const SpatialBoundingFrustum& frustum) const
+    {
+      if (m_timer.GetFrameCount() == m_frustumCheckFrameNumber)
+      {
+        return m_isInFrustum;
+      }
+
+      const float bottom = -0.5;
+      const float left = -0.5;
+      const float right = 0.5;
+      const float top = 0.5;
+
+      const std::array<float3, 4> points =
+      {
+        transform(float3(left, top, 0.f), m_currentPose),
+        transform(float3(right, top, 0.f), m_currentPose),
+        transform(float3(right, bottom, 0.f), m_currentPose),
+        transform(float3(left, bottom, 0.f), m_currentPose)
+      };
+
+      // For each plane, check to see if all 8 points are in front, if so, obj is outside
+      for (auto& entry : { frustum.Left, frustum.Right, frustum.Bottom, frustum.Top, frustum.Near, frustum.Far })
+      {
+        XMVECTOR plane = XMLoadPlane(&entry);
+
+        bool objFullyInFront(true);
+        for (auto& point : points)
+        {
+          XMVECTOR dotProduct = XMPlaneDotCoord(plane, XMLoadFloat3(&point));
+          if (XMVectorGetX(dotProduct) < 0.f)
+          {
+            objFullyInFront = false;
+            break;
+          }
+        }
+        if (objFullyInFront)
+        {
+          m_isInFrustum = false;
+          m_frustumCheckFrameNumber = m_timer.GetFrameCount();
+          return false;
+        }
+      }
+
+      m_isInFrustum = true;
+      m_frustumCheckFrameNumber = m_timer.GetFrameCount();
+      return true;
+    }
+
+    //----------------------------------------------------------------------------
+    void SliceEntry::Update(SpatialPointerPose^ pose)
+    {
+      const float& deltaTime = static_cast<float>(m_timer.GetElapsedSeconds());
 
       float3 currentTranslation = { m_currentPose.m41, m_currentPose.m42, m_currentPose.m43 };
       float3 lastTranslation = { m_lastPose.m41, m_lastPose.m42, m_lastPose.m43 };
@@ -163,7 +195,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void SliceEntry::Render(uint32 indexCount)
     {
-      if (!m_showing || !m_sliceValid)
+      if (!m_visible || !m_sliceValid)
       {
         return;
       }
@@ -304,9 +336,15 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    bool SliceEntry::GetVisible() const
+    {
+      return m_visible;
+    }
+
+    //----------------------------------------------------------------------------
     void SliceEntry::SetVisible(bool visible)
     {
-      m_showing = visible;
+      m_visible = visible;
     }
 
     //----------------------------------------------------------------------------

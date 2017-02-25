@@ -52,7 +52,7 @@ namespace HoloIntervention
       typedef std::list<std::shared_ptr<VolumeEntry>> VolumeList;
 
     public:
-      VolumeRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources);
+      VolumeRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& timer);
       ~VolumeRenderer();
 
       uint64 AddVolume(std::shared_ptr<byte> imageData, uint16 width, uint16 height, uint16 depth, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 desiredPose);
@@ -72,7 +72,7 @@ namespace HoloIntervention
       void SetDesiredVolumePose(uint64 volumeToken, const Windows::Foundation::Numerics::float4x4& pose);
       Windows::Foundation::Numerics::float3 GetVolumeVelocity(uint64 volumeToken) const;
 
-      void Update(const DX::StepTimer& timer, DX::CameraResources* cameraResources, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem, Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
+      void Update(const DX::CameraResources* cameraResources, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem, Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
       void Render();
 
       // D3D device related controls
@@ -91,7 +91,8 @@ namespace HoloIntervention
     protected:
       // Cached pointer to device and camera resources.
       std::shared_ptr<DX::DeviceResources>              m_deviceResources = nullptr;
-      DX::CameraResources*                              m_cameraResources = nullptr;
+      const DX::CameraResources*                        m_cameraResources = nullptr;
+      DX::StepTimer&                                    m_timer;
 
       // Direct3D resources for volume rendering
       Microsoft::WRL::ComPtr<ID3D11Buffer>              m_cwIndexBuffer;

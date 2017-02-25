@@ -62,8 +62,9 @@ namespace HoloIntervention
   namespace Rendering
   {
     //----------------------------------------------------------------------------
-    VolumeRenderer::VolumeRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources)
+    VolumeRenderer::VolumeRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& timer)
       : m_deviceResources(deviceResources)
+      , m_timer(timer)
     {
       CreateDeviceDependentResourcesAsync();
     }
@@ -97,7 +98,8 @@ namespace HoloIntervention
                                            m_frontPositionRTV.Get(),
                                            m_backPositionRTV.Get(),
                                            m_frontPositionSRV.Get(),
-                                           m_backPositionSRV.Get());
+                                           m_backPositionSRV.Get(),
+                                           m_timer);
       entry->SetDesiredPose(desiredPose);
       entry->SetFrame(frame);
       entry->SetShowing(true);
@@ -233,7 +235,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void VolumeRenderer::Update(const DX::StepTimer& timer, DX::CameraResources* cameraResources, SpatialCoordinateSystem^ hmdCoordinateSystem, SpatialPointerPose^ headPose)
+    void VolumeRenderer::Update(const DX::CameraResources* cameraResources, SpatialCoordinateSystem^ hmdCoordinateSystem, SpatialPointerPose^ headPose)
     {
       if (m_cameraResources != cameraResources)
       {
@@ -248,7 +250,7 @@ namespace HoloIntervention
 
       for (auto& volEntry : m_volumes)
       {
-        volEntry->Update(timer);
+        volEntry->Update();
       }
     }
 
@@ -271,9 +273,18 @@ namespace HoloIntervention
       context->VSSetConstantBuffers(2, 1, m_volumeRendererConstantBuffer.GetAddressOf());
       context->PSSetConstantBuffers(2, 1, m_volumeRendererConstantBuffer.GetAddressOf());
 
+      SpatialBoundingFrustum frustum;
+      if (m_cameraResources != nullptr)
+      {
+        m_cameraResources->GetLatestSpatialBoundingFrustum(frustum);
+      }
+
       for (auto& volEntry : m_volumes)
       {
-        volEntry->Render(m_indexCount);
+        if (volEntry->IsInFrustum(frustum))
+        {
+          volEntry->Render(m_indexCount);
+        }
       }
     }
 

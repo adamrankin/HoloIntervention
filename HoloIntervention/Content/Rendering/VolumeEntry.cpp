@@ -88,7 +88,7 @@ namespace HoloIntervention
     const float VolumeEntry::LERP_RATE = 2.5f;
 
     //----------------------------------------------------------------------------
-    VolumeEntry::VolumeEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, uint64 token, ID3D11Buffer* cwIndexBuffer, ID3D11Buffer* ccwIndexBuffer, ID3D11InputLayout* inputLayout, ID3D11Buffer* vertexBuffer, ID3D11VertexShader* volRenderVertexShader, ID3D11GeometryShader* volRenderGeometryShader, ID3D11PixelShader* volRenderPixelShader, ID3D11PixelShader* faceCalcPixelShader, ID3D11Texture2D* frontPositionTextureArray, ID3D11Texture2D* backPositionTextureArray, ID3D11RenderTargetView* frontPositionRTV, ID3D11RenderTargetView* backPositionRTV, ID3D11ShaderResourceView* frontPositionSRV, ID3D11ShaderResourceView* backPositionSRV)
+    VolumeEntry::VolumeEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, uint64 token, ID3D11Buffer* cwIndexBuffer, ID3D11Buffer* ccwIndexBuffer, ID3D11InputLayout* inputLayout, ID3D11Buffer* vertexBuffer, ID3D11VertexShader* volRenderVertexShader, ID3D11GeometryShader* volRenderGeometryShader, ID3D11PixelShader* volRenderPixelShader, ID3D11PixelShader* faceCalcPixelShader, ID3D11Texture2D* frontPositionTextureArray, ID3D11Texture2D* backPositionTextureArray, ID3D11RenderTargetView* frontPositionRTV, ID3D11RenderTargetView* backPositionRTV, ID3D11ShaderResourceView* frontPositionSRV, ID3D11ShaderResourceView* backPositionSRV, DX::StepTimer& timer)
       : m_deviceResources(deviceResources)
       , m_token(token)
       , m_cwIndexBuffer(cwIndexBuffer)
@@ -105,6 +105,7 @@ namespace HoloIntervention
       , m_backPositionRTV(backPositionRTV)
       , m_frontPositionSRV(frontPositionSRV)
       , m_backPositionSRV(backPositionSRV)
+      , m_timer(timer)
     {
       ControlPointList points;
       points.push_back(ControlPoint(0.f, float4(0.f, 0.f, 0.f, 0.f)));
@@ -122,7 +123,61 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void VolumeEntry::Update(const DX::StepTimer& timer)
+    bool VolumeEntry::IsInFrustum() const
+    {
+      return m_isInFrustum;
+    }
+
+    //----------------------------------------------------------------------------
+    bool VolumeEntry::IsInFrustum(const Windows::Perception::Spatial::SpatialBoundingFrustum& frustum) const
+    {
+      if (m_timer.GetFrameCount() == m_frustumCheckFrameNumber)
+      {
+        return m_isInFrustum;
+      }
+
+      const std::array<float3, 8> points =
+      {
+        transform(float3(0.f, 0.f, 0.f), m_currentPose),
+        transform(float3(0.f, 0.f, 1.f), m_currentPose),
+        transform(float3(0.f, 1.f, 0.f), m_currentPose),
+        transform(float3(0.f, 1.f, 1.f), m_currentPose),
+        transform(float3(1.f, 0.f, 0.f), m_currentPose),
+        transform(float3(1.f, 0.f, 1.f), m_currentPose),
+        transform(float3(1.f, 1.f, 0.f), m_currentPose),
+        transform(float3(1.f, 1.f, 1.f), m_currentPose)
+      };
+
+      // For each plane, check to see if all 8 points are in front, if so, obj is outside
+      for (auto& entry : { frustum.Left, frustum.Right, frustum.Bottom, frustum.Top, frustum.Near, frustum.Far })
+      {
+        XMVECTOR plane = XMLoadPlane(&entry);
+
+        bool objFullyInFront(true);
+        for (auto& point : points)
+        {
+          XMVECTOR dotProduct = XMPlaneDotCoord(plane, XMLoadFloat3(&point));
+          if (XMVectorGetX(dotProduct) < 0.f)
+          {
+            objFullyInFront = false;
+            break;
+          }
+        }
+        if (objFullyInFront)
+        {
+          m_isInFrustum = false;
+          m_frustumCheckFrameNumber = m_timer.GetFrameCount();
+          return false;
+        }
+      }
+
+      m_isInFrustum = true;
+      m_frustumCheckFrameNumber = m_timer.GetFrameCount();
+      return true;
+    }
+
+    //----------------------------------------------------------------------------
+    void VolumeEntry::Update()
     {
       if (!m_tfResourcesReady)
       {
@@ -133,7 +188,7 @@ namespace HoloIntervention
       auto context = m_deviceResources->GetD3DDeviceContext();
       auto device = m_deviceResources->GetD3DDevice();
 
-      const float& deltaTime = static_cast<float>(timer.GetElapsedSeconds());
+      const float& deltaTime = static_cast<float>(m_timer.GetElapsedSeconds());
 
       float3 currentScale;
       quaternion currentRotation;
@@ -469,15 +524,15 @@ namespace HoloIntervention
         delete m_opacityTransferFunction;
         switch (functionType)
         {
-        case VolumeEntry::TransferFunction_Piecewise_Linear:
-        {
-          m_opacityTFType = VolumeEntry::TransferFunction_Piecewise_Linear;
-          m_opacityTransferFunction = new PiecewiseLinearTransferFunction();
-          break;
-        }
-        default:
-          throw std::invalid_argument("Function type not recognized.");
-          break;
+          case VolumeEntry::TransferFunction_Piecewise_Linear:
+          {
+            m_opacityTFType = VolumeEntry::TransferFunction_Piecewise_Linear;
+            m_opacityTransferFunction = new PiecewiseLinearTransferFunction();
+            break;
+          }
+          default:
+            throw std::invalid_argument("Function type not recognized.");
+            break;
         }
 
         for (auto& point : controlPoints)

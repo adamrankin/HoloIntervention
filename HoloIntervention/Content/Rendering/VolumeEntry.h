@@ -86,10 +86,14 @@ namespace HoloIntervention
                   ID3D11RenderTargetView* frontPositionRTV,
                   ID3D11RenderTargetView* backPositionRTV,
                   ID3D11ShaderResourceView* frontPositionSRV,
-                  ID3D11ShaderResourceView* backPositionSRV);
+                  ID3D11ShaderResourceView* backPositionSRV,
+                  DX::StepTimer& timer);
       ~VolumeEntry();
 
-      void Update(const DX::StepTimer& timer);
+      bool IsInFrustum() const;
+      bool IsInFrustum(const Windows::Perception::Spatial::SpatialBoundingFrustum& frustum) const;
+
+      void Update();
       void Render(uint32 indexCount);
 
       void SetFrame(UWPOpenIGTLink::TrackedFrame^ frame);
@@ -123,6 +127,7 @@ namespace HoloIntervention
     protected:
       // Cached pointer to device resources.
       std::shared_ptr<DX::DeviceResources>              m_deviceResources;
+      DX::StepTimer&                                    m_timer;
 
       // Cached pointers to re-used D3D resources
       ID3D11Buffer*                                     m_cwIndexBuffer;
@@ -167,6 +172,8 @@ namespace HoloIntervention
       float                                             m_stepScale = 1.f;  // Increasing this reduces the number of steps taken per pixel
 
       // State
+      mutable std::atomic_bool                          m_isInFrustum = false;
+      mutable uint64                                    m_frustumCheckFrameNumber = 0;
       uint64                                            m_token = 0;
       std::atomic_bool                                  m_showing = true;
       std::atomic_bool                                  m_entryReady = false;

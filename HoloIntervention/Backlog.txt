@@ -9,3 +9,4 @@ Voice feedback
 UI for IP setting - Dictation
 Registration feedback (move around, etc...)
 internationalization (xml database of voice commands and feedback)
+refactor isinfrustum to abstract base class

@@ -52,10 +52,13 @@ namespace HoloIntervention
       virtual float GetStabilizePriority() const;
 
     public:
-      SliceEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources);
+      SliceEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& timer);
       ~SliceEntry();
 
-      void Update(Windows::UI::Input::Spatial::SpatialPointerPose^ pose, const DX::StepTimer& timer);
+      bool IsInFrustum() const;
+      bool IsInFrustum(const Windows::Perception::Spatial::SpatialBoundingFrustum& frustum) const;
+
+      void Update(Windows::UI::Input::Spatial::SpatialPointerPose^ pose);
       void Render(uint32 indexCount);
 
       void SetFrame(UWPOpenIGTLink::TrackedFrame^ frame);
@@ -67,6 +70,7 @@ namespace HoloIntervention
       void SetCurrentPose(const Windows::Foundation::Numerics::float4x4& matrix);
       Windows::Foundation::Numerics::float4x4 GetCurrentPose() const;
 
+      bool GetVisible() const;
       void SetVisible(bool visible);
       void SetHeadlocked(bool headLocked);
 
@@ -82,18 +86,21 @@ namespace HoloIntervention
       DXGI_FORMAT                                         m_pixelFormat = DXGI_FORMAT_UNKNOWN;
 
     protected:
-      // Cached pointer to device resources.
+      // Cached pointer
       std::shared_ptr<DX::DeviceResources>                m_deviceResources;
+      DX::StepTimer&                                      m_timer;
 
       Microsoft::WRL::ComPtr<ID3D11Texture2D>             m_imageTexture;
       Microsoft::WRL::ComPtr<ID3D11Texture2D>             m_imageStagingTexture;
       Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>    m_shaderResourceView;
       Microsoft::WRL::ComPtr<ID3D11Buffer>                m_sliceConstantBuffer;
+      mutable std::atomic_bool                            m_isInFrustum = false;
+      mutable uint64                                      m_frustumCheckFrameNumber = 0;
 
       // Rendering behavior vars
       std::atomic_bool                                    m_sliceValid = false;
       std::atomic_bool                                    m_headLocked = false;
-      std::atomic_bool                                    m_showing = true;
+      std::atomic_bool                                    m_visible = true;
       float                                               m_scalingFactor = 1.f;
 
       // Image data vars

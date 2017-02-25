@@ -155,8 +155,8 @@ namespace HoloIntervention
       m_notificationRenderer = std::make_unique<Rendering::NotificationRenderer>(m_deviceResources);
       m_notificationSystem = std::make_unique<System::NotificationSystem>(*m_notificationRenderer.get());
       m_modelRenderer = std::make_unique<Rendering::ModelRenderer>(m_deviceResources, m_timer);
-      m_sliceRenderer = std::make_unique<Rendering::SliceRenderer>(m_deviceResources);
-      m_volumeRenderer = std::make_unique<Rendering::VolumeRenderer>(m_deviceResources);
+      m_sliceRenderer = std::make_unique<Rendering::SliceRenderer>(m_deviceResources, m_timer);
+      m_volumeRenderer = std::make_unique<Rendering::VolumeRenderer>(m_deviceResources, m_timer);
       m_meshRenderer = std::make_unique<Rendering::SpatialMeshRenderer>(*m_notificationSystem.get(), m_deviceResources);
 
       m_soundAPI = std::make_unique<Sound::SoundAPI>();
@@ -316,13 +316,13 @@ namespace HoloIntervention
       {
         // Show our welcome screen until it is ready!
         m_splashSystem->Update(m_timer, hmdCoordinateSystem, headPose);
-        m_sliceRenderer->Update(headPose, m_timer);
+        m_sliceRenderer->Update(headPose, cameraResources);
       }
       else
       {
         if (headPose != nullptr)
         {
-          m_volumeRenderer->Update(m_timer, cameraResources, hmdCoordinateSystem, headPose);
+          m_volumeRenderer->Update(cameraResources, hmdCoordinateSystem, headPose);
         }
         m_imagingSystem->Update(m_timer, hmdCoordinateSystem);
         m_toolSystem->Update(m_timer, hmdCoordinateSystem);
@@ -335,7 +335,7 @@ namespace HoloIntervention
           m_gazeSystem->Update(m_timer, hmdCoordinateSystem, headPose);
           m_iconSystem->Update(m_timer, headPose);
           m_soundAPI->Update(m_timer, hmdCoordinateSystem);
-          m_sliceRenderer->Update(headPose, m_timer);
+          m_sliceRenderer->Update(headPose, cameraResources);
           m_notificationSystem->Update(headPose, m_timer);
         }
 
