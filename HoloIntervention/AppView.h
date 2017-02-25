@@ -64,8 +64,8 @@ namespace HoloIntervention
     std::unique_ptr<HoloInterventionCore>                   m_main;
 
     std::shared_ptr<DX::DeviceResources>                    m_deviceResources;
-    bool                                                    m_windowClosed  = false;
-    bool                                                    m_windowVisible = true;
+    std::atomic_bool                                        m_windowClosed  = false;
+    std::atomic_bool                                        m_windowVisible = true;
 
     Windows::Graphics::Holographic::HolographicSpace^       m_holographicSpace = nullptr;
 

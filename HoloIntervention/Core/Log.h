@@ -64,11 +64,10 @@ namespace HoloIntervention
     void LogMessage(LogLevelType level, const std::string& message, const std::string& file, int32 line);
     void LogMessage(LogLevelType level, const std::wstring& message, const std::wstring& file, int32 line);
 
-    Concurrency::task<void> SuspendAsync();
-    Concurrency::task<void> ResumeAsync();
+    Concurrency::task<void> EndSessionAsync();
 
   protected:
-    Concurrency::task<void> DataSenderAsync();
+    Concurrency::task<void> DataWriterAsync();
     Concurrency::task<void> PeriodicFlushAsync();
 
   protected:
@@ -76,15 +75,17 @@ namespace HoloIntervention
     ~Log();
 
   protected:
-    Concurrency::cancellation_token_source  m_tokenSource;
+    Concurrency::cancellation_token_source          m_tokenSource;
+    std::atomic_bool                                m_writerActive = false;
 
-    std::mutex                              m_writerMutex;
-    Windows::Storage::StorageFile^          m_logFile;
-    Windows::Storage::Streams::DataWriter^  m_logWriter;
+    std::mutex                                      m_writerMutex;
+    Windows::Storage::StorageFile^                  m_logFile;
+    Windows::Storage::Streams::IRandomAccessStream^ m_logStream;
+    Windows::Storage::Streams::DataWriter^          m_logWriter;
 
-    std::mutex                              m_messagesMutex;
-    std::deque<MessageEntry>                m_messages;
+    std::mutex                                      m_messagesMutex;
+    std::deque<MessageEntry>                        m_messages;
 
-    const uint32                            FLUSH_PERIOD_MSEC = 2000;
+    const uint32                                    FLUSH_PERIOD_MSEC = 2000;
   };
 }
