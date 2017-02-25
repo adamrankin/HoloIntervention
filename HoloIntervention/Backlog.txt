@@ -1,5 +1,3 @@
-Major implementation details remaining:
-
 Network search on startup
 CPU cost of network/image-transforms separate
   unpack on demand
@@ -10,5 +8,4 @@ Network connect, disconnect, connect, connection lost
 Voice feedback
 UI for IP setting - Dictation
 Registration feedback (move around, etc...)
-cameraregistration stabilization normal should be -headgaze
-trackedframe sometimes disposed
+internationalization (xml database of voice commands and feedback)

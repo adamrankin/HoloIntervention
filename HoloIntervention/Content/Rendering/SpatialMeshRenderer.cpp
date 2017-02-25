@@ -204,12 +204,12 @@ namespace HoloIntervention
         {
           switch (status)
           {
-          case SpatialPerceptionAccessStatus::Allowed:
-            m_surfaceAccessAllowed = true;
-            break;
-          default:
-            m_surfaceAccessAllowed = false;
-            break;
+            case SpatialPerceptionAccessStatus::Allowed:
+              m_surfaceAccessAllowed = true;
+              break;
+            default:
+              m_surfaceAccessAllowed = false;
+              break;
           }
         });
 
@@ -503,6 +503,20 @@ namespace HoloIntervention
       {
         m_notificationSystem.QueueMessage(L"Mesh disabled.");
         SetEnabled(false);
+      };
+
+      callbackMap[L"mesh solid"] = [this](SpeechRecognitionResult ^ result)
+      {
+        m_notificationSystem.QueueMessage(L"Solid mesh on.");
+        m_drawWireframe = false;
+        SetEnabled(true);
+      };
+
+      callbackMap[L"mesh wireframe"] = [this](SpeechRecognitionResult ^ result)
+      {
+        m_notificationSystem.QueueMessage(L"Wireframe mesh on.");
+        m_drawWireframe = true;
+        SetEnabled(true);
       };
     }
 
