@@ -29,9 +29,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 // System includes
 #include "NotificationSystem.h"
 
-// Network includes
-#include "IGTConnector.h"
-
 using namespace Concurrency;
 using namespace Windows::Networking;
 using namespace Windows::Storage;

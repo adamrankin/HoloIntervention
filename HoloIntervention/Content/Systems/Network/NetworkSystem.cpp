@@ -110,7 +110,7 @@ namespace HoloIntervention
 
       if (iter != end(m_connectors))
       {
-        assert(entry.Connector != nullptr);
+        assert(iter->Connector != nullptr);
 
         iter->State = CONNECTION_STATE_CONNECTING;
 
@@ -675,6 +675,7 @@ namespace HoloIntervention
           }
         });
       }
+      return create_task([]() {});
     }
   }
 }

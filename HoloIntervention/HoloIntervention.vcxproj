@@ -61,7 +61,7 @@
     <ClCompile>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)MediaCapture;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink-bin;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink\Source\igtlutil;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink\Source;$(IntermediateOutputPath);$(SolutionDir)DirectXTK\Src;$(SolutionDir)DirectXTK\Inc;$(SolutionDir)$(Configuration)\$(ProjectName);$(ProjectDir)Content\Systems\Tool;$(ProjectDir)Content\Systems\Notification;$(ProjectDir)Content\Systems\Imaging;$(ProjectDir)Content\Systems\Icon;$(ProjectDir)Content\Systems\Splash;$(ProjectDir)Content\Systems\Network;$(ProjectDir)Content\Systems\Gaze;$(ProjectDir)Content\Systems\Registration;$(ProjectDir)Content\Systems;$(ProjectDir)Content\SpatialMapping;$(ProjectDir)Content\Capture;$(ProjectDir)Content\Physics;$(ProjectDir)Content\Network;$(ProjectDir)Content\Rendering\Volume;$(ProjectDir)Content\Rendering\Shaders;$(ProjectDir)Content\Rendering\Shaders\Compiled;$(ProjectDir)Content\Rendering\DirectXTK;$(ProjectDir)Content\Rendering;$(ProjectDir)Content\Input;$(ProjectDir)Content\Sound;$(ProjectDir)Core\Rendering;$(ProjectDir)Core;$(ProjectDir)Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content\Data;$(SolutionDir)DirectXTex\DirectXTex;$(SolutionDir)OpenCV-bin\install\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)MediaCapture;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink-bin;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink\Source\igtlutil;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink\Source;$(IntermediateOutputPath);$(SolutionDir)DirectXTK\Src;$(SolutionDir)DirectXTK\Inc;$(SolutionDir)$(Configuration)\$(ProjectName);$(ProjectDir)Content\Systems\Tool;$(ProjectDir)Content\Systems\Notification;$(ProjectDir)Content\Systems\Imaging;$(ProjectDir)Content\Systems\Icon;$(ProjectDir)Content\Systems\Splash;$(ProjectDir)Content\Systems\Network;$(ProjectDir)Content\Systems\Gaze;$(ProjectDir)Content\Systems\Registration;$(ProjectDir)Content\Systems;$(ProjectDir)Content\SpatialMapping;$(ProjectDir)Content\Capture;$(ProjectDir)Content\Physics;$(ProjectDir)Content\Network;$(ProjectDir)Content\Rendering\Volume;$(ProjectDir)Content\Rendering\Shaders;$(ProjectDir)Content\Rendering\Shaders\Compiled;$(ProjectDir)Content\Rendering\Model;$(ProjectDir)Content\Rendering\Slice;$(ProjectDir)Content\Rendering\Notification;$(ProjectDir)Content\Rendering\Mesh;$(ProjectDir)Content\Rendering\DirectXTK;$(ProjectDir)Content\Rendering;$(ProjectDir)Content\Input;$(ProjectDir)Content\Sound;$(ProjectDir)Core\Rendering;$(ProjectDir)Core;$(ProjectDir)Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content\Data;$(SolutionDir)DirectXTex\DirectXTex;$(SolutionDir)OpenCV-bin\install\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
@@ -78,7 +78,7 @@
     <ClCompile>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)MediaCapture;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink-bin;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink\Source\igtlutil;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink\Source;$(IntermediateOutputPath);$(SolutionDir)DirectXTK\Src;$(SolutionDir)DirectXTK\Inc;$(SolutionDir)$(Configuration)\$(ProjectName);$(ProjectDir)Content\Systems\Tool;$(ProjectDir)Content\Systems\Notification;$(ProjectDir)Content\Systems\Imaging;$(ProjectDir)Content\Systems\Icon;$(ProjectDir)Content\Systems\Splash;$(ProjectDir)Content\Systems\Network;$(ProjectDir)Content\Systems\Gaze;$(ProjectDir)Content\Systems\Registration;$(ProjectDir)Content\Systems;$(ProjectDir)Content\SpatialMapping;$(ProjectDir)Content\Capture;$(ProjectDir)Content\Physics;$(ProjectDir)Content\Network;$(ProjectDir)Content\Rendering\Volume;$(ProjectDir)Content\Rendering\Shaders;$(ProjectDir)Content\Rendering\Shaders\Compiled;$(ProjectDir)Content\Rendering\DirectXTK;$(ProjectDir)Content\Rendering;$(ProjectDir)Content\Input;$(ProjectDir)Content\Sound;$(ProjectDir)Core\Rendering;$(ProjectDir)Core;$(ProjectDir)Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content\Data;$(SolutionDir)DirectXTex\DirectXTex;$(SolutionDir)OpenCV-bin\install\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)MediaCapture;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink-bin;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink\Source\igtlutil;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink\Source;$(IntermediateOutputPath);$(SolutionDir)DirectXTK\Src;$(SolutionDir)DirectXTK\Inc;$(SolutionDir)$(Configuration)\$(ProjectName);$(ProjectDir)Content\Systems\Tool;$(ProjectDir)Content\Systems\Notification;$(ProjectDir)Content\Systems\Imaging;$(ProjectDir)Content\Systems\Icon;$(ProjectDir)Content\Systems\Splash;$(ProjectDir)Content\Systems\Network;$(ProjectDir)Content\Systems\Gaze;$(ProjectDir)Content\Systems\Registration;$(ProjectDir)Content\Systems;$(ProjectDir)Content\SpatialMapping;$(ProjectDir)Content\Capture;$(ProjectDir)Content\Physics;$(ProjectDir)Content\Network;$(ProjectDir)Content\Rendering\Volume;$(ProjectDir)Content\Rendering\Shaders;$(ProjectDir)Content\Rendering\Shaders\Compiled;$(ProjectDir)Content\Rendering\Model;$(ProjectDir)Content\Rendering\Slice;$(ProjectDir)Content\Rendering\Notification;$(ProjectDir)Content\Rendering\Mesh;$(ProjectDir)Content\Rendering\DirectXTK;$(ProjectDir)Content\Rendering;$(ProjectDir)Content\Input;$(ProjectDir)Content\Sound;$(ProjectDir)Core\Rendering;$(ProjectDir)Core;$(ProjectDir)Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content\Data;$(SolutionDir)DirectXTex\DirectXTex;$(SolutionDir)OpenCV-bin\install\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
@@ -116,21 +116,21 @@
     <ClInclude Include="Content\Rendering\DirectXTK\InstancedEffectCommon.h" />
     <ClInclude Include="Content\Rendering\DirectXTK\InstancedEffectFactory.h" />
     <ClInclude Include="Content\Rendering\DirectXTK\InstancedGeometricPrimitive.h" />
-    <ClInclude Include="Content\Rendering\DistanceFieldRenderer.h" />
-    <ClInclude Include="Content\Rendering\ModelEntry.h" />
-    <ClInclude Include="Content\Rendering\ModelRenderer.h" />
-    <ClInclude Include="Content\Rendering\NotificationRenderer.h" />
-    <ClInclude Include="Content\Rendering\PrimitiveEntry.h" />
+    <ClInclude Include="Content\Rendering\Mesh\Mesh.h" />
+    <ClInclude Include="Content\Rendering\Mesh\MeshRenderer.h" />
+    <ClInclude Include="Content\Rendering\Model\ModelEntry.h" />
+    <ClInclude Include="Content\Rendering\Model\ModelRenderer.h" />
+    <ClInclude Include="Content\Rendering\Model\PrimitiveEntry.h" />
+    <ClInclude Include="Content\Rendering\Notification\DistanceFieldRenderer.h" />
+    <ClInclude Include="Content\Rendering\Notification\NotificationRenderer.h" />
+    <ClInclude Include="Content\Rendering\Notification\TextRenderer.h" />
     <ClInclude Include="Content\Rendering\RenderingCommon.h" />
-    <ClInclude Include="Content\Rendering\SliceEntry.h" />
-    <ClInclude Include="Content\Rendering\SliceRenderer.h" />
-    <ClInclude Include="Content\Rendering\MeshRenderer.h" />
-    <ClInclude Include="Content\Rendering\Mesh.h" />
-    <ClInclude Include="Content\Rendering\TextRenderer.h" />
-    <ClInclude Include="Content\Rendering\VolumeEntry.h" />
+    <ClInclude Include="Content\Rendering\Slice\SliceEntry.h" />
+    <ClInclude Include="Content\Rendering\Slice\SliceRenderer.h" />
     <ClInclude Include="Content\Rendering\Volume\BaseTransferFunction.h" />
     <ClInclude Include="Content\Rendering\Volume\PiecewiseLinearTransferFunction.h" />
     <ClInclude Include="Content\Rendering\Volume\TransferFunctionLookupTable.h" />
+    <ClInclude Include="Content\Rendering\Volume\VolumeEntry.h" />
     <ClInclude Include="Content\Rendering\Volume\VolumeRenderer.h" />
     <ClInclude Include="Content\Sound\AudioFileReader.h" />
     <ClInclude Include="Content\Sound\CardioidSound.h" />
@@ -171,18 +171,19 @@
     <ClCompile Include="Content\Rendering\DirectXTK\InstancedEffectCommon.cpp" />
     <ClCompile Include="Content\Rendering\DirectXTK\InstancedEffectFactory.cpp" />
     <ClCompile Include="Content\Rendering\DirectXTK\InstancedGeometricPrimitive.cpp" />
-    <ClCompile Include="Content\Rendering\DistanceFieldRenderer.cpp" />
-    <ClCompile Include="Content\Rendering\ModelEntry.cpp" />
-    <ClCompile Include="Content\Rendering\ModelRenderer.cpp" />
-    <ClCompile Include="Content\Rendering\NotificationRenderer.cpp" />
-    <ClCompile Include="Content\Rendering\PrimitiveEntry.cpp" />
-    <ClCompile Include="Content\Rendering\SliceEntry.cpp" />
-    <ClCompile Include="Content\Rendering\SliceRenderer.cpp" />
-    <ClCompile Include="Content\Rendering\MeshRenderer.cpp" />
-    <ClCompile Include="Content\Rendering\Mesh.cpp" />
-    <ClCompile Include="Content\Rendering\TextRenderer.cpp" />
-    <ClCompile Include="Content\Rendering\VolumeEntry.cpp" />
+    <ClCompile Include="Content\Rendering\Mesh\Mesh.cpp" />
+    <ClCompile Include="Content\Rendering\Mesh\MeshRenderer.cpp" />
+    <ClCompile Include="Content\Rendering\Model\ModelEntry.cpp" />
+    <ClCompile Include="Content\Rendering\Model\ModelRenderer.cpp" />
+    <ClCompile Include="Content\Rendering\Model\PrimitiveEntry.cpp" />
+    <ClCompile Include="Content\Rendering\Notification\DistanceFieldRenderer.cpp" />
+    <ClCompile Include="Content\Rendering\Notification\NotificationRenderer.cpp" />
+    <ClCompile Include="Content\Rendering\Notification\TextRenderer.cpp" />
+    <ClCompile Include="Content\Rendering\RenderingCommon.cxx" />
+    <ClCompile Include="Content\Rendering\Slice\SliceEntry.cpp" />
+    <ClCompile Include="Content\Rendering\Slice\SliceRenderer.cpp" />
     <ClCompile Include="Content\Rendering\Volume\BaseTransferFunction.cpp" />
+    <ClCompile Include="Content\Rendering\Volume\VolumeEntry.cpp" />
     <ClCompile Include="Content\Rendering\Volume\VolumeRenderer.cpp" />
     <ClCompile Include="Content\Sound\AudioFileReader.cpp" />
     <ClCompile Include="Content\Sound\CardioidSound.cpp" />

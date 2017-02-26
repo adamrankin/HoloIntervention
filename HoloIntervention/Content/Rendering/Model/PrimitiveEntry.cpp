@@ -25,6 +25,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "pch.h"
 #include "CameraResources.h"
 #include "PrimitiveEntry.h"
+#include "RenderingCommon.h"
 #include "StepTimer.h"
 
 // Unnecessary, but reduces intellisense errors
@@ -116,7 +117,7 @@ namespace HoloIntervention
 
       // The normals for the 6 planes each face out from the frustum, defining its volume
       auto bounds = GetBounds();
-      std::array<float3, 8> points
+      std::vector<float3> points
       {
         transform(float3(bounds[0], bounds[2], bounds[4]), m_currentPose),
         transform(float3(bounds[1], bounds[2], bounds[4]), m_currentPose),
@@ -128,30 +129,7 @@ namespace HoloIntervention
         transform(float3(bounds[1], bounds[3], bounds[5]), m_currentPose)
       };
 
-      // For each plane, check to see if all 8 points are in front, if so, obj is outside
-      for (auto& entry : { frustum.Left, frustum.Right, frustum.Bottom, frustum.Top, frustum.Near, frustum.Far })
-      {
-        XMVECTOR plane = XMLoadPlane(&entry);
-
-        bool objFullyInFront(true);
-        for (auto& point : points)
-        {
-          XMVECTOR dotProduct = XMPlaneDotCoord(plane, XMLoadFloat3(&point));
-          if (XMVectorGetX(dotProduct) < 0.f)
-          {
-            objFullyInFront = false;
-            break;
-          }
-        }
-        if (objFullyInFront)
-        {
-          m_isInFrustum = false;
-          m_frustumCheckFrameNumber = m_timer.GetFrameCount();
-          return m_isInFrustum;
-        }
-      }
-
-      m_isInFrustum = true;
+      m_isInFrustum = HoloIntervention::IsInFrustum(frustum, points);
       m_frustumCheckFrameNumber = m_timer.GetFrameCount();
       return m_isInFrustum;
     }

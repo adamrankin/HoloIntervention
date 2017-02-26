@@ -23,25 +23,21 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
+// STL includes
+#include <vector>
+
 // DirectX includes
 #include <DirectXMath.h>
 
-inline DirectX::XMFLOAT4 operator-(const DirectX::XMFLOAT4& lhs, const DirectX::XMFLOAT4& rhs)
-{
-  return DirectX::XMFLOAT4(lhs.x - rhs.x, lhs.y - rhs.y, lhs.z - rhs.z, lhs.w - rhs.w);
-}
+DirectX::XMFLOAT4 operator-(const DirectX::XMFLOAT4& lhs, const DirectX::XMFLOAT4& rhs);
 
-inline DirectX::XMFLOAT4 operator+(const DirectX::XMFLOAT4& lhs, const DirectX::XMFLOAT4& rhs)
-{
-  return DirectX::XMFLOAT4(lhs.x + rhs.x, lhs.y + rhs.y, lhs.z + rhs.z, lhs.w + rhs.w);
-}
+DirectX::XMFLOAT4 operator+(const DirectX::XMFLOAT4& lhs, const DirectX::XMFLOAT4& rhs);
 
-inline DirectX::XMFLOAT4 operator*(const float& lhs, const DirectX::XMFLOAT4& rhs)
-{
-  return DirectX::XMFLOAT4(lhs * rhs.x, lhs * rhs.y, lhs * rhs.z, lhs * rhs.w);
-}
+DirectX::XMFLOAT4 operator*(const float& lhs, const DirectX::XMFLOAT4& rhs);
 
-inline DirectX::XMFLOAT4 operator*(const DirectX::XMFLOAT4& lhs, const float& rhs)
+DirectX::XMFLOAT4 operator*(const DirectX::XMFLOAT4& lhs, const float& rhs);
+
+namespace HoloIntervention
 {
-  return DirectX::XMFLOAT4(lhs.x * rhs, lhs.y * rhs, lhs.z * rhs, lhs.w * rhs);
+  bool IsInFrustum(const Windows::Perception::Spatial::SpatialBoundingFrustum& frustum, const std::vector<Windows::Foundation::Numerics::float3>& bounds);
 }

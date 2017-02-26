@@ -26,6 +26,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "Common.h"
 #include "DeviceResources.h"
 #include "DirectXHelper.h"
+#include "RenderingCommon.h"
 #include "SliceEntry.h"
 #include "StepTimer.h"
 
@@ -112,7 +113,7 @@ namespace HoloIntervention
       const float right = 0.5;
       const float top = 0.5;
 
-      const std::array<float3, 4> points =
+      const std::vector<float3> points =
       {
         transform(float3(left, top, 0.f), m_currentPose),
         transform(float3(right, top, 0.f), m_currentPose),
@@ -120,32 +121,9 @@ namespace HoloIntervention
         transform(float3(left, bottom, 0.f), m_currentPose)
       };
 
-      // For each plane, check to see if all 8 points are in front, if so, obj is outside
-      for (auto& entry : { frustum.Left, frustum.Right, frustum.Bottom, frustum.Top, frustum.Near, frustum.Far })
-      {
-        XMVECTOR plane = XMLoadPlane(&entry);
-
-        bool objFullyInFront(true);
-        for (auto& point : points)
-        {
-          XMVECTOR dotProduct = XMPlaneDotCoord(plane, XMLoadFloat3(&point));
-          if (XMVectorGetX(dotProduct) < 0.f)
-          {
-            objFullyInFront = false;
-            break;
-          }
-        }
-        if (objFullyInFront)
-        {
-          m_isInFrustum = false;
-          m_frustumCheckFrameNumber = m_timer.GetFrameCount();
-          return false;
-        }
-      }
-
-      m_isInFrustum = true;
+      m_isInFrustum = HoloIntervention::IsInFrustum(frustum, points);
       m_frustumCheckFrameNumber = m_timer.GetFrameCount();
-      return true;
+      return m_isInFrustum;
     }
 
     //----------------------------------------------------------------------------
