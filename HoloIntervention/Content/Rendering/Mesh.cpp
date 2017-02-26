@@ -12,7 +12,7 @@
 // Local includes
 #include "pch.h"
 #include "InstancedGeometricPrimitive.h"
-#include "SpatialMesh.h"
+#include "Mesh.h"
 
 // Common includes
 #include "Common.h"
@@ -35,7 +35,7 @@ namespace HoloIntervention
   namespace Rendering
   {
     //----------------------------------------------------------------------------
-    SpatialMesh::SpatialMesh(std::shared_ptr<DX::DeviceResources> deviceResources)
+    Mesh::Mesh(std::shared_ptr<DX::DeviceResources> deviceResources)
       : m_deviceResources(deviceResources)
     {
       std::lock_guard<std::mutex> lock(m_meshResourcesMutex);
@@ -45,7 +45,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    SpatialMesh::SpatialMesh()
+    Mesh::Mesh()
     {
       std::lock_guard<std::mutex> lock(m_meshResourcesMutex);
 
@@ -54,7 +54,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    SpatialMesh::~SpatialMesh()
+    Mesh::~Mesh()
     {
       std::lock_guard<std::mutex> lock(m_meshResourcesMutex);
 
@@ -62,14 +62,14 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SpatialMesh::UpdateSurface(SpatialSurfaceMesh^ surfaceMesh)
+    void Mesh::UpdateSurface(SpatialSurfaceMesh^ surfaceMesh)
     {
       m_surfaceMesh = surfaceMesh;
       m_updateNeeded = true;
     }
 
     //----------------------------------------------------------------------------
-    void SpatialMesh::UpdateDeviceBasedResources()
+    void Mesh::UpdateDeviceBasedResources()
     {
       std::lock_guard<std::mutex> lock(m_meshResourcesMutex);
 
@@ -79,7 +79,7 @@ namespace HoloIntervention
 
     //----------------------------------------------------------------------------
     // Spatial Mapping surface meshes each have a transform. This transform is updated every frame.
-    void SpatialMesh::Update(const DX::StepTimer& timer, SpatialCoordinateSystem^ baseCoordinateSystem)
+    void Mesh::Update(const DX::StepTimer& timer, SpatialCoordinateSystem^ baseCoordinateSystem)
     {
       if (m_surfaceMesh == nullptr)
       {
@@ -159,7 +159,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SpatialMesh::Render(bool usingVprtShaders)
+    void Mesh::Render(bool usingVprtShaders)
     {
       if (!m_constantBufferCreated || !m_loadingComplete)
       {
@@ -190,7 +190,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SpatialMesh::CreateDirectXBuffer(ID3D11Device& device, D3D11_BIND_FLAG binding, IBuffer^ buffer, ID3D11Buffer** target)
+    void Mesh::CreateDirectXBuffer(ID3D11Device& device, D3D11_BIND_FLAG binding, IBuffer^ buffer, ID3D11Buffer** target)
     {
       auto length = buffer->Length;
 
@@ -200,7 +200,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SpatialMesh::CreateVertexResources()
+    void Mesh::CreateVertexResources()
     {
       if (m_surfaceMesh == nullptr)
       {
@@ -221,7 +221,7 @@ namespace HoloIntervention
       {
         if (m_surfaceMesh->VertexPositions == nullptr || m_surfaceMesh->VertexNormals == nullptr || m_surfaceMesh->TriangleIndices == nullptr)
         {
-          call_after(std::bind(&SpatialMesh::CreateVertexResources, this), 250);
+          call_after(std::bind(&Mesh::CreateVertexResources, this), 250);
           return;
         }
         IBuffer^ positions = m_surfaceMesh->VertexPositions->Data;
@@ -256,7 +256,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SpatialMesh::CreateDeviceDependentResources()
+    void Mesh::CreateDeviceDependentResources()
     {
       CreateVertexResources();
 
@@ -274,7 +274,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SpatialMesh::ReleaseVertexResources()
+    void Mesh::ReleaseVertexResources()
     {
       m_loadingComplete = false;
 
@@ -287,7 +287,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SpatialMesh::SwapVertexBuffers()
+    void Mesh::SwapVertexBuffers()
     {
       // Swap out the previous vertex position, normal, and index buffers, and replace
       // them with up-to-date buffers.
@@ -305,7 +305,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SpatialMesh::ReleaseDeviceDependentResources()
+    void Mesh::ReleaseDeviceDependentResources()
     {
       // Clear out any pending resources.
       SwapVertexBuffers();
@@ -320,38 +320,38 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool SpatialMesh::GetIsActive() const
+    bool Mesh::GetIsActive() const
     {
       return m_isActive;
     }
 
     //----------------------------------------------------------------------------
-    float SpatialMesh::GetLastActiveTime() const
+    float Mesh::GetLastActiveTime() const
     {
       return m_lastActiveTime;
     }
 
     //----------------------------------------------------------------------------
-    Windows::Foundation::DateTime SpatialMesh::GetLastUpdateTime() const
+    Windows::Foundation::DateTime Mesh::GetLastUpdateTime() const
     {
       return m_lastUpdateTime;
     }
 
     //----------------------------------------------------------------------------
-    void SpatialMesh::SetIsActive(const bool& isActive)
+    void Mesh::SetIsActive(const bool& isActive)
     {
       m_isActive = isActive;
     }
 
     //----------------------------------------------------------------------------
-    void SpatialMesh::SetColorFadeTimer(const float& duration)
+    void Mesh::SetColorFadeTimer(const float& duration)
     {
       m_colorFadeTimeout = duration;
       m_colorFadeTimer = 0.f;
     }
 
     //----------------------------------------------------------------------------
-    void SpatialMesh::SetDeviceResources(std::shared_ptr<DX::DeviceResources> deviceResources)
+    void Mesh::SetDeviceResources(std::shared_ptr<DX::DeviceResources> deviceResources)
     {
       m_deviceResources = deviceResources;
     }

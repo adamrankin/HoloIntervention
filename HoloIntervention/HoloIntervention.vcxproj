@@ -124,8 +124,8 @@
     <ClInclude Include="Content\Rendering\RenderingCommon.h" />
     <ClInclude Include="Content\Rendering\SliceEntry.h" />
     <ClInclude Include="Content\Rendering\SliceRenderer.h" />
-    <ClInclude Include="Content\Rendering\SpatialMeshRenderer.h" />
-    <ClInclude Include="Content\Rendering\SpatialMesh.h" />
+    <ClInclude Include="Content\Rendering\MeshRenderer.h" />
+    <ClInclude Include="Content\Rendering\Mesh.h" />
     <ClInclude Include="Content\Rendering\TextRenderer.h" />
     <ClInclude Include="Content\Rendering\VolumeEntry.h" />
     <ClInclude Include="Content\Rendering\Volume\BaseTransferFunction.h" />
@@ -178,8 +178,8 @@
     <ClCompile Include="Content\Rendering\PrimitiveEntry.cpp" />
     <ClCompile Include="Content\Rendering\SliceEntry.cpp" />
     <ClCompile Include="Content\Rendering\SliceRenderer.cpp" />
-    <ClCompile Include="Content\Rendering\SpatialMeshRenderer.cpp" />
-    <ClCompile Include="Content\Rendering\SpatialMesh.cpp" />
+    <ClCompile Include="Content\Rendering\MeshRenderer.cpp" />
+    <ClCompile Include="Content\Rendering\Mesh.cpp" />
     <ClCompile Include="Content\Rendering\TextRenderer.cpp" />
     <ClCompile Include="Content\Rendering\VolumeEntry.cpp" />
     <ClCompile Include="Content\Rendering\Volume\BaseTransferFunction.cpp" />

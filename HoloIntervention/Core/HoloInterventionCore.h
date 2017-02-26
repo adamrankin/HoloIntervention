@@ -65,7 +65,7 @@ namespace HoloIntervention
     class ModelRenderer;
     class NotificationRenderer;
     class SliceRenderer;
-    class SpatialMeshRenderer;
+    class MeshRenderer;
     class VolumeRenderer;
   }
 
@@ -137,7 +137,7 @@ namespace HoloIntervention
     std::unique_ptr<Rendering::ModelRenderer>             m_modelRenderer;
     std::unique_ptr<Rendering::NotificationRenderer>      m_notificationRenderer;
     std::unique_ptr<Rendering::SliceRenderer>             m_sliceRenderer;
-    std::unique_ptr<Rendering::SpatialMeshRenderer>       m_meshRenderer;
+    std::unique_ptr<Rendering::MeshRenderer>       m_meshRenderer;
     std::unique_ptr<Rendering::VolumeRenderer>            m_volumeRenderer;
 
     // Event handlers

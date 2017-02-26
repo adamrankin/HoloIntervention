@@ -12,7 +12,7 @@
 // Local includes
 #include "pch.h"
 #include "AppView.h"
-#include "SpatialMeshRenderer.h"
+#include "MeshRenderer.h"
 
 // Common includes
 #include "DeviceResources.h"
@@ -44,7 +44,7 @@ namespace HoloIntervention
   namespace Rendering
   {
     //----------------------------------------------------------------------------
-    SpatialMeshRenderer::SpatialMeshRenderer(System::NotificationSystem& notificationSystem, const std::shared_ptr<DX::DeviceResources>& deviceResources)
+    MeshRenderer::MeshRenderer(System::NotificationSystem& notificationSystem, const std::shared_ptr<DX::DeviceResources>& deviceResources)
       : m_deviceResources(deviceResources)
       , m_notificationSystem(notificationSystem)
     {
@@ -54,7 +54,7 @@ namespace HoloIntervention
 
     //----------------------------------------------------------------------------
     // Called once per frame, maintains and updates the mesh collection.
-    void SpatialMeshRenderer::Update(const DX::StepTimer& timer, SpatialCoordinateSystem^ coordinateSystem)
+    void MeshRenderer::Update(const DX::StepTimer& timer, SpatialCoordinateSystem^ coordinateSystem)
     {
       if (!m_renderEnabled)
       {
@@ -102,7 +102,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SpatialMeshRenderer::InitObserver(SpatialCoordinateSystem^ coordinateSystem)
+    void MeshRenderer::InitObserver(SpatialCoordinateSystem^ coordinateSystem)
     {
       SpatialBoundingBox axisAlignedBoundingBox =
       {
@@ -158,14 +158,14 @@ namespace HoloIntervention
           // We then subscribe to an event to receive up-to-date data.
           m_surfacesChangedToken = m_surfaceObserver->ObservedSurfacesChanged +=
                                      ref new TypedEventHandler<SpatialSurfaceObserver^, Platform::Object^>(
-                                       std::bind(&SpatialMeshRenderer::OnSurfacesChanged, this, std::placeholders::_1, std::placeholders::_2)
+                                       std::bind(&MeshRenderer::OnSurfacesChanged, this, std::placeholders::_1, std::placeholders::_2)
                                      );
         }
       }
     }
 
     //----------------------------------------------------------------------------
-    void SpatialMeshRenderer::OnSurfacesChanged(SpatialSurfaceObserver^ sender, Object^ args)
+    void MeshRenderer::OnSurfacesChanged(SpatialSurfaceObserver^ sender, Object^ args)
     {
       IMapView<Guid, SpatialSurfaceInfo^>^ const& surfaceCollection = sender->GetObservedSurfaces();
 
@@ -194,7 +194,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SpatialMeshRenderer::RequestAccessAsync(SpatialCoordinateSystem^ coordinateSystem)
+    void MeshRenderer::RequestAccessAsync(SpatialCoordinateSystem^ coordinateSystem)
     {
       // Initialize the Surface Observer using a valid coordinate system.
       if (!m_spatialPerceptionAccessRequested)
@@ -218,7 +218,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SpatialMeshRenderer::AddSurface(Guid id, SpatialSurfaceInfo^ newSurface)
+    void MeshRenderer::AddSurface(Guid id, SpatialSurfaceInfo^ newSurface)
     {
       auto fadeInMeshTask = AddOrUpdateSurfaceAsync(id, newSurface).then([this, id]()
       {
@@ -236,13 +236,13 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SpatialMeshRenderer::UpdateSurface(Guid id, SpatialSurfaceInfo^ newSurface)
+    void MeshRenderer::UpdateSurface(Guid id, SpatialSurfaceInfo^ newSurface)
     {
       AddOrUpdateSurfaceAsync(id, newSurface);
     }
 
     //----------------------------------------------------------------------------
-    Concurrency::task<void> SpatialMeshRenderer::AddOrUpdateSurfaceAsync(Guid id, SpatialSurfaceInfo^ newSurface)
+    Concurrency::task<void> MeshRenderer::AddOrUpdateSurfaceAsync(Guid id, SpatialSurfaceInfo^ newSurface)
     {
       auto options = ref new SpatialSurfaceMeshOptions();
       options->IncludeVertexNormals = true;
@@ -267,21 +267,21 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SpatialMeshRenderer::RemoveSurface(Guid id)
+    void MeshRenderer::RemoveSurface(Guid id)
     {
       std::lock_guard<std::mutex> guard(m_meshCollectionLock);
       m_meshCollection.erase(id);
     }
 
     //----------------------------------------------------------------------------
-    void SpatialMeshRenderer::ClearSurfaces()
+    void MeshRenderer::ClearSurfaces()
     {
       std::lock_guard<std::mutex> guard(m_meshCollectionLock);
       m_meshCollection.clear();
     }
 
     //----------------------------------------------------------------------------
-    void SpatialMeshRenderer::HideInactiveMeshes(IMapView<Guid, SpatialSurfaceInfo^>^ const& surfaceCollection)
+    void MeshRenderer::HideInactiveMeshes(IMapView<Guid, SpatialSurfaceInfo^>^ const& surfaceCollection)
     {
       std::lock_guard<std::mutex> guard(m_meshCollectionLock);
 
@@ -297,7 +297,7 @@ namespace HoloIntervention
 
     //----------------------------------------------------------------------------
     // Renders one frame using the vertex, geometry, and pixel shaders.
-    void SpatialMeshRenderer::Render()
+    void MeshRenderer::Render()
     {
       // Loading is asynchronous. Only draw geometry after it's loaded.
       if (!m_componentReady || !m_renderEnabled)
@@ -345,19 +345,19 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SpatialMeshRenderer::SetEnabled(bool arg)
+    void MeshRenderer::SetEnabled(bool arg)
     {
       m_renderEnabled = arg;
     }
 
     //----------------------------------------------------------------------------
-    bool SpatialMeshRenderer::GetEnabled() const
+    bool MeshRenderer::GetEnabled() const
     {
       return m_renderEnabled;
     }
 
     //----------------------------------------------------------------------------
-    void SpatialMeshRenderer::CreateDeviceDependentResources()
+    void MeshRenderer::CreateDeviceDependentResources()
     {
       m_usingVprtShaders = m_deviceResources->GetDeviceSupportsVprt();
 
@@ -456,7 +456,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SpatialMeshRenderer::ReleaseDeviceDependentResources()
+    void MeshRenderer::ReleaseDeviceDependentResources()
     {
       m_componentReady = false;
 
@@ -477,7 +477,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SpatialMeshRenderer::Reset()
+    void MeshRenderer::Reset()
     {
       std::lock_guard<std::mutex> guard(m_meshCollectionLock);
       ReleaseDeviceDependentResources();
@@ -491,7 +491,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SpatialMeshRenderer::RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap)
+    void MeshRenderer::RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap)
     {
       callbackMap[L"mesh on"] = [this](SpeechRecognitionResult ^ result)
       {
@@ -521,14 +521,14 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool SpatialMeshRenderer::HasSurface(Platform::Guid id)
+    bool MeshRenderer::HasSurface(Platform::Guid id)
     {
       std::lock_guard<std::mutex> guard(m_meshCollectionLock);
       return m_meshCollection.find(id) != m_meshCollection.end();
     }
 
     //----------------------------------------------------------------------------
-    Windows::Foundation::DateTime SpatialMeshRenderer::GetLastUpdateTime(Platform::Guid id)
+    Windows::Foundation::DateTime MeshRenderer::GetLastUpdateTime(Platform::Guid id)
     {
       std::lock_guard<std::mutex> guard(m_meshCollectionLock);
       auto& meshIter = m_meshCollection.find(id);

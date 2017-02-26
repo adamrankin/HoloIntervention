@@ -14,7 +14,7 @@
 // Local includes
 #include "IEngineComponent.h"
 #include "IVoiceInput.h"
-#include "SpatialMesh.h"
+#include "Mesh.h"
 
 // STL includes
 #include <memory>
@@ -35,12 +35,12 @@ namespace HoloIntervention
 
   namespace Rendering
   {
-    class SpatialMeshRenderer : public Sound::IVoiceInput, public IEngineComponent
+    class MeshRenderer : public Sound::IVoiceInput, public IEngineComponent
     {
-      typedef std::map<Platform::Guid, SpatialMesh> GuidMeshMap;
+      typedef std::map<Platform::Guid, Mesh> GuidMeshMap;
 
     public:
-      SpatialMeshRenderer(System::NotificationSystem& notificationSystem, const std::shared_ptr<DX::DeviceResources>& deviceResources);
+      MeshRenderer(System::NotificationSystem& notificationSystem, const std::shared_ptr<DX::DeviceResources>& deviceResources);
 
       void Update(const DX::StepTimer& timer, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem);
       void Render();

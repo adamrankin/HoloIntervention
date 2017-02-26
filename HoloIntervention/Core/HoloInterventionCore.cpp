@@ -50,7 +50,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "ModelRenderer.h"
 #include "NotificationRenderer.h"
 #include "SliceRenderer.h"
-#include "SpatialMeshRenderer.h"
+#include "MeshRenderer.h"
 #include "VolumeRenderer.h"
 
 // Input includes
@@ -154,7 +154,7 @@ namespace HoloIntervention
       m_modelRenderer = std::make_unique<Rendering::ModelRenderer>(m_deviceResources, m_timer);
       m_sliceRenderer = std::make_unique<Rendering::SliceRenderer>(m_deviceResources, m_timer);
       m_volumeRenderer = std::make_unique<Rendering::VolumeRenderer>(m_deviceResources, m_timer);
-      m_meshRenderer = std::make_unique<Rendering::SpatialMeshRenderer>(*m_notificationSystem.get(), m_deviceResources);
+      m_meshRenderer = std::make_unique<Rendering::MeshRenderer>(*m_notificationSystem.get(), m_deviceResources);
 
       m_soundAPI = std::make_unique<Sound::SoundAPI>();
 

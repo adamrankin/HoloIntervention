@@ -29,7 +29,6 @@ namespace DX
 
 namespace HoloIntervention
 {
-
   namespace Rendering
   {
     // Constant buffer used to send hologram position and normal transforms to the shader pipeline.
@@ -50,12 +49,12 @@ namespace HoloIntervention
       DXGI_FORMAT  indexFormat = DXGI_FORMAT_UNKNOWN;
     };
 
-    class SpatialMesh final
+    class Mesh final
     {
     public:
-      SpatialMesh();
-      SpatialMesh(std::shared_ptr<DX::DeviceResources> deviceResources);
-      ~SpatialMesh();
+      Mesh();
+      Mesh(std::shared_ptr<DX::DeviceResources> deviceResources);
+      ~Mesh();
 
       void SetDeviceResources(std::shared_ptr<DX::DeviceResources> deviceResources);
 

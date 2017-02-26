@@ -52,12 +52,6 @@
     <ClCompile Include="Content\Rendering\DirectXTK\InstancedBasicEffect.cpp">
       <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
     </ClCompile>
-    <ClCompile Include="Content\Rendering\SpatialMeshRenderer.cpp">
-      <Filter>Content\Rendering\SpatialMeshRenderer</Filter>
-    </ClCompile>
-    <ClCompile Include="Content\Rendering\SpatialMesh.cpp">
-      <Filter>Content\Rendering\SpatialMeshRenderer</Filter>
-    </ClCompile>
     <ClCompile Include="Content\Rendering\DirectXTK\InstancedGeometricPrimitive.cpp">
       <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
     </ClCompile>
@@ -142,6 +136,12 @@
     <ClCompile Include="Content\Systems\Network\NetworkSystem.cpp">
       <Filter>Content\Systems\Network</Filter>
     </ClCompile>
+    <ClCompile Include="Content\Rendering\MeshRenderer.cpp">
+      <Filter>Content\Rendering\MeshRenderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Rendering\Mesh.cpp">
+      <Filter>Content\Rendering\MeshRenderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Content\Sound\OmnidirectionalSound.h">
@@ -194,12 +194,6 @@
     </ClInclude>
     <ClInclude Include="Content\Rendering\DirectXTK\InstancedEffects.h">
       <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
-    </ClInclude>
-    <ClInclude Include="Content\Rendering\SpatialMeshRenderer.h">
-      <Filter>Content\Rendering\SpatialMeshRenderer</Filter>
-    </ClInclude>
-    <ClInclude Include="Content\Rendering\SpatialMesh.h">
-      <Filter>Content\Rendering\SpatialMeshRenderer</Filter>
     </ClInclude>
     <ClInclude Include="Content\Rendering\DirectXTK\InstancedGeometricPrimitive.h">
       <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
@@ -308,6 +302,12 @@
     </ClInclude>
     <ClInclude Include="Content\Systems\Network\NetworkSystem.h">
       <Filter>Content\Systems\Network</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Rendering\MeshRenderer.h">
+      <Filter>Content\Rendering\MeshRenderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Rendering\Mesh.h">
+      <Filter>Content\Rendering\MeshRenderer</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -672,12 +672,6 @@
     <Filter Include="Assets\Models\Tools">
       <UniqueIdentifier>{bb0e2372-170b-4d40-a51f-55abb6f7d94a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Content\Rendering\SpatialMeshRenderer">
-      <UniqueIdentifier>{2384fb19-462f-4317-b3e0-b20ab0a79b47}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Content\Rendering\SpatialMeshRenderer\Shaders">
-      <UniqueIdentifier>{d194b49e-a3a5-46c4-aa82-0ac812d4d39d}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Assets\Data">
       <UniqueIdentifier>{d8ff3f6a-1caf-4488-b74c-77ebe2d90ea5}</UniqueIdentifier>
     </Filter>
@@ -744,6 +738,12 @@
     <Filter Include="Content\Systems\Network">
       <UniqueIdentifier>{551d6927-82ba-4055-b2ee-76c3fd3d5093}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Content\Rendering\MeshRenderer">
+      <UniqueIdentifier>{2384fb19-462f-4317-b3e0-b20ab0a79b47}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Rendering\MeshRenderer\Shaders">
+      <UniqueIdentifier>{d194b49e-a3a5-46c4-aa82-0ac812d4d39d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Content\SpatialMapping\Shaders\CSRayTriangleIntersection.hlsl">
@@ -795,16 +795,16 @@
       <Filter>Content\Rendering\NotificationRenderer\Shaders\NotificationRenderer</Filter>
     </FxCompile>
     <FxCompile Include="Content\Rendering\Shaders\SMRLightingPixelShader.hlsl">
-      <Filter>Content\Rendering\SpatialMeshRenderer\Shaders</Filter>
+      <Filter>Content\Rendering\MeshRenderer\Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Content\Rendering\Shaders\SMRSolidColorPixelShader.hlsl">
-      <Filter>Content\Rendering\SpatialMeshRenderer\Shaders</Filter>
+      <Filter>Content\Rendering\MeshRenderer\Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Content\Rendering\Shaders\SMRSurfaceVertexShader.hlsl">
-      <Filter>Content\Rendering\SpatialMeshRenderer\Shaders</Filter>
+      <Filter>Content\Rendering\MeshRenderer\Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Content\Rendering\Shaders\SMRSurfaceVPRTVertexShader.hlsl">
-      <Filter>Content\Rendering\SpatialMeshRenderer\Shaders</Filter>
+      <Filter>Content\Rendering\MeshRenderer\Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Content\Rendering\Shaders\PPNCIGeometryShader.hlsl">
       <Filter>Content\Rendering\Geometry Shaders</Filter>
