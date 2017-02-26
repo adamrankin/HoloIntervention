@@ -36,6 +36,8 @@ using namespace Concurrency;
 using namespace Windows::Data::Xml::Dom;
 using namespace Windows::Foundation::Numerics;
 using namespace Windows::Storage;
+using namespace Windows::Security::Cryptography;
+using namespace Windows::Security::Cryptography::Core;
 
 namespace HoloIntervention
 {
@@ -211,6 +213,26 @@ namespace HoloIntervention
     {
       return false;
     }
+  }
+
+  //----------------------------------------------------------------------------
+  uint64 HashString(const std::wstring& string)
+  {
+    return HashString(ref new Platform::String(string.c_str()));
+  }
+
+  //----------------------------------------------------------------------------
+  uint64 HashString(Platform::String^ string)
+  {
+    auto alg = HashAlgorithmProvider::OpenAlgorithm(HashAlgorithmNames::Md5);
+    auto buff = CryptographicBuffer::ConvertStringToBinary(string, BinaryStringEncoding::Utf8);
+    auto hashed = alg->HashData(buff);
+    Platform::Array<byte>^ platArray = ref new Platform::Array<byte>(256);
+    CryptographicBuffer::CopyToByteArray(buff, &platArray);
+    uint64 result;
+    // Grab only first N bytes...
+    memcpy(&result, platArray->Data, sizeof(uint64));
+    return result;
   }
 
   //----------------------------------------------------------------------------

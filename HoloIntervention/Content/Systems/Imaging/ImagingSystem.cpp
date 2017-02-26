@@ -28,9 +28,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "ImagingSystem.h"
 #include "StepTimer.h"
 
-// Network includes
-#include "IGTConnector.h"
-
 // System includes
 #include "NetworkSystem.h"
 #include "NotificationSystem.h"
@@ -202,7 +199,7 @@ namespace HoloIntervention
       {
         LoadXmlDocumentAsync(L"configuration.xml", configStorageFolder).then([this](XmlDocument ^ doc)
         {
-          auto fromToFunction = [this, doc](Platform::String ^ xpath, std::wstring & m_from, std::wstring & m_to, UWPOpenIGTLink::TransformName^& name, std::wstring & connectionName)
+          auto fromToFunction = [this, doc](Platform::String ^ xpath, std::wstring & m_from, std::wstring & m_to, UWPOpenIGTLink::TransformName^& name, uint64 & hashedConnectionName)
           {
             if (doc->SelectNodes(xpath)->Length != 1)
             {
@@ -227,12 +224,12 @@ namespace HoloIntervention
             Platform::String^ igtConnection = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"IGTConnection")->NodeValue);
             if (igtConnection != nullptr)
             {
-              connectionName = std::wstring(begin(igtConnection), end(igtConnection));
+              hashedConnectionName = HashString(igtConnection);
             }
           };
 
-          fromToFunction(L"/HoloIntervention/VolumeRendering", m_volumeFromCoordFrame, m_volumeToCoordFrame, m_volumeToHMDName, m_volumeConnectionName);
-          fromToFunction(L"/HoloIntervention/SliceRendering", m_sliceFromCoordFrame, m_sliceToCoordFrame, m_sliceToHMDName, m_sliceConnectionName);
+          fromToFunction(L"/HoloIntervention/VolumeRendering", m_volumeFromCoordFrame, m_volumeToCoordFrame, m_volumeToHMDName, m_hashedVolumeConnectionName);
+          fromToFunction(L"/HoloIntervention/SliceRendering", m_sliceFromCoordFrame, m_sliceToCoordFrame, m_sliceToHMDName, m_hashedSliceConnectionName);
         });
       }
       catch (Platform::Exception^ e)
@@ -250,25 +247,14 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ImagingSystem::Update(const DX::StepTimer& timer, SpatialCoordinateSystem^ coordSystem)
     {
-      UWPOpenIGTLink::TrackedFrame^ frame(nullptr);
-      std::shared_ptr<Network::IGTConnector> sliceConnection = m_networkSystem.GetConnection(m_sliceConnectionName);
-      if (sliceConnection == nullptr)
-      {
-        return;
-      }
-      frame = sliceConnection->GetTrackedFrame(m_latestSliceTimestamp);
+      UWPOpenIGTLink::TrackedFrame^ frame = m_networkSystem.GetTrackedFrame(m_hashedSliceConnectionName, m_latestSliceTimestamp);
       if (frame != nullptr && frame->HasImage() && frame->Dimensions[2] == 1)
       {
         m_transformRepository->SetTransforms(frame);
         Process2DFrame(frame, coordSystem);
       }
 
-      std::shared_ptr<Network::IGTConnector> volumeConnection = m_networkSystem.GetConnection(m_volumeConnectionName);
-      if (volumeConnection == nullptr)
-      {
-        return;
-      }
-      frame = volumeConnection->GetTrackedFrame(m_latestVolumeTimestamp);
+      frame = m_networkSystem.GetTrackedFrame(m_hashedVolumeConnectionName, m_latestVolumeTimestamp);
       if (frame != nullptr && frame->HasImage() && frame->Dimensions[2] > 1)
       {
         m_transformRepository->SetTransforms(frame);

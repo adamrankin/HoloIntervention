@@ -164,7 +164,7 @@ namespace HoloIntervention
       std::shared_ptr<Capture::VideoFrameProcessor>                         m_videoFrameProcessor = nullptr;
 
       // IGT link
-      std::wstring                                                          m_connectionName;
+      uint64                                                                m_hashedConnectionName;
       UWPOpenIGTLink::TransformRepository^                                  m_transformRepository = ref new UWPOpenIGTLink::TransformRepository();
       std::atomic_bool                                                      m_transformsAvailable = false;
       double                                                                m_latestTimestamp = 0.0;

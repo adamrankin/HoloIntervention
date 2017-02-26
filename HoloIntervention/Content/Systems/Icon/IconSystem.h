@@ -26,11 +26,11 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "IStabilizedComponent.h"
 
-// Network includes
-#include "IGTConnector.h"
-
 // Rendering includes
 #include "ModelEntry.h"
+
+// System includes
+#include "NetworkSystem.h"
 
 namespace DX
 {
@@ -57,7 +57,6 @@ namespace HoloIntervention
   namespace System
   {
     class IconEntry;
-    class NetworkSystem;
     class NotificationSystem;
     class RegistrationSystem;
 
@@ -103,12 +102,12 @@ namespace HoloIntervention
       std::shared_ptr<IconEntry>      m_microphoneIcon = nullptr;
 
       // Network logic variables
-      std::wstring                    m_connectionName;
+      uint64                          m_hashedConnectionName;
       UWPOpenIGTLink::TrackedFrame^   m_frame = ref new UWPOpenIGTLink::TrackedFrame();
       double                          m_latestTimestamp = 0.0;
       bool                            m_wasNetworkConnected = true;
       bool                            m_networkIsBlinking = true;
-      Network::ConnectionState        m_networkPreviousState = Network::CONNECTION_STATE_UNKNOWN;
+      NetworkSystem::ConnectionState  m_networkPreviousState = NetworkSystem::CONNECTION_STATE_UNKNOWN;
       float                           m_networkBlinkTimer = 0.f;
       static const float              NETWORK_BLINK_TIME_SEC;
 

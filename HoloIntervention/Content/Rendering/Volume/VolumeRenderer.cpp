@@ -33,11 +33,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "DirectXHelper.h"
 
 // System includes
-#include "RegistrationSystem.h"
+#include "NetworkSystem.h"
 #include "NotificationSystem.h"
-
-// Network includes
-#include "IGTConnector.h"
+#include "RegistrationSystem.h"
 
 // DirectX includes
 #include <d3d11_3.h>

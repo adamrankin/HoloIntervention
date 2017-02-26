@@ -212,13 +212,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ToolSystem::Update(const DX::StepTimer& timer, SpatialCoordinateSystem^ hmdCoordinateSystem)
     {
-      UWPOpenIGTLink::TrackedFrame^ frame(nullptr);
-      std::shared_ptr<Network::IGTConnector> connection = m_networkSystem.GetConnection(m_connectionName);
-      if (connection == nullptr)
-      {
-        return;
-      }
-      frame = connection->GetTrackedFrame(m_latestTimestamp);
+      UWPOpenIGTLink::TrackedFrame^ frame = m_networkSystem.GetTrackedFrame(m_hashedConnectionName, m_latestTimestamp);
       if (frame == nullptr)
       {
         return;
@@ -257,7 +251,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     concurrency::task<void> ToolSystem::InitAsync(XmlDocument^ doc)
     {
-      return create_task([ = ]()
+      return create_task([this, doc]()
       {
         auto xpath = ref new Platform::String(L"/HoloIntervention/Tools");
         if (doc->SelectNodes(xpath)->Length != 1)
@@ -272,7 +266,7 @@ namespace HoloIntervention
             throw ref new Platform::Exception(E_FAIL, L"Tool configuration does not contain \"ConnectionName\" attribute.");
           }
           Platform::String^ connectionName = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"ConnectionName")->NodeValue);
-          m_connectionName = std::wstring(connectionName->Data());
+          m_hashedConnectionName = HashString(connectionName);
         }
 
         xpath = ref new Platform::String(L"/HoloIntervention/Tools/Tool");

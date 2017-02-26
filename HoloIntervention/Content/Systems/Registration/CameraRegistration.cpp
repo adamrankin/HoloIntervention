@@ -43,9 +43,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 // STL includes
 #include <algorithm>
 
-// Network includes
-#include "IGTConnector.h"
-
 // OpenCV includes
 #include <opencv2/calib3d.hpp>
 #include <opencv2/core.hpp>
@@ -502,18 +499,11 @@ namespace HoloIntervention
         return;
       }
 
-      std::shared_ptr<Network::IGTConnector> connection = m_networkSystem.GetConnection(m_connectionName);
-      if (connection == nullptr)
-      {
-        LOG(LogLevelType::LOG_LEVEL_ERROR, "Unable to process frames. Connection is not available.");
-        return;
-      }
-
       uint64 lastMessageId(std::numeric_limits<uint64>::max());
       while (!token.is_canceled())
       {
         std::unique_lock<std::mutex> lock(m_processorLock);
-        if (m_videoFrameProcessor == nullptr || !connection->IsConnected())
+        if (m_videoFrameProcessor == nullptr || !m_networkSystem.IsConnected(m_hashedConnectionName))
         {
           lock.unlock();
           std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -521,7 +511,7 @@ namespace HoloIntervention
         }
 
         MediaFrameReference^ cameraFrame(m_videoFrameProcessor->GetLatestFrame());
-        l_latestTrackedFrame = connection->GetTrackedFrame(m_latestTimestamp);
+        l_latestTrackedFrame = m_networkSystem.GetTrackedFrame(m_hashedConnectionName, m_latestTimestamp);
         if (l_latestTrackedFrame != nullptr &&
             cameraFrame != nullptr &&
             cameraFrame != l_latestCameraFrame)
@@ -1331,7 +1321,7 @@ done:
               throw ref new Platform::Exception(E_FAIL, L"Camera registration entry does not contain \"IGTConnection\" attribute.");
             }
             Platform::String^ igtConnectionName = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"IGTConnection")->NodeValue);
-            m_connectionName = std::wstring(begin(igtConnectionName), end(igtConnectionName));
+            m_hashedConnectionName = HashString(igtConnectionName);
           }
         });
       }

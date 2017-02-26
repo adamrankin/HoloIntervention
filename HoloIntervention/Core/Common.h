@@ -159,6 +159,8 @@ namespace HoloIntervention
   int IsLittleEndian();
 
   bool IsEqualInsensitive(std::wstring const& a, std::wstring const& b);
+  uint64 HashString(const std::wstring& string);
+  uint64 HashString(Platform::String^ string);
 
   // XML helper functions
   bool HasAttribute(const std::wstring& attributeName, Windows::Data::Xml::Dom::IXmlNode^ node);

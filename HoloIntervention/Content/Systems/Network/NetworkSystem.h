@@ -27,11 +27,13 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "IEngineComponent.h"
 #include "IVoiceInput.h"
 
-// Network includes
-#include "IGTConnector.h"
-
 // OS includes
 #include <ppltasks.h>
+
+namespace igtl
+{
+  class TrackedFrameMessage;
+}
 
 namespace HoloIntervention
 {
@@ -52,7 +54,26 @@ namespace HoloIntervention
     class NetworkSystem : public IEngineComponent, public Sound::IVoiceInput
     {
     public:
-      typedef std::vector<std::shared_ptr<Network::IGTConnector>> ConnectorList;
+      enum ConnectionState
+      {
+        CONNECTION_STATE_UNKNOWN,
+        CONNECTION_STATE_CONNECTING,
+        CONNECTION_STATE_CONNECTION_LOST,
+        CONNECTION_STATE_DISCONNECTING,
+        CONNECTION_STATE_DISCONNECTED,
+        CONNECTION_STATE_CONNECTED
+      };
+
+    private:
+      struct ConnectorEntry
+      {
+        uint64                                  HashedName = 0;
+        bool                                    ReconnectOnDrop = true;
+        Concurrency::cancellation_token_source  KeepAliveTokenSource;
+        ConnectionState                         State = CONNECTION_STATE_UNKNOWN;
+        UWPOpenIGTLink::IGTClient^              Connector = nullptr;
+      };
+      typedef std::vector<ConnectorEntry> ConnectorList;
 
     public:
       NetworkSystem(System::NotificationSystem& notificationSystem,
@@ -60,20 +81,57 @@ namespace HoloIntervention
                     Windows::Storage::StorageFolder^ configStorageFolder);
       virtual ~NetworkSystem();
 
-      bool IsConnected() const;
-      Concurrency::task<bool> InitAsync(Windows::Storage::StorageFolder^ configStorageFolder);
-      std::shared_ptr<Network::IGTConnector> GetConnection(const std::wstring& name) const;
-
       /// IVoiceInput functions
       void RegisterVoiceCallbacks(Sound::VoiceInputCallbackMap& callbackMap);
 
-    protected:
-      Concurrency::task<std::vector<std::wstring>> FindServersAsync();
+      /// Connect all known connectors
+      Concurrency::task<bool> ConnectAsync(double timeoutSec = CONNECT_TIMEOUT_SEC, Concurrency::task_options& options = Concurrency::task_options());
+
+      /// Connect a specific connector
+      Concurrency::task<bool> ConnectAsync(uint64 hashedConnectionName, double timeoutSec = CONNECT_TIMEOUT_SEC, Concurrency::task_options& options = Concurrency::task_options());
+
+      bool IsConnected(uint64 hashedConnectionName) const;
+
+      UWPOpenIGTLink::TransformName^ GetEmbeddedImageTransformName(uint64 hashedConnectionName) const;
+      void SetEmbeddedImageTransformName(uint64 hashedConnectionName, UWPOpenIGTLink::TransformName^ name);
+
+      void Disconnect(uint64 hashedConnectionName);
+      bool GetConnectionState(uint64 hashedConnectionName, ConnectionState& state) const;
+
+      void SetReconnectOnDrop(uint64 hashedConnectionName, bool arg);
+      bool GetReconnectOnDrop(uint64 hashedConnectionName, bool& reconnectOnDrop) const;
+
+      void SetHostname(uint64 hashedConnectionName, const std::wstring& hostname);
+      bool GetHostname(uint64 hashedConnectionName, std::wstring& hostName) const;
+
+      void SetPort(uint64 hashedConnectionName, int32 port);
+      bool GetPort(uint64 hashedConnectionName, int32& port) const;
+
+      UWPOpenIGTLink::TrackedFrame^ GetTrackedFrame(uint64 hashedConnectionName, double& latestTimestamp);
 
     protected:
-      System::NotificationSystem&   m_notificationSystem;
-      Input::VoiceInput&            m_voiceInput;
-      ConnectorList                 m_connectors;
+      Concurrency::task<bool> InitAsync(Windows::Storage::StorageFolder^ configStorageFolder);
+
+      Concurrency::task<std::vector<std::wstring>> FindServersAsync();
+      Concurrency::task<void> KeepAliveAsync(uint64 hashedConnectionName);
+
+    protected:
+      // Cached entries
+      System::NotificationSystem&                   m_notificationSystem;
+      Input::VoiceInput&                            m_voiceInput;
+
+      std::wstring                                  m_accumulatedDictationResult;
+      uint64                                        m_dictationMatcherToken;
+
+      mutable std::mutex                            m_connectorsMutex;
+      ConnectorList                                 m_connectors;
+
+      // Constants relating to IGT behavior
+      static const double                           CONNECT_TIMEOUT_SEC;
+      static const uint32                           RECONNECT_RETRY_DELAY_MSEC;
+      static const uint32                           RECONNECT_RETRY_COUNT;
+      static const uint32                           DICTATION_TIMEOUT_DELAY_MSEC;
+      static const uint32                           KEEP_ALIVE_INTERVAL_MSEC;
     };
   }
 }

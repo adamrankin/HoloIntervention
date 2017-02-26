@@ -93,7 +93,7 @@ namespace HoloIntervention
       UWPOpenIGTLink::TransformRepository^  m_transformRepository = ref new UWPOpenIGTLink::TransformRepository();
 
       // Slice system
-      std::wstring                          m_sliceConnectionName;
+      uint64                                m_hashedSliceConnectionName;
       std::wstring                          m_sliceFromCoordFrame = L"Image";
       std::wstring                          m_sliceToCoordFrame = L"HMD";
       UWPOpenIGTLink::TransformName^        m_sliceToHMDName = ref new UWPOpenIGTLink::TransformName(ref new Platform::String(m_sliceFromCoordFrame.c_str()), ref new Platform::String(m_sliceToCoordFrame.c_str()));
@@ -102,7 +102,7 @@ namespace HoloIntervention
       std::atomic_bool                      m_sliceValid = false;
 
       // Volume system
-      std::wstring                          m_volumeConnectionName;
+      uint64                                m_hashedVolumeConnectionName;
       std::wstring                          m_volumeFromCoordFrame = L"Volume";
       std::wstring                          m_volumeToCoordFrame = L"HMD";
       UWPOpenIGTLink::TransformName^        m_volumeToHMDName = ref new UWPOpenIGTLink::TransformName(ref new Platform::String(m_volumeFromCoordFrame.c_str()), ref new Platform::String(m_volumeToCoordFrame.c_str()));

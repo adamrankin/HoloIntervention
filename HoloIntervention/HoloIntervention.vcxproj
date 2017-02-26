@@ -111,7 +111,6 @@
     <ClInclude Include="Content\Input\SpatialInput.h" />
     <ClInclude Include="Content\Input\VoiceCallback.h" />
     <ClInclude Include="Content\Input\VoiceInput.h" />
-    <ClInclude Include="Content\Network\IGTConnector.h" />
     <ClInclude Include="Content\Physics\PhysicsAPI.h" />
     <ClInclude Include="Content\Rendering\DirectXTK\InstancedEffects.h" />
     <ClInclude Include="Content\Rendering\DirectXTK\InstancedEffectCommon.h" />
@@ -167,7 +166,6 @@
     <ClCompile Include="Content\Capture\VideoFrameProcessor.cpp" />
     <ClCompile Include="Content\Input\SpatialInput.cpp" />
     <ClCompile Include="Content\Input\VoiceInput.cpp" />
-    <ClCompile Include="Content\Network\IGTConnector.cpp" />
     <ClCompile Include="Content\Physics\PhysicsAPI.cpp" />
     <ClCompile Include="Content\Rendering\DirectXTK\InstancedBasicEffect.cpp" />
     <ClCompile Include="Content\Rendering\DirectXTK\InstancedEffectCommon.cpp" />

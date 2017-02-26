@@ -53,9 +53,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "SpatialMeshRenderer.h"
 #include "VolumeRenderer.h"
 
-// Network includes
-#include "IGTConnector.h"
-
 // Input includes
 #include "SpatialInput.h"
 #include "VoiceInput.h"

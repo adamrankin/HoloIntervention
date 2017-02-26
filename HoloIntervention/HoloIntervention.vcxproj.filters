@@ -130,9 +130,6 @@
     <ClCompile Include="Core\Rendering\DeviceResources.cpp">
       <Filter>Core\Rendering</Filter>
     </ClCompile>
-    <ClCompile Include="Content\Network\IGTConnector.cpp">
-      <Filter>Content\Network</Filter>
-    </ClCompile>
     <ClCompile Include="Content\Sound\SoundAPI.cpp">
       <Filter>Content\Sound</Filter>
     </ClCompile>
@@ -142,7 +139,9 @@
     <ClCompile Include="Content\Systems\Splash\SplashSystem.cpp">
       <Filter>Content\Systems\Splash</Filter>
     </ClCompile>
-    <ClCompile Include="Content\Systems\Network\NetworkSystem.cpp" />
+    <ClCompile Include="Content\Systems\Network\NetworkSystem.cpp">
+      <Filter>Content\Systems\Network</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Content\Sound\OmnidirectionalSound.h">
@@ -298,9 +297,6 @@
     <ClInclude Include="Core\Rendering\DeviceResources.h">
       <Filter>Core\Rendering</Filter>
     </ClInclude>
-    <ClInclude Include="Content\Network\IGTConnector.h">
-      <Filter>Content\Network</Filter>
-    </ClInclude>
     <ClInclude Include="Content\Sound\SoundAPI.h">
       <Filter>Content\Sound</Filter>
     </ClInclude>
@@ -310,7 +306,9 @@
     <ClInclude Include="Content\Systems\Splash\SplashSystem.h">
       <Filter>Content\Systems\Splash</Filter>
     </ClInclude>
-    <ClInclude Include="Content\Systems\Network\NetworkSystem.h" />
+    <ClInclude Include="Content\Systems\Network\NetworkSystem.h">
+      <Filter>Content\Systems\Network</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\LockScreenLogo.scale-200.png">
@@ -640,9 +638,6 @@
     </Filter>
     <Filter Include="Content\Rendering\ModelRenderer\DirectXTK">
       <UniqueIdentifier>{ac74860e-d1dd-4505-a825-922102bf91af}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Content\Network">
-      <UniqueIdentifier>{5cbfa541-c5c4-47c9-a0d2-d754fbe0669f}</UniqueIdentifier>
     </Filter>
     <Filter Include="Content\Systems">
       <UniqueIdentifier>{7e576baa-03cd-4bc3-ba22-2a7062c2289f}</UniqueIdentifier>

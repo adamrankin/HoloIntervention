@@ -84,7 +84,7 @@ namespace HoloIntervention
       NetworkSystem&                                    m_networkSystem;
       Rendering::ModelRenderer&                         m_modelRenderer;
 
-      std::wstring                                      m_connectionName;
+      uint64                                            m_hashedConnectionName;
       double                                            m_latestTimestamp;
       std::vector<std::shared_ptr<Tools::ToolEntry>>    m_toolEntries;
       UWPOpenIGTLink::TransformRepository^              m_transformRepository;

@@ -101,7 +101,7 @@ namespace HoloIntervention
       // Create network icon
       m_networkIcon = AddEntry(L"Assets/Models/network_icon.cmo");
       // TODO : multiple networks?
-      m_connectionName = L"2DImage";
+      m_hashedConnectionName = HashString(L"2DImage");
 
       // Create camera icon
       m_cameraIcon = AddEntry(L"Assets/Models/camera_icon.cmo");
@@ -238,13 +238,16 @@ namespace HoloIntervention
     {
       // TODO how to show multiple connection icons?
 
-      auto connection = m_networkSystem.GetConnection(m_connectionName);
-      auto state = connection->GetConnectionState();
+      NetworkSystem::ConnectionState state;
+      if (!m_networkSystem.GetConnectionState(m_hashedConnectionName, state))
+      {
+        return;
+      }
 
       switch (state)
       {
-        case HoloIntervention::Network::CONNECTION_STATE_CONNECTING:
-        case HoloIntervention::Network::CONNECTION_STATE_DISCONNECTING:
+        case NetworkSystem::CONNECTION_STATE_CONNECTING:
+        case NetworkSystem::CONNECTION_STATE_DISCONNECTING:
           if (m_networkPreviousState != state)
           {
             m_networkBlinkTimer = 0.f;
@@ -260,9 +263,9 @@ namespace HoloIntervention
           }
           m_networkIsBlinking = true;
           break;
-        case HoloIntervention::Network::CONNECTION_STATE_UNKNOWN:
-        case HoloIntervention::Network::CONNECTION_STATE_DISCONNECTED:
-        case HoloIntervention::Network::CONNECTION_STATE_CONNECTION_LOST:
+        case NetworkSystem::CONNECTION_STATE_UNKNOWN:
+        case NetworkSystem::CONNECTION_STATE_DISCONNECTED:
+        case NetworkSystem::CONNECTION_STATE_CONNECTION_LOST:
           m_networkIcon->GetModelEntry()->SetVisible(true);
           m_networkIsBlinking = false;
           if (m_wasNetworkConnected)
@@ -271,7 +274,7 @@ namespace HoloIntervention
             m_wasNetworkConnected = false;
           }
           break;
-        case HoloIntervention::Network::CONNECTION_STATE_CONNECTED:
+        case NetworkSystem::CONNECTION_STATE_CONNECTED:
           m_networkIcon->GetModelEntry()->SetVisible(true);
           m_networkIsBlinking = false;
           if (!m_wasNetworkConnected)

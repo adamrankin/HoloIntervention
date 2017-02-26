@@ -38,9 +38,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Spatial includes
 #include "SurfaceMesh.h"
 
-// Network includes
-#include "IGTConnector.h"
-
 // Physics includes
 #include "PhysicsAPI.h"
 

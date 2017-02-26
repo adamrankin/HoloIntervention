@@ -24,13 +24,16 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "pch.h"
 #include "Common.h"
+#include "Log.h"
 #include "NetworkSystem.h"
 
 // System includes
 #include "NotificationSystem.h"
 
-// Network
-#include "IGTConnector.h"
+// IGT includes
+#include <IGTCommon.h>
+#include <igtlMessageBase.h>
+#include <igtlStatusMessage.h>
 
 // STL includes
 #include <sstream>
@@ -46,6 +49,12 @@ namespace HoloIntervention
 {
   namespace System
   {
+    const double NetworkSystem::CONNECT_TIMEOUT_SEC = 3.0;
+    const uint32_t NetworkSystem::RECONNECT_RETRY_DELAY_MSEC = 100;
+    const uint32_t NetworkSystem::RECONNECT_RETRY_COUNT = 10;
+    const uint32 NetworkSystem::DICTATION_TIMEOUT_DELAY_MSEC = 8000;
+    const uint32 NetworkSystem::KEEP_ALIVE_INTERVAL_MSEC = 1000;
+
     //----------------------------------------------------------------------------
     NetworkSystem::NetworkSystem(System::NotificationSystem& notificationSystem, Input::VoiceInput& voiceInput, StorageFolder^ configStorageFolder)
       : m_notificationSystem(notificationSystem)
@@ -59,8 +68,9 @@ namespace HoloIntervention
         {
           result = initTask.get();
         }
-        catch (const std::exception&)
+        catch (const std::exception& e)
         {
+          LOG(LogLevelType::LOG_LEVEL_ERROR, std::string("Unable to initialize network system: ") + e.what());
           throw std::exception("Unable to initialize network system.");
         }
 
@@ -90,14 +100,76 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool NetworkSystem::IsConnected() const
+    Concurrency::task<bool> NetworkSystem::ConnectAsync(uint64 hashedConnectionName, double timeoutSec /*= CONNECT_TIMEOUT_SEC*/, Concurrency::task_options& options /*= Concurrency::task_options()*/)
     {
-      bool connected(true);
-      for (auto conn : m_connectors)
+      std::lock_guard<std::mutex> guard(m_connectorsMutex);
+      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
       {
-        connected &= conn->IsConnected();
+        return hashedConnectionName == entry.HashedName;
+      });
+
+      if (iter != end(m_connectors))
+      {
+        assert(entry.Connector != nullptr);
+
+        iter->State = CONNECTION_STATE_CONNECTING;
+
+        return create_task(iter->Connector->ConnectAsync(timeoutSec), options).then([this, hashedConnectionName](task<bool> connectTask)
+        {
+          bool result(false);
+          try
+          {
+            result = connectTask.get();
+          }
+          catch (const std::exception& e)
+          {
+            LOG(LogLevelType::LOG_LEVEL_ERROR, std::string("IGTConnector failed to connect: ") + e.what());
+            return false;
+          }
+
+          std::lock_guard<std::mutex> guard(m_connectorsMutex);
+          auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
+          {
+            return hashedConnectionName == entry.HashedName;
+          });
+
+          if (result)
+          {
+            iter->State = CONNECTION_STATE_CONNECTED;
+            if (result)
+            {
+              KeepAliveAsync(hashedConnectionName).then([this](task<void> keepAliveTask)
+              {
+                try
+                {
+                  keepAliveTask.wait();
+                }
+                catch (const std::exception& e)
+                {
+                  LOG(LogLevelType::LOG_LEVEL_ERROR, std::string("KeepAliveTask exception: ") + e.what());
+                }
+              });
+            }
+          }
+          else
+          {
+            iter->State = CONNECTION_STATE_DISCONNECTED;
+          }
+          return result;
+        });
       }
-      return connected;
+      return task_from_result(false);
+    }
+
+    //----------------------------------------------------------------------------
+    bool NetworkSystem::IsConnected(uint64 hashedConnectionName) const
+    {
+      std::lock_guard<std::mutex> guard(m_connectorsMutex);
+      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
+      {
+        return hashedConnectionName == entry.HashedName;
+      });
+      return iter == end(m_connectors) ? false : iter->Connector->Connected;
     }
 
     //----------------------------------------------------------------------------
@@ -138,19 +210,21 @@ namespace HoloIntervention
                 return false;
               }
 
-              std::shared_ptr<Network::IGTConnector> connector = std::make_shared<Network::IGTConnector>(m_notificationSystem);
-              connector->SetConnectionName(name->Data());
-              connector->SetHostname(host->Data());
+              ConnectorEntry entry;
+              entry.HashedName = HashString(name->Data());
+              entry.Connector = ref new UWPOpenIGTLink::IGTClient();
+              entry.Connector->ServerHost = host;
+
               try
               {
-                connector->SetPort(std::stoi(port->Data()));
+                entry.Connector->ServerPort = std::stoi(port->Data());
               }
               catch (const std::exception&) {}
 
               bool reconnectOnDrop;
               if (GetBooleanAttribute(L"ReconnectOnDrop", node, reconnectOnDrop))
               {
-                connector->SetReconnectOnDrop(reconnectOnDrop);
+                entry.ReconnectOnDrop = reconnectOnDrop;
               }
 
               if (HasAttribute(L"EmbeddedImageTransformName", node))
@@ -161,13 +235,14 @@ namespace HoloIntervention
                   try
                   {
                     auto transformName = ref new UWPOpenIGTLink::TransformName(embeddedImageTransformName);
-                    connector->SetEmbeddedImageTransformName(transformName);
+                    entry.Connector->EmbeddedImageTransformName = transformName;
                   }
                   catch (Platform::Exception^) {}
                 }
               }
 
-              m_connectors.push_back(connector);
+              std::lock_guard<std::mutex> guard(m_connectorsMutex);
+              m_connectors.push_back(entry);
             }
 
             return true;
@@ -181,29 +256,30 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    std::shared_ptr<Network::IGTConnector> NetworkSystem::GetConnection(const std::wstring& name) const
-    {
-      auto iter = std::find_if(m_connectors.begin(), m_connectors.end(), [this, name](const std::shared_ptr<Network::IGTConnector>& connection)
-      {
-        return connection->GetConnectionName() == name;
-      });
-
-      if (iter != m_connectors.end())
-      {
-        return *iter;
-      }
-      return false;
-    }
-
-    //----------------------------------------------------------------------------
     void NetworkSystem::RegisterVoiceCallbacks(Sound::VoiceInputCallbackMap& callbackMap)
     {
       callbackMap[L"connect"] = [this](SpeechRecognitionResult ^ result)
       {
-        // Which connector?
+        // Connect all connectors
+        auto tasks = std::vector<task<bool>>();
+
         uint64 connectMessageId = m_notificationSystem.QueueMessage(L"Connecting...");
-        m_connectors[0]->ConnectAsync(true, 4.0).then([this, connectMessageId](bool result)
         {
+          std::lock_guard<std::mutex> guard(m_connectorsMutex);
+          for (auto entry : m_connectors)
+          {
+            auto task = create_task(entry.Connector->ConnectAsync(4.0));
+            tasks.push_back(task);
+          }
+        }
+
+        auto joinTask = when_all(begin(tasks), end(tasks)).then([this, connectMessageId](std::vector<bool> results)
+        {
+          bool result(true);
+          for (auto res : results)
+          {
+            result &= res;
+          }
           m_notificationSystem.RemoveMessage(connectMessageId);
           if (result)
           {
@@ -252,11 +328,189 @@ namespace HoloIntervention
 
       callbackMap[L"disconnect"] = [this](SpeechRecognitionResult ^ result)
       {
-        m_connectors[0]->Disconnect();
+        std::lock_guard<std::mutex> guard(m_connectorsMutex);
+        for (auto entry : m_connectors)
+        {
+          entry.Connector->Disconnect();
+        }
         m_notificationSystem.QueueMessage(L"Disconnected.");
       };
     }
 
+
+    //----------------------------------------------------------------------------
+    UWPOpenIGTLink::TransformName^ NetworkSystem::GetEmbeddedImageTransformName(uint64 hashedConnectionName) const
+    {
+      std::lock_guard<std::mutex> guard(m_connectorsMutex);
+      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
+      {
+        return hashedConnectionName == entry.HashedName;
+      });
+      return iter == end(m_connectors) ? nullptr : iter->Connector->EmbeddedImageTransformName;
+    }
+
+    //----------------------------------------------------------------------------
+    void NetworkSystem::SetEmbeddedImageTransformName(uint64 hashedConnectionName, UWPOpenIGTLink::TransformName^ name)
+    {
+      std::lock_guard<std::mutex> guard(m_connectorsMutex);
+      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
+      {
+        return hashedConnectionName == entry.HashedName;
+      });
+      if (iter != end(m_connectors))
+      {
+        iter->Connector->EmbeddedImageTransformName = name;
+      }
+    }
+
+    //----------------------------------------------------------------------------
+    void NetworkSystem::Disconnect(uint64 hashedConnectionName)
+    {
+      std::lock_guard<std::mutex> guard(m_connectorsMutex);
+      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
+      {
+        return hashedConnectionName == entry.HashedName;
+      });
+
+      if (iter != end(m_connectors))
+      {
+        iter->KeepAliveTokenSource.cancel();
+        iter->KeepAliveTokenSource = cancellation_token_source();
+        iter->Connector->Disconnect();
+        iter->State = CONNECTION_STATE_DISCONNECTED;
+      }
+    }
+
+    //----------------------------------------------------------------------------
+    bool NetworkSystem::GetConnectionState(uint64 hashedConnectionName, ConnectionState& state) const
+    {
+      std::lock_guard<std::mutex> guard(m_connectorsMutex);
+      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
+      {
+        return hashedConnectionName == entry.HashedName;
+      });
+      if (iter != end(m_connectors))
+      {
+        state = iter->State;
+        return true;
+      }
+      return false;
+    }
+
+    //----------------------------------------------------------------------------
+    void NetworkSystem::SetReconnectOnDrop(uint64 hashedConnectionName, bool arg)
+    {
+      std::lock_guard<std::mutex> guard(m_connectorsMutex);
+      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
+      {
+        return hashedConnectionName == entry.HashedName;
+      });
+      if (iter != end(m_connectors))
+      {
+        iter->ReconnectOnDrop = arg;
+      }
+    }
+
+    //----------------------------------------------------------------------------
+    bool NetworkSystem::GetReconnectOnDrop(uint64 hashedConnectionName, bool& reconnectOnDrop) const
+    {
+      std::lock_guard<std::mutex> guard(m_connectorsMutex);
+      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
+      {
+        return hashedConnectionName == entry.HashedName;
+      });
+      if (iter != end(m_connectors))
+      {
+        reconnectOnDrop = iter->ReconnectOnDrop;
+        return true;
+      }
+      return false;
+    }
+
+    //----------------------------------------------------------------------------
+    void NetworkSystem::SetHostname(uint64 hashedConnectionName, const std::wstring& hostname)
+    {
+      std::lock_guard<std::mutex> guard(m_connectorsMutex);
+      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
+      {
+        return hashedConnectionName == entry.HashedName;
+      });
+      if (iter != end(m_connectors))
+      {
+        iter->Connector->ServerHost = ref new Platform::String(hostname.c_str());
+      }
+    }
+
+    //----------------------------------------------------------------------------
+    bool NetworkSystem::GetHostname(uint64 hashedConnectionName, std::wstring& hostName) const
+    {
+      std::lock_guard<std::mutex> guard(m_connectorsMutex);
+      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
+      {
+        return hashedConnectionName == entry.HashedName;
+      });
+      if (iter != end(m_connectors))
+      {
+        hostName = iter->Connector->ServerHost->Data();
+        return true;
+      }
+      return false;
+    }
+
+    //----------------------------------------------------------------------------
+    void NetworkSystem::SetPort(uint64 hashedConnectionName, int32 port)
+    {
+      std::lock_guard<std::mutex> guard(m_connectorsMutex);
+      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
+      {
+        return hashedConnectionName == entry.HashedName;
+      });
+      if (iter != end(m_connectors))
+      {
+        iter->Connector->ServerPort = port;
+      }
+    }
+
+    //----------------------------------------------------------------------------
+    bool NetworkSystem::GetPort(uint64 hashedConnectionName, int32& port) const
+    {
+      std::lock_guard<std::mutex> guard(m_connectorsMutex);
+      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
+      {
+        return hashedConnectionName == entry.HashedName;
+      });
+      if (iter != end(m_connectors))
+      {
+        port = iter->Connector->ServerPort;
+        return true;
+      }
+      return false;
+    }
+
+    //----------------------------------------------------------------------------
+    UWPOpenIGTLink::TrackedFrame^ NetworkSystem::GetTrackedFrame(uint64 hashedConnectionName, double& latestTimestamp)
+    {
+      std::lock_guard<std::mutex> guard(m_connectorsMutex);
+      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
+      {
+        return hashedConnectionName == entry.HashedName;
+      });
+      if (iter != end(m_connectors))
+      {
+        auto latestFrame = iter->Connector->GetTrackedFrame(latestTimestamp);
+        if (latestFrame == nullptr)
+        {
+          return nullptr;
+        }
+        try
+        {
+          latestTimestamp = latestFrame->Timestamp;
+        }
+        catch (Platform::ObjectDisposedException^) { return nullptr; }
+        return latestFrame;
+      }
+      return nullptr;
+    }
 
     //----------------------------------------------------------------------------
     task<std::vector<std::wstring>> NetworkSystem::FindServersAsync()
@@ -311,6 +565,116 @@ namespace HoloIntervention
 
         return results;
       });
+    }
+
+    //----------------------------------------------------------------------------
+    task<void> NetworkSystem::KeepAliveAsync(uint64 hashedConnectionName)
+    {
+      std::lock_guard<std::mutex> guard(m_connectorsMutex);
+      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
+      {
+        return hashedConnectionName == entry.HashedName;
+      });
+      if (iter != end(m_connectors))
+      {
+        iter->KeepAliveTokenSource = cancellation_token_source();
+        return create_task([this, hashedConnectionName, token = iter->KeepAliveTokenSource.get_token()]()
+        {
+          igtl::StatusMessage::Pointer statusMsg = igtl::StatusMessage::New();
+          statusMsg->SetCode(igtl::StatusMessage::STATUS_OK);
+          statusMsg->Pack();
+
+          while (!token.is_canceled())
+          {
+            ConnectorList::iterator iter;
+            {
+              std::lock_guard<std::mutex> guard(m_connectorsMutex);
+              iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
+              {
+                return hashedConnectionName == entry.HashedName;
+              });
+              if (iter == end(m_connectors))
+              {
+                // Connector has been removed out from under us, abort!
+                break;
+              }
+            }
+
+            if (iter->State == CONNECTION_STATE_CONNECTED)
+            {
+              // send keep alive message
+              bool result(false);
+              {
+                RETRY_UNTIL_TRUE(result = iter->Connector->SendMessage((UWPOpenIGTLink::MessageBasePointerPtr)&statusMsg), 10, 25);
+              }
+              if (!result)
+              {
+                iter->Connector->Disconnect();
+                iter->State = CONNECTION_STATE_CONNECTION_LOST;
+                if (iter->ReconnectOnDrop)
+                {
+                  uint32_t retryCount(0);
+                  while (iter->State != CONNECTION_STATE_CONNECTED && retryCount < RECONNECT_RETRY_COUNT)
+                  {
+                    // Either it's up and running and it can connect right away, or it's down and will never connect
+                    auto connTask = create_task(iter->Connector->ConnectAsync(0.1)).then([this, &retryCount](task<bool> previousTask)
+                    {
+                      bool result(false);
+                      try
+                      {
+                        result = previousTask.get();
+                      }
+                      catch (const std::exception& e)
+                      {
+                        LOG(LogLevelType::LOG_LEVEL_ERROR, e.what());
+                      }
+                      catch (Platform::Exception^ e)
+                      {
+                        WLOG(LogLevelType::LOG_LEVEL_ERROR, e->Message);
+                      }
+
+                      return result;
+                    });
+
+                    bool result = connTask.get();
+                    if (!result)
+                    {
+                      retryCount++;
+                      std::this_thread::sleep_for(std::chrono::milliseconds(RECONNECT_RETRY_DELAY_MSEC));
+                    }
+                  }
+
+                  if (iter->State != CONNECTION_STATE_CONNECTED)
+                  {
+                    // Failed to reconnect within retry count
+                    iter->KeepAliveTokenSource.cancel();
+                    iter->KeepAliveTokenSource = cancellation_token_source();
+                    m_notificationSystem.QueueMessage(L"Connection lost. Check server.");
+                    return;
+                  }
+                }
+                else
+                {
+                  // Don't reconnect on drop
+                  iter->KeepAliveTokenSource.cancel();
+                  iter->KeepAliveTokenSource = cancellation_token_source();
+                  m_notificationSystem.QueueMessage(L"Connection lost. Check server.");
+                  return;
+                }
+              }
+              else
+              {
+                std::this_thread::sleep_for(std::chrono::milliseconds(KEEP_ALIVE_INTERVAL_MSEC));
+              }
+            }
+            else
+            {
+              LOG(LogLevelType::LOG_LEVEL_ERROR, "Keep alive running unconnected but token not canceled. Exiting keep alive.");
+              return;
+            }
+          }
+        });
+      }
     }
   }
 }
