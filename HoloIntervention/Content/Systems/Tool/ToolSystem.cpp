@@ -212,11 +212,12 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ToolSystem::Update(const DX::StepTimer& timer, SpatialCoordinateSystem^ hmdCoordinateSystem)
     {
-      UWPOpenIGTLink::TrackedFrame^ frame = m_networkSystem.GetTrackedFrame(m_hashedConnectionName, m_latestTimestamp);
-      if (frame == nullptr)
+      UWPOpenIGTLink::TransformListABI^ transFrame = m_networkSystem.GetTransformFrame(m_hashedConnectionName, m_latestTimestamp);
+      if (transFrame == nullptr)
       {
         return;
       }
+      // TODO : backup to tracked frames?
 
       // Update the transform repository with the latest registration
       float4x4 referenceToHMD(float4x4::identity());
@@ -225,7 +226,7 @@ namespace HoloIntervention
         return;
       }
 
-      if (!m_transformRepository->SetTransforms(frame))
+      if (!m_transformRepository->SetTransforms(transFrame))
       {
         return;
       }

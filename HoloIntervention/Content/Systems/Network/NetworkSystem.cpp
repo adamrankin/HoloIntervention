@@ -102,7 +102,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     Concurrency::task<bool> NetworkSystem::ConnectAsync(uint64 hashedConnectionName, double timeoutSec /*= CONNECT_TIMEOUT_SEC*/, Concurrency::task_options& options /*= Concurrency::task_options()*/)
     {
-      std::lock_guard<std::mutex> guard(m_connectorsMutex);
+      std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
       auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
       {
         return hashedConnectionName == entry.HashedName;
@@ -127,7 +127,7 @@ namespace HoloIntervention
             return false;
           }
 
-          std::lock_guard<std::mutex> guard(m_connectorsMutex);
+          std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
           auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
           {
             return hashedConnectionName == entry.HashedName;
@@ -164,7 +164,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     bool NetworkSystem::IsConnected(uint64 hashedConnectionName) const
     {
-      std::lock_guard<std::mutex> guard(m_connectorsMutex);
+      std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
       auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
       {
         return hashedConnectionName == entry.HashedName;
@@ -241,7 +241,7 @@ namespace HoloIntervention
                 }
               }
 
-              std::lock_guard<std::mutex> guard(m_connectorsMutex);
+              std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
               m_connectors.push_back(entry);
             }
 
@@ -265,10 +265,10 @@ namespace HoloIntervention
 
         uint64 connectMessageId = m_notificationSystem.QueueMessage(L"Connecting...");
         {
-          std::lock_guard<std::mutex> guard(m_connectorsMutex);
+          std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
           for (auto entry : m_connectors)
           {
-            auto task = create_task(entry.Connector->ConnectAsync(4.0));
+            auto task = this->ConnectAsync(entry.HashedName, 4.0);
             tasks.push_back(task);
           }
         }
@@ -328,7 +328,7 @@ namespace HoloIntervention
 
       callbackMap[L"disconnect"] = [this](SpeechRecognitionResult ^ result)
       {
-        std::lock_guard<std::mutex> guard(m_connectorsMutex);
+        std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
         for (auto entry : m_connectors)
         {
           entry.Connector->Disconnect();
@@ -341,7 +341,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     UWPOpenIGTLink::TransformName^ NetworkSystem::GetEmbeddedImageTransformName(uint64 hashedConnectionName) const
     {
-      std::lock_guard<std::mutex> guard(m_connectorsMutex);
+      std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
       auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
       {
         return hashedConnectionName == entry.HashedName;
@@ -352,7 +352,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void NetworkSystem::SetEmbeddedImageTransformName(uint64 hashedConnectionName, UWPOpenIGTLink::TransformName^ name)
     {
-      std::lock_guard<std::mutex> guard(m_connectorsMutex);
+      std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
       auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
       {
         return hashedConnectionName == entry.HashedName;
@@ -366,7 +366,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void NetworkSystem::Disconnect(uint64 hashedConnectionName)
     {
-      std::lock_guard<std::mutex> guard(m_connectorsMutex);
+      std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
       auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
       {
         return hashedConnectionName == entry.HashedName;
@@ -384,7 +384,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     bool NetworkSystem::GetConnectionState(uint64 hashedConnectionName, ConnectionState& state) const
     {
-      std::lock_guard<std::mutex> guard(m_connectorsMutex);
+      std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
       auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
       {
         return hashedConnectionName == entry.HashedName;
@@ -400,7 +400,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void NetworkSystem::SetReconnectOnDrop(uint64 hashedConnectionName, bool arg)
     {
-      std::lock_guard<std::mutex> guard(m_connectorsMutex);
+      std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
       auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
       {
         return hashedConnectionName == entry.HashedName;
@@ -414,7 +414,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     bool NetworkSystem::GetReconnectOnDrop(uint64 hashedConnectionName, bool& reconnectOnDrop) const
     {
-      std::lock_guard<std::mutex> guard(m_connectorsMutex);
+      std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
       auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
       {
         return hashedConnectionName == entry.HashedName;
@@ -430,7 +430,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void NetworkSystem::SetHostname(uint64 hashedConnectionName, const std::wstring& hostname)
     {
-      std::lock_guard<std::mutex> guard(m_connectorsMutex);
+      std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
       auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
       {
         return hashedConnectionName == entry.HashedName;
@@ -444,7 +444,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     bool NetworkSystem::GetHostname(uint64 hashedConnectionName, std::wstring& hostName) const
     {
-      std::lock_guard<std::mutex> guard(m_connectorsMutex);
+      std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
       auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
       {
         return hashedConnectionName == entry.HashedName;
@@ -460,7 +460,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void NetworkSystem::SetPort(uint64 hashedConnectionName, int32 port)
     {
-      std::lock_guard<std::mutex> guard(m_connectorsMutex);
+      std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
       auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
       {
         return hashedConnectionName == entry.HashedName;
@@ -474,7 +474,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     bool NetworkSystem::GetPort(uint64 hashedConnectionName, int32& port) const
     {
-      std::lock_guard<std::mutex> guard(m_connectorsMutex);
+      std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
       auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
       {
         return hashedConnectionName == entry.HashedName;
@@ -490,7 +490,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     UWPOpenIGTLink::TrackedFrame^ NetworkSystem::GetTrackedFrame(uint64 hashedConnectionName, double& latestTimestamp)
     {
-      std::lock_guard<std::mutex> guard(m_connectorsMutex);
+      std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
       auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
       {
         return hashedConnectionName == entry.HashedName;
@@ -505,6 +505,38 @@ namespace HoloIntervention
         try
         {
           latestTimestamp = latestFrame->Timestamp;
+        }
+        catch (Platform::ObjectDisposedException^) { return nullptr; }
+        return latestFrame;
+      }
+      return nullptr;
+    }
+
+    //----------------------------------------------------------------------------
+    UWPOpenIGTLink::TransformListABI^ NetworkSystem::GetTransformFrame(uint64 hashedConnectionName, double& latestTimestamp)
+    {
+      std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
+      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
+      {
+        return hashedConnectionName == entry.HashedName;
+      });
+      if (iter != end(m_connectors))
+      {
+        auto latestFrame = iter->Connector->GetTransformFrame(latestTimestamp);
+        if (latestFrame == nullptr)
+        {
+          return nullptr;
+        }
+        try
+        {
+          if (latestFrame->Size > 0)
+          {
+            latestTimestamp = latestFrame->GetAt(0)->Timestamp;
+          }
+          else
+          {
+            return nullptr;
+          }
         }
         catch (Platform::ObjectDisposedException^) { return nullptr; }
         return latestFrame;
@@ -570,7 +602,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     task<void> NetworkSystem::KeepAliveAsync(uint64 hashedConnectionName)
     {
-      std::lock_guard<std::mutex> guard(m_connectorsMutex);
+      std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
       auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
       {
         return hashedConnectionName == entry.HashedName;
@@ -588,7 +620,7 @@ namespace HoloIntervention
           {
             ConnectorList::iterator iter;
             {
-              std::lock_guard<std::mutex> guard(m_connectorsMutex);
+              std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
               iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
               {
                 return hashedConnectionName == entry.HashedName;

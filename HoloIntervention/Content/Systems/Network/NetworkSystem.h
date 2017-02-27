@@ -27,6 +27,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "IEngineComponent.h"
 #include "IVoiceInput.h"
 
+// IGT includes
+#include <IGTCommon.h>
+
 // OS includes
 #include <ppltasks.h>
 
@@ -108,6 +111,7 @@ namespace HoloIntervention
       bool GetPort(uint64 hashedConnectionName, int32& port) const;
 
       UWPOpenIGTLink::TrackedFrame^ GetTrackedFrame(uint64 hashedConnectionName, double& latestTimestamp);
+      UWPOpenIGTLink::TransformListABI^ GetTransformFrame(uint64 hashedConnectionName, double& latestTimestamp);
 
     protected:
       Concurrency::task<bool> InitAsync(Windows::Storage::StorageFolder^ configStorageFolder);
@@ -123,7 +127,7 @@ namespace HoloIntervention
       std::wstring                                  m_accumulatedDictationResult;
       uint64                                        m_dictationMatcherToken;
 
-      mutable std::mutex                            m_connectorsMutex;
+      mutable std::recursive_mutex                  m_connectorsMutex;
       ConnectorList                                 m_connectors;
 
       // Constants relating to IGT behavior

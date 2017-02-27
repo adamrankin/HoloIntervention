@@ -490,7 +490,7 @@ namespace HoloIntervention
       bool l_initialized(false);
       int32_t l_height(0);
       int32_t l_width(0);
-      UWPOpenIGTLink::TrackedFrame^ l_latestTrackedFrame(nullptr);
+      UWPOpenIGTLink::TransformListABI^ l_latestTransformFrame(nullptr);
       MediaFrameReference^ l_latestCameraFrame(nullptr);
 
       if (!m_transformsAvailable)
@@ -511,15 +511,19 @@ namespace HoloIntervention
         }
 
         MediaFrameReference^ cameraFrame(m_videoFrameProcessor->GetLatestFrame());
-        l_latestTrackedFrame = m_networkSystem.GetTrackedFrame(m_hashedConnectionName, m_latestTimestamp);
-        if (l_latestTrackedFrame != nullptr &&
+        l_latestTransformFrame = m_networkSystem.GetTransformFrame(m_hashedConnectionName, m_latestTimestamp);
+        if (l_latestTransformFrame != nullptr &&
             cameraFrame != nullptr &&
             cameraFrame != l_latestCameraFrame)
         {
           float4x4 cameraToRawWorldAnchor = float4x4::identity();
 
           l_latestCameraFrame = cameraFrame;
-          m_latestTimestamp = l_latestTrackedFrame->Timestamp;
+          if (l_latestTransformFrame->Size == 0)
+          {
+            continue;
+          }
+          m_latestTimestamp = l_latestTransformFrame->GetAt(0)->Timestamp;
           if (l_latestCameraFrame->CoordinateSystem != nullptr)
           {
             std::lock_guard<std::mutex> guard(m_anchorLock);
@@ -544,8 +548,13 @@ namespace HoloIntervention
             continue;
           }
 
+          if (!m_transformRepository->SetTransforms(l_latestTransformFrame))
+          {
+            continue;
+          }
+
           LandmarkRegistration::VecFloat3 sphereInReferenceResults;
-          if (!RetrieveTrackerFrameLocations(l_latestTrackedFrame, sphereInReferenceResults))
+          if (!RetrieveTrackerFrameLocations(sphereInReferenceResults))
           {
             continue;
           }
@@ -873,13 +882,8 @@ done:
     }
 
     //----------------------------------------------------------------------------
-    bool CameraRegistration::RetrieveTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame, LandmarkRegistration::VecFloat3& outSphereInReferencePositions)
+    bool CameraRegistration::RetrieveTrackerFrameLocations(LandmarkRegistration::VecFloat3& outSphereInReferencePositions)
     {
-      if (!m_transformRepository->SetTransforms(trackedFrame))
-      {
-        return false;
-      }
-
       float4x4 sphereXToReferenceTransform[PHANTOM_SPHERE_COUNT];
 
       // Calculate world position from transforms in tracked frame

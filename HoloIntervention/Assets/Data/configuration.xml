@@ -5,7 +5,7 @@
   <Tools ConnectionName="2DImage">
     <Tool 
       Model="hemisphere_stylus" 
-      Transform="StylusTipToHMD"
+      Transform="TipToHMD"
       LerpEnabled="false" />
   </Tools>
 

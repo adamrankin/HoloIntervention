@@ -122,7 +122,7 @@ namespace HoloIntervention
       bool IsPhantomToCameraSane(const Windows::Foundation::Numerics::float4x4& phantomToCameraTransform);
       void ProcessAvailableFrames(Concurrency::cancellation_token token);
       void PerformLandmarkRegistration(Concurrency::cancellation_token token);
-      bool CameraRegistration::RetrieveTrackerFrameLocations(UWPOpenIGTLink::TrackedFrame^ trackedFrame, LandmarkRegistration::VecFloat3& outSphereInReferencePositions);
+      bool RetrieveTrackerFrameLocations(LandmarkRegistration::VecFloat3& outSphereInReferencePositions);
       bool ComputePhantomToCameraTransform(Windows::Media::Capture::Frames::VideoMediaFrame^ videoFrame, bool& initialized, int32_t& height, int32_t& width,
                                            cv::Mat& hsv, cv::Mat& redMat, cv::Mat& redMatWrap, cv::Mat& imageRGB, cv::Mat& mask, cv::Mat& rvec,
                                            cv::Mat& tvec, cv::Mat& cannyOutput, Windows::Foundation::Numerics::float4x4& modelToCameraTransform);
