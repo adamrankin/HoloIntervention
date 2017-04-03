@@ -344,6 +344,8 @@
     <Image Include="Assets\Images\HoloIntervention.png">
       <Filter>Assets\Images</Filter>
     </Image>
+    <Image Include="Assets\StoreLogo.scale-200.png" />
+    <Image Include="Assets\StoreLogo.scale-100.png" />
   </ItemGroup>
   <ItemGroup>
     <None Include="HoloIntervention_TemporaryKey.pfx">
