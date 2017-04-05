@@ -132,11 +132,56 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    RegistrationSystem::RegistrationSystem(NetworkSystem& networkSystem, Physics::PhysicsAPI& physicsAPI, NotificationSystem& notificationSystem, Rendering::ModelRenderer& modelRenderer, StorageFolder^ configStorageFolder)
+    concurrency::task<bool> RegistrationSystem::WriteConfigurationAsync(XmlDocument^ document)
+    {
+      return create_task([this, document]()
+      {
+        if (document->SelectNodes(L"/HoloIntervention")->Length != 1)
+        {
+          return task_from_result(false);
+        }
+
+        auto rootNode = document->SelectNodes(L"/HoloIntervention")->Item(0);
+
+        auto repo = ref new UWPOpenIGTLink::TransformRepository();
+        auto trName = ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD");
+        repo->SetTransform(trName, m_cachedRegistrationTransform, true);
+        repo->SetTransformPersistent(trName, true);
+        repo->WriteConfiguration(document);
+
+        return m_cameraRegistration->WriteConfigurationAsync(document);
+      });
+    }
+
+    //----------------------------------------------------------------------------
+    concurrency::task<bool> RegistrationSystem::ReadConfigurationAsync(XmlDocument^ document)
+    {
+      return create_task([this, document]()
+      {
+        auto repo = ref new UWPOpenIGTLink::TransformRepository();
+        auto trName = ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD");
+        if (!repo->ReadConfiguration(document))
+        {
+          return task_from_result(false);
+        }
+
+        float4x4 temp;
+        if (repo->GetTransform(trName, &temp))
+        {
+          m_cachedRegistrationTransform = transpose(temp);
+        }
+        m_componentReady = true;
+
+        return m_cameraRegistration->ReadConfigurationAsync(document);
+      });
+    }
+
+    //----------------------------------------------------------------------------
+    RegistrationSystem::RegistrationSystem(NetworkSystem& networkSystem, Physics::PhysicsAPI& physicsAPI, NotificationSystem& notificationSystem, Rendering::ModelRenderer& modelRenderer)
       : m_notificationSystem(notificationSystem)
       , m_modelRenderer(modelRenderer)
       , m_physicsAPI(physicsAPI)
-      , m_cameraRegistration(std::make_shared<CameraRegistration>(notificationSystem, networkSystem, modelRenderer, configStorageFolder))
+      , m_cameraRegistration(std::make_shared<CameraRegistration>(notificationSystem, networkSystem, modelRenderer))
     {
       m_regAnchorModelId = m_modelRenderer.AddModel(REGISTRATION_ANCHOR_MODEL_FILENAME);
       if (m_regAnchorModelId != INVALID_TOKEN)
@@ -151,20 +196,6 @@ namespace HoloIntervention
       m_regAnchorModel->SetVisible(false);
       m_regAnchorModel->EnablePoseLerp(true);
       m_regAnchorModel->SetPoseLerpRate(4.f);
-
-      auto repo = ref new UWPOpenIGTLink::TransformRepository();
-      auto trName = ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD");
-      InitializeTransformRepositoryAsync(L"configuration.xml", configStorageFolder, repo).then([this, repo, trName]()
-      {
-        float4x4 temp;
-        if (repo->GetTransform(trName, &temp))
-        {
-          m_cachedRegistrationTransform = transpose(temp);
-        }
-      }).then([this]()
-      {
-        m_componentReady = true;
-      });
 
       m_cameraRegistration->RegisterTransformUpdatedCallback([this](float4x4 registrationTransform)
       {

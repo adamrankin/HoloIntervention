@@ -111,19 +111,19 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
-  task<void> InitializeTransformRepositoryAsync(Platform::String^ fileName, StorageFolder^ fileStorageFolder, UWPOpenIGTLink::TransformRepository^ transformRepository)
+  task<bool> InitializeTransformRepositoryAsync(Platform::String^ fileName, StorageFolder^ fileStorageFolder, UWPOpenIGTLink::TransformRepository^ transformRepository)
   {
-    return create_task(LoadXmlDocumentAsync(fileName, fileStorageFolder)).then([transformRepository](task<XmlDocument^> previousTask)
+    return create_task(LoadXmlDocumentAsync(fileName, fileStorageFolder)).then([transformRepository](task<XmlDocument^> previousTask) -> bool
     {
-      XmlDocument^ file = nullptr;
+      XmlDocument^ xmlDoc = nullptr;
       try
       {
-        file = previousTask.get();
-        transformRepository->ReadConfiguration(file);
+        xmlDoc = previousTask.get();
+        return transformRepository->ReadConfiguration(xmlDoc);
       }
       catch (Platform::Exception^ e)
       {
-        throw ref new Platform::Exception(E_INVALIDARG, L"Invalid layout in coordinate definitions configuration area.");
+        return false;
       }
     });
   }
@@ -159,6 +159,27 @@ namespace HoloIntervention
 
         return doc;
       });
+    });
+  }
+
+  //----------------------------------------------------------------------------
+  Concurrency::task<Windows::Data::Xml::Dom::XmlDocument^> LoadXmlDocumentAsync(Windows::Storage::StorageFile^ file)
+  {
+    XmlDocument^ doc = ref new XmlDocument();
+    return create_task(doc->LoadFromFileAsync(file)).then([](task<XmlDocument^> previousTask) -> XmlDocument^
+    {
+      XmlDocument^ doc = nullptr;
+      try
+      {
+        doc = previousTask.get();
+      }
+      catch (Platform::Exception^ e)
+      {
+        throw ref new Platform::Exception(E_INVALIDARG, L"System configuration file did not contain valid XML.");
+        return nullptr;
+      }
+
+      return doc;
     });
   }
 

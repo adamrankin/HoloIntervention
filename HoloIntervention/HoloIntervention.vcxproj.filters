@@ -312,6 +312,9 @@
     <ClInclude Include="Content\Rendering\Mesh\Mesh.h">
       <Filter>Content\Rendering\MeshRenderer</Filter>
     </ClInclude>
+    <ClInclude Include="Core\IConfigurable.h">
+      <Filter>Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\LockScreenLogo.scale-200.png">
@@ -329,9 +332,6 @@
     <Image Include="Assets\Square150x150Logo.scale-200.png">
       <Filter>Assets\Images</Filter>
     </Image>
-    <Image Include="Assets\StoreLogo.png">
-      <Filter>Assets\Images</Filter>
-    </Image>
     <Image Include="Assets\Wide310x150Logo.scale-200.png">
       <Filter>Assets\Images</Filter>
     </Image>
@@ -344,8 +344,12 @@
     <Image Include="Assets\Images\HoloIntervention.png">
       <Filter>Assets\Images</Filter>
     </Image>
-    <Image Include="Assets\StoreLogo.scale-200.png" />
-    <Image Include="Assets\StoreLogo.scale-100.png" />
+    <Image Include="Assets\StoreLogo.scale-200.png">
+      <Filter>Assets\Images</Filter>
+    </Image>
+    <Image Include="Assets\StoreLogo.scale-100.png">
+      <Filter>Assets\Images</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <None Include="HoloIntervention_TemporaryKey.pfx">

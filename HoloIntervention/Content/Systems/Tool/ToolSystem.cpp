@@ -130,37 +130,61 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    ToolSystem::ToolSystem(NotificationSystem& notificationSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer, NetworkSystem& networkSystem, StorageFolder^ configStorageFolder)
+    concurrency::task<bool> ToolSystem::WriteConfigurationAsync(XmlDocument^ document)
+    {
+      return create_task([this, document]()
+      {
+        auto xpath = ref new Platform::String(L"/HoloIntervention");
+        if (document->SelectNodes(xpath)->Length != 1)
+        {
+          return false;
+        }
+
+        auto node = document->SelectNodes(xpath)->Item(0);
+
+        auto toolsElem = document->CreateElement("Tools");
+        toolsElem->SetAttribute(L"IGTConnection", ref new Platform::String(m_connectionName.c_str()));
+        node->AppendChild(toolsElem);
+
+        for (auto tool : m_toolEntries)
+        {
+          auto toolElem = document->CreateElement("Tool");
+          toolElem->SetAttribute(L"Model", ref new Platform::String(tool->GetModelEntry()->GetAssetLocation().c_str()));
+          toolElem->SetAttribute(L"Transform", tool->GetCoordinateFrame()->GetTransformName());
+          toolElem->SetAttribute(L"LerpEnabled", tool->GetModelEntry()->GetLerpEnabled() ? L"true" : L"false");
+          toolElem->SetAttribute(L"LerpRate", tool->GetModelEntry()->GetLerpRate().ToString());
+          toolsElem->AppendChild(toolElem);
+        }
+
+        m_transformRepository->WriteConfiguration(document);
+
+        return true;
+      });
+    }
+
+    //----------------------------------------------------------------------------
+    concurrency::task<bool> ToolSystem::ReadConfigurationAsync(XmlDocument^ document)
+    {
+      if (!m_transformRepository->ReadConfiguration(document))
+      {
+        return task_from_result(false);
+      }
+
+      return InitAsync(document).then([this]()
+      {
+        m_componentReady = true;
+        return true;
+      });
+    }
+
+    //----------------------------------------------------------------------------
+    ToolSystem::ToolSystem(NotificationSystem& notificationSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer, NetworkSystem& networkSystem)
       : m_notificationSystem(notificationSystem)
       , m_registrationSystem(registrationSystem)
       , m_modelRenderer(modelRenderer)
       , m_transformRepository(ref new UWPOpenIGTLink::TransformRepository())
       , m_networkSystem(networkSystem)
     {
-      try
-      {
-        InitializeTransformRepositoryAsync(L"configuration.xml", configStorageFolder, m_transformRepository);
-      }
-      catch (Platform::Exception^)
-      {
-        m_notificationSystem.QueueMessage("Unable to initialize tool system.");
-        return;
-      }
-
-      try
-      {
-        LoadXmlDocumentAsync(L"configuration.xml", configStorageFolder).then([this](XmlDocument ^ doc)
-        {
-          return InitAsync(doc).then([this]()
-          {
-            m_componentReady = true;
-          });
-        });
-      }
-      catch (Platform::Exception^)
-      {
-        m_notificationSystem.QueueMessage("Unable to initialize tool system.");
-      }
     }
 
     //----------------------------------------------------------------------------
@@ -267,6 +291,7 @@ namespace HoloIntervention
             throw ref new Platform::Exception(E_FAIL, L"Tool configuration does not contain \"ConnectionName\" attribute.");
           }
           Platform::String^ connectionName = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"ConnectionName")->NodeValue);
+          m_connectionName = std::wstring(connectionName->Data());
           m_hashedConnectionName = HashString(connectionName);
         }
 

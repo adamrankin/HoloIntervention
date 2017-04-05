@@ -24,6 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
+#include "IConfigurable.h"
 #include "IStabilizedComponent.h"
 #include "LandmarkRegistration.h"
 
@@ -71,7 +72,7 @@ namespace HoloIntervention
     class NetworkSystem;
     class NotificationSystem;
 
-    class CameraRegistration : public IStabilizedComponent
+    class CameraRegistration : public IStabilizedComponent, public IConfigurable
     {
       typedef std::vector<uint32> ColourToCircleList;
 
@@ -97,7 +98,11 @@ namespace HoloIntervention
       virtual float GetStabilizePriority() const;
 
     public:
-      CameraRegistration(NotificationSystem& notificationSystem, NetworkSystem& networkSystem, Rendering::ModelRenderer& modelRenderer, Windows::Storage::StorageFolder^ configFileFolder);
+      virtual concurrency::task<bool> WriteConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
+      virtual concurrency::task<bool> ReadConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
+
+    public:
+      CameraRegistration(NotificationSystem& notificationSystem, NetworkSystem& networkSystem, Rendering::ModelRenderer& modelRenderer);
       ~CameraRegistration();
 
       void Update(Platform::IBox<Windows::Foundation::Numerics::float4x4>^ anchorToRequestedBox);
@@ -164,6 +169,7 @@ namespace HoloIntervention
       std::shared_ptr<Capture::VideoFrameProcessor>                         m_videoFrameProcessor = nullptr;
 
       // IGT link
+      std::wstring                                                          m_connectionName; // For config writing
       uint64                                                                m_hashedConnectionName;
       UWPOpenIGTLink::TransformRepository^                                  m_transformRepository = ref new UWPOpenIGTLink::TransformRepository();
       std::atomic_bool                                                      m_transformsAvailable = false;
@@ -182,7 +188,6 @@ namespace HoloIntervention
       std::atomic_bool                                                      m_hasRegistration = false;
       std::atomic_bool                                                      m_pnpNeedsInit = true;
       std::function<void(Windows::Foundation::Numerics::float4x4)>          m_completeCallback;
-      Windows::Storage::StorageFolder^                                      m_configStorageFolder;
       uint32                                                                m_lastRegistrationResultCount = NUMBER_OF_FRAMES_BETWEEN_REGISTRATION;
       Windows::Foundation::Numerics::float4x4                               m_referenceToAnchor = Windows::Foundation::Numerics::float4x4::identity();
       std::shared_ptr<LandmarkRegistration>                                 m_landmarkRegistration = std::make_shared<LandmarkRegistration>();

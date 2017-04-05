@@ -27,6 +27,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "Common.h"
 #include "DirectXHelper.h"
 #include "HoloInterventionCore.h"
+#include "IConfigurable.h"
 #include "IEngineComponent.h"
 #include "IStabilizedComponent.h"
 
@@ -70,6 +71,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 using namespace Concurrency;
 using namespace Platform;
 using namespace Windows::ApplicationModel;
+using namespace Windows::Data::Xml::Dom;
 using namespace Windows::Foundation::Collections;
 using namespace Windows::Foundation::Numerics;
 using namespace Windows::Foundation;
@@ -109,130 +111,97 @@ namespace HoloIntervention
 
     m_holographicSpace = holographicSpace;
 
-    auto createMainTask = create_task(ApplicationData::Current->LocalFolder->TryGetItemAsync(L"configuration.xml")).then([this](IStorageItem ^ file)
+    // Initialize the system components
+    m_notificationRenderer = std::make_unique<Rendering::NotificationRenderer>(m_deviceResources);
+    m_notificationSystem = std::make_unique<System::NotificationSystem>(*m_notificationRenderer.get());
+    m_modelRenderer = std::make_unique<Rendering::ModelRenderer>(m_deviceResources, m_timer);
+    m_sliceRenderer = std::make_unique<Rendering::SliceRenderer>(m_deviceResources, m_timer);
+    m_volumeRenderer = std::make_unique<Rendering::VolumeRenderer>(m_deviceResources, m_timer);
+    m_meshRenderer = std::make_unique<Rendering::MeshRenderer>(*m_notificationSystem.get(), m_deviceResources);
+
+    m_soundAPI = std::make_unique<Sound::SoundAPI>();
+
+    m_spatialInput = std::make_unique<Input::SpatialInput>();
+    m_voiceInput = std::make_unique<Input::VoiceInput>(*m_notificationSystem.get(), *m_soundAPI.get());
+
+    m_networkSystem = std::make_unique<System::NetworkSystem>(*m_notificationSystem.get(), *m_voiceInput.get());
+    m_physicsAPI = std::make_unique<Physics::PhysicsAPI>(*m_notificationSystem.get(), m_deviceResources, m_timer);
+
+    m_registrationSystem = std::make_unique<System::RegistrationSystem>(*m_networkSystem.get(), *m_physicsAPI.get(), *m_notificationSystem.get(), *m_modelRenderer.get());
+    m_iconSystem = std::make_unique<System::IconSystem>(*m_notificationSystem.get(), *m_registrationSystem.get(), *m_networkSystem.get(), *m_voiceInput.get(), *m_modelRenderer.get());
+    m_gazeSystem = std::make_unique<System::GazeSystem>(*m_notificationSystem.get(), *m_physicsAPI.get(), *m_modelRenderer.get());
+    m_toolSystem = std::make_unique<System::ToolSystem>(*m_notificationSystem.get(), *m_registrationSystem.get(), *m_modelRenderer.get(), *m_networkSystem.get());
+    m_imagingSystem = std::make_unique<System::ImagingSystem>(*m_registrationSystem.get(), *m_notificationSystem.get(), *m_sliceRenderer.get(), *m_volumeRenderer.get(), *m_networkSystem.get());
+    m_splashSystem = std::make_unique<System::SplashSystem>(*m_sliceRenderer.get());
+
+    m_engineComponents.push_back(m_modelRenderer.get());
+    m_engineComponents.push_back(m_sliceRenderer.get());
+    m_engineComponents.push_back(m_volumeRenderer.get());
+    m_engineComponents.push_back(m_meshRenderer.get());
+    m_engineComponents.push_back(m_soundAPI.get());
+    m_engineComponents.push_back(m_notificationSystem.get());
+    m_engineComponents.push_back(m_spatialInput.get());
+    m_engineComponents.push_back(m_voiceInput.get());
+    m_engineComponents.push_back(m_physicsAPI.get());
+    m_engineComponents.push_back(m_networkSystem.get());
+    m_engineComponents.push_back(m_gazeSystem.get());
+    m_engineComponents.push_back(m_toolSystem.get());
+    m_engineComponents.push_back(m_registrationSystem.get());
+    m_engineComponents.push_back(m_imagingSystem.get());
+    m_engineComponents.push_back(m_iconSystem.get());
+    m_engineComponents.push_back(m_splashSystem.get());
+
+    m_configurableComponents.push_back(m_toolSystem.get());
+    m_configurableComponents.push_back(m_registrationSystem.get());
+    m_configurableComponents.push_back(m_networkSystem.get());
+    m_configurableComponents.push_back(m_imagingSystem.get());
+
+    ReadConfigurationAsync();
+
+    try
     {
-      if (file == nullptr)
-      {
-        return create_task(Package::Current->InstalledLocation->GetFileAsync(L"Assets\\Data\\configuration.xml")).then([this](task<StorageFile^> getTask)
-        {
-          StorageFile^ file;
-          try
-          {
-            file = getTask.get();
-          }
-          catch (Platform::Exception^)
-          {
-            // Not local, not installed... what happened!?
-            assert(false);
-          }
-
-          return create_task(file->CopyAsync(ApplicationData::Current->LocalFolder, L"configuration.xml")).then([this](task<StorageFile^> copyTask)
-          {
-            try
-            {
-              StorageFile^ file = copyTask.get();
-              return task_from_result(ApplicationData::Current->LocalFolder);
-            }
-            catch (Platform::Exception^)
-            {
-              return task_from_result(Package::Current->InstalledLocation);
-            }
-          });
-        });
-      }
-      else
-      {
-        return task_from_result(ApplicationData::Current->LocalFolder);
-      }
-    }).then([this](task<StorageFolder^> configTask)
+      m_soundAPI->InitializeAsync();
+    }
+    catch (Platform::Exception^ e)
     {
-      m_configStorageFolder = configTask.get();
+      m_notificationSystem->QueueMessage(L"Unable to initialize audio system. See log.");
+      OutputDebugStringW((L"Audio Error" + e->Message)->Data());
+    }
 
-      // Initialize the system components
-      m_notificationRenderer = std::make_unique<Rendering::NotificationRenderer>(m_deviceResources);
-      m_notificationSystem = std::make_unique<System::NotificationSystem>(*m_notificationRenderer.get());
-      m_modelRenderer = std::make_unique<Rendering::ModelRenderer>(m_deviceResources, m_timer);
-      m_sliceRenderer = std::make_unique<Rendering::SliceRenderer>(m_deviceResources, m_timer);
-      m_volumeRenderer = std::make_unique<Rendering::VolumeRenderer>(m_deviceResources, m_timer);
-      m_meshRenderer = std::make_unique<Rendering::MeshRenderer>(*m_notificationSystem.get(), m_deviceResources);
+    InitializeVoiceSystem();
 
-      m_soundAPI = std::make_unique<Sound::SoundAPI>();
+    // Use the default SpatialLocator to track the motion of the device.
+    m_locator = SpatialLocator::GetDefault();
 
-      m_spatialInput = std::make_unique<Input::SpatialInput>();
-      m_voiceInput = std::make_unique<Input::VoiceInput>(*m_notificationSystem.get(), *m_soundAPI.get());
+    m_locatabilityChangedToken = m_locator->LocatabilityChanged +=
+                                   ref new Windows::Foundation::TypedEventHandler<SpatialLocator^, Object^>(std::bind(&HoloInterventionCore::OnLocatabilityChanged, this, std::placeholders::_1, std::placeholders::_2));
 
-      m_networkSystem = std::make_unique<System::NetworkSystem>(*m_notificationSystem.get(), *m_voiceInput.get(), m_configStorageFolder);
-      m_physicsAPI = std::make_unique<Physics::PhysicsAPI>(*m_notificationSystem.get(), m_deviceResources, m_timer);
+    m_cameraAddedToken = m_holographicSpace->CameraAdded +=
+                           ref new Windows::Foundation::TypedEventHandler<HolographicSpace^, HolographicSpaceCameraAddedEventArgs^>(std::bind(&HoloInterventionCore::OnCameraAdded, this, std::placeholders::_1, std::placeholders::_2));
 
-      m_registrationSystem = std::make_unique<System::RegistrationSystem>(*m_networkSystem.get(), *m_physicsAPI.get(), *m_notificationSystem.get(), *m_modelRenderer.get(), m_configStorageFolder);
-      m_iconSystem = std::make_unique<System::IconSystem>(*m_notificationSystem.get(), *m_registrationSystem.get(), *m_networkSystem.get(), *m_voiceInput.get(), *m_modelRenderer.get());
-      m_gazeSystem = std::make_unique<System::GazeSystem>(*m_notificationSystem.get(), *m_physicsAPI.get(), *m_modelRenderer.get());
-      m_toolSystem = std::make_unique<System::ToolSystem>(*m_notificationSystem.get(), *m_registrationSystem.get(), *m_modelRenderer.get(), *m_networkSystem.get(), m_configStorageFolder);
-      m_imagingSystem = std::make_unique<System::ImagingSystem>(*m_registrationSystem.get(), *m_notificationSystem.get(), *m_sliceRenderer.get(), *m_volumeRenderer.get(), *m_networkSystem.get(), m_configStorageFolder);
-      m_splashSystem = std::make_unique<System::SplashSystem>(*m_sliceRenderer.get());
+    m_cameraRemovedToken = m_holographicSpace->CameraRemoved +=
+                             ref new Windows::Foundation::TypedEventHandler<HolographicSpace^, HolographicSpaceCameraRemovedEventArgs^>(std::bind(&HoloInterventionCore::OnCameraRemoved, this, std::placeholders::_1, std::placeholders::_2));
 
-      m_engineComponents.push_back(m_modelRenderer.get());
-      m_engineComponents.push_back(m_sliceRenderer.get());
-      m_engineComponents.push_back(m_volumeRenderer.get());
-      m_engineComponents.push_back(m_meshRenderer.get());
-      m_engineComponents.push_back(m_soundAPI.get());
-      m_engineComponents.push_back(m_notificationSystem.get());
-      m_engineComponents.push_back(m_spatialInput.get());
-      m_engineComponents.push_back(m_voiceInput.get());
-      m_engineComponents.push_back(m_physicsAPI.get());
-      m_engineComponents.push_back(m_networkSystem.get());
-      m_engineComponents.push_back(m_gazeSystem.get());
-      m_engineComponents.push_back(m_toolSystem.get());
-      m_engineComponents.push_back(m_registrationSystem.get());
-      m_engineComponents.push_back(m_imagingSystem.get());
-      m_engineComponents.push_back(m_iconSystem.get());
-      m_engineComponents.push_back(m_splashSystem.get());
+    m_attachedReferenceFrame = m_locator->CreateAttachedFrameOfReferenceAtCurrentHeading();
 
-      try
+    // Initialize the notification system with a bogus frame to grab sensor data
+    HolographicFrame^ holographicFrame = m_holographicSpace->CreateNextFrame();
+    SpatialCoordinateSystem^ currentCoordinateSystem = m_attachedReferenceFrame->GetStationaryCoordinateSystemAtTimestamp(holographicFrame->CurrentPrediction->Timestamp);
+    SpatialPointerPose^ pose = SpatialPointerPose::TryGetAtTimestamp(currentCoordinateSystem, holographicFrame->CurrentPrediction->Timestamp);
+    m_notificationSystem->Initialize(pose);
+    m_physicsAPI->InitializeSurfaceObserverAsync(currentCoordinateSystem).then([this](bool result)
+    {
+      if (!result)
       {
-        m_soundAPI->InitializeAsync();
+        // TODO : add more robust error handling
+        m_notificationSystem->QueueMessage("Unable to initialize surface observer.");
       }
-      catch (Platform::Exception^ e)
-      {
-        m_notificationSystem->QueueMessage(L"Unable to initialize audio system. See log.");
-        OutputDebugStringW((L"Audio Error" + e->Message)->Data());
-      }
-
-      InitializeVoiceSystem();
-
-      // Use the default SpatialLocator to track the motion of the device.
-      m_locator = SpatialLocator::GetDefault();
-
-      m_locatabilityChangedToken = m_locator->LocatabilityChanged +=
-                                     ref new Windows::Foundation::TypedEventHandler<SpatialLocator^, Object^>(std::bind(&HoloInterventionCore::OnLocatabilityChanged, this, std::placeholders::_1, std::placeholders::_2));
-
-      m_cameraAddedToken = m_holographicSpace->CameraAdded +=
-                             ref new Windows::Foundation::TypedEventHandler<HolographicSpace^, HolographicSpaceCameraAddedEventArgs^>(std::bind(&HoloInterventionCore::OnCameraAdded, this, std::placeholders::_1, std::placeholders::_2));
-
-      m_cameraRemovedToken = m_holographicSpace->CameraRemoved +=
-                               ref new Windows::Foundation::TypedEventHandler<HolographicSpace^, HolographicSpaceCameraRemovedEventArgs^>(std::bind(&HoloInterventionCore::OnCameraRemoved, this, std::placeholders::_1, std::placeholders::_2));
-
-      m_attachedReferenceFrame = m_locator->CreateAttachedFrameOfReferenceAtCurrentHeading();
-
-      // Initialize the notification system with a bogus frame to grab sensor data
-      HolographicFrame^ holographicFrame = m_holographicSpace->CreateNextFrame();
-      SpatialCoordinateSystem^ currentCoordinateSystem = m_attachedReferenceFrame->GetStationaryCoordinateSystemAtTimestamp(holographicFrame->CurrentPrediction->Timestamp);
-      SpatialPointerPose^ pose = SpatialPointerPose::TryGetAtTimestamp(currentCoordinateSystem, holographicFrame->CurrentPrediction->Timestamp);
-      m_notificationSystem->Initialize(pose);
-      m_physicsAPI->InitializeSurfaceObserverAsync(currentCoordinateSystem).then([this](bool result)
-      {
-        if (!result)
-        {
-          // TODO : add more robust error handling
-          m_notificationSystem->QueueMessage("Unable to initialize surface observer.");
-        }
-      });
-
-      LoadAppStateAsync();
-
-      LOG(LogLevelType::LOG_LEVEL_INFO, "Engine started.");
-      m_engineBuilt = true;
     });
+
+    LoadAppStateAsync();
+
+    LOG(LogLevelType::LOG_LEVEL_INFO, "Engine started.");
+    m_engineBuilt = true;
   }
 
   //----------------------------------------------------------------------------
@@ -536,6 +505,21 @@ namespace HoloIntervention
       m_notificationSystem->QueueMessage(L"Log session ended.");
     };
 
+    callbacks[L"save config"] = [this](SpeechRecognitionResult ^ result)
+    {
+      WriteConfigurationAsync().then([this](bool result)
+      {
+        if (result)
+        {
+          m_notificationSystem->QueueMessage(L"Save successful.");
+        }
+        else
+        {
+          m_notificationSystem->QueueMessage(L"Save failed.");
+        }
+      });
+    };
+
     m_voiceInput->CompileCallbacksAsync(callbacks).then([this](task<bool> compileTask)
     {
       bool result;
@@ -601,4 +585,153 @@ namespace HoloIntervention
       }
     }
   }
+
+  //----------------------------------------------------------------------------
+  task<bool> HoloInterventionCore::WriteConfigurationAsync()
+  {
+    // Backup current file
+    return create_task(ApplicationData::Current->LocalFolder->TryGetItemAsync(L"configuration.xml")).then([this](IStorageItem ^ item)
+    {
+      if (item == nullptr)
+      {
+        return task_from_result((StorageFile^)nullptr);
+      }
+      else
+      {
+        StorageFile^ file = dynamic_cast<StorageFile^>(item);
+        return create_task(file->CopyAsync(ApplicationData::Current->LocalFolder, L"configuration.xml", Windows::Storage::NameCollisionOption::GenerateUniqueName));
+      }
+    }).then([this](task<StorageFile^> copyTask)
+    {
+      copyTask.wait();
+
+      // Create new document
+      auto doc = ref new XmlDocument();
+
+      // Add root node
+      auto elem = doc->CreateElement(L"HoloIntervention");
+      doc->AppendChild(elem);
+
+      auto docElem = doc->DocumentElement;
+
+      // Populate document
+      std::vector<task<bool>> tasks;
+      for (auto comp : m_configurableComponents)
+      {
+        tasks.push_back(comp->WriteConfigurationAsync(doc));
+      }
+
+      return when_all(begin(tasks), end(tasks)).then([this, doc](std::vector<bool> results)
+      {
+        // Write document to disk
+        return create_task(ApplicationData::Current->LocalFolder->CreateFileAsync(L"configuration.xml", Windows::Storage::CreationCollisionOption::ReplaceExisting)).then([this, doc](StorageFile ^ file)
+        {
+          return create_task(doc->SaveToFileAsync(file)).then([this](task<void> saveAction)
+          {
+            try
+            {
+              saveAction.wait();
+            }
+            catch (Platform::Exception^ e)
+            {
+              return false;
+            }
+            return true;
+          });
+        });
+      });
+    });
+  }
+
+  //----------------------------------------------------------------------------
+  task<bool> HoloInterventionCore::ReadConfigurationAsync()
+  {
+    return create_task(ApplicationData::Current->LocalFolder->TryGetItemAsync(L"configuration.xml")).then([this](IStorageItem ^ file)
+    {
+      if (file == nullptr)
+      {
+        // If the user specific file doesn't exist, copy the default from the installed location
+        return create_task(Package::Current->InstalledLocation->GetFileAsync(L"Assets\\Data\\configuration.xml")).then([this](task<StorageFile^> getTask)
+        {
+          StorageFile^ file;
+          try
+          {
+            file = getTask.get();
+          }
+          catch (Platform::Exception^)
+          {
+            // Not local, not installed... what happened!?
+            assert(false);
+          }
+
+          return create_task(file->CopyAsync(ApplicationData::Current->LocalFolder, L"configuration.xml")).then([this](task<StorageFile^> copyTask)
+          {
+            try
+            {
+              return copyTask.get();
+            }
+            catch (Platform::Exception^)
+            {
+              return (StorageFile^)nullptr;
+            }
+          });
+        });
+      }
+      else
+      {
+        return task_from_result(dynamic_cast<StorageFile^>(file));
+      }
+    }).then([this](task<StorageFile^> fileTask)
+    {
+      StorageFile^ file;
+      try
+      {
+        file = fileTask.get();
+      }
+      catch (Platform::Exception^)
+      {
+        // Not local, not installed... what happened!?
+        task_from_result(false);
+      }
+
+      if (file == nullptr)
+      {
+        return task_from_result(false);
+      }
+
+      return LoadXmlDocumentAsync(file).then([this](task<XmlDocument^> docTask)
+      {
+        XmlDocument^ doc;
+        try
+        {
+          doc = docTask.get();
+        }
+        catch (Platform::Exception^)
+        {
+          // Not local, not installed... what happened!?
+          return task_from_result(false);
+        }
+
+        std::vector<task<bool>> tasks;
+        bool hasError(false);
+        for (auto comp : m_configurableComponents)
+        {
+          tasks.push_back(comp->ReadConfigurationAsync(doc));
+        }
+
+        return when_all(begin(tasks), end(tasks)).then([this](std::vector<bool> results)
+        {
+          for (auto res : results)
+          {
+            if (!res)
+            {
+              return false;
+            }
+          }
+          return true;
+        });
+      });
+    });
+  }
+
 }

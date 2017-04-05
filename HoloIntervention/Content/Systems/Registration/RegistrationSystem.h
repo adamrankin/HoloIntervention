@@ -27,6 +27,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <vector>
 
 // Local includes
+#include "IConfigurable.h"
 #include "IStabilizedComponent.h"
 #include "IVoiceInput.h"
 
@@ -57,21 +58,23 @@ namespace HoloIntervention
     class NetworkSystem;
     class NotificationSystem;
 
-    class RegistrationSystem : public Sound::IVoiceInput, public IStabilizedComponent
+    class RegistrationSystem : public Sound::IVoiceInput, public IStabilizedComponent, public IConfigurable
     {
     public:
-      // IStabilizedComponent methods
       virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition() const;
       virtual Windows::Foundation::Numerics::float3 GetStabilizedNormal(Windows::UI::Input::Spatial::SpatialPointerPose^ pose) const;
       virtual Windows::Foundation::Numerics::float3 GetStabilizedVelocity() const;
       virtual float GetStabilizePriority() const;
 
     public:
+      virtual concurrency::task<bool> WriteConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
+      virtual concurrency::task<bool> ReadConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
+
+    public:
       RegistrationSystem(NetworkSystem& networkSystem,
                          Physics::PhysicsAPI& physicsAPI,
                          NotificationSystem& notificationSystem,
-                         Rendering::ModelRenderer& modelRenderer,
-                         Windows::Storage::StorageFolder^ configStorageFolder);
+                         Rendering::ModelRenderer& modelRenderer);
       ~RegistrationSystem();
 
       void Update(DX::StepTimer& timer,

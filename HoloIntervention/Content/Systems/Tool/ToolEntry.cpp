@@ -142,6 +142,12 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    UWPOpenIGTLink::TransformName^ ToolEntry::GetCoordinateFrame() const
+    {
+      return m_coordinateFrame;
+    }
+
+    //----------------------------------------------------------------------------
     uint64 ToolEntry::GetId() const
     {
       if (m_modelEntry == nullptr)

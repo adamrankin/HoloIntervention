@@ -147,11 +147,63 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    CameraRegistration::CameraRegistration(NotificationSystem& notificationSystem, NetworkSystem& networkSystem, Rendering::ModelRenderer& modelRenderer, StorageFolder^ configStorageFolder)
+    task<bool> CameraRegistration::WriteConfigurationAsync(XmlDocument^ document)
+    {
+      return create_task([this, document]()
+      {
+        if (document->SelectNodes(L"/HoloIntervention")->Length != 1)
+        {
+          return false;
+        }
+
+        auto rootNode = document->SelectNodes(L"/HoloIntervention")->Item(0);
+
+        auto camRegElem = document->CreateElement(L"CameraRegistration");
+        camRegElem->SetAttribute(L"IGTConnection", ref new Platform::String(m_connectionName.c_str()));
+        rootNode->AppendChild(camRegElem);
+
+        return true;
+      });
+    }
+
+    //----------------------------------------------------------------------------
+    task<bool> CameraRegistration::ReadConfigurationAsync(XmlDocument^ document)
+    {
+      return create_task([this, document]()
+      {
+        if (!m_transformRepository->ReadConfiguration(document))
+        {
+          return false;
+        }
+
+        m_transformsAvailable = true;
+
+        auto xpath = ref new Platform::String(L"/HoloIntervention/CameraRegistration");
+        if (document->SelectNodes(xpath)->Length == 0)
+        {
+          throw ref new Platform::Exception(E_INVALIDARG, L"No camera registration defined in the configuration file.");
+        }
+
+        for (auto node : document->SelectNodes(xpath))
+        {
+          if (!HasAttribute(L"IGTConnection", node))
+          {
+            throw ref new Platform::Exception(E_FAIL, L"Camera registration entry does not contain \"IGTConnection\" attribute.");
+          }
+          Platform::String^ igtConnectionName = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"IGTConnection")->NodeValue);
+          m_connectionName = std::wstring(igtConnectionName->Data());
+          m_hashedConnectionName = HashString(igtConnectionName);
+        }
+
+        return true;
+      });
+    }
+
+    //----------------------------------------------------------------------------
+    CameraRegistration::CameraRegistration(NotificationSystem& notificationSystem, NetworkSystem& networkSystem, Rendering::ModelRenderer& modelRenderer)
       : m_modelRenderer(modelRenderer)
       , m_notificationSystem(notificationSystem)
       , m_networkSystem(networkSystem)
-      , m_configStorageFolder(configStorageFolder)
     {
       Init();
     }
@@ -1296,49 +1348,13 @@ done:
     //----------------------------------------------------------------------------
     void CameraRegistration::Init()
     {
-      try
-      {
-        InitializeTransformRepositoryAsync(L"configuration.xml", m_configStorageFolder, m_transformRepository).then([this]()
-        {
-          m_transformsAvailable = true;
-        });
-      }
-      catch (Platform::Exception^ e)
-      {
-        LOG(LogLevelType::LOG_LEVEL_ERROR, e->Message);
-      }
-
-      try
-      {
-        LoadXmlDocumentAsync(L"configuration.xml", m_configStorageFolder).then([this](XmlDocument ^ doc)
-        {
-          auto xpath = ref new Platform::String(L"/HoloIntervention/CameraRegistration");
-          if (doc->SelectNodes(xpath)->Length == 0)
-          {
-            throw ref new Platform::Exception(E_INVALIDARG, L"No camera registration defined in the configuration file.");
-          }
-
-          for (auto node : doc->SelectNodes(xpath))
-          {
-            if (!HasAttribute(L"IGTConnection", node))
-            {
-              throw ref new Platform::Exception(E_FAIL, L"Camera registration entry does not contain \"IGTConnection\" attribute.");
-            }
-            Platform::String^ igtConnectionName = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"IGTConnection")->NodeValue);
-            m_hashedConnectionName = HashString(igtConnectionName);
-          }
-        });
-      }
-      catch (Platform::Exception^ e)
-      {
-        LOG(LogLevelType::LOG_LEVEL_ERROR, "Unable to read configuration file.");
-      }
-
       m_sphereCoordinateNames[0] = ref new UWPOpenIGTLink::TransformName(L"RedSphere1", L"Reference");
       m_sphereCoordinateNames[1] = ref new UWPOpenIGTLink::TransformName(L"RedSphere2", L"Reference");
       m_sphereCoordinateNames[2] = ref new UWPOpenIGTLink::TransformName(L"RedSphere3", L"Reference");
       m_sphereCoordinateNames[3] = ref new UWPOpenIGTLink::TransformName(L"RedSphere4", L"Reference");
       m_sphereCoordinateNames[4] = ref new UWPOpenIGTLink::TransformName(L"RedSphere5", L"Reference");
+
+      m_componentReady = true;
     }
 
     //----------------------------------------------------------------------------

@@ -41,6 +41,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "Log.h"
 #include <WindowsNumerics.h>
 
+using namespace Concurrency;
 using namespace Windows::Data::Xml::Dom;
 using namespace Windows::Foundation::Numerics;
 using namespace Windows::Media::SpeechRecognition;
@@ -176,66 +177,93 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    ImagingSystem::ImagingSystem(RegistrationSystem& registrationSystem, NotificationSystem& notificationSystem, Rendering::SliceRenderer& sliceRenderer, Rendering::VolumeRenderer& volumeRenderer, NetworkSystem& networkSystem, StorageFolder^ configStorageFolder)
+    task<bool> ImagingSystem::WriteConfigurationAsync(XmlDocument^ document)
+    {
+      return create_task([this, document]()
+      {
+        auto xpath = ref new Platform::String(L"/HoloIntervention");
+        if (document->SelectNodes(xpath)->Length != 1)
+        {
+          return false;
+        }
+
+        m_transformRepository->WriteConfiguration(document);
+
+        auto rootNode = document->SelectNodes(xpath)->Item(0);
+
+        auto sliceElem = document->CreateElement("SliceRendering");
+        sliceElem->SetAttribute(L"From", ref new Platform::String(m_sliceFromCoordFrame.c_str()));
+        sliceElem->SetAttribute(L"To", ref new Platform::String(m_sliceToCoordFrame.c_str()));
+        sliceElem->SetAttribute(L"IGTConnection", ref new Platform::String(m_sliceConnectionName.c_str()));
+        rootNode->AppendChild(sliceElem);
+
+        auto volumeElem = document->CreateElement("VolumeRendering");
+        volumeElem->SetAttribute(L"From", ref new Platform::String(m_volumeFromCoordFrame.c_str()));
+        volumeElem->SetAttribute(L"To", ref new Platform::String(m_volumeToCoordFrame.c_str()));
+        volumeElem->SetAttribute(L"IGTConnection", ref new Platform::String(m_volumeConnectionName.c_str()));
+        rootNode->AppendChild(volumeElem);
+
+        return true;
+      });
+    }
+
+    //----------------------------------------------------------------------------
+    task<bool> ImagingSystem::ReadConfigurationAsync(XmlDocument^ document)
+    {
+      return create_task([this, document]()
+      {
+        if (!m_transformRepository->ReadConfiguration(document))
+        {
+          return false;
+        }
+
+        auto fromToFunction = [this, document](Platform::String ^ xpath, std::wstring & m_from, std::wstring & m_to, UWPOpenIGTLink::TransformName^& name, uint64 & hashedConnectionName, std::wstring & connectionName)
+        {
+          if (document->SelectNodes(xpath)->Length != 1)
+          {
+            // No configuration found, use defaults
+            return;
+          }
+
+          IXmlNode^ node = document->SelectNodes(xpath)->Item(0);
+          Platform::String^ fromAttribute = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"From")->NodeValue);
+          Platform::String^ toAttribute = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"To")->NodeValue);
+          if (fromAttribute->IsEmpty() || toAttribute->IsEmpty())
+          {
+            return;
+          }
+          else
+          {
+            m_from = std::wstring(fromAttribute->Data());
+            m_to = std::wstring(toAttribute->Data());
+            name = ref new UWPOpenIGTLink::TransformName(fromAttribute, toAttribute);
+          }
+
+          Platform::String^ igtConnection = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"IGTConnection")->NodeValue);
+          if (igtConnection != nullptr)
+          {
+            connectionName = std::wstring(igtConnection->Data());
+            hashedConnectionName = HashString(igtConnection);
+          }
+        };
+
+        fromToFunction(L"/HoloIntervention/VolumeRendering", m_volumeFromCoordFrame, m_volumeToCoordFrame, m_volumeToHMDName, m_hashedVolumeConnectionName, m_volumeConnectionName);
+        fromToFunction(L"/HoloIntervention/SliceRendering", m_sliceFromCoordFrame, m_sliceToCoordFrame, m_sliceToHMDName, m_hashedSliceConnectionName, m_sliceConnectionName);
+
+        m_componentReady = true;
+
+        return true;
+      });
+    }
+
+    //----------------------------------------------------------------------------
+    ImagingSystem::ImagingSystem(RegistrationSystem& registrationSystem, NotificationSystem& notificationSystem, Rendering::SliceRenderer& sliceRenderer, Rendering::VolumeRenderer& volumeRenderer, NetworkSystem& networkSystem)
       : m_notificationSystem(notificationSystem)
       , m_registrationSystem(registrationSystem)
       , m_sliceRenderer(sliceRenderer)
       , m_volumeRenderer(volumeRenderer)
       , m_networkSystem(networkSystem)
     {
-      try
-      {
-        InitializeTransformRepositoryAsync(L"configuration.xml", configStorageFolder, m_transformRepository).then([this]()
-        {
-          m_componentReady = true;
-        });
-      }
-      catch (Platform::Exception^ e)
-      {
-        HoloIntervention::LOG(LogLevelType::LOG_LEVEL_ERROR, e->Message);
-      }
-
-      try
-      {
-        LoadXmlDocumentAsync(L"configuration.xml", configStorageFolder).then([this](XmlDocument ^ doc)
-        {
-          auto fromToFunction = [this, doc](Platform::String ^ xpath, std::wstring & m_from, std::wstring & m_to, UWPOpenIGTLink::TransformName^& name, uint64 & hashedConnectionName)
-          {
-            if (doc->SelectNodes(xpath)->Length != 1)
-            {
-              // No configuration found, use defaults
-              return;
-            }
-
-            IXmlNode^ node = doc->SelectNodes(xpath)->Item(0);
-            Platform::String^ fromAttribute = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"From")->NodeValue);
-            Platform::String^ toAttribute = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"To")->NodeValue);
-            if (fromAttribute->IsEmpty() || toAttribute->IsEmpty())
-            {
-              return;
-            }
-            else
-            {
-              m_from = std::wstring(fromAttribute->Data());
-              m_to = std::wstring(toAttribute->Data());
-              name = ref new UWPOpenIGTLink::TransformName(fromAttribute, toAttribute);
-            }
-
-            Platform::String^ igtConnection = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"IGTConnection")->NodeValue);
-            if (igtConnection != nullptr)
-            {
-              hashedConnectionName = HashString(igtConnection);
-            }
-          };
-
-          fromToFunction(L"/HoloIntervention/VolumeRendering", m_volumeFromCoordFrame, m_volumeToCoordFrame, m_volumeToHMDName, m_hashedVolumeConnectionName);
-          fromToFunction(L"/HoloIntervention/SliceRendering", m_sliceFromCoordFrame, m_sliceToCoordFrame, m_sliceToHMDName, m_hashedSliceConnectionName);
-        });
-      }
-      catch (Platform::Exception^ e)
-      {
-        HoloIntervention::LOG(LogLevelType::LOG_LEVEL_ERROR, e->Message);
-      }
     }
 
     //----------------------------------------------------------------------------
@@ -381,7 +409,6 @@ namespace HoloIntervention
 
       if (!HasSlice())
       {
-        // For now, our slice renderer only draws one slice, in the future, it should be able to draw more
         m_sliceToken = m_sliceRenderer.AddSlice(frame, sliceToHMD);
       }
       else
@@ -417,7 +444,6 @@ namespace HoloIntervention
 
       if (!HasVolume())
       {
-        // For now, our slice renderer only draws one slice, in the future, it should be able to draw more
         m_volumeToken = m_volumeRenderer.AddVolume(frame, volumeToHMD);
       }
       else

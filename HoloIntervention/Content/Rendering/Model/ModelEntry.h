@@ -87,6 +87,10 @@ namespace HoloIntervention
       void SetId(uint64 id);
       std::array<float, 6> GetBounds() const;
 
+      std::wstring GetAssetLocation() const;
+      bool GetLerpEnabled() const;
+      float GetLerpRate() const;
+
       // Alternate rendering options
       void RenderGreyscale();
       void RenderDefault();

@@ -24,6 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
+#include "IConfigurable.h"
 #include "IEngineComponent.h"
 #include "IVoiceInput.h"
 
@@ -54,7 +55,7 @@ namespace HoloIntervention
   {
     class NotificationSystem;
 
-    class NetworkSystem : public IEngineComponent, public Sound::IVoiceInput
+    class NetworkSystem : public IEngineComponent, public Sound::IVoiceInput, public IConfigurable
     {
     public:
       enum ConnectionState
@@ -70,6 +71,7 @@ namespace HoloIntervention
     private:
       struct ConnectorEntry
       {
+        std::wstring                            Name = L""; // For saving back to disk
         uint64                                  HashedName = 0;
         bool                                    ReconnectOnDrop = true;
         Concurrency::cancellation_token_source  KeepAliveTokenSource;
@@ -79,9 +81,12 @@ namespace HoloIntervention
       typedef std::vector<ConnectorEntry> ConnectorList;
 
     public:
+      virtual concurrency::task<bool> WriteConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
+      virtual concurrency::task<bool> ReadConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
+
+    public:
       NetworkSystem(System::NotificationSystem& notificationSystem,
-                    Input::VoiceInput& voiceInput,
-                    Windows::Storage::StorageFolder^ configStorageFolder);
+                    Input::VoiceInput& voiceInput);
       virtual ~NetworkSystem();
 
       /// IVoiceInput functions
@@ -114,7 +119,7 @@ namespace HoloIntervention
       UWPOpenIGTLink::TransformListABI^ GetTransformFrame(uint64 hashedConnectionName, double& latestTimestamp);
 
     protected:
-      Concurrency::task<bool> InitAsync(Windows::Storage::StorageFolder^ configStorageFolder);
+      Concurrency::task<bool> InitAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
 
       Concurrency::task<std::vector<std::wstring>> FindServersAsync();
       Concurrency::task<void> KeepAliveAsync(uint64 hashedConnectionName);

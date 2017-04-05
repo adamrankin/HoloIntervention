@@ -56,14 +56,43 @@ namespace HoloIntervention
     const uint32 NetworkSystem::KEEP_ALIVE_INTERVAL_MSEC = 1000;
 
     //----------------------------------------------------------------------------
-    NetworkSystem::NetworkSystem(System::NotificationSystem& notificationSystem, Input::VoiceInput& voiceInput, StorageFolder^ configStorageFolder)
-      : m_notificationSystem(notificationSystem)
-      , m_voiceInput(voiceInput)
+    task<bool> NetworkSystem::WriteConfigurationAsync(XmlDocument^ document)
     {
-      InitAsync(configStorageFolder).then([this](task<bool> initTask)
+      return create_task([this, document]()
+      {
+        auto xpath = ref new Platform::String(L"/HoloIntervention");
+        if (document->SelectNodes(xpath)->Length != 1)
+        {
+          return false;
+        }
+
+        auto rootNode = document->SelectNodes(xpath)->Item(0);
+
+        auto connectionsElem = document->CreateElement(L"IGTConnections");
+
+        for (auto connector : m_connectors)
+        {
+          auto connectionElem = document->CreateElement(L"Connection");
+          connectionElem->SetAttribute(L"Name", ref new Platform::String(connector.Name.c_str()));
+          connectionElem->SetAttribute(L"Host", connector.Connector->ServerHost);
+          connectionElem->SetAttribute(L"Port", connector.Connector->ServerPort.ToString());
+          connectionElem->SetAttribute(L"ReconnectOnDrop", connector.ReconnectOnDrop ? L"true" : L"false");
+          connectionElem->SetAttribute(L"EmbeddedImageTransformName", connector.Connector->EmbeddedImageTransformName->GetTransformName());
+          connectionsElem->AppendChild(connectionElem);
+        }
+
+        rootNode->AppendChild(connectionsElem);
+
+        return true;
+      });
+    }
+
+    //----------------------------------------------------------------------------
+    task<bool> NetworkSystem::ReadConfigurationAsync(XmlDocument^ document)
+    {
+      return InitAsync(document).then([this](task<bool> initTask)
       {
         bool result;
-
         try
         {
           result = initTask.get();
@@ -71,12 +100,19 @@ namespace HoloIntervention
         catch (const std::exception& e)
         {
           LOG(LogLevelType::LOG_LEVEL_ERROR, std::string("Unable to initialize network system: ") + e.what());
-          throw std::exception("Unable to initialize network system.");
+          return false;
         }
 
         m_componentReady = true;
+        return result;
       });
+    }
 
+    //----------------------------------------------------------------------------
+    NetworkSystem::NetworkSystem(System::NotificationSystem& notificationSystem, Input::VoiceInput& voiceInput)
+      : m_notificationSystem(notificationSystem)
+      , m_voiceInput(voiceInput)
+    {
       /*
       disabled, currently crashes
       FindServersAsync().then([this](task<std::vector<std::wstring>> findServerTask)
@@ -162,6 +198,13 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    Concurrency::task<bool> NetworkSystem::ConnectAsync(double timeoutSec /*= CONNECT_TIMEOUT_SEC*/, Concurrency::task_options& options /*= Concurrency::task_options()*/)
+    {
+      // TODO : to implement
+      return task_from_result(false);
+    }
+
+    //----------------------------------------------------------------------------
     bool NetworkSystem::IsConnected(uint64 hashedConnectionName) const
     {
       std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
@@ -173,85 +216,76 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<bool> NetworkSystem::InitAsync(StorageFolder^ configStorageFolder)
+    task<bool> NetworkSystem::InitAsync(XmlDocument^ xmlDoc)
     {
-      return create_task([this, configStorageFolder]()
+      return create_task([this, xmlDoc]()
       {
-        try
+        auto xpath = ref new Platform::String(L"/HoloIntervention/IGTConnections/Connection");
+        if (xmlDoc->SelectNodes(xpath)->Length == 0)
         {
-          return LoadXmlDocumentAsync(L"configuration.xml", configStorageFolder).then([this](XmlDocument ^ doc)
+          return false;
+        }
+
+        for (auto node : xmlDoc->SelectNodes(xpath))
+        {
+          if (!HasAttribute(L"Name", node))
           {
-            auto xpath = ref new Platform::String(L"/HoloIntervention/IGTConnections/Connection");
-            if (doc->SelectNodes(xpath)->Length == 0)
+            return false;
+          }
+          if (!HasAttribute(L"Host", node))
+          {
+            return false;
+          }
+          if (!HasAttribute(L"Port", node))
+          {
+            return false;
+          }
+
+          Platform::String^ name = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Name")->NodeValue);
+          Platform::String^ host = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Host")->NodeValue);
+          Platform::String^ port = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Port")->NodeValue);
+          if (name->IsEmpty() || host->IsEmpty() || port->IsEmpty())
+          {
+            return false;
+          }
+
+          ConnectorEntry entry;
+          entry.Name = std::wstring(name->Data());
+          entry.HashedName = HashString(name->Data());
+          entry.Connector = ref new UWPOpenIGTLink::IGTClient();
+          entry.Connector->ServerHost = host;
+
+          try
+          {
+            entry.Connector->ServerPort = std::stoi(port->Data());
+          }
+          catch (const std::exception&) {}
+
+          bool reconnectOnDrop;
+          if (GetBooleanAttribute(L"ReconnectOnDrop", node, reconnectOnDrop))
+          {
+            entry.ReconnectOnDrop = reconnectOnDrop;
+          }
+
+          if (HasAttribute(L"EmbeddedImageTransformName", node))
+          {
+            Platform::String^ embeddedImageTransformName = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"EmbeddedImageTransformName")->NodeValue);
+            if (!embeddedImageTransformName->IsEmpty())
             {
-              return false;
-            }
-
-            for (auto node : doc->SelectNodes(xpath))
-            {
-              if (!HasAttribute(L"Name", node))
-              {
-                return false;
-              }
-              if (!HasAttribute(L"Host", node))
-              {
-                return false;
-              }
-              if (!HasAttribute(L"Port", node))
-              {
-                return false;
-              }
-
-              Platform::String^ name = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Name")->NodeValue);
-              Platform::String^ host = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Host")->NodeValue);
-              Platform::String^ port = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Port")->NodeValue);
-              if (name->IsEmpty() || host->IsEmpty() || port->IsEmpty())
-              {
-                return false;
-              }
-
-              ConnectorEntry entry;
-              entry.HashedName = HashString(name->Data());
-              entry.Connector = ref new UWPOpenIGTLink::IGTClient();
-              entry.Connector->ServerHost = host;
-
               try
               {
-                entry.Connector->ServerPort = std::stoi(port->Data());
+                auto transformName = ref new UWPOpenIGTLink::TransformName(embeddedImageTransformName);
+                entry.Connector->EmbeddedImageTransformName = transformName;
               }
-              catch (const std::exception&) {}
-
-              bool reconnectOnDrop;
-              if (GetBooleanAttribute(L"ReconnectOnDrop", node, reconnectOnDrop))
-              {
-                entry.ReconnectOnDrop = reconnectOnDrop;
-              }
-
-              if (HasAttribute(L"EmbeddedImageTransformName", node))
-              {
-                Platform::String^ embeddedImageTransformName = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"EmbeddedImageTransformName")->NodeValue);
-                if (!embeddedImageTransformName->IsEmpty())
-                {
-                  try
-                  {
-                    auto transformName = ref new UWPOpenIGTLink::TransformName(embeddedImageTransformName);
-                    entry.Connector->EmbeddedImageTransformName = transformName;
-                  }
-                  catch (Platform::Exception^) {}
-                }
-              }
-
-              std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
-              m_connectors.push_back(entry);
+              catch (Platform::Exception^) {}
             }
+          }
 
-            return true;
-          });
+          std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
+          m_connectors.push_back(entry);
         }
-        catch (Platform::Exception^)
-        {
-          return task_from_result(false);
-        }
+
+        return true;
       });
     }
 

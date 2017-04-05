@@ -35,6 +35,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 namespace HoloIntervention
 {
+  class IConfigurable;
   class IEngineComponent;
 
   namespace Physics
@@ -129,15 +130,21 @@ namespace HoloIntervention
                                   Windows::Perception::Spatial::SpatialCoordinateSystem^ currentCoordinateSystem,
                                   Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
 
+    // Write the configuration to file
+    concurrency::task<bool> WriteConfigurationAsync();
+
+    concurrency::task<bool> ReadConfigurationAsync();
+
   protected:
     // IEngineComponent list, used to query overall system status
     std::vector<IEngineComponent*>                        m_engineComponents;
+    std::vector<IConfigurable*>                           m_configurableComponents;
 
     // Renderers
     std::unique_ptr<Rendering::ModelRenderer>             m_modelRenderer;
     std::unique_ptr<Rendering::NotificationRenderer>      m_notificationRenderer;
     std::unique_ptr<Rendering::SliceRenderer>             m_sliceRenderer;
-    std::unique_ptr<Rendering::MeshRenderer>       m_meshRenderer;
+    std::unique_ptr<Rendering::MeshRenderer>              m_meshRenderer;
     std::unique_ptr<Rendering::VolumeRenderer>            m_volumeRenderer;
 
     // Event handlers
@@ -147,7 +154,6 @@ namespace HoloIntervention
     // Engine state
     std::atomic_bool                                      m_engineBuilt = false;
     std::atomic_bool                                      m_engineReady = false;
-    Windows::Storage::StorageFolder^                      m_configStorageFolder = nullptr;
 
     // Cached pointer to device resources.
     std::shared_ptr<DX::DeviceResources>                  m_deviceResources;

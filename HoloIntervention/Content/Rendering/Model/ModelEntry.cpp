@@ -348,6 +348,24 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    std::wstring ModelEntry::GetAssetLocation() const
+    {
+      return m_assetLocation;
+    }
+
+    //----------------------------------------------------------------------------
+    bool ModelEntry::GetLerpEnabled() const
+    {
+      return m_enableLerp;
+    }
+
+    //----------------------------------------------------------------------------
+    float ModelEntry::GetLerpRate() const
+    {
+      return m_poseLerpRate;
+    }
+
+    //----------------------------------------------------------------------------
     void ModelEntry::RenderGreyscale()
     {
       m_model->UpdateEffects([this](IEffect * effect)

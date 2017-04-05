@@ -16,6 +16,7 @@
 #include <mfidl.h>
 #include <mfreadwrite.h>
 #include <ppltasks.h>
+#include <ppl.h>
 #include <strsafe.h>
 #include <windows.h>
 #include <wrl\client.h>

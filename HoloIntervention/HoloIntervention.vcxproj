@@ -101,7 +101,6 @@
     </Image>
     <Image Include="Assets\Square44x44Logo.scale-200.png" />
     <Image Include="Assets\Square44x44Logo.targetsize-24_altform-unplated.png" />
-    <Image Include="Assets\StoreLogo.png" />
     <Image Include="Assets\StoreLogo.scale-100.png">
       <DeploymentContent>true</DeploymentContent>
     </Image>
@@ -158,6 +157,7 @@
     <ClInclude Include="Content\Systems\Tool\ToolSystem.h" />
     <ClInclude Include="Core\Common.h" />
     <ClInclude Include="Core\HoloInterventionCore.h" />
+    <ClInclude Include="Core\IConfigurable.h" />
     <ClInclude Include="Core\IEngineComponent.h" />
     <ClInclude Include="Core\IStabilizedComponent.h" />
     <ClInclude Include="Core\Log.h" />

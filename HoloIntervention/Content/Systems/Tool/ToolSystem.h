@@ -24,6 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
+#include "IConfigurable.h"
 #include "IStabilizedComponent.h"
 #include "IVoiceInput.h"
 
@@ -47,7 +48,7 @@ namespace HoloIntervention
     class NotificationSystem;
     class RegistrationSystem;
 
-    class ToolSystem : public Sound::IVoiceInput, public IStabilizedComponent
+    class ToolSystem : public Sound::IVoiceInput, public IStabilizedComponent, public IConfigurable
     {
     public:
       virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition() const;
@@ -56,11 +57,14 @@ namespace HoloIntervention
       virtual float GetStabilizePriority() const;
 
     public:
+      virtual concurrency::task<bool> WriteConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
+      virtual concurrency::task<bool> ReadConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
+
+    public:
       ToolSystem(NotificationSystem& notificationSystem,
                  RegistrationSystem& registrationSystem,
                  Rendering::ModelRenderer& modelRenderer,
-                 NetworkSystem& networkSystem,
-                 Windows::Storage::StorageFolder^ configStorageFolder);
+                 NetworkSystem& networkSystem);
       ~ToolSystem();
 
       std::shared_ptr<Tools::ToolEntry> GetTool(uint64 token);
@@ -84,6 +88,7 @@ namespace HoloIntervention
       NetworkSystem&                                    m_networkSystem;
       Rendering::ModelRenderer&                         m_modelRenderer;
 
+      std::wstring                                      m_connectionName; // For config saving
       uint64                                            m_hashedConnectionName;
       double                                            m_latestTimestamp;
       std::vector<std::shared_ptr<Tools::ToolEntry>>    m_toolEntries;

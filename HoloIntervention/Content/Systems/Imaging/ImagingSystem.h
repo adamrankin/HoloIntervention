@@ -24,6 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
+#include "IConfigurable.h"
 #include "IStabilizedComponent.h"
 #include "IVoiceInput.h"
 
@@ -49,7 +50,7 @@ namespace HoloIntervention
     class NetworkSystem;
     class NotificationSystem;
 
-    class ImagingSystem : public Sound::IVoiceInput, public IStabilizedComponent
+    class ImagingSystem : public Sound::IVoiceInput, public IStabilizedComponent, public IConfigurable
     {
     public:
       virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition() const;
@@ -58,12 +59,15 @@ namespace HoloIntervention
       virtual float GetStabilizePriority() const;
 
     public:
+      virtual concurrency::task<bool> WriteConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
+      virtual concurrency::task<bool> ReadConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
+
+    public:
       ImagingSystem(RegistrationSystem& registrationSystem,
                     NotificationSystem& notificationSystem,
                     Rendering::SliceRenderer& sliceRenderer,
                     Rendering::VolumeRenderer& volumeRenderer,
-                    NetworkSystem& networkSystem,
-                    Windows::Storage::StorageFolder^ configStorageFolder);
+                    NetworkSystem& networkSystem);
       ~ImagingSystem();
 
       void Update(const DX::StepTimer& timer, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);
@@ -93,6 +97,7 @@ namespace HoloIntervention
       UWPOpenIGTLink::TransformRepository^  m_transformRepository = ref new UWPOpenIGTLink::TransformRepository();
 
       // Slice system
+      std::wstring                          m_sliceConnectionName; // For saving back to disk
       uint64                                m_hashedSliceConnectionName;
       std::wstring                          m_sliceFromCoordFrame = L"Image";
       std::wstring                          m_sliceToCoordFrame = L"HMD";
@@ -102,6 +107,7 @@ namespace HoloIntervention
       std::atomic_bool                      m_sliceValid = false;
 
       // Volume system
+      std::wstring                          m_volumeConnectionName; // For saving back to disk
       uint64                                m_hashedVolumeConnectionName;
       std::wstring                          m_volumeFromCoordFrame = L"Volume";
       std::wstring                          m_volumeToCoordFrame = L"HMD";

@@ -7,8 +7,8 @@ Volume rendering
 Network connect, disconnect, connect, connection lost
 Voice feedback
 UI for IP setting - Dictation
-  saving configuration file infrastructure
 Registration feedback (move around, etc...)
 internationalization (xml database of voice commands and feedback)
 refactor isinfrustum to abstract base class
 after connection lost, connect causes crash
+* slice rendering is incorrect
