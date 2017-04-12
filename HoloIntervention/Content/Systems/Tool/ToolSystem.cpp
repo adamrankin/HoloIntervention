@@ -308,18 +308,19 @@ namespace HoloIntervention
           {
             throw ref new Platform::Exception(E_FAIL, L"Tool entry does not contain model attribute.");
           }
-          if (!HasAttribute(L"Transform", node))
+          if (!HasAttribute(L"From", node) || !HasAttribute(L"To", node))
           {
             throw ref new Platform::Exception(E_FAIL, L"Tool entry does not contain transform attribute.");
           }
           Platform::String^ modelString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Model")->NodeValue);
-          Platform::String^ transformString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Transform")->NodeValue);
-          if (modelString->IsEmpty() || transformString->IsEmpty())
+          Platform::String^ fromString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"From")->NodeValue);
+          Platform::String^ toString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"To")->NodeValue);
+          if (modelString->IsEmpty() || fromString->IsEmpty() || toString->IsEmpty())
           {
             throw ref new Platform::Exception(E_FAIL, L"Tool entry contains an empty attribute.");
           }
 
-          UWPOpenIGTLink::TransformName^ trName = ref new UWPOpenIGTLink::TransformName(transformString);
+          UWPOpenIGTLink::TransformName^ trName = ref new UWPOpenIGTLink::TransformName(fromString, toString);
           if (!trName->IsValid())
           {
             throw ref new Platform::Exception(E_FAIL, L"Tool entry contains invalid transform name.");

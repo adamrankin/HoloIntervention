@@ -1,11 +1,16 @@
-#
-# Material file
-# Created by SpaceClaim
-#
+# Exported from 3D Builder
 
 newmtl c_0
-Kd 0 0.5019608 1
-Ks 0.8 0.8 0.8
-Ka 0.2 0.2 0.2
-illum 2
-Ns 40
+Kd 0.000000 0.501961 1.000000
+
+newmtl c_0
+Kd 0.000000 0.501961 1.000000
+
+newmtl c_0
+Kd 0.000000 0.501961 1.000000
+
+newmtl c_0
+Kd 0.000000 0.501961 1.000000
+
+newmtl c_1
+Kd 1.000000 0.000000 0.000000

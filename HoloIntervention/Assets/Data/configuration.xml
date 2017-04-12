@@ -5,26 +5,41 @@
   <Tools ConnectionName="2DImage">
     <Tool 
       Model="hemisphere_stylus" 
-      Transform="TipToHMD"
+      From="StylusTip"
+      To="HMD"
       LerpEnabled="false" />
   </Tools>
 
   <CoordinateDefinitions>
+    <Transform From="StylusTip" To="Stylus"
+      Matrix="
+        0.999688	0	0.0249626	0.00198826
+        -0.00028736	0.999934	0.0115081	0.000916616
+        -0.0249609	-0.0115117	0.999622	0.0796197
+        0	0	0	1"
+      Error="0.115965" Date="013017_102345" />
   </CoordinateDefinitions>
 
   <CameraRegistration
-    IGTConnection="2DImage" />
+    IGTConnection="2DImage"
+    Dp="2"
+    MinDistanceDivisor="16"
+    Param1="255"
+    Param2="30"
+    MinRadius="20"
+    MaxRadius="60"
+    />
 
   <IGTConnections>
     <Connection
       Name="2DImage"
-      Host="192.168.0.102"
+      Host="192.168.0.101"
       Port="18944"
       ReconnectOnDrop="true"
       EmbeddedImageTransformName="ImageToReference" />
     <xConnection
       Name="3DImage"
-      Host="192.168.0.102"
+      Host="192.168.0.101"
       Port="18945"
       ReconnectOnDrop="true"
       EmbeddedImageTransformName="VolumeToReference" />

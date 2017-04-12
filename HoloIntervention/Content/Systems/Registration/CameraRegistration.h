@@ -167,6 +167,12 @@ namespace HoloIntervention
       Windows::Media::Capture::Frames::MediaFrameReference^                 m_nextFrame = nullptr;
       mutable std::mutex                                                    m_processorLock;
       std::shared_ptr<Capture::VideoFrameProcessor>                         m_videoFrameProcessor = nullptr;
+      double                                                                m_dp = 2;
+      double                                                                m_minDistanceDivisor = 16;
+      double                                                                m_param1 = 255;
+      double                                                                m_param2 = 30;
+      double                                                                m_minRadius = 20;
+      double                                                                m_maxRadius = 60;
 
       // IGT link
       std::wstring                                                          m_connectionName; // For config writing

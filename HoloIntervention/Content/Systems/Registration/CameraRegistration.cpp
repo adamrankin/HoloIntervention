@@ -160,6 +160,18 @@ namespace HoloIntervention
 
         auto camRegElem = document->CreateElement(L"CameraRegistration");
         camRegElem->SetAttribute(L"IGTConnection", ref new Platform::String(m_connectionName.c_str()));
+        for (auto attr :
+        {
+          std::pair<Platform::String^, double&>(L"Dp", m_dp),
+          std::pair<Platform::String^, double&>(L"MinDistanceDivisor", m_minDistanceDivisor),
+          std::pair<Platform::String^, double&>(L"Param1", m_param1),
+          std::pair<Platform::String^, double&>(L"Param2", m_param2),
+          std::pair<Platform::String^, double&>(L"MinRadius", m_minRadius),
+          std::pair<Platform::String^, double&>(L"MaxRadius", m_maxRadius)
+        })
+        {
+          camRegElem->SetAttribute(attr.first, attr.second.ToString());
+        }
         rootNode->AppendChild(camRegElem);
 
         return true;
@@ -184,15 +196,36 @@ namespace HoloIntervention
           throw ref new Platform::Exception(E_INVALIDARG, L"No camera registration defined in the configuration file.");
         }
 
-        for (auto node : document->SelectNodes(xpath))
+        auto node = document->SelectNodes(xpath)->Item(0);
+
+        if (!HasAttribute(L"IGTConnection", node))
         {
-          if (!HasAttribute(L"IGTConnection", node))
+          throw ref new Platform::Exception(E_FAIL, L"Camera registration entry does not contain \"IGTConnection\" attribute.");
+        }
+        Platform::String^ igtConnectionName = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"IGTConnection")->NodeValue);
+        m_connectionName = std::wstring(igtConnectionName->Data());
+        m_hashedConnectionName = HashString(igtConnectionName);
+
+        for (auto attr :
+             {
+               std::pair<Platform::String^, double&>(L"Dp", m_dp),
+               std::pair<Platform::String^, double&>(L"MinDistanceDivisor", m_minDistanceDivisor),
+               std::pair<Platform::String^, double&>(L"Param1", m_param1),
+               std::pair<Platform::String^, double&>(L"Param2", m_param2),
+               std::pair<Platform::String^, double&>(L"MinRadius", m_minRadius),
+               std::pair<Platform::String^, double&>(L"MaxRadius", m_maxRadius)
+             })
+        {
+          if (!HasAttribute(std::wstring(attr.first->Data()), node))
           {
-            throw ref new Platform::Exception(E_FAIL, L"Camera registration entry does not contain \"IGTConnection\" attribute.");
+            continue;
           }
-          Platform::String^ igtConnectionName = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"IGTConnection")->NodeValue);
-          m_connectionName = std::wstring(igtConnectionName->Data());
-          m_hashedConnectionName = HashString(igtConnectionName);
+          Platform::String^ attrString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(attr.first)->NodeValue);
+          std::wstringstream ss;
+          ss << attrString->Data();
+          double attrValue;
+          ss >> attrValue;
+          attr.second = attrValue;
         }
 
         return true;
@@ -846,6 +879,7 @@ namespace HoloIntervention
           else if (circles.size() > PHANTOM_SPHERE_COUNT)
           {
             // TODO : is it possible to make our code more robust by identifying 5 circles that make sense? pixel center distances? radii? etc...
+            LOG(LogLevelType::LOG_LEVEL_ERROR, "Too many circles detected.");
             result = false;
             goto done;
           }
@@ -888,6 +922,7 @@ namespace HoloIntervention
             // Initialize rvec and tvec with a reasonable guess
             if (!cv::solvePnP(phantomFiducialsCv, circleCentersPixel, intrinsic, distCoeffs, rvec, tvec, false, cv::SOLVEPNP_DLS))
             {
+              LOG(LogLevelType::LOG_LEVEL_ERROR, "Cannot solvePnP initialization.");
               result = false;
               goto done;
             }
@@ -896,6 +931,7 @@ namespace HoloIntervention
           // Use iterative technique to refine results
           if (!cv::solvePnP(phantomFiducialsCv, circleCentersPixel, intrinsic, distCoeffs, rvec, tvec, true))
           {
+            LOG(LogLevelType::LOG_LEVEL_ERROR, "Cannot solvePnP iteration.");
             result = false;
             goto done;
           }
@@ -919,6 +955,7 @@ namespace HoloIntervention
           if (!IsPhantomToCameraSane(phantomToCameraTransform))
           {
             // Somethings gone wonky, let's try with a fresh start on the next frame
+            LOG(LogLevelType::LOG_LEVEL_ERROR, "PhantomToCamera isn't sane. Skipping");
             m_pnpNeedsInit = true;
             return false;
           }
@@ -947,6 +984,12 @@ done:
           if (m_transformRepository->GetTransform(m_sphereCoordinateNames[i], &transform))
           {
             sphereXToReferenceTransform[i] = transpose(transform);
+          }
+          else
+          {
+            // Path not found, cannot continue
+            LOG(LogLevelType::LOG_LEVEL_ERROR, L"Cannot extract " + m_sphereCoordinateNames[i]->GetTransformName() + L" transform. Aborting.");
+            return false;
           }
         }
       }
@@ -1106,7 +1149,7 @@ done:
             (greenLinks.size() == 2 && yellowLinks.size() == 2 && tealLinks.size() == 2) ||
             (greenLinks.size() == 2 && yellowLinks.size() == 2 && blueLinks.size() == 2)))
       {
-        // No trio of 2, cannot deduce pattern
+        LOG(LogLevelType::LOG_LEVEL_ERROR, "No trio of 2. Cannot deduce pattern.");
         return false;
       }
 

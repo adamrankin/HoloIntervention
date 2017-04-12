@@ -399,21 +399,40 @@ namespace HoloIntervention
         return;
       }
 
-      float4x4 sliceToHMD;
-      if (!m_transformRepository->GetTransform(m_sliceToHMDName, &sliceToHMD))
+      float4x4 imageToHMD;
+      if (!m_transformRepository->GetTransform(m_sliceToHMDName, &imageToHMD))
       {
         LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to retrieve " + m_sliceToHMDName->GetTransformName() + L" from repository.");
         return;
       }
-      sliceToHMD = transpose(sliceToHMD);
+      imageToHMD = transpose(imageToHMD);
+
+      // Model space is vertex space, [-0.5,0.5]
+      auto modelToModelOffset = make_float4x4_translation(-0.5, 1.5, 0);
+      auto modelOffsetToImage = make_float4x4_scale(frame->Dimensions[0] * 1.f, frame->Dimensions[1] * 1.f, 1.f);
+      auto modelToHMD = modelToModelOffset * modelOffsetToImage * imageToHMD;
+
+      // We must also transform from model space to image space
+      // +0.5 x, +0.5 y to get square from 0-1, 0-1 (model space)
+      // 1   0   0   0
+      // 0   1   0   0
+      // 0   0   1   0
+      // 0.5 0.5 0   1
+      // * imageSize[0], * imageSize[1] to scale and get rect from 0-imageSize[0], 0-imageSize[1] (pixel space)
+      // imageSize[0] 0             0 0
+      // 0            imageSize[1]  0 0
+      // 0            0             1 0
+      // 0            0             0 1
 
       if (!HasSlice())
       {
-        m_sliceToken = m_sliceRenderer.AddSlice(frame, sliceToHMD);
+        m_sliceToken = m_sliceRenderer.AddSlice(frame, modelToHMD);
+        auto sliceEntry = m_sliceRenderer.GetSlice(m_sliceToken);
+        sliceEntry->SetCurrentPose(modelToHMD);
       }
       else
       {
-        m_sliceRenderer.UpdateSlice(m_sliceToken, frame, sliceToHMD);
+        m_sliceRenderer.UpdateSlice(m_sliceToken, frame, modelToHMD);
       }
     }
 
@@ -445,6 +464,8 @@ namespace HoloIntervention
       if (!HasVolume())
       {
         m_volumeToken = m_volumeRenderer.AddVolume(frame, volumeToHMD);
+        auto entry = m_volumeRenderer.GetVolume(m_volumeToken);
+        entry->SetCurrentPose(volumeToHMD);
       }
       else
       {
