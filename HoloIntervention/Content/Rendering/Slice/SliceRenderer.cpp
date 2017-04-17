@@ -103,11 +103,8 @@ namespace HoloIntervention
       }
 
       std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources, m_timer);
-      entry->m_id = m_nextUnusedSliceId;
-
-      XMStoreFloat4x4(&entry->m_constantBuffer.worldMatrix, DirectX::XMLoadFloat4x4(&desiredPose));
-      entry->m_desiredPose = entry->m_currentPose = entry->m_lastPose = desiredPose;
-
+      entry->SetId(m_nextUnusedSliceId);
+      entry->ForceCurrentPose(desiredPose);
       entry->SetImageData(imageData, width, height, pixelFormat);
 
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
@@ -126,10 +123,8 @@ namespace HoloIntervention
       }
 
       std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources, m_timer);
-      entry->m_id = m_nextUnusedSliceId;
-
-      XMStoreFloat4x4(&entry->m_constantBuffer.worldMatrix, DirectX::XMLoadFloat4x4(&desiredPose));
-      entry->m_desiredPose = entry->m_currentPose = entry->m_lastPose = desiredPose;
+      entry->SetId(m_nextUnusedSliceId);
+      entry->ForceCurrentPose(desiredPose);
 
       std::shared_ptr<byte> imDataPtr(new byte[imageData->Length], std::default_delete<byte[]>());
       memcpy(imDataPtr.get(), HoloIntervention::GetDataFromIBuffer(imageData), imageData->Length * sizeof(byte));
@@ -151,7 +146,7 @@ namespace HoloIntervention
       }
 
       std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources, m_timer);
-      entry->m_id = m_nextUnusedSliceId;
+      entry->SetId(m_nextUnusedSliceId);
       entry->SetDesiredPose(desiredPose);
       entry->SetImageData(fileName);
 
@@ -171,7 +166,7 @@ namespace HoloIntervention
       }
 
       std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources, m_timer);
-      entry->m_id = m_nextUnusedSliceId;
+      entry->SetId(m_nextUnusedSliceId);
       entry->SetDesiredPose(desiredPose);
       entry->SetFrame(frame);
 
@@ -191,7 +186,7 @@ namespace HoloIntervention
       {
         for (auto sliceIter = m_slices.begin(); sliceIter != m_slices.end(); ++sliceIter)
         {
-          if ((*sliceIter)->m_id == sliceToken)
+          if ((*sliceIter)->GetId() == sliceToken)
           {
             m_slices.erase(sliceIter);
             return;
@@ -277,13 +272,13 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SliceRenderer::SetSlicePose(uint64 sliceToken, const float4x4& pose)
+    void SliceRenderer::ForceSlicePose(uint64 sliceToken, const float4x4& pose)
     {
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
       std::shared_ptr<SliceEntry> entry;
       if (FindSlice(sliceToken, entry))
       {
-        entry->m_currentPose = entry->m_desiredPose = entry->m_lastPose = pose;
+        entry->ForceCurrentPose(pose);
       }
     }
 
@@ -294,7 +289,7 @@ namespace HoloIntervention
       std::shared_ptr<SliceEntry> entry;
       if (FindSlice(sliceToken, entry))
       {
-        return entry->m_currentPose;
+        return entry->GetCurrentPose();
       }
 
       std::stringstream ss;
@@ -524,7 +519,7 @@ namespace HoloIntervention
     {
       for (auto slice : m_slices)
       {
-        if (slice->m_id == sliceToken)
+        if (slice->GetId() == sliceToken)
         {
           sliceEntry = slice;
           return true;

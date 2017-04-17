@@ -195,6 +195,17 @@ namespace HoloIntervention
         sliceElem->SetAttribute(L"From", ref new Platform::String(m_sliceFromCoordFrame.c_str()));
         sliceElem->SetAttribute(L"To", ref new Platform::String(m_sliceToCoordFrame.c_str()));
         sliceElem->SetAttribute(L"IGTConnection", ref new Platform::String(m_sliceConnectionName.c_str()));
+        {
+          std::wstringstream ss;
+          ss << m_whiteMapColour.x << " " << m_whiteMapColour.y << " " << m_whiteMapColour.z << " " << m_whiteMapColour.w;
+          sliceElem->SetAttribute(L"WhiteMapColour", ref new Platform::String(ss.str().c_str()));
+        }
+        {
+          std::wstringstream ss;
+          ss << m_blackMapColour.x << " " << m_blackMapColour.y << " " << m_blackMapColour.z << " " << m_blackMapColour.w;
+          sliceElem->SetAttribute(L"BlackMapColour", ref new Platform::String(ss.str().c_str()));
+        }
+
         rootNode->AppendChild(sliceElem);
 
         auto volumeElem = document->CreateElement("VolumeRendering");
@@ -225,9 +236,9 @@ namespace HoloIntervention
             return;
           }
 
-          IXmlNode^ node = document->SelectNodes(xpath)->Item(0);
-          Platform::String^ fromAttribute = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"From")->NodeValue);
-          Platform::String^ toAttribute = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"To")->NodeValue);
+          auto node = document->SelectNodes(xpath)->Item(0);
+          auto fromAttribute = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"From")->NodeValue);
+          auto toAttribute = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"To")->NodeValue);
           if (fromAttribute->IsEmpty() || toAttribute->IsEmpty())
           {
             return;
@@ -249,6 +260,23 @@ namespace HoloIntervention
 
         fromToFunction(L"/HoloIntervention/VolumeRendering", m_volumeFromCoordFrame, m_volumeToCoordFrame, m_volumeToHMDName, m_hashedVolumeConnectionName, m_volumeConnectionName);
         fromToFunction(L"/HoloIntervention/SliceRendering", m_sliceFromCoordFrame, m_sliceToCoordFrame, m_sliceToHMDName, m_hashedSliceConnectionName, m_sliceConnectionName);
+
+        if (document->SelectNodes(L"/HoloIntervention/SliceRendering")->Length == 1)
+        {
+          auto node = document->SelectNodes(L"/HoloIntervention/SliceRendering")->Item(0);
+          auto whiteMapColourString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"WhiteMapColour")->NodeValue);
+          auto blackMapColourString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"BlackMapColour")->NodeValue);
+          {
+            std::wstringstream ss;
+            ss << whiteMapColourString->Data();
+            ss >> m_whiteMapColour.x >> m_whiteMapColour.y >> m_whiteMapColour.z >> m_whiteMapColour.w;
+          }
+          {
+            std::wstringstream ss;
+            ss << whiteMapColourString->Data();
+            ss >> m_blackMapColour.x >> m_blackMapColour.y >> m_blackMapColour.z >> m_blackMapColour.w;
+          }
+        }
 
         m_componentReady = true;
 
@@ -428,7 +456,7 @@ namespace HoloIntervention
       {
         m_sliceToken = m_sliceRenderer.AddSlice(frame, modelToHMD);
         auto sliceEntry = m_sliceRenderer.GetSlice(m_sliceToken);
-        sliceEntry->SetCurrentPose(modelToHMD);
+        sliceEntry->ForceCurrentPose(modelToHMD);
       }
       else
       {
@@ -465,7 +493,7 @@ namespace HoloIntervention
       {
         m_volumeToken = m_volumeRenderer.AddVolume(frame, volumeToHMD);
         auto entry = m_volumeRenderer.GetVolume(m_volumeToken);
-        entry->SetCurrentPose(volumeToHMD);
+        entry->ForceCurrentPose(volumeToHMD);
       }
       else
       {

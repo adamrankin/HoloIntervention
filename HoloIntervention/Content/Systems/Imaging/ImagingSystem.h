@@ -104,6 +104,8 @@ namespace HoloIntervention
       UWPOpenIGTLink::TransformName^        m_sliceToHMDName = ref new UWPOpenIGTLink::TransformName(ref new Platform::String(m_sliceFromCoordFrame.c_str()), ref new Platform::String(m_sliceToCoordFrame.c_str()));
       uint64                                m_sliceToken = INVALID_TOKEN;
       double                                m_latestSliceTimestamp = 0.0;
+      Windows::Foundation::Numerics::float4 m_whiteMapColour = { 1.f, 1.f, 1.f, 1.f };
+      Windows::Foundation::Numerics::float4 m_blackMapColour = { 0.f, 0.f, 0.f, 1.f };
       std::atomic_bool                      m_sliceValid = false;
 
       // Volume system

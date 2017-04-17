@@ -48,6 +48,8 @@
   <SliceRendering 
     From="Image" 
     To="HMD"
+    WhiteMapColour="1.0 0.0 0.0 1.0"
+    BlackMapColour="0.0 0.0 1.0 1.0"
     IGTConnection="2DImage" />
 
   <VolumeRendering 

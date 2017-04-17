@@ -39,6 +39,8 @@ namespace HoloIntervention
     struct SliceConstantBuffer
     {
       DirectX::XMFLOAT4X4 worldMatrix;
+      DirectX::XMFLOAT4   blackMapColour;
+      DirectX::XMFLOAT4   whiteMinusBlackColour;
     };
 
     static_assert((sizeof(SliceConstantBuffer) % (sizeof(float) * 4)) == 0, "Slice constant buffer size must be 16-byte aligned (16 bytes is the length of four floats).");
@@ -67,12 +69,20 @@ namespace HoloIntervention
       std::shared_ptr<byte> GetImageData() const;
 
       void SetDesiredPose(const Windows::Foundation::Numerics::float4x4& matrix);
-      void SetCurrentPose(const Windows::Foundation::Numerics::float4x4& matrix);
+      void ForceCurrentPose(const Windows::Foundation::Numerics::float4x4& matrix);
       Windows::Foundation::Numerics::float4x4 GetCurrentPose() const;
 
       bool GetVisible() const;
       void SetVisible(bool visible);
+
       void SetHeadlocked(bool headLocked);
+      bool GetHeadlocked() const;
+
+      void SetId(uint64 id);
+      uint64 GetId() const;
+
+      void SetWhiteMapColour(Windows::Foundation::Numerics::float4 colour);
+      void SetBlackMapColour(Windows::Foundation::Numerics::float4 colour);
 
       void CreateDeviceDependentResources();
       void ReleaseDeviceDependentResources();
@@ -80,30 +90,33 @@ namespace HoloIntervention
       DXGI_FORMAT GetPixelFormat() const;
       void SetPixelFormat(DXGI_FORMAT val);
 
-      uint64                                              m_id = 0;
-      SliceConstantBuffer                                 m_constantBuffer;
-      Windows::Foundation::Numerics::float4x4             m_desiredPose = Windows::Foundation::Numerics::float4x4::identity();
-      Windows::Foundation::Numerics::float4x4             m_currentPose = Windows::Foundation::Numerics::float4x4::identity();
-      Windows::Foundation::Numerics::float4x4             m_lastPose = Windows::Foundation::Numerics::float4x4::identity();
-      Windows::Foundation::Numerics::float3               m_velocity = { 0.f, 0.f, 0.f };
     protected:
       // Cached pointer
       std::shared_ptr<DX::DeviceResources>                m_deviceResources;
       DX::StepTimer&                                      m_timer;
 
+      // D3D resources
       Microsoft::WRL::ComPtr<ID3D11Texture2D>             m_imageTexture;
       Microsoft::WRL::ComPtr<ID3D11Texture2D>             m_imageStagingTexture;
       Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>    m_shaderResourceView;
       Microsoft::WRL::ComPtr<ID3D11Buffer>                m_sliceConstantBuffer;
-      mutable std::atomic_bool                            m_isInFrustum = false;
-      mutable uint64                                      m_frustumCheckFrameNumber = 0;
 
-      // Rendering behavior vars
+      // State vars
+      uint64                                              m_id = 0;
+      SliceConstantBuffer                                 m_constantBuffer;
       std::atomic_bool                                    m_sliceValid = false;
       std::atomic_bool                                    m_headLocked = false;
       std::atomic_bool                                    m_visible = true;
+      Windows::Foundation::Numerics::float4x4             m_desiredPose = Windows::Foundation::Numerics::float4x4::identity();
+      Windows::Foundation::Numerics::float4x4             m_currentPose = Windows::Foundation::Numerics::float4x4::identity();
+      Windows::Foundation::Numerics::float4x4             m_lastPose = Windows::Foundation::Numerics::float4x4::identity();
+      Windows::Foundation::Numerics::float3               m_velocity = { 0.f, 0.f, 0.f };
+      Windows::Foundation::Numerics::float4               m_whiteMapColour = { 1.f, 1.f, 1.f, 1.f };
+      Windows::Foundation::Numerics::float4               m_blackMapColour = { 0.f, 0.f, 0.f, 1.f };
       float                                               m_scalingFactor = 1.f;
       DXGI_FORMAT                                         m_pixelFormat = DXGI_FORMAT_UNKNOWN;
+      mutable std::atomic_bool                            m_isInFrustum = false;
+      mutable uint64                                      m_frustumCheckFrameNumber = 0;
 
       // Image data vars
       UWPOpenIGTLink::TrackedFrame^                       m_frame = nullptr;

@@ -80,7 +80,7 @@ namespace HoloIntervention
       void SetSliceVisible(uint64 sliceToken, bool show);
       void SetSliceHeadlocked(uint64 sliceToken, bool headlocked);
 
-      void SetSlicePose(uint64 sliceToken, const Windows::Foundation::Numerics::float4x4& pose);
+      void ForceSlicePose(uint64 sliceToken, const Windows::Foundation::Numerics::float4x4& pose);
       Windows::Foundation::Numerics::float4x4 GetSlicePose(uint64 sliceToken) const;
       void SetDesiredSlicePose(uint64 sliceToken, const Windows::Foundation::Numerics::float4x4& pose);
       Windows::Foundation::Numerics::float3 GetSliceVelocity(uint64 sliceToken) const;

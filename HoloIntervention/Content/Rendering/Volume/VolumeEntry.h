@@ -101,7 +101,7 @@ namespace HoloIntervention
       void SetShowing(bool showing);
       uint64 GetToken() const;
 
-      void SetCurrentPose(const Windows::Foundation::Numerics::float4x4& matrix);
+      void ForceCurrentPose(const Windows::Foundation::Numerics::float4x4& matrix);
       void SetDesiredPose(const Windows::Foundation::Numerics::float4x4& matrix);
       Windows::Foundation::Numerics::float4x4 GetCurrentPose() const;
       Windows::Foundation::Numerics::float3 GetVelocity() const;

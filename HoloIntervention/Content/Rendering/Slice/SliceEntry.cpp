@@ -181,6 +181,7 @@ namespace HoloIntervention
       const auto context = m_deviceResources->GetD3DDeviceContext();
 
       context->VSSetConstantBuffers(0, 1, m_sliceConstantBuffer.GetAddressOf());
+      context->PSSetConstantBuffers(0, 1, m_sliceConstantBuffer.GetAddressOf());
       context->PSSetShaderResources(0, 1, m_shaderResourceView.GetAddressOf());
 
       context->DrawIndexedInstanced(indexCount, 2, 0, 0, 0);
@@ -302,9 +303,9 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SliceEntry::SetCurrentPose(const Windows::Foundation::Numerics::float4x4& matrix)
+    void SliceEntry::ForceCurrentPose(const Windows::Foundation::Numerics::float4x4& matrix)
     {
-      m_currentPose = m_desiredPose = matrix;
+      m_currentPose = m_desiredPose = m_lastPose = matrix;
     }
 
     //----------------------------------------------------------------------------
@@ -337,6 +338,37 @@ namespace HoloIntervention
       {
         m_scalingFactor = 1.f;
       }
+    }
+
+    //----------------------------------------------------------------------------
+    bool SliceEntry::GetHeadlocked() const
+    {
+      return m_headLocked;
+    }
+
+    //----------------------------------------------------------------------------
+    void SliceEntry::SetId(uint64 id)
+    {
+      m_id = id;
+    }
+
+    //----------------------------------------------------------------------------
+    uint64 SliceEntry::GetId() const
+    {
+      return m_id;
+    }
+
+    //----------------------------------------------------------------------------
+    void SliceEntry::SetWhiteMapColour(float4 colour)
+    {
+      float4 blackMapColour(m_constantBuffer.blackMapColour.x, m_constantBuffer.blackMapColour.y, m_constantBuffer.blackMapColour.z, m_constantBuffer.blackMapColour.w);
+      XMStoreFloat4(&m_constantBuffer.whiteMinusBlackColour, XMLoadFloat4(&(colour - blackMapColour)));
+    }
+
+    //----------------------------------------------------------------------------
+    void SliceEntry::SetBlackMapColour(float4 colour)
+    {
+      XMStoreFloat4(&m_constantBuffer.blackMapColour, XMLoadFloat4(&colour));
     }
 
     //----------------------------------------------------------------------------

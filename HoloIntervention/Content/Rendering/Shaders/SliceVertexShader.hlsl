@@ -13,6 +13,8 @@
 cbuffer SliceConstantBuffer : register(b0)
 {
   float4x4      model;
+  float4        whiteMapColour;
+  float4        blackMapColour;
 };
 
 // A constant buffer that stores each set of view and projection matrices in column-major format.

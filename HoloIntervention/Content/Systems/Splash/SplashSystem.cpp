@@ -147,7 +147,7 @@ namespace HoloIntervention
 
         if (m_firstFrame)
         {
-          m_sliceEntry->SetCurrentPose(scaleTransform * worldTransform);
+          m_sliceEntry->ForceCurrentPose(scaleTransform * worldTransform);
           m_firstFrame = false;
         }
         else

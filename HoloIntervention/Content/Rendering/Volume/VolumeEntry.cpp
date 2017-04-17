@@ -319,7 +319,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void VolumeEntry::SetCurrentPose(const Windows::Foundation::Numerics::float4x4& matrix)
+    void VolumeEntry::ForceCurrentPose(const Windows::Foundation::Numerics::float4x4& matrix)
     {
       m_desiredPose = m_currentPose = matrix;
     }
