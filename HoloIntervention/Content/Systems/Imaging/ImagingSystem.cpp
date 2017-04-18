@@ -456,6 +456,8 @@ namespace HoloIntervention
       {
         m_sliceToken = m_sliceRenderer.AddSlice(frame, modelToHMD);
         auto sliceEntry = m_sliceRenderer.GetSlice(m_sliceToken);
+        sliceEntry->SetWhiteMapColour(m_whiteMapColour);
+        sliceEntry->SetBlackMapColour(m_blackMapColour);
         sliceEntry->ForceCurrentPose(modelToHMD);
       }
       else
