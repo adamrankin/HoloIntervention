@@ -21,6 +21,13 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 ====================================================================*/
 
+cbuffer SliceConstantBuffer : register(b0)
+{
+  float4x4 model;
+  float4 blackMapColour;
+  float4 whiteMinusBlackColour;
+};
+
 // Per-pixel color data passed through to the pixel shader.
 struct PixelShaderInput
 {

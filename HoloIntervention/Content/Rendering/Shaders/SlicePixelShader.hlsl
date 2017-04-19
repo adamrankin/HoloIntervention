@@ -43,7 +43,7 @@ SamplerState  textureSampler  : s0;
 min16float4 main(PixelShaderInput input) : SV_TARGET
 {
   float4 sample = tex.Sample(textureSampler, input.texCoord);
-  float4 result = blackMapColour + (whiteMinusBlackColour * sample);
+  float4 result = blackMapColour + (whiteMinusBlackColour * sample.xxxx);
 
-  return min16float4(result.x, result.y, result.z, result.a);
+  return min16float4(result.r, result.g, result.b, result.w);
 }
