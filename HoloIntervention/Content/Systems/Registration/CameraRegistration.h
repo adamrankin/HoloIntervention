@@ -24,8 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
-#include "IConfigurable.h"
-#include "IStabilizedComponent.h"
+#include "IRegistrationMethod.h"
 #include "LandmarkRegistration.h"
 
 // Capture includes
@@ -72,7 +71,7 @@ namespace HoloIntervention
     class NetworkSystem;
     class NotificationSystem;
 
-    class CameraRegistration : public IStabilizedComponent, public IConfigurable
+    class CameraRegistration : public IRegistrationMethod
     {
       typedef std::vector<uint32> ColourToCircleList;
 
@@ -102,24 +101,20 @@ namespace HoloIntervention
       virtual concurrency::task<bool> ReadConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
 
     public:
+      virtual void SetWorldAnchor(Windows::Perception::Spatial::SpatialAnchor^ worldAnchor);
+
+      virtual Concurrency::task<bool> StopAsync();
+      virtual Concurrency::task<bool> StartAsync();
+      virtual bool IsStarted();
+      virtual void ResetRegistration();
+      virtual void EnableVisualization(bool enabled);
+      virtual void Update(Platform::IBox<Windows::Foundation::Numerics::float4x4>^ anchorToRequestedBox);
+
+    public:
       CameraRegistration(NotificationSystem& notificationSystem, NetworkSystem& networkSystem, Rendering::ModelRenderer& modelRenderer);
       ~CameraRegistration();
 
-      void Update(Platform::IBox<Windows::Foundation::Numerics::float4x4>^ anchorToRequestedBox);
-      Concurrency::task<bool> StopCameraAsync();
-      Concurrency::task<bool> StartCameraAsync();
       bool IsCameraActive() const;
-      void SetVisualization(bool enabled);
-
-      void DiscardFrames();
-
-      Windows::Perception::Spatial::SpatialAnchor^ GetWorldAnchor();
-      void SetWorldAnchor(Windows::Perception::Spatial::SpatialAnchor^ worldAnchor);
-
-      bool HasRegistration() const;
-      Windows::Foundation::Numerics::float4x4 GetReferenceToWorldAnchorTransformation() const;
-
-      void RegisterTransformUpdatedCallback(std::function<void(Windows::Foundation::Numerics::float4x4)> function);
 
     protected:
       void Init();
@@ -149,10 +144,6 @@ namespace HoloIntervention
       Rendering::ModelRenderer&                                             m_modelRenderer;
       NotificationSystem&                                                   m_notificationSystem;
       NetworkSystem&                                                        m_networkSystem;
-
-      // Anchor resources
-      std::mutex                                                            m_anchorLock;
-      Windows::Perception::Spatial::SpatialAnchor^                          m_worldAnchor = nullptr;
 
       // Visualization resources
       std::atomic_bool                                                      m_visualizationEnabled = false;
@@ -191,11 +182,8 @@ namespace HoloIntervention
 
       // State
       Concurrency::cancellation_token_source                                m_tokenSource;
-      std::atomic_bool                                                      m_hasRegistration = false;
       std::atomic_bool                                                      m_pnpNeedsInit = true;
-      std::function<void(Windows::Foundation::Numerics::float4x4)>          m_completeCallback;
       uint32                                                                m_lastRegistrationResultCount = NUMBER_OF_FRAMES_BETWEEN_REGISTRATION;
-      Windows::Foundation::Numerics::float4x4                               m_referenceToAnchor = Windows::Foundation::Numerics::float4x4::identity();
       std::shared_ptr<LandmarkRegistration>                                 m_landmarkRegistration = std::make_shared<LandmarkRegistration>();
 
       static const uint32                                                   NUMBER_OF_FRAMES_BETWEEN_REGISTRATION = 3;

@@ -145,6 +145,9 @@
     <ClCompile Include="Content\Rendering\RenderingCommon.cxx">
       <Filter>Content\Rendering</Filter>
     </ClCompile>
+    <ClCompile Include="Content\Systems\Registration\OpticalRegistration.cpp">
+      <Filter>Content\Systems\Registration\Optical</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Content\Sound\OmnidirectionalSound.h">
@@ -314,6 +317,12 @@
     </ClInclude>
     <ClInclude Include="Core\IConfigurable.h">
       <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Systems\Registration\OpticalRegistration.h">
+      <Filter>Content\Systems\Registration\Optical</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Systems\Registration\IRegistrationMethod.h">
+      <Filter>Content\Systems\Registration</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -677,6 +686,9 @@
     </Filter>
     <Filter Include="Content\Rendering\MeshRenderer\Shaders">
       <UniqueIdentifier>{d194b49e-a3a5-46c4-aa82-0ac812d4d39d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Systems\Registration\Optical">
+      <UniqueIdentifier>{6acd74ab-a1e7-4c51-a802-a913e17d4fbb}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

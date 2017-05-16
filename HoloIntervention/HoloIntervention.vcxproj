@@ -150,7 +150,9 @@
     <ClInclude Include="Content\Systems\Network\NetworkSystem.h" />
     <ClInclude Include="Content\Systems\Notification\NotificationSystem.h" />
     <ClInclude Include="Content\Systems\Registration\CameraRegistration.h" />
+    <ClInclude Include="Content\Systems\Registration\IRegistrationMethod.h" />
     <ClInclude Include="Content\Systems\Registration\LandmarkRegistration.h" />
+    <ClInclude Include="Content\Systems\Registration\OpticalRegistration.h" />
     <ClInclude Include="Content\Systems\Registration\RegistrationSystem.h" />
     <ClInclude Include="Content\Systems\Splash\SplashSystem.h" />
     <ClInclude Include="Content\Systems\Tool\ToolEntry.h" />
@@ -205,6 +207,7 @@
     <ClCompile Include="Content\Systems\Notification\NotificationSystem.cpp" />
     <ClCompile Include="Content\Systems\Registration\CameraRegistration.cpp" />
     <ClCompile Include="Content\Systems\Registration\LandmarkRegistration.cpp" />
+    <ClCompile Include="Content\Systems\Registration\OpticalRegistration.cpp" />
     <ClCompile Include="Content\Systems\Registration\RegistrationSystem.cpp" />
     <ClCompile Include="Content\Systems\Splash\SplashSystem.cpp" />
     <ClCompile Include="Content\Systems\Tool\ToolEntry.cpp" />

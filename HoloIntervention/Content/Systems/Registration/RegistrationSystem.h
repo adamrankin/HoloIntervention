@@ -28,14 +28,12 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "IConfigurable.h"
+#include "IRegistrationMethod.h"
 #include "IStabilizedComponent.h"
 #include "IVoiceInput.h"
 
 // WinRT includes
 #include <ppltasks.h>
-
-// Registration method includes
-#include "CameraRegistration.h"
 
 namespace DX
 {
@@ -90,6 +88,7 @@ namespace HoloIntervention
     protected:
       // Cached references
       NotificationSystem&                             m_notificationSystem;
+      NetworkSystem&                                  m_networkSystem;
       Rendering::ModelRenderer&                       m_modelRenderer;
       Physics::PhysicsAPI&                            m_physicsAPI;
 
@@ -97,14 +96,13 @@ namespace HoloIntervention
       std::atomic_bool                                m_forcePose = false;
 
       // Anchor variables
-      std::atomic_bool                                m_registrationActive = false;
       std::atomic_bool                                m_regAnchorRequested = false;
       uint64_t                                        m_regAnchorModelId = 0;
       std::shared_ptr<Rendering::ModelEntry>          m_regAnchorModel = nullptr;
       Windows::Perception::Spatial::SpatialAnchor^    m_regAnchor = nullptr;
 
       // Registration methods
-      std::shared_ptr<CameraRegistration>             m_cameraRegistration;
+      std::shared_ptr<IRegistrationMethod>            m_registrationMethod;
       Windows::Foundation::Numerics::float4x4         m_cachedRegistrationTransform = Windows::Foundation::Numerics::float4x4::identity();
 
       // Constants
