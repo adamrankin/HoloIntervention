@@ -31,7 +31,7 @@ namespace HoloIntervention
   class IStabilizedComponent : public IEngineComponent
   {
   public:
-    virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition() const = 0;
+    virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition(Windows::UI::Input::Spatial::SpatialPointerPose^ pose) const = 0;
     virtual Windows::Foundation::Numerics::float3 GetStabilizedNormal(Windows::UI::Input::Spatial::SpatialPointerPose^ pose) const = 0;
     virtual Windows::Foundation::Numerics::float3 GetStabilizedVelocity() const = 0;
     virtual float GetStabilizePriority() const = 0;

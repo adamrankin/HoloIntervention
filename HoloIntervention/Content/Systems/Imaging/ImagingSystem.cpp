@@ -55,7 +55,7 @@ namespace HoloIntervention
   {
 
     //----------------------------------------------------------------------------
-    float3 ImagingSystem::GetStabilizedPosition() const
+    float3 ImagingSystem::GetStabilizedPosition(SpatialPointerPose^ pose) const
     {
       std::shared_ptr<Rendering::SliceEntry> sliceEntry(nullptr);
       if (m_sliceValid)

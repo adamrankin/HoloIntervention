@@ -267,6 +267,18 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
+  bool GetAttribute(const std::wstring& attributeName, Windows::Data::Xml::Dom::IXmlNode^ node, std::wstring& outValue)
+  {
+    if (!HasAttribute(attributeName, node))
+    {
+      return false;
+    }
+
+    outValue = std::wstring(dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(ref new Platform::String(attributeName.c_str()))->NodeValue)->Data());
+    return true;
+  }
+
+  //----------------------------------------------------------------------------
   bool GetBooleanAttribute(const std::wstring& attributeName, Windows::Data::Xml::Dom::IXmlNode^ node, bool& outValue)
   {
     auto attribute = node->Attributes->GetNamedItem(ref new Platform::String(attributeName.c_str()));

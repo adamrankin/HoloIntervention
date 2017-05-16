@@ -24,9 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
-#include "IConfigurable.h"
 #include "IRegistrationMethod.h"
-#include "IStabilizedComponent.h"
 
 namespace HoloIntervention
 {
@@ -34,11 +32,16 @@ namespace HoloIntervention
   {
     class NotificationSystem;
     class NetworkSystem;
+    class LandmarkRegistration;
 
     class OpticalRegistration : public IRegistrationMethod
     {
+      // First = head pose, second = tracker pose
+      typedef Windows::Foundation::Numerics::float3 Position;
+      typedef std::vector<Position> PositionList;
+
     public:
-      virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition() const;
+      virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition(Windows::UI::Input::Spatial::SpatialPointerPose^ pose) const;
       virtual Windows::Foundation::Numerics::float3 GetStabilizedNormal(Windows::UI::Input::Spatial::SpatialPointerPose^ pose) const;
       virtual Windows::Foundation::Numerics::float3 GetStabilizedVelocity() const;
       virtual float GetStabilizePriority() const;
@@ -56,13 +59,36 @@ namespace HoloIntervention
       virtual void ResetRegistration();
 
       virtual void EnableVisualization(bool enabled);
-      virtual void Update(Platform::IBox<Windows::Foundation::Numerics::float4x4>^ anchorToRequestedBox);
+      virtual void Update(Windows::UI::Input::Spatial::SpatialPointerPose^ headPose, Windows::Perception::Spatial::SpatialCoordinateSystem^ hmdCoordinateSystem, Platform::IBox<Windows::Foundation::Numerics::float4x4>^ anchorToHMDBox);
 
     public:
       OpticalRegistration(NotificationSystem& notificationSystem, NetworkSystem& networkSystem);
       ~OpticalRegistration();
 
     protected:
+      // Cached references
+      NotificationSystem&                   m_notificationSystem;
+      NetworkSystem&                        m_networkSystem;
+
+      // IGTLink variables
+      UWPOpenIGTLink::TransformRepository^  m_transformRepository = ref new UWPOpenIGTLink::TransformRepository();
+
+      // Landmark registration
+      std::shared_ptr<LandmarkRegistration> m_landmarkRegistration = nullptr;
+
+      // State variables
+      std::wstring                          m_connectionName;
+      uint64                                m_hashedConnectionName;
+      double                                m_latestTimestamp = 0.0;
+      UWPOpenIGTLink::TransformName^        m_opticalHMDToOpticalReferenceName;
+      PositionList                          m_opticalPositionList;
+      PositionList                          m_hololensInAnchorPositionList;
+      uint32                                m_poseListMinSize;
+      std::atomic_bool                      m_started = false;
+      std::atomic_bool                      m_calculating = false;
+
+      // Constants
+      static const uint32                   DEFAULT_LIST_MAX_SIZE = 50;
     };
   }
 }

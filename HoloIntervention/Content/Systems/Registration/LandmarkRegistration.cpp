@@ -125,7 +125,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void LandmarkRegistration::SetSourceLandmarks(const LandmarkList& landmarks)
+    void LandmarkRegistration::SetSourceLandmarks(const VecFloat3& landmarks)
     {
       m_sourceLandmarks = landmarks;
     }
@@ -151,7 +151,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void LandmarkRegistration::SetTargetLandmarks(const LandmarkList& landmarks)
+    void LandmarkRegistration::SetTargetLandmarks(const VecFloat3& landmarks)
     {
       m_targetLandmarks = landmarks;
     }
@@ -185,7 +185,7 @@ namespace HoloIntervention
 
         if (m_sourceLandmarks.empty() || m_targetLandmarks.empty())
         {
-          HoloIntervention::LOG(LogLevelType::LOG_LEVEL_ERROR, "Cannot compute registration. Landmark lists are invalid.");
+          LOG(LogLevelType::LOG_LEVEL_ERROR, "Cannot compute registration. Landmark lists are invalid.");
           return float4x4::identity();
         }
 
@@ -195,7 +195,7 @@ namespace HoloIntervention
         const uint32_t numberOfPoints = m_sourceLandmarks.size();
         if (numberOfPoints != m_targetLandmarks.size())
         {
-          HoloIntervention::LOG(LogLevelType::LOG_LEVEL_ERROR, "Cannot compute registration. Landmark lists differ in size.");
+          LOG(LogLevelType::LOG_LEVEL_ERROR, "Cannot compute registration. Landmark lists differ in size.");
           return float4x4::identity();
         }
 

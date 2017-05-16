@@ -91,7 +91,7 @@ namespace HoloIntervention
       };
 
     public:
-      virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition() const;
+      virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition(Windows::UI::Input::Spatial::SpatialPointerPose^ pose) const;
       virtual Windows::Foundation::Numerics::float3 GetStabilizedNormal(Windows::UI::Input::Spatial::SpatialPointerPose^ pose) const;
       virtual Windows::Foundation::Numerics::float3 GetStabilizedVelocity() const;
       virtual float GetStabilizePriority() const;
@@ -108,7 +108,7 @@ namespace HoloIntervention
       virtual bool IsStarted();
       virtual void ResetRegistration();
       virtual void EnableVisualization(bool enabled);
-      virtual void Update(Platform::IBox<Windows::Foundation::Numerics::float4x4>^ anchorToRequestedBox);
+      virtual void Update(Windows::UI::Input::Spatial::SpatialPointerPose^ headPose, Windows::Perception::Spatial::SpatialCoordinateSystem^ hmdCoordinateSystem, Platform::IBox<Windows::Foundation::Numerics::float4x4>^ anchorToHMDBox);
 
     public:
       CameraRegistration(NotificationSystem& notificationSystem, NetworkSystem& networkSystem, Rendering::ModelRenderer& modelRenderer);

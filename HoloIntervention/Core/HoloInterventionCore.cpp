@@ -563,7 +563,7 @@ namespace HoloIntervention
     {
       HolographicCameraRenderingParameters^ renderingParameters = holographicFrame->GetRenderingParameters(cameraPose);
 
-      float3 focusPointPosition = winningComponent->GetStabilizedPosition();
+      float3 focusPointPosition = winningComponent->GetStabilizedPosition(pose);
       float3 focusPointNormal = winningComponent->GetStabilizedNormal(pose);
       float3 focusPointVelocity = winningComponent->GetStabilizedVelocity();
 

@@ -43,7 +43,7 @@ namespace HoloIntervention
   {
 
     //----------------------------------------------------------------------------
-    float3 ToolEntry::GetStabilizedPosition() const
+    float3 ToolEntry::GetStabilizedPosition(SpatialPointerPose^ pose) const
     {
       if (m_modelEntry != nullptr)
       {

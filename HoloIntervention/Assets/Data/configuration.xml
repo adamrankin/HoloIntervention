@@ -30,13 +30,25 @@
     MaxRadius="60"
     />
 
+  <OpticalRegistration
+    IGTConnection="NDITracker"
+    BufferSize="50"
+    OpticalHMDCoordinateFrame="HoloLens"
+    OpticalReferenceCoordinateFrame="Reference"
+    />
+
   <IGTConnections>
-    <Connection
+    <xConnection
       Name="2DImage"
       Host="192.168.0.101"
       Port="18944"
       ReconnectOnDrop="true"
       EmbeddedImageTransformName="ImageToReference" />
+    <Connection
+      Name="NDITracker"
+      Host="192.168.0.101"
+      Port="18944"
+      ReconnectOnDrop="true" />
     <xConnection
       Name="3DImage"
       Host="192.168.0.101"

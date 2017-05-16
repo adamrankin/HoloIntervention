@@ -54,7 +54,7 @@ namespace HoloIntervention
       virtual void ResetRegistration() = 0;
 
       virtual void EnableVisualization(bool enabled) = 0;
-      virtual void Update(Platform::IBox<Windows::Foundation::Numerics::float4x4>^ anchorToRequestedBox) = 0;
+      virtual void Update(Windows::UI::Input::Spatial::SpatialPointerPose^ headPose, Windows::Perception::Spatial::SpatialCoordinateSystem^ hmdCoordinateSystem, Platform::IBox<Windows::Foundation::Numerics::float4x4>^ anchorToHMDBox) = 0;
 
     protected:
       // Anchor resources

@@ -57,7 +57,7 @@ namespace HoloIntervention
     const float SliceEntry::LERP_RATE = 2.5f;
 
     //----------------------------------------------------------------------------
-    float3 SliceEntry::GetStabilizedPosition() const
+    float3 SliceEntry::GetStabilizedPosition(SpatialPointerPose^ pose) const
     {
       return transform(float3(0.f, 0.f, 0.f), m_currentPose);
     }

@@ -68,13 +68,13 @@ namespace HoloIntervention
     const std::wstring RegistrationSystem::REGISTRATION_ANCHOR_MODEL_FILENAME = L"Assets/Models/anchor.cmo";
 
     //----------------------------------------------------------------------------
-    float3 RegistrationSystem::GetStabilizedPosition() const
+    float3 RegistrationSystem::GetStabilizedPosition(SpatialPointerPose^ pose) const
     {
-      if(m_registrationMethod->IsStabilizationActive())
+      if (m_registrationMethod->IsStabilizationActive())
       {
-        m_registrationMethod->GetStabilizedPosition();
+        m_registrationMethod->GetStabilizedPosition(pose);
       }
-      if(m_regAnchor != nullptr)
+      if (m_regAnchor != nullptr)
       {
         const float4x4& pose = m_regAnchorModel->GetCurrentPose();
         return float3(pose.m41, pose.m42, pose.m43);
@@ -88,11 +88,11 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float3 RegistrationSystem::GetStabilizedNormal(SpatialPointerPose^ pose) const
     {
-      if(m_registrationMethod->IsStabilizationActive())
+      if (m_registrationMethod->IsStabilizationActive())
       {
         m_registrationMethod->GetStabilizedNormal(pose);
       }
-      if(m_regAnchor != nullptr)
+      if (m_regAnchor != nullptr)
       {
         return ExtractNormal(m_regAnchorModel->GetCurrentPose());
       }
@@ -105,11 +105,11 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float3 RegistrationSystem::GetStabilizedVelocity() const
     {
-      if(m_registrationMethod->IsStabilizationActive())
+      if (m_registrationMethod->IsStabilizationActive())
       {
         m_registrationMethod->GetStabilizedVelocity();
       }
-      if(m_regAnchor != nullptr)
+      if (m_regAnchor != nullptr)
       {
         return m_regAnchorModel->GetVelocity();
       }
@@ -122,11 +122,11 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float RegistrationSystem::GetStabilizePriority() const
     {
-      if(m_registrationMethod->IsStabilizationActive())
+      if (m_registrationMethod->IsStabilizationActive())
       {
         return m_registrationMethod->GetStabilizePriority();
       }
-      if(m_regAnchor != nullptr)
+      if (m_regAnchor != nullptr)
       {
         // TODO : stabilization values?
         return m_regAnchorModel->IsInFrustum() ? 1.f : PRIORITY_NOT_ACTIVE;
@@ -140,7 +140,7 @@ namespace HoloIntervention
     {
       return create_task([this, document]()
       {
-        if(document->SelectNodes(L"/HoloIntervention")->Length != 1)
+        if (document->SelectNodes(L"/HoloIntervention")->Length != 1)
         {
           return task_from_result(false);
         }
@@ -164,13 +164,13 @@ namespace HoloIntervention
       {
         auto repo = ref new UWPOpenIGTLink::TransformRepository();
         auto trName = ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD");
-        if(!repo->ReadConfiguration(document))
+        if (!repo->ReadConfiguration(document))
         {
           return task_from_result(false);
         }
 
         float4x4 temp;
-        if(repo->GetTransform(trName, &temp))
+        if (repo->GetTransform(trName, &temp))
         {
           m_cachedRegistrationTransform = transpose(temp);
         }
@@ -189,11 +189,11 @@ namespace HoloIntervention
       , m_registrationMethod(nullptr)
     {
       m_regAnchorModelId = m_modelRenderer.AddModel(REGISTRATION_ANCHOR_MODEL_FILENAME);
-      if(m_regAnchorModelId != INVALID_TOKEN)
+      if (m_regAnchorModelId != INVALID_TOKEN)
       {
         m_regAnchorModel = m_modelRenderer.GetModel(m_regAnchorModelId);
       }
-      if(m_regAnchorModel == nullptr)
+      if (m_regAnchorModel == nullptr)
       {
         m_notificationSystem.QueueMessage(L"Unable to retrieve anchor model.");
         return;
@@ -214,11 +214,11 @@ namespace HoloIntervention
     void RegistrationSystem::Update(DX::StepTimer& timer, SpatialCoordinateSystem^ coordinateSystem, SpatialPointerPose^ headPose)
     {
       // Anchor placement logic
-      if(m_regAnchorRequested)
+      if (m_regAnchorRequested)
       {
-        if(m_physicsAPI.DropAnchorAtIntersectionHit(REGISTRATION_ANCHOR_NAME, coordinateSystem, headPose))
+        if (m_physicsAPI.DropAnchorAtIntersectionHit(REGISTRATION_ANCHOR_NAME, coordinateSystem, headPose))
         {
-          if(m_regAnchorModel != nullptr)
+          if (m_regAnchorModel != nullptr)
           {
             m_regAnchorModel->SetVisible(true);
             m_regAnchor = m_physicsAPI.GetAnchor(REGISTRATION_ANCHOR_NAME);
@@ -233,12 +233,12 @@ namespace HoloIntervention
 
       Platform::IBox<float4x4>^ transformContainer(nullptr);
       // Anchor model position update logic
-      if(m_regAnchor != nullptr)
+      if (m_regAnchor != nullptr)
       {
         transformContainer = m_regAnchor->CoordinateSystem->TryGetTransformTo(coordinateSystem);
-        if(transformContainer != nullptr)
+        if (transformContainer != nullptr)
         {
-          if(m_forcePose)
+          if (m_forcePose)
           {
             m_regAnchorModel->SetCurrentPose(transformContainer->Value);
             m_forcePose = false;
@@ -250,9 +250,9 @@ namespace HoloIntervention
         }
       }
 
-      if(m_registrationMethod != nullptr)
+      if (m_registrationMethod != nullptr && transformContainer != nullptr)
       {
-        m_registrationMethod->Update(transformContainer);
+        m_registrationMethod->Update(headPose, coordinateSystem, transformContainer);
       }
     }
 
@@ -261,7 +261,7 @@ namespace HoloIntervention
     {
       return create_task([ = ]()
       {
-        if(m_physicsAPI.HasAnchor(REGISTRATION_ANCHOR_NAME))
+        if (m_physicsAPI.HasAnchor(REGISTRATION_ANCHOR_NAME))
         {
           m_forcePose = true;
           m_regAnchor = m_physicsAPI.GetAnchor(REGISTRATION_ANCHOR_NAME);
@@ -290,11 +290,11 @@ namespace HoloIntervention
       {
         m_registrationMethod->StopAsync().then([this](bool result)
         {
-          if(m_regAnchorModel)
+          if (m_regAnchorModel)
           {
             m_regAnchorModel->SetVisible(false);
           }
-          if(m_physicsAPI.RemoveAnchor(REGISTRATION_ANCHOR_NAME) == 1)
+          if (m_physicsAPI.RemoveAnchor(REGISTRATION_ANCHOR_NAME) == 1)
           {
             m_notificationSystem.QueueMessage(L"Anchor \"" + REGISTRATION_ANCHOR_NAME + "\" removed.");
           }
@@ -303,13 +303,13 @@ namespace HoloIntervention
 
       callbackMap[L"start camera registration"] = [this](SpeechRecognitionResult ^ result)
       {
-        if(dynamic_cast<CameraRegistration*>(m_registrationMethod.get()) != nullptr && m_registrationMethod->IsStarted())
+        if (dynamic_cast<CameraRegistration*>(m_registrationMethod.get()) != nullptr && m_registrationMethod->IsStarted())
         {
           m_notificationSystem.QueueMessage(L"Registration already running.");
           return;
         }
 
-        if(m_regAnchor == nullptr)
+        if (m_regAnchor == nullptr)
         {
           m_notificationSystem.QueueMessage(L"Anchor required. Please place an anchor with 'drop anchor'.");
           return;
@@ -319,7 +319,7 @@ namespace HoloIntervention
 
         m_registrationMethod->StartAsync().then([this](bool result)
         {
-          if(!result)
+          if (!result)
           {
             m_registrationMethod = nullptr;
             m_notificationSystem.QueueMessage(L"Unable to start camera registration.");
@@ -329,13 +329,13 @@ namespace HoloIntervention
 
       callbackMap[L"start optical registration"] = [this](SpeechRecognitionResult ^ result)
       {
-        if(dynamic_cast<OpticalRegistration*>(m_registrationMethod.get()) != nullptr && m_registrationMethod->IsStarted())
+        if (dynamic_cast<OpticalRegistration*>(m_registrationMethod.get()) != nullptr && m_registrationMethod->IsStarted())
         {
           m_notificationSystem.QueueMessage(L"Registration already running.");
           return;
         }
 
-        if(m_regAnchor == nullptr)
+        if (m_regAnchor == nullptr)
         {
           m_notificationSystem.QueueMessage(L"Anchor required. Please place an anchor with 'drop anchor'.");
           return;
@@ -345,7 +345,7 @@ namespace HoloIntervention
 
         m_registrationMethod->StartAsync().then([this](bool result)
         {
-          if(!result)
+          if (!result)
           {
             m_registrationMethod = nullptr;
             m_notificationSystem.QueueMessage(L"Unable to start optical registration.");
@@ -357,7 +357,7 @@ namespace HoloIntervention
       {
         m_registrationMethod->StopAsync().then([this](bool result)
         {
-          if(result)
+          if (result)
           {
             m_registrationMethod = nullptr;
             m_notificationSystem.QueueMessage(L"Registration stopped.");
@@ -371,7 +371,7 @@ namespace HoloIntervention
 
       callbackMap[L"reset registration"] = [this](SpeechRecognitionResult ^ result)
       {
-        if(m_registrationMethod != nullptr)
+        if (m_registrationMethod != nullptr)
         {
           m_registrationMethod->ResetRegistration();
         }
@@ -379,7 +379,7 @@ namespace HoloIntervention
 
       callbackMap[L"enable registration viz"] = [this](SpeechRecognitionResult ^ result)
       {
-        if(m_registrationMethod != nullptr)
+        if (m_registrationMethod != nullptr)
         {
           m_registrationMethod->EnableVisualization(true);
           m_notificationSystem.QueueMessage(L"Visualization enabled.");
@@ -388,7 +388,7 @@ namespace HoloIntervention
 
       callbackMap[L"disable registration viz"] = [this](SpeechRecognitionResult ^ result)
       {
-        if(m_registrationMethod != nullptr)
+        if (m_registrationMethod != nullptr)
         {
           m_registrationMethod->EnableVisualization(false);
           m_notificationSystem.QueueMessage(L"Visualization disabled.");
@@ -399,13 +399,13 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     bool RegistrationSystem::GetReferenceToCoordinateSystemTransformation(SpatialCoordinateSystem^ requestedCoordinateSystem, float4x4& outTransform)
     {
-      if(m_cachedRegistrationTransform == float4x4::identity())
+      if (m_cachedRegistrationTransform == float4x4::identity())
       {
         return false;
       }
 
       auto worldAnchor = m_registrationMethod->GetWorldAnchor();
-      if(worldAnchor == nullptr)
+      if (worldAnchor == nullptr)
       {
         return false;
       }
@@ -413,7 +413,7 @@ namespace HoloIntervention
       try
       {
         Platform::IBox<float4x4>^ anchorToRequestedBox = worldAnchor->CoordinateSystem->TryGetTransformTo(requestedCoordinateSystem);
-        if(anchorToRequestedBox == nullptr)
+        if (anchorToRequestedBox == nullptr)
         {
           return false;
         }
@@ -421,7 +421,7 @@ namespace HoloIntervention
         outTransform = m_cachedRegistrationTransform * anchorToRequestedBox->Value;
         return true;
       }
-      catch(Platform::Exception^ e)
+      catch (Platform::Exception^ e)
       {
         return false;
       }

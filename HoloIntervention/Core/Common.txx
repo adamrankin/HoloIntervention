@@ -25,6 +25,11 @@ namespace HoloIntervention
 {
   template<typename T> bool GetScalarAttribute(const std::wstring& attributeName, Windows::Data::Xml::Dom::IXmlNode^ node, T& outValue)
   {
+    if (!HasAttribute(attributeName, node))
+    {
+      return false;
+    }
+
     auto attribute = node->Attributes->GetNamedItem(ref new Platform::String(attributeName.c_str()));
     if (attribute != nullptr)
     {

@@ -49,7 +49,7 @@ namespace HoloIntervention
   namespace System
   {
     //----------------------------------------------------------------------------
-    float3 ToolSystem::GetStabilizedPosition() const
+    float3 ToolSystem::GetStabilizedPosition(SpatialPointerPose^ pose) const
     {
       std::shared_ptr<Tools::ToolEntry> maxEntry(nullptr);
       float maxPriority(PRIORITY_NOT_ACTIVE);
@@ -64,7 +64,7 @@ namespace HoloIntervention
 
       if (maxEntry != nullptr)
       {
-        return maxEntry->GetStabilizedPosition();
+        return maxEntry->GetStabilizedPosition(pose);
       }
 
       return float3(0.f, 0.f, 0.f);

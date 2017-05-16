@@ -53,7 +53,7 @@ namespace HoloIntervention
     const float GazeSystem::LERP_RATE = 6.f;
 
     //----------------------------------------------------------------------------
-    float3 GazeSystem::GetStabilizedPosition() const
+    float3 GazeSystem::GetStabilizedPosition(SpatialPointerPose^ pose) const
     {
       return transform(float3(0.f, 0.f, 0.f), m_modelEntry->GetCurrentPose());
     }

@@ -61,7 +61,7 @@ namespace HoloIntervention
     const float IconSystem::ICON_SIZE_METER = 0.025f;
 
     //----------------------------------------------------------------------------
-    float3 IconSystem::GetStabilizedPosition() const
+    float3 IconSystem::GetStabilizedPosition(SpatialPointerPose^ pose) const
     {
       auto networkPose = m_networkIcon->GetModelEntry()->GetCurrentPose();
       auto cameraPose = m_cameraIcon->GetModelEntry()->GetCurrentPose();

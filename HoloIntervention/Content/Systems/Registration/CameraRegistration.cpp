@@ -93,7 +93,7 @@ namespace HoloIntervention
     const float CameraRegistration::VISUALIZATION_SPHERE_RADIUS = 0.03f;
 
     //----------------------------------------------------------------------------
-    float3 CameraRegistration::GetStabilizedPosition() const
+    float3 CameraRegistration::GetStabilizedPosition(SpatialPointerPose^ pose) const
     {
       float3 position(0.f, 0.f, 0.f);
       // Only do this if we've enabled visualization, the sphere primitives have been created, and we've analyzed at least 1 frame
@@ -248,9 +248,9 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void CameraRegistration::Update(Platform::IBox<Windows::Foundation::Numerics::float4x4>^ anchorToRequestedBox)
+    void CameraRegistration::Update(SpatialPointerPose^ headPose, SpatialCoordinateSystem^ hmdCoordinateSystem, Platform::IBox<Windows::Foundation::Numerics::float4x4>^ anchorToHMDBox)
     {
-      if(anchorToRequestedBox == nullptr)
+      if(anchorToHMDBox == nullptr)
       {
         return;
       }
@@ -260,7 +260,7 @@ namespace HoloIntervention
         // Only do this if we've enabled visualization, the sphere primitives have been created, and we've analyzed at least 1 frame
         for(int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
         {
-          m_spherePrimitives[i]->SetDesiredPose(m_sphereToAnchorPoses[i] * anchorToRequestedBox->Value);
+          m_spherePrimitives[i]->SetDesiredPose(m_sphereToAnchorPoses[i] * anchorToHMDBox->Value);
         }
       }
     }

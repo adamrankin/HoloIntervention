@@ -61,10 +61,10 @@ namespace HoloIntervention
     const float SplashSystem::WELCOME_DISPLAY_TIME_SEC = 6.f;
 
     //----------------------------------------------------------------------------
-    float3 SplashSystem::GetStabilizedPosition() const
+    float3 SplashSystem::GetStabilizedPosition(SpatialPointerPose^ pose) const
     {
-      auto& pose = m_sliceEntry->GetCurrentPose();
-      return float3(pose.m41, pose.m42, pose.m43);
+      auto& slicePose = m_sliceEntry->GetCurrentPose();
+      return float3(slicePose.m41, slicePose.m42, slicePose.m43);
     }
 
     //----------------------------------------------------------------------------

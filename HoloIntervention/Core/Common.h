@@ -23,6 +23,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
+// Local includes
+#include "Log.h"
+
 // STL includes
 #include <algorithm>
 #include <iostream>
@@ -165,6 +168,7 @@ namespace HoloIntervention
 
   // XML helper functions
   bool HasAttribute(const std::wstring& attributeName, Windows::Data::Xml::Dom::IXmlNode^ node);
+  bool GetAttribute(const std::wstring& attributeName, Windows::Data::Xml::Dom::IXmlNode^ node, std::wstring& outValue);
   bool GetBooleanAttribute(const std::wstring& attributeName, Windows::Data::Xml::Dom::IXmlNode^ node, bool& outValue);
   template<typename T> bool GetScalarAttribute(const std::wstring& attributeName, Windows::Data::Xml::Dom::IXmlNode^ node, T& outValue);
 }
