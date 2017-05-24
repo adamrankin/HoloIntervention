@@ -247,14 +247,15 @@ namespace HoloIntervention
 
       // grab latest head pose
       auto anchorToHMD = anchorToHMDBox->Value;
-      if (!invert(anchorToHMD, &anchorToHMD))
+      auto HMDToAnchor = float4x4::identity();
+      if (!invert(anchorToHMD, &HMDToAnchor))
       {
         LOG(LogLevelType::LOG_LEVEL_ERROR, L"Uninvertible transform sent as pose matrix. How is this possible?");
         return;
       }
 
       m_opticalPositionList.push_back(float3(opticalPose.m14, opticalPose.m24, opticalPose.m34)); // row-major form
-      m_hololensInAnchorPositionList.push_back(transform(headPose->Head->Position, anchorToHMD));
+      m_hololensInAnchorPositionList.push_back(transform(headPose->Head->Position, HMDToAnchor));
 
       if (m_opticalPositionList.size() >= m_poseListMinSize && !m_calculating)
       {
