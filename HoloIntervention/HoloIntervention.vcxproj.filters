@@ -148,6 +148,9 @@
     <ClCompile Include="Content\Systems\Registration\OpticalRegistration.cpp">
       <Filter>Content\Systems\Registration\Optical</Filter>
     </ClCompile>
+    <ClCompile Include="Content\Algorithms\KalmanFilter.cpp">
+      <Filter>Content\Algorithms\Kalman</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Content\Sound\OmnidirectionalSound.h">
@@ -323,6 +326,9 @@
     </ClInclude>
     <ClInclude Include="Content\Systems\Registration\IRegistrationMethod.h">
       <Filter>Content\Systems\Registration</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Algorithms\KalmanFilter.h">
+      <Filter>Content\Algorithms\Kalman</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -689,6 +695,12 @@
     </Filter>
     <Filter Include="Content\Systems\Registration\Optical">
       <UniqueIdentifier>{6acd74ab-a1e7-4c51-a802-a913e17d4fbb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Algorithms">
+      <UniqueIdentifier>{2325d3d6-534b-4373-a158-8566da345b58}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Algorithms\Kalman">
+      <UniqueIdentifier>{fc7a8fed-30a1-4440-8eb7-efeba82be2f8}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

@@ -29,6 +29,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 // STL includes
 #include <atomic>
 
+// OpenCV
+#include <Opencv2/core/mat.hpp>
+
 namespace DX
 {
   class StepTimer;
@@ -41,6 +44,11 @@ namespace HoloIntervention
   {
     class ModelEntry;
     class ModelRenderer;
+  }
+
+  namespace Algorithms
+  {
+    class KalmanFilter;
   }
 
   namespace Tools
@@ -70,12 +78,17 @@ namespace HoloIntervention
 
     protected:
       // Cached links to system resources
-      Rendering::ModelRenderer&               m_modelRenderer;
-      UWPOpenIGTLink::TransformRepository^    m_transformRepository;
+      Rendering::ModelRenderer&                   m_modelRenderer;
+      UWPOpenIGTLink::TransformRepository^        m_transformRepository;
 
-      std::atomic_bool                        m_wasValid = false;
-      UWPOpenIGTLink::TransformName^          m_coordinateFrame;
-      std::shared_ptr<Rendering::ModelEntry>  m_modelEntry;
+      std::atomic_bool                            m_wasValid = false;
+      UWPOpenIGTLink::TransformName^              m_coordinateFrame;
+      std::shared_ptr<Rendering::ModelEntry>      m_modelEntry;
+
+      // Kalman filter for smoothing and prediction
+      std::shared_ptr<Algorithms::KalmanFilter>   m_kalmanFilter = nullptr;
+      std::atomic_bool                            m_firstDataPoint = true;
+      cv::Mat                                     m_correctionMatrix = cv::Mat(7, 1, CV_32F);
     };
   }
 }

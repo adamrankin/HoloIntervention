@@ -61,7 +61,7 @@
     <ClCompile>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)MediaCapture;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink-bin;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink\Source\igtlutil;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink\Source;$(IntermediateOutputPath);$(SolutionDir)DirectXTK\Src;$(SolutionDir)DirectXTK\Inc;$(SolutionDir)$(Configuration)\$(ProjectName);$(ProjectDir)Content\Systems\Tool;$(ProjectDir)Content\Systems\Notification;$(ProjectDir)Content\Systems\Imaging;$(ProjectDir)Content\Systems\Icon;$(ProjectDir)Content\Systems\Splash;$(ProjectDir)Content\Systems\Network;$(ProjectDir)Content\Systems\Gaze;$(ProjectDir)Content\Systems\Registration;$(ProjectDir)Content\Systems;$(ProjectDir)Content\SpatialMapping;$(ProjectDir)Content\Capture;$(ProjectDir)Content\Physics;$(ProjectDir)Content\Network;$(ProjectDir)Content\Rendering\Volume;$(ProjectDir)Content\Rendering\Shaders;$(ProjectDir)Content\Rendering\Shaders\Compiled;$(ProjectDir)Content\Rendering\Model;$(ProjectDir)Content\Rendering\Slice;$(ProjectDir)Content\Rendering\Notification;$(ProjectDir)Content\Rendering\Mesh;$(ProjectDir)Content\Rendering\DirectXTK;$(ProjectDir)Content\Rendering;$(ProjectDir)Content\Input;$(ProjectDir)Content\Sound;$(ProjectDir)Core\Rendering;$(ProjectDir)Core;$(ProjectDir)Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content\Data;$(SolutionDir)DirectXTex\DirectXTex;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)MediaCapture;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink-bin;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink\Source\igtlutil;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink\Source;$(IntermediateOutputPath);$(SolutionDir)DirectXTK\Src;$(SolutionDir)DirectXTK\Inc;$(SolutionDir)$(Configuration)\$(ProjectName);$(ProjectDir)Content\Systems\Tool;$(ProjectDir)Content\Systems\Notification;$(ProjectDir)Content\Systems\Imaging;$(ProjectDir)Content\Systems\Icon;$(ProjectDir)Content\Systems\Splash;$(ProjectDir)Content\Systems\Network;$(ProjectDir)Content\Systems\Gaze;$(ProjectDir)Content\Systems\Registration;$(ProjectDir)Content\Systems;$(ProjectDir)Content\Algorithms;$(ProjectDir)Content\SpatialMapping;$(ProjectDir)Content\Capture;$(ProjectDir)Content\Physics;$(ProjectDir)Content\Network;$(ProjectDir)Content\Rendering\Volume;$(ProjectDir)Content\Rendering\Shaders;$(ProjectDir)Content\Rendering\Shaders\Compiled;$(ProjectDir)Content\Rendering\Model;$(ProjectDir)Content\Rendering\Slice;$(ProjectDir)Content\Rendering\Notification;$(ProjectDir)Content\Rendering\Mesh;$(ProjectDir)Content\Rendering\DirectXTK;$(ProjectDir)Content\Rendering;$(ProjectDir)Content\Input;$(ProjectDir)Content\Sound;$(ProjectDir)Core\Rendering;$(ProjectDir)Core;$(ProjectDir)Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content\Data;$(SolutionDir)DirectXTex\DirectXTex;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
@@ -78,7 +78,7 @@
     <ClCompile>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)MediaCapture;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink-bin;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink\Source\igtlutil;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink\Source;$(IntermediateOutputPath);$(SolutionDir)DirectXTK\Src;$(SolutionDir)DirectXTK\Inc;$(SolutionDir)$(Configuration)\$(ProjectName);$(ProjectDir)Content\Systems\Tool;$(ProjectDir)Content\Systems\Notification;$(ProjectDir)Content\Systems\Imaging;$(ProjectDir)Content\Systems\Icon;$(ProjectDir)Content\Systems\Splash;$(ProjectDir)Content\Systems\Network;$(ProjectDir)Content\Systems\Gaze;$(ProjectDir)Content\Systems\Registration;$(ProjectDir)Content\Systems;$(ProjectDir)Content\SpatialMapping;$(ProjectDir)Content\Capture;$(ProjectDir)Content\Physics;$(ProjectDir)Content\Network;$(ProjectDir)Content\Rendering\Volume;$(ProjectDir)Content\Rendering\Shaders;$(ProjectDir)Content\Rendering\Shaders\Compiled;$(ProjectDir)Content\Rendering\Model;$(ProjectDir)Content\Rendering\Slice;$(ProjectDir)Content\Rendering\Notification;$(ProjectDir)Content\Rendering\Mesh;$(ProjectDir)Content\Rendering\DirectXTK;$(ProjectDir)Content\Rendering;$(ProjectDir)Content\Input;$(ProjectDir)Content\Sound;$(ProjectDir)Core\Rendering;$(ProjectDir)Core;$(ProjectDir)Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content\Data;$(SolutionDir)DirectXTex\DirectXTex;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)MediaCapture;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink-bin;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink\Source\igtlutil;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink\Source;$(IntermediateOutputPath);$(SolutionDir)DirectXTK\Src;$(SolutionDir)DirectXTK\Inc;$(SolutionDir)$(Configuration)\$(ProjectName);$(ProjectDir)Content\Systems\Tool;$(ProjectDir)Content\Systems\Notification;$(ProjectDir)Content\Systems\Imaging;$(ProjectDir)Content\Systems\Icon;$(ProjectDir)Content\Systems\Splash;$(ProjectDir)Content\Systems\Network;$(ProjectDir)Content\Systems\Gaze;$(ProjectDir)Content\Systems\Registration;$(ProjectDir)Content\Systems;$(ProjectDir)Content\Algorithms;$(ProjectDir)Content\SpatialMapping;$(ProjectDir)Content\Capture;$(ProjectDir)Content\Physics;$(ProjectDir)Content\Network;$(ProjectDir)Content\Rendering\Volume;$(ProjectDir)Content\Rendering\Shaders;$(ProjectDir)Content\Rendering\Shaders\Compiled;$(ProjectDir)Content\Rendering\Model;$(ProjectDir)Content\Rendering\Slice;$(ProjectDir)Content\Rendering\Notification;$(ProjectDir)Content\Rendering\Mesh;$(ProjectDir)Content\Rendering\DirectXTK;$(ProjectDir)Content\Rendering;$(ProjectDir)Content\Input;$(ProjectDir)Content\Sound;$(ProjectDir)Core\Rendering;$(ProjectDir)Core;$(ProjectDir)Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content\Data;$(SolutionDir)DirectXTex\DirectXTex;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
@@ -111,6 +111,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AppView.h" />
+    <ClInclude Include="Content\Algorithms\KalmanFilter.h" />
     <ClInclude Include="Content\Capture\VideoFrameProcessor.h" />
     <ClInclude Include="Content\Input\IVoiceInput.h" />
     <ClInclude Include="Content\Input\SpatialInput.h" />
@@ -171,6 +172,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AppView.cpp" />
+    <ClCompile Include="Content\Algorithms\KalmanFilter.cpp" />
     <ClCompile Include="Content\Capture\VideoFrameProcessor.cpp" />
     <ClCompile Include="Content\Input\SpatialInput.cpp" />
     <ClCompile Include="Content\Input\VoiceInput.cpp" />
@@ -549,6 +551,7 @@
     <Import Project="..\packages\OpenCV.Win.HighGUI.310.6.1\build\native\opencv.win.highgui.targets" Condition="Exists('..\packages\OpenCV.Win.HighGUI.310.6.1\build\native\opencv.win.highgui.targets')" />
     <Import Project="..\packages\OpenCV.Win.Features2D.310.6.1\build\native\opencv.win.features2d.targets" Condition="Exists('..\packages\OpenCV.Win.Features2D.310.6.1\build\native\opencv.win.features2d.targets')" />
     <Import Project="..\packages\OpenCV.Win.Calib3D.310.6.1\build\native\opencv.win.calib3d.targets" Condition="Exists('..\packages\OpenCV.Win.Calib3D.310.6.1\build\native\opencv.win.calib3d.targets')" />
+    <Import Project="..\packages\OpenCV.Win.Video.310.6.1\build\native\opencv.win.video.targets" Condition="Exists('..\packages\OpenCV.Win.Video.310.6.1\build\native\opencv.win.video.targets')" />
   </ImportGroup>
   <PropertyGroup>
     <AppxPackageSigningEnabled>true</AppxPackageSigningEnabled>
@@ -569,5 +572,6 @@
     <Error Condition="!Exists('..\packages\OpenCV.Win.HighGUI.310.6.1\build\native\opencv.win.highgui.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\OpenCV.Win.HighGUI.310.6.1\build\native\opencv.win.highgui.targets'))" />
     <Error Condition="!Exists('..\packages\OpenCV.Win.Features2D.310.6.1\build\native\opencv.win.features2d.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\OpenCV.Win.Features2D.310.6.1\build\native\opencv.win.features2d.targets'))" />
     <Error Condition="!Exists('..\packages\OpenCV.Win.Calib3D.310.6.1\build\native\opencv.win.calib3d.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\OpenCV.Win.Calib3D.310.6.1\build\native\opencv.win.calib3d.targets'))" />
+    <Error Condition="!Exists('..\packages\OpenCV.Win.Video.310.6.1\build\native\opencv.win.video.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\OpenCV.Win.Video.310.6.1\build\native\opencv.win.video.targets'))" />
   </Target>
 </Project>
