@@ -172,6 +172,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void OpticalRegistration::SetWorldAnchor(SpatialAnchor^ worldAnchor)
     {
+      m_worldAnchor = worldAnchor;
       ResetRegistration();
     }
 
@@ -271,7 +272,7 @@ namespace HoloIntervention
       }
       else
       {
-        if (m_opticalPositionList.size() % 25 == 0)
+        if (m_opticalPositionList.size() % 60 == 0)
         {
           m_notificationSystem.QueueMessage(m_opticalPositionList.size().ToString() + L" positions collected.");
         }

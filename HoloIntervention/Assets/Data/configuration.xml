@@ -46,7 +46,7 @@
       EmbeddedImageTransformName="ImageToReference" />
     <Connection
       Name="NDITracker"
-      Host="192.168.0.101"
+      Host="192.168.0.103"
       Port="18944"
       ReconnectOnDrop="true" />
     <xConnection

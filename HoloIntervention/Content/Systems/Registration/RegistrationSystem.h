@@ -91,6 +91,7 @@ namespace HoloIntervention
       NetworkSystem&                                  m_networkSystem;
       Rendering::ModelRenderer&                       m_modelRenderer;
       Physics::PhysicsAPI&                            m_physicsAPI;
+      Windows::Data::Xml::Dom::XmlDocument^           m_configDocument = nullptr;
 
       // State variables
       std::atomic_bool                                m_forcePose = false;

@@ -70,6 +70,10 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float3 RegistrationSystem::GetStabilizedPosition(SpatialPointerPose^ pose) const
     {
+      if (m_registrationMethod == nullptr)
+      {
+        return float3(0.f, 0.f, 0.f);
+      }
       if (m_registrationMethod->IsStabilizationActive())
       {
         m_registrationMethod->GetStabilizedPosition(pose);
@@ -88,6 +92,10 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float3 RegistrationSystem::GetStabilizedNormal(SpatialPointerPose^ pose) const
     {
+      if (m_registrationMethod == nullptr)
+      {
+        return float3(0.f, 1.f, 0.f);
+      }
       if (m_registrationMethod->IsStabilizationActive())
       {
         m_registrationMethod->GetStabilizedNormal(pose);
@@ -105,6 +113,10 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float3 RegistrationSystem::GetStabilizedVelocity() const
     {
+      if (m_registrationMethod == nullptr)
+      {
+        return float3(0.f, 0.f, 0.f);
+      }
       if (m_registrationMethod->IsStabilizationActive())
       {
         m_registrationMethod->GetStabilizedVelocity();
@@ -122,6 +134,10 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float RegistrationSystem::GetStabilizePriority() const
     {
+      if (m_registrationMethod == nullptr)
+      {
+        return PRIORITY_NOT_ACTIVE;
+      }
       if (m_registrationMethod->IsStabilizationActive())
       {
         return m_registrationMethod->GetStabilizePriority();
@@ -174,9 +190,11 @@ namespace HoloIntervention
         {
           m_cachedRegistrationTransform = transpose(temp);
         }
+
+        m_configDocument = document;
         m_componentReady = true;
 
-        return m_registrationMethod->ReadConfigurationAsync(document);
+        return task_from_result(true);
       });
     }
 
@@ -259,14 +277,17 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     task<void> RegistrationSystem::LoadAppStateAsync()
     {
-      return create_task([ = ]()
+      return create_task([=]()
       {
         if (m_physicsAPI.HasAnchor(REGISTRATION_ANCHOR_NAME))
         {
           m_forcePose = true;
           m_regAnchor = m_physicsAPI.GetAnchor(REGISTRATION_ANCHOR_NAME);
           m_regAnchorModel->SetVisible(true);
-          m_registrationMethod->SetWorldAnchor(m_regAnchor);
+          if (m_registrationMethod != nullptr)
+          {
+            m_registrationMethod->SetWorldAnchor(m_regAnchor);
+          }
         }
       });
     }
@@ -316,8 +337,14 @@ namespace HoloIntervention
         }
         m_registrationMethod = std::make_shared<CameraRegistration>(m_notificationSystem, m_networkSystem, m_modelRenderer);
         m_registrationMethod->SetWorldAnchor(m_regAnchor);
-
-        m_registrationMethod->StartAsync().then([this](bool result)
+        m_registrationMethod->ReadConfigurationAsync(m_configDocument).then([this](bool result)
+        {
+          if (!result)
+          {
+            return task_from_result(false);
+          }
+          return m_registrationMethod->StartAsync();
+        }).then([this](bool result)
         {
           if (!result)
           {
@@ -343,7 +370,14 @@ namespace HoloIntervention
         m_registrationMethod = std::make_shared<OpticalRegistration>(m_notificationSystem, m_networkSystem);
         m_registrationMethod->SetWorldAnchor(m_regAnchor);
 
-        m_registrationMethod->StartAsync().then([this](bool result)
+        m_registrationMethod->ReadConfigurationAsync(m_configDocument).then([this](bool result)
+        {
+          if (!result)
+          {
+            return task_from_result(false);
+          }
+          return m_registrationMethod->StartAsync();
+        }).then([this](bool result)
         {
           if (!result)
           {
