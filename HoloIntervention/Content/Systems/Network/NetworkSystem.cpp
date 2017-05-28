@@ -74,9 +74,8 @@ namespace HoloIntervention
         {
           auto connectionElem = document->CreateElement(L"Connection");
           connectionElem->SetAttribute(L"Name", ref new Platform::String(connector.Name.c_str()));
-          connectionElem->SetAttribute(L"Host", connector.Connector->ServerHost);
-          connectionElem->SetAttribute(L"Port", connector.Connector->ServerPort.ToString());
-          connectionElem->SetAttribute(L"ReconnectOnDrop", connector.ReconnectOnDrop ? L"true" : L"false");
+          connectionElem->SetAttribute(L"Host", connector.Connector->ServerHost->DisplayName);
+          connectionElem->SetAttribute(L"Port", connector.Connector->ServerPort);
           connectionElem->SetAttribute(L"EmbeddedImageTransformName", connector.Connector->EmbeddedImageTransformName->GetTransformName());
           connectionsElem->AppendChild(connectionElem);
         }
@@ -172,20 +171,6 @@ namespace HoloIntervention
           if (result)
           {
             iter->State = CONNECTION_STATE_CONNECTED;
-            if (result)
-            {
-              KeepAliveAsync(hashedConnectionName).then([this](task<void> keepAliveTask)
-              {
-                try
-                {
-                  keepAliveTask.wait();
-                }
-                catch (const std::exception& e)
-                {
-                  LOG(LogLevelType::LOG_LEVEL_ERROR, std::string("KeepAliveTask exception: ") + e.what());
-                }
-              });
-            }
           }
           else
           {
@@ -253,19 +238,14 @@ namespace HoloIntervention
           entry.Name = std::wstring(name->Data());
           entry.HashedName = HashString(name->Data());
           entry.Connector = ref new UWPOpenIGTLink::IGTClient();
-          entry.Connector->ServerHost = host;
+          entry.Connector->ServerHost = ref new HostName(host);
 
           try
           {
-            entry.Connector->ServerPort = std::stoi(port->Data());
+            std::stoi(port->Data());
+            entry.Connector->ServerPort = port;
           }
           catch (const std::exception&) {}
-
-          bool reconnectOnDrop;
-          if (GetBooleanAttribute(L"ReconnectOnDrop", node, reconnectOnDrop))
-          {
-            entry.ReconnectOnDrop = reconnectOnDrop;
-          }
 
           if (HasAttribute(L"EmbeddedImageTransformName", node))
           {
@@ -363,9 +343,10 @@ namespace HoloIntervention
       callbackMap[L"disconnect"] = [this](SpeechRecognitionResult ^ result)
       {
         std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
-        for (auto entry : m_connectors)
+        for (auto& entry : m_connectors)
         {
           entry.Connector->Disconnect();
+          entry.State = CONNECTION_STATE_DISCONNECTED;
         }
         m_notificationSystem.QueueMessage(L"Disconnected.");
       };
@@ -408,8 +389,6 @@ namespace HoloIntervention
 
       if (iter != end(m_connectors))
       {
-        iter->KeepAliveTokenSource.cancel();
-        iter->KeepAliveTokenSource = cancellation_token_source();
         iter->Connector->Disconnect();
         iter->State = CONNECTION_STATE_DISCONNECTED;
       }
@@ -432,36 +411,6 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void NetworkSystem::SetReconnectOnDrop(uint64 hashedConnectionName, bool arg)
-    {
-      std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
-      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
-      {
-        return hashedConnectionName == entry.HashedName;
-      });
-      if (iter != end(m_connectors))
-      {
-        iter->ReconnectOnDrop = arg;
-      }
-    }
-
-    //----------------------------------------------------------------------------
-    bool NetworkSystem::GetReconnectOnDrop(uint64 hashedConnectionName, bool& reconnectOnDrop) const
-    {
-      std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
-      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
-      {
-        return hashedConnectionName == entry.HashedName;
-      });
-      if (iter != end(m_connectors))
-      {
-        reconnectOnDrop = iter->ReconnectOnDrop;
-        return true;
-      }
-      return false;
-    }
-
-    //----------------------------------------------------------------------------
     void NetworkSystem::SetHostname(uint64 hashedConnectionName, const std::wstring& hostname)
     {
       std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
@@ -471,7 +420,7 @@ namespace HoloIntervention
       });
       if (iter != end(m_connectors))
       {
-        iter->Connector->ServerHost = ref new Platform::String(hostname.c_str());
+        iter->Connector->ServerHost = ref new HostName(ref new Platform::String(hostname.c_str()));
       }
     }
 
@@ -485,7 +434,7 @@ namespace HoloIntervention
       });
       if (iter != end(m_connectors))
       {
-        hostName = iter->Connector->ServerHost->Data();
+        hostName = iter->Connector->ServerHost->DisplayName->Data();
         return true;
       }
       return false;
@@ -501,7 +450,7 @@ namespace HoloIntervention
       });
       if (iter != end(m_connectors))
       {
-        iter->Connector->ServerPort = port;
+        iter->Connector->ServerPort = port.ToString();
       }
     }
 
@@ -515,7 +464,7 @@ namespace HoloIntervention
       });
       if (iter != end(m_connectors))
       {
-        port = iter->Connector->ServerPort;
+        port = std::stoi(iter->Connector->ServerPort->Data());
         return true;
       }
       return false;
@@ -606,8 +555,8 @@ namespace HoloIntervention
               }
 
               UWPOpenIGTLink::IGTClient^ client = ref new UWPOpenIGTLink::IGTClient();
-              client->ServerHost = ref new Platform::String((prefix + L"." + ss.str()).c_str());
-              client->ServerPort = 18944;
+              client->ServerHost = ref new HostName(ref new Platform::String((prefix + L"." + ss.str()).c_str()));
+              client->ServerPort = L"18944";
 
               task<bool> connectTask = create_task(client->ConnectAsync(0.5));
               bool result(false);
@@ -631,117 +580,6 @@ namespace HoloIntervention
 
         return results;
       });
-    }
-
-    //----------------------------------------------------------------------------
-    task<void> NetworkSystem::KeepAliveAsync(uint64 hashedConnectionName)
-    {
-      std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
-      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
-      {
-        return hashedConnectionName == entry.HashedName;
-      });
-      if (iter != end(m_connectors))
-      {
-        iter->KeepAliveTokenSource = cancellation_token_source();
-        return create_task([this, hashedConnectionName, token = iter->KeepAliveTokenSource.get_token()]()
-        {
-          igtl::StatusMessage::Pointer statusMsg = igtl::StatusMessage::New();
-          statusMsg->SetCode(igtl::StatusMessage::STATUS_OK);
-          statusMsg->Pack();
-
-          while (!token.is_canceled())
-          {
-            ConnectorList::iterator iter;
-            {
-              std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
-              iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
-              {
-                return hashedConnectionName == entry.HashedName;
-              });
-              if (iter == end(m_connectors))
-              {
-                // Connector has been removed out from under us, abort!
-                break;
-              }
-            }
-
-            if (iter->State == CONNECTION_STATE_CONNECTED)
-            {
-              // send keep alive message
-              bool result(false);
-              {
-                RETRY_UNTIL_TRUE(result = iter->Connector->SendMessage((UWPOpenIGTLink::MessageBasePointerPtr)&statusMsg), 10, 25);
-              }
-              if (!result)
-              {
-                iter->Connector->Disconnect();
-                iter->State = CONNECTION_STATE_CONNECTION_LOST;
-                if (iter->ReconnectOnDrop)
-                {
-                  uint32_t retryCount(0);
-                  while (iter->State != CONNECTION_STATE_CONNECTED && retryCount < RECONNECT_RETRY_COUNT)
-                  {
-                    // Either it's up and running and it can connect right away, or it's down and will never connect
-                    auto connTask = create_task(iter->Connector->ConnectAsync(0.1)).then([this, &retryCount](task<bool> previousTask)
-                    {
-                      bool result(false);
-                      try
-                      {
-                        result = previousTask.get();
-                      }
-                      catch (const std::exception& e)
-                      {
-                        LOG(LogLevelType::LOG_LEVEL_ERROR, e.what());
-                      }
-                      catch (Platform::Exception^ e)
-                      {
-                        WLOG(LogLevelType::LOG_LEVEL_ERROR, e->Message);
-                      }
-
-                      return result;
-                    });
-
-                    bool result = connTask.get();
-                    if (!result)
-                    {
-                      retryCount++;
-                      std::this_thread::sleep_for(std::chrono::milliseconds(RECONNECT_RETRY_DELAY_MSEC));
-                    }
-                  }
-
-                  if (iter->State != CONNECTION_STATE_CONNECTED)
-                  {
-                    // Failed to reconnect within retry count
-                    iter->KeepAliveTokenSource.cancel();
-                    iter->KeepAliveTokenSource = cancellation_token_source();
-                    m_notificationSystem.QueueMessage(L"Connection lost. Check server.");
-                    return;
-                  }
-                }
-                else
-                {
-                  // Don't reconnect on drop
-                  iter->KeepAliveTokenSource.cancel();
-                  iter->KeepAliveTokenSource = cancellation_token_source();
-                  m_notificationSystem.QueueMessage(L"Connection lost. Check server.");
-                  return;
-                }
-              }
-              else
-              {
-                std::this_thread::sleep_for(std::chrono::milliseconds(KEEP_ALIVE_INTERVAL_MSEC));
-              }
-            }
-            else
-            {
-              LOG(LogLevelType::LOG_LEVEL_ERROR, "Keep alive running unconnected but token not canceled. Exiting keep alive.");
-              return;
-            }
-          }
-        });
-      }
-      return create_task([]() {});
     }
   }
 }

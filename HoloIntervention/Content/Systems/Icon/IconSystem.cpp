@@ -101,7 +101,7 @@ namespace HoloIntervention
       // Create network icon
       m_networkIcon = AddEntry(L"Assets/Models/network_icon.cmo");
       // TODO : multiple networks?
-      m_hashedConnectionName = HashString(L"2DImage");
+      m_hashedConnectionName = HashString(L"NDITracker");
 
       // Create camera icon
       m_cameraIcon = AddEntry(L"Assets/Models/camera_icon.cmo");

@@ -73,8 +73,6 @@ namespace HoloIntervention
       {
         std::wstring                            Name = L""; // For saving back to disk
         uint64                                  HashedName = 0;
-        bool                                    ReconnectOnDrop = true;
-        Concurrency::cancellation_token_source  KeepAliveTokenSource;
         ConnectionState                         State = CONNECTION_STATE_UNKNOWN;
         UWPOpenIGTLink::IGTClient^              Connector = nullptr;
       };
@@ -106,9 +104,6 @@ namespace HoloIntervention
       void Disconnect(uint64 hashedConnectionName);
       bool GetConnectionState(uint64 hashedConnectionName, ConnectionState& state) const;
 
-      void SetReconnectOnDrop(uint64 hashedConnectionName, bool arg);
-      bool GetReconnectOnDrop(uint64 hashedConnectionName, bool& reconnectOnDrop) const;
-
       void SetHostname(uint64 hashedConnectionName, const std::wstring& hostname);
       bool GetHostname(uint64 hashedConnectionName, std::wstring& hostName) const;
 
@@ -122,7 +117,6 @@ namespace HoloIntervention
       Concurrency::task<bool> InitAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
 
       Concurrency::task<std::vector<std::wstring>> FindServersAsync();
-      Concurrency::task<void> KeepAliveAsync(uint64 hashedConnectionName);
 
     protected:
       // Cached entries
