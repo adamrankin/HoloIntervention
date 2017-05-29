@@ -43,7 +43,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Link>
-      <AdditionalDependencies>d2d1.lib;d3d11.lib;dxgi.lib;dwrite.lib;windowscodecs.lib;Mfreadwrite.lib;mfplat.lib;Mfuuid.lib;hrtfapo.lib;$(SolutionDir)DirectXTK\Bin\Windows10\$(Platform)\$(Configuration)\DirectXTK.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d2d1.lib;d3d11.lib;dxgi.lib;dwrite.lib;windowscodecs.lib;Mfreadwrite.lib;mfplat.lib;Mfuuid.lib;hrtfapo.lib;$(SolutionDir)DirectXTK\Bin\Windows10\Win32\$(Configuration)\DirectXTK.lib;$(SolutionDir)DirectXTex\DirectXTex\Bin\Windows10\Win32\$(Configuration)\DirectXTex.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories); $(VCInstallDir)\lib\store; $(VCInstallDir)\lib</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>mincore.lib;kernel32.lib;ole32.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
@@ -60,7 +60,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Link>
-      <AdditionalDependencies>d2d1.lib;d3d11.lib;dxgi.lib;dwrite.lib;windowscodecs.lib;Mfreadwrite.lib;mfplat.lib;Mfuuid.lib;hrtfapo.lib;$(SolutionDir)DirectXTK\Bin\Windows10\$(Platform)\$(Configuration)\DirectXTK.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d2d1.lib;d3d11.lib;dxgi.lib;dwrite.lib;windowscodecs.lib;Mfreadwrite.lib;mfplat.lib;Mfuuid.lib;hrtfapo.lib;$(SolutionDir)DirectXTK\Bin\Windows10\Win32\$(Configuration)\DirectXTK.lib;$(SolutionDir)DirectXTex\DirectXTex\Bin\Windows10\Win32\$(Configuration)\DirectXTex.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories); $(VCInstallDir)\lib\store; $(VCInstallDir)\lib</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>mincore.lib;kernel32.lib;ole32.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
