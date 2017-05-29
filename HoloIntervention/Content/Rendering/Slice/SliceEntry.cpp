@@ -86,6 +86,8 @@ namespace HoloIntervention
       : m_deviceResources(deviceResources)
       , m_timer(timer)
     {
+      SetBlackMapColour(m_blackMapColour);
+      SetWhiteMapColour(m_whiteMapColour);
     }
 
     //----------------------------------------------------------------------------
@@ -369,6 +371,7 @@ namespace HoloIntervention
     void SliceEntry::SetBlackMapColour(float4 colour)
     {
       XMStoreFloat4(&m_constantBuffer.blackMapColour, XMLoadFloat4(&colour));
+      SetWhiteMapColour(m_whiteMapColour);
     }
 
     //----------------------------------------------------------------------------
