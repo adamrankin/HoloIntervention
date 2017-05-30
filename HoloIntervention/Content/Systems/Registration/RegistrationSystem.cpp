@@ -29,6 +29,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Registration types
 #include "CameraRegistration.h"
+#include "ManualRegistration.h"
 #include "OpticalRegistration.h"
 
 // Common includes
@@ -48,7 +49,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 // System includes
 #include "NotificationSystem.h"
 
-// Unnecessary, but removes intellisense errors
+// Unnecessary, but removes Intellisense errors
 #include "Log.h"
 #include <WindowsNumerics.h>
 
@@ -152,7 +153,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    concurrency::task<bool> RegistrationSystem::WriteConfigurationAsync(XmlDocument^ document)
+    task<bool> RegistrationSystem::WriteConfigurationAsync(XmlDocument^ document)
     {
       return create_task([this, document]()
       {
@@ -169,12 +170,19 @@ namespace HoloIntervention
         repo->SetTransformPersistent(trName, true);
         repo->WriteConfiguration(document);
 
+        auto task = m_correctionMethod->WriteConfigurationAsync(document);
+        auto result = task.get();
+        if (!result)
+        {
+          return task_from_result(false);
+        }
+
         return m_registrationMethod->WriteConfigurationAsync(document);
       });
     }
 
     //----------------------------------------------------------------------------
-    concurrency::task<bool> RegistrationSystem::ReadConfigurationAsync(XmlDocument^ document)
+    task<bool> RegistrationSystem::ReadConfigurationAsync(XmlDocument^ document)
     {
       return create_task([this, document]()
       {
@@ -182,7 +190,7 @@ namespace HoloIntervention
         auto trName = ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD");
         if (!repo->ReadConfiguration(document))
         {
-          return task_from_result(false);
+          return false;
         }
 
         float4x4 temp;
@@ -191,10 +199,16 @@ namespace HoloIntervention
           m_cachedRegistrationTransform = transpose(temp);
         }
 
+        auto task = m_correctionMethod->ReadConfigurationAsync(document);
+        auto result = task.get();
+        if (!result)
+        {
+          return false;
+        }
         m_configDocument = document;
         m_componentReady = true;
 
-        return task_from_result(true);
+        return true;
       });
     }
 
@@ -205,6 +219,7 @@ namespace HoloIntervention
       , m_modelRenderer(modelRenderer)
       , m_physicsAPI(physicsAPI)
       , m_registrationMethod(nullptr)
+      , m_correctionMethod(std::make_shared<System::ManualRegistration>(networkSystem))
     {
       m_regAnchorModelId = m_modelRenderer.AddModel(REGISTRATION_ANCHOR_MODEL_FILENAME);
       if (m_regAnchorModelId != INVALID_TOKEN)
@@ -277,7 +292,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     task<void> RegistrationSystem::LoadAppStateAsync()
     {
-      return create_task([=]()
+      return create_task([ = ]()
       {
         if (m_physicsAPI.HasAnchor(REGISTRATION_ANCHOR_NAME))
         {
@@ -409,6 +424,48 @@ namespace HoloIntervention
         {
           m_registrationMethod->ResetRegistration();
         }
+      };
+
+      callbackMap[L"start correction"] = [this](SpeechRecognitionResult ^ result)
+      {
+        if (m_correctionMethod->IsStarted())
+        {
+          m_notificationSystem.QueueMessage(L"Correction already running.");
+          return;
+        }
+
+        m_correctionMethod->StartAsync().then([this](bool result)
+        {
+          if (!result)
+          {
+            m_notificationSystem.QueueMessage(L"Unable to start correction.");
+          }
+        });
+      };
+
+      callbackMap[L"stop correction"] = [this](SpeechRecognitionResult ^ result)
+      {
+        if (!m_correctionMethod->IsStarted())
+        {
+          m_notificationSystem.QueueMessage(L"Already stopped.");
+          return;
+        }
+        m_correctionMethod->StopAsync().then([this](bool result)
+        {
+          if (result)
+          {
+            m_notificationSystem.QueueMessage(L"Correction stopped.");
+          }
+          else
+          {
+            m_notificationSystem.QueueMessage(L"Error when stopping correction.");
+          }
+        });
+      };
+
+      callbackMap[L"reset correction"] = [this](SpeechRecognitionResult ^ result)
+      {
+        m_correctionMethod->ResetRegistration();
       };
 
       callbackMap[L"enable registration viz"] = [this](SpeechRecognitionResult ^ result)

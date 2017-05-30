@@ -104,6 +104,7 @@ namespace HoloIntervention
 
       // Registration methods
       std::shared_ptr<IRegistrationMethod>            m_registrationMethod;
+      std::shared_ptr<IRegistrationMethod>            m_correctionMethod;
       Windows::Foundation::Numerics::float4x4         m_cachedRegistrationTransform = Windows::Foundation::Numerics::float4x4::identity();
 
       // Constants

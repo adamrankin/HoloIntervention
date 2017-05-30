@@ -142,6 +142,7 @@
     <ClInclude Include="Content\Systems\Registration\CameraRegistration.h" />
     <ClInclude Include="Content\Systems\Registration\IRegistrationMethod.h" />
     <ClInclude Include="Content\Systems\Registration\LandmarkRegistration.h" />
+    <ClInclude Include="Content\Systems\Registration\ManualRegistration.h" />
     <ClInclude Include="Content\Systems\Registration\OpticalRegistration.h" />
     <ClInclude Include="Content\Systems\Registration\RegistrationSystem.h" />
     <ClInclude Include="Content\Systems\Splash\SplashSystem.h" />
@@ -198,6 +199,7 @@
     <ClCompile Include="Content\Systems\Notification\NotificationSystem.cpp" />
     <ClCompile Include="Content\Systems\Registration\CameraRegistration.cpp" />
     <ClCompile Include="Content\Systems\Registration\LandmarkRegistration.cpp" />
+    <ClCompile Include="Content\Systems\Registration\ManualRegistration.cpp" />
     <ClCompile Include="Content\Systems\Registration\OpticalRegistration.cpp" />
     <ClCompile Include="Content\Systems\Registration\RegistrationSystem.cpp" />
     <ClCompile Include="Content\Systems\Splash\SplashSystem.cpp" />

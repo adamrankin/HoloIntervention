@@ -30,6 +30,12 @@
     MaxRadius="60"
     />
 
+  <ManualRegistration
+    IGTConnection="NDITracker"
+    FromFrameName="Tool"
+    ToFrameName="Reference"
+    />
+
   <OpticalRegistration
     IGTConnection="NDITracker"
     BufferSize="50"
@@ -42,18 +48,15 @@
       Name="2DImage"
       Host="192.168.0.101"
       Port="18944"
-      ReconnectOnDrop="true"
       EmbeddedImageTransformName="ImageToReference" />
     <Connection
       Name="NDITracker"
-      Host="192.168.0.103"
-      Port="18944"
-      ReconnectOnDrop="true" />
+      Host="192.168.0.100"
+      Port="18944" />
     <xConnection
       Name="3DImage"
       Host="192.168.0.101"
       Port="18945"
-      ReconnectOnDrop="true"
       EmbeddedImageTransformName="VolumeToReference" />
   </IGTConnections>
 

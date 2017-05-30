@@ -151,6 +151,9 @@
     <ClCompile Include="Content\Algorithms\KalmanFilter.cpp">
       <Filter>Content\Algorithms\Kalman</Filter>
     </ClCompile>
+    <ClCompile Include="Content\Systems\Registration\ManualRegistration.cpp">
+      <Filter>Content\Systems\Registration\Manual</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Content\Sound\OmnidirectionalSound.h">
@@ -329,6 +332,9 @@
     </ClInclude>
     <ClInclude Include="Content\Algorithms\KalmanFilter.h">
       <Filter>Content\Algorithms\Kalman</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Systems\Registration\ManualRegistration.h">
+      <Filter>Content\Systems\Registration\Manual</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -701,6 +707,9 @@
     </Filter>
     <Filter Include="Content\Algorithms\Kalman">
       <UniqueIdentifier>{fc7a8fed-30a1-4440-8eb7-efeba82be2f8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Systems\Registration\Manual">
+      <UniqueIdentifier>{da06830a-f055-4454-998b-362184d66f4b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
