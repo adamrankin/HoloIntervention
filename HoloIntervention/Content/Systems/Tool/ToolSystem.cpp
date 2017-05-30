@@ -236,7 +236,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ToolSystem::Update(const DX::StepTimer& timer, SpatialCoordinateSystem^ hmdCoordinateSystem)
     {
-      UWPOpenIGTLink::TransformListABI^ transFrame = m_networkSystem.GetTransformFrame(m_hashedConnectionName, m_latestTimestamp);
+      UWPOpenIGTLink::TransformListABI^ transFrame = m_networkSystem.GetTDataFrame(m_hashedConnectionName, m_latestTimestamp);
       if (transFrame == nullptr)
       {
         return;

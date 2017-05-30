@@ -231,7 +231,7 @@ namespace HoloIntervention
       auto frame = m_networkSystem.GetTrackedFrame(m_hashedConnectionName, m_latestTimestamp);
       if (frame == nullptr)
       {
-        auto transformFrame = m_networkSystem.GetTransformFrame(m_hashedConnectionName, m_latestTimestamp);
+        auto transformFrame = m_networkSystem.GetTDataFrame(m_hashedConnectionName, m_latestTimestamp);
         if (transformFrame == nullptr)
         {
           return;

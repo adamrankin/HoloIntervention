@@ -53,7 +53,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <WindowsNumerics.h>
 
 #ifndef SUCCEEDED
-#define SUCCEEDED(hr) (((HRESULT)(hr)) >= 0)
+  #define SUCCEEDED(hr) (((HRESULT)(hr)) >= 0)
 #endif
 
 using namespace Concurrency;
@@ -76,7 +76,7 @@ namespace
   bool ExtractPhantomToFiducialPose(float4x4& phantomFiducialPose, UWPOpenIGTLink::TransformRepository^ transformRepository, Platform::String^ from, Platform::String^ to)
   {
     float4x4 transformation;
-    if(transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(from, to), &transformation))
+    if (transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(from, to), &transformation))
     {
       phantomFiducialPose = transpose(transformation);
       return true;
@@ -97,10 +97,10 @@ namespace HoloIntervention
     {
       float3 position(0.f, 0.f, 0.f);
       // Only do this if we've enabled visualization, the sphere primitives have been created, and we've analyzed at least 1 frame
-      if(m_visualizationEnabled && m_spherePrimitiveIds[0] != INVALID_TOKEN && m_sphereInAnchorResultFrames.size() > 0)
+      if (m_visualizationEnabled && m_spherePrimitiveIds[0] != INVALID_TOKEN && m_sphereInAnchorResultFrames.size() > 0)
       {
         // Take the mean position
-        for(int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
+        for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
         {
           position += transform(float3(0.f, 0.f, 0.f), m_spherePrimitives[i]->GetCurrentPose());
         }
@@ -119,7 +119,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float3 CameraRegistration::GetStabilizedVelocity() const
     {
-      if(m_visualizationEnabled && m_spherePrimitiveIds[0] != INVALID_TOKEN && m_sphereInAnchorResultFrames.size() > 0)
+      if (m_visualizationEnabled && m_spherePrimitiveIds[0] != INVALID_TOKEN && m_sphereInAnchorResultFrames.size() > 0)
       {
         // They all have the same velocity
         return m_spherePrimitives[0]->GetVelocity();
@@ -131,10 +131,10 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float CameraRegistration::GetStabilizePriority() const
     {
-      if(m_visualizationEnabled && m_spherePrimitiveIds[0] != INVALID_TOKEN && m_sphereInAnchorResultFrames.size() > 0)
+      if (m_visualizationEnabled && m_spherePrimitiveIds[0] != INVALID_TOKEN && m_sphereInAnchorResultFrames.size() > 0)
       {
         bool anyInFrustum(false);
-        for(int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
+        for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
         {
           anyInFrustum |= m_spherePrimitives[i]->IsInFrustum();
         }
@@ -151,7 +151,7 @@ namespace HoloIntervention
     {
       return create_task([this, document]()
       {
-        if(document->SelectNodes(L"/HoloIntervention")->Length != 1)
+        if (document->SelectNodes(L"/HoloIntervention")->Length != 1)
         {
           return false;
         }
@@ -160,15 +160,15 @@ namespace HoloIntervention
 
         auto camRegElem = document->CreateElement(L"CameraRegistration");
         camRegElem->SetAttribute(L"IGTConnection", ref new Platform::String(m_connectionName.c_str()));
-        for(auto attr :
-            {
-              std::pair<Platform::String^, double&>(L"Dp", m_dp),
-              std::pair<Platform::String^, double&>(L"MinDistanceDivisor", m_minDistanceDivisor),
-              std::pair<Platform::String^, double&>(L"Param1", m_param1),
-              std::pair<Platform::String^, double&>(L"Param2", m_param2),
-              std::pair<Platform::String^, double&>(L"MinRadius", m_minRadius),
-              std::pair<Platform::String^, double&>(L"MaxRadius", m_maxRadius)
-            })
+        for (auto attr :
+             {
+               std::pair<Platform::String^, double&>(L"Dp", m_dp),
+               std::pair<Platform::String^, double&>(L"MinDistanceDivisor", m_minDistanceDivisor),
+               std::pair<Platform::String^, double&>(L"Param1", m_param1),
+               std::pair<Platform::String^, double&>(L"Param2", m_param2),
+               std::pair<Platform::String^, double&>(L"MinRadius", m_minRadius),
+               std::pair<Platform::String^, double&>(L"MaxRadius", m_maxRadius)
+             })
         {
           camRegElem->SetAttribute(attr.first, attr.second.ToString());
         }
@@ -183,7 +183,7 @@ namespace HoloIntervention
     {
       return create_task([this, document]()
       {
-        if(!m_transformRepository->ReadConfiguration(document))
+        if (!m_transformRepository->ReadConfiguration(document))
         {
           return false;
         }
@@ -191,14 +191,14 @@ namespace HoloIntervention
         m_transformsAvailable = true;
 
         auto xpath = ref new Platform::String(L"/HoloIntervention/CameraRegistration");
-        if(document->SelectNodes(xpath)->Length == 0)
+        if (document->SelectNodes(xpath)->Length == 0)
         {
           throw ref new Platform::Exception(E_INVALIDARG, L"No camera registration defined in the configuration file.");
         }
 
         auto node = document->SelectNodes(xpath)->Item(0);
 
-        if(!HasAttribute(L"IGTConnection", node))
+        if (!HasAttribute(L"IGTConnection", node))
         {
           throw ref new Platform::Exception(E_FAIL, L"Camera registration entry does not contain \"IGTConnection\" attribute.");
         }
@@ -206,17 +206,17 @@ namespace HoloIntervention
         m_connectionName = std::wstring(igtConnectionName->Data());
         m_hashedConnectionName = HashString(igtConnectionName);
 
-        for(auto attr :
-            {
-              std::pair<Platform::String^, double&>(L"Dp", m_dp),
-              std::pair<Platform::String^, double&>(L"MinDistanceDivisor", m_minDistanceDivisor),
-              std::pair<Platform::String^, double&>(L"Param1", m_param1),
-              std::pair<Platform::String^, double&>(L"Param2", m_param2),
-              std::pair<Platform::String^, double&>(L"MinRadius", m_minRadius),
-              std::pair<Platform::String^, double&>(L"MaxRadius", m_maxRadius)
-            })
+        for (auto attr :
+             {
+               std::pair<Platform::String^, double&>(L"Dp", m_dp),
+               std::pair<Platform::String^, double&>(L"MinDistanceDivisor", m_minDistanceDivisor),
+               std::pair<Platform::String^, double&>(L"Param1", m_param1),
+               std::pair<Platform::String^, double&>(L"Param2", m_param2),
+               std::pair<Platform::String^, double&>(L"MinRadius", m_minRadius),
+               std::pair<Platform::String^, double&>(L"MaxRadius", m_maxRadius)
+             })
         {
-          if(!HasAttribute(std::wstring(attr.first->Data()), node))
+          if (!HasAttribute(std::wstring(attr.first->Data()), node))
           {
             continue;
           }
@@ -250,15 +250,15 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void CameraRegistration::Update(SpatialPointerPose^ headPose, SpatialCoordinateSystem^ hmdCoordinateSystem, Platform::IBox<Windows::Foundation::Numerics::float4x4>^ anchorToHMDBox)
     {
-      if(anchorToHMDBox == nullptr)
+      if (anchorToHMDBox == nullptr)
       {
         return;
       }
 
-      if(m_visualizationEnabled && m_spherePrimitiveIds[0] != INVALID_TOKEN && m_sphereInAnchorResultFrames.size() > 0)
+      if (m_visualizationEnabled && m_spherePrimitiveIds[0] != INVALID_TOKEN && m_sphereInAnchorResultFrames.size() > 0)
       {
         // Only do this if we've enabled visualization, the sphere primitives have been created, and we've analyzed at least 1 frame
-        for(int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
+        for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
         {
           m_spherePrimitives[i]->SetDesiredPose(m_sphereToAnchorPoses[i] * anchorToHMDBox->Value);
         }
@@ -270,7 +270,7 @@ namespace HoloIntervention
     {
       EnableVisualization(false);
 
-      if(IsCameraActive())
+      if (IsCameraActive())
       {
         m_tokenSource.cancel();
         std::lock_guard<std::mutex> guard(m_processorLock);
@@ -280,7 +280,7 @@ namespace HoloIntervention
           {
             stopTask.wait();
           }
-          catch(Platform::Exception^ e)
+          catch (Platform::Exception^ e)
           {
             OutputDebugStringW(e->Message->Data());
           }
@@ -318,7 +318,7 @@ namespace HoloIntervention
         EnableVisualization(true);
 
         std::lock_guard<std::mutex> guard(m_processorLock);
-        if(m_videoFrameProcessor == nullptr)
+        if (m_videoFrameProcessor == nullptr)
         {
           return Capture::VideoFrameProcessor::CreateAsync().then([this](task<std::shared_ptr<Capture::VideoFrameProcessor>> createTask)
           {
@@ -327,13 +327,13 @@ namespace HoloIntervention
             {
               processor = createTask.get();
             }
-            catch(Platform::Exception^ e)
+            catch (Platform::Exception^ e)
             {
               OutputDebugStringW(e->Message->Data());
               return false;
             }
 
-            if(processor == nullptr)
+            if (processor == nullptr)
             {
               m_notificationSystem.QueueMessage(L"Unable to initialize capture system.");
             }
@@ -346,7 +346,7 @@ namespace HoloIntervention
             return true;
           }).then([this](bool result)
           {
-            if(!result)
+            if (!result)
             {
               return task_from_result(result);
             }
@@ -359,13 +359,13 @@ namespace HoloIntervention
               {
                 status = startTask.get();
               }
-              catch(Platform::Exception^ e)
+              catch (Platform::Exception^ e)
               {
                 OutputDebugStringW(e->Message->Data());
                 return false;
               }
 
-              if(status == MediaFrameReaderStartStatus::Success)
+              if (status == MediaFrameReaderStartStatus::Success)
               {
                 m_notificationSystem.QueueMessage(L"Capturing...");
               }
@@ -378,7 +378,7 @@ namespace HoloIntervention
               return true;
             }).then([this](bool result)
             {
-              if(!result)
+              if (!result)
               {
                 return result;
               }
@@ -390,7 +390,7 @@ namespace HoloIntervention
                 {
                   ProcessAvailableFrames(m_tokenSource.get_token());
                 }
-                catch(const std::exception& e)
+                catch (const std::exception& e)
                 {
                   LOG(LogLevelType::LOG_LEVEL_ERROR, e.what());
                   m_tokenSource.cancel();
@@ -403,7 +403,7 @@ namespace HoloIntervention
                 {
                   PerformLandmarkRegistration(m_tokenSource.get_token());
                 }
-                catch(const std::exception& e)
+                catch (const std::exception& e)
                 {
                   LOG(LogLevelType::LOG_LEVEL_ERROR, e.what());
                   m_tokenSource.cancel();
@@ -424,7 +424,7 @@ namespace HoloIntervention
             {
               status = startTask.get();
             }
-            catch(Platform::Exception^ e)
+            catch (Platform::Exception^ e)
             {
               OutputDebugStringW(e->Message->Data());
               return false;
@@ -451,11 +451,11 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void CameraRegistration::EnableVisualization(bool on)
     {
-      if(!on)
+      if (!on)
       {
-        for(int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
+        for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
         {
-          if(m_spherePrimitiveIds[i] != INVALID_TOKEN)
+          if (m_spherePrimitiveIds[i] != INVALID_TOKEN)
           {
             m_spherePrimitives[i]->SetVisible(false);
           }
@@ -464,9 +464,9 @@ namespace HoloIntervention
         return;
       }
 
-      for(int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
+      for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
       {
-        if(m_spherePrimitiveIds[i] == INVALID_TOKEN)
+        if (m_spherePrimitiveIds[i] == INVALID_TOKEN)
         {
           m_spherePrimitiveIds[i] = m_modelRenderer.AddPrimitive(Rendering::PrimitiveType_SPHERE, VISUALIZATION_SPHERE_RADIUS, 30);
           m_spherePrimitives[i] = m_modelRenderer.GetPrimitive(m_spherePrimitiveIds[i]);
@@ -497,7 +497,7 @@ namespace HoloIntervention
     void CameraRegistration::SetWorldAnchor(Windows::Perception::Spatial::SpatialAnchor^ worldAnchor)
     {
       std::lock_guard<std::mutex> guard(m_anchorLock);
-      if(IsCameraActive())
+      if (IsCameraActive())
       {
         // World anchor changed during registration, invalidate the registration session.
         StopAsync().then([this](bool result)
@@ -507,7 +507,7 @@ namespace HoloIntervention
         });
       }
 
-      if(m_hasRegistration && m_worldAnchor != nullptr)
+      if (m_hasRegistration && m_worldAnchor != nullptr)
       {
         try
         {
@@ -516,20 +516,20 @@ namespace HoloIntervention
           {
             worldAnchorToNewAnchorBox = m_worldAnchor->CoordinateSystem->TryGetTransformTo(worldAnchor->CoordinateSystem);
           }
-          catch(Platform::Exception^ e)
+          catch (Platform::Exception^ e)
           {
             LOG(LogLevelType::LOG_LEVEL_ERROR, e->Message);
           }
-          if(worldAnchorToNewAnchorBox != nullptr)
+          if (worldAnchorToNewAnchorBox != nullptr)
           {
             // If possible, update the registration to be referential to the new world anchor
             m_referenceToAnchor = m_referenceToAnchor * worldAnchorToNewAnchorBox->Value;
           }
         }
-        catch(Platform::Exception^ e) {}
+        catch (Platform::Exception^ e) {}
       }
 
-      if(m_worldAnchor != worldAnchor && m_worldAnchor != nullptr)
+      if (m_worldAnchor != worldAnchor && m_worldAnchor != nullptr)
       {
         m_worldAnchor->RawCoordinateSystemAdjusted -= m_anchorUpdatedToken;
       }
@@ -558,17 +558,17 @@ namespace HoloIntervention
       UWPOpenIGTLink::TransformListABI^ l_latestTransformFrame(nullptr);
       MediaFrameReference^ l_latestCameraFrame(nullptr);
 
-      if(!m_transformsAvailable)
+      if (!m_transformsAvailable)
       {
         LOG(LogLevelType::LOG_LEVEL_ERROR, "Unable to process frames. Transform repository was not properly initialized.");
         return;
       }
 
       uint64 lastMessageId(std::numeric_limits<uint64>::max());
-      while(!token.is_canceled())
+      while (!token.is_canceled())
       {
         std::unique_lock<std::mutex> lock(m_processorLock);
-        if(m_videoFrameProcessor == nullptr || !m_networkSystem.IsConnected(m_hashedConnectionName))
+        if (m_videoFrameProcessor == nullptr || !m_networkSystem.IsConnected(m_hashedConnectionName))
         {
           lock.unlock();
           std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -576,20 +576,20 @@ namespace HoloIntervention
         }
 
         MediaFrameReference^ cameraFrame(m_videoFrameProcessor->GetLatestFrame());
-        l_latestTransformFrame = m_networkSystem.GetTransformFrame(m_hashedConnectionName, m_latestTimestamp);
-        if(l_latestTransformFrame != nullptr &&
+        l_latestTransformFrame = m_networkSystem.GetTDataFrame(m_hashedConnectionName, m_latestTimestamp);
+        if (l_latestTransformFrame != nullptr &&
             cameraFrame != nullptr &&
             cameraFrame != l_latestCameraFrame)
         {
           float4x4 cameraToRawWorldAnchor = float4x4::identity();
 
           l_latestCameraFrame = cameraFrame;
-          if(l_latestTransformFrame->Size == 0)
+          if (l_latestTransformFrame->Size == 0)
           {
             continue;
           }
           m_latestTimestamp = l_latestTransformFrame->GetAt(0)->Timestamp;
-          if(l_latestCameraFrame->CoordinateSystem != nullptr)
+          if (l_latestCameraFrame->CoordinateSystem != nullptr)
           {
             std::lock_guard<std::mutex> guard(m_anchorLock);
             Platform::IBox<float4x4>^ cameraToRawWorldAnchorBox;
@@ -597,29 +597,29 @@ namespace HoloIntervention
             {
               cameraToRawWorldAnchorBox = l_latestCameraFrame->CoordinateSystem->TryGetTransformTo(m_worldAnchor->RawCoordinateSystem);
             }
-            catch(Platform::Exception^ e)
+            catch (Platform::Exception^ e)
             {
               LOG(LogLevelType::LOG_LEVEL_ERROR, L"Exception: " + e->Message);
               continue;
             }
-            if(cameraToRawWorldAnchorBox != nullptr)
+            if (cameraToRawWorldAnchorBox != nullptr)
             {
               cameraToRawWorldAnchor = cameraToRawWorldAnchorBox->Value;
             }
           }
 
-          if(cameraToRawWorldAnchor == float4x4::identity())
+          if (cameraToRawWorldAnchor == float4x4::identity())
           {
             continue;
           }
 
-          if(!m_transformRepository->SetTransforms(l_latestTransformFrame))
+          if (!m_transformRepository->SetTransforms(l_latestTransformFrame))
           {
             continue;
           }
 
           LandmarkRegistration::VecFloat3 sphereInReferenceResults;
-          if(!RetrieveTrackerFrameLocations(sphereInReferenceResults))
+          if (!RetrieveTrackerFrameLocations(sphereInReferenceResults))
           {
             continue;
           }
@@ -630,22 +630,22 @@ namespace HoloIntervention
           {
             frame = l_latestCameraFrame->VideoMediaFrame;
           }
-          catch(Platform::Exception^ e)
+          catch (Platform::Exception^ e)
           {
             continue;
           }
-          if(ComputePhantomToCameraTransform(frame, l_initialized, l_height, l_width, l_hsv, l_redMat, l_redMatWrap, l_imageRGB, l_mask, l_rvec, l_tvec, l_canny_output, phantomToCameraTransform))
+          if (ComputePhantomToCameraTransform(frame, l_initialized, l_height, l_width, l_hsv, l_redMat, l_redMatWrap, l_imageRGB, l_mask, l_rvec, l_tvec, l_canny_output, phantomToCameraTransform))
           {
             // Transform points in model space to anchor space
             LandmarkRegistration::VecFloat3 sphereInAnchorResults;
             int i = 0;
-            for(auto& sphereToPhantom : m_sphereToPhantomPoses)
+            for (auto& sphereToPhantom : m_sphereToPhantomPoses)
             {
               float4x4 sphereToAnchorPose = sphereToPhantom * phantomToCameraTransform * cameraToRawWorldAnchor;
 
               sphereInAnchorResults.push_back(float3(sphereToAnchorPose.m41, sphereToAnchorPose.m42, sphereToAnchorPose.m43));
 
-              if(m_visualizationEnabled)
+              if (m_visualizationEnabled)
               {
                 // If visualizing, update the latest known poses of the spheres
                 m_sphereToAnchorPoses[i] = sphereToAnchorPose;
@@ -657,7 +657,7 @@ namespace HoloIntervention
             m_sphereInAnchorResultFrames.push_back(sphereInAnchorResults);
             m_sphereInReferenceResultFrames.push_back(sphereInReferenceResults);
 
-            if(lastMessageId != std::numeric_limits<uint64>::max())
+            if (lastMessageId != std::numeric_limits<uint64>::max())
             {
               m_notificationSystem.RemoveMessage(lastMessageId);
             }
@@ -676,12 +676,12 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void CameraRegistration::PerformLandmarkRegistration(Concurrency::cancellation_token token)
     {
-      while(!token.is_canceled())
+      while (!token.is_canceled())
       {
         uint32 size;
         {
           std::unique_lock<std::mutex> frameLock(m_outputFramesLock);
-          if(m_sphereInAnchorResultFrames.size() < m_lastRegistrationResultCount + NUMBER_OF_FRAMES_BETWEEN_REGISTRATION)
+          if (m_sphereInAnchorResultFrames.size() < m_lastRegistrationResultCount + NUMBER_OF_FRAMES_BETWEEN_REGISTRATION)
           {
             frameLock.unlock();
             std::this_thread::sleep_for(std::chrono::milliseconds(33));
@@ -691,27 +691,27 @@ namespace HoloIntervention
           assert(m_sphereInAnchorResultFrames.size() == m_sphereInReferenceResultFrames.size());
 
           // TODO : determine why astronomical values
-          for(uint32 i = 0; i < m_sphereInReferenceResultFrames.size();)
+          for (uint32 i = 0; i < m_sphereInReferenceResultFrames.size();)
           {
             auto ref = m_sphereInReferenceResultFrames[i];
             auto anc = m_sphereInAnchorResultFrames[i];
 
             bool remove(false);
-            for(auto point : ref)
+            for (auto point : ref)
             {
-              if(abs(point.x) > 100.0 || abs(point.y) > 100.0 || abs(point.z) > 100)
+              if (abs(point.x) > 100.0 || abs(point.y) > 100.0 || abs(point.z) > 100)
               {
                 remove = true;
               }
             }
-            for(auto point : anc)
+            for (auto point : anc)
             {
-              if(abs(point.x) > 100.0 || abs(point.y) > 100.0 || abs(point.z) > 100)
+              if (abs(point.x) > 100.0 || abs(point.y) > 100.0 || abs(point.z) > 100)
               {
                 remove = true;
               }
             }
-            if(remove)
+            if (remove)
             {
               m_sphereInReferenceResultFrames.erase(m_sphereInReferenceResultFrames.begin() + i);
               m_sphereInAnchorResultFrames.erase(m_sphereInAnchorResultFrames.begin() + i);
@@ -730,11 +730,11 @@ namespace HoloIntervention
         std::atomic_bool calcFinished(false);
         m_landmarkRegistration->CalculateTransformationAsync().then([this, &calcFinished](float4x4 referenceToAnchorTransformation)
         {
-          if(referenceToAnchorTransformation != float4x4::identity())
+          if (referenceToAnchorTransformation != float4x4::identity())
           {
             m_hasRegistration = true;
             m_referenceToAnchor = referenceToAnchorTransformation;
-            if(m_completeCallback)
+            if (m_completeCallback)
             {
               m_completeCallback(referenceToAnchorTransformation);
             }
@@ -742,7 +742,7 @@ namespace HoloIntervention
           calcFinished = true;
         });
 
-        while(!calcFinished)
+        while (!calcFinished)
         {
           std::this_thread::sleep_for(std::chrono::milliseconds(33));
         }
@@ -766,7 +766,7 @@ namespace HoloIntervention
         cv::Mat& cannyOutput,
         float4x4& phantomToCameraTransform)
     {
-      if(m_sphereToPhantomPoses.size() != PHANTOM_SPHERE_COUNT)
+      if (m_sphereToPhantomPoses.size() != PHANTOM_SPHERE_COUNT)
       {
         LOG(LogLevelType::LOG_LEVEL_ERROR, "Phantom coordinates haven't been received. Can't determine 3D sphere coordinates.");
         return false;
@@ -775,14 +775,14 @@ namespace HoloIntervention
       CameraIntrinsics^ cameraIntrinsics(nullptr);
       try
       {
-        if(videoFrame == nullptr || videoFrame->CameraIntrinsics == nullptr)
+        if (videoFrame == nullptr || videoFrame->CameraIntrinsics == nullptr)
         {
           LOG(LogLevelType::LOG_LEVEL_ERROR, "Camera intrinsics not available. Cannot continue.");
           return false;
         }
         cameraIntrinsics = videoFrame->CameraIntrinsics;
       }
-      catch(Platform::Exception^ e)
+      catch (Platform::Exception^ e)
       {
         LOG(LogLevelType::LOG_LEVEL_ERROR, e->Message);
         return false;
@@ -790,13 +790,13 @@ namespace HoloIntervention
 
       bool result(false);
       // Validate that the incoming frame format is compatible
-      if(videoFrame->SoftwareBitmap)
+      if (videoFrame->SoftwareBitmap)
       {
         ComPtr<IMemoryBufferByteAccess> byteAccess;
         BitmapBuffer^ buffer = videoFrame->SoftwareBitmap->LockBuffer(BitmapBufferAccessMode::Read);
         IMemoryBufferReference^ reference = buffer->CreateReference();
 
-        if(SUCCEEDED(reinterpret_cast<IUnknown*>(reference)->QueryInterface(IID_PPV_ARGS(&byteAccess))))
+        if (SUCCEEDED(reinterpret_cast<IUnknown*>(reference)->QueryInterface(IID_PPV_ARGS(&byteAccess))))
         {
           // Get a pointer to the pixel buffer
           byte* data;
@@ -806,7 +806,7 @@ namespace HoloIntervention
           // Get information about the BitmapBuffer
           auto desc = buffer->GetPlaneDescription(0);
 
-          if(!initialized || height != desc.Height || width != desc.Width)
+          if (!initialized || height != desc.Height || width != desc.Width)
           {
             initialized = true;
             height = desc.Height;
@@ -835,19 +835,19 @@ namespace HoloIntervention
           // Apply the Hough Transform to find the circles
           cv::HoughCircles(mask, circles, CV_HOUGH_GRADIENT, 2, mask.rows / 16, 255, 30, 20, 60);
 
-          if(circles.size() == PHANTOM_SPHERE_COUNT)
+          if (circles.size() == PHANTOM_SPHERE_COUNT)
           {
             float radiusMean(0.f);
-            for(auto& circle : circles)
+            for (auto& circle : circles)
             {
               radiusMean += circle.z;
             }
             radiusMean /= circles.size();
 
-            for(auto& circle : circles)
+            for (auto& circle : circles)
             {
               // Ensure radius of circle falls within 15% of mean
-              if(circle.z / radiusMean < 0.85f || circle.z / radiusMean > 1.15f)
+              if (circle.z / radiusMean < 0.85f || circle.z / radiusMean > 1.15f)
               {
                 result = false;
                 goto done;
@@ -856,7 +856,7 @@ namespace HoloIntervention
               circleCentersPixel.push_back(cv::Point2f(circle.x, circle.y));
             }
           }
-          else if(circles.size() > PHANTOM_SPHERE_COUNT)
+          else if (circles.size() > PHANTOM_SPHERE_COUNT)
           {
             // TODO : is it possible to make our code more robust by identifying 5 circles that make sense? pixel center distances? radii? etc...
             LOG(LogLevelType::LOG_LEVEL_ERROR, "Too many circles detected.");
@@ -884,23 +884,23 @@ namespace HoloIntervention
 
           std::vector<cv::Point3f> phantomFiducialsCv;
           float3 origin(0.f, 0.f, 0.f);
-          for(auto& pose : m_sphereToPhantomPoses)
+          for (auto& pose : m_sphereToPhantomPoses)
           {
             phantomFiducialsCv.push_back(cv::Point3f(pose.m41, pose.m42, pose.m43));
           }
 
           // Circles has x, y, radius
-          if(!SortCorrespondence(hsv, phantomFiducialsCv, circles))
+          if (!SortCorrespondence(hsv, phantomFiducialsCv, circles))
           {
             result = false;
             goto done;
           }
 
           // Is this our first frame?
-          if(m_pnpNeedsInit)
+          if (m_pnpNeedsInit)
           {
             // Initialize rvec and tvec with a reasonable guess
-            if(!cv::solvePnP(phantomFiducialsCv, circleCentersPixel, intrinsic, distCoeffs, rvec, tvec, false, cv::SOLVEPNP_DLS))
+            if (!cv::solvePnP(phantomFiducialsCv, circleCentersPixel, intrinsic, distCoeffs, rvec, tvec, false, cv::SOLVEPNP_DLS))
             {
               LOG(LogLevelType::LOG_LEVEL_ERROR, "Cannot solvePnP initialization.");
               result = false;
@@ -909,7 +909,7 @@ namespace HoloIntervention
           }
 
           // Use iterative technique to refine results
-          if(!cv::solvePnP(phantomFiducialsCv, circleCentersPixel, intrinsic, distCoeffs, rvec, tvec, true))
+          if (!cv::solvePnP(phantomFiducialsCv, circleCentersPixel, intrinsic, distCoeffs, rvec, tvec, true))
           {
             LOG(LogLevelType::LOG_LEVEL_ERROR, "Cannot solvePnP iteration.");
             result = false;
@@ -932,7 +932,7 @@ namespace HoloIntervention
           cvToD3D.m33 = -1.f;
           phantomToCameraTransform = transpose(phantomToCameraTransform) * cvToD3D; // Output is in column-major format, OpenCV produces row-major
 
-          if(!IsPhantomToCameraSane(phantomToCameraTransform))
+          if (!IsPhantomToCameraSane(phantomToCameraTransform))
           {
             // Somethings gone wonky, let's try with a fresh start on the next frame
             LOG(LogLevelType::LOG_LEVEL_ERROR, "PhantomToCamera isn't sane. Skipping");
@@ -958,10 +958,10 @@ done:
       // Calculate world position from transforms in tracked frame
       try
       {
-        for(int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
+        for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
         {
           float4x4 transform;
-          if(m_transformRepository->GetTransform(m_sphereCoordinateNames[i], &transform))
+          if (m_transformRepository->GetTransform(m_sphereCoordinateNames[i], &transform))
           {
             sphereXToReferenceTransform[i] = transpose(transform);
           }
@@ -973,30 +973,30 @@ done:
           }
         }
       }
-      catch(Platform::Exception^ e)
+      catch (Platform::Exception^ e)
       {
         return false;
       }
 
       float4 origin = { 0.f, 0.f, 0.f, 1.f };
-      for(int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
+      for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
       {
         outSphereInReferencePositions.push_back(float3(sphereXToReferenceTransform[i].m41, sphereXToReferenceTransform[i].m42, sphereXToReferenceTransform[i].m43));
       }
 
       // Phantom is rigid body, so only need to pull the values once
-      if(!m_hasSphereToPhantomPoses)
+      if (!m_hasSphereToPhantomPoses)
       {
         bool hasError(false);
-        for(int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
+        for (int i = 0; i < PHANTOM_SPHERE_COUNT; ++i)
         {
-          if(!ExtractPhantomToFiducialPose(m_sphereToPhantomPoses[i], m_transformRepository, L"RedSphere" + (i + 1).ToString(), L"Phantom"))
+          if (!ExtractPhantomToFiducialPose(m_sphereToPhantomPoses[i], m_transformRepository, L"RedSphere" + (i + 1).ToString(), L"Phantom"))
           {
             hasError = true;
           }
         }
 
-        if(!hasError)
+        if (!hasError)
         {
           m_hasSphereToPhantomPoses = true;
         }
@@ -1012,18 +1012,18 @@ done:
     //----------------------------------------------------------------------------
     void CameraRegistration::OnAnchorRawCoordinateSystemAdjusted(Windows::Perception::Spatial::SpatialAnchor^ anchor, Windows::Perception::Spatial::SpatialAnchorRawCoordinateSystemAdjustedEventArgs^ args)
     {
-      if(m_hasRegistration)
+      if (m_hasRegistration)
       {
         m_referenceToAnchor = m_referenceToAnchor * args->OldRawCoordinateSystemToNewRawCoordinateSystemTransform;
       }
 
-      if(IsCameraActive())
+      if (IsCameraActive())
       {
         // Registration is active, apply this to all m_rawWorldAnchorResults results, to adjust raw anchor coordinate system that they depend on
         std::lock_guard<std::mutex> frameGuard(m_outputFramesLock);
-        for(auto& frame : m_sphereInAnchorResultFrames)
+        for (auto& frame : m_sphereInAnchorResultFrames)
         {
-          for(auto& point : frame)
+          for (auto& point : frame)
           {
             float3 pointNumerics(point.x, point.y, point.z);
             pointNumerics = transform(pointNumerics, args->OldRawCoordinateSystemToNewRawCoordinateSystemTransform);
@@ -1033,7 +1033,7 @@ done:
           }
         }
       }
-      for(auto& pose : m_sphereToAnchorPoses)
+      for (auto& pose : m_sphereToAnchorPoses)
       {
         pose = pose * args->OldRawCoordinateSystemToNewRawCoordinateSystemTransform;
       }
@@ -1064,7 +1064,7 @@ done:
 
       std::array<ColourToCircleList, colour_count> circleLinkResults;
 
-      for(auto& line : lines)
+      for (auto& line : lines)
       {
         // Given a pair of circles, compute histogram of patch that lies between, determine if profile of patch matches expected parameters
         auto firstCircle = inCircles[line[0]];
@@ -1088,7 +1088,7 @@ done:
 
         // Blue hue, 100-120, tuning needed
         uint8 blueHue[2] = { 100, 120 };
-        if(IsPatchColour(blueHue, 70, 50, hsvMeans, histogram, pixelCount, FIFTH_PERCENTILE_FACTOR, MEAN_DISTRIBUTION_RATIO_THRESHOLD))
+        if (IsPatchColour(blueHue, 70, 50, hsvMeans, histogram, pixelCount, FIFTH_PERCENTILE_FACTOR, MEAN_DISTRIBUTION_RATIO_THRESHOLD))
         {
           circleLinkResults[blue_link].push_back(line[0]);
           circleLinkResults[blue_link].push_back(line[1]);
@@ -1096,7 +1096,7 @@ done:
 
         // Green hue, 45-65, tuning needed
         uint8 greenHue[2] = { 50, 70 };
-        if(IsPatchColour(greenHue, 70, 40, hsvMeans, histogram, pixelCount, FIFTH_PERCENTILE_FACTOR, MEAN_DISTRIBUTION_RATIO_THRESHOLD))
+        if (IsPatchColour(greenHue, 70, 40, hsvMeans, histogram, pixelCount, FIFTH_PERCENTILE_FACTOR, MEAN_DISTRIBUTION_RATIO_THRESHOLD))
         {
           circleLinkResults[green_link].push_back(line[0]);
           circleLinkResults[green_link].push_back(line[1]);
@@ -1104,7 +1104,7 @@ done:
 
         // Yellow hue, 17-37, tuning needed
         uint8 yelloHue[2] = { 17, 37 };
-        if(IsPatchColour(yelloHue, 70, 50, hsvMeans, histogram, pixelCount, FIFTH_PERCENTILE_FACTOR, MEAN_DISTRIBUTION_RATIO_THRESHOLD))
+        if (IsPatchColour(yelloHue, 70, 50, hsvMeans, histogram, pixelCount, FIFTH_PERCENTILE_FACTOR, MEAN_DISTRIBUTION_RATIO_THRESHOLD))
         {
           circleLinkResults[yellow_link].push_back(line[0]);
           circleLinkResults[yellow_link].push_back(line[1]);
@@ -1112,7 +1112,7 @@ done:
 
         // Teal hue, 75-95, tuning needed
         uint8 tealHue[2] = { 75, 95 };
-        if(IsPatchColour(tealHue, 70, 40, hsvMeans, histogram, pixelCount, FIFTH_PERCENTILE_FACTOR, MEAN_DISTRIBUTION_RATIO_THRESHOLD))
+        if (IsPatchColour(tealHue, 70, 40, hsvMeans, histogram, pixelCount, FIFTH_PERCENTILE_FACTOR, MEAN_DISTRIBUTION_RATIO_THRESHOLD))
         {
           circleLinkResults[teal_link].push_back(line[0]);
           circleLinkResults[teal_link].push_back(line[1]);
@@ -1124,10 +1124,10 @@ done:
       auto& greenLinks = circleLinkResults[green_link];
       auto& yellowLinks = circleLinkResults[yellow_link];
       auto& tealLinks = circleLinkResults[teal_link];
-      if(!((blueLinks.size() == 2 && greenLinks.size() == 2 && tealLinks.size() == 2) ||
-           (blueLinks.size() == 2 && yellowLinks.size() == 2 && tealLinks.size() == 2) ||
-           (greenLinks.size() == 2 && yellowLinks.size() == 2 && tealLinks.size() == 2) ||
-           (greenLinks.size() == 2 && yellowLinks.size() == 2 && blueLinks.size() == 2)))
+      if (!((blueLinks.size() == 2 && greenLinks.size() == 2 && tealLinks.size() == 2) ||
+            (blueLinks.size() == 2 && yellowLinks.size() == 2 && tealLinks.size() == 2) ||
+            (greenLinks.size() == 2 && yellowLinks.size() == 2 && tealLinks.size() == 2) ||
+            (greenLinks.size() == 2 && yellowLinks.size() == 2 && blueLinks.size() == 2)))
       {
         LOG(LogLevelType::LOG_LEVEL_ERROR, "No trio of 2. Cannot deduce pattern.");
         return false;
@@ -1137,19 +1137,19 @@ done:
       std::vector<uint32>* listA(nullptr);
       std::vector<uint32>* listB(nullptr);
       std::vector<uint32>* listC(nullptr);
-      if(blueLinks.size() == 2 && yellowLinks.size() == 2 && tealLinks.size() == 2)
+      if (blueLinks.size() == 2 && yellowLinks.size() == 2 && tealLinks.size() == 2)
       {
         listA = &blueLinks;
         listB = &yellowLinks;
         listC = &tealLinks;
       }
-      else if(blueLinks.size() == 2 && greenLinks.size() == 2 && tealLinks.size() == 2)
+      else if (blueLinks.size() == 2 && greenLinks.size() == 2 && tealLinks.size() == 2)
       {
         listA = &blueLinks;
         listB = &greenLinks;
         listC = &tealLinks;
       }
-      else if(greenLinks.size() == 2 && yellowLinks.size() == 2 && blueLinks.size() == 2)
+      else if (greenLinks.size() == 2 && yellowLinks.size() == 2 && blueLinks.size() == 2)
       {
         listA = &greenLinks;
         listB = &yellowLinks;
@@ -1164,18 +1164,18 @@ done:
 
       // If this is a successful detection, there will be one and only one index common to listA, listB, and listC
       int32 centerSphereIndex(-1);
-      for(auto& circleIndex : *listA)
+      for (auto& circleIndex : *listA)
       {
         auto listBIter = std::find(listB->begin(), listB->end(), circleIndex);
         auto listCIter = std::find(listC->begin(), listC->end(), circleIndex);
-        if(listBIter != listB->end() && listCIter != listC->end())
+        if (listBIter != listB->end() && listCIter != listC->end())
         {
           centerSphereIndex = circleIndex;
           break;
         }
       }
 
-      if(centerSphereIndex == -1)
+      if (centerSphereIndex == -1)
       {
         LOG(LogLevelType::LOG_LEVEL_ERROR, "No index common to all lists.");
         return false;
@@ -1196,25 +1196,25 @@ done:
 
       remainingIndicies.erase(std::find(remainingIndicies.begin(), remainingIndicies.end(), centerSphereIndex));
 
-      if(listA == &greenLinks || listB == &greenLinks || listC == &greenLinks)
+      if (listA == &greenLinks || listB == &greenLinks || listC == &greenLinks)
       {
         output[greenLinks[0]] = inOutPhantomFiducialsCv[0];
         remainingIndicies.erase(std::find(remainingIndicies.begin(), remainingIndicies.end(), greenLinks[0]));
         remainingColours.erase(std::find(remainingColours.begin(), remainingColours.end(), 0));
       }
-      if(listA == &blueLinks || listB == &blueLinks || listC == &blueLinks)
+      if (listA == &blueLinks || listB == &blueLinks || listC == &blueLinks)
       {
         output[blueLinks[0]] = inOutPhantomFiducialsCv[3];
         remainingIndicies.erase(std::find(remainingIndicies.begin(), remainingIndicies.end(), blueLinks[0]));
         remainingColours.erase(std::find(remainingColours.begin(), remainingColours.end(), 3));
       }
-      if(listA == &yellowLinks || listB == &yellowLinks || listC == &yellowLinks)
+      if (listA == &yellowLinks || listB == &yellowLinks || listC == &yellowLinks)
       {
         output[yellowLinks[0]] = inOutPhantomFiducialsCv[2];
         remainingIndicies.erase(std::find(remainingIndicies.begin(), remainingIndicies.end(), yellowLinks[0]));
         remainingColours.erase(std::find(remainingColours.begin(), remainingColours.end(), 2));
       }
-      if(listA == &tealLinks || listB == &tealLinks || listC == &tealLinks)
+      if (listA == &tealLinks || listB == &tealLinks || listC == &tealLinks)
       {
         output[tealLinks[0]] = inOutPhantomFiducialsCv[4];
         remainingIndicies.erase(std::find(remainingIndicies.begin(), remainingIndicies.end(), tealLinks[0]));
@@ -1243,7 +1243,7 @@ done:
                         hsvMeans[1] >= saturationMin &&                             // does saturation fall above or equal to requested minimum
                         hsvMeans[2] >= valueMin;                                    // does value fall above or equal to requested minimum
 
-      if(!basicCheck)
+      if (!basicCheck)
       {
         return false;
       }
@@ -1251,7 +1251,7 @@ done:
       // Now examine histogram around mean hue to see if the distribution is concentrated about the mean
       uint32 hueCountSum(0);
       uint32 hueRangeHalf = (uint32)(HUE_MAX * percentileFactor);
-      for(uint32 i = hsvMeans[0] - hueRangeHalf; i < hsvMeans[0] + hueRangeHalf; ++i)
+      for (uint32 i = hsvMeans[0] - hueRangeHalf; i < hsvMeans[0] + hueRangeHalf; ++i)
       {
         // ensure i is wrapped to 0-HUE_MAX
         hueCountSum += histogram.hue[(i + HUE_MAX) % HUE_MAX];
@@ -1274,9 +1274,9 @@ done:
       float meanValue(0.f);
       const float PI = 3.14159265359f;
 
-      for(float i = 0.f; i < tangentPixelCount / 2; ++i)
+      for (float i = 0.f; i < tangentPixelCount / 2; ++i)
       {
-        for(float j = 0.f; j < atLength; ++j)
+        for (float j = 0.f; j < atLength; ++j)
         {
           uint32 compositePixelValue = CalculatePixelValue(startPixel + tangentVector * i + atVector * j, imageData, step);
           uint8 hue = compositePixelValue >> 16;
@@ -1295,9 +1295,9 @@ done:
         }
 
         // Don't double count the center line
-        if(i != 0.f)
+        if (i != 0.f)
         {
-          for(float j = 0.f; j < atLength; ++j)
+          for (float j = 0.f; j < atLength; ++j)
           {
             uint32 compositePixelValue = CalculatePixelValue(startPixel - tangentVector * i + atVector * j, imageData, step);
             uint8 hue = compositePixelValue >> 16;
@@ -1318,7 +1318,7 @@ done:
       }
 
       float hue = atan2f(huePolarMean.y / outPixelCount, huePolarMean.x / outPixelCount) * 90 / PI;
-      if(hue < 0.f)
+      if (hue < 0.f)
       {
         hue += 180.f;
       }
@@ -1358,7 +1358,7 @@ done:
     //----------------------------------------------------------------------------
     void CameraRegistration::RemoveResultFromList(ColourToCircleList& circleLinkResult, int32 centerSphereIndex)
     {
-      if(circleLinkResult[0] == centerSphereIndex)
+      if (circleLinkResult[0] == centerSphereIndex)
       {
         circleLinkResult.erase(circleLinkResult.begin());
       }
@@ -1386,13 +1386,13 @@ done:
       // This function contains all the rules for what validates a "sane" phantomToCamera (phantom pose)
 
       // Is Z < 0 (forward?), is it more than ... 15cm away?
-      if(phantomToCameraTransform.m43 > -0.15f)
+      if (phantomToCameraTransform.m43 > -0.15f)
       {
         return false;
       }
 
       // X, Y, less than 1.3m from center?
-      if(fabs(phantomToCameraTransform.m42) > 1.3f || fabs(phantomToCameraTransform.m41) > 1.3f)
+      if (fabs(phantomToCameraTransform.m42) > 1.3f || fabs(phantomToCameraTransform.m41) > 1.3f)
       {
         return false;
       }

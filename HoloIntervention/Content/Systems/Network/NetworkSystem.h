@@ -111,7 +111,8 @@ namespace HoloIntervention
       bool GetPort(uint64 hashedConnectionName, int32& port) const;
 
       UWPOpenIGTLink::TrackedFrame^ GetTrackedFrame(uint64 hashedConnectionName, double& latestTimestamp);
-      UWPOpenIGTLink::TransformListABI^ GetTransformFrame(uint64 hashedConnectionName, double& latestTimestamp);
+      UWPOpenIGTLink::TransformListABI^ GetTDataFrame(uint64 hashedConnectionName, double& latestTimestamp);
+      UWPOpenIGTLink::Transform^ GetTransform(uint64 hashedConnectionName, UWPOpenIGTLink::TransformName^ transformName, double& latestTimestamp);
 
     protected:
       Concurrency::task<bool> InitAsync(Windows::Data::Xml::Dom::XmlDocument^ document);

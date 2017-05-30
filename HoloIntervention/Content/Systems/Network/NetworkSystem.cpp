@@ -496,7 +496,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    UWPOpenIGTLink::TransformListABI^ NetworkSystem::GetTransformFrame(uint64 hashedConnectionName, double& latestTimestamp)
+    UWPOpenIGTLink::TransformListABI^ NetworkSystem::GetTDataFrame(uint64 hashedConnectionName, double& latestTimestamp)
     {
       std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
       auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
@@ -505,7 +505,7 @@ namespace HoloIntervention
       });
       if (iter != end(m_connectors))
       {
-        auto latestFrame = iter->Connector->GetTransformFrame(latestTimestamp);
+        auto latestFrame = iter->Connector->GetTDataFrame(latestTimestamp);
         if (latestFrame == nullptr)
         {
           return nullptr;
@@ -520,6 +520,31 @@ namespace HoloIntervention
           {
             return nullptr;
           }
+        }
+        catch (Platform::ObjectDisposedException^) { return nullptr; }
+        return latestFrame;
+      }
+      return nullptr;
+    }
+
+    //----------------------------------------------------------------------------
+    UWPOpenIGTLink::Transform^ NetworkSystem::GetTransform(uint64 hashedConnectionName, UWPOpenIGTLink::TransformName^ transformName, double& latestTimestamp)
+    {
+      std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
+      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
+      {
+        return hashedConnectionName == entry.HashedName;
+      });
+      if (iter != end(m_connectors))
+      {
+        auto latestFrame = iter->Connector->GetTransform(transformName, latestTimestamp);
+        if (latestFrame == nullptr)
+        {
+          return nullptr;
+        }
+        try
+        {
+          latestTimestamp = latestFrame->Timestamp;
         }
         catch (Platform::ObjectDisposedException^) { return nullptr; }
         return latestFrame;
