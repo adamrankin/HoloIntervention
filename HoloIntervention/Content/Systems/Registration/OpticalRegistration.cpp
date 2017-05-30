@@ -167,8 +167,8 @@ namespace HoloIntervention
                                                ref new Platform::String(referenceCoordinateFrameName.c_str())
                                              );
 
-m_componentReady = true;
-return true;
+        m_componentReady = true;
+        return true;
       });
     }
 
@@ -249,23 +249,22 @@ return true;
         return;
       }
 
-      // grab latest head pose
-      auto anchorToHMD = anchorToHMDBox->Value;
-      auto HMDToAnchor = float4x4::identity();
-      if (!invert(anchorToHMD, &HMDToAnchor))
-      {
-        LOG(LogLevelType::LOG_LEVEL_ERROR, L"Uninvertible transform sent as pose matrix. How is this possible?");
-        return;
-      }
+      // Grab latest head pose
+      //auto HMDToAnchor = float4x4::identity();
+      //if (!invert(anchorToHMDBox->Value, &HMDToAnchor))
+      //{
+      //LOG(LogLevelType::LOG_LEVEL_ERROR, L"Uninvertible transform sent as pose matrix. How is this possible?");
+      //return;
+      //}
 
       Position newOpticalPosition(opticalPose.m14, opticalPose.m24, opticalPose.m34);
-      Position newHoloLensPosition(HMDToAnchor.m41, HMDToAnchor.m42, HMDToAnchor.m43);
+      Position newHoloLensPosition(anchorToHMDBox->Value.m41, anchorToHMDBox->Value.m42, anchorToHMDBox->Value.m43);
 
       if (m_previousOpticalPosition != Position::zero())
       {
         // Analyze current point and previous point for reasons to reject
         if (distance(newOpticalPosition, m_previousOpticalPosition) <= MIN_DISTANCE_BETWEEN_POINTS_METER ||
-          distance(newHoloLensPosition, m_previousHoloLensPosition) <= MIN_DISTANCE_BETWEEN_POINTS_METER)
+            distance(newHoloLensPosition, m_previousHoloLensPosition) <= MIN_DISTANCE_BETWEEN_POINTS_METER)
         {
           return;
         }
