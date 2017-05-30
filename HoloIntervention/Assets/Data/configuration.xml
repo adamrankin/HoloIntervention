@@ -2,22 +2,15 @@
 <HoloIntervention>
   <!-- HMD coordinate frame is the HoloLens rendering coordinate frame -->
   <!-- Reference coordinate frame is the reference coordinate system of the magnetic tracker -->
-  <Tools ConnectionName="2DImage">
+  <Tools IGTConnection="NDITracker">
     <Tool 
       Model="hemisphere_stylus" 
-      From="StylusTip"
+      From="Tip"
       To="HMD"
       LerpEnabled="false" />
   </Tools>
 
   <CoordinateDefinitions>
-    <Transform From="StylusTip" To="Stylus"
-      Matrix="
-        0.999688	0	0.0249626	0.00198826
-        -0.00028736	0.999934	0.0115081	0.000916616
-        -0.0249609	-0.0115117	0.999622	0.0796197
-        0	0	0	1"
-      Error="0.115965" Date="013017_102345" />
   </CoordinateDefinitions>
 
   <CameraRegistration
@@ -38,7 +31,7 @@
 
   <OpticalRegistration
     IGTConnection="NDITracker"
-    BufferSize="50"
+    RecalcThresholdCount="100"
     OpticalHMDCoordinateFrame="HoloLens"
     OpticalReferenceCoordinateFrame="Reference"
     />

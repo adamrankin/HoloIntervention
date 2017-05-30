@@ -286,11 +286,11 @@ namespace HoloIntervention
 
         for (auto node : doc->SelectNodes(xpath))
         {
-          if (!HasAttribute(L"ConnectionName", node))
+          if (!HasAttribute(L"IGTConnection", node))
           {
-            throw ref new Platform::Exception(E_FAIL, L"Tool configuration does not contain \"ConnectionName\" attribute.");
+            throw ref new Platform::Exception(E_FAIL, L"Tool configuration does not contain \"IGTConnection\" attribute.");
           }
-          Platform::String^ connectionName = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"ConnectionName")->NodeValue);
+          Platform::String^ connectionName = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"IGTConnection")->NodeValue);
           m_connectionName = std::wstring(connectionName->Data());
           m_hashedConnectionName = HashString(connectionName);
         }

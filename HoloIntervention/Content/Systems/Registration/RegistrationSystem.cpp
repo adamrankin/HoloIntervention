@@ -283,7 +283,7 @@ namespace HoloIntervention
         }
       }
 
-      if (m_registrationMethod != nullptr && transformContainer != nullptr)
+      if (m_registrationMethod != nullptr && m_registrationMethod->IsStarted() && transformContainer != nullptr)
       {
         m_registrationMethod->Update(headPose, coordinateSystem, transformContainer);
       }
@@ -352,6 +352,11 @@ namespace HoloIntervention
         }
         m_registrationMethod = std::make_shared<CameraRegistration>(m_notificationSystem, m_networkSystem, m_modelRenderer);
         m_registrationMethod->SetWorldAnchor(m_regAnchor);
+        m_registrationMethod->RegisterTransformUpdatedCallback([this](float4x4 result)
+        {
+          m_cachedRegistrationTransform = result;
+        });
+
         m_registrationMethod->ReadConfigurationAsync(m_configDocument).then([this](bool result)
         {
           if (!result)
@@ -384,6 +389,10 @@ namespace HoloIntervention
         }
         m_registrationMethod = std::make_shared<OpticalRegistration>(m_notificationSystem, m_networkSystem);
         m_registrationMethod->SetWorldAnchor(m_regAnchor);
+        m_registrationMethod->RegisterTransformUpdatedCallback([this](float4x4 result)
+        {
+          m_cachedRegistrationTransform = result;
+        });
 
         m_registrationMethod->ReadConfigurationAsync(m_configDocument).then([this](bool result)
         {
@@ -495,15 +504,14 @@ namespace HoloIntervention
         return false;
       }
 
-      auto worldAnchor = m_registrationMethod->GetWorldAnchor();
-      if (worldAnchor == nullptr)
+      if (m_regAnchor == nullptr)
       {
         return false;
       }
 
       try
       {
-        Platform::IBox<float4x4>^ anchorToRequestedBox = worldAnchor->CoordinateSystem->TryGetTransformTo(requestedCoordinateSystem);
+        Platform::IBox<float4x4>^ anchorToRequestedBox = m_regAnchor->CoordinateSystem->TryGetTransformTo(requestedCoordinateSystem);
         if (anchorToRequestedBox == nullptr)
         {
           return false;

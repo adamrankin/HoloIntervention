@@ -44,10 +44,13 @@ namespace HoloIntervention
 {
   namespace System
   {
+    const float OpticalRegistration::MIN_DISTANCE_BETWEEN_POINTS_METER = 0.001f;
+
     //----------------------------------------------------------------------------
     OpticalRegistration::OpticalRegistration(NotificationSystem& notificationSystem, NetworkSystem& networkSystem)
       : m_notificationSystem(notificationSystem)
       , m_networkSystem(networkSystem)
+      , m_landmarkRegistration(std::make_shared<LandmarkRegistration>())
     {
 
     }
@@ -104,7 +107,7 @@ namespace HoloIntervention
 
         auto elem = document->CreateElement("OpticalRegistration");
         elem->SetAttribute(L"IGTConnection", ref new Platform::String(m_connectionName.c_str()));
-        elem->SetAttribute(L"BufferSize", m_poseListMinSize.ToString());
+        elem->SetAttribute(L"RecalcThresholdCount", m_poseListRecalcThresholdCount.ToString());
         elem->SetAttribute(L"OpticalHMDCoordinateFrame", m_opticalHMDToOpticalReferenceName->From());
         elem->SetAttribute(L"OpticalReferenceCoordinateFrame", m_opticalHMDToOpticalReferenceName->To());
         rootNode->AppendChild(elem);
@@ -141,10 +144,10 @@ namespace HoloIntervention
 
         m_hashedConnectionName = HashString(m_connectionName);
 
-        if (!GetScalarAttribute<uint32>(L"BufferSize", node, m_poseListMinSize))
+        if (!GetScalarAttribute<uint32>(L"RecalcThresholdCount", node, m_poseListRecalcThresholdCount))
         {
-          LOG(LogLevelType::LOG_LEVEL_WARNING, L"Buffer size not defined for optical registration. Defaulting to " + DEFAULT_LIST_MAX_SIZE.ToString());
-          m_poseListMinSize = DEFAULT_LIST_MAX_SIZE;
+          LOG(LogLevelType::LOG_LEVEL_WARNING, L"Buffer size not defined for optical registration. Defaulting to " + DEFAULT_LIST_RECALC_THRESHOLD.ToString());
+          m_poseListRecalcThresholdCount = DEFAULT_LIST_RECALC_THRESHOLD;
         }
 
         std::wstring hmdCoordinateFrameName;
@@ -164,8 +167,8 @@ namespace HoloIntervention
                                                ref new Platform::String(referenceCoordinateFrameName.c_str())
                                              );
 
-        m_componentReady = true;
-        return true;
+m_componentReady = true;
+return true;
       });
     }
 
@@ -255,27 +258,47 @@ namespace HoloIntervention
         return;
       }
 
-      m_opticalPositionList.push_back(float3(opticalPose.m14, opticalPose.m24, opticalPose.m34)); // row-major form
-      m_hololensInAnchorPositionList.push_back(transform(headPose->Head->Position, HMDToAnchor));
+      Position newOpticalPosition(opticalPose.m14, opticalPose.m24, opticalPose.m34);
+      Position newHoloLensPosition(HMDToAnchor.m41, HMDToAnchor.m42, HMDToAnchor.m43);
 
-      if (m_opticalPositionList.size() >= m_poseListMinSize && !m_calculating)
+      if (m_previousOpticalPosition != Position::zero())
       {
+        // Analyze current point and previous point for reasons to reject
+        if (distance(newOpticalPosition, m_previousOpticalPosition) <= MIN_DISTANCE_BETWEEN_POINTS_METER ||
+          distance(newHoloLensPosition, m_previousHoloLensPosition) <= MIN_DISTANCE_BETWEEN_POINTS_METER)
+        {
+          return;
+        }
+      }
+      m_opticalPositionList.push_back(newOpticalPosition);
+      m_previousOpticalPosition = newOpticalPosition;
+
+      m_hololensInAnchorPositionList.push_back(newHoloLensPosition);
+      m_previousHoloLensPosition = newHoloLensPosition;
+
+      m_currentNewPointCount++;
+
+      if (m_currentNewPointCount >= m_poseListRecalcThresholdCount && !m_calculating)
+      {
+        m_notificationSystem.QueueMessage(m_opticalPositionList.size().ToString() + L" positions collected.");
+        m_currentNewPointCount = 0;
         m_landmarkRegistration->SetSourceLandmarks(m_opticalPositionList);
         m_landmarkRegistration->SetTargetLandmarks(m_hololensInAnchorPositionList);
 
         m_calculating = true;
-        m_landmarkRegistration->CalculateTransformationAsync().then([this](float4x4 result)
+        m_landmarkRegistration->CalculateTransformationAsync().then([this](task<float4x4> regTask)
         {
+          try
+          {
+            float4x4 result = regTask.get();
+            m_completeCallback(result);
+          }
+          catch (const std::exception&)
+          {
+            LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to calculate registration.");
+          }
           m_calculating = false;
-          m_completeCallback(result);
         });
-      }
-      else
-      {
-        if (m_opticalPositionList.size() % 60 == 0)
-        {
-          m_notificationSystem.QueueMessage(m_opticalPositionList.size().ToString() + L" positions collected.");
-        }
       }
     }
   }

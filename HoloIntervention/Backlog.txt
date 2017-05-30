@@ -3,12 +3,12 @@ CPU cost of network/image-transforms separate
   unpack on demand
 Volume rendering
 *Registration
-**Smarter circle detection, find 5 within similar mean radius, etc...
+  Optical registration -- offset?
+  Replace 3d printed phantom with AR code based registration
+  Registration feedback (move around, etc...)
 Network connect, disconnect, connect, connection lost
 Voice feedback
 UI for IP setting - Dictation
-Registration feedback (move around, etc...)
-internationalization (xml database of voice commands and feedback)
-refactor isinfrustum to abstract base class
-after connection lost, connect causes crash
+Internationalization (xml database of voice commands and feedback)
+Refactor isinfrustum to abstract base class
 * slice rendering is incorrect
