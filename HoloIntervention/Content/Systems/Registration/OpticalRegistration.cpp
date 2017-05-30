@@ -250,15 +250,15 @@ namespace HoloIntervention
       }
 
       // Grab latest head pose
-      //auto HMDToAnchor = float4x4::identity();
-      //if (!invert(anchorToHMDBox->Value, &HMDToAnchor))
-      //{
-      //LOG(LogLevelType::LOG_LEVEL_ERROR, L"Uninvertible transform sent as pose matrix. How is this possible?");
-      //return;
-      //}
+      auto HMDToAnchor = float4x4::identity();
+      if (!invert(anchorToHMDBox->Value, &HMDToAnchor))
+      {
+        LOG(LogLevelType::LOG_LEVEL_ERROR, L"Uninvertible transform sent as pose matrix. How is this possible?");
+        return;
+      }
 
       Position newOpticalPosition(opticalPose.m14, opticalPose.m24, opticalPose.m34);
-      Position newHoloLensPosition(anchorToHMDBox->Value.m41, anchorToHMDBox->Value.m42, anchorToHMDBox->Value.m43);
+      Position newHoloLensPosition(HMDToAnchor.m41, HMDToAnchor.m42, HMDToAnchor.m43);
 
       if (m_previousOpticalPosition != Position::zero())
       {
