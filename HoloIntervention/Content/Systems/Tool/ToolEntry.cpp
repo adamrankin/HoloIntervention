@@ -184,6 +184,7 @@ namespace HoloIntervention
           m_modelEntry->RenderDefault();
         }
 
+        /*
         quaternion q_measured = make_quaternion_from_rotation_matrix(transform);
         if (m_firstDataPoint)
         {
@@ -220,7 +221,8 @@ namespace HoloIntervention
         m_correctionMatrix.at<float>(6) = q_measured.z;
 
         m_kalmanFilter->Correct(m_correctionMatrix);
-
+        */
+        m_modelEntry->SetDesiredPose(transpose(transform));
         m_wasValid = true;
       }
     }
