@@ -509,7 +509,7 @@ namespace HoloIntervention
           return false;
         }
 
-        outTransform = m_cachedRegistrationTransform * anchorToRequestedBox->Value;
+        outTransform = m_cachedRegistrationTransform * m_correctionMethod->GetRegistrationTransformation() * anchorToRequestedBox->Value;
         return true;
       }
       catch (Platform::Exception^ e)
