@@ -6,7 +6,7 @@
     <Tool 
       Model="hemisphere_stylus" 
       From="Tip"
-      To="HMD"
+      To="Reference"
       LerpEnabled="false" />
   </Tools>
 

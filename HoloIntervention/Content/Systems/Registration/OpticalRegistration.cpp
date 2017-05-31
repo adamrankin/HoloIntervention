@@ -233,6 +233,7 @@ namespace HoloIntervention
       {
         return;
       }
+      m_latestTimestamp = transform->Timestamp;
       m_transformRepository->SetTransform(m_opticalHMDToOpticalReferenceName, transform->Matrix, transform->Valid);
 
       // Grab latest head pose

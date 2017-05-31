@@ -71,6 +71,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float3 RegistrationSystem::GetStabilizedPosition(SpatialPointerPose^ pose) const
     {
+      std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
       if (m_registrationMethod == nullptr)
       {
         return float3(0.f, 0.f, 0.f);
@@ -93,6 +94,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float3 RegistrationSystem::GetStabilizedNormal(SpatialPointerPose^ pose) const
     {
+      std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
       if (m_registrationMethod == nullptr)
       {
         return float3(0.f, 1.f, 0.f);
@@ -114,6 +116,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float3 RegistrationSystem::GetStabilizedVelocity() const
     {
+      std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
       if (m_registrationMethod == nullptr)
       {
         return float3(0.f, 0.f, 0.f);
@@ -135,6 +138,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float RegistrationSystem::GetStabilizePriority() const
     {
+      std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
       if (m_registrationMethod == nullptr)
       {
         return PRIORITY_NOT_ACTIVE;
@@ -177,6 +181,7 @@ namespace HoloIntervention
           return task_from_result(false);
         }
 
+        std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
         return m_registrationMethod->WriteConfigurationAsync(document);
       });
     }
@@ -283,6 +288,7 @@ namespace HoloIntervention
         }
       }
 
+      std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
       if (m_registrationMethod != nullptr && m_registrationMethod->IsStarted() && transformContainer != nullptr)
       {
         m_registrationMethod->Update(headPose, coordinateSystem, transformContainer);
@@ -324,6 +330,7 @@ namespace HoloIntervention
 
       callbackMap[L"remove anchor"] = [this](SpeechRecognitionResult ^ result)
       {
+        std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
         m_registrationMethod->StopAsync().then([this](bool result)
         {
           if (m_regAnchorModel)
@@ -339,6 +346,7 @@ namespace HoloIntervention
 
       callbackMap[L"start camera registration"] = [this](SpeechRecognitionResult ^ result)
       {
+        std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
         if (dynamic_cast<CameraRegistration*>(m_registrationMethod.get()) != nullptr && m_registrationMethod->IsStarted())
         {
           m_notificationSystem.QueueMessage(L"Registration already running.");
@@ -359,6 +367,7 @@ namespace HoloIntervention
 
         m_registrationMethod->ReadConfigurationAsync(m_configDocument).then([this](bool result)
         {
+          std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
           if (!result)
           {
             return task_from_result(false);
@@ -368,6 +377,7 @@ namespace HoloIntervention
         {
           if (!result)
           {
+            std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
             m_registrationMethod = nullptr;
             m_notificationSystem.QueueMessage(L"Unable to start camera registration.");
           }
@@ -376,6 +386,7 @@ namespace HoloIntervention
 
       callbackMap[L"start optical registration"] = [this](SpeechRecognitionResult ^ result)
       {
+        std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
         if (dynamic_cast<OpticalRegistration*>(m_registrationMethod.get()) != nullptr && m_registrationMethod->IsStarted())
         {
           m_notificationSystem.QueueMessage(L"Registration already running.");
@@ -396,6 +407,7 @@ namespace HoloIntervention
 
         m_registrationMethod->ReadConfigurationAsync(m_configDocument).then([this](bool result)
         {
+          std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
           if (!result)
           {
             return task_from_result(false);
@@ -405,6 +417,7 @@ namespace HoloIntervention
         {
           if (!result)
           {
+            std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
             m_registrationMethod = nullptr;
             m_notificationSystem.QueueMessage(L"Unable to start optical registration.");
           }
@@ -413,10 +426,12 @@ namespace HoloIntervention
 
       callbackMap[L"stop registration"] = [this](SpeechRecognitionResult ^ result)
       {
+        std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
         m_registrationMethod->StopAsync().then([this](bool result)
         {
           if (result)
           {
+            std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
             m_registrationMethod = nullptr;
             m_notificationSystem.QueueMessage(L"Registration stopped.");
           }
@@ -429,6 +444,7 @@ namespace HoloIntervention
 
       callbackMap[L"reset registration"] = [this](SpeechRecognitionResult ^ result)
       {
+        std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
         if (m_registrationMethod != nullptr)
         {
           m_registrationMethod->ResetRegistration();
@@ -479,6 +495,7 @@ namespace HoloIntervention
 
       callbackMap[L"enable registration viz"] = [this](SpeechRecognitionResult ^ result)
       {
+        std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
         if (m_registrationMethod != nullptr)
         {
           m_registrationMethod->EnableVisualization(true);
@@ -488,6 +505,7 @@ namespace HoloIntervention
 
       callbackMap[L"disable registration viz"] = [this](SpeechRecognitionResult ^ result)
       {
+        std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
         if (m_registrationMethod != nullptr)
         {
           m_registrationMethod->EnableVisualization(false);

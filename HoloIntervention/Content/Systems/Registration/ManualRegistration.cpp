@@ -193,18 +193,14 @@ namespace HoloIntervention
       }
 
       // grab latest network frame
-      auto transformFrame = m_networkSystem.GetTDataFrame(m_hashedConnectionName, m_latestTimestamp);
-      if (transformFrame == nullptr)
+      auto transform = m_networkSystem.GetTransform(m_hashedConnectionName, m_toolCoordinateFrameName, m_latestTimestamp);
+      if (transform == nullptr)
       {
         return;
       }
-      m_transformRepository->SetTransforms(transformFrame);
+      m_latestTimestamp = transform->Timestamp;
 
-      auto opticalPose = float4x4::identity();
-      if (!m_transformRepository->GetTransform(m_toolCoordinateFrameName, &opticalPose))
-      {
-        return;
-      }
+      auto opticalPose = transform->Matrix;
 
       if (m_baselineNeeded)
       {

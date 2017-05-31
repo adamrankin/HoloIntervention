@@ -103,6 +103,7 @@ namespace HoloIntervention
       Windows::Perception::Spatial::SpatialAnchor^    m_regAnchor = nullptr;
 
       // Registration methods
+      mutable std::mutex                              m_registrationMethodMutex;
       std::shared_ptr<IRegistrationMethod>            m_registrationMethod;
       std::shared_ptr<IRegistrationMethod>            m_correctionMethod;
       Windows::Foundation::Numerics::float4x4         m_cachedRegistrationTransform = Windows::Foundation::Numerics::float4x4::identity();

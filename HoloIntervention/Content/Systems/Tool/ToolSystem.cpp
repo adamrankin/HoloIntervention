@@ -208,7 +208,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     uint64 ToolSystem::RegisterTool(const std::wstring& modelName, UWPOpenIGTLink::TransformName^ coordinateFrame)
     {
-      std::shared_ptr<Tools::ToolEntry> entry = std::make_shared<Tools::ToolEntry>(m_modelRenderer, coordinateFrame, modelName, m_transformRepository);
+      std::shared_ptr<Tools::ToolEntry> entry = std::make_shared<Tools::ToolEntry>(m_modelRenderer, m_networkSystem, m_hashedConnectionName, coordinateFrame, modelName, m_transformRepository);
       entry->GetModelEntry()->SetVisible(false);
       m_toolEntries.push_back(entry);
       return entry->GetId();
@@ -236,21 +236,9 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ToolSystem::Update(const DX::StepTimer& timer, SpatialCoordinateSystem^ hmdCoordinateSystem)
     {
-      UWPOpenIGTLink::TransformListABI^ transFrame = m_networkSystem.GetTDataFrame(m_hashedConnectionName, m_latestTimestamp);
-      if (transFrame == nullptr)
-      {
-        return;
-      }
-      // TODO : backup to tracked frames?
-
       // Update the transform repository with the latest registration
       float4x4 referenceToHMD(float4x4::identity());
       if (!m_registrationSystem.GetReferenceToCoordinateSystemTransformation(hmdCoordinateSystem, referenceToHMD))
-      {
-        return;
-      }
-
-      if (!m_transformRepository->SetTransforms(transFrame))
       {
         return;
       }

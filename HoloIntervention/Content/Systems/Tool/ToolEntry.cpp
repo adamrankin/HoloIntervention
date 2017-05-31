@@ -26,6 +26,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "Common.h"
 #include "ToolEntry.h"
 
+// System includes
+#include "NetworkSystem.h"
+
 // Rendering includes
 #include "ModelEntry.h"
 #include "ModelRenderer.h"
@@ -90,8 +93,10 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    ToolEntry::ToolEntry(Rendering::ModelRenderer& modelRenderer, UWPOpenIGTLink::TransformName^ coordinateFrame, const std::wstring& modelName, UWPOpenIGTLink::TransformRepository^ transformRepository)
+    ToolEntry::ToolEntry(Rendering::ModelRenderer& modelRenderer, System::NetworkSystem& networkSystem, uint64 hashedConnectionName, UWPOpenIGTLink::TransformName^ coordinateFrame, const std::wstring& modelName, UWPOpenIGTLink::TransformRepository^ transformRepository)
       : m_modelRenderer(modelRenderer)
+      , m_networkSystem(networkSystem)
+      , m_hashedConnectionName(hashedConnectionName)
       , m_transformRepository(transformRepository)
       , m_coordinateFrame(coordinateFrame)
       , m_kalmanFilter(std::make_shared<Algorithms::KalmanFilter>(18, 6, 0))
@@ -102,8 +107,10 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    ToolEntry::ToolEntry(Rendering::ModelRenderer& modelRenderer, const std::wstring& coordinateFrame, const std::wstring& modelName, UWPOpenIGTLink::TransformRepository^ transformRepository)
+    ToolEntry::ToolEntry(Rendering::ModelRenderer& modelRenderer, System::NetworkSystem& networkSystem, uint64 hashedConnectionName, const std::wstring& coordinateFrame, const std::wstring& modelName, UWPOpenIGTLink::TransformRepository^ transformRepository)
       : m_modelRenderer(modelRenderer)
+      , m_networkSystem(networkSystem)
+      , m_hashedConnectionName(hashedConnectionName)
       , m_transformRepository(transformRepository)
       , m_kalmanFilter(std::make_shared<Algorithms::KalmanFilter>(21, 7, 0)) // position as x, y, z -- rotation as quaternion x, y, z, w
     {
@@ -167,9 +174,20 @@ namespace HoloIntervention
     void ToolEntry::Update(const DX::StepTimer& timer)
     {
       // m_transformRepository has already been initialized with the transforms for this update
+      auto toolToRefTransform = m_networkSystem.GetTransform(m_hashedConnectionName, m_coordinateFrame, m_latestTimestamp);
+      if (toolToRefTransform == nullptr)
+      {
+        return;
+      }
+      m_latestTimestamp = toolToRefTransform->Timestamp;
+
+      if (!m_transformRepository->SetTransform(m_coordinateFrame, toolToRefTransform->Matrix, toolToRefTransform->Valid))
+      {
+        return;
+      }
 
       float4x4 transform;
-      auto isTransformValid = m_transformRepository->GetTransform(m_coordinateFrame, &transform);
+      auto isTransformValid = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(m_coordinateFrame->From(), L"HMD"), &transform);
       if (!isTransformValid && m_wasValid)
       {
         m_wasValid = false;

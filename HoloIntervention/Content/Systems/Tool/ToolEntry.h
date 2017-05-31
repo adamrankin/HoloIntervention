@@ -39,7 +39,11 @@ namespace DX
 
 namespace HoloIntervention
 {
-  // Forward declarations
+  namespace System
+  {
+    class NetworkSystem;
+  }
+
   namespace Rendering
   {
     class ModelEntry;
@@ -62,8 +66,8 @@ namespace HoloIntervention
       virtual float GetStabilizePriority() const;
 
     public:
-      ToolEntry(Rendering::ModelRenderer& modelRenderer, UWPOpenIGTLink::TransformName^ coordinateFrame, const std::wstring& modelName, UWPOpenIGTLink::TransformRepository^ transformRepository);
-      ToolEntry(Rendering::ModelRenderer& modelRenderer, const std::wstring& coordinateFrame, const std::wstring& modelName, UWPOpenIGTLink::TransformRepository^ transformRepository);
+      ToolEntry(Rendering::ModelRenderer& modelRenderer, System::NetworkSystem& networkSystem, uint64 hashedConnectionName, UWPOpenIGTLink::TransformName^ coordinateFrame, const std::wstring& modelName, UWPOpenIGTLink::TransformRepository^ transformRepository);
+      ToolEntry(Rendering::ModelRenderer& modelRenderer, System::NetworkSystem& networkSystem, uint64 hashedConnectionName, const std::wstring& coordinateFrame, const std::wstring& modelName, UWPOpenIGTLink::TransformRepository^ transformRepository);
       ~ToolEntry();
 
       void Update(const DX::StepTimer& timer);
@@ -79,11 +83,14 @@ namespace HoloIntervention
     protected:
       // Cached links to system resources
       Rendering::ModelRenderer&                   m_modelRenderer;
+      System::NetworkSystem&                      m_networkSystem;
       UWPOpenIGTLink::TransformRepository^        m_transformRepository;
+      uint64                                      m_hashedConnectionName;
 
       std::atomic_bool                            m_wasValid = false;
       UWPOpenIGTLink::TransformName^              m_coordinateFrame;
       std::shared_ptr<Rendering::ModelEntry>      m_modelEntry;
+      double                                      m_latestTimestamp = 0.0;
 
       // Kalman filter for smoothing and prediction
       std::shared_ptr<Algorithms::KalmanFilter>   m_kalmanFilter = nullptr;
