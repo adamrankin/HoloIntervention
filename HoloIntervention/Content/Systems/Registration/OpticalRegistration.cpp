@@ -227,27 +227,13 @@ namespace HoloIntervention
         return;
       }
 
-      // grab latest network frame
-      auto frame = m_networkSystem.GetTrackedFrame(m_hashedConnectionName, m_latestTimestamp);
-      if (frame == nullptr)
-      {
-        auto transformFrame = m_networkSystem.GetTDataFrame(m_hashedConnectionName, m_latestTimestamp);
-        if (transformFrame == nullptr)
-        {
-          return;
-        }
-        m_transformRepository->SetTransforms(transformFrame);
-      }
-      else
-      {
-        m_transformRepository->SetTransforms(frame);
-      }
-
-      auto opticalPose = float4x4::identity();
-      if (!m_transformRepository->GetTransform(m_opticalHMDToOpticalReferenceName, &opticalPose))
+      // grab latest transform
+      auto transform = m_networkSystem.GetTransform(m_hashedConnectionName, m_opticalHMDToOpticalReferenceName, m_latestTimestamp);
+      if (transform == nullptr)
       {
         return;
       }
+      m_transformRepository->SetTransform(m_opticalHMDToOpticalReferenceName, transform->Matrix, transform->Valid);
 
       // Grab latest head pose
       auto HMDToAnchor = float4x4::identity();
@@ -257,7 +243,7 @@ namespace HoloIntervention
         return;
       }
 
-      Position newOpticalPosition(opticalPose.m14, opticalPose.m24, opticalPose.m34);
+      Position newOpticalPosition(transform->Matrix.m14, transform->Matrix.m24, transform->Matrix.m34);
       Position newHoloLensPosition(HMDToAnchor.m41, HMDToAnchor.m42, HMDToAnchor.m43);
 
       if (m_previousOpticalPosition != Position::zero())
