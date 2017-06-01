@@ -129,6 +129,7 @@ namespace HoloIntervention
                                       ref new Platform::String(toFrameName.c_str())
                                     );
 
+        m_baselineNeeded = true;
         return true;
       });
     }
@@ -162,6 +163,7 @@ namespace HoloIntervention
     task<bool> ManualRegistration::StopAsync()
     {
       m_started = false;
+      m_registrationMatrix = m_accumulatorMatrix * m_registrationMatrix;
       return task_from_result(true);
     }
 
@@ -174,8 +176,8 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ManualRegistration::ResetRegistration()
     {
-      m_registrationMatrix = float4x4::identity();
       m_baselineNeeded = true;
+      m_registrationMatrix = float4x4::identity();
     }
 
     //----------------------------------------------------------------------------
@@ -215,7 +217,7 @@ namespace HoloIntervention
         return;
       }
 
-      if (!invert(opticalPose * m_baselineInverse, &m_registrationMatrix))
+      if (!invert(opticalPose * m_baselineInverse, &m_accumulatorMatrix))
       {
         m_baselineNeeded = true;
       }
@@ -224,7 +226,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float4x4 ManualRegistration::GetRegistrationTransformation() const
     {
-      return m_registrationMatrix;
+      return m_accumulatorMatrix * m_registrationMatrix;
     }
   }
 }

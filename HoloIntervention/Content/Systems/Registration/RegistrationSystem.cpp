@@ -444,6 +444,11 @@ namespace HoloIntervention
       callbackMap[L"stop registration"] = [this](SpeechRecognitionResult ^ result)
       {
         std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
+        if (m_registrationMethod == nullptr)
+        {
+          m_notificationSystem.QueueMessage(L"Registration not running.");
+          return;
+        }
         m_registrationMethod->StopAsync().then([this](bool result)
         {
           if (result)
@@ -556,7 +561,7 @@ namespace HoloIntervention
           return false;
         }
 
-        outTransform = m_cachedRegistrationTransform * m_correctionMethod->GetRegistrationTransformation() * anchorToRequestedBox->Value;
+        outTransform = m_cachedRegistrationTransform * anchorToRequestedBox->Value * m_correctionMethod->GetRegistrationTransformation();
         return true;
       }
       catch (Platform::Exception^ e)
