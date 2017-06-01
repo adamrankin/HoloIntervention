@@ -174,7 +174,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ManualRegistration::ResetRegistration()
     {
-      m_registrationMatrixInverse = float4x4::identity();
+      m_registrationMatrix = float4x4::identity();
       m_baselineNeeded = true;
     }
 
@@ -200,11 +200,11 @@ namespace HoloIntervention
       }
       m_latestTimestamp = transform->Timestamp;
 
-      auto opticalPose = transform->Matrix;
+      auto opticalPose = transpose(transform->Matrix);
 
       if (m_baselineNeeded)
       {
-        m_baselinePose = transpose(opticalPose);
+        m_baselinePose = opticalPose;
         if (!invert(m_baselinePose, &m_baselineInverse))
         {
           m_baselineNeeded = true;
@@ -215,19 +215,16 @@ namespace HoloIntervention
         return;
       }
 
-      m_registrationMatrixInverse = opticalPose * m_baselineInverse;
+      if (!invert(opticalPose * m_baselineInverse, &m_registrationMatrix))
+      {
+        m_baselineNeeded = true;
+      }
     }
 
     //----------------------------------------------------------------------------
     float4x4 ManualRegistration::GetRegistrationTransformation() const
     {
-      float4x4 result;
-      if (!invert(m_registrationMatrixInverse, &result))
-      {
-        LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to invert pose transformation. How is this possible?");
-        return float4x4::identity();
-      }
-      return result;
+      return m_registrationMatrix;
     }
   }
 }

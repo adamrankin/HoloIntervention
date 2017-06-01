@@ -83,7 +83,7 @@ namespace HoloIntervention
       double                                    m_latestTimestamp = 0.0;
 
       // Output
-      Windows::Foundation::Numerics::float4x4   m_registrationMatrixInverse = Windows::Foundation::Numerics::float4x4::identity();
+      Windows::Foundation::Numerics::float4x4   m_registrationMatrix = Windows::Foundation::Numerics::float4x4::identity();
     };
   }
 }

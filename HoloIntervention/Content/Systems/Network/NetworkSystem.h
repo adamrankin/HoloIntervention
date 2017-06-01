@@ -83,8 +83,7 @@ namespace HoloIntervention
       virtual concurrency::task<bool> ReadConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
 
     public:
-      NetworkSystem(System::NotificationSystem& notificationSystem,
-                    Input::VoiceInput& voiceInput);
+      NetworkSystem(System::NotificationSystem& notificationSystem, Input::VoiceInput& voiceInput);
       virtual ~NetworkSystem();
 
       /// IVoiceInput functions

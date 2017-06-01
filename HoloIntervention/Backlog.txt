@@ -1,14 +1,12 @@
 Network search on startup
-CPU cost of network/image-transforms separate
-  unpack on demand
 Volume rendering
 *Registration
-  Optical registration -- offset?
+  Optical registration -- offset, due to transformation between optical origin and hololens origin
   Replace 3d printed phantom with AR code based registration
   Registration feedback (move around, etc...)
-Network connect, disconnect, connect, connection lost
 Voice feedback
 UI for IP setting - Dictation
 Internationalization (xml database of voice commands and feedback)
 Refactor isinfrustum to abstract base class
-* slice rendering is incorrect
+Reconsider headlocked UI design
+Slice views of anatomical imaging

@@ -171,7 +171,12 @@ namespace HoloIntervention
         auto repo = ref new UWPOpenIGTLink::TransformRepository();
         auto trName = ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD");
         repo->SetTransform(trName, m_cachedRegistrationTransform, true);
+        auto corrName = ref new UWPOpenIGTLink::TransformName(L"Registration", L"Correction");
+        repo->SetTransform(corrName, m_correctionMethod->GetRegistrationTransformation(), true);
+
         repo->SetTransformPersistent(trName, true);
+        repo->SetTransformPersistent(corrName, true);
+
         repo->WriteConfiguration(document);
 
         auto task = m_correctionMethod->WriteConfigurationAsync(document);
@@ -202,6 +207,13 @@ namespace HoloIntervention
         if (repo->GetTransform(trName, &temp))
         {
           m_cachedRegistrationTransform = transpose(temp);
+        }
+
+        trName = ref new UWPOpenIGTLink::TransformName(L"Registration", L"Correction");
+        if (repo->GetTransform(trName, &temp))
+        {
+          // TODO : set?
+          //m_cachedRegistrationTransform = transpose(temp);
         }
 
         auto task = m_correctionMethod->ReadConfigurationAsync(document);
@@ -292,6 +304,11 @@ namespace HoloIntervention
       if (m_registrationMethod != nullptr && m_registrationMethod->IsStarted() && transformContainer != nullptr)
       {
         m_registrationMethod->Update(headPose, coordinateSystem, transformContainer);
+      }
+
+      if (m_correctionMethod->IsStarted())
+      {
+        m_correctionMethod->Update(headPose, coordinateSystem, transformContainer);
       }
     }
 
@@ -464,6 +481,10 @@ namespace HoloIntervention
           if (!result)
           {
             m_notificationSystem.QueueMessage(L"Unable to start correction.");
+          }
+          else
+          {
+            m_notificationSystem.QueueMessage(L"Correction started.");
           }
         });
       };
