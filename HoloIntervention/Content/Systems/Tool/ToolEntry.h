@@ -74,6 +74,8 @@ namespace HoloIntervention
 
       std::shared_ptr<Rendering::ModelEntry> GetModelEntry();
       UWPOpenIGTLink::TransformName^ GetCoordinateFrame() const;
+      bool IsValid() const;
+      bool WasValid() const;
 
       uint64 GetId() const;
 
@@ -87,6 +89,7 @@ namespace HoloIntervention
       UWPOpenIGTLink::TransformRepository^        m_transformRepository;
       uint64                                      m_hashedConnectionName;
 
+      std::atomic_bool                            m_isValid = false;
       std::atomic_bool                            m_wasValid = false;
       UWPOpenIGTLink::TransformName^              m_coordinateFrame;
       std::shared_ptr<Rendering::ModelEntry>      m_modelEntry;

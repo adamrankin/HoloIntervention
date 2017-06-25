@@ -97,6 +97,8 @@ namespace HoloIntervention
 
       bool IsConnected(uint64 hashedConnectionName) const;
 
+      ConnectorList GetConnectors();
+
       UWPOpenIGTLink::TransformName^ GetEmbeddedImageTransformName(uint64 hashedConnectionName) const;
       void SetEmbeddedImageTransformName(uint64 hashedConnectionName, UWPOpenIGTLink::TransformName^ name);
 

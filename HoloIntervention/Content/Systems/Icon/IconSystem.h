@@ -59,6 +59,7 @@ namespace HoloIntervention
     class IconEntry;
     class NotificationSystem;
     class RegistrationSystem;
+    class ToolSystem;
 
     typedef std::vector<std::shared_ptr<IconEntry>> IconEntryList;
 
@@ -71,12 +72,15 @@ namespace HoloIntervention
       virtual float GetStabilizePriority() const;
 
     public:
-      IconSystem(NotificationSystem& notificationSystem, RegistrationSystem& registrationSystem, NetworkSystem& networkSystem, Input::VoiceInput& voiceInput, Rendering::ModelRenderer& modelRenderer);
+      IconSystem(NotificationSystem& notificationSystem, RegistrationSystem& registrationSystem, NetworkSystem& networkSystem, ToolSystem& toolSystem, Input::VoiceInput& voiceInput, Rendering::ModelRenderer& modelRenderer);
       ~IconSystem();
 
       void Update(DX::StepTimer& timer, Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
 
-      std::shared_ptr<IconEntry> AddEntry(const std::wstring& modelName);
+      std::shared_ptr<IconEntry> AddEntry(const std::wstring& modelName, std::wstring userValue = L"");
+      std::shared_ptr<IconEntry> AddEntry(const std::wstring& modelName, uint64 userValue = 0);
+      std::shared_ptr<IconEntry> AddEntry(std::shared_ptr<Rendering::ModelEntry> modelEntry, std::wstring userValue = L"");
+      std::shared_ptr<IconEntry> AddEntry(std::shared_ptr<Rendering::ModelEntry> modelEntry, uint64 userValue = 0);
       bool RemoveEntry(uint64 entryId);
       std::shared_ptr<IconEntry> GetEntry(uint64 entryId);
 
@@ -84,6 +88,7 @@ namespace HoloIntervention
       void ProcessNetworkLogic(DX::StepTimer&);
       void ProcessCameraLogic(DX::StepTimer&);
       void ProcessMicrophoneLogic(DX::StepTimer&);
+      void ProcessToolLogic(DX::StepTimer&);
 
     protected:
       uint64                          m_nextValidEntry = 0;
@@ -94,22 +99,25 @@ namespace HoloIntervention
       NotificationSystem&             m_notificationSystem;
       RegistrationSystem&             m_registrationSystem;
       NetworkSystem&                  m_networkSystem;
+      ToolSystem&                     m_toolSystem;
       Input::VoiceInput&              m_voiceInput;
 
       // Icons that this subsystem manages
-      std::shared_ptr<IconEntry>      m_networkIcon = nullptr;
-      std::shared_ptr<IconEntry>      m_cameraIcon = nullptr;
-      std::shared_ptr<IconEntry>      m_microphoneIcon = nullptr;
+      std::vector<std::shared_ptr<IconEntry>> m_networkIcons;
+      std::shared_ptr<IconEntry>              m_cameraIcon = nullptr;
+      std::shared_ptr<IconEntry>              m_microphoneIcon = nullptr;
+      std::vector<std::shared_ptr<IconEntry>> m_toolIcons;
 
       // Network logic variables
-      uint64                          m_hashedConnectionName;
-      UWPOpenIGTLink::TrackedFrame^   m_frame = ref new UWPOpenIGTLink::TrackedFrame();
-      double                          m_latestTimestamp = 0.0;
-      bool                            m_wasNetworkConnected = true;
-      bool                            m_networkIsBlinking = true;
-      NetworkSystem::ConnectionState  m_networkPreviousState = NetworkSystem::CONNECTION_STATE_UNKNOWN;
-      float                           m_networkBlinkTimer = 0.f;
-      static const float              NETWORK_BLINK_TIME_SEC;
+      struct NetworkLogicEntry
+      {
+        bool                            m_wasNetworkConnected = true;
+        bool                            m_networkIsBlinking = true;
+        NetworkSystem::ConnectionState  m_networkPreviousState = NetworkSystem::CONNECTION_STATE_UNKNOWN;
+        float                           m_networkBlinkTimer = 0.f;
+      };
+      std::vector<NetworkLogicEntry>    m_networkLogicEntries;
+      static const float                NETWORK_BLINK_TIME_SEC;
 
       // Camera logic variables
       float                           m_cameraBlinkTimer = 0.f;

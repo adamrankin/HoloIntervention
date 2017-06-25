@@ -53,11 +53,19 @@ namespace HoloIntervention
       bool GetFirstFrame() const;
       void SetFirstFrame(bool firstFrame);
 
+      void SetUserValue(uint64 userValue);
+      uint64 GetUserValueNumber() const;
+      void SetUserValue(const std::wstring& userValue);
+      std::wstring GetUserValueString() const;
+
     protected:
       uint64                                          m_id;
       std::atomic_bool                                m_firstFrame = true;
       std::shared_ptr<Rendering::ModelEntry>          m_modelEntry;
       float                                           m_scaleFactor = 1.f;
+
+      uint64                                          m_userValueNumber = 0;
+      std::wstring                                    m_userValueString = L"";
     };
   }
 }

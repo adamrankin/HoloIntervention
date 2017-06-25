@@ -201,6 +201,12 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    HoloIntervention::System::NetworkSystem::ConnectorList NetworkSystem::GetConnectors()
+    {
+      return m_connectors;
+    }
+
+    //----------------------------------------------------------------------------
     task<bool> NetworkSystem::InitAsync(XmlDocument^ xmlDoc)
     {
       return create_task([this, xmlDoc]()

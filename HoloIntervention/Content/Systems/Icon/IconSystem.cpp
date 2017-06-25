@@ -32,6 +32,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "NetworkSystem.h"
 #include "NotificationSystem.h"
 #include "RegistrationSystem.h"
+#include "ToolSystem.h"
+#include "ToolEntry.h"
 
 // Input includes
 #include "VoiceInput.h"
@@ -63,24 +65,46 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float3 IconSystem::GetStabilizedPosition(SpatialPointerPose^ pose) const
     {
-      auto networkPose = m_networkIcon->GetModelEntry()->GetCurrentPose();
-      auto cameraPose = m_cameraIcon->GetModelEntry()->GetCurrentPose();
-      auto micPose = m_microphoneIcon->GetModelEntry()->GetCurrentPose();
-      return (float3(networkPose.m41, networkPose.m42, networkPose.m43) +
-              float3(cameraPose.m41, cameraPose.m42, cameraPose.m43) +
-              float3(micPose.m41, micPose.m42, micPose.m43)) / 3.f;
+      float3 pos = { 0.f, 0.f, 0.f };
+      for (auto& icon : m_iconEntries)
+      {
+        auto pose = icon->GetModelEntry()->GetCurrentPose();
+        pos.x += pose.m41;
+        pos.y += pose.m42;
+        pos.z += pose.m43;
+      }
+      pos /= m_iconEntries.size();
+      return pos;
     }
 
     //----------------------------------------------------------------------------
     float3 IconSystem::GetStabilizedNormal(SpatialPointerPose^ pose) const
     {
-      return (ExtractNormal(m_networkIcon->GetModelEntry()->GetCurrentPose()) + ExtractNormal(m_cameraIcon->GetModelEntry()->GetCurrentPose()) + ExtractNormal(m_microphoneIcon->GetModelEntry()->GetCurrentPose())) / 3.f;
+      float3 accumulator = { 0.f, 0.f, 0.f };
+      for (auto& icon : m_iconEntries)
+      {
+        auto normal = ExtractNormal(icon->GetModelEntry()->GetCurrentPose());
+        accumulator.x += normal.x;
+        accumulator.y += normal.y;
+        accumulator.z += normal.z;
+      }
+      accumulator /= m_iconEntries.size();
+      return accumulator;
     }
 
     //----------------------------------------------------------------------------
     float3 IconSystem::GetStabilizedVelocity() const
     {
-      return (m_networkIcon->GetModelEntry()->GetVelocity() + m_cameraIcon->GetModelEntry()->GetVelocity() + m_microphoneIcon->GetModelEntry()->GetVelocity()) / 3.f;
+      float3 accumulator = { 0.f, 0.f, 0.f };
+      for (auto& icon : m_iconEntries)
+      {
+        auto vel = icon->GetModelEntry()->GetVelocity();
+        accumulator.x += vel.x;
+        accumulator.y += vel.y;
+        accumulator.z += vel.z;
+      }
+      accumulator /= m_iconEntries.size();
+      return accumulator;
     }
 
     //----------------------------------------------------------------------------
@@ -91,50 +115,87 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    IconSystem::IconSystem(NotificationSystem& notificationSystem, RegistrationSystem& registrationSystem, NetworkSystem& networkSystem, Input::VoiceInput& voiceInput, Rendering::ModelRenderer& modelRenderer)
+    IconSystem::IconSystem(NotificationSystem& notificationSystem, RegistrationSystem& registrationSystem, NetworkSystem& networkSystem, ToolSystem& toolSystem, Input::VoiceInput& voiceInput, Rendering::ModelRenderer& modelRenderer)
       : m_modelRenderer(modelRenderer)
       , m_notificationSystem(notificationSystem)
       , m_registrationSystem(registrationSystem)
       , m_networkSystem(networkSystem)
+      , m_toolSystem(toolSystem)
       , m_voiceInput(voiceInput)
     {
-      // Create network icon
-      m_networkIcon = AddEntry(L"Assets/Models/network_icon.cmo");
-      // TODO : multiple networks?
-      m_hashedConnectionName = HashString(L"NDITracker");
+      // Create network icons
+      for (auto& conn : m_networkSystem.GetConnectors())
+      {
+        m_networkIcons.push_back(AddEntry(L"Assets/Models/network_icon.cmo", conn.HashedName));
+        m_networkLogicEntries.push_back(NetworkLogicEntry());
+      }
 
       // Create camera icon
-      m_cameraIcon = AddEntry(L"Assets/Models/camera_icon.cmo");
+      m_cameraIcon = AddEntry(L"Assets/Models/camera_icon.cmo", 0);
 
       // Create microphone icon
-      m_microphoneIcon = AddEntry(L"Assets/Models/microphone_icon.cmo");
+      m_microphoneIcon = AddEntry(L"Assets/Models/microphone_icon.cmo", 0);
+
+      // Create tool icons
+      for (auto& tool : m_toolSystem.GetTools())
+      {
+        auto entry = AddEntry(tool->GetModelEntry(), std::wstring(tool->GetCoordinateFrame()->GetTransformName()->Data()));
+        entry->SetUserValue(tool->GetId());
+        m_toolIcons.push_back(entry);
+      }
 
       create_task([this]()
       {
-        if (!wait_until_condition([this]() {return m_networkIcon->GetModelEntry()->IsLoaded() && m_cameraIcon->GetModelEntry()->IsLoaded() && m_microphoneIcon->GetModelEntry()->IsLoaded();}, 5000))
+        if (!wait_until_condition([this]()
+      {
+        bool loaded = m_cameraIcon->GetModelEntry()->IsLoaded() && m_microphoneIcon->GetModelEntry()->IsLoaded();
+          for (auto& conn : m_networkIcons)
+          {
+            loaded &= conn->GetModelEntry()->IsLoaded();
+          }
+          for (auto& icon : m_toolIcons)
+          {
+            loaded &= icon->GetModelEntry()->IsLoaded();
+          }
+          return loaded;
+        }, 5000))
         {
           m_notificationSystem.QueueMessage(L"Icon models failed to load after 5s.");
           return false;
         }
 
         // Determine scale factors for the models
-        auto& bounds = m_networkIcon->GetModelEntry()->GetBounds();
-        auto scale = ICON_SIZE_METER / (bounds[1] - bounds[0]);
-        m_networkIcon->SetScaleFactor(scale);
+        for (auto& conn : m_networkIcons)
+        {
+          auto& bounds = conn->GetModelEntry()->GetBounds();
+          auto scale = ICON_SIZE_METER / (bounds[1] - bounds[0]);
+          conn->SetScaleFactor(scale);
+        }
 
-        bounds = m_cameraIcon->GetModelEntry()->GetBounds();
-        scale = ICON_SIZE_METER / (bounds[1] - bounds[0]);
+        auto& bounds = m_cameraIcon->GetModelEntry()->GetBounds();
+        auto scale = ICON_SIZE_METER / (bounds[1] - bounds[0]);
         m_cameraIcon->SetScaleFactor(scale);
 
         bounds = m_microphoneIcon->GetModelEntry()->GetBounds();
         scale = ICON_SIZE_METER / (bounds[1] - bounds[0]);
         m_microphoneIcon->SetScaleFactor(scale);
 
+        for (auto& tool : m_toolIcons)
+        {
+          bounds = tool->GetModelEntry()->GetBounds();
+          scale = ICON_SIZE_METER / (bounds[1] - bounds[0]);
+          tool->SetScaleFactor(scale);
+        }
+
         return true;
       }).then([this](bool loaded)
       {
-        m_networkIcon->GetModelEntry()->EnablePoseLerp(true);
-        m_networkIcon->GetModelEntry()->SetPoseLerpRate(8.f);
+        for (auto& conn : m_networkIcons)
+        {
+          conn->GetModelEntry()->EnablePoseLerp(true);
+          conn->GetModelEntry()->SetPoseLerpRate(8.f);
+          m_iconEntries.push_back(conn);
+        }
 
         m_cameraIcon->GetModelEntry()->EnablePoseLerp(true);
         m_cameraIcon->GetModelEntry()->SetPoseLerpRate(8.f);
@@ -142,9 +203,15 @@ namespace HoloIntervention
         m_microphoneIcon->GetModelEntry()->EnablePoseLerp(true);
         m_microphoneIcon->GetModelEntry()->SetPoseLerpRate(8.f);
 
-        m_iconEntries.push_back(m_networkIcon);
         m_iconEntries.push_back(m_cameraIcon);
         m_iconEntries.push_back(m_microphoneIcon);
+
+        for (auto& tool : m_toolIcons)
+        {
+          tool->GetModelEntry()->EnablePoseLerp(true);
+          tool->GetModelEntry()->SetPoseLerpRate(8.f);
+          m_iconEntries.push_back(tool);
+        }
 
         m_componentReady = loaded;
       });
@@ -193,12 +260,48 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    std::shared_ptr<IconEntry> IconSystem::AddEntry(const std::wstring& modelName)
+    std::shared_ptr<IconEntry> IconSystem::AddEntry(const std::wstring& modelName, std::wstring userValue)
     {
       auto modelEntryId = m_modelRenderer.AddModel(modelName);
       auto modelEntry = m_modelRenderer.GetModel(modelEntryId);
       auto entry = std::make_shared<IconEntry>();
       entry->SetModelEntry(modelEntry);
+      entry->SetUserValue(userValue);
+      entry->SetId(m_nextValidEntry++);
+
+      return entry;
+    }
+
+    //----------------------------------------------------------------------------
+    std::shared_ptr<HoloIntervention::System::IconEntry> IconSystem::AddEntry(std::shared_ptr<Rendering::ModelEntry> modelEntry, std::wstring userValue)
+    {
+      auto entry = std::make_shared<IconEntry>();
+      entry->SetModelEntry(modelEntry);
+      entry->SetUserValue(userValue);
+      entry->SetId(m_nextValidEntry++);
+
+      return entry;
+    }
+
+    //----------------------------------------------------------------------------
+    std::shared_ptr<HoloIntervention::System::IconEntry> IconSystem::AddEntry(const std::wstring& modelName, uint64 userValue /*= 0*/)
+    {
+      auto modelEntryId = m_modelRenderer.AddModel(modelName);
+      auto modelEntry = m_modelRenderer.GetModel(modelEntryId);
+      auto entry = std::make_shared<IconEntry>();
+      entry->SetModelEntry(modelEntry);
+      entry->SetUserValue(userValue);
+      entry->SetId(m_nextValidEntry++);
+
+      return entry;
+    }
+
+    //----------------------------------------------------------------------------
+    std::shared_ptr<HoloIntervention::System::IconEntry> IconSystem::AddEntry(std::shared_ptr<Rendering::ModelEntry> modelEntry, uint64 userValue /*= 0*/)
+    {
+      auto entry = std::make_shared<IconEntry>();
+      entry->SetModelEntry(modelEntry);
+      entry->SetUserValue(userValue);
       entry->SetId(m_nextValidEntry++);
 
       return entry;
@@ -236,56 +339,59 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void IconSystem::ProcessNetworkLogic(DX::StepTimer& timer)
     {
-      // TODO how to show multiple connection icons?
-
-      NetworkSystem::ConnectionState state;
-      if (!m_networkSystem.GetConnectionState(m_hashedConnectionName, state))
+      for (uint32 i = 0; i < m_networkIcons.size(); ++i)
       {
-        return;
-      }
+        auto conn = m_networkIcons[i];
 
-      switch (state)
-      {
-        case NetworkSystem::CONNECTION_STATE_CONNECTING:
-        case NetworkSystem::CONNECTION_STATE_DISCONNECTING:
-          if (m_networkPreviousState != state)
-          {
-            m_networkBlinkTimer = 0.f;
-          }
-          else
-          {
-            m_networkBlinkTimer += static_cast<float>(timer.GetElapsedSeconds());
-            if (m_networkBlinkTimer >= NETWORK_BLINK_TIME_SEC)
+        NetworkSystem::ConnectionState state;
+        if (!m_networkSystem.GetConnectionState(conn->GetUserValueNumber(), state))
+        {
+          return;
+        }
+
+        switch (state)
+        {
+          case NetworkSystem::CONNECTION_STATE_CONNECTING:
+          case NetworkSystem::CONNECTION_STATE_DISCONNECTING:
+            if (m_networkLogicEntries[i].m_networkPreviousState != state)
             {
-              m_networkBlinkTimer = 0.f;
-              m_networkIcon->GetModelEntry()->ToggleVisible();
+              m_networkLogicEntries[i].m_networkBlinkTimer = 0.f;
             }
-          }
-          m_networkIsBlinking = true;
-          break;
-        case NetworkSystem::CONNECTION_STATE_UNKNOWN:
-        case NetworkSystem::CONNECTION_STATE_DISCONNECTED:
-        case NetworkSystem::CONNECTION_STATE_CONNECTION_LOST:
-          m_networkIcon->GetModelEntry()->SetVisible(true);
-          m_networkIsBlinking = false;
-          if (m_wasNetworkConnected)
-          {
-            m_networkIcon->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
-            m_wasNetworkConnected = false;
-          }
-          break;
-        case NetworkSystem::CONNECTION_STATE_CONNECTED:
-          m_networkIcon->GetModelEntry()->SetVisible(true);
-          m_networkIsBlinking = false;
-          if (!m_wasNetworkConnected)
-          {
-            m_wasNetworkConnected = true;
-            m_networkIcon->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
-          }
-          break;
-      }
+            else
+            {
+              m_networkLogicEntries[i].m_networkBlinkTimer += static_cast<float>(timer.GetElapsedSeconds());
+              if (m_networkLogicEntries[i].m_networkBlinkTimer >= NETWORK_BLINK_TIME_SEC)
+              {
+                m_networkLogicEntries[i].m_networkBlinkTimer = 0.f;
+                conn->GetModelEntry()->ToggleVisible();
+              }
+            }
+            m_networkLogicEntries[i].m_networkIsBlinking = true;
+            break;
+          case NetworkSystem::CONNECTION_STATE_UNKNOWN:
+          case NetworkSystem::CONNECTION_STATE_DISCONNECTED:
+          case NetworkSystem::CONNECTION_STATE_CONNECTION_LOST:
+            conn->GetModelEntry()->SetVisible(true);
+            m_networkLogicEntries[i].m_networkIsBlinking = false;
+            if (m_networkLogicEntries[i].m_wasNetworkConnected)
+            {
+              conn->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
+              m_networkLogicEntries[i].m_wasNetworkConnected = false;
+            }
+            break;
+          case NetworkSystem::CONNECTION_STATE_CONNECTED:
+            conn->GetModelEntry()->SetVisible(true);
+            m_networkLogicEntries[i].m_networkIsBlinking = false;
+            if (!m_networkLogicEntries[i].m_wasNetworkConnected)
+            {
+              m_networkLogicEntries[i].m_wasNetworkConnected = true;
+              conn->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
+            }
+            break;
+        }
 
-      m_networkPreviousState = state;
+        m_networkLogicEntries[i].m_networkPreviousState = state;
+      }
     }
 
     //----------------------------------------------------------------------------
@@ -324,12 +430,39 @@ namespace HoloIntervention
       }
       else if (m_wasHearingSound && !m_voiceInput.IsHearingSound())
       {
+        // Greyscale
         m_wasHearingSound = false;
         m_microphoneIcon->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
       }
       else if (m_wasHearingSound && m_voiceInput.IsHearingSound())
       {
-        // blink!
+        // Blink!
+        m_microphoneBlinkTimer += static_cast<float>(timer.GetElapsedSeconds());
+        if (m_microphoneBlinkTimer >= MICROPHONE_BLINK_TIME_SEC)
+        {
+          m_microphoneBlinkTimer = 0.f;
+          m_microphoneIcon->GetModelEntry()->ToggleVisible();
+        }
+      }
+    }
+
+    //----------------------------------------------------------------------------
+    void IconSystem::ProcessToolLogic(DX::StepTimer&)
+    {
+      for (auto& tool : m_toolIcons)
+      {
+        auto coordFrame = tool->GetUserValueString();
+        auto id = tool->GetUserValueNumber();
+        auto isValid = m_toolSystem.IsToolValid(id);
+        auto wasValid = m_toolSystem.WasToolValid(id);
+        if (isValid && !wasValid)
+        {
+          tool->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
+        }
+        else if (!isValid && wasValid)
+        {
+          tool->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
+        }
       }
     }
   }

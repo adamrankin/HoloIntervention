@@ -187,15 +187,15 @@ namespace HoloIntervention
       }
 
       float4x4 transform;
-      auto isTransformValid = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(m_coordinateFrame->From(), L"HMD"), &transform);
-      if (!isTransformValid && m_wasValid)
+      m_isValid = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(m_coordinateFrame->From(), L"HMD"), &transform);
+      if (!m_isValid && m_wasValid)
       {
         m_wasValid = false;
         m_modelEntry->RenderGreyscale();
         return;
       }
 
-      if (isTransformValid)
+      if (m_isValid)
       {
         if (!m_wasValid)
         {
@@ -255,6 +255,18 @@ namespace HoloIntervention
     UWPOpenIGTLink::TransformName^ ToolEntry::GetCoordinateFrame() const
     {
       return m_coordinateFrame;
+    }
+
+    //----------------------------------------------------------------------------
+    bool ToolEntry::IsValid() const
+    {
+      return m_isValid;
+    }
+
+    //----------------------------------------------------------------------------
+    bool ToolEntry::WasValid() const
+    {
+      return m_wasValid;
     }
 
     //----------------------------------------------------------------------------

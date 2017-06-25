@@ -193,7 +193,13 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    std::shared_ptr<HoloIntervention::Tools::ToolEntry> ToolSystem::GetTool(uint64 token)
+    uint32 ToolSystem::GetToolCount() const
+    {
+      return m_toolEntries.size();
+    }
+
+    //----------------------------------------------------------------------------
+    std::shared_ptr<HoloIntervention::Tools::ToolEntry> ToolSystem::GetTool(uint64 token) const
     {
       for (auto iter = m_toolEntries.begin(); iter != m_toolEntries.end(); ++iter)
       {
@@ -203,6 +209,36 @@ namespace HoloIntervention
         }
       }
       return nullptr;
+    }
+
+    //----------------------------------------------------------------------------
+    std::vector<std::shared_ptr<HoloIntervention::Tools::ToolEntry>> ToolSystem::GetTools()
+    {
+      return m_toolEntries;
+    }
+
+    //----------------------------------------------------------------------------
+    bool ToolSystem::IsToolValid(uint64 token) const
+    {
+      auto tool = GetTool(token);
+      if (tool == nullptr)
+      {
+        return false;
+      }
+
+      return tool->IsValid();
+    }
+
+    //----------------------------------------------------------------------------
+    bool ToolSystem::WasToolValid(uint64 token) const
+    {
+      auto tool = GetTool(token);
+      if (tool == nullptr)
+      {
+        return false;
+      }
+
+      return tool->WasValid();
     }
 
     //----------------------------------------------------------------------------

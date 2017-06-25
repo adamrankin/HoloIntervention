@@ -90,5 +90,29 @@ namespace HoloIntervention
       m_firstFrame = firstFrame;
     }
 
+    //----------------------------------------------------------------------------
+    uint64 IconEntry::GetUserValueNumber() const
+    {
+      return m_userValueNumber;
+    }
+
+    //----------------------------------------------------------------------------
+    void IconEntry::SetUserValue(uint64 userValue)
+    {
+      m_userValueNumber = userValue;
+    }
+
+    //----------------------------------------------------------------------------
+    void IconEntry::SetUserValue(const std::wstring& userValue)
+    {
+      m_userValueString = userValue;
+    }
+
+    //----------------------------------------------------------------------------
+    std::wstring IconEntry::GetUserValueString() const
+    {
+      return m_userValueString;
+    }
+
   }
 }

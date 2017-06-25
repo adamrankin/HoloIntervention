@@ -67,7 +67,11 @@ namespace HoloIntervention
                  NetworkSystem& networkSystem);
       ~ToolSystem();
 
-      std::shared_ptr<Tools::ToolEntry> GetTool(uint64 token);
+      uint32 GetToolCount() const;
+      std::shared_ptr<Tools::ToolEntry> GetTool(uint64 token) const;
+      std::vector<std::shared_ptr<Tools::ToolEntry>> GetTools();
+      bool IsToolValid(uint64 token) const;
+      bool WasToolValid(uint64 token) const;
 
       uint64 RegisterTool(const std::wstring& modelName, UWPOpenIGTLink::TransformName^ coordinateFrame);
       void UnregisterTool(uint64 toolToken);

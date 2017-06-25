@@ -86,6 +86,9 @@ namespace HoloIntervention
       bool GetReferenceToCoordinateSystemTransformation(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem, Windows::Foundation::Numerics::float4x4& outTransform);
 
     protected:
+      bool CheckRegistrationValidity();
+
+    protected:
       // Cached references
       NotificationSystem&                             m_notificationSystem;
       NetworkSystem&                                  m_networkSystem;

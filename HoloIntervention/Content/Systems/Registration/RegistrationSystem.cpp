@@ -456,6 +456,10 @@ namespace HoloIntervention
             std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
             m_registrationMethod = nullptr;
             m_notificationSystem.QueueMessage(L"Registration stopped.");
+            if (!CheckRegistrationValidity())
+            {
+              m_notificationSystem.QueueMessage(L"Warning: Registration probably not valid.");
+            }
           }
           else
           {
@@ -561,7 +565,7 @@ namespace HoloIntervention
           return false;
         }
 
-        outTransform = m_cachedRegistrationTransform * anchorToRequestedBox->Value * m_correctionMethod->GetRegistrationTransformation();
+        outTransform = m_cachedRegistrationTransform * m_correctionMethod->GetRegistrationTransformation() * anchorToRequestedBox->Value;
         return true;
       }
       catch (Platform::Exception^ e)
@@ -570,6 +574,27 @@ namespace HoloIntervention
       }
 
       return false;
+    }
+
+    //----------------------------------------------------------------------------
+    bool RegistrationSystem::CheckRegistrationValidity()
+    {
+      // Check to see if scale is 1
+      float3 scale;
+      quaternion rot;
+      float3 translation;
+      if (!decompose(m_cachedRegistrationTransform * m_correctionMethod->GetRegistrationTransformation(), &scale, &rot, &translation))
+      {
+        return false;
+      }
+
+      const float epsilon = 0.001f;
+      if (fabs(scale.x - 1.f) > epsilon || fabs(scale.y - 1.f) > epsilon || fabs(scale.z - 1.f) > epsilon)
+      {
+        return false;
+      }
+
+      return true;
     }
   }
 }

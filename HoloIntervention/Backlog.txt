@@ -9,4 +9,9 @@ UI for IP setting - Dictation
 Internationalization (xml database of voice commands and feedback)
 Refactor isinfrustum to abstract base class
 Reconsider headlocked UI design
+  body locked UI
 Slice views of anatomical imaging
+  body locked slices (with zoom option)
+3D model of anatomy registered in-situ
+  get_image IGT support
+  how to store image landmarks? send in metadata?

@@ -164,6 +164,7 @@ namespace HoloIntervention
     {
       m_started = false;
       m_registrationMatrix = m_accumulatorMatrix * m_registrationMatrix;
+      m_accumulatorMatrix = float4x4::identity();
       return task_from_result(true);
     }
 
@@ -178,6 +179,7 @@ namespace HoloIntervention
     {
       m_baselineNeeded = true;
       m_registrationMatrix = float4x4::identity();
+      m_accumulatorMatrix = float4x4::identity();
     }
 
     //----------------------------------------------------------------------------
