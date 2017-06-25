@@ -459,6 +459,17 @@ namespace HoloIntervention
             if (!CheckRegistrationValidity())
             {
               m_notificationSystem.QueueMessage(L"Warning: Registration probably not valid.");
+
+              // Remove any scaling, for now, assume 1:1 (mm to mm)
+              float3 scaling;
+              quaternion rotation;
+              float3 translation;
+              decompose(m_cachedRegistrationTransform, &scaling, &rotation, &translation);
+              auto unscaledMatrix = make_float4x4_from_quaternion(rotation);
+              unscaledMatrix.m41 = translation.x;
+              unscaledMatrix.m42 = translation.y;
+              unscaledMatrix.m43 = translation.z;
+              m_cachedRegistrationTransform = unscaledMatrix;
             }
           }
           else
