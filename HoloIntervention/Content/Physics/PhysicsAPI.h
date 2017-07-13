@@ -51,7 +51,7 @@ namespace HoloIntervention
 
   namespace Physics
   {
-    class PhysicsAPI : public Sound::IVoiceInput, public IEngineComponent
+    class PhysicsAPI : public Input::IVoiceInput, public IEngineComponent
     {
     public:
       PhysicsAPI(System::NotificationSystem& notificationSystem, const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer);
@@ -91,7 +91,7 @@ namespace HoloIntervention
       bool HasAnchor(Platform::String^ anchorName);
 
       // IVoiceInput functions
-      virtual void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap);
+      virtual void RegisterVoiceCallbacks(HoloIntervention::Input::VoiceInputCallbackMap& callbackMap);
 
     protected:
       // Event registration tokens.

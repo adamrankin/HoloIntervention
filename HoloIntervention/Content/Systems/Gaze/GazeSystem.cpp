@@ -188,7 +188,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void GazeSystem::RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap)
+    void GazeSystem::RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap)
     {
       callbackMap[L"show cursor"] = [this](SpeechRecognitionResult ^ result)
       {

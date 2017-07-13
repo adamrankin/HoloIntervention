@@ -15,3 +15,5 @@ Slice views of anatomical imaging
 3D model of anatomy registered in-situ
   get_image IGT support
   how to store image landmarks? send in metadata?
+add on/off voice commands to notification system
+add hide/show commands to tool system

@@ -338,7 +338,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void RegistrationSystem::RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap)
+    void RegistrationSystem::RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap)
     {
       callbackMap[L"drop anchor"] = [this](SpeechRecognitionResult ^ result)
       {

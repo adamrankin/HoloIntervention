@@ -292,7 +292,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ToolSystem::RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap)
+    void ToolSystem::RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap)
     {
 
     }

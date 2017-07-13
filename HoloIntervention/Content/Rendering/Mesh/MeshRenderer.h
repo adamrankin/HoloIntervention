@@ -35,7 +35,7 @@ namespace HoloIntervention
 
   namespace Rendering
   {
-    class MeshRenderer : public Sound::IVoiceInput, public IEngineComponent
+    class MeshRenderer : public Input::IVoiceInput, public IEngineComponent
     {
       typedef std::map<Platform::Guid, Mesh> GuidMeshMap;
 
@@ -64,7 +64,7 @@ namespace HoloIntervention
       void Reset();
 
       // IVoiceInput functions
-      virtual void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap);
+      virtual void RegisterVoiceCallbacks(HoloIntervention::Input::VoiceInputCallbackMap& callbackMap);
 
     protected:
       void InitObserver(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem);

@@ -25,7 +25,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 namespace HoloIntervention
 {
-  namespace Sound
+  namespace Input
   {
     typedef std::map<std::wstring, std::function<void(Windows::Media::SpeechRecognition::SpeechRecognitionResult^ result)>> VoiceInputCallbackMap;
 

@@ -491,7 +491,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void MeshRenderer::RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap)
+    void MeshRenderer::RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap)
     {
       callbackMap[L"mesh on"] = [this](SpeechRecognitionResult ^ result)
       {

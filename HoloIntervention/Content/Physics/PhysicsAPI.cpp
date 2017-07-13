@@ -420,7 +420,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void PhysicsAPI::RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap)
+    void PhysicsAPI::RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap)
     {
 
     }

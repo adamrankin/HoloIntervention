@@ -55,7 +55,7 @@ namespace HoloIntervention
   {
     class NotificationSystem;
 
-    class NetworkSystem : public IEngineComponent, public Sound::IVoiceInput, public IConfigurable
+    class NetworkSystem : public IEngineComponent, public Input::IVoiceInput, public IConfigurable
     {
     public:
       enum ConnectionState
@@ -87,7 +87,7 @@ namespace HoloIntervention
       virtual ~NetworkSystem();
 
       /// IVoiceInput functions
-      void RegisterVoiceCallbacks(Sound::VoiceInputCallbackMap& callbackMap);
+      void RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap);
 
       /// Connect all known connectors
       Concurrency::task<bool> ConnectAsync(double timeoutSec = CONNECT_TIMEOUT_SEC, Concurrency::task_options& options = Concurrency::task_options());
