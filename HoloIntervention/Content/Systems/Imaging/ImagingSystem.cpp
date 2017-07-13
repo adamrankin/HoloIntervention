@@ -133,7 +133,7 @@ namespace HoloIntervention
 
       if (m_sliceValid || m_volumeValid)
       {
-        return IMAGING_PRIORITY;
+        return PRIORITY_IMAGING;
       }
 
       return PRIORITY_NOT_ACTIVE;

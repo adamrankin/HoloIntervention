@@ -61,7 +61,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float ManualRegistration::GetStabilizePriority() const
     {
-      return MANUAL_PRIORITY;
+      return PRIORITY_MANUAL;
     }
 
     //----------------------------------------------------------------------------

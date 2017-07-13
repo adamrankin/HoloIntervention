@@ -79,7 +79,7 @@ namespace HoloIntervention
         return PRIORITY_NOT_ACTIVE;
       }
 
-      return m_wasValid ? VALID_TOOL_PRIORITY : INVALID_TOOL_PRIORITY;
+      return m_wasValid ? PRIORITY_VALID_TOOL : PRIORITY_INVALID_TOOL;
     }
 
     //----------------------------------------------------------------------------

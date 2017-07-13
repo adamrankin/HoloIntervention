@@ -74,7 +74,7 @@ namespace HoloIntervention
         pos.y += pose.m42;
         pos.z += pose.m43;
       }
-      pos /= m_iconEntries.size();
+      pos /= static_cast<float>(m_iconEntries.size()); // Cast size to float, this is safe as entries will be a small positive number
       return pos;
     }
 
@@ -89,14 +89,14 @@ namespace HoloIntervention
         accumulator.y += vel.y;
         accumulator.z += vel.z;
       }
-      accumulator /= m_iconEntries.size();
+      accumulator /= static_cast<float>(m_iconEntries.size()); // Cast size to float, this is safe as entries will be a small positive number
       return accumulator;
     }
 
     //----------------------------------------------------------------------------
     float IconSystem::GetStabilizePriority() const
     {
-      return m_componentReady ? ICON_PRIORITY : PRIORITY_NOT_ACTIVE;
+      return m_componentReady ? PRIORITY_ICON : PRIORITY_NOT_ACTIVE;
     }
 
     //----------------------------------------------------------------------------

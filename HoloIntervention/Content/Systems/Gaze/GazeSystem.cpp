@@ -71,7 +71,7 @@ namespace HoloIntervention
       {
         return PRIORITY_NOT_ACTIVE;
       }
-      return IsCursorEnabled() ? GAZE_PRIORITY : PRIORITY_NOT_ACTIVE;
+      return IsCursorEnabled() ? PRIORITY_GAZE : PRIORITY_NOT_ACTIVE;
     }
 
     //----------------------------------------------------------------------------

@@ -82,7 +82,7 @@ namespace HoloIntervention
       }
 
       // Ultra high, this should be stabilized during loading
-      return !m_componentReady ? SPLASH_PRIORITY : PRIORITY_NOT_ACTIVE;
+      return !m_componentReady ? PRIORITY_SPLASH : PRIORITY_NOT_ACTIVE;
     }
 
     //----------------------------------------------------------------------------

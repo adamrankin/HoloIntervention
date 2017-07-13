@@ -125,7 +125,7 @@ namespace HoloIntervention
       }
       if (m_regAnchor != nullptr)
       {
-        return m_regAnchorModel->IsInFrustum() ? REGISTRATION_PRIORITY : PRIORITY_NOT_ACTIVE;
+        return m_regAnchorModel->IsInFrustum() ? PRIORITY_REGISTRATION : PRIORITY_NOT_ACTIVE;
       }
 
       return PRIORITY_NOT_ACTIVE;

@@ -81,7 +81,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float OpticalRegistration::GetStabilizePriority() const
     {
-      return OPTICAL_PRIORITY;
+      return PRIORITY_OPTICAL;
     }
 
     //----------------------------------------------------------------------------

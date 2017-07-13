@@ -133,7 +133,7 @@ namespace HoloIntervention
           anyInFrustum |= m_spherePrimitives[i]->IsInFrustum();
         }
 
-        return anyInFrustum ? CAMERA_PRIORITY : PRIORITY_NOT_ACTIVE;
+        return anyInFrustum ? PRIORITY_CAMERA : PRIORITY_NOT_ACTIVE;
       }
 
       return PRIORITY_NOT_ACTIVE;
