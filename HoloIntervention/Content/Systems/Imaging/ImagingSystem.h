@@ -50,7 +50,7 @@ namespace HoloIntervention
     class NetworkSystem;
     class NotificationSystem;
 
-    class ImagingSystem : public Sound::IVoiceInput, public IStabilizedComponent, public IConfigurable
+    class ImagingSystem : public Input::IVoiceInput, public IStabilizedComponent, public IConfigurable
     {
     public:
       virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition(Windows::UI::Input::Spatial::SpatialPointerPose^ pose) const;
@@ -78,7 +78,7 @@ namespace HoloIntervention
       bool HasVolume() const;
 
       // IVoiceInput functions
-      virtual void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap);
+      virtual void RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap);
 
     protected:
       void Process2DFrame(UWPOpenIGTLink::TrackedFrame^ frame, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);

@@ -58,7 +58,7 @@ namespace HoloIntervention
       Concurrency::task<bool> SwitchToCommandRecognitionAsync();
       Concurrency::task<bool> SwitchToDictationRecognitionAsync();
 
-      Concurrency::task<bool> CompileCallbacksAsync(Sound::VoiceInputCallbackMap& callbacks);
+      Concurrency::task<bool> CompileCallbacksAsync(Input::VoiceInputCallbackMap& callbacks);
 
       uint64 RegisterDictationMatcher(std::function<bool(const std::wstring& text)> func);
       void RemoveDictationMatcher(uint64 token);
@@ -84,7 +84,7 @@ namespace HoloIntervention
       Windows::Media::SpeechRecognition::SpeechRecognizer^              m_activeRecognizer = nullptr;
 
       Windows::Media::SpeechRecognition::SpeechRecognizer^              m_commandRecognizer = ref new Windows::Media::SpeechRecognition::SpeechRecognizer(Windows::Media::SpeechRecognition::SpeechRecognizer::SystemSpeechLanguage);
-      std::unique_ptr<Sound::VoiceInputCallbackMap>                     m_callbacks;
+      std::unique_ptr<Input::VoiceInputCallbackMap>                     m_callbacks;
       Windows::Foundation::EventRegistrationToken                       m_commandDetectedEventToken;
       Windows::Foundation::EventRegistrationToken                       m_commandStateChangedToken;
 

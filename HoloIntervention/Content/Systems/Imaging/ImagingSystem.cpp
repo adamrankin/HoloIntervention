@@ -320,7 +320,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ImagingSystem::RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap)
+    void ImagingSystem::RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap)
     {
       callbackMap[L"slice on"] = [this](SpeechRecognitionResult ^ result)
       {

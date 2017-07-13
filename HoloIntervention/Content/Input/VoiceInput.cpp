@@ -49,7 +49,7 @@ namespace HoloIntervention
     VoiceInput::VoiceInput(System::NotificationSystem& notificationSystem, Sound::SoundAPI& soundAPI)
       : m_notificationSystem(notificationSystem)
       , m_soundAPI(soundAPI)
-      , m_callbacks(std::make_unique<Sound::VoiceInputCallbackMap>())
+      , m_callbacks(std::make_unique<Input::VoiceInputCallbackMap>())
     {
       // Apply the dictation topic constraint to optimize for dictated freeform speech.
       auto dictationConstraint = ref new SpeechRecognitionTopicConstraint(SpeechRecognitionScenario::Dictation, "dictation");
@@ -165,7 +165,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<bool> VoiceInput::CompileCallbacksAsync(Sound::VoiceInputCallbackMap& callbacks)
+    task<bool> VoiceInput::CompileCallbacksAsync(Input::VoiceInputCallbackMap& callbacks)
     {
       Platform::Collections::Vector<Platform::String^ >^ speechCommandList = ref new Platform::Collections::Vector<Platform::String^ >();
       for (auto entry : callbacks)

@@ -495,7 +495,7 @@ namespace HoloIntervention
   //----------------------------------------------------------------------------
   void HoloInterventionCore::InitializeVoiceSystem()
   {
-    Sound::VoiceInputCallbackMap callbacks;
+    Input::VoiceInputCallbackMap callbacks;
 
     m_gazeSystem->RegisterVoiceCallbacks(callbacks);
     m_networkSystem->RegisterVoiceCallbacks(callbacks);

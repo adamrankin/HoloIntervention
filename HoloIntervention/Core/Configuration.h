@@ -23,17 +23,19 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-namespace HoloIntervention
-{
-  namespace Input
-  {
-    typedef std::map<std::wstring, std::function<void(Windows::Media::SpeechRecognition::SpeechRecognitionResult^ result)>> VoiceInputCallbackMap;
+// STL includes
+#include <map>
+#include <string>
 
-    class IVoiceInput
-    {
-    public:
-      virtual void RegisterVoiceCallbacks(VoiceInputCallbackMap& callbackMap) = 0;
-      virtual ~IVoiceInput() {};
-    };
-  }
-}
+// Engine component priority values, winner gets to set stabilization parameters
+static const float PRIORITY_NOT_ACTIVE = 0.f;
+static const float REGISTRATION_PRIORITY = 1.f; // anchor
+static const float GAZE_PRIORITY = 1.f; // gaze cursor
+static const float ICON_PRIORITY = 0.5f; // icons
+static const float IMAGING_PRIORITY = 3.f; // slices
+static const float CAMERA_PRIORITY = 3.f; // spheres (will be changing)
+static const float MANUAL_PRIORITY = PRIORITY_NOT_ACTIVE; // has no display component
+static const float OPTICAL_PRIORITY = 0.5f; // no display component, for now
+static const float SPLASH_PRIORITY = 4.f; // slice
+static const float INVALID_TOOL_PRIORITY = 0.25f; // greyscale model
+static const float VALID_TOOL_PRIORITY = 2.5f; // colour model

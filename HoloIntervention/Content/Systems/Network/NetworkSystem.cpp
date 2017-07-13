@@ -285,7 +285,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void NetworkSystem::RegisterVoiceCallbacks(Sound::VoiceInputCallbackMap& callbackMap)
+    void NetworkSystem::RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap)
     {
       callbackMap[L"connect"] = [this](SpeechRecognitionResult ^ result)
       {

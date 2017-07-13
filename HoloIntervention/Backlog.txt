@@ -15,3 +15,5 @@ Slice views of anatomical imaging
   get_image IGT support
   how to store image landmarks? send in metadata?
 Refactor model entry infrastructure so that app controlled rendering properties are unique, but underlying model data (on GPU) is shared
+add on/off voice commands to notification system
+add hide/show commands to tool system

@@ -49,7 +49,7 @@ namespace HoloIntervention
   {
     class NotificationSystem;
 
-    class GazeSystem : public Sound::IVoiceInput, public IStabilizedComponent
+    class GazeSystem : public Input::IVoiceInput, public IStabilizedComponent
     {
     public:
       virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition(Windows::UI::Input::Spatial::SpatialPointerPose^ pose) const;
@@ -70,7 +70,7 @@ namespace HoloIntervention
       Windows::Foundation::Numerics::float3 GetHitVelocity() const;
 
       // IVoiceInput functions
-      virtual void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap);
+      virtual void RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap);
 
     protected:
       // Cached entries

@@ -154,6 +154,9 @@
     <ClCompile Include="Content\Systems\Registration\ManualRegistration.cpp">
       <Filter>Content\Systems\Registration\Manual</Filter>
     </ClCompile>
+    <ClCompile Include="Content\Tasks\PhantomTask.cpp">
+      <Filter>Content\Systems\Tasks</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Content\Sound\OmnidirectionalSound.h">
@@ -338,6 +341,9 @@
     </ClInclude>
     <ClInclude Include="Core\Configuration.h">
       <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Tasks\PhantomTask.h">
+      <Filter>Content\Systems\Tasks</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -713,6 +719,9 @@
     </Filter>
     <Filter Include="Content\Systems\Registration\Manual">
       <UniqueIdentifier>{da06830a-f055-4454-998b-362184d66f4b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Systems\Tasks">
+      <UniqueIdentifier>{4d342565-c9df-414e-b523-fdae587fbd9f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

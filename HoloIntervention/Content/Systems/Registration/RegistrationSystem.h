@@ -56,7 +56,7 @@ namespace HoloIntervention
     class NetworkSystem;
     class NotificationSystem;
 
-    class RegistrationSystem : public Sound::IVoiceInput, public IStabilizedComponent, public IConfigurable
+    class RegistrationSystem : public Input::IVoiceInput, public IStabilizedComponent, public IConfigurable
     {
     public:
       virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition(Windows::UI::Input::Spatial::SpatialPointerPose^ pose) const;
@@ -80,7 +80,7 @@ namespace HoloIntervention
 
       Concurrency::task<void> LoadAppStateAsync();
       bool IsCameraActive() const;
-      virtual void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbacks);
+      virtual void RegisterVoiceCallbacks(HoloIntervention::Input::VoiceInputCallbackMap& callbacks);
 
       bool GetReferenceToCoordinateSystemTransformation(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem, Windows::Foundation::Numerics::float4x4& outTransform);
 

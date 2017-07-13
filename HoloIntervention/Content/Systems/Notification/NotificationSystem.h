@@ -45,7 +45,7 @@ namespace HoloIntervention
 
   namespace System
   {
-    class NotificationSystem : public Sound::IVoiceInput, public IEngineComponent
+    class NotificationSystem : public Input::IVoiceInput, public IEngineComponent
     {
       enum AnimationState
       {
@@ -93,7 +93,7 @@ namespace HoloIntervention
       void SetPose(Windows::UI::Input::Spatial::SpatialPointerPose^ pointerPose);
 
       // ISystem functions
-      virtual void RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap);
+      virtual void RegisterVoiceCallbacks(HoloIntervention::Input::VoiceInputCallbackMap& callbackMap);
 
     protected:
       void UpdateHologramPosition(Windows::UI::Input::Spatial::SpatialPointerPose^ pointerPose, const DX::StepTimer& timer);
