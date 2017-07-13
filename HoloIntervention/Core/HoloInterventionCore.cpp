@@ -155,6 +155,7 @@ namespace HoloIntervention
     m_configurableComponents.push_back(m_registrationSystem.get());
     m_configurableComponents.push_back(m_networkSystem.get());
     m_configurableComponents.push_back(m_imagingSystem.get());
+    m_configurableComponents.push_back(m_iconSystem.get());
 
     ReadConfigurationAsync();
 
@@ -266,6 +267,11 @@ namespace HoloIntervention
       {
         m_engineReady = m_engineReady && component->IsReady();
       }
+
+      if (m_engineReady)
+      {
+        m_splashSystem->EndSplash();
+      }
     }
 
     if (m_engineReady && !m_voiceInput->IsVoiceEnabled())
@@ -280,7 +286,7 @@ namespace HoloIntervention
 
       if (!m_engineReady)
       {
-        // Show our welcome screen until it is ready!
+        // Show our welcome screen until the engine is ready!
         m_splashSystem->Update(m_timer, hmdCoordinateSystem, headPose);
         m_sliceRenderer->Update(headPose, cameraResources);
       }
@@ -646,6 +652,11 @@ namespace HoloIntervention
   //----------------------------------------------------------------------------
   task<bool> HoloInterventionCore::ReadConfigurationAsync()
   {
+    if (m_configurableComponents.size() == 0)
+    {
+      return task_from_result(true);
+    }
+
     return create_task(ApplicationData::Current->LocalFolder->TryGetItemAsync(L"configuration.xml")).then([this](IStorageItem ^ file)
     {
       if (file == nullptr)
@@ -712,23 +723,23 @@ namespace HoloIntervention
           return task_from_result(false);
         }
 
-        std::vector<task<bool>> tasks;
-        bool hasError(false);
-        for (auto comp : m_configurableComponents)
+        std::shared_ptr<bool> hasError = std::make_shared<bool>(false);
+        // Run in order, as some configurations may rely on others
+        auto readConfigTask = create_task([this, hasError, doc]()
         {
-          tasks.push_back(comp->ReadConfigurationAsync(doc));
+          *hasError = *hasError || !m_configurableComponents[0]->ReadConfigurationAsync(doc).get();
+        });
+        for (uint32 i = 1; i < m_configurableComponents.size(); ++i)
+        {
+          readConfigTask = readConfigTask.then([this, hasError, doc, i]()
+          {
+            *hasError = *hasError || !m_configurableComponents[i]->ReadConfigurationAsync(doc).get();
+          });
         }
 
-        return when_all(begin(tasks), end(tasks)).then([this](std::vector<bool> results)
+        return readConfigTask.then([hasError]()
         {
-          for (auto res : results)
-          {
-            if (!res)
-            {
-              return false;
-            }
-          }
-          return true;
+          return *hasError;
         });
       });
     });

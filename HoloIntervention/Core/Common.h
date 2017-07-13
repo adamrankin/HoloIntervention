@@ -24,6 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
+#include "Configuration.h"
 #include "Log.h"
 
 // STL includes
@@ -47,6 +48,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 namespace HoloIntervention
 {
   static const uint64 INVALID_TOKEN = 0;
+  static const float FLOAT_EPSILON = 0.001f;
+
+#define IsFloatEqual(x, y) (fabs(x - y) < HoloIntervention::FLOAT_EPSILON)
 
   //------------------------------------------------------------------------
   template<class T>

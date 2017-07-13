@@ -61,26 +61,23 @@ namespace HoloIntervention
     {
     public:
       virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition(Windows::UI::Input::Spatial::SpatialPointerPose^ pose) const;
-      virtual Windows::Foundation::Numerics::float3 GetStabilizedNormal(Windows::UI::Input::Spatial::SpatialPointerPose^ pose) const;
       virtual Windows::Foundation::Numerics::float3 GetStabilizedVelocity() const;
       virtual float GetStabilizePriority() const;
 
     public:
-      ToolEntry(Rendering::ModelRenderer& modelRenderer, System::NetworkSystem& networkSystem, uint64 hashedConnectionName, UWPOpenIGTLink::TransformName^ coordinateFrame, const std::wstring& modelName, UWPOpenIGTLink::TransformRepository^ transformRepository);
-      ToolEntry(Rendering::ModelRenderer& modelRenderer, System::NetworkSystem& networkSystem, uint64 hashedConnectionName, const std::wstring& coordinateFrame, const std::wstring& modelName, UWPOpenIGTLink::TransformRepository^ transformRepository);
+      ToolEntry(Rendering::ModelRenderer& modelRenderer, System::NetworkSystem& networkSystem, uint64 hashedConnectionName, UWPOpenIGTLink::TransformName^ coordinateFrame, UWPOpenIGTLink::TransformRepository^ transformRepository);
+      ToolEntry(Rendering::ModelRenderer& modelRenderer, System::NetworkSystem& networkSystem, uint64 hashedConnectionName, const std::wstring& coordinateFrame, UWPOpenIGTLink::TransformRepository^ transformRepository);
       ~ToolEntry();
 
       void Update(const DX::StepTimer& timer);
 
+      void SetModelEntry(std::shared_ptr<Rendering::ModelEntry> entry);
       std::shared_ptr<Rendering::ModelEntry> GetModelEntry();
       UWPOpenIGTLink::TransformName^ GetCoordinateFrame() const;
       bool IsValid() const;
       bool WasValid() const;
 
       uint64 GetId() const;
-
-    protected:
-      void CreateModel(const std::wstring& modelName);
 
     protected:
       // Cached links to system resources

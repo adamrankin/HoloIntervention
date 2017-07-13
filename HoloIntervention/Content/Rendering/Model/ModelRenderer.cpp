@@ -107,17 +107,30 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    uint64 ModelRenderer::AddModel(const std::wstring& assetLocation)
+    task<uint64> ModelRenderer::AddModelAsync(const std::wstring& assetLocation)
     {
-      std::shared_ptr<ModelEntry> entry = std::make_shared<ModelEntry>(m_deviceResources, assetLocation, m_timer);
-      entry->SetId(m_nextUnusedId);
-      entry->SetVisible(true);
+      return create_task([this, assetLocation]()
+      {
+        uint64 myId(0);
+        std::shared_ptr<ModelEntry> entry = std::make_shared<ModelEntry>(m_deviceResources, assetLocation, m_timer);
+        {
+          std::lock_guard<std::mutex> guard(m_idMutex);
+          entry->SetId(m_nextUnusedId++);
+          myId = m_nextUnusedId - 1;
+        }
+        entry->SetVisible(true);
 
-      std::lock_guard<std::mutex> guard(m_modelListMutex);
-      m_models.push_back(entry);
+        {
+          std::lock_guard<std::mutex> guard(m_modelListMutex);
+          m_models.push_back(entry);
+        }
 
-      m_nextUnusedId++;
-      return m_nextUnusedId - 1;
+        while (!entry->IsLoaded() && !entry->FailedLoad())
+        {
+          std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+        return myId;
+      });
     }
 
     //----------------------------------------------------------------------------
@@ -153,9 +166,9 @@ namespace HoloIntervention
       std::unique_ptr<DirectX::InstancedGeometricPrimitive> primitive(nullptr);
       switch (type)
       {
-      case PrimitiveType_SPHERE:
-        primitive = std::move(DirectX::InstancedGeometricPrimitive::CreateSphere(m_deviceResources->GetD3DDeviceContext(), diameter, tessellation, rhcoords, invertn));
-        break;
+        case PrimitiveType_SPHERE:
+          primitive = std::move(DirectX::InstancedGeometricPrimitive::CreateSphere(m_deviceResources->GetD3DDeviceContext(), diameter, tessellation, rhcoords, invertn));
+          break;
       }
 
       std::shared_ptr<PrimitiveEntry> entry = std::make_shared<PrimitiveEntry>(m_deviceResources, std::move(primitive), m_timer);

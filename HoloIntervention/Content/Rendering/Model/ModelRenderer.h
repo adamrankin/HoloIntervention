@@ -65,7 +65,7 @@ namespace HoloIntervention
       void Update(const DX::CameraResources* cameraResources);
       void Render();
 
-      uint64 AddModel(const std::wstring& assetLocation);
+      concurrency::task<uint64> AddModelAsync(const std::wstring& assetLocation);
       void RemoveModel(uint64 modelId);
       std::shared_ptr<ModelEntry> GetModel(uint64 modelId) const;
 
@@ -88,6 +88,7 @@ namespace HoloIntervention
       ModelList                                       m_models;
       std::mutex                                      m_primitiveListMutex;
       PrimitiveList                                   m_primitives;
+      std::mutex                                      m_idMutex;
       uint64                                          m_nextUnusedId = 1; // start at 1, 0 (INVALID_ENTRY) is considered invalid
     };
   }

@@ -59,12 +59,6 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    float3 GazeSystem::GetStabilizedNormal(SpatialPointerPose^ pose) const
-    {
-      return ExtractNormal(m_modelEntry->GetCurrentPose());
-    }
-
-    //----------------------------------------------------------------------------
     float3 GazeSystem::GetStabilizedVelocity() const
     {
       return m_modelEntry->GetVelocity();
@@ -77,7 +71,7 @@ namespace HoloIntervention
       {
         return PRIORITY_NOT_ACTIVE;
       }
-      return IsCursorEnabled() ? 1.f : PRIORITY_NOT_ACTIVE;
+      return IsCursorEnabled() ? GAZE_PRIORITY : PRIORITY_NOT_ACTIVE;
     }
 
     //----------------------------------------------------------------------------
@@ -88,10 +82,13 @@ namespace HoloIntervention
       , m_modelEntry(nullptr)
       , m_modelToken(0)
     {
-      m_modelToken = m_modelRenderer.AddModel(GAZE_CURSOR_ASSET_LOCATION);
-      m_modelEntry = m_modelRenderer.GetModel(m_modelToken);
-      m_modelEntry->SetVisible(false);
-      m_componentReady = true;
+      m_modelRenderer.AddModelAsync(GAZE_CURSOR_ASSET_LOCATION).then([this](uint64 modelId)
+      {
+        m_modelToken = modelId;
+        m_modelEntry = m_modelRenderer.GetModel(m_modelToken);
+        m_modelEntry->SetVisible(false);
+        m_componentReady = true;
+      });
     }
 
     //----------------------------------------------------------------------------
@@ -160,12 +157,20 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void GazeSystem::EnableCursor(bool enable)
     {
+      if (m_modelEntry == nullptr || !m_modelEntry->IsLoaded())
+      {
+        return;
+      }
       m_modelEntry->SetVisible(enable);
     }
 
     //----------------------------------------------------------------------------
     bool GazeSystem::IsCursorEnabled() const
     {
+      if (m_modelEntry == nullptr || !m_modelEntry->IsLoaded())
+      {
+        return false;
+      }
       return m_modelEntry->IsVisible();
     }
 

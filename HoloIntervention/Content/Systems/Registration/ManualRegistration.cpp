@@ -47,21 +47,21 @@ namespace HoloIntervention
   namespace System
   {
     //----------------------------------------------------------------------------
-    Windows::Foundation::Numerics::float3 ManualRegistration::GetStabilizedPosition(Windows::UI::Input::Spatial::SpatialPointerPose^ pose) const
+    float3 ManualRegistration::GetStabilizedPosition(SpatialPointerPose^ pose) const
     {
-      return Windows::Foundation::Numerics::float3(0.f, 0.f, 0.f);
+      return float3(0.f, 0.f, 0.f);
     }
 
     //----------------------------------------------------------------------------
-    Windows::Foundation::Numerics::float3 ManualRegistration::GetStabilizedNormal(Windows::UI::Input::Spatial::SpatialPointerPose^ pose) const
+    float3 ManualRegistration::GetStabilizedVelocity() const
     {
-      return Windows::Foundation::Numerics::float3(0.f, 1.f, 0.f);
+      return float3(0.f, 0.f, 0.f);
     }
 
     //----------------------------------------------------------------------------
-    Windows::Foundation::Numerics::float3 ManualRegistration::GetStabilizedVelocity() const
+    float ManualRegistration::GetStabilizePriority() const
     {
-      return Windows::Foundation::Numerics::float3(0.f, 0.f, 0.f);
+      return MANUAL_PRIORITY;
     }
 
     //----------------------------------------------------------------------------
@@ -78,8 +78,8 @@ namespace HoloIntervention
 
         auto camRegElem = document->CreateElement(L"ManualRegistration");
         camRegElem->SetAttribute(L"IGTConnection", ref new Platform::String(m_connectionName.c_str()));
-        camRegElem->SetAttribute(L"FromFrameName", m_toolCoordinateFrameName->From());
-        camRegElem->SetAttribute(L"ToFrameName", m_toolCoordinateFrameName->To());
+        camRegElem->SetAttribute(L"From", m_toolCoordinateFrameName->From());
+        camRegElem->SetAttribute(L"To", m_toolCoordinateFrameName->To());
         rootNode->AppendChild(camRegElem);
 
         return true;
@@ -114,12 +114,12 @@ namespace HoloIntervention
 
         std::wstring fromFrameName;
         std::wstring toFrameName;
-        if (!GetAttribute(L"FromFrameName", node, fromFrameName))
+        if (!GetAttribute(L"From", node, fromFrameName))
         {
           LOG(LogLevelType::LOG_LEVEL_ERROR, L"FromFrameName attribute not defined for manual registration. Aborting.");
           return false;
         }
-        if (!GetAttribute(L"ToFrameName", node, toFrameName))
+        if (!GetAttribute(L"To", node, toFrameName))
         {
           LOG(LogLevelType::LOG_LEVEL_ERROR, L"ToFrameName attribute not defined for manual registration. Aborting.");
           return false;

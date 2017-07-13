@@ -1,7 +1,6 @@
 Network search on startup
 Volume rendering
 *Registration
-  Optical registration -- offset, due to transformation between optical origin and hololens origin
   Replace 3d printed phantom with AR code based registration
   Registration feedback (move around, etc...)
 Voice feedback
@@ -15,3 +14,4 @@ Slice views of anatomical imaging
 3D model of anatomy registered in-situ
   get_image IGT support
   how to store image landmarks? send in metadata?
+Refactor model entry infrastructure so that app controlled rendering properties are unique, but underlying model data (on GPU) is shared

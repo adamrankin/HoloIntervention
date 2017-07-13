@@ -52,7 +52,6 @@ namespace HoloIntervention
     {
     public:
       virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition(Windows::UI::Input::Spatial::SpatialPointerPose^ pose) const;
-      virtual Windows::Foundation::Numerics::float3 GetStabilizedNormal(Windows::UI::Input::Spatial::SpatialPointerPose^ pose) const;
       virtual Windows::Foundation::Numerics::float3 GetStabilizedVelocity() const;
       virtual float GetStabilizePriority() const;
 
@@ -73,7 +72,7 @@ namespace HoloIntervention
       bool IsToolValid(uint64 token) const;
       bool WasToolValid(uint64 token) const;
 
-      uint64 RegisterTool(const std::wstring& modelName, UWPOpenIGTLink::TransformName^ coordinateFrame);
+      Concurrency::task<uint64> RegisterToolAsync(const std::wstring& modelName, UWPOpenIGTLink::TransformName^ coordinateFrame);
       void UnregisterTool(uint64 toolToken);
       void ClearTools();
 
@@ -95,6 +94,7 @@ namespace HoloIntervention
       std::wstring                                      m_connectionName; // For config saving
       uint64                                            m_hashedConnectionName;
       double                                            m_latestTimestamp;
+      mutable std::mutex                                m_entriesMutex;
       std::vector<std::shared_ptr<Tools::ToolEntry>>    m_toolEntries;
       UWPOpenIGTLink::TransformRepository^              m_transformRepository;
     };

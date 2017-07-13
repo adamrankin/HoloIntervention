@@ -1,10 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <HoloIntervention>
-  <!-- HMD coordinate frame is the HoloLens rendering coordinate frame -->
-  <!-- Reference coordinate frame is the reference coordinate system of the magnetic tracker -->
   <Tools IGTConnection="NDITracker">
     <Tool 
-      Model="hemisphere_stylus" 
+      Model="Assets/Models/Tools/hemisphere_stylus"
       From="Tip"
       To="Reference"
       LerpEnabled="false" />
@@ -25,15 +23,15 @@
 
   <ManualRegistration
     IGTConnection="NDITracker"
-    FromFrameName="Tool"
-    ToFrameName="Reference"
+    From="Tool"
+    To="Reference"
     />
 
   <OpticalRegistration
     IGTConnection="NDITracker"
     RecalcThresholdCount="100"
-    OpticalHMDCoordinateFrame="HoloLens"
-    OpticalReferenceCoordinateFrame="Reference"
+    From="HoloLens"
+    To="Reference"
     />
 
   <IGTConnections>

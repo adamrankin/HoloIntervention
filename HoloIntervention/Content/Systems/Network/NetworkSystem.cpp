@@ -74,9 +74,18 @@ namespace HoloIntervention
         {
           auto connectionElem = document->CreateElement(L"Connection");
           connectionElem->SetAttribute(L"Name", ref new Platform::String(connector.Name.c_str()));
-          connectionElem->SetAttribute(L"Host", connector.Connector->ServerHost->DisplayName);
-          connectionElem->SetAttribute(L"Port", connector.Connector->ServerPort);
-          connectionElem->SetAttribute(L"EmbeddedImageTransformName", connector.Connector->EmbeddedImageTransformName->GetTransformName());
+          if (connector.Connector->ServerHost != nullptr)
+          {
+            connectionElem->SetAttribute(L"Host", connector.Connector->ServerHost->DisplayName);
+          }
+          if (connector.Connector->ServerPort != nullptr)
+          {
+            connectionElem->SetAttribute(L"Port", connector.Connector->ServerPort);
+          }
+          if (connector.Connector->EmbeddedImageTransformName != nullptr)
+          {
+            connectionElem->SetAttribute(L"EmbeddedImageTransformName", connector.Connector->EmbeddedImageTransformName->GetTransformName());
+          }
           connectionsElem->AppendChild(connectionElem);
         }
 

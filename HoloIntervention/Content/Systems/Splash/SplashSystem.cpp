@@ -58,19 +58,13 @@ namespace HoloIntervention
   namespace System
   {
     const float SplashSystem::LERP_RATE = 4.f;
-    const float SplashSystem::WELCOME_DISPLAY_TIME_SEC = 6.f;
+    const float SplashSystem::MINIMUM_WELCOME_DISPLAY_TIME_SEC = 6.f;
 
     //----------------------------------------------------------------------------
     float3 SplashSystem::GetStabilizedPosition(SpatialPointerPose^ pose) const
     {
       auto& slicePose = m_sliceEntry->GetCurrentPose();
       return float3(slicePose.m41, slicePose.m42, slicePose.m43);
-    }
-
-    //----------------------------------------------------------------------------
-    float3 SplashSystem::GetStabilizedNormal(SpatialPointerPose^ pose) const
-    {
-      return ExtractNormal(m_sliceEntry->GetCurrentPose());
     }
 
     //----------------------------------------------------------------------------
@@ -88,7 +82,7 @@ namespace HoloIntervention
       }
 
       // Ultra high, this should be stabilized during loading
-      return !m_componentReady ? 4.f : PRIORITY_NOT_ACTIVE;
+      return !m_componentReady ? SPLASH_PRIORITY : PRIORITY_NOT_ACTIVE;
     }
 
     //----------------------------------------------------------------------------
@@ -116,6 +110,24 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    void SplashSystem::StartSplash()
+    {
+      if (m_sliceEntry != nullptr)
+      {
+        m_sliceEntry->SetVisible(true);
+      }
+    }
+
+    //----------------------------------------------------------------------------
+    void SplashSystem::EndSplash()
+    {
+      if (m_sliceEntry != nullptr)
+      {
+        m_sliceEntry->SetVisible(false);
+      }
+    }
+
+    //----------------------------------------------------------------------------
     void SplashSystem::Update(const DX::StepTimer& timer, SpatialCoordinateSystem^ hmdCoordinateSystem, SpatialPointerPose^ headPose)
     {
       // Calculate world pose, ahead of face, centered
@@ -129,13 +141,9 @@ namespace HoloIntervention
 
       m_welcomeTimerSec += deltaTime;
 
-      if (!m_componentReady && m_welcomeTimerSec >= WELCOME_DISPLAY_TIME_SEC)
+      if (!m_componentReady && m_welcomeTimerSec >= MINIMUM_WELCOME_DISPLAY_TIME_SEC)
       {
-        m_welcomeTimerSec = 0.0;
         m_componentReady = true;
-        m_sliceEntry->SetVisible(false);
-        m_sliceEntry = nullptr;
-        m_sliceRenderer.RemoveSlice(m_sliceToken);
         return;
       }
 

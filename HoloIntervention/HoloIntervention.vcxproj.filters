@@ -336,6 +336,9 @@
     <ClInclude Include="Content\Systems\Registration\ManualRegistration.h">
       <Filter>Content\Systems\Registration\Manual</Filter>
     </ClInclude>
+    <ClInclude Include="Core\Configuration.h">
+      <Filter>Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\LockScreenLogo.scale-200.png">

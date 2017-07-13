@@ -23,6 +23,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "pch.h"
+#include "Common.h"
 #include "CameraResources.h"
 #include "DeviceResources.h"
 #include "ModelEntry.h"
@@ -58,13 +59,12 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     ModelEntry::ModelEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, const std::wstring& assetLocation, DX::StepTimer& timer)
       : m_deviceResources(deviceResources)
-      , m_assetLocation(assetLocation)
       , m_timer(timer)
     {
       // Validate asset location
       Platform::String^ mainFolderLocation = Windows::ApplicationModel::Package::Current->InstalledLocation->Path;
 
-      auto folderTask = create_task(StorageFolder::GetFolderFromPathAsync(mainFolderLocation)).then([this](task<StorageFolder^> folderTask)
+      auto folderTask = create_task(StorageFolder::GetFolderFromPathAsync(mainFolderLocation)).then([this, assetLocation](task<StorageFolder^> folderTask)
       {
         StorageFolder^ folder(nullptr);
         try
@@ -74,8 +74,10 @@ namespace HoloIntervention
         catch (const std::exception&)
         {
           HoloIntervention::LOG(LogLevelType::LOG_LEVEL_ERROR, "Unable to locate installed folder path.");
+          m_failedLoad = true;
+          return;
         }
-        std::string asset(m_assetLocation.begin(), m_assetLocation.end());
+        std::string asset(assetLocation.begin(), assetLocation.end());
 
         char drive[32];
         char dir[32767];
@@ -87,8 +89,20 @@ namespace HoloIntervention
         std::string extStr(ext);
         std::string dirStr(dir);
         std::replace(dirStr.begin(), dirStr.end(), '/', '\\');
-        std::wstring wdir(dirStr.begin(), dirStr.end());
-        create_task(folder->GetFolderAsync(ref new Platform::String(wdir.c_str()))).then([this, nameStr, extStr](concurrency::task<StorageFolder^> previousTask)
+
+        if (extStr.empty())
+        {
+          extStr = ".cmo";
+        }
+        if (dirStr.find("Assets\\Models\\") != 0)
+        {
+          dirStr.insert(0, "Assets\\Models\\");
+        }
+        std::wstring wDir(dirStr.begin(), dirStr.end());
+
+        m_assetLocation = wDir + std::wstring(begin(nameStr), end(nameStr)) + std::wstring(begin(extStr), end(extStr));
+
+        create_task(folder->GetFolderAsync(ref new Platform::String(wDir.c_str()))).then([this, nameStr, extStr](concurrency::task<StorageFolder^> previousTask)
         {
           StorageFolder^ folder;
           try
@@ -98,11 +112,13 @@ namespace HoloIntervention
           catch (Platform::InvalidArgumentException^ e)
           {
             HoloIntervention::LOG(LogLevelType::LOG_LEVEL_ERROR, L"InvalidArgumentException: " + e->Message);
+            m_failedLoad = true;
             return;
           }
           catch (const std::exception& e)
           {
             HoloIntervention::LOG(LogLevelType::LOG_LEVEL_ERROR, std::string("Unable to get subfolder: ") + e.what());
+            m_failedLoad = true;
             return;
           }
           std::string filename(nameStr);
@@ -120,6 +136,8 @@ namespace HoloIntervention
               catch (const std::exception& e)
               {
                 HoloIntervention::LOG(LogLevelType::LOG_LEVEL_ERROR, std::string("Unable to load model. ") + e.what());
+                m_failedLoad = true;
+                return;
               }
             }
           });
@@ -248,6 +266,12 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ModelEntry::SetRenderingState(ModelRenderingState state)
     {
+      if (!m_loadingComplete)
+      {
+        LOG(LogLevelType::LOG_LEVEL_ERROR, "Attempting to change rendering state before model is loaded.");
+        return;
+      }
+
       if (state == RENDERING_GREYSCALE)
       {
         RenderGreyscale();
@@ -321,6 +345,12 @@ namespace HoloIntervention
           mesh->ccw = true;
         }
       }
+    }
+
+    //----------------------------------------------------------------------------
+    bool ModelEntry::FailedLoad() const
+    {
+      return m_failedLoad;
     }
 
     //----------------------------------------------------------------------------

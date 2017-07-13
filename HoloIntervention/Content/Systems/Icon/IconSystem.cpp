@@ -49,6 +49,7 @@ using namespace Concurrency;
 using namespace Windows::Foundation::Numerics;
 using namespace Windows::Perception::Spatial;
 using namespace Windows::UI::Input::Spatial;
+using namespace Windows::Data::Xml::Dom;
 
 namespace HoloIntervention
 {
@@ -78,21 +79,6 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    float3 IconSystem::GetStabilizedNormal(SpatialPointerPose^ pose) const
-    {
-      float3 accumulator = { 0.f, 0.f, 0.f };
-      for (auto& icon : m_iconEntries)
-      {
-        auto normal = ExtractNormal(icon->GetModelEntry()->GetCurrentPose());
-        accumulator.x += normal.x;
-        accumulator.y += normal.y;
-        accumulator.z += normal.z;
-      }
-      accumulator /= m_iconEntries.size();
-      return accumulator;
-    }
-
-    //----------------------------------------------------------------------------
     float3 IconSystem::GetStabilizedVelocity() const
     {
       float3 accumulator = { 0.f, 0.f, 0.f };
@@ -110,86 +96,67 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float IconSystem::GetStabilizePriority() const
     {
-      // TODO : stabilizer values?
-      return 0.5f;
+      return m_componentReady ? ICON_PRIORITY : PRIORITY_NOT_ACTIVE;
     }
 
     //----------------------------------------------------------------------------
-    IconSystem::IconSystem(NotificationSystem& notificationSystem, RegistrationSystem& registrationSystem, NetworkSystem& networkSystem, ToolSystem& toolSystem, Input::VoiceInput& voiceInput, Rendering::ModelRenderer& modelRenderer)
-      : m_modelRenderer(modelRenderer)
-      , m_notificationSystem(notificationSystem)
-      , m_registrationSystem(registrationSystem)
-      , m_networkSystem(networkSystem)
-      , m_toolSystem(toolSystem)
-      , m_voiceInput(voiceInput)
+    task<bool> IconSystem::WriteConfigurationAsync(XmlDocument^ document)
     {
+      return task_from_result(true);
+    }
+
+    //----------------------------------------------------------------------------
+    task<bool> IconSystem::ReadConfigurationAsync(XmlDocument^ document)
+    {
+      std::vector<task<std::shared_ptr<IconEntry>>> modelLoadingTasks;
+
       // Create network icons
       for (auto& conn : m_networkSystem.GetConnectors())
       {
-        m_networkIcons.push_back(AddEntry(L"Assets/Models/network_icon.cmo", conn.HashedName));
-        m_networkLogicEntries.push_back(NetworkLogicEntry());
+        modelLoadingTasks.push_back(AddEntryAsync(L"Assets/Models/network_icon.cmo", conn.HashedName).then([this](std::shared_ptr<IconEntry> entry)
+        {
+          m_networkIcons.push_back(entry);
+          m_networkLogicEntries.push_back(NetworkLogicEntry());
+          return entry;
+        }));
       }
 
       // Create camera icon
-      m_cameraIcon = AddEntry(L"Assets/Models/camera_icon.cmo", 0);
+      modelLoadingTasks.push_back(AddEntryAsync(L"Assets/Models/camera_icon.cmo", 0).then([this](std::shared_ptr<IconEntry> entry)
+      {
+        m_cameraIcon = entry;
+        return entry;
+      }));
 
       // Create microphone icon
-      m_microphoneIcon = AddEntry(L"Assets/Models/microphone_icon.cmo", 0);
+      modelLoadingTasks.push_back(AddEntryAsync(L"Assets/Models/microphone_icon.cmo", 0).then([this](std::shared_ptr<IconEntry> entry)
+      {
+        m_microphoneIcon = entry;
+        return entry;
+      }));
 
       // Create tool icons
       for (auto& tool : m_toolSystem.GetTools())
       {
-        auto entry = AddEntry(tool->GetModelEntry(), std::wstring(tool->GetCoordinateFrame()->GetTransformName()->Data()));
-        entry->SetUserValue(tool->GetId());
-        m_toolIcons.push_back(entry);
+        modelLoadingTasks.push_back(AddEntryAsync(tool->GetModelEntry(), std::wstring(tool->GetCoordinateFrame()->GetTransformName()->Data())).then([this, tool](std::shared_ptr<IconEntry> entry)
+        {
+          entry->SetUserValue(tool->GetId());
+          m_toolIcons.push_back(entry);
+          return entry;
+        }));
       }
 
-      create_task([this]()
+      return when_all(begin(modelLoadingTasks), end(modelLoadingTasks)).then([this](std::vector<std::shared_ptr<IconEntry>> entries)
       {
-        if (!wait_until_condition([this]()
-      {
-        bool loaded = m_cameraIcon->GetModelEntry()->IsLoaded() && m_microphoneIcon->GetModelEntry()->IsLoaded();
-          for (auto& conn : m_networkIcons)
-          {
-            loaded &= conn->GetModelEntry()->IsLoaded();
-          }
-          for (auto& icon : m_toolIcons)
-          {
-            loaded &= icon->GetModelEntry()->IsLoaded();
-          }
-          return loaded;
-        }, 5000))
-        {
-          m_notificationSystem.QueueMessage(L"Icon models failed to load after 5s.");
-          return false;
-        }
-
         // Determine scale factors for the models
-        for (auto& conn : m_networkIcons)
+        for (auto& entry : entries)
         {
-          auto& bounds = conn->GetModelEntry()->GetBounds();
+          auto& bounds = entry->GetModelEntry()->GetBounds();
           auto scale = ICON_SIZE_METER / (bounds[1] - bounds[0]);
-          conn->SetScaleFactor(scale);
+          entry->SetScaleFactor(scale);
         }
 
-        auto& bounds = m_cameraIcon->GetModelEntry()->GetBounds();
-        auto scale = ICON_SIZE_METER / (bounds[1] - bounds[0]);
-        m_cameraIcon->SetScaleFactor(scale);
-
-        bounds = m_microphoneIcon->GetModelEntry()->GetBounds();
-        scale = ICON_SIZE_METER / (bounds[1] - bounds[0]);
-        m_microphoneIcon->SetScaleFactor(scale);
-
-        for (auto& tool : m_toolIcons)
-        {
-          bounds = tool->GetModelEntry()->GetBounds();
-          scale = ICON_SIZE_METER / (bounds[1] - bounds[0]);
-          tool->SetScaleFactor(scale);
-        }
-
-        return true;
-      }).then([this](bool loaded)
-      {
+        // Fixed order below, so that they appear in the same order on screen every run
         for (auto& conn : m_networkIcons)
         {
           conn->GetModelEntry()->EnablePoseLerp(true);
@@ -213,8 +180,24 @@ namespace HoloIntervention
           m_iconEntries.push_back(tool);
         }
 
-        m_componentReady = loaded;
+        m_componentReady = true;
+        return true;
+      }).then([this](bool loaded)
+      {
+        return loaded;
       });
+    }
+
+    //----------------------------------------------------------------------------
+    IconSystem::IconSystem(NotificationSystem& notificationSystem, RegistrationSystem& registrationSystem, NetworkSystem& networkSystem, ToolSystem& toolSystem, Input::VoiceInput& voiceInput, Rendering::ModelRenderer& modelRenderer)
+      : m_modelRenderer(modelRenderer)
+      , m_notificationSystem(notificationSystem)
+      , m_registrationSystem(registrationSystem)
+      , m_networkSystem(networkSystem)
+      , m_toolSystem(toolSystem)
+      , m_voiceInput(voiceInput)
+    {
+
     }
 
     //----------------------------------------------------------------------------
@@ -233,6 +216,7 @@ namespace HoloIntervention
       ProcessNetworkLogic(timer);
       ProcessCameraLogic(timer);
       ProcessMicrophoneLogic(timer);
+      ProcessToolLogic(timer);
 
       // Calculate forward vector 2m ahead
       float3 basePosition = headPose->Head->Position + (float3(2.f) * headPose->Head->ForwardDirection);
@@ -260,51 +244,70 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    std::shared_ptr<IconEntry> IconSystem::AddEntry(const std::wstring& modelName, std::wstring userValue)
+    task<std::shared_ptr<IconEntry>> IconSystem::AddEntryAsync(const std::wstring& modelName, std::wstring userValue)
     {
-      auto modelEntryId = m_modelRenderer.AddModel(modelName);
-      auto modelEntry = m_modelRenderer.GetModel(modelEntryId);
-      auto entry = std::make_shared<IconEntry>();
-      entry->SetModelEntry(modelEntry);
-      entry->SetUserValue(userValue);
-      entry->SetId(m_nextValidEntry++);
+      return m_modelRenderer.AddModelAsync(modelName).then([this, userValue](uint64 modelId)
+      {
+        std::lock_guard<std::mutex> guard(m_entryMutex);
+        auto modelEntry = m_modelRenderer.GetModel(modelId);
+        auto entry = std::make_shared<IconEntry>();
+        entry->SetModelEntry(modelEntry);
+        entry->SetUserValue(userValue);
+        entry->SetId(m_nextValidEntry++);
 
-      return entry;
+        return entry;
+      });
     }
 
     //----------------------------------------------------------------------------
-    std::shared_ptr<HoloIntervention::System::IconEntry> IconSystem::AddEntry(std::shared_ptr<Rendering::ModelEntry> modelEntry, std::wstring userValue)
+    task<std::shared_ptr<IconEntry>> IconSystem::AddEntryAsync(std::shared_ptr<Rendering::ModelEntry> modelEntry, std::wstring userValue)
     {
-      auto entry = std::make_shared<IconEntry>();
-      entry->SetModelEntry(modelEntry);
-      entry->SetUserValue(userValue);
-      entry->SetId(m_nextValidEntry++);
+      // Duplicate incoming model entry, so that they have their own independent rendering properties
+      return m_modelRenderer.AddModelAsync(modelEntry->GetAssetLocation()).then([this, userValue](uint64 modelEntryId)
+      {
+        std::lock_guard<std::mutex> guard(m_entryMutex);
+        auto entry = std::make_shared<IconEntry>();
+        auto duplicateEntry = m_modelRenderer.GetModel(modelEntryId);
+        duplicateEntry->SetRenderingState(Rendering::RENDERING_GREYSCALE);
+        entry->SetModelEntry(duplicateEntry);
+        entry->SetUserValue(userValue);
+        entry->SetId(m_nextValidEntry++);
 
-      return entry;
+        return entry;
+      });
     }
 
     //----------------------------------------------------------------------------
-    std::shared_ptr<HoloIntervention::System::IconEntry> IconSystem::AddEntry(const std::wstring& modelName, uint64 userValue /*= 0*/)
+    task<std::shared_ptr<IconEntry>> IconSystem::AddEntryAsync(const std::wstring& modelName, uint64 userValue /*= 0*/)
     {
-      auto modelEntryId = m_modelRenderer.AddModel(modelName);
-      auto modelEntry = m_modelRenderer.GetModel(modelEntryId);
-      auto entry = std::make_shared<IconEntry>();
-      entry->SetModelEntry(modelEntry);
-      entry->SetUserValue(userValue);
-      entry->SetId(m_nextValidEntry++);
+      return m_modelRenderer.AddModelAsync(modelName).then([this, userValue](uint64 modelId)
+      {
+        std::lock_guard<std::mutex> guard(m_entryMutex);
+        auto modelEntry = m_modelRenderer.GetModel(modelId);
+        auto entry = std::make_shared<IconEntry>();
+        entry->SetModelEntry(modelEntry);
+        entry->SetUserValue(userValue);
+        entry->SetId(m_nextValidEntry++);
 
-      return entry;
+        return entry;
+      });
     }
 
     //----------------------------------------------------------------------------
-    std::shared_ptr<HoloIntervention::System::IconEntry> IconSystem::AddEntry(std::shared_ptr<Rendering::ModelEntry> modelEntry, uint64 userValue /*= 0*/)
+    task<std::shared_ptr<IconEntry>> IconSystem::AddEntryAsync(std::shared_ptr<Rendering::ModelEntry> modelEntry, uint64 userValue /*= 0*/)
     {
-      auto entry = std::make_shared<IconEntry>();
-      entry->SetModelEntry(modelEntry);
-      entry->SetUserValue(userValue);
-      entry->SetId(m_nextValidEntry++);
+      // Duplicate incoming model entry, so that they have their own independent rendering properties
+      return m_modelRenderer.AddModelAsync(modelEntry->GetAssetLocation()).then([this, userValue](uint64 modelEntryId)
+      {
+        std::lock_guard<std::mutex> guard(m_entryMutex);
+        auto entry = std::make_shared<IconEntry>();
+        auto duplicateEntry = m_modelRenderer.GetModel(modelEntryId);
+        entry->SetModelEntry(duplicateEntry);
+        entry->SetUserValue(userValue);
+        entry->SetId(m_nextValidEntry++);
 
-      return entry;
+        return entry;
+      });
     }
 
     //----------------------------------------------------------------------------
@@ -342,6 +345,10 @@ namespace HoloIntervention
       for (uint32 i = 0; i < m_networkIcons.size(); ++i)
       {
         auto conn = m_networkIcons[i];
+        if (!conn->GetModelEntry()->IsLoaded())
+        {
+          continue;
+        }
 
         NetworkSystem::ConnectionState state;
         if (!m_networkSystem.GetConnectionState(conn->GetUserValueNumber(), state))
@@ -397,6 +404,11 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void IconSystem::ProcessCameraLogic(DX::StepTimer& timer)
     {
+      if (!m_cameraIcon->GetModelEntry()->IsLoaded())
+      {
+        return;
+      }
+
       if (!m_wasCameraOn && m_registrationSystem.IsCameraActive())
       {
         m_wasCameraOn = true;
@@ -422,16 +434,23 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void IconSystem::ProcessMicrophoneLogic(DX::StepTimer& timer)
     {
+      if (!m_microphoneIcon->GetModelEntry()->IsLoaded())
+      {
+        return;
+      }
+
       if (!m_wasHearingSound && m_voiceInput.IsHearingSound())
       {
         // Colour!
         m_wasHearingSound = true;
+        m_microphoneIcon->GetModelEntry()->SetVisible(true);
         m_microphoneIcon->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
       }
       else if (m_wasHearingSound && !m_voiceInput.IsHearingSound())
       {
         // Greyscale
         m_wasHearingSound = false;
+        m_microphoneIcon->GetModelEntry()->SetVisible(true);
         m_microphoneIcon->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
       }
       else if (m_wasHearingSound && m_voiceInput.IsHearingSound())
@@ -449,19 +468,24 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void IconSystem::ProcessToolLogic(DX::StepTimer&)
     {
-      for (auto& tool : m_toolIcons)
+      for (auto& toolIcon : m_toolIcons)
       {
-        auto coordFrame = tool->GetUserValueString();
-        auto id = tool->GetUserValueNumber();
+        if (!toolIcon->GetModelEntry()->IsLoaded())
+        {
+          continue;
+        }
+
+        auto coordFrame = toolIcon->GetUserValueString();
+        auto id = toolIcon->GetUserValueNumber();
         auto isValid = m_toolSystem.IsToolValid(id);
         auto wasValid = m_toolSystem.WasToolValid(id);
         if (isValid && !wasValid)
         {
-          tool->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
+          toolIcon->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
         }
         else if (!isValid && wasValid)
         {
-          tool->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
+          toolIcon->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
         }
       }
     }

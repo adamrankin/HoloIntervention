@@ -71,28 +71,6 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    float3 ToolSystem::GetStabilizedNormal(SpatialPointerPose^ pose) const
-    {
-      std::shared_ptr<Tools::ToolEntry> maxEntry(nullptr);
-      float maxPriority(PRIORITY_NOT_ACTIVE);
-      for (auto& entry : m_toolEntries)
-      {
-        if (entry->GetStabilizePriority() > maxPriority)
-        {
-          maxPriority = entry->GetStabilizePriority();
-          maxEntry = entry;
-        }
-      }
-
-      if (maxEntry != nullptr)
-      {
-        return maxEntry->GetStabilizedNormal(pose);
-      }
-
-      return float3(0.f, 1.f, 0.f);
-    }
-
-    //----------------------------------------------------------------------------
     float3 ToolSystem::GetStabilizedVelocity() const
     {
       std::shared_ptr<Tools::ToolEntry> maxEntry(nullptr);
@@ -150,9 +128,13 @@ namespace HoloIntervention
         {
           auto toolElem = document->CreateElement("Tool");
           toolElem->SetAttribute(L"Model", ref new Platform::String(tool->GetModelEntry()->GetAssetLocation().c_str()));
-          toolElem->SetAttribute(L"Transform", tool->GetCoordinateFrame()->GetTransformName());
+          toolElem->SetAttribute(L"From", tool->GetCoordinateFrame()->From());
+          toolElem->SetAttribute(L"To", tool->GetCoordinateFrame()->To());
           toolElem->SetAttribute(L"LerpEnabled", tool->GetModelEntry()->GetLerpEnabled() ? L"true" : L"false");
-          toolElem->SetAttribute(L"LerpRate", tool->GetModelEntry()->GetLerpRate().ToString());
+          if (tool->GetModelEntry()->GetLerpEnabled())
+          {
+            toolElem->SetAttribute(L"LerpRate", tool->GetModelEntry()->GetLerpRate().ToString());
+          }
           toolsElem->AppendChild(toolElem);
         }
 
@@ -195,12 +177,14 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     uint32 ToolSystem::GetToolCount() const
     {
+      std::lock_guard<std::mutex> guard(m_entriesMutex);
       return m_toolEntries.size();
     }
 
     //----------------------------------------------------------------------------
     std::shared_ptr<HoloIntervention::Tools::ToolEntry> ToolSystem::GetTool(uint64 token) const
     {
+      std::lock_guard<std::mutex> guard(m_entriesMutex);
       for (auto iter = m_toolEntries.begin(); iter != m_toolEntries.end(); ++iter)
       {
         if (token == (*iter)->GetId())
@@ -242,17 +226,24 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    uint64 ToolSystem::RegisterTool(const std::wstring& modelName, UWPOpenIGTLink::TransformName^ coordinateFrame)
+    task<uint64> ToolSystem::RegisterToolAsync(const std::wstring& modelName, UWPOpenIGTLink::TransformName^ coordinateFrame)
     {
-      std::shared_ptr<Tools::ToolEntry> entry = std::make_shared<Tools::ToolEntry>(m_modelRenderer, m_networkSystem, m_hashedConnectionName, coordinateFrame, modelName, m_transformRepository);
-      entry->GetModelEntry()->SetVisible(false);
-      m_toolEntries.push_back(entry);
-      return entry->GetId();
+      return m_modelRenderer.AddModelAsync(modelName).then([this, coordinateFrame](uint64 modelEntryId)
+      {
+        std::shared_ptr<Tools::ToolEntry> entry = std::make_shared<Tools::ToolEntry>(m_modelRenderer, m_networkSystem, m_hashedConnectionName, coordinateFrame, m_transformRepository);
+        auto modelEntry = m_modelRenderer.GetModel(modelEntryId);
+        entry->SetModelEntry(modelEntry);
+        modelEntry->SetVisible(false);
+        std::lock_guard<std::mutex> guard(m_entriesMutex);
+        m_toolEntries.push_back(entry);
+        return entry->GetId();
+      });
     }
 
     //----------------------------------------------------------------------------
     void ToolSystem::UnregisterTool(uint64 toolToken)
     {
+      std::lock_guard<std::mutex> guard(m_entriesMutex);
       for (auto iter = m_toolEntries.begin(); iter != m_toolEntries.end(); ++iter)
       {
         if (toolToken == (*iter)->GetId())
@@ -266,6 +257,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ToolSystem::ClearTools()
     {
+      std::lock_guard<std::mutex> guard(m_entriesMutex);
       m_toolEntries.clear();
     }
 
@@ -284,6 +276,7 @@ namespace HoloIntervention
         return;
       }
 
+      std::lock_guard<std::mutex> guard(m_entriesMutex);
       for (auto entry : m_toolEntries)
       {
         entry->GetModelEntry()->SetVisible(true);
@@ -292,13 +285,13 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ToolSystem::RegisterVoiceCallbacks(HoloIntervention::Sound::VoiceInputCallbackMap& callbackMap)
+    void ToolSystem::RegisterVoiceCallbacks(Sound::VoiceInputCallbackMap& callbackMap)
     {
 
     }
 
     //----------------------------------------------------------------------------
-    concurrency::task<void> ToolSystem::InitAsync(XmlDocument^ doc)
+    task<void> ToolSystem::InitAsync(XmlDocument^ doc)
     {
       return create_task([this, doc]()
       {
@@ -350,20 +343,22 @@ namespace HoloIntervention
             throw ref new Platform::Exception(E_FAIL, L"Tool entry contains invalid transform name.");
           }
 
-          auto token = RegisterTool(std::wstring(modelString->Data()), trName);
-          auto tool = GetTool(token);
-
-          bool lerpEnabled;
-          if (GetBooleanAttribute(L"LerpEnabled", node, lerpEnabled))
+          RegisterToolAsync(std::wstring(modelString->Data()), trName).then([this, node](uint64 token)
           {
-            tool->GetModelEntry()->EnablePoseLerp(lerpEnabled);
-          }
+            auto tool = GetTool(token);
 
-          float lerpRate;
-          if (GetScalarAttribute<float>(L"LerpRate", node, lerpRate))
-          {
-            tool->GetModelEntry()->SetPoseLerpRate(lerpRate);
-          }
+            bool lerpEnabled;
+            if (GetBooleanAttribute(L"LerpEnabled", node, lerpEnabled))
+            {
+              tool->GetModelEntry()->EnablePoseLerp(lerpEnabled);
+            }
+
+            float lerpRate;
+            if (GetScalarAttribute<float>(L"LerpRate", node, lerpRate))
+            {
+              tool->GetModelEntry()->SetPoseLerpRate(lerpRate);
+            }
+          });
         }
       });
     }

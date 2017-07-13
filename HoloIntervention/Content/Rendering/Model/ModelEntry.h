@@ -99,6 +99,7 @@ namespace HoloIntervention
       void EnableLighting(bool enable);
       void SetCullMode(D3D11_CULL_MODE mode);
 
+      bool FailedLoad() const;
       bool IsLoaded() const;
 
     protected:
@@ -142,6 +143,7 @@ namespace HoloIntervention
 
       // Variables used with the rendering loop.
       std::atomic_bool                                    m_loadingComplete = false;
+      std::atomic_bool                                    m_failedLoad = false;
     };
   }
 }

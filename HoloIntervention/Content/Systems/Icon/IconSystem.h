@@ -24,6 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
+#include "IConfigurable.h"
 #include "IStabilizedComponent.h"
 
 // Rendering includes
@@ -63,13 +64,16 @@ namespace HoloIntervention
 
     typedef std::vector<std::shared_ptr<IconEntry>> IconEntryList;
 
-    class IconSystem : public IStabilizedComponent
+    class IconSystem : public IConfigurable, public IStabilizedComponent
     {
     public:
       virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition(Windows::UI::Input::Spatial::SpatialPointerPose^ pose) const;
-      virtual Windows::Foundation::Numerics::float3 GetStabilizedNormal(Windows::UI::Input::Spatial::SpatialPointerPose^ pose) const;
       virtual Windows::Foundation::Numerics::float3 GetStabilizedVelocity() const;
       virtual float GetStabilizePriority() const;
+
+    public:
+      virtual concurrency::task<bool> WriteConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
+      virtual concurrency::task<bool> ReadConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
 
     public:
       IconSystem(NotificationSystem& notificationSystem, RegistrationSystem& registrationSystem, NetworkSystem& networkSystem, ToolSystem& toolSystem, Input::VoiceInput& voiceInput, Rendering::ModelRenderer& modelRenderer);
@@ -77,10 +81,10 @@ namespace HoloIntervention
 
       void Update(DX::StepTimer& timer, Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
 
-      std::shared_ptr<IconEntry> AddEntry(const std::wstring& modelName, std::wstring userValue = L"");
-      std::shared_ptr<IconEntry> AddEntry(const std::wstring& modelName, uint64 userValue = 0);
-      std::shared_ptr<IconEntry> AddEntry(std::shared_ptr<Rendering::ModelEntry> modelEntry, std::wstring userValue = L"");
-      std::shared_ptr<IconEntry> AddEntry(std::shared_ptr<Rendering::ModelEntry> modelEntry, uint64 userValue = 0);
+      Concurrency::task<std::shared_ptr<IconEntry>> AddEntryAsync(const std::wstring& modelName, std::wstring userValue = L"");
+      Concurrency::task<std::shared_ptr<IconEntry>> AddEntryAsync(const std::wstring& modelName, uint64 userValue = 0);
+      Concurrency::task<std::shared_ptr<IconEntry>> AddEntryAsync(std::shared_ptr<Rendering::ModelEntry> modelEntry, std::wstring userValue = L"");
+      Concurrency::task<std::shared_ptr<IconEntry>> AddEntryAsync(std::shared_ptr<Rendering::ModelEntry> modelEntry, uint64 userValue = 0);
       bool RemoveEntry(uint64 entryId);
       std::shared_ptr<IconEntry> GetEntry(uint64 entryId);
 
@@ -91,6 +95,7 @@ namespace HoloIntervention
       void ProcessToolLogic(DX::StepTimer&);
 
     protected:
+      std::mutex                      m_entryMutex;
       uint64                          m_nextValidEntry = 0;
       IconEntryList                   m_iconEntries;
 

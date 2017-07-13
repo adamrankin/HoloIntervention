@@ -60,7 +60,6 @@ namespace HoloIntervention
     {
     public:
       virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition(Windows::UI::Input::Spatial::SpatialPointerPose^ pose) const;
-      virtual Windows::Foundation::Numerics::float3 GetStabilizedNormal(Windows::UI::Input::Spatial::SpatialPointerPose^ pose) const;
       virtual Windows::Foundation::Numerics::float3 GetStabilizedVelocity() const;
       virtual float GetStabilizePriority() const;
 
@@ -85,8 +84,10 @@ namespace HoloIntervention
 
       bool GetReferenceToCoordinateSystemTransformation(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem, Windows::Foundation::Numerics::float4x4& outTransform);
 
+      void OnRegistrationComplete(Windows::Foundation::Numerics::float4x4);
+
     protected:
-      bool CheckRegistrationValidity();
+      bool CheckRegistrationValidity(Windows::Foundation::Numerics::float4x4);
 
     protected:
       // Cached references
@@ -106,10 +107,11 @@ namespace HoloIntervention
       Windows::Perception::Spatial::SpatialAnchor^    m_regAnchor = nullptr;
 
       // Registration methods
-      mutable std::mutex                              m_registrationMethodMutex;
-      std::shared_ptr<IRegistrationMethod>            m_registrationMethod;
-      std::shared_ptr<IRegistrationMethod>            m_correctionMethod;
-      Windows::Foundation::Numerics::float4x4         m_cachedRegistrationTransform = Windows::Foundation::Numerics::float4x4::identity();
+      mutable std::mutex                                            m_registrationMethodMutex;
+      std::map<std::wstring, std::shared_ptr<IRegistrationMethod>>  m_knownRegistrationMethods;
+      std::shared_ptr<IRegistrationMethod>                          m_currentRegistrationMethod;
+      std::shared_ptr<IRegistrationMethod>                          m_correctionMethod;
+      Windows::Foundation::Numerics::float4x4                       m_cachedRegistrationTransform = Windows::Foundation::Numerics::float4x4::identity();
 
       // Constants
       static Platform::String^                        REGISTRATION_ANCHOR_NAME;

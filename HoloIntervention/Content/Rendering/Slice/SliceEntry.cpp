@@ -63,12 +63,6 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    float3 SliceEntry::GetStabilizedNormal(SpatialPointerPose^ pose) const
-    {
-      return ExtractNormal(m_currentPose);
-    }
-
-    //----------------------------------------------------------------------------
     float3 SliceEntry::GetStabilizedVelocity() const
     {
       return m_velocity;

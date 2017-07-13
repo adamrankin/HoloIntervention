@@ -91,42 +91,6 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    float3 ImagingSystem::GetStabilizedNormal(SpatialPointerPose^ pose) const
-    {
-      std::shared_ptr<Rendering::SliceEntry> sliceEntry(nullptr);
-      if (m_sliceValid)
-      {
-        sliceEntry = m_sliceRenderer.GetSlice(m_sliceToken);
-      }
-
-      std::shared_ptr<Rendering::VolumeEntry> volumeEntry(nullptr);
-      if (m_volumeValid)
-      {
-        volumeEntry = m_volumeRenderer.GetVolume(m_volumeToken);
-      }
-
-      if (m_sliceValid && m_volumeValid)
-      {
-        // TODO : which one is close to the view frustrum?
-        // TODO : which one is more recent?
-        // TODO : other metrics?
-        return m_latestSliceTimestamp > m_latestVolumeTimestamp ? ExtractNormal(sliceEntry->GetCurrentPose()) : ExtractNormal(volumeEntry->GetCurrentPose());
-      }
-      else if (m_volumeValid)
-      {
-        return ExtractNormal(volumeEntry->GetCurrentPose());
-      }
-      else if (m_sliceValid)
-      {
-        return ExtractNormal(sliceEntry->GetCurrentPose());
-      }
-      else
-      {
-        return float3(0.f, 1.f, 0.f);
-      }
-    }
-
-    //----------------------------------------------------------------------------
     float3 ImagingSystem::GetStabilizedVelocity() const
     {
       std::shared_ptr<Rendering::SliceEntry> sliceEntry(nullptr);
@@ -169,8 +133,7 @@ namespace HoloIntervention
 
       if (m_sliceValid || m_volumeValid)
       {
-        // TODO : stabilizer values?
-        return 3.f;
+        return IMAGING_PRIORITY;
       }
 
       return PRIORITY_NOT_ACTIVE;
@@ -202,7 +165,7 @@ namespace HoloIntervention
         }
         {
           std::wstringstream ss;
-          ss << m_blackMapColour.x << " " << m_blackMapColour.y << " " << m_blackMapColour.z << " " << m_blackMapColour.w;
+          ss << std::fixed << m_blackMapColour.x << " " << m_blackMapColour.y << " " << m_blackMapColour.z << " " << m_blackMapColour.w;
           sliceElem->SetAttribute(L"BlackMapColour", ref new Platform::String(ss.str().c_str()));
         }
 

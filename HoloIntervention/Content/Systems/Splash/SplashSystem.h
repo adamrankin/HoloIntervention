@@ -45,13 +45,15 @@ namespace HoloIntervention
     {
     public:
       virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition(Windows::UI::Input::Spatial::SpatialPointerPose^ pose) const;
-      virtual Windows::Foundation::Numerics::float3 GetStabilizedNormal(Windows::UI::Input::Spatial::SpatialPointerPose^ pose) const;
       virtual Windows::Foundation::Numerics::float3 GetStabilizedVelocity() const;
       virtual float GetStabilizePriority() const;
 
     public:
       SplashSystem(Rendering::SliceRenderer& sliceRenderer);
       ~SplashSystem();
+
+      void StartSplash();
+      void EndSplash();
 
       void Update(const DX::StepTimer& timer, Windows::Perception::Spatial::SpatialCoordinateSystem^ hmdCoordinateSystem, Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
 
@@ -69,7 +71,7 @@ namespace HoloIntervention
       std::wstring                                        m_splashImageFilename = L"Assets\\Images\\HoloIntervention.png";
 
       static const float                                  LERP_RATE;
-      static const float                                  WELCOME_DISPLAY_TIME_SEC;
+      static const float                                  MINIMUM_WELCOME_DISPLAY_TIME_SEC; // The splash screen doesn't say it's "ready" until this time has elapsed
     };
   }
 }

@@ -24,17 +24,15 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "pch.h"
 #include "AppView.h"
-#include "RegistrationSystem.h"
 #include "CameraResources.h"
+#include "Common.h"
+#include "RegistrationSystem.h"
+#include "StepTimer.h"
 
 // Registration types
 #include "CameraRegistration.h"
 #include "ManualRegistration.h"
 #include "OpticalRegistration.h"
-
-// Common includes
-#include "Common.h"
-#include "StepTimer.h"
 
 // Rendering includes
 #include "ModelRenderer.h"
@@ -72,13 +70,13 @@ namespace HoloIntervention
     float3 RegistrationSystem::GetStabilizedPosition(SpatialPointerPose^ pose) const
     {
       std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
-      if (m_registrationMethod == nullptr)
+      if (m_currentRegistrationMethod == nullptr)
       {
         return float3(0.f, 0.f, 0.f);
       }
-      if (m_registrationMethod->IsStabilizationActive())
+      if (m_currentRegistrationMethod->IsStabilizationActive())
       {
-        m_registrationMethod->GetStabilizedPosition(pose);
+        m_currentRegistrationMethod->GetStabilizedPosition(pose);
       }
       if (m_regAnchor != nullptr)
       {
@@ -92,38 +90,16 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    float3 RegistrationSystem::GetStabilizedNormal(SpatialPointerPose^ pose) const
-    {
-      std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
-      if (m_registrationMethod == nullptr)
-      {
-        return float3(0.f, 1.f, 0.f);
-      }
-      if (m_registrationMethod->IsStabilizationActive())
-      {
-        m_registrationMethod->GetStabilizedNormal(pose);
-      }
-      if (m_regAnchor != nullptr)
-      {
-        return ExtractNormal(m_regAnchorModel->GetCurrentPose());
-      }
-
-      // Nothing completed yet, this shouldn't even be called because in this case, priority returns not active
-      assert(false);
-      return float3(0.f, 1.f, 0.f);
-    }
-
-    //----------------------------------------------------------------------------
     float3 RegistrationSystem::GetStabilizedVelocity() const
     {
       std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
-      if (m_registrationMethod == nullptr)
+      if (m_currentRegistrationMethod == nullptr)
       {
         return float3(0.f, 0.f, 0.f);
       }
-      if (m_registrationMethod->IsStabilizationActive())
+      if (m_currentRegistrationMethod->IsStabilizationActive())
       {
-        m_registrationMethod->GetStabilizedVelocity();
+        m_currentRegistrationMethod->GetStabilizedVelocity();
       }
       if (m_regAnchor != nullptr)
       {
@@ -139,18 +115,17 @@ namespace HoloIntervention
     float RegistrationSystem::GetStabilizePriority() const
     {
       std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
-      if (m_registrationMethod == nullptr)
+      if (m_currentRegistrationMethod == nullptr)
       {
         return PRIORITY_NOT_ACTIVE;
       }
-      if (m_registrationMethod->IsStabilizationActive())
+      if (m_currentRegistrationMethod->IsStabilizationActive())
       {
-        return m_registrationMethod->GetStabilizePriority();
+        return m_currentRegistrationMethod->GetStabilizePriority();
       }
       if (m_regAnchor != nullptr)
       {
-        // TODO : stabilization values?
-        return m_regAnchorModel->IsInFrustum() ? 1.f : PRIORITY_NOT_ACTIVE;
+        return m_regAnchorModel->IsInFrustum() ? REGISTRATION_PRIORITY : PRIORITY_NOT_ACTIVE;
       }
 
       return PRIORITY_NOT_ACTIVE;
@@ -170,13 +145,8 @@ namespace HoloIntervention
 
         auto repo = ref new UWPOpenIGTLink::TransformRepository();
         auto trName = ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD");
-        repo->SetTransform(trName, m_cachedRegistrationTransform, true);
-        auto corrName = ref new UWPOpenIGTLink::TransformName(L"Registration", L"Correction");
-        repo->SetTransform(corrName, m_correctionMethod->GetRegistrationTransformation(), true);
-
+        repo->SetTransform(trName, m_correctionMethod->GetRegistrationTransformation() * m_cachedRegistrationTransform, true);
         repo->SetTransformPersistent(trName, true);
-        repo->SetTransformPersistent(corrName, true);
-
         repo->WriteConfiguration(document);
 
         auto task = m_correctionMethod->WriteConfigurationAsync(document);
@@ -187,7 +157,12 @@ namespace HoloIntervention
         }
 
         std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
-        return m_registrationMethod->WriteConfigurationAsync(document);
+        if (m_currentRegistrationMethod != nullptr)
+        {
+          return m_currentRegistrationMethod->WriteConfigurationAsync(document);
+        }
+
+        return task_from_result(true);
       });
     }
 
@@ -209,11 +184,19 @@ namespace HoloIntervention
           m_cachedRegistrationTransform = transpose(temp);
         }
 
-        trName = ref new UWPOpenIGTLink::TransformName(L"Registration", L"Correction");
-        if (repo->GetTransform(trName, &temp))
+        // Test each known registration method ReadConfigurationAsync and store if known
+        for (auto pair :
+             {
+               std::pair<std::wstring, std::shared_ptr<IRegistrationMethod>>(L"Optical", std::make_shared<OpticalRegistration>(m_notificationSystem, m_networkSystem)),
+               std::pair<std::wstring, std::shared_ptr<IRegistrationMethod>>(L"Camera", std::make_shared<CameraRegistration>(m_notificationSystem, m_networkSystem, m_modelRenderer)),
+               std::pair<std::wstring, std::shared_ptr<IRegistrationMethod>>(L"Manual", std::make_shared<ManualRegistration>(m_networkSystem))
+             })
         {
-          // TODO : set?
-          //m_cachedRegistrationTransform = transpose(temp);
+          bool result = pair.second->ReadConfigurationAsync(document).get();
+          if (result)
+          {
+            m_knownRegistrationMethods[pair.first] = pair.second;
+          }
         }
 
         auto task = m_correctionMethod->ReadConfigurationAsync(document);
@@ -235,22 +218,24 @@ namespace HoloIntervention
       , m_networkSystem(networkSystem)
       , m_modelRenderer(modelRenderer)
       , m_physicsAPI(physicsAPI)
-      , m_registrationMethod(nullptr)
+      , m_currentRegistrationMethod(nullptr)
       , m_correctionMethod(std::make_shared<System::ManualRegistration>(networkSystem))
     {
-      m_regAnchorModelId = m_modelRenderer.AddModel(REGISTRATION_ANCHOR_MODEL_FILENAME);
-      if (m_regAnchorModelId != INVALID_TOKEN)
+      m_modelRenderer.AddModelAsync(REGISTRATION_ANCHOR_MODEL_FILENAME).then([this](uint64 m_regAnchorModelId)
       {
-        m_regAnchorModel = m_modelRenderer.GetModel(m_regAnchorModelId);
-      }
-      if (m_regAnchorModel == nullptr)
-      {
-        m_notificationSystem.QueueMessage(L"Unable to retrieve anchor model.");
-        return;
-      }
-      m_regAnchorModel->SetVisible(false);
-      m_regAnchorModel->EnablePoseLerp(true);
-      m_regAnchorModel->SetPoseLerpRate(4.f);
+        if (m_regAnchorModelId != INVALID_TOKEN)
+        {
+          m_regAnchorModel = m_modelRenderer.GetModel(m_regAnchorModelId);
+        }
+        if (m_regAnchorModel == nullptr)
+        {
+          m_notificationSystem.QueueMessage(L"Unable to retrieve anchor model.");
+          return;
+        }
+        m_regAnchorModel->SetVisible(false);
+        m_regAnchorModel->EnablePoseLerp(true);
+        m_regAnchorModel->SetPoseLerpRate(4.f);
+      });
     }
 
     //----------------------------------------------------------------------------
@@ -301,9 +286,9 @@ namespace HoloIntervention
       }
 
       std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
-      if (m_registrationMethod != nullptr && m_registrationMethod->IsStarted() && transformContainer != nullptr)
+      if (m_currentRegistrationMethod != nullptr && m_currentRegistrationMethod->IsStarted() && transformContainer != nullptr)
       {
-        m_registrationMethod->Update(headPose, coordinateSystem, transformContainer);
+        m_currentRegistrationMethod->Update(headPose, coordinateSystem, transformContainer);
       }
 
       if (m_correctionMethod->IsStarted())
@@ -322,9 +307,9 @@ namespace HoloIntervention
           m_forcePose = true;
           m_regAnchor = m_physicsAPI.GetAnchor(REGISTRATION_ANCHOR_NAME);
           m_regAnchorModel->SetVisible(true);
-          if (m_registrationMethod != nullptr)
+          if (m_currentRegistrationMethod != nullptr)
           {
-            m_registrationMethod->SetWorldAnchor(m_regAnchor);
+            m_currentRegistrationMethod->SetWorldAnchor(m_regAnchor);
           }
         }
       });
@@ -333,7 +318,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     bool RegistrationSystem::IsCameraActive() const
     {
-      auto camReg = dynamic_cast<CameraRegistration*>(m_registrationMethod.get());
+      auto camReg = dynamic_cast<CameraRegistration*>(m_currentRegistrationMethod.get());
       return camReg != nullptr && camReg->IsCameraActive();
     }
 
@@ -348,7 +333,7 @@ namespace HoloIntervention
       callbackMap[L"remove anchor"] = [this](SpeechRecognitionResult ^ result)
       {
         std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
-        m_registrationMethod->StopAsync().then([this](bool result)
+        m_currentRegistrationMethod->StopAsync().then([this](bool result)
         {
           if (m_regAnchorModel)
           {
@@ -364,7 +349,7 @@ namespace HoloIntervention
       callbackMap[L"start camera registration"] = [this](SpeechRecognitionResult ^ result)
       {
         std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
-        if (dynamic_cast<CameraRegistration*>(m_registrationMethod.get()) != nullptr && m_registrationMethod->IsStarted())
+        if (dynamic_cast<CameraRegistration*>(m_currentRegistrationMethod.get()) != nullptr && m_currentRegistrationMethod->IsStarted())
         {
           m_notificationSystem.QueueMessage(L"Registration already running.");
           return;
@@ -375,27 +360,29 @@ namespace HoloIntervention
           m_notificationSystem.QueueMessage(L"Anchor required. Please place an anchor with 'drop anchor'.");
           return;
         }
-        m_registrationMethod = std::make_shared<CameraRegistration>(m_notificationSystem, m_networkSystem, m_modelRenderer);
-        m_registrationMethod->SetWorldAnchor(m_regAnchor);
-        m_registrationMethod->RegisterTransformUpdatedCallback([this](float4x4 result)
-        {
-          m_cachedRegistrationTransform = result;
-        });
 
-        m_registrationMethod->ReadConfigurationAsync(m_configDocument).then([this](bool result)
+        if (m_knownRegistrationMethods.find(L"Camera") == m_knownRegistrationMethods.end())
+        {
+          m_notificationSystem.QueueMessage(L"No camera configuration defined. Please add the necessary information to the configuration file and try again.");
+          return;
+        }
+        m_currentRegistrationMethod = m_knownRegistrationMethods[L"Camera"];
+        m_currentRegistrationMethod->SetWorldAnchor(m_regAnchor);
+        m_currentRegistrationMethod->RegisterTransformUpdatedCallback(std::bind(&RegistrationSystem::OnRegistrationComplete, this, std::placeholders::_1));
+        m_currentRegistrationMethod->ReadConfigurationAsync(m_configDocument).then([this](bool result)
         {
           std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
           if (!result)
           {
             return task_from_result(false);
           }
-          return m_registrationMethod->StartAsync();
+          return m_currentRegistrationMethod->StartAsync();
         }).then([this](bool result)
         {
           if (!result)
           {
             std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
-            m_registrationMethod = nullptr;
+            m_currentRegistrationMethod = nullptr;
             m_notificationSystem.QueueMessage(L"Unable to start camera registration.");
           }
         });
@@ -404,7 +391,7 @@ namespace HoloIntervention
       callbackMap[L"start optical registration"] = [this](SpeechRecognitionResult ^ result)
       {
         std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
-        if (dynamic_cast<OpticalRegistration*>(m_registrationMethod.get()) != nullptr && m_registrationMethod->IsStarted())
+        if (dynamic_cast<OpticalRegistration*>(m_currentRegistrationMethod.get()) != nullptr && m_currentRegistrationMethod->IsStarted())
         {
           m_notificationSystem.QueueMessage(L"Registration already running.");
           return;
@@ -415,27 +402,29 @@ namespace HoloIntervention
           m_notificationSystem.QueueMessage(L"Anchor required. Please place an anchor with 'drop anchor'.");
           return;
         }
-        m_registrationMethod = std::make_shared<OpticalRegistration>(m_notificationSystem, m_networkSystem);
-        m_registrationMethod->SetWorldAnchor(m_regAnchor);
-        m_registrationMethod->RegisterTransformUpdatedCallback([this](float4x4 result)
-        {
-          m_cachedRegistrationTransform = result;
-        });
 
-        m_registrationMethod->ReadConfigurationAsync(m_configDocument).then([this](bool result)
+        if (m_knownRegistrationMethods.find(L"Optical") == m_knownRegistrationMethods.end())
+        {
+          m_notificationSystem.QueueMessage(L"No optical configuration defined. Please add the necessary information to the configuration file and try again.");
+          return;
+        }
+        m_currentRegistrationMethod = m_knownRegistrationMethods[L"Optical"];
+        m_currentRegistrationMethod->SetWorldAnchor(m_regAnchor);
+        m_currentRegistrationMethod->RegisterTransformUpdatedCallback(std::bind(&RegistrationSystem::OnRegistrationComplete, this, std::placeholders::_1));
+        m_currentRegistrationMethod->ReadConfigurationAsync(m_configDocument).then([this](bool result)
         {
           std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
           if (!result)
           {
             return task_from_result(false);
           }
-          return m_registrationMethod->StartAsync();
+          return m_currentRegistrationMethod->StartAsync();
         }).then([this](bool result)
         {
           if (!result)
           {
             std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
-            m_registrationMethod = nullptr;
+            m_currentRegistrationMethod = nullptr;
             m_notificationSystem.QueueMessage(L"Unable to start optical registration.");
           }
         });
@@ -444,47 +433,24 @@ namespace HoloIntervention
       callbackMap[L"stop registration"] = [this](SpeechRecognitionResult ^ result)
       {
         std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
-        if (m_registrationMethod == nullptr)
+        if (m_currentRegistrationMethod == nullptr)
         {
           m_notificationSystem.QueueMessage(L"Registration not running.");
           return;
         }
-        m_registrationMethod->StopAsync().then([this](bool result)
+        m_currentRegistrationMethod->StopAsync().then([this](bool result)
         {
-          if (result)
-          {
-            std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
-            m_registrationMethod = nullptr;
-            m_notificationSystem.QueueMessage(L"Registration stopped.");
-            if (!CheckRegistrationValidity())
-            {
-              m_notificationSystem.QueueMessage(L"Warning: Registration probably not valid.");
-
-              // Remove any scaling, for now, assume 1:1 (mm to mm)
-              float3 scaling;
-              quaternion rotation;
-              float3 translation;
-              decompose(m_cachedRegistrationTransform, &scaling, &rotation, &translation);
-              auto unscaledMatrix = make_float4x4_from_quaternion(rotation);
-              unscaledMatrix.m41 = translation.x;
-              unscaledMatrix.m42 = translation.y;
-              unscaledMatrix.m43 = translation.z;
-              m_cachedRegistrationTransform = unscaledMatrix;
-            }
-          }
-          else
-          {
-            m_notificationSystem.QueueMessage(L"Error when stopping registration.");
-          }
+          std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
+          m_currentRegistrationMethod = nullptr;
         });
       };
 
       callbackMap[L"reset registration"] = [this](SpeechRecognitionResult ^ result)
       {
         std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
-        if (m_registrationMethod != nullptr)
+        if (m_currentRegistrationMethod != nullptr)
         {
-          m_registrationMethod->ResetRegistration();
+          m_currentRegistrationMethod->ResetRegistration();
         }
       };
 
@@ -504,7 +470,7 @@ namespace HoloIntervention
           }
           else
           {
-            m_notificationSystem.QueueMessage(L"Correction started.");
+            m_notificationSystem.QueueMessage(L"Correction started...");
           }
         });
       };
@@ -537,9 +503,9 @@ namespace HoloIntervention
       callbackMap[L"enable registration viz"] = [this](SpeechRecognitionResult ^ result)
       {
         std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
-        if (m_registrationMethod != nullptr)
+        if (m_currentRegistrationMethod != nullptr)
         {
-          m_registrationMethod->EnableVisualization(true);
+          m_currentRegistrationMethod->EnableVisualization(true);
           m_notificationSystem.QueueMessage(L"Visualization enabled.");
         }
       };
@@ -547,9 +513,9 @@ namespace HoloIntervention
       callbackMap[L"disable registration viz"] = [this](SpeechRecognitionResult ^ result)
       {
         std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
-        if (m_registrationMethod != nullptr)
+        if (m_currentRegistrationMethod != nullptr)
         {
-          m_registrationMethod->EnableVisualization(false);
+          m_currentRegistrationMethod->EnableVisualization(false);
           m_notificationSystem.QueueMessage(L"Visualization disabled.");
         }
       };
@@ -576,7 +542,7 @@ namespace HoloIntervention
           return false;
         }
 
-        outTransform = m_cachedRegistrationTransform * m_correctionMethod->GetRegistrationTransformation() * anchorToRequestedBox->Value;
+        outTransform = m_correctionMethod->GetRegistrationTransformation() * m_cachedRegistrationTransform * anchorToRequestedBox->Value;
         return true;
       }
       catch (Platform::Exception^ e)
@@ -588,19 +554,60 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool RegistrationSystem::CheckRegistrationValidity()
+    void RegistrationSystem::OnRegistrationComplete(float4x4 registrationTransformation)
     {
+      if (!CheckRegistrationValidity(registrationTransformation))
+      {
+        m_notificationSystem.QueueMessage(L"Warning: Registration probably not valid.");
+
+        // Remove any scaling, for now, assume 1:1 (mm to mm)
+        float3 scaling;
+        quaternion rotation;
+        float3 translation;
+        decompose(registrationTransformation, &scaling, &rotation, &translation);
+        auto unscaledMatrix = make_float4x4_from_quaternion(rotation);
+        unscaledMatrix.m41 = translation.x;
+        unscaledMatrix.m42 = translation.y;
+        unscaledMatrix.m43 = translation.z;
+
+        m_cachedRegistrationTransform = unscaledMatrix;
+      }
+      else
+      {
+        m_cachedRegistrationTransform = registrationTransformation;
+      }
+    }
+
+    //----------------------------------------------------------------------------
+    bool RegistrationSystem::CheckRegistrationValidity(float4x4 registrationTransformation)
+    {
+      // Check orthogonality of basis vectors
+      float3 xAxis = normalize(float3(registrationTransformation.m11, registrationTransformation.m21, registrationTransformation.m31));
+      float3 yAxis = normalize(float3(registrationTransformation.m12, registrationTransformation.m22, registrationTransformation.m32));
+      float3 zAxis = normalize(float3(registrationTransformation.m13, registrationTransformation.m23, registrationTransformation.m33));
+
+      if (!IsFloatEqual(dot(xAxis, yAxis), 0.f) ||
+          !IsFloatEqual(dot(xAxis, zAxis), 0.f) ||
+          !IsFloatEqual(dot(yAxis, zAxis), 0.f))
+      {
+        // Not orthogonal!
+        return false;
+      }
+
       // Check to see if scale is 1
+      // TODO : this is currently hardcoded as tracker is expected to produce units in mm, eventually this assumption will be removed
+      // the scale is currently not 1, this is a bug
       float3 scale;
       quaternion rot;
       float3 translation;
-      if (!decompose(m_cachedRegistrationTransform * m_correctionMethod->GetRegistrationTransformation(), &scale, &rot, &translation))
+      if (!decompose(registrationTransformation, &scale, &rot, &translation))
       {
         return false;
       }
 
-      const float epsilon = 0.001f;
-      if (fabs(scale.x - 1.f) > epsilon || fabs(scale.y - 1.f) > epsilon || fabs(scale.z - 1.f) > epsilon)
+      LOG(LogLevelType::LOG_LEVEL_DEBUG, "scale: " + scale.x.ToString() + L" " + scale.y.ToString() + L" " + scale.z.ToString());
+
+      if (!IsFloatEqual(scale.x, 1.f) || !IsFloatEqual(scale.y, 1.f) || !IsFloatEqual(scale.z, 1.f))
       {
         return false;
       }

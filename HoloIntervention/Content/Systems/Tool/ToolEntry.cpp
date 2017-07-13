@@ -54,7 +54,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float3 ToolEntry::GetStabilizedPosition(SpatialPointerPose^ pose) const
     {
-      if (m_modelEntry != nullptr)
+      if (m_modelEntry != nullptr && m_modelEntry->IsLoaded())
       {
         return transform(float3(0.f, 0.f, 0.f), m_modelEntry->GetCurrentPose());
       }
@@ -62,19 +62,9 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    float3 ToolEntry::GetStabilizedNormal(SpatialPointerPose^ pose) const
-    {
-      if (m_modelEntry != nullptr)
-      {
-        return ExtractNormal(m_modelEntry->GetCurrentPose());
-      }
-      return float3(0.f, 1.f, 0.f);
-    }
-
-    //----------------------------------------------------------------------------
     float3 ToolEntry::GetStabilizedVelocity() const
     {
-      if (m_modelEntry != nullptr)
+      if (m_modelEntry != nullptr && m_modelEntry->IsLoaded())
       {
         return m_modelEntry->GetVelocity();
       }
@@ -84,16 +74,16 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float ToolEntry::GetStabilizePriority() const
     {
-      if (!m_modelEntry->IsInFrustum())
+      if (!m_modelEntry->IsLoaded() || !m_modelEntry->IsInFrustum())
       {
         return PRIORITY_NOT_ACTIVE;
       }
-      // TODO : stabilizer values?
-      return m_wasValid ? 2.5f : 0.25f;
+
+      return m_wasValid ? VALID_TOOL_PRIORITY : INVALID_TOOL_PRIORITY;
     }
 
     //----------------------------------------------------------------------------
-    ToolEntry::ToolEntry(Rendering::ModelRenderer& modelRenderer, System::NetworkSystem& networkSystem, uint64 hashedConnectionName, UWPOpenIGTLink::TransformName^ coordinateFrame, const std::wstring& modelName, UWPOpenIGTLink::TransformRepository^ transformRepository)
+    ToolEntry::ToolEntry(Rendering::ModelRenderer& modelRenderer, System::NetworkSystem& networkSystem, uint64 hashedConnectionName, UWPOpenIGTLink::TransformName^ coordinateFrame, UWPOpenIGTLink::TransformRepository^ transformRepository)
       : m_modelRenderer(modelRenderer)
       , m_networkSystem(networkSystem)
       , m_hashedConnectionName(hashedConnectionName)
@@ -101,13 +91,11 @@ namespace HoloIntervention
       , m_coordinateFrame(coordinateFrame)
       , m_kalmanFilter(std::make_shared<Algorithms::KalmanFilter>(18, 6, 0))
     {
-      CreateModel(modelName);
-
       m_componentReady = true;
     }
 
     //----------------------------------------------------------------------------
-    ToolEntry::ToolEntry(Rendering::ModelRenderer& modelRenderer, System::NetworkSystem& networkSystem, uint64 hashedConnectionName, const std::wstring& coordinateFrame, const std::wstring& modelName, UWPOpenIGTLink::TransformRepository^ transformRepository)
+    ToolEntry::ToolEntry(Rendering::ModelRenderer& modelRenderer, System::NetworkSystem& networkSystem, uint64 hashedConnectionName, const std::wstring& coordinateFrame, UWPOpenIGTLink::TransformRepository^ transformRepository)
       : m_modelRenderer(modelRenderer)
       , m_networkSystem(networkSystem)
       , m_hashedConnectionName(hashedConnectionName)
@@ -161,8 +149,6 @@ namespace HoloIntervention
                                                   0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 1.f
                                                 };
       m_kalmanFilter->SetTransitionMatrix(Mat_<float>(21, 21, transitionMatrixCoefficients));
-
-      CreateModel(modelName);
     }
 
     //----------------------------------------------------------------------------
@@ -177,6 +163,7 @@ namespace HoloIntervention
       auto toolToRefTransform = m_networkSystem.GetTransform(m_hashedConnectionName, m_coordinateFrame, m_latestTimestamp);
       if (toolToRefTransform == nullptr)
       {
+        m_isValid = false;
         return;
       }
       m_latestTimestamp = toolToRefTransform->Timestamp;
@@ -246,6 +233,12 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    void ToolEntry::SetModelEntry(std::shared_ptr<Rendering::ModelEntry> entry)
+    {
+      m_modelEntry = entry;
+    }
+
+    //----------------------------------------------------------------------------
     std::shared_ptr<HoloIntervention::Rendering::ModelEntry> ToolEntry::GetModelEntry()
     {
       return m_modelEntry;
@@ -277,18 +270,6 @@ namespace HoloIntervention
         return INVALID_TOKEN;
       }
       return m_modelEntry->GetId();
-    }
-
-    //----------------------------------------------------------------------------
-    void ToolEntry::CreateModel(const std::wstring& modelName)
-    {
-      uint64 modelToken = m_modelRenderer.AddModel(L"Assets\\Models\\Tools\\" + modelName + L".cmo");
-      if (modelToken == INVALID_TOKEN)
-      {
-        WLOG(LogLevelType::LOG_LEVEL_WARNING, std::wstring(L"Unable to create model with name: ") + modelName);
-        return;
-      }
-      m_modelEntry = m_modelRenderer.GetModel(modelToken);
     }
   }
 }

@@ -24,6 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
+#include "Configuration.h"
 #include "IEngineComponent.h"
 
 namespace HoloIntervention
@@ -32,13 +33,9 @@ namespace HoloIntervention
   {
   public:
     virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition(Windows::UI::Input::Spatial::SpatialPointerPose^ pose) const = 0;
-    virtual Windows::Foundation::Numerics::float3 GetStabilizedNormal(Windows::UI::Input::Spatial::SpatialPointerPose^ pose) const = 0;
     virtual Windows::Foundation::Numerics::float3 GetStabilizedVelocity() const = 0;
     virtual float GetStabilizePriority() const = 0;
     inline bool IsStabilizationActive() { return GetStabilizePriority() > PRIORITY_NOT_ACTIVE; }
-
-  protected:
-    const float PRIORITY_NOT_ACTIVE = 0.f;
 
   protected:
     IStabilizedComponent() {};

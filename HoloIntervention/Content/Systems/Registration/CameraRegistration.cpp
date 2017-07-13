@@ -111,12 +111,6 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    float3 CameraRegistration::GetStabilizedNormal(SpatialPointerPose^ pose) const
-    {
-      return -pose->Head->ForwardDirection;
-    }
-
-    //----------------------------------------------------------------------------
     float3 CameraRegistration::GetStabilizedVelocity() const
     {
       if (m_visualizationEnabled && m_spherePrimitiveIds[0] != INVALID_TOKEN && m_sphereInAnchorResultFrames.size() > 0)
@@ -139,8 +133,7 @@ namespace HoloIntervention
           anyInFrustum |= m_spherePrimitives[i]->IsInFrustum();
         }
 
-        // TODO : priority values?
-        return anyInFrustum ? 3.f : PRIORITY_NOT_ACTIVE;
+        return anyInFrustum ? CAMERA_PRIORITY : PRIORITY_NOT_ACTIVE;
       }
 
       return PRIORITY_NOT_ACTIVE;
@@ -297,11 +290,13 @@ namespace HoloIntervention
           m_pnpNeedsInit = true;
           m_nextFrame = nullptr;
           Init();
+          m_notificationSystem.QueueMessage(L"Registration stopped.");
           return true;
         });
       }
-      return create_task([]()
+      return create_task([this]()
       {
+        m_notificationSystem.QueueMessage(L"Registration stopped.");
         return true;
       });
     }

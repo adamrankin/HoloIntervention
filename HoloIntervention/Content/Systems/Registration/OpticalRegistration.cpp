@@ -67,12 +67,6 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    float3 OpticalRegistration::GetStabilizedNormal(SpatialPointerPose^ pose) const
-    {
-      return -pose->Head->ForwardDirection;
-    }
-
-    //----------------------------------------------------------------------------
     float3 OpticalRegistration::GetStabilizedVelocity() const
     {
       if (m_hololensInAnchorPositionList.size() <= 2)
@@ -87,7 +81,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float OpticalRegistration::GetStabilizePriority() const
     {
-      return 0.5f;
+      return OPTICAL_PRIORITY;
     }
 
     //----------------------------------------------------------------------------
@@ -108,8 +102,8 @@ namespace HoloIntervention
         auto elem = document->CreateElement("OpticalRegistration");
         elem->SetAttribute(L"IGTConnection", ref new Platform::String(m_connectionName.c_str()));
         elem->SetAttribute(L"RecalcThresholdCount", m_poseListRecalcThresholdCount.ToString());
-        elem->SetAttribute(L"OpticalHMDCoordinateFrame", m_opticalHMDToOpticalReferenceName->From());
-        elem->SetAttribute(L"OpticalReferenceCoordinateFrame", m_opticalHMDToOpticalReferenceName->To());
+        elem->SetAttribute(L"From", m_opticalHMDToOpticalReferenceName->From());
+        elem->SetAttribute(L"To", m_opticalHMDToOpticalReferenceName->To());
         rootNode->AppendChild(elem);
 
         return true;
@@ -152,12 +146,12 @@ namespace HoloIntervention
 
         std::wstring hmdCoordinateFrameName;
         std::wstring referenceCoordinateFrameName;
-        if (!GetAttribute(L"OpticalHMDCoordinateFrame", node, hmdCoordinateFrameName))
+        if (!GetAttribute(L"From", node, hmdCoordinateFrameName))
         {
           LOG(LogLevelType::LOG_LEVEL_ERROR, L"OpticalHMDCoordinateFrame attribute not defined for optical registration. Aborting.");
           return false;
         }
-        if (!GetAttribute(L"OpticalReferenceCoordinateFrame", node, referenceCoordinateFrameName))
+        if (!GetAttribute(L"To", node, referenceCoordinateFrameName))
         {
           LOG(LogLevelType::LOG_LEVEL_ERROR, L"OpticalReferenceCoordinateFrame attribute not defined for optical registration. Aborting.");
           return false;
@@ -188,6 +182,7 @@ namespace HoloIntervention
       }
       m_started = true;
       ResetRegistration();
+      m_notificationSystem.QueueMessage(L"Capturing...");
       return task_from_result<bool>(true);
     }
 
@@ -195,6 +190,7 @@ namespace HoloIntervention
     Concurrency::task<bool> OpticalRegistration::StopAsync()
     {
       m_started = false;
+      m_notificationSystem.QueueMessage(L"Registration stopped.");
       return task_from_result<bool>(true);
     }
 

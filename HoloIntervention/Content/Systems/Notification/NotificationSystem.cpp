@@ -79,6 +79,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     uint64 NotificationSystem::QueueMessage(const std::wstring& message, double duration)
     {
+      WLOG(LogLevelType::LOG_LEVEL_INFO, message);
       duration = clamp<double>(duration, MAXIMUM_REQUESTED_DURATION_SEC, 0.1);
 
       std::lock_guard<std::mutex> guard(m_messageQueueMutex);
