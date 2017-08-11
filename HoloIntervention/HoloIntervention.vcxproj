@@ -552,6 +552,7 @@
     <AppxSymbolPackageEnabled>False</AppxSymbolPackageEnabled>
     <AppxBundlePlatforms>x86</AppxBundlePlatforms>
     <AppxBundle>Always</AppxBundle>
+    <PackageCertificateThumbprint>040069C6933CD848BCF07E163BBA50EC1B99CA9F</PackageCertificateThumbprint>
   </PropertyGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

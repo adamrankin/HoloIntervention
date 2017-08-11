@@ -23,10 +23,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-// STL includes
-#include <map>
-#include <string>
-
 // Engine component priority values, winner gets to set stabilization parameters
 static const float PRIORITY_NOT_ACTIVE = 0.f;
 static const float PRIORITY_REGISTRATION = 1.f; // anchor
