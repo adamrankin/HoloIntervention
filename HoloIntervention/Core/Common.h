@@ -43,7 +43,17 @@ OTHER DEALINGS IN THE SOFTWARE.
 #define WFILE WIDE1(__FILE__)
 
 #define LOG(level, msg) Log::instance().LogMessage(level, msg, __FILE__, __LINE__)
+#define LOG_ERROR(msg) Log::instance().LogMessage(HoloIntervention::LogLevelType::LOG_LEVEL_ERROR, msg, __FILE__, __LINE__)
+#define LOG_WARNING(msg) Log::instance().LogMessage(HoloIntervention::LogLevelType::LOG_LEVEL_WARNING, msg, __FILE__, __LINE__)
+#define LOG_INFO(msg) Log::instance().LogMessage(HoloIntervention::LogLevelType::LOG_LEVEL_INFO, msg, __FILE__, __LINE__)
+#define LOG_DEBUG(msg) Log::instance().LogMessage(HoloIntervention::LogLevelType::LOG_LEVEL_DEBUG, msg, __FILE__, __LINE__)
+#define LOG_TRACE(msg) Log::instance().LogMessage(HoloIntervention::LogLevelType::LOG_LEVEL_TRACE, msg, __FILE__, __LINE__)
 #define WLOG(level, msg) Log::instance().LogMessage(level, msg, WFILE, __LINE__)
+#define WLOG_ERROR(msg) Log::instance().LogMessage(HoloIntervention::LogLevelType::LOG_LEVEL_ERROR, msg, WFILE, __LINE__)
+#define WLOG_WARNING(msg) Log::instance().LogMessage(HoloIntervention::LogLevelType::LOG_LEVEL_WARNING, msg, WFILE, __LINE__)
+#define WLOG_INFO(msg) Log::instance().LogMessage(HoloIntervention::LogLevelType::LOG_LEVEL_INFO, msg, WFILE, __LINE__)
+#define WLOG_DEBUG(msg) Log::instance().LogMessage(HoloIntervention::LogLevelType::LOG_LEVEL_DEBUG, msg, WFILE, __LINE__)
+#define WLOG_TRACE(msg) Log::instance().LogMessage(HoloIntervention::LogLevelType::LOG_LEVEL_TRACE, msg, WFILE, __LINE__)
 
 namespace HoloIntervention
 {
@@ -63,14 +73,14 @@ namespace HoloIntervention
   template <typename t = byte>
   t * GetDataFromIBuffer(Windows::Storage::Streams::IBuffer^ container)
   {
-    if (container == nullptr)
+    if(container == nullptr)
     {
       return nullptr;
     }
 
     unsigned int bufferLength = container->Length;
 
-    if (!(bufferLength > 0))
+    if(!(bufferLength > 0))
     {
       return nullptr;
     }
@@ -80,14 +90,14 @@ namespace HoloIntervention
     Microsoft::WRL::ComPtr<IUnknown> pUnknown = reinterpret_cast<IUnknown*>(container);
     Microsoft::WRL::ComPtr<Windows::Storage::Streams::IBufferByteAccess> spByteAccess;
     hr = pUnknown.As(&spByteAccess);
-    if (FAILED(hr))
+    if(FAILED(hr))
     {
       return nullptr;
     }
 
     byte* pRawData = nullptr;
     hr = spByteAccess->Buffer(&pRawData);
-    if (FAILED(hr))
+    if(FAILED(hr))
     {
       return nullptr;
     }
@@ -142,7 +152,7 @@ namespace HoloIntervention
     // if the timeout task finishes first.
     return (failure_task || success_task).then([t, cts](bool success)
     {
-      if (!success)
+      if(!success)
       {
         // Set the cancellation token. The task that is passed as the
         // t parameter should respond to the cancellation and stop

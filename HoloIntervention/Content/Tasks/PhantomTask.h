@@ -37,6 +37,11 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 namespace HoloIntervention
 {
+  namespace Rendering
+  {
+    class ModelEntry;
+  }
+
   namespace Input
   {
     class VoiceInput;
@@ -47,10 +52,11 @@ namespace HoloIntervention
     class IGTConnector;
   }
 
-  class NotificationSystem;
-
   namespace System
   {
+    class NetworkSystem;
+    class NotificationSystem;
+
     namespace Tasks
     {
       class PhantomTask : public IStabilizedComponent, public Input::IVoiceInput, public IConfigurable
@@ -66,9 +72,24 @@ namespace HoloIntervention
 
       public:
         virtual void RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap);
+        virtual void Update();
 
-        PhantomTask();
+        PhantomTask(NetworkSystem& networkSystem);
         ~PhantomTask();
+
+      protected:
+        // Cached system variables
+        NetworkSystem&                                      m_networkSystem;
+
+        std::wstring                                        m_modelName = L"";
+        std::wstring                                        m_connectionName = L"";
+        uint64                                              m_hashedConnectionName = 0;
+        UWPOpenIGTLink::TransformName^                      m_transformName = ref new UWPOpenIGTLink::TransformName();
+        double                                              m_latestTimestamp = 0.0;
+
+        std::vector<Windows::Foundation::Numerics::float3>  m_targets; // in Phantom coordinate system
+        std::shared_ptr<Rendering::ModelEntry>              m_phantomModel = nullptr;
+        bool                                                m_phantomRequestOutstanding = false;
       };
     }
   }

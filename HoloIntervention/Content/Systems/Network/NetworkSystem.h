@@ -99,6 +99,8 @@ namespace HoloIntervention
 
       ConnectorList GetConnectors();
 
+      Concurrency::task<UWPOpenIGTLink::CommandData> SendCommandAsync(uint64 hashedConnectionName, const std::wstring& commandName, const std::map<std::wstring, std::wstring>& attributes);
+
       UWPOpenIGTLink::TransformName^ GetEmbeddedImageTransformName(uint64 hashedConnectionName) const;
       void SetEmbeddedImageTransformName(uint64 hashedConnectionName, UWPOpenIGTLink::TransformName^ name);
 
