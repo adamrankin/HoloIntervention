@@ -9,8 +9,8 @@
     <AppContainerApplication>true</AppContainerApplication>
     <ApplicationType>Windows Store</ApplicationType>
     <ApplicationTypeRevision>10.0</ApplicationTypeRevision>
-    <WindowsTargetPlatformVersion>10.0.14393.0</WindowsTargetPlatformVersion>
-    <WindowsTargetPlatformMinVersion>10.0.10586.0</WindowsTargetPlatformMinVersion>
+    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformMinVersion>10.0.14393.0</WindowsTargetPlatformMinVersion>
     <EnableDotNetNativeCompatibleProfile>true</EnableDotNetNativeCompatibleProfile>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -27,13 +27,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <PropertyGroup Label="UserMacros" />
@@ -50,7 +50,7 @@
     <ClCompile>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)MediaCapture;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink-bin;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink\Source\igtlutil;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink\Source;$(IntermediateOutputPath);$(SolutionDir)DirectXTK\Src;$(SolutionDir)DirectXTK\Inc;$(SolutionDir)$(Configuration)\$(ProjectName);$(ProjectDir)Content\Systems\Tool;$(ProjectDir)Content\Systems\Notification;$(ProjectDir)Content\Systems\Imaging;$(ProjectDir)Content\Systems\Icon;$(ProjectDir)Content\Systems\Splash;$(ProjectDir)Content\Systems\Tasks;$(ProjectDir)Content\Systems\Network;$(ProjectDir)Content\Systems\Gaze;$(ProjectDir)Content\Systems\Registration;$(ProjectDir)Content\Systems;$(ProjectDir)Content\Algorithms;$(ProjectDir)Content\SpatialMapping;$(ProjectDir)Content\Capture;$(ProjectDir)Content\Physics;$(ProjectDir)Content\Network;$(ProjectDir)Content\Rendering\Volume;$(ProjectDir)Content\Rendering\Shaders;$(ProjectDir)Content\Rendering\Shaders\Compiled;$(ProjectDir)Content\Rendering\Model;$(ProjectDir)Content\Rendering\Slice;$(ProjectDir)Content\Rendering\Notification;$(ProjectDir)Content\Rendering\Mesh;$(ProjectDir)Content\Rendering\DirectXTK;$(ProjectDir)Content\Rendering;$(ProjectDir)Content\Input;$(ProjectDir)Content\Sound;$(ProjectDir)Core\Rendering;$(ProjectDir)Core;$(ProjectDir)Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content\Data;$(SolutionDir)DirectXTex\DirectXTex;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)MediaCapture;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink-bin-$(Platform);$(SolutionDir)UWPOpenIGTLink\OpenIGTLink\Source\igtlutil;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink\Source;$(IntermediateOutputPath);$(SolutionDir)DirectXTK\Src;$(SolutionDir)DirectXTK\Inc;$(SolutionDir)$(Configuration)\$(ProjectName);$(ProjectDir)Content\Systems\Tool;$(ProjectDir)Content\Systems\Notification;$(ProjectDir)Content\Systems\Imaging;$(ProjectDir)Content\Systems\Icon;$(ProjectDir)Content\Systems\Splash;$(ProjectDir)Content\Systems\Tasks;$(ProjectDir)Content\Systems\Network;$(ProjectDir)Content\Systems\Gaze;$(ProjectDir)Content\Systems\Registration;$(ProjectDir)Content\Systems;$(ProjectDir)Content\Algorithms;$(ProjectDir)Content\SpatialMapping;$(ProjectDir)Content\Capture;$(ProjectDir)Content\Physics;$(ProjectDir)Content\Network;$(ProjectDir)Content\Rendering\Volume;$(ProjectDir)Content\Rendering\Shaders;$(ProjectDir)Content\Rendering\Shaders\Compiled;$(ProjectDir)Content\Rendering\Model;$(ProjectDir)Content\Rendering\Slice;$(ProjectDir)Content\Rendering\Notification;$(ProjectDir)Content\Rendering\Mesh;$(ProjectDir)Content\Rendering\DirectXTK;$(ProjectDir)Content\Rendering;$(ProjectDir)Content\Input;$(ProjectDir)Content\Sound;$(ProjectDir)Core\Rendering;$(ProjectDir)Core;$(ProjectDir)Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content\Data;$(SolutionDir)DirectXTex\DirectXTex;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
@@ -67,7 +67,7 @@
     <ClCompile>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)MediaCapture;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink-bin;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink\Source\igtlutil;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink\Source;$(IntermediateOutputPath);$(SolutionDir)DirectXTK\Src;$(SolutionDir)DirectXTK\Inc;$(SolutionDir)$(Configuration)\$(ProjectName);$(ProjectDir)Content\Systems\Tool;$(ProjectDir)Content\Systems\Notification;$(ProjectDir)Content\Systems\Imaging;$(ProjectDir)Content\Systems\Icon;$(ProjectDir)Content\Systems\Splash;$(ProjectDir)Content\Systems\Tasks;$(ProjectDir)Content\Systems\Network;$(ProjectDir)Content\Systems\Gaze;$(ProjectDir)Content\Systems\Registration;$(ProjectDir)Content\Systems;$(ProjectDir)Content\Algorithms;$(ProjectDir)Content\SpatialMapping;$(ProjectDir)Content\Capture;$(ProjectDir)Content\Physics;$(ProjectDir)Content\Network;$(ProjectDir)Content\Rendering\Volume;$(ProjectDir)Content\Rendering\Shaders;$(ProjectDir)Content\Rendering\Shaders\Compiled;$(ProjectDir)Content\Rendering\Model;$(ProjectDir)Content\Rendering\Slice;$(ProjectDir)Content\Rendering\Notification;$(ProjectDir)Content\Rendering\Mesh;$(ProjectDir)Content\Rendering\DirectXTK;$(ProjectDir)Content\Rendering;$(ProjectDir)Content\Input;$(ProjectDir)Content\Sound;$(ProjectDir)Core\Rendering;$(ProjectDir)Core;$(ProjectDir)Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content\Data;$(SolutionDir)DirectXTex\DirectXTex;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)MediaCapture;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink-bin-$(Platform);$(SolutionDir)UWPOpenIGTLink\OpenIGTLink\Source\igtlutil;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink\Source;$(IntermediateOutputPath);$(SolutionDir)DirectXTK\Src;$(SolutionDir)DirectXTK\Inc;$(SolutionDir)$(Configuration)\$(ProjectName);$(ProjectDir)Content\Systems\Tool;$(ProjectDir)Content\Systems\Notification;$(ProjectDir)Content\Systems\Imaging;$(ProjectDir)Content\Systems\Icon;$(ProjectDir)Content\Systems\Splash;$(ProjectDir)Content\Systems\Tasks;$(ProjectDir)Content\Systems\Network;$(ProjectDir)Content\Systems\Gaze;$(ProjectDir)Content\Systems\Registration;$(ProjectDir)Content\Systems;$(ProjectDir)Content\Algorithms;$(ProjectDir)Content\SpatialMapping;$(ProjectDir)Content\Capture;$(ProjectDir)Content\Physics;$(ProjectDir)Content\Network;$(ProjectDir)Content\Rendering\Volume;$(ProjectDir)Content\Rendering\Shaders;$(ProjectDir)Content\Rendering\Shaders\Compiled;$(ProjectDir)Content\Rendering\Model;$(ProjectDir)Content\Rendering\Slice;$(ProjectDir)Content\Rendering\Notification;$(ProjectDir)Content\Rendering\Mesh;$(ProjectDir)Content\Rendering\DirectXTK;$(ProjectDir)Content\Rendering;$(ProjectDir)Content\Input;$(ProjectDir)Content\Sound;$(ProjectDir)Core\Rendering;$(ProjectDir)Core;$(ProjectDir)Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content\Data;$(SolutionDir)DirectXTex\DirectXTex;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
