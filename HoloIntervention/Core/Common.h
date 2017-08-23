@@ -73,14 +73,14 @@ namespace HoloIntervention
   template <typename t = byte>
   t * GetDataFromIBuffer(Windows::Storage::Streams::IBuffer^ container)
   {
-    if(container == nullptr)
+    if (container == nullptr)
     {
       return nullptr;
     }
 
     unsigned int bufferLength = container->Length;
 
-    if(!(bufferLength > 0))
+    if (!(bufferLength > 0))
     {
       return nullptr;
     }
@@ -90,14 +90,14 @@ namespace HoloIntervention
     Microsoft::WRL::ComPtr<IUnknown> pUnknown = reinterpret_cast<IUnknown*>(container);
     Microsoft::WRL::ComPtr<Windows::Storage::Streams::IBufferByteAccess> spByteAccess;
     hr = pUnknown.As(&spByteAccess);
-    if(FAILED(hr))
+    if (FAILED(hr))
     {
       return nullptr;
     }
 
     byte* pRawData = nullptr;
     hr = spByteAccess->Buffer(&pRawData);
-    if(FAILED(hr))
+    if (FAILED(hr))
     {
       return nullptr;
     }
@@ -152,7 +152,7 @@ namespace HoloIntervention
     // if the timeout task finishes first.
     return (failure_task || success_task).then([t, cts](bool success)
     {
-      if(!success)
+      if (!success)
       {
         // Set the cancellation token. The task that is passed as the
         // t parameter should respond to the cancellation and stop

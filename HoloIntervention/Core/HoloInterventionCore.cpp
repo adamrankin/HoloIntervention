@@ -112,27 +112,27 @@ namespace HoloIntervention
     m_holographicSpace = holographicSpace;
 
     // Initialize the system components
-    m_notificationRenderer = std::make_unique<Rendering::NotificationRenderer>(m_deviceResources);
-    m_notificationSystem = std::make_unique<System::NotificationSystem>(*m_notificationRenderer.get());
-    m_modelRenderer = std::make_unique<Rendering::ModelRenderer>(m_deviceResources, m_timer);
-    m_sliceRenderer = std::make_unique<Rendering::SliceRenderer>(m_deviceResources, m_timer);
-    m_volumeRenderer = std::make_unique<Rendering::VolumeRenderer>(m_deviceResources, m_timer);
-    m_meshRenderer = std::make_unique<Rendering::MeshRenderer>(*m_notificationSystem.get(), m_deviceResources);
+    m_notificationRenderer = std::make_unique<Rendering::NotificationRenderer> (m_deviceResources);
+    m_notificationSystem = std::make_unique<System::NotificationSystem> (*m_notificationRenderer.get());
+    m_modelRenderer = std::make_unique<Rendering::ModelRenderer> (m_deviceResources, m_timer);
+    m_sliceRenderer = std::make_unique<Rendering::SliceRenderer> (m_deviceResources, m_timer);
+    m_volumeRenderer = std::make_unique<Rendering::VolumeRenderer> (m_deviceResources, m_timer);
+    m_meshRenderer = std::make_unique<Rendering::MeshRenderer> (*m_notificationSystem.get(), m_deviceResources);
 
     m_soundAPI = std::make_unique<Sound::SoundAPI>();
 
     m_spatialInput = std::make_unique<Input::SpatialInput>();
-    m_voiceInput = std::make_unique<Input::VoiceInput>(*m_notificationSystem.get(), *m_soundAPI.get());
+    m_voiceInput = std::make_unique<Input::VoiceInput> (*m_notificationSystem.get(), *m_soundAPI.get());
 
-    m_networkSystem = std::make_unique<System::NetworkSystem>(*m_notificationSystem.get(), *m_voiceInput.get());
-    m_physicsAPI = std::make_unique<Physics::PhysicsAPI>(*m_notificationSystem.get(), m_deviceResources, m_timer);
+    m_networkSystem = std::make_unique<System::NetworkSystem> (*m_notificationSystem.get(), *m_voiceInput.get());
+    m_physicsAPI = std::make_unique<Physics::PhysicsAPI> (*m_notificationSystem.get(), m_deviceResources, m_timer);
 
-    m_registrationSystem = std::make_unique<System::RegistrationSystem>(*m_networkSystem.get(), *m_physicsAPI.get(), *m_notificationSystem.get(), *m_modelRenderer.get());
-    m_toolSystem = std::make_unique<System::ToolSystem>(*m_notificationSystem.get(), *m_registrationSystem.get(), *m_modelRenderer.get(), *m_networkSystem.get());
-    m_iconSystem = std::make_unique<System::IconSystem>(*m_notificationSystem.get(), *m_registrationSystem.get(), *m_networkSystem.get(), *m_toolSystem.get(), *m_voiceInput.get(), *m_modelRenderer.get());
-    m_gazeSystem = std::make_unique<System::GazeSystem>(*m_notificationSystem.get(), *m_physicsAPI.get(), *m_modelRenderer.get());
-    m_imagingSystem = std::make_unique<System::ImagingSystem>(*m_registrationSystem.get(), *m_notificationSystem.get(), *m_sliceRenderer.get(), *m_volumeRenderer.get(), *m_networkSystem.get());
-    m_splashSystem = std::make_unique<System::SplashSystem>(*m_sliceRenderer.get());
+    m_registrationSystem = std::make_unique<System::RegistrationSystem> (*m_networkSystem.get(), *m_physicsAPI.get(), *m_notificationSystem.get(), *m_modelRenderer.get());
+    m_toolSystem = std::make_unique<System::ToolSystem> (*m_notificationSystem.get(), *m_registrationSystem.get(), *m_modelRenderer.get(), *m_networkSystem.get());
+    m_iconSystem = std::make_unique<System::IconSystem> (*m_notificationSystem.get(), *m_registrationSystem.get(), *m_networkSystem.get(), *m_toolSystem.get(), *m_voiceInput.get(), *m_modelRenderer.get());
+    m_gazeSystem = std::make_unique<System::GazeSystem> (*m_notificationSystem.get(), *m_physicsAPI.get(), *m_modelRenderer.get());
+    m_imagingSystem = std::make_unique<System::ImagingSystem> (*m_registrationSystem.get(), *m_notificationSystem.get(), *m_sliceRenderer.get(), *m_volumeRenderer.get(), *m_networkSystem.get());
+    m_splashSystem = std::make_unique<System::SplashSystem> (*m_sliceRenderer.get());
 
     m_engineComponents.push_back(m_modelRenderer.get());
     m_engineComponents.push_back(m_sliceRenderer.get());
@@ -175,13 +175,13 @@ namespace HoloIntervention
     m_locator = SpatialLocator::GetDefault();
 
     m_locatabilityChangedToken = m_locator->LocatabilityChanged +=
-                                   ref new Windows::Foundation::TypedEventHandler<SpatialLocator^, Object^>(std::bind(&HoloInterventionCore::OnLocatabilityChanged, this, std::placeholders::_1, std::placeholders::_2));
+                                   ref new Windows::Foundation::TypedEventHandler<SpatialLocator^, Object^> (std::bind(&HoloInterventionCore::OnLocatabilityChanged, this, std::placeholders::_1, std::placeholders::_2));
 
     m_cameraAddedToken = m_holographicSpace->CameraAdded +=
-                           ref new Windows::Foundation::TypedEventHandler<HolographicSpace^, HolographicSpaceCameraAddedEventArgs^>(std::bind(&HoloInterventionCore::OnCameraAdded, this, std::placeholders::_1, std::placeholders::_2));
+                           ref new Windows::Foundation::TypedEventHandler<HolographicSpace^, HolographicSpaceCameraAddedEventArgs^> (std::bind(&HoloInterventionCore::OnCameraAdded, this, std::placeholders::_1, std::placeholders::_2));
 
     m_cameraRemovedToken = m_holographicSpace->CameraRemoved +=
-                             ref new Windows::Foundation::TypedEventHandler<HolographicSpace^, HolographicSpaceCameraRemovedEventArgs^>(std::bind(&HoloInterventionCore::OnCameraRemoved, this, std::placeholders::_1, std::placeholders::_2));
+                             ref new Windows::Foundation::TypedEventHandler<HolographicSpace^, HolographicSpaceCameraRemovedEventArgs^> (std::bind(&HoloInterventionCore::OnCameraRemoved, this, std::placeholders::_1, std::placeholders::_2));
 
     m_attachedReferenceFrame = m_locator->CreateAttachedFrameOfReferenceAtCurrentHeading();
 
@@ -202,7 +202,27 @@ namespace HoloIntervention
     LoadAppStateAsync();
 
     LOG(LogLevelType::LOG_LEVEL_INFO, "Engine started.");
-    m_engineBuilt = true;
+
+    // TODO : validate this works
+    create_task([this]()
+    {
+      bool engineReady(true);
+      do
+      {
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+        for (auto& component : m_engineComponents)
+        {
+          engineReady = engineReady && component->IsReady();
+        }
+      }
+      while (!engineReady);
+
+      m_engineReady = true;
+    }).then([this]()
+    {
+      m_splashSystem->EndSplash();
+    });
   }
 
   //----------------------------------------------------------------------------
@@ -233,7 +253,7 @@ namespace HoloIntervention
   // Updates the application state once per frame.
   HolographicFrame^ HoloInterventionCore::Update()
   {
-    if (!m_engineBuilt)
+    if (!m_engineUserEnabled)
     {
       return nullptr;
     }
@@ -246,7 +266,7 @@ namespace HoloIntervention
     SpatialCoordinateSystem^ hmdCoordinateSystem = m_attachedReferenceFrame->GetStationaryCoordinateSystemAtTimestamp(prediction->Timestamp);
 
     DX::CameraResources* cameraResources(nullptr);
-    m_deviceResources->UseHolographicCameraResources<bool>([this, holographicFrame, prediction, hmdCoordinateSystem, &cameraResources](std::map<UINT32, std::unique_ptr<DX::CameraResources>>& cameraResourceMap)
+    m_deviceResources->UseHolographicCameraResources<bool> ([this, holographicFrame, prediction, hmdCoordinateSystem, &cameraResources](std::map<UINT32, std::unique_ptr<DX::CameraResources>>& cameraResourceMap)
     {
       for (auto cameraPose : prediction->CameraPoses)
       {
@@ -259,25 +279,6 @@ namespace HoloIntervention
       }
       return true;
     });
-
-    if (!m_engineReady)
-    {
-      m_engineReady = true;
-      for (auto& component : m_engineComponents)
-      {
-        m_engineReady = m_engineReady && component->IsReady();
-      }
-
-      if (m_engineReady)
-      {
-        m_splashSystem->EndSplash();
-      }
-    }
-
-    if (m_engineReady && !m_voiceInput->IsVoiceEnabled())
-    {
-      m_voiceInput->EnableVoiceAnalysis(true);
-    }
 
     // Time-based updates
     m_timer.Tick([&]()
@@ -325,13 +326,13 @@ namespace HoloIntervention
   //----------------------------------------------------------------------------
   bool HoloInterventionCore::Render(Windows::Graphics::Holographic::HolographicFrame^ holographicFrame)
   {
-    if (!m_engineBuilt || m_timer.GetFrameCount() == 0)
+    if (m_timer.GetFrameCount() == 0 || !m_engineUserEnabled || holographicFrame == nullptr)
     {
       return false;
     }
 
     // Lock the set of holographic camera resources, then draw to each camera in this frame.
-    return m_deviceResources->UseHolographicCameraResources<bool>([this, holographicFrame](std::map<UINT32, std::unique_ptr<DX::CameraResources>>& cameraResourceMap) -> bool
+    return m_deviceResources->UseHolographicCameraResources<bool> ([this, holographicFrame](std::map<UINT32, std::unique_ptr<DX::CameraResources>>& cameraResourceMap) -> bool
     {
       holographicFrame->UpdateCurrentPrediction();
       HolographicFramePrediction^ prediction = holographicFrame->CurrentPrediction;
@@ -386,7 +387,7 @@ namespace HoloIntervention
   //----------------------------------------------------------------------------
   task<void> HoloInterventionCore::SaveAppStateAsync()
   {
-    if (!m_engineBuilt)
+    if (m_physicsAPI == nullptr || !m_physicsAPI->IsReady())
     {
       return create_task([]() {});
     }
@@ -396,7 +397,8 @@ namespace HoloIntervention
   //----------------------------------------------------------------------------
   task<void> HoloInterventionCore::LoadAppStateAsync()
   {
-    if (!m_engineBuilt)
+    if (m_physicsAPI == nullptr || m_registrationSystem == nullptr ||
+        !m_physicsAPI->IsReady() || !m_registrationSystem->IsReady())
     {
       // This can happen when the app is starting
       return create_task([]() {});
@@ -526,6 +528,16 @@ namespace HoloIntervention
       });
     };
 
+    callbacks[L"hide all"] = [this](SpeechRecognitionResult ^ result)
+    {
+      m_engineUserEnabled = false;
+    };
+
+    callbacks[L"show all"] = [this](SpeechRecognitionResult ^ result)
+    {
+      m_engineUserEnabled = true;
+    };
+
     m_voiceInput->CompileCallbacksAsync(callbacks).then([this](task<bool> compileTask)
     {
       bool result;
@@ -600,7 +612,7 @@ namespace HoloIntervention
     {
       if (item == nullptr)
       {
-        return task_from_result((StorageFile^)nullptr);
+        return task_from_result((StorageFile^) nullptr);
       }
       else
       {
@@ -683,7 +695,7 @@ namespace HoloIntervention
             }
             catch (Platform::Exception^)
             {
-              return (StorageFile^)nullptr;
+              return (StorageFile^) nullptr;
             }
           });
         });
@@ -723,7 +735,7 @@ namespace HoloIntervention
           return task_from_result(false);
         }
 
-        std::shared_ptr<bool> hasError = std::make_shared<bool>(false);
+        std::shared_ptr<bool> hasError = std::make_shared<bool> (false);
         // Run in order, as some configurations may rely on others
         auto readConfigTask = create_task([this, hasError, doc]()
         {

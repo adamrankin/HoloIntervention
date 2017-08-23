@@ -55,7 +55,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float3 ToolEntry::GetStabilizedPosition(SpatialPointerPose^ pose) const
     {
-      if(m_modelEntry != nullptr && m_modelEntry->IsLoaded())
+      if (m_modelEntry != nullptr && m_modelEntry->IsLoaded())
       {
         return transform(float3(0.f, 0.f, 0.f), m_modelEntry->GetCurrentPose());
       }
@@ -65,7 +65,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float3 ToolEntry::GetStabilizedVelocity() const
     {
-      if(m_modelEntry != nullptr && m_modelEntry->IsLoaded())
+      if (m_modelEntry != nullptr && m_modelEntry->IsLoaded())
       {
         return m_modelEntry->GetVelocity();
       }
@@ -75,7 +75,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float ToolEntry::GetStabilizePriority() const
     {
-      if(!m_modelEntry->IsLoaded() || !m_modelEntry->IsInFrustum())
+      if (!m_modelEntry->IsLoaded() || !m_modelEntry->IsInFrustum())
       {
         return PRIORITY_NOT_ACTIVE;
       }
@@ -162,30 +162,30 @@ namespace HoloIntervention
     {
       // m_transformRepository has already been initialized with the transforms for this update
       auto toolToRefTransform = m_networkSystem.GetTransform(m_hashedConnectionName, m_coordinateFrame, m_latestTimestamp);
-      if(toolToRefTransform == nullptr)
+      if (toolToRefTransform == nullptr)
       {
         m_isValid = false;
         return;
       }
       m_latestTimestamp = toolToRefTransform->Timestamp;
 
-      if(!m_transformRepository->SetTransform(m_coordinateFrame, toolToRefTransform->Matrix, toolToRefTransform->Valid))
+      if (!m_transformRepository->SetTransform(m_coordinateFrame, toolToRefTransform->Matrix, toolToRefTransform->Valid))
       {
         return;
       }
 
       IKeyValuePair<bool, float4x4>^ result = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(m_coordinateFrame->From(), L"HMD"));
       m_isValid = result->Key;
-      if(!m_isValid && m_wasValid)
+      if (!m_isValid && m_wasValid)
       {
         m_wasValid = false;
         m_modelEntry->RenderGreyscale();
         return;
       }
 
-      if(m_isValid)
+      if (m_isValid)
       {
-        if(!m_wasValid)
+        if (!m_wasValid)
         {
           m_modelEntry->RenderDefault();
         }
@@ -266,7 +266,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     uint64 ToolEntry::GetId() const
     {
-      if(m_modelEntry == nullptr)
+      if (m_modelEntry == nullptr)
       {
         return INVALID_TOKEN;
       }

@@ -58,9 +58,6 @@
     <ClCompile Include="Content\Capture\VideoFrameProcessor.cpp">
       <Filter>Content\Capture</Filter>
     </ClCompile>
-    <ClCompile Include="Content\Systems\Registration\LandmarkRegistration.cpp">
-      <Filter>Content\Systems\Registration\Camera</Filter>
-    </ClCompile>
     <ClCompile Include="Content\Rendering\Volume\VolumeRenderer.cpp">
       <Filter>Content\Rendering\VolumeRenderer</Filter>
     </ClCompile>
@@ -157,6 +154,9 @@
     <ClCompile Include="Content\Tasks\PhantomTask.cpp">
       <Filter>Content\Systems\Tasks</Filter>
     </ClCompile>
+    <ClCompile Include="Content\Systems\Registration\LandmarkRegistration.cpp">
+      <Filter>Content\Systems\Registration</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Content\Sound\OmnidirectionalSound.h">
@@ -215,9 +215,6 @@
     </ClInclude>
     <ClInclude Include="Content\Capture\VideoFrameProcessor.h">
       <Filter>Content\Capture</Filter>
-    </ClInclude>
-    <ClInclude Include="Content\Systems\Registration\LandmarkRegistration.h">
-      <Filter>Content\Systems\Registration\Camera</Filter>
     </ClInclude>
     <ClInclude Include="Content\Rendering\Volume\VolumeRenderer.h">
       <Filter>Content\Rendering\VolumeRenderer</Filter>
@@ -344,6 +341,9 @@
     </ClInclude>
     <ClInclude Include="Content\Tasks\PhantomTask.h">
       <Filter>Content\Systems\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Systems\Registration\LandmarkRegistration.h">
+      <Filter>Content\Systems\Registration</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

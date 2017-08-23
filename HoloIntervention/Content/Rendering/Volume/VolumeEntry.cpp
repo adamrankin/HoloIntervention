@@ -67,7 +67,7 @@ namespace
     XMVECTOR vScale = XMLoadFloat3(&scale);
 
     XMMATRIX mtx = XMMatrixTransformation(vZero, qId, vScale, vZero, qRot, vPos);
-    if(transpose)
+    if (transpose)
     {
       mtx = XMMatrixTranspose(mtx);
     }
@@ -128,7 +128,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     bool VolumeEntry::IsInFrustum(const Windows::Perception::Spatial::SpatialBoundingFrustum& frustum) const
     {
-      if(m_timer.GetFrameCount() == m_frustumCheckFrameNumber)
+      if (m_timer.GetFrameCount() == m_frustumCheckFrameNumber)
       {
         return m_isInFrustum;
       }
@@ -153,7 +153,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void VolumeEntry::Update()
     {
-      if(!m_tfResourcesReady)
+      if (!m_tfResourcesReady)
       {
         // nothing to do!
         return;
@@ -190,14 +190,14 @@ namespace HoloIntervention
 
       m_currentPose = MatrixCompose(smoothedTranslation, smoothedRotation, smoothedScale, true);
 
-      if(m_volumeUpdateNeeded)
+      if (m_volumeUpdateNeeded)
       {
         ReleaseVolumeResources();
         CreateVolumeResources();
         m_volumeUpdateNeeded = false;
       }
 
-      if(m_onGPUFrame != m_frame)
+      if (m_onGPUFrame != m_frame)
       {
         UpdateGPUImageData();
       }
@@ -209,7 +209,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void VolumeEntry::Render(uint32 indexCount)
     {
-      if(!m_volumeReady || !m_tfResourcesReady)
+      if (!m_volumeReady || !m_tfResourcesReady)
       {
         return;
       }
@@ -238,7 +238,7 @@ namespace HoloIntervention
       context->OMSetRenderTargets(1, targets, nullptr);
       context->VSSetShader(m_volRenderVertexShader, nullptr, 0);
       context->VSSetConstantBuffers(0, 1, m_volumeEntryConstantBuffer.GetAddressOf());
-      if(!m_deviceResources->GetDeviceSupportsVprt())
+      if (!m_deviceResources->GetDeviceSupportsVprt())
       {
         context->GSSetShader(m_volRenderGeometryShader, nullptr, 0);
         context->GSSetConstantBuffers(0, 1, m_volumeEntryConstantBuffer.GetAddressOf());
@@ -275,21 +275,21 @@ namespace HoloIntervention
     void VolumeEntry::SetFrame(UWPOpenIGTLink::TrackedFrame^ frame)
     {
       auto frameSize = frame->Dimensions;
-      if(frameSize[2] < 1)
+      if (frameSize[2] < 1)
       {
         return;
       }
 
-      if(!m_volumeReady)
+      if (!m_volumeReady)
       {
         m_volumeUpdateNeeded = true;
       }
-      else if(m_frame != nullptr)
+      else if (m_frame != nullptr)
       {
-        if(m_frame != nullptr)
+        if (m_frame != nullptr)
         {
           auto myFrameSize = m_frame->Dimensions;
-          if(myFrameSize[0] != frameSize[0] || myFrameSize[1] != frameSize[1] || myFrameSize[2] != frameSize[2])
+          if (myFrameSize[0] != frameSize[0] || myFrameSize[1] != frameSize[1] || myFrameSize[2] != frameSize[2])
           {
             // GPU needs to be reallocated
             m_volumeUpdateNeeded = true;
@@ -350,14 +350,14 @@ namespace HoloIntervention
       auto bytesPerPixel = BitsPerPixel((DXGI_FORMAT)m_frame->GetPixelFormat(true)) / 8;
 
       std::shared_ptr<byte> image = *(std::shared_ptr<byte>*)(m_frame->GetImageData());
-      if(image == nullptr)
+      if (image == nullptr)
       {
         LOG(LogLevelType::LOG_LEVEL_ERROR, "Unable to access image buffer.");
         return;
       }
 
       auto frameSize = m_frame->Dimensions;
-      if(frameSize[2] < 1)
+      if (frameSize[2] < 1)
       {
         return;
       }
@@ -367,9 +367,9 @@ namespace HoloIntervention
       D3D11_MAPPED_SUBRESOURCE mappedResource;
       context->Map(m_volumeStagingTexture.Get(), 0, D3D11_MAP_READ_WRITE, 0, &mappedResource);
       byte* mappedData = reinterpret_cast<byte*>(mappedResource.pData);
-      for(uint32 j = 0; j < frameSize[2]; ++j)
+      for (uint32 j = 0; j < frameSize[2]; ++j)
       {
-        for(uint32 i = 0; i < frameSize[1]; ++i)
+        for (uint32 i = 0; i < frameSize[1]; ++i)
         {
           memcpy(mappedData, imageRaw, frameSize[0] * bytesPerPixel);
           mappedData += mappedResource.RowPitch;
@@ -388,13 +388,13 @@ namespace HoloIntervention
     {
       const auto device = m_deviceResources->GetD3DDevice();
 
-      if(m_opacityTFType != TransferFunction_Unknown)
+      if (m_opacityTFType != TransferFunction_Unknown)
       {
         std::lock_guard<std::mutex> guard(m_opacityTFMutex);
         CreateTFResources();
       }
 
-      if(m_frame != nullptr)
+      if (m_frame != nullptr)
       {
         CreateVolumeResources();
       }
@@ -423,7 +423,7 @@ namespace HoloIntervention
     {
       const auto device = m_deviceResources->GetD3DDevice();
 
-      if(m_frame == nullptr)
+      if (m_frame == nullptr)
       {
         return;
       }
@@ -431,14 +431,14 @@ namespace HoloIntervention
       auto format = (DXGI_FORMAT)m_frame->GetPixelFormat(true);
       auto bytesPerPixel = BitsPerPixel(format) / 8;
       byte* imageRaw = GetDataFromIBuffer<byte>(m_frame->Frame->ImageData);
-      if(imageRaw == nullptr)
+      if (imageRaw == nullptr)
       {
         LOG(LogLevelType::LOG_LEVEL_ERROR, "Unable to access image buffer.");
         return;
       }
 
       auto frameSize = m_frame->Dimensions;
-      if(frameSize[2] < 1)
+      if (frameSize[2] < 1)
       {
         return;
       }
@@ -502,20 +502,20 @@ namespace HoloIntervention
         std::lock_guard<std::mutex> guard(m_opacityTFMutex);
 
         delete m_opacityTransferFunction;
-        switch(functionType)
+        switch (functionType)
         {
-        case VolumeEntry::TransferFunction_Piecewise_Linear:
-        {
-          m_opacityTFType = VolumeEntry::TransferFunction_Piecewise_Linear;
-          m_opacityTransferFunction = new PiecewiseLinearTransferFunction();
-          break;
-        }
-        default:
-          throw std::invalid_argument("Function type not recognized.");
-          break;
+          case VolumeEntry::TransferFunction_Piecewise_Linear:
+          {
+            m_opacityTFType = VolumeEntry::TransferFunction_Piecewise_Linear;
+            m_opacityTransferFunction = new PiecewiseLinearTransferFunction();
+            break;
+          }
+          default:
+            throw std::invalid_argument("Function type not recognized.");
+            break;
         }
 
-        for(auto& point : controlPoints)
+        for (auto& point : controlPoints)
         {
           m_opacityTransferFunction->AddControlPoint(point.first, point.second.w);
         }
@@ -532,12 +532,12 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void VolumeEntry::CreateTFResources()
     {
-      if(m_opacityTransferFunction == nullptr)
+      if (m_opacityTransferFunction == nullptr)
       {
         return;
       }
 
-      if(!m_opacityTransferFunction->IsValid())
+      if (!m_opacityTransferFunction->IsValid())
       {
         throw std::exception("Transfer function table not valid.");
       }

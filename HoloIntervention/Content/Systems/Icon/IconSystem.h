@@ -26,6 +26,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "IConfigurable.h"
 #include "IStabilizedComponent.h"
+#include "IVoiceInput.h"
 
 // Rendering includes
 #include "ModelEntry.h"
@@ -64,7 +65,7 @@ namespace HoloIntervention
 
     typedef std::vector<std::shared_ptr<IconEntry>> IconEntryList;
 
-    class IconSystem : public IConfigurable, public IStabilizedComponent
+    class IconSystem : public IConfigurable, public IStabilizedComponent, public Input::IVoiceInput
     {
     public:
       virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition(Windows::UI::Input::Spatial::SpatialPointerPose^ pose) const;
@@ -74,6 +75,9 @@ namespace HoloIntervention
     public:
       virtual concurrency::task<bool> WriteConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
       virtual concurrency::task<bool> ReadConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
+
+    public:
+      virtual void RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap);
 
     public:
       IconSystem(NotificationSystem& notificationSystem, RegistrationSystem& registrationSystem, NetworkSystem& networkSystem, ToolSystem& toolSystem, Input::VoiceInput& voiceInput, Rendering::ModelRenderer& modelRenderer);
@@ -98,6 +102,7 @@ namespace HoloIntervention
       std::mutex                      m_entryMutex;
       uint64                          m_nextValidEntry = 0;
       IconEntryList                   m_iconEntries;
+      std::atomic_bool                m_iconsShowing = true;
 
       // Cached entries to model renderer
       Rendering::ModelRenderer&       m_modelRenderer;

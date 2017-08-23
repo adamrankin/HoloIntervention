@@ -46,10 +46,11 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "Log.h"
 
 using namespace Concurrency;
+using namespace Windows::Data::Xml::Dom;
 using namespace Windows::Foundation::Numerics;
+using namespace Windows::Media::SpeechRecognition;
 using namespace Windows::Perception::Spatial;
 using namespace Windows::UI::Input::Spatial;
-using namespace Windows::Data::Xml::Dom;
 
 namespace HoloIntervention
 {
@@ -189,6 +190,29 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    void IconSystem::RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap)
+    {
+      callbackMap[L"hide icons"] = [this](SpeechRecognitionResult ^ result)
+      {
+        for (auto& icon : m_iconEntries)
+        {
+          icon->GetModelEntry()->SetVisible(false);
+        }
+        m_iconsShowing = false;
+      };
+
+      callbackMap[L"show icons"] = [this](SpeechRecognitionResult ^ result)
+      {
+        for (auto& icon : m_iconEntries)
+        {
+          icon->SetFirstFrame(true); // Forces an update to current pose instead of interpolating from last visible point
+          icon->GetModelEntry()->SetVisible(true);
+        }
+        m_iconsShowing = true;
+      };
+    }
+
+    //----------------------------------------------------------------------------
     IconSystem::IconSystem(NotificationSystem& notificationSystem, RegistrationSystem& registrationSystem, NetworkSystem& networkSystem, ToolSystem& toolSystem, Input::VoiceInput& voiceInput, Rendering::ModelRenderer& modelRenderer)
       : m_modelRenderer(modelRenderer)
       , m_notificationSystem(notificationSystem)
@@ -197,7 +221,6 @@ namespace HoloIntervention
       , m_toolSystem(toolSystem)
       , m_voiceInput(voiceInput)
     {
-
     }
 
     //----------------------------------------------------------------------------
@@ -208,7 +231,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void IconSystem::Update(DX::StepTimer& timer, SpatialPointerPose^ headPose)
     {
-      if (!m_componentReady)
+      if (!m_componentReady || !m_iconsShowing)
       {
         return;
       }

@@ -35,16 +35,16 @@ namespace HoloIntervention
     class VoiceCallback : public IXAudio2VoiceCallback
     {
     public:
-      VoiceCallback( T& sound );
+      VoiceCallback(T& sound);
       ~VoiceCallback();
 
       virtual void STDMETHODCALLTYPE OnStreamEnd();
       virtual void STDMETHODCALLTYPE OnVoiceProcessingPassEnd();
-      virtual void STDMETHODCALLTYPE OnVoiceProcessingPassStart( UINT32 SamplesRequired );
-      virtual void STDMETHODCALLTYPE OnBufferEnd( void* pBufferContext );
-      virtual void STDMETHODCALLTYPE OnBufferStart( void* pBufferContext );
-      virtual void STDMETHODCALLTYPE OnLoopEnd( void* pBufferContext );
-      virtual void STDMETHODCALLTYPE OnVoiceError( void* pBufferContext, HRESULT Error );
+      virtual void STDMETHODCALLTYPE OnVoiceProcessingPassStart(UINT32 SamplesRequired);
+      virtual void STDMETHODCALLTYPE OnBufferEnd(void* pBufferContext);
+      virtual void STDMETHODCALLTYPE OnBufferStart(void* pBufferContext);
+      virtual void STDMETHODCALLTYPE OnLoopEnd(void* pBufferContext);
+      virtual void STDMETHODCALLTYPE OnVoiceError(void* pBufferContext, HRESULT Error);
 
     private:
       T& m_sound;
@@ -108,8 +108,8 @@ namespace HoloIntervention
 
     //----------------------------------------------------------------------------
     template<class T>
-    HoloIntervention::Sound::VoiceCallback<T>::VoiceCallback( T& sound )
-      : m_sound( sound )
+    HoloIntervention::Sound::VoiceCallback<T>::VoiceCallback(T& sound)
+      : m_sound(sound)
     {
 
     }

@@ -61,7 +61,7 @@ namespace HoloIntervention
       return create_task([this, document]()
       {
         auto xpath = ref new Platform::String(L"/HoloIntervention");
-        if(document->SelectNodes(xpath)->Length != 1)
+        if (document->SelectNodes(xpath)->Length != 1)
         {
           return false;
         }
@@ -70,19 +70,19 @@ namespace HoloIntervention
 
         auto connectionsElem = document->CreateElement(L"IGTConnections");
 
-        for(auto connector : m_connectors)
+        for (auto connector : m_connectors)
         {
           auto connectionElem = document->CreateElement(L"Connection");
           connectionElem->SetAttribute(L"Name", ref new Platform::String(connector.Name.c_str()));
-          if(connector.Connector->ServerHost != nullptr)
+          if (connector.Connector->ServerHost != nullptr)
           {
             connectionElem->SetAttribute(L"Host", connector.Connector->ServerHost->DisplayName);
           }
-          if(connector.Connector->ServerPort != nullptr)
+          if (connector.Connector->ServerPort != nullptr)
           {
             connectionElem->SetAttribute(L"Port", connector.Connector->ServerPort);
           }
-          if(connector.Connector->EmbeddedImageTransformName != nullptr)
+          if (connector.Connector->EmbeddedImageTransformName != nullptr)
           {
             connectionElem->SetAttribute(L"EmbeddedImageTransformName", connector.Connector->EmbeddedImageTransformName->GetTransformName());
           }
@@ -105,7 +105,7 @@ namespace HoloIntervention
         {
           result = initTask.get();
         }
-        catch(const std::exception& e)
+        catch (const std::exception& e)
         {
           LOG(LogLevelType::LOG_LEVEL_ERROR, std::string("Unable to initialize network system: ") + e.what());
           return false;
@@ -152,7 +152,7 @@ namespace HoloIntervention
         return hashedConnectionName == entry.HashedName;
       });
 
-      if(iter != end(m_connectors))
+      if (iter != end(m_connectors))
       {
         assert(iter->Connector != nullptr);
 
@@ -165,7 +165,7 @@ namespace HoloIntervention
           {
             result = connectTask.get();
           }
-          catch(const std::exception& e)
+          catch (const std::exception& e)
           {
             LOG(LogLevelType::LOG_LEVEL_ERROR, std::string("IGTConnector failed to connect: ") + e.what());
             return false;
@@ -177,7 +177,7 @@ namespace HoloIntervention
             return hashedConnectionName == entry.HashedName;
           });
 
-          if(result)
+          if (result)
           {
             iter->State = CONNECTION_STATE_CONNECTED;
           }
@@ -227,14 +227,14 @@ namespace HoloIntervention
         return hashedConnectionName == entry.HashedName;
       });
 
-      if(iter == end(m_connectors))
+      if (iter == end(m_connectors))
       {
         LOG_ERROR("Unable to locate connector.");
         return task_from_result(cmdData);
       }
 
       auto map = ref new Platform::Collections::Map<Platform::String^, Platform::String^>();
-      for(auto& pair : attributes)
+      for (auto& pair : attributes)
       {
         map->Insert(ref new Platform::String(pair.first.c_str()),
                     ref new Platform::String(pair.second.c_str()));
@@ -252,7 +252,7 @@ namespace HoloIntervention
         return hashedConnectionName == entry.HashedName;
       });
 
-      if(iter == end(m_connectors))
+      if (iter == end(m_connectors))
       {
         LOG_ERROR("Unable to locate connector.");
         return false;
@@ -267,22 +267,22 @@ namespace HoloIntervention
       return create_task([this, xmlDoc]()
       {
         auto xpath = ref new Platform::String(L"/HoloIntervention/IGTConnections/Connection");
-        if(xmlDoc->SelectNodes(xpath)->Length == 0)
+        if (xmlDoc->SelectNodes(xpath)->Length == 0)
         {
           return false;
         }
 
-        for(auto node : xmlDoc->SelectNodes(xpath))
+        for (auto node : xmlDoc->SelectNodes(xpath))
         {
-          if(!HasAttribute(L"Name", node))
+          if (!HasAttribute(L"Name", node))
           {
             return false;
           }
-          if(!HasAttribute(L"Host", node))
+          if (!HasAttribute(L"Host", node))
           {
             return false;
           }
-          if(!HasAttribute(L"Port", node))
+          if (!HasAttribute(L"Port", node))
           {
             return false;
           }
@@ -290,7 +290,7 @@ namespace HoloIntervention
           Platform::String^ name = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Name")->NodeValue);
           Platform::String^ host = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Host")->NodeValue);
           Platform::String^ port = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Port")->NodeValue);
-          if(name->IsEmpty() || host->IsEmpty() || port->IsEmpty())
+          if (name->IsEmpty() || host->IsEmpty() || port->IsEmpty())
           {
             return false;
           }
@@ -306,19 +306,19 @@ namespace HoloIntervention
             std::stoi(port->Data());
             entry.Connector->ServerPort = port;
           }
-          catch(const std::exception&) {}
+          catch (const std::exception&) {}
 
-          if(HasAttribute(L"EmbeddedImageTransformName", node))
+          if (HasAttribute(L"EmbeddedImageTransformName", node))
           {
             Platform::String^ embeddedImageTransformName = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"EmbeddedImageTransformName")->NodeValue);
-            if(!embeddedImageTransformName->IsEmpty())
+            if (!embeddedImageTransformName->IsEmpty())
             {
               try
               {
                 auto transformName = ref new UWPOpenIGTLink::TransformName(embeddedImageTransformName);
                 entry.Connector->EmbeddedImageTransformName = transformName;
               }
-              catch(Platform::Exception^) {}
+              catch (Platform::Exception^) {}
             }
           }
 
@@ -341,7 +341,7 @@ namespace HoloIntervention
         uint64 connectMessageId = m_notificationSystem.QueueMessage(L"Connecting...");
         {
           std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
-          for(auto entry : m_connectors)
+          for (auto entry : m_connectors)
           {
             auto task = this->ConnectAsync(entry.HashedName, 4.0);
             tasks.push_back(task);
@@ -351,12 +351,12 @@ namespace HoloIntervention
         auto joinTask = when_all(begin(tasks), end(tasks)).then([this, connectMessageId](std::vector<bool> results)
         {
           bool result(true);
-          for(auto res : results)
+          for (auto res : results)
           {
             result &= res;
           }
           m_notificationSystem.RemoveMessage(connectMessageId);
-          if(result)
+          if (result)
           {
             m_notificationSystem.QueueMessage(L"Connection successful.");
           }
@@ -404,7 +404,7 @@ namespace HoloIntervention
       callbackMap[L"disconnect"] = [this](SpeechRecognitionResult ^ result)
       {
         std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
-        for(auto& entry : m_connectors)
+        for (auto& entry : m_connectors)
         {
           entry.Connector->Disconnect();
           entry.State = CONNECTION_STATE_DISCONNECTED;
@@ -433,7 +433,7 @@ namespace HoloIntervention
       {
         return hashedConnectionName == entry.HashedName;
       });
-      if(iter != end(m_connectors))
+      if (iter != end(m_connectors))
       {
         iter->Connector->EmbeddedImageTransformName = name;
       }
@@ -448,7 +448,7 @@ namespace HoloIntervention
         return hashedConnectionName == entry.HashedName;
       });
 
-      if(iter != end(m_connectors))
+      if (iter != end(m_connectors))
       {
         iter->Connector->Disconnect();
         iter->State = CONNECTION_STATE_DISCONNECTED;
@@ -463,7 +463,7 @@ namespace HoloIntervention
       {
         return hashedConnectionName == entry.HashedName;
       });
-      if(iter != end(m_connectors))
+      if (iter != end(m_connectors))
       {
         state = iter->State;
         return true;
@@ -479,7 +479,7 @@ namespace HoloIntervention
       {
         return hashedConnectionName == entry.HashedName;
       });
-      if(iter != end(m_connectors))
+      if (iter != end(m_connectors))
       {
         iter->Connector->ServerHost = ref new HostName(ref new Platform::String(hostname.c_str()));
       }
@@ -493,7 +493,7 @@ namespace HoloIntervention
       {
         return hashedConnectionName == entry.HashedName;
       });
-      if(iter != end(m_connectors))
+      if (iter != end(m_connectors))
       {
         hostName = iter->Connector->ServerHost->DisplayName->Data();
         return true;
@@ -509,7 +509,7 @@ namespace HoloIntervention
       {
         return hashedConnectionName == entry.HashedName;
       });
-      if(iter != end(m_connectors))
+      if (iter != end(m_connectors))
       {
         iter->Connector->ServerPort = port.ToString();
       }
@@ -523,7 +523,7 @@ namespace HoloIntervention
       {
         return hashedConnectionName == entry.HashedName;
       });
-      if(iter != end(m_connectors))
+      if (iter != end(m_connectors))
       {
         port = std::stoi(iter->Connector->ServerPort->Data());
         return true;
@@ -539,10 +539,10 @@ namespace HoloIntervention
       {
         return hashedConnectionName == entry.HashedName;
       });
-      if(iter != end(m_connectors))
+      if (iter != end(m_connectors))
       {
         auto latestFrame = iter->Connector->GetTrackedFrame(latestTimestamp);
-        if(latestFrame == nullptr)
+        if (latestFrame == nullptr)
         {
           return nullptr;
         }
@@ -550,7 +550,7 @@ namespace HoloIntervention
         {
           latestTimestamp = latestFrame->Timestamp;
         }
-        catch(Platform::ObjectDisposedException^) { return nullptr; }
+        catch (Platform::ObjectDisposedException^) { return nullptr; }
         return latestFrame;
       }
       return nullptr;
@@ -564,16 +564,16 @@ namespace HoloIntervention
       {
         return hashedConnectionName == entry.HashedName;
       });
-      if(iter != end(m_connectors))
+      if (iter != end(m_connectors))
       {
         auto latestFrame = iter->Connector->GetTDataFrame(latestTimestamp);
-        if(latestFrame == nullptr)
+        if (latestFrame == nullptr)
         {
           return nullptr;
         }
         try
         {
-          if(latestFrame->Size > 0)
+          if (latestFrame->Size > 0)
           {
             latestTimestamp = latestFrame->GetAt(0)->Timestamp;
           }
@@ -582,7 +582,7 @@ namespace HoloIntervention
             return nullptr;
           }
         }
-        catch(Platform::ObjectDisposedException^) { return nullptr; }
+        catch (Platform::ObjectDisposedException^) { return nullptr; }
         return latestFrame;
       }
       return nullptr;
@@ -596,10 +596,10 @@ namespace HoloIntervention
       {
         return hashedConnectionName == entry.HashedName;
       });
-      if(iter != end(m_connectors))
+      if (iter != end(m_connectors))
       {
         auto latestFrame = iter->Connector->GetTransform(transformName, latestTimestamp);
-        if(latestFrame == nullptr)
+        if (latestFrame == nullptr)
         {
           return nullptr;
         }
@@ -607,7 +607,7 @@ namespace HoloIntervention
         {
           latestTimestamp = latestFrame->Timestamp;
         }
-        catch(Platform::ObjectDisposedException^) { return nullptr; }
+        catch (Platform::ObjectDisposedException^) { return nullptr; }
         return latestFrame;
       }
       return nullptr;
@@ -621,7 +621,7 @@ namespace HoloIntervention
       {
         return hashedConnectionName == entry.HashedName;
       });
-      if(iter != end(m_connectors))
+      if (iter != end(m_connectors))
       {
         auto polydata = iter->Connector->GetPolydata(name);
         return polydata;
@@ -638,20 +638,20 @@ namespace HoloIntervention
 
         auto hostNames = NetworkInformation::GetHostNames();
 
-        for(auto host : hostNames)
+        for (auto host : hostNames)
         {
-          if(host->Type == HostNameType::Ipv4)
+          if (host->Type == HostNameType::Ipv4)
           {
             std::wstring hostIP(host->ToString()->Data());
             std::wstring machineIP = hostIP.substr(hostIP.find_last_of(L'.') + 1);
             std::wstring prefix = hostIP.substr(0, hostIP.find_last_of(L'.'));
 
             // Given a subnet, ping all other IPs
-            for(int i = 0; i < 256; ++i)
+            for (int i = 0; i < 256; ++i)
             {
               std::wstringstream ss;
               ss << i;
-              if(ss.str() == machineIP)
+              if (ss.str() == machineIP)
               {
                 continue;
               }
@@ -666,12 +666,12 @@ namespace HoloIntervention
               {
                 result = connectTask.get();
               }
-              catch(const std::exception&)
+              catch (const std::exception&)
               {
                 continue;
               }
 
-              if(result)
+              if (result)
               {
                 client->Disconnect();
                 results.push_back(prefix + L"." + ss.str());

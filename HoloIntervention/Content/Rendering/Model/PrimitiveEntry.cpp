@@ -73,7 +73,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void PrimitiveEntry::Render()
     {
-      if(m_visible)
+      if (m_visible)
       {
         FXMMATRIX view[2] =
         {
@@ -110,7 +110,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     bool PrimitiveEntry::IsInFrustum(const SpatialBoundingFrustum& frustum) const
     {
-      if(m_timer.GetFrameCount() == m_frustumCheckFrameNumber)
+      if (m_timer.GetFrameCount() == m_frustumCheckFrameNumber)
       {
         return m_isInFrustum;
       }

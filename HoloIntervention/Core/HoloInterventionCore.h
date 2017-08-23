@@ -152,8 +152,8 @@ namespace HoloIntervention
     std::unique_ptr<Input::VoiceInput>                    m_voiceInput;
 
     // Engine state
-    std::atomic_bool                                      m_engineBuilt = false;
     std::atomic_bool                                      m_engineReady = false;
+    std::atomic_bool                                      m_engineUserEnabled = true;
 
     // Cached pointer to device resources.
     std::shared_ptr<DX::DeviceResources>                  m_deviceResources;

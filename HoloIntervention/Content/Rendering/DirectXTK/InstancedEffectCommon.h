@@ -41,7 +41,7 @@ namespace DirectX
     XMMATRIX projection[2];
     XMMATRIX worldView[2];
 
-    void SetConstants( _Inout_ int& dirtyFlags, _Inout_ XMMATRIX& leftWorldViewProjConstant, _Inout_ XMMATRIX& rightWorldViewProjConstant );
+    void SetConstants(_Inout_ int& dirtyFlags, _Inout_ XMMATRIX& leftWorldViewProjConstant, _Inout_ XMMATRIX& rightWorldViewProjConstant);
   };
 
 
@@ -54,7 +54,7 @@ namespace DirectX
     float start;
     float end;
 
-    void XM_CALLCONV SetConstants( _Inout_ int& dirtyFlags, _In_ FXMMATRIX leftWorldView, _In_ FXMMATRIX rightWorldView, _Inout_ XMVECTOR& leftFogVectorConstant, _Inout_ XMVECTOR& rightFogVectorConstant );
+    void XM_CALLCONV SetConstants(_Inout_ int& dirtyFlags, _In_ FXMMATRIX leftWorldView, _In_ FXMMATRIX rightWorldView, _Inout_ XMVECTOR& leftFogVectorConstant, _Inout_ XMVECTOR& rightFogVectorConstant);
   };
 
   struct StereoEffectLights : public EffectColor
@@ -72,33 +72,33 @@ namespace DirectX
     XMVECTOR lightSpecularColor[MaxDirectionalLights];
 
     // Methods.
-    void InitializeConstants( _Out_ XMVECTOR& specularColorAndPowerConstant,
-                              _Out_writes_all_( MaxDirectionalLights )
-                              XMVECTOR* lightDirectionConstant,
-                              _Out_writes_all_( MaxDirectionalLights ) XMVECTOR* lightDiffuseConstant,
-                              _Out_writes_all_( MaxDirectionalLights ) XMVECTOR* lightSpecularConstant );
-    void SetConstants( _Inout_ int& dirtyFlags,
-                       _In_ StereoEffectMatrices const& matrices,
-                       _Inout_ XMMATRIX& worldConstant,
-                       _Inout_updates_( 3 ) XMVECTOR worldInverseTransposeConstant[3],
-                       _Inout_ XMVECTOR& leftEyePositionConstant,
-                       _Inout_ XMVECTOR& rightEyePositionConstant,
-                       _Inout_ XMVECTOR& diffuseColorConstant,
-                       _Inout_ XMVECTOR& emissiveColorConstant,
-                       bool lightingEnabled );
-    int SetLightEnabled( int whichLight,
-                         bool value,
-                         _Inout_updates_( MaxDirectionalLights ) XMVECTOR* lightDiffuseConstant,
-                         _Inout_updates_( MaxDirectionalLights ) XMVECTOR* lightSpecularConstant );
-    int XM_CALLCONV SetLightDiffuseColor( int whichLight,
+    void InitializeConstants(_Out_ XMVECTOR& specularColorAndPowerConstant,
+                             _Out_writes_all_(MaxDirectionalLights)
+                             XMVECTOR* lightDirectionConstant,
+                             _Out_writes_all_(MaxDirectionalLights) XMVECTOR* lightDiffuseConstant,
+                             _Out_writes_all_(MaxDirectionalLights) XMVECTOR* lightSpecularConstant);
+    void SetConstants(_Inout_ int& dirtyFlags,
+                      _In_ StereoEffectMatrices const& matrices,
+                      _Inout_ XMMATRIX& worldConstant,
+                      _Inout_updates_(3) XMVECTOR worldInverseTransposeConstant[3],
+                      _Inout_ XMVECTOR& leftEyePositionConstant,
+                      _Inout_ XMVECTOR& rightEyePositionConstant,
+                      _Inout_ XMVECTOR& diffuseColorConstant,
+                      _Inout_ XMVECTOR& emissiveColorConstant,
+                      bool lightingEnabled);
+    int SetLightEnabled(int whichLight,
+                        bool value,
+                        _Inout_updates_(MaxDirectionalLights) XMVECTOR* lightDiffuseConstant,
+                        _Inout_updates_(MaxDirectionalLights) XMVECTOR* lightSpecularConstant);
+    int XM_CALLCONV SetLightDiffuseColor(int whichLight,
+                                         FXMVECTOR value,
+                                         _Inout_updates_(MaxDirectionalLights) XMVECTOR* lightDiffuseConstant);
+    int XM_CALLCONV SetLightSpecularColor(int whichLight,
                                           FXMVECTOR value,
-                                          _Inout_updates_( MaxDirectionalLights ) XMVECTOR* lightDiffuseConstant );
-    int XM_CALLCONV SetLightSpecularColor( int whichLight,
-                                           FXMVECTOR value,
-                                           _Inout_updates_( MaxDirectionalLights ) XMVECTOR* lightSpecularConstant );
+                                          _Inout_updates_(MaxDirectionalLights) XMVECTOR* lightSpecularConstant);
 
-    static void ValidateLightIndex( int whichLight );
-    static void EnableDefaultLighting( _In_ IEffectLights* effect );
+    static void ValidateLightIndex(int whichLight);
+    static void EnableDefaultLighting(_In_ IEffectLights* effect);
   };
 
   template<typename Traits>
@@ -106,7 +106,7 @@ namespace DirectX
   {
   public:
     // Constructor.
-    InstancedEffectBase( _In_ ID3D11Device* device );
+    InstancedEffectBase(_In_ ID3D11Device* device);
 
     // Fields.
     typename Traits::ConstantBufferType constants;
@@ -120,10 +120,10 @@ namespace DirectX
 
     // Helper looks up the bytecode for the specified vertex shader permutation.
     // Client code needs this in order to create matching input layouts.
-    void GetVertexShaderBytecode( int permutation, _Out_ void const** pShaderByteCode, _Out_ size_t* pByteCodeLength );
+    void GetVertexShaderBytecode(int permutation, _Out_ void const** pShaderByteCode, _Out_ size_t* pByteCodeLength);
 
     // Helper sets our shaders and constant buffers onto the D3D device.
-    void ApplyShaders( _In_ ID3D11DeviceContext* deviceContext, int permutation );
+    void ApplyShaders(_In_ ID3D11DeviceContext* deviceContext, int permutation);
 
     // Helper returns the default texture.
     ID3D11ShaderResourceView* GetDefaultTexture()
@@ -155,55 +155,55 @@ namespace DirectX
     class DeviceResources : protected EffectDeviceResources
     {
     public:
-      DeviceResources( _In_ ID3D11Device* device )
-        : EffectDeviceResources( device )
+      DeviceResources(_In_ ID3D11Device* device)
+        : EffectDeviceResources(device)
       {
         // Check for device support for the optional feature that allows setting the render target array index from the vertex shader stage.
         D3D11_FEATURE_DATA_D3D11_OPTIONS3 options;
-        device->CheckFeatureSupport( D3D11_FEATURE_D3D11_OPTIONS3, &options, sizeof( options ) );
-        if ( options.VPAndRTArrayIndexFromAnyShaderFeedingRasterizer )
+        device->CheckFeatureSupport(D3D11_FEATURE_D3D11_OPTIONS3, &options, sizeof(options));
+        if (options.VPAndRTArrayIndexFromAnyShaderFeedingRasterizer)
         {
           m_supportsVPRT = true;
         }
       }
 
       // Gets or lazily creates the specified vertex shader permutation.
-      ID3D11GeometryShader* DeviceResources::DemandCreateGeometryShader( _Inout_ Microsoft::WRL::ComPtr<ID3D11GeometryShader>& geometryShader, ShaderBytecode const& bytecode )
+      ID3D11GeometryShader* DeviceResources::DemandCreateGeometryShader(_Inout_ Microsoft::WRL::ComPtr<ID3D11GeometryShader>& geometryShader, ShaderBytecode const& bytecode)
       {
-        return DemandCreate( geometryShader, mMutex, [&]( ID3D11GeometryShader** pResult ) -> HRESULT
+        return DemandCreate(geometryShader, mMutex, [&](ID3D11GeometryShader** pResult) -> HRESULT
         {
-          HRESULT hr = mDevice->CreateGeometryShader( bytecode.code, bytecode.length, nullptr, pResult );
+          HRESULT hr = mDevice->CreateGeometryShader(bytecode.code, bytecode.length, nullptr, pResult);
 
-          if ( SUCCEEDED( hr ) )
-            SetDebugObjectName( *pResult, "DirectXTK:GSEffect" );
+          if (SUCCEEDED(hr))
+            SetDebugObjectName(*pResult, "DirectXTK:GSEffect");
 
           return hr;
-        } );
+        });
       }
 
       // Gets or lazily creates the specified vertex shader permutation.
-      ID3D11VertexShader* GetVertexShader( int permutation )
+      ID3D11VertexShader* GetVertexShader(int permutation)
       {
         int shaderIndex = VertexShaderIndices[permutation];
 
-        return DemandCreateVertexShader( m_supportsVPRT ? mVPRTVertexShaders[shaderIndex] : mVertexShaders[shaderIndex],
-                                         m_supportsVPRT ? VPRTVertexShaderBytecode[shaderIndex] : VertexShaderBytecode[shaderIndex] );
+        return DemandCreateVertexShader(m_supportsVPRT ? mVPRTVertexShaders[shaderIndex] : mVertexShaders[shaderIndex],
+                                        m_supportsVPRT ? VPRTVertexShaderBytecode[shaderIndex] : VertexShaderBytecode[shaderIndex]);
       }
 
       // Gets or lazily creates the specified vertex shader permutation.
-      ID3D11GeometryShader* GetGeometryShader( int permutation )
+      ID3D11GeometryShader* GetGeometryShader(int permutation)
       {
         int shaderIndex = GeometryShaderIndices[permutation];
 
-        return DemandCreateGeometryShader( mGeometryShaders[shaderIndex], GeometryShaderBytecode[shaderIndex] );
+        return DemandCreateGeometryShader(mGeometryShaders[shaderIndex], GeometryShaderBytecode[shaderIndex]);
       }
 
       // Gets or lazily creates the specified pixel shader permutation.
-      ID3D11PixelShader* GetPixelShader( int permutation )
+      ID3D11PixelShader* GetPixelShader(int permutation)
       {
         int shaderIndex = PixelShaderIndices[permutation];
 
-        return DemandCreatePixelShader( mPixelShaders[shaderIndex], PixelShaderBytecode[shaderIndex] );
+        return DemandCreatePixelShader(mPixelShaders[shaderIndex], PixelShaderBytecode[shaderIndex]);
       }
 
       // Gets or lazily creates the default texture
@@ -230,15 +230,15 @@ namespace DirectX
 
   //----------------------------------------------------------------------------
   template<typename Traits>
-  DirectX::InstancedEffectBase<Traits>::InstancedEffectBase( _In_ ID3D11Device* device ) : dirtyFlags( INT_MAX ),
-    mConstantBuffer( device ),
-    mDeviceResources( deviceResourcesPool.DemandCreate( device ) ),
+  DirectX::InstancedEffectBase<Traits>::InstancedEffectBase(_In_ ID3D11Device* device) : dirtyFlags(INT_MAX),
+    mConstantBuffer(device),
+    mDeviceResources(deviceResourcesPool.DemandCreate(device)),
     constants{}
   {
     // Check for device support for the optional feature that allows setting the render target array index from the vertex shader stage.
     D3D11_FEATURE_DATA_D3D11_OPTIONS3 options;
-    device->CheckFeatureSupport( D3D11_FEATURE_D3D11_OPTIONS3, &options, sizeof( options ) );
-    if ( options.VPAndRTArrayIndexFromAnyShaderFeedingRasterizer )
+    device->CheckFeatureSupport(D3D11_FEATURE_D3D11_OPTIONS3, &options, sizeof(options));
+    if (options.VPAndRTArrayIndexFromAnyShaderFeedingRasterizer)
     {
       m_supportsVPRT = true;
     }
@@ -246,7 +246,7 @@ namespace DirectX
 
   //----------------------------------------------------------------------------
   template<typename Traits>
-  void DirectX::InstancedEffectBase<Traits>::GetVertexShaderBytecode( int permutation, _Out_ void const** pShaderByteCode, _Out_ size_t* pByteCodeLength )
+  void DirectX::InstancedEffectBase<Traits>::GetVertexShaderBytecode(int permutation, _Out_ void const** pShaderByteCode, _Out_ size_t* pByteCodeLength)
   {
     int shaderIndex = VertexShaderIndices[permutation];
     ShaderBytecode const& bytecode = m_supportsVPRT ? VPRTVertexShaderBytecode[shaderIndex] : VertexShaderBytecode[shaderIndex];
@@ -257,25 +257,25 @@ namespace DirectX
 
   //----------------------------------------------------------------------------
   template<typename Traits>
-  void DirectX::InstancedEffectBase<Traits>::ApplyShaders( _In_ ID3D11DeviceContext* deviceContext, int permutation )
+  void DirectX::InstancedEffectBase<Traits>::ApplyShaders(_In_ ID3D11DeviceContext* deviceContext, int permutation)
   {
     // Set shaders.
-    auto vertexShader = mDeviceResources->GetVertexShader( permutation );
-    deviceContext->VSSetShader( vertexShader, nullptr, 0 );
+    auto vertexShader = mDeviceResources->GetVertexShader(permutation);
+    deviceContext->VSSetShader(vertexShader, nullptr, 0);
 
-    if( !mDeviceResources->GetSupportsVPRT() )
+    if (!mDeviceResources->GetSupportsVPRT())
     {
-      auto geometryShader = mDeviceResources->GetGeometryShader( permutation );
-      deviceContext->GSSetShader( geometryShader, nullptr, 0 );
+      auto geometryShader = mDeviceResources->GetGeometryShader(permutation);
+      deviceContext->GSSetShader(geometryShader, nullptr, 0);
     }
 
-    auto pixelShader = mDeviceResources->GetPixelShader( permutation );
-    deviceContext->PSSetShader( pixelShader, nullptr, 0 );
+    auto pixelShader = mDeviceResources->GetPixelShader(permutation);
+    deviceContext->PSSetShader(pixelShader, nullptr, 0);
 
     // Make sure the constant buffer is up to date.
-    if ( dirtyFlags & EffectDirtyFlags::ConstantBuffer )
+    if (dirtyFlags & EffectDirtyFlags::ConstantBuffer)
     {
-      mConstantBuffer.SetData( deviceContext, constants );
+      mConstantBuffer.SetData(deviceContext, constants);
 
       dirtyFlags &= ~EffectDirtyFlags::ConstantBuffer;
     }
@@ -283,11 +283,11 @@ namespace DirectX
     // Set the constant buffer.
     ID3D11Buffer* buffer = mConstantBuffer.GetBuffer();
 
-    deviceContext->VSSetConstantBuffers( 0, 1, &buffer );
-    if ( !mDeviceResources->GetSupportsVPRT() )
+    deviceContext->VSSetConstantBuffers(0, 1, &buffer);
+    if (!mDeviceResources->GetSupportsVPRT())
     {
-      deviceContext->GSSetConstantBuffers( 0, 1, &buffer );
+      deviceContext->GSSetConstantBuffers(0, 1, &buffer);
     }
-    deviceContext->PSSetConstantBuffers( 0, 1, &buffer );
+    deviceContext->PSSetConstantBuffers(0, 1, &buffer);
   }
 }

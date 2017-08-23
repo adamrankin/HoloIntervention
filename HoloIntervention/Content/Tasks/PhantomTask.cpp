@@ -62,7 +62,7 @@ namespace HoloIntervention
         return create_task([this, document]()
         {
           auto xpath = ref new Platform::String(L"/HoloIntervention");
-          if(document->SelectNodes(xpath)->Length != 1)
+          if (document->SelectNodes(xpath)->Length != 1)
           {
             return false;
           }
@@ -98,12 +98,12 @@ namespace HoloIntervention
         return create_task([this, document]()
         {
           auto xpath = ref new Platform::String(L"/HoloIntervention/PhantomTask");
-          if(document->SelectNodes(xpath)->Length == 0)
+          if (document->SelectNodes(xpath)->Length == 0)
           {
             return false;
           }
 
-          if(!m_transformRepository->ReadConfiguration(document))
+          if (!m_transformRepository->ReadConfiguration(document))
           {
             return false;
           }
@@ -111,46 +111,46 @@ namespace HoloIntervention
           // Connection and model name details
           auto node = document->SelectNodes(xpath)->Item(0);
 
-          if(!HasAttribute(L"ModelName", node))
+          if (!HasAttribute(L"ModelName", node))
           {
             LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to locate \"ModelName\" attribute. Cannot configure PhantomTask.");
             return false;
           }
-          if(!HasAttribute(L"IGTConnection", node))
+          if (!HasAttribute(L"IGTConnection", node))
           {
             LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to locate \"IGTConnection\" attributes. Cannot configure PhantomTask.");
             return false;
           }
-          if(!HasAttribute(L"PhantomFrom", node))
+          if (!HasAttribute(L"PhantomFrom", node))
           {
             LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to locate \"PhantomFrom\" attribute. Cannot configure PhantomTask.");
             return false;
           }
-          if(!HasAttribute(L"PhantomTo", node))
+          if (!HasAttribute(L"PhantomTo", node))
           {
             LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to locate \"PhantomTo\" attribute. Cannot configure PhantomTask.");
             return false;
           }
-          if(!HasAttribute(L"StylusFrom", node))
+          if (!HasAttribute(L"StylusFrom", node))
           {
             LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to locate \"StylusFrom\" attribute. Cannot configure PhantomTask.");
             return false;
           }
-          if(!HasAttribute(L"StylusTo", node))
+          if (!HasAttribute(L"StylusTo", node))
           {
             LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to locate \"StylusTo\" attribute. Cannot configure PhantomTask.");
             return false;
           }
 
           Platform::String^ modelName = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"ModelName")->NodeValue);
-          if(modelName->IsEmpty())
+          if (modelName->IsEmpty())
           {
             return false;
           }
           m_modelName = std::wstring(modelName->Data());
 
           auto igtConnection = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"IGTConnection")->NodeValue);
-          if(igtConnection->IsEmpty())
+          if (igtConnection->IsEmpty())
           {
             return false;
           }
@@ -159,13 +159,13 @@ namespace HoloIntervention
 
           auto fromName = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"PhantomFrom")->NodeValue);
           auto toName = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"PhantomTo")->NodeValue);
-          if(!fromName->IsEmpty() && !toName->IsEmpty())
+          if (!fromName->IsEmpty() && !toName->IsEmpty())
           {
             try
             {
               m_transformName = ref new UWPOpenIGTLink::TransformName(fromName, toName);
             }
-            catch(Platform::Exception^)
+            catch (Platform::Exception^)
             {
               LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to construct PhantomTransformName from " + fromName + L" and " + toName + L" attributes. Cannot configure PhantomTask.");
               return false;
@@ -174,13 +174,13 @@ namespace HoloIntervention
 
           fromName = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"StylusFrom")->NodeValue);
           toName = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"StylusTo")->NodeValue);
-          if(!fromName->IsEmpty() && !toName->IsEmpty())
+          if (!fromName->IsEmpty() && !toName->IsEmpty())
           {
             try
             {
               m_stylusTipTransformName = ref new UWPOpenIGTLink::TransformName(fromName, toName);
             }
-            catch(Platform::Exception^)
+            catch (Platform::Exception^)
             {
               LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to construct StylusTipTransformName from " + fromName + L" and " + toName + L" attributes. Cannot configure PhantomTask.");
               return false;
@@ -189,7 +189,7 @@ namespace HoloIntervention
 
           // Position of targets
           xpath = ref new Platform::String(L"/HoloIntervention/PhantomTask/Region");
-          if(document->SelectNodes(xpath)->Length == 0)
+          if (document->SelectNodes(xpath)->Length == 0)
           {
             return false;
           }
@@ -206,9 +206,9 @@ namespace HoloIntervention
             {4, L"ZMin"},
             {5, L"ZMax"}
           };
-          for(auto pair : vals)
+          for (auto pair : vals)
           {
-            if(!HasAttribute(pair.second, node))
+            if (!HasAttribute(pair.second, node))
             {
               WLOG(LogLevelType::LOG_LEVEL_ERROR, L"Missing " + pair.second + L" attribute in \"Region\" tag. Cannot define task region bounds.");
               return false;
@@ -218,7 +218,7 @@ namespace HoloIntervention
             {
               m_bounds[pair.first] = std::stof(std::wstring(value->Data()));
             }
-            catch(...)
+            catch (...)
             {
               WLOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to parse " + ref new Platform::String(pair.second.c_str()) + L" attribute in \"Region\" tag with value " + value + L". Cannot define task region bounds.");
               return false;
@@ -226,7 +226,7 @@ namespace HoloIntervention
           }
 
           // Validate bounds
-          if(m_bounds[1] < m_bounds[0] || m_bounds[3] < m_bounds[2] || m_bounds[5] < m_bounds[4])
+          if (m_bounds[1] < m_bounds[0] || m_bounds[3] < m_bounds[2] || m_bounds[5] < m_bounds[4])
           {
             LOG_ERROR("Bounds are invalid. Cannot perform phantom task.");
             return false;
@@ -240,7 +240,7 @@ namespace HoloIntervention
       //----------------------------------------------------------------------------
       float3 PhantomTask::GetStabilizedPosition(SpatialPointerPose^ pose) const
       {
-        if(m_targetModel != nullptr)
+        if (m_targetModel != nullptr)
         {
           return float3(m_targetModel->GetCurrentPose().m41, m_targetModel->GetCurrentPose().m42, m_targetModel->GetCurrentPose().m43);
         }
@@ -250,7 +250,7 @@ namespace HoloIntervention
       //----------------------------------------------------------------------------
       float3 PhantomTask::GetStabilizedVelocity() const
       {
-        if(m_targetModel != nullptr)
+        if (m_targetModel != nullptr)
         {
           return m_targetModel->GetVelocity();
         }
@@ -285,21 +285,21 @@ namespace HoloIntervention
       //----------------------------------------------------------------------------
       void PhantomTask::Update(SpatialCoordinateSystem^ coordinateSystem, DX::StepTimer& timer)
       {
-        if(!m_componentReady)
+        if (!m_componentReady)
         {
           return;
         }
 
         // Update phantom blinking if needed
-        if(m_targetModel && m_blinkTimer >= 0.0)
+        if (m_targetModel && m_blinkTimer >= 0.0)
         {
-          if(std::floor(m_blinkTimer - timer.GetElapsedSeconds()) != std::floor(m_blinkTimer))
+          if (std::floor(m_blinkTimer - timer.GetElapsedSeconds()) != std::floor(m_blinkTimer))
           {
             m_targetModel->SetVisible(!m_targetModel->IsVisible());
           }
 
           m_blinkTimer -= timer.GetElapsedSeconds();
-          if(m_blinkTimer <= 0.0)
+          if (m_blinkTimer <= 0.0)
           {
             m_blinkTimer = 0.0;
             m_targetModel->SetVisible(true);
@@ -307,27 +307,27 @@ namespace HoloIntervention
           }
         }
 
-        if(m_networkSystem.IsConnected(m_hashedConnectionName))
+        if (m_networkSystem.IsConnected(m_hashedConnectionName))
         {
           m_trackedFrame = m_networkSystem.GetTrackedFrame(m_hashedConnectionName, m_latestTimestamp);
-          if(m_trackedFrame == nullptr || !m_transformRepository->SetTransforms(m_trackedFrame))
+          if (m_trackedFrame == nullptr || !m_transformRepository->SetTransforms(m_trackedFrame))
           {
             return;
           }
 
           float4x4 registration;
-          if(m_registrationSystem.GetReferenceToCoordinateSystemTransformation(coordinateSystem, registration))
+          if (m_registrationSystem.GetReferenceToCoordinateSystemTransformation(coordinateSystem, registration))
           {
             m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", L"HoloLens"), registration, true);
             auto result = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(m_transformName->From(), L"HoloLens"));
 
             // Update phantom model rendering
-            if(!result->Key && m_phantomWasValid)
+            if (!result->Key && m_phantomWasValid)
             {
               m_phantomWasValid = false;
               m_targetModel->SetColour(float3(0.6f, 0.6f, 0.6f));
             }
-            else if(result->Key && !m_phantomWasValid)
+            else if (result->Key && !m_phantomWasValid)
             {
               m_phantomWasValid = true;
               m_targetModel->SetColour(DEFAULT_TARGET_COLOUR);
@@ -337,11 +337,11 @@ namespace HoloIntervention
             auto pair = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"Phantom", L"HoloLens"));
             m_targetModel->SetDesiredPose(pair->Value);
 
-            if(m_recordPointOnUpdate)
+            if (m_recordPointOnUpdate)
             {
               // Record a data point
               auto result = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(m_stylusTipTransformName->From(), L"Reference"));
-              if(result->Key)
+              if (result->Key)
               {
                 m_notificationSystem.QueueMessage(L"Point recorded. Next one created...");
                 {
@@ -394,7 +394,7 @@ namespace HoloIntervention
 
         callbackMap[L"record point"] = [this](SpeechRecognitionResult ^ result)
         {
-          if(!m_taskStarted)
+          if (!m_taskStarted)
           {
             return;
           }
@@ -405,7 +405,7 @@ namespace HoloIntervention
 
         callbackMap[L"where's the point"] = [this](SpeechRecognitionResult ^ result)
         {
-          if(!m_taskStarted)
+          if (!m_taskStarted)
           {
             return;
           }
