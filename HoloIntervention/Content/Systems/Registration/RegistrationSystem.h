@@ -37,6 +37,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 namespace DX
 {
+  class StepTimer;
   struct ViewProjectionConstantBuffer;
 }
 
@@ -49,6 +50,7 @@ namespace HoloIntervention
   namespace Rendering
   {
     class ModelEntry;
+    class ModelRenderer;
   }
 
   namespace System

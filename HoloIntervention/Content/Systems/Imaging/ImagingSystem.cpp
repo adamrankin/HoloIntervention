@@ -43,6 +43,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 using namespace Concurrency;
 using namespace Windows::Data::Xml::Dom;
+using namespace Windows::Foundation::Collections;
 using namespace Windows::Foundation::Numerics;
 using namespace Windows::Media::SpeechRecognition;
 using namespace Windows::Perception::Spatial;
@@ -58,29 +59,29 @@ namespace HoloIntervention
     float3 ImagingSystem::GetStabilizedPosition(SpatialPointerPose^ pose) const
     {
       std::shared_ptr<Rendering::SliceEntry> sliceEntry(nullptr);
-      if (m_sliceValid)
+      if(m_sliceValid)
       {
         sliceEntry = m_sliceRenderer.GetSlice(m_sliceToken);
       }
 
       std::shared_ptr<Rendering::VolumeEntry> volumeEntry(nullptr);
-      if (m_volumeValid)
+      if(m_volumeValid)
       {
         volumeEntry = m_volumeRenderer.GetVolume(m_volumeToken);
       }
 
-      if (m_sliceValid && m_volumeValid)
+      if(m_sliceValid && m_volumeValid)
       {
         // TODO : which one is close to the view frustrum?
         // TODO : which one is more recent?
         // TODO : other metrics?
         return m_latestSliceTimestamp > m_latestVolumeTimestamp ? transform(float3(0.f, 0.f, 0.f), sliceEntry->GetCurrentPose()) : transform(float3(0.f, 0.f, 0.f), volumeEntry->GetCurrentPose());
       }
-      else if (m_volumeValid)
+      else if(m_volumeValid)
       {
         return transform(float3(0.f, 0.f, 0.f), volumeEntry->GetCurrentPose());
       }
-      else if (m_sliceValid)
+      else if(m_sliceValid)
       {
         return transform(float3(0.f, 0.f, 0.f), sliceEntry->GetCurrentPose());
       }
@@ -94,29 +95,29 @@ namespace HoloIntervention
     float3 ImagingSystem::GetStabilizedVelocity() const
     {
       std::shared_ptr<Rendering::SliceEntry> sliceEntry(nullptr);
-      if (m_sliceValid)
+      if(m_sliceValid)
       {
         sliceEntry = m_sliceRenderer.GetSlice(m_sliceToken);
       }
 
       std::shared_ptr<Rendering::VolumeEntry> volumeEntry(nullptr);
-      if (m_volumeValid)
+      if(m_volumeValid)
       {
         volumeEntry = m_volumeRenderer.GetVolume(m_volumeToken);
       }
 
-      if (m_sliceValid && m_volumeValid)
+      if(m_sliceValid && m_volumeValid)
       {
         // TODO : which one is close to the view frustrum?
         // TODO : which one is more recent?
         // TODO : other metrics?
         return m_latestSliceTimestamp > m_latestVolumeTimestamp ? sliceEntry->GetStabilizedVelocity() : volumeEntry->GetVelocity();
       }
-      else if (m_volumeValid)
+      else if(m_volumeValid)
       {
         return volumeEntry->GetVelocity();
       }
-      else if (m_sliceValid)
+      else if(m_sliceValid)
       {
         return sliceEntry->GetStabilizedVelocity();
       }
@@ -131,7 +132,7 @@ namespace HoloIntervention
     {
       // TODO : are they in frustum?
 
-      if (m_sliceValid || m_volumeValid)
+      if(m_sliceValid || m_volumeValid)
       {
         return PRIORITY_IMAGING;
       }
@@ -145,7 +146,7 @@ namespace HoloIntervention
       return create_task([this, document]()
       {
         auto xpath = ref new Platform::String(L"/HoloIntervention");
-        if (document->SelectNodes(xpath)->Length != 1)
+        if(document->SelectNodes(xpath)->Length != 1)
         {
           return false;
         }
@@ -186,14 +187,14 @@ namespace HoloIntervention
     {
       return create_task([this, document]()
       {
-        if (!m_transformRepository->ReadConfiguration(document))
+        if(!m_transformRepository->ReadConfiguration(document))
         {
           return false;
         }
 
         auto fromToFunction = [this, document](Platform::String ^ xpath, std::wstring & m_from, std::wstring & m_to, UWPOpenIGTLink::TransformName^& name, uint64 & hashedConnectionName, std::wstring & connectionName)
         {
-          if (document->SelectNodes(xpath)->Length != 1)
+          if(document->SelectNodes(xpath)->Length != 1)
           {
             // No configuration found, use defaults
             return;
@@ -202,7 +203,7 @@ namespace HoloIntervention
           auto node = document->SelectNodes(xpath)->Item(0);
           auto fromAttribute = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"From")->NodeValue);
           auto toAttribute = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"To")->NodeValue);
-          if (fromAttribute->IsEmpty() || toAttribute->IsEmpty())
+          if(fromAttribute->IsEmpty() || toAttribute->IsEmpty())
           {
             return;
           }
@@ -214,7 +215,7 @@ namespace HoloIntervention
           }
 
           Platform::String^ igtConnection = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"IGTConnection")->NodeValue);
-          if (igtConnection != nullptr)
+          if(igtConnection != nullptr)
           {
             connectionName = std::wstring(igtConnection->Data());
             hashedConnectionName = HashString(igtConnection);
@@ -224,7 +225,7 @@ namespace HoloIntervention
         fromToFunction(L"/HoloIntervention/VolumeRendering", m_volumeFromCoordFrame, m_volumeToCoordFrame, m_volumeToHMDName, m_hashedVolumeConnectionName, m_volumeConnectionName);
         fromToFunction(L"/HoloIntervention/SliceRendering", m_sliceFromCoordFrame, m_sliceToCoordFrame, m_sliceToHMDName, m_hashedSliceConnectionName, m_sliceConnectionName);
 
-        if (document->SelectNodes(L"/HoloIntervention/SliceRendering")->Length == 1)
+        if(document->SelectNodes(L"/HoloIntervention/SliceRendering")->Length == 1)
         {
           auto node = document->SelectNodes(L"/HoloIntervention/SliceRendering")->Item(0);
           auto whiteMapColourString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"WhiteMapColour")->NodeValue);
@@ -267,14 +268,14 @@ namespace HoloIntervention
     void ImagingSystem::Update(const DX::StepTimer& timer, SpatialCoordinateSystem^ coordSystem)
     {
       UWPOpenIGTLink::TrackedFrame^ frame = m_networkSystem.GetTrackedFrame(m_hashedSliceConnectionName, m_latestSliceTimestamp);
-      if (frame != nullptr && frame->HasImage() && frame->Dimensions[2] == 1)
+      if(frame != nullptr && frame->HasImage() && frame->Dimensions[2] == 1)
       {
         m_transformRepository->SetTransforms(frame);
         Process2DFrame(frame, coordSystem);
       }
 
       frame = m_networkSystem.GetTrackedFrame(m_hashedVolumeConnectionName, m_latestVolumeTimestamp);
-      if (frame != nullptr && frame->HasImage() && frame->Dimensions[2] > 1)
+      if(frame != nullptr && frame->HasImage() && frame->Dimensions[2] > 1)
       {
         m_transformRepository->SetTransforms(frame);
         Process3DFrame(frame, coordSystem);
@@ -294,7 +295,7 @@ namespace HoloIntervention
       {
         return m_sliceRenderer.GetSlicePose(m_sliceToken);
       }
-      catch (const std::exception&)
+      catch(const std::exception&)
       {
         throw std::exception("Unable to retrieve slice pose.");
       }
@@ -307,7 +308,7 @@ namespace HoloIntervention
       {
         return m_sliceRenderer.GetSliceVelocity(m_sliceToken);
       }
-      catch (const std::exception&)
+      catch(const std::exception&)
       {
         throw std::exception("Unable to retrieve slice velocity.");
       }
@@ -324,7 +325,7 @@ namespace HoloIntervention
     {
       callbackMap[L"slice on"] = [this](SpeechRecognitionResult ^ result)
       {
-        if (HasSlice())
+        if(HasSlice())
         {
           m_notificationSystem.QueueMessage(L"Slice showing.");
           m_sliceRenderer.ShowSlice(m_sliceToken);
@@ -335,7 +336,7 @@ namespace HoloIntervention
 
       callbackMap[L"slice off"] = [this](SpeechRecognitionResult ^ result)
       {
-        if (HasSlice())
+        if(HasSlice())
         {
           m_notificationSystem.QueueMessage(L"Slice hidden.");
           m_sliceRenderer.HideSlice(m_sliceToken);
@@ -346,7 +347,7 @@ namespace HoloIntervention
 
       callbackMap[L"lock slice"] = [this](SpeechRecognitionResult ^ result)
       {
-        if (!HasSlice())
+        if(!HasSlice())
         {
           m_notificationSystem.QueueMessage(L"No slice to head-lock!");
           return;
@@ -357,7 +358,7 @@ namespace HoloIntervention
 
       callbackMap[L"unlock slice"] = [this](SpeechRecognitionResult ^ result)
       {
-        if (!HasSlice())
+        if(!HasSlice())
         {
           m_notificationSystem.QueueMessage(L"No slice to unlock!");
           return;
@@ -380,23 +381,23 @@ namespace HoloIntervention
 
       // Update the transform repository with the latest registration
       float4x4 referenceToHMD(float4x4::identity());
-      if (!m_registrationSystem.GetReferenceToCoordinateSystemTransformation(hmdCoordinateSystem, referenceToHMD))
+      if(!m_registrationSystem.GetReferenceToCoordinateSystemTransformation(hmdCoordinateSystem, referenceToHMD))
       {
         return;
       }
 
-      if (!m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD"), transpose(referenceToHMD), true))
+      if(!m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD"), transpose(referenceToHMD), true))
       {
         return;
       }
 
-      float4x4 imageToHMD;
-      if (!m_transformRepository->GetTransform(m_sliceToHMDName, &imageToHMD))
+      IKeyValuePair<bool, float4x4>^ result = m_transformRepository->GetTransform(m_sliceToHMDName);
+      if(!result->Key)
       {
         LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to retrieve " + m_sliceToHMDName->GetTransformName() + L" from repository.");
         return;
       }
-      imageToHMD = transpose(imageToHMD);
+      float4x4 imageToHMD = transpose(result->Value);
 
       // Model space is vertex space, [-0.5,0.5]
       auto modelToModelOffset = make_float4x4_translation(-0.5, 1.5, 0);
@@ -415,7 +416,7 @@ namespace HoloIntervention
       // 0            0             1 0
       // 0            0             0 1
 
-      if (!HasSlice())
+      if(!HasSlice())
       {
         m_sliceToken = m_sliceRenderer.AddSlice(frame, modelToHMD);
         auto sliceEntry = m_sliceRenderer.GetSlice(m_sliceToken);
@@ -436,25 +437,25 @@ namespace HoloIntervention
 
       // Update the transform repository with the latest registration
       float4x4 referenceToHMD(float4x4::identity());
-      if (!m_registrationSystem.GetReferenceToCoordinateSystemTransformation(hmdCoordinateSystem, referenceToHMD))
+      if(!m_registrationSystem.GetReferenceToCoordinateSystemTransformation(hmdCoordinateSystem, referenceToHMD))
       {
         return;
       }
 
-      if (!m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD"), transpose(referenceToHMD), true))
+      if(!m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD"), transpose(referenceToHMD), true))
       {
         return;
       }
 
-      float4x4 volumeToHMD;
-      if (!m_transformRepository->GetTransform(m_volumeToHMDName, &volumeToHMD))
+      IKeyValuePair<bool, float4x4>^ result = m_transformRepository->GetTransform(m_sliceToHMDName);
+      if(!result->Key)
       {
         LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to retrieve " + m_volumeToHMDName->GetTransformName() + L" from repository.");
         return;
       }
-      volumeToHMD = transpose(volumeToHMD);
+      float4x4 volumeToHMD = transpose(result->Value);
 
-      if (!HasVolume())
+      if(!HasVolume())
       {
         m_volumeToken = m_volumeRenderer.AddVolume(frame, volumeToHMD);
         auto entry = m_volumeRenderer.GetVolume(m_volumeToken);

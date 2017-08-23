@@ -64,15 +64,16 @@ namespace HoloIntervention
       bool IsInFrustum(const Windows::Perception::Spatial::SpatialBoundingFrustum& frustum) const;
 
       // Colour control
+      void SetColour(Windows::Foundation::Numerics::float4 newColour);
       void SetColour(Windows::Foundation::Numerics::float3 newColour);
+      void SetColour(float r, float g, float b, float a);
+      void SetColour(float r, float g, float b);
       Windows::Foundation::Numerics::float3 GetColour() const;
 
       // Primitive pose control
       void SetDesiredPose(const Windows::Foundation::Numerics::float4x4& world);
       Windows::Foundation::Numerics::float4x4 GetCurrentPose() const;
-
       Windows::Foundation::Numerics::float3 GetVelocity() const;
-
       std::array<float, 6> GetBounds() const;
 
       // Accessors
@@ -91,7 +92,7 @@ namespace HoloIntervention
 
       // Primitive resources
       std::unique_ptr<DirectX::InstancedGeometricPrimitive> m_primitive = nullptr;
-      Windows::Foundation::Numerics::float4                 m_colour;
+      Windows::Foundation::Numerics::float4                 m_colour = {1.f, 1.f, 1.f, 1.f};
       Windows::Foundation::Numerics::float3                 m_velocity;
       Windows::Foundation::Numerics::float4x4               m_lastPose = Windows::Foundation::Numerics::float4x4::identity();
       Windows::Foundation::Numerics::float4x4               m_desiredPose = Windows::Foundation::Numerics::float4x4::identity();

@@ -73,7 +73,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void PrimitiveEntry::Render()
     {
-      if (m_visible)
+      if(m_visible)
       {
         FXMMATRIX view[2] =
         {
@@ -110,7 +110,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     bool PrimitiveEntry::IsInFrustum(const SpatialBoundingFrustum& frustum) const
     {
-      if (m_timer.GetFrameCount() == m_frustumCheckFrameNumber)
+      if(m_timer.GetFrameCount() == m_frustumCheckFrameNumber)
       {
         return m_isInFrustum;
       }
@@ -143,7 +143,25 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void PrimitiveEntry::SetColour(float3 newColour)
     {
-      m_colour = float4(newColour.x, newColour.y, newColour.z, 1.f);
+      m_colour = float4(newColour.x, newColour.y, newColour.z, m_colour.w);
+    }
+
+    //----------------------------------------------------------------------------
+    void PrimitiveEntry::SetColour(float r, float g, float b, float a)
+    {
+      m_colour = float4(r, g, b, a);
+    }
+
+    //----------------------------------------------------------------------------
+    void PrimitiveEntry::SetColour(Windows::Foundation::Numerics::float4 newColour)
+    {
+      m_colour = newColour;
+    }
+
+    //----------------------------------------------------------------------------
+    void PrimitiveEntry::SetColour(float r, float g, float b)
+    {
+      m_colour = float4{r, g, b, m_colour.w};
     }
 
     //----------------------------------------------------------------------------

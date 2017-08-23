@@ -101,6 +101,8 @@ namespace HoloIntervention
 
       Concurrency::task<UWPOpenIGTLink::CommandData> SendCommandAsync(uint64 hashedConnectionName, const std::wstring& commandName, const std::map<std::wstring, std::wstring>& attributes);
 
+      bool IsCommandComplete(uint64 hashedConnectionName, uint32 commandId);
+
       UWPOpenIGTLink::TransformName^ GetEmbeddedImageTransformName(uint64 hashedConnectionName) const;
       void SetEmbeddedImageTransformName(uint64 hashedConnectionName, UWPOpenIGTLink::TransformName^ name);
 
@@ -116,10 +118,10 @@ namespace HoloIntervention
       UWPOpenIGTLink::TrackedFrame^ GetTrackedFrame(uint64 hashedConnectionName, double& latestTimestamp);
       UWPOpenIGTLink::TransformListABI^ GetTDataFrame(uint64 hashedConnectionName, double& latestTimestamp);
       UWPOpenIGTLink::Transform^ GetTransform(uint64 hashedConnectionName, UWPOpenIGTLink::TransformName^ transformName, double& latestTimestamp);
+      UWPOpenIGTLink::Polydata^ GetPolydata(uint64 hashedConnectionName, Platform::String^ name);
 
     protected:
       Concurrency::task<bool> InitAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
-
       Concurrency::task<std::vector<std::wstring>> FindServersAsync();
 
     protected:

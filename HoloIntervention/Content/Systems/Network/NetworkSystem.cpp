@@ -244,6 +244,24 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    bool NetworkSystem::IsCommandComplete(uint64 hashedConnectionName, uint32 commandId)
+    {
+      std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
+      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
+      {
+        return hashedConnectionName == entry.HashedName;
+      });
+
+      if(iter == end(m_connectors))
+      {
+        LOG_ERROR("Unable to locate connector.");
+        return false;
+      }
+
+      return iter->Connector->IsCommandComplete(commandId);
+    }
+
+    //----------------------------------------------------------------------------
     task<bool> NetworkSystem::InitAsync(XmlDocument^ xmlDoc)
     {
       return create_task([this, xmlDoc]()
@@ -591,6 +609,22 @@ namespace HoloIntervention
         }
         catch(Platform::ObjectDisposedException^) { return nullptr; }
         return latestFrame;
+      }
+      return nullptr;
+    }
+
+    //----------------------------------------------------------------------------
+    UWPOpenIGTLink::Polydata^ NetworkSystem::GetPolydata(uint64 hashedConnectionName, Platform::String^ name)
+    {
+      std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
+      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
+      {
+        return hashedConnectionName == entry.HashedName;
+      });
+      if(iter != end(m_connectors))
+      {
+        auto polydata = iter->Connector->GetPolydata(name);
+        return polydata;
       }
       return nullptr;
     }

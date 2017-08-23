@@ -53,6 +53,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 using namespace Concurrency;
 using namespace Windows::Data::Xml::Dom;
+using namespace Windows::Foundation::Collections;
 using namespace Windows::Foundation::Numerics;
 using namespace Windows::Media::SpeechRecognition;
 using namespace Windows::Perception::Spatial;
@@ -178,10 +179,11 @@ namespace HoloIntervention
           return false;
         }
 
-        float4x4 temp;
-        if(repo->GetTransform(trName, &temp))
+        IKeyValuePair<bool, float4x4>^ temp;
+        temp = repo->GetTransform(trName);
+        if(temp->Key)
         {
-          m_cachedRegistrationTransform = transpose(temp);
+          m_cachedRegistrationTransform = transpose(temp->Value);
         }
 
         // Test each known registration method ReadConfigurationAsync and store if known
