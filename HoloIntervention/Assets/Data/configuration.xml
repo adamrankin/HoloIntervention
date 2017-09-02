@@ -37,16 +37,16 @@
   <IGTConnections>
     <xConnection
       Name="2DImage"
-      Host="192.168.0.101"
+      Host="192.168.0.26"
       Port="18944"
       EmbeddedImageTransformName="ImageToReference" />
     <Connection
       Name="NDITracker"
-      Host="192.168.0.100"
+      Host="192.168.0.26"
       Port="18944" />
     <xConnection
       Name="3DImage"
-      Host="192.168.0.101"
+      Host="192.168.0.26"
       Port="18945"
       EmbeddedImageTransformName="VolumeToReference" />
   </IGTConnections>

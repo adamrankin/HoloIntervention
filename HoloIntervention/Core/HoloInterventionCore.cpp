@@ -209,6 +209,7 @@ namespace HoloIntervention
       bool engineReady(true);
       do
       {
+        engineReady = true;
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
         for (auto& component : m_engineComponents)
@@ -222,6 +223,7 @@ namespace HoloIntervention
     }).then([this]()
     {
       m_splashSystem->EndSplash();
+      m_voiceInput->EnableVoiceAnalysis(true);
     });
   }
 
