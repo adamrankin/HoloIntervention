@@ -1,5 +1,5 @@
 /*====================================================================
-Copyright(c) 2016 Adam Rankin
+Copyright(c) 2017 Adam Rankin
 
 
 Permission is hereby granted, free of charge, to any person obtaining a
@@ -215,7 +215,7 @@ namespace HoloIntervention
         componentsReady = 0;
         engineReady = true;
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        std::this_thread::sleep_for(std::chrono::milliseconds(16));
 
         for (auto& component : m_engineComponents)
         {

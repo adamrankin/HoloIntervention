@@ -1,5 +1,5 @@
 /*====================================================================
-Copyright(c) 2016 Adam Rankin
+Copyright(c) 2017 Adam Rankin
 
 
 Permission is hereby granted, free of charge, to any person obtaining a
@@ -24,13 +24,14 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "pch.h"
 #include "SpatialInput.h"
+#include "SpatialSourceHandler.h"
 
 // STL includes
 #include <functional>
 
 using namespace Windows::Foundation;
+using namespace Windows::Perception::Spatial;
 using namespace Windows::UI::Input::Spatial;
-using namespace std::placeholders;
 
 namespace HoloIntervention
 {
@@ -40,30 +41,110 @@ namespace HoloIntervention
     SpatialInput::SpatialInput()
     {
       m_interactionManager = SpatialInteractionManager::GetForCurrentView();
+
+      m_sourceDetectedEventToken =
+        m_interactionManager->SourceDetected +=
+          ref new TypedEventHandler<SpatialInteractionManager^, SpatialInteractionSourceEventArgs^>(
+            std::bind(&SpatialInput::OnSourceDetected, this, std::placeholders::_1, std::placeholders::_2)
+          );
+
+      m_sourceLostEventToken =
+        m_interactionManager->SourceLost +=
+          ref new TypedEventHandler<SpatialInteractionManager^, SpatialInteractionSourceEventArgs^>(
+            std::bind(&SpatialInput::OnSourceLost, this, std::placeholders::_1, std::placeholders::_2)
+          );
+
       m_sourcePressedEventToken =
-        m_interactionManager->SourcePressed += ref new TypedEventHandler<SpatialInteractionManager^, SpatialInteractionSourceEventArgs^>(bind(&SpatialInput::OnSourcePressed, this, _1, _2));
+        m_interactionManager->SourcePressed +=
+          ref new TypedEventHandler<SpatialInteractionManager^, SpatialInteractionSourceEventArgs^>(
+            std::bind(&SpatialInput::OnSourcePressed, this, std::placeholders::_1, std::placeholders::_2)
+          );
+
+      // Source Updated is raised when the input state or the location of a source changes.
+      // The main usage is to display the tool associated to a controller at the right position
+      m_sourceUpdatedEventToken =
+        m_interactionManager->SourceUpdated +=
+          ref new TypedEventHandler<SpatialInteractionManager^, SpatialInteractionSourceEventArgs^>(
+            std::bind(&SpatialInput::OnSourceUpdated, this, std::placeholders::_1, std::placeholders::_2)
+          );
+
       m_componentReady = true;
     }
 
     //----------------------------------------------------------------------------
     SpatialInput::~SpatialInput()
     {
-      m_interactionManager->SourcePressed -= m_sourcePressedEventToken;
+      m_interactionManager->SourceLost -= m_sourceLostEventToken;
       m_interactionManager->SourceDetected -= m_sourceDetectedEventToken;
+      m_interactionManager->SourcePressed -= m_sourcePressedEventToken;
+      m_interactionManager->SourceUpdated -= m_sourceUpdatedEventToken;
     }
 
     //----------------------------------------------------------------------------
-    SpatialInteractionSourceState^ SpatialInput::CheckForPressedInput()
+    void SpatialInput::Update(SpatialCoordinateSystem^ coordinateSystem)
     {
-      SpatialInteractionSourceState^ sourceState = m_sourceState;
-      m_sourceState = nullptr;
-      return sourceState;
+      m_referenceFrame = coordinateSystem;
+    }
+
+    //----------------------------------------------------------------------------
+    void SpatialInput::OnSourceDetected(Windows::UI::Input::Spatial::SpatialInteractionManager^ sender, Windows::UI::Input::Spatial::SpatialInteractionSourceEventArgs^ args)
+    {
+      SpatialInteractionSourceState^ state = args->State;
+      SpatialInteractionSource^ source = state->Source;
+
+      if (source->Kind == SpatialInteractionSourceKind::Hand)
+      {
+        auto it = m_sourceMap.find(source->Id);
+        if (it == m_sourceMap.end())
+        {
+          return;
+        }
+
+        std::shared_ptr<SpatialSourceHandler> sourceHandler = std::make_shared<SpatialSourceHandler>(source);
+        sourceHandler->OnSourceUpdated(state, m_referenceFrame);
+        m_sourceMap[source->Id] = sourceHandler;
+      }
+    }
+
+    //----------------------------------------------------------------------------
+    void SpatialInput::OnSourceLost(Windows::UI::Input::Spatial::SpatialInteractionManager^ sender, Windows::UI::Input::Spatial::SpatialInteractionSourceEventArgs^ args)
+    {
+      auto it = m_sourceMap.find(args->State->Source->Id);
+      if (it != m_sourceMap.end())
+      {
+        m_sourceMap.erase(it);
+      }
     }
 
     //----------------------------------------------------------------------------
     void SpatialInput::OnSourcePressed(SpatialInteractionManager^ sender, SpatialInteractionSourceEventArgs^ args)
     {
-      m_sourceState = args->State;
+      SpatialInteractionSourceState^ state = args->State;
+      SpatialInteractionSource^ source = state->Source;
+      SpatialSourceHandler* sourceHandler = GetSourceHandler(source->Id);
+      if (sourceHandler != nullptr)
+      {
+        sourceHandler->OnSourcePressed(args);
+      }
+    }
+
+    //----------------------------------------------------------------------------
+    void SpatialInput::OnSourceUpdated(SpatialInteractionManager^ sender, SpatialInteractionSourceEventArgs^ args)
+    {
+      SpatialInteractionSourceState^ state = args->State;
+      SpatialInteractionSource^ source = state->Source;
+      SpatialSourceHandler* sourceHandler = GetSourceHandler(source->Id);
+      if (sourceHandler != nullptr)
+      {
+        sourceHandler->OnSourceUpdated(state, m_referenceFrame);
+      }
+    }
+
+    //----------------------------------------------------------------------------
+    HoloIntervention::Input::SpatialSourceHandler* SpatialInput::GetSourceHandler(unsigned int sourceId)
+    {
+      auto it = m_sourceMap.find(sourceId);
+      return (it == m_sourceMap.end()) ? nullptr : it->second.get();
     }
   }
 }

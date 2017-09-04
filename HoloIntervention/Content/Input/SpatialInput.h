@@ -1,5 +1,5 @@
 /*====================================================================
-Copyright(c) 2016 Adam Rankin
+Copyright(c) 2017 Adam Rankin
 
 
 Permission is hereby granted, free of charge, to any person obtaining a
@@ -30,21 +30,36 @@ namespace HoloIntervention
 {
   namespace Input
   {
+    class SpatialSourceHandler;
+
     class SpatialInput : public IEngineComponent
     {
     public:
       SpatialInput();
       ~SpatialInput();
 
-      Windows::UI::Input::Spatial::SpatialInteractionSourceState^ CheckForPressedInput();
+      void Update(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem);
 
     protected:
-      void OnSourcePressed(Windows::UI::Input::Spatial::SpatialInteractionManager^ sender, Windows::UI::Input::Spatial::SpatialInteractionSourceEventArgs^ args);
+      void OnSourceDetected(Windows::UI::Input::Spatial::SpatialInteractionManager^ sender, Windows::UI::Input::Spatial::SpatialInteractionSourceEventArgs^ args);
+      void OnSourceLost(Windows::UI::Input::Spatial::SpatialInteractionManager^ sender, Windows::UI::Input::Spatial::SpatialInteractionSourceEventArgs^ args);
 
+      void OnSourcePressed(Windows::UI::Input::Spatial::SpatialInteractionManager^ sender, Windows::UI::Input::Spatial::SpatialInteractionSourceEventArgs^ args);
+      void OnSourceUpdated(Windows::UI::Input::Spatial::SpatialInteractionManager^ sender, Windows::UI::Input::Spatial::SpatialInteractionSourceEventArgs^ args);
+
+      SpatialSourceHandler* GetSourceHandler(unsigned int sourceId);
+
+    protected:
       Windows::UI::Input::Spatial::SpatialInteractionManager^     m_interactionManager = nullptr;
-      Windows::Foundation::EventRegistrationToken                 m_sourcePressedEventToken;
+
+      Windows::Perception::Spatial::SpatialCoordinateSystem^      m_referenceFrame = nullptr;
+
+      Windows::Foundation::EventRegistrationToken                 m_sourceLostEventToken;
       Windows::Foundation::EventRegistrationToken                 m_sourceDetectedEventToken;
-      Windows::UI::Input::Spatial::SpatialInteractionSourceState^ m_sourceState = nullptr;
+      Windows::Foundation::EventRegistrationToken                 m_sourcePressedEventToken;
+      Windows::Foundation::EventRegistrationToken                 m_sourceUpdatedEventToken;
+
+      std::map<uint32, std::shared_ptr<SpatialSourceHandler>>     m_sourceMap;
     };
   }
 }

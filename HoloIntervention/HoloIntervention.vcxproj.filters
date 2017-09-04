@@ -67,9 +67,6 @@
     <ClCompile Include="Core\HoloInterventionCore.cpp">
       <Filter>Core</Filter>
     </ClCompile>
-    <ClCompile Include="Content\Input\SpatialInput.cpp">
-      <Filter>Content\Input</Filter>
-    </ClCompile>
     <ClCompile Include="Content\Input\VoiceInput.cpp">
       <Filter>Content\Input</Filter>
     </ClCompile>
@@ -157,6 +154,12 @@
     <ClCompile Include="Content\Systems\Registration\LandmarkRegistration.cpp">
       <Filter>Content\Systems\Registration</Filter>
     </ClCompile>
+    <ClCompile Include="Content\Input\SpatialInput.cpp">
+      <Filter>Content\Input\SpatialInput</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Input\SpatialSourceHandler.cpp">
+      <Filter>Content\Input\SpatialInput</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Content\Sound\OmnidirectionalSound.h">
@@ -224,9 +227,6 @@
     </ClInclude>
     <ClInclude Include="Core\HoloInterventionCore.h">
       <Filter>Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Content\Input\SpatialInput.h">
-      <Filter>Content\Input</Filter>
     </ClInclude>
     <ClInclude Include="Content\Input\VoiceInput.h">
       <Filter>Content\Input</Filter>
@@ -344,6 +344,12 @@
     </ClInclude>
     <ClInclude Include="Content\Systems\Registration\LandmarkRegistration.h">
       <Filter>Content\Systems\Registration</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Input\SpatialInput.h">
+      <Filter>Content\Input\SpatialInput</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Input\SpatialSourceHandler.h">
+      <Filter>Content\Input\SpatialInput</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -722,6 +728,9 @@
     </Filter>
     <Filter Include="Content\Systems\Tasks">
       <UniqueIdentifier>{4d342565-c9df-414e-b523-fdae587fbd9f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Input\SpatialInput">
+      <UniqueIdentifier>{646177ae-08c6-4de3-b4c4-77ba1ad9e48f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

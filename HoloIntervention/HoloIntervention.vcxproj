@@ -103,6 +103,7 @@
     <ClInclude Include="Content\Algorithms\KalmanFilter.h" />
     <ClInclude Include="Content\Capture\VideoFrameProcessor.h" />
     <ClInclude Include="Content\Input\IVoiceInput.h" />
+    <ClInclude Include="Content\Input\SpatialSourceHandler.h" />
     <ClInclude Include="Content\Input\SpatialInput.h" />
     <ClInclude Include="Content\Input\VoiceCallback.h" />
     <ClInclude Include="Content\Input\VoiceInput.h" />
@@ -166,6 +167,7 @@
     <ClCompile Include="AppView.cpp" />
     <ClCompile Include="Content\Algorithms\KalmanFilter.cpp" />
     <ClCompile Include="Content\Capture\VideoFrameProcessor.cpp" />
+    <ClCompile Include="Content\Input\SpatialSourceHandler.cpp" />
     <ClCompile Include="Content\Input\SpatialInput.cpp" />
     <ClCompile Include="Content\Input\VoiceInput.cpp" />
     <ClCompile Include="Content\Physics\PhysicsAPI.cpp" />
