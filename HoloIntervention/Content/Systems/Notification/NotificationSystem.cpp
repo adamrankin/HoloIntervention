@@ -118,6 +118,11 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void NotificationSystem::Update(SpatialPointerPose^ pointerPose, const DX::StepTimer& timer)
     {
+      if (!m_componentReady)
+      {
+        return;
+      }
+
       // The following code updates any relevant timers depending on state
       auto elapsedTimeSec = timer.GetElapsedSeconds();
 

@@ -201,27 +201,41 @@ namespace HoloIntervention
 
     LoadAppStateAsync();
 
-    LOG(LogLevelType::LOG_LEVEL_INFO, "Engine started.");
+    LOG(LogLevelType::LOG_LEVEL_INFO, "Engine loading...");
 
-    // TODO : validate this works
     create_task([this]()
     {
+      uint32 componentsReady(0);
       bool engineReady(true);
+
+      auto messageId = m_notificationSystem->QueueMessage(L"Loading ... 0%");
+
       do
       {
+        componentsReady = 0;
         engineReady = true;
+
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
         for (auto& component : m_engineComponents)
         {
           engineReady = engineReady && component->IsReady();
+          if (component->IsReady())
+          {
+            componentsReady++;
+          }
         }
+
+        m_notificationSystem->RemoveMessage(messageId);
+        messageId = m_notificationSystem->QueueMessage(L"Loading ... " + ((double)componentsReady / m_engineComponents.size() * 100).ToString() + L"%");
       }
       while (!engineReady);
 
       m_engineReady = true;
     }).then([this]()
     {
+      LOG(LogLevelType::LOG_LEVEL_INFO, "Engine loaded.");
+
       m_splashSystem->EndSplash();
       m_voiceInput->EnableVoiceAnalysis(true);
     });
@@ -292,6 +306,7 @@ namespace HoloIntervention
         // Show our welcome screen until the engine is ready!
         m_splashSystem->Update(m_timer, hmdCoordinateSystem, headPose);
         m_sliceRenderer->Update(headPose, cameraResources);
+        m_notificationSystem->Update(headPose, m_timer);
       }
       else
       {
@@ -376,6 +391,10 @@ namespace HoloIntervention
           {
             // Show our welcome screen until it is ready!
             m_sliceRenderer->Render();
+            if (m_notificationSystem->IsShowingNotification())
+            {
+              m_notificationRenderer->Render();
+            }
           }
 
           atLeastOneCameraRendered = true;
@@ -561,7 +580,7 @@ namespace HoloIntervention
       SpatialCoordinateSystem^ currentCoordinateSystem,
       SpatialPointerPose^ pose)
   {
-    float maxPriority(-1.f);
+    float maxPriority(PRIORITY_NOT_ACTIVE);
     IStabilizedComponent* winningComponent(nullptr);
     for (auto component : m_engineComponents)
     {

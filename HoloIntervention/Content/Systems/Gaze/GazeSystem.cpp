@@ -67,7 +67,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float GazeSystem::GetStabilizePriority() const
     {
-      if (IsCursorEnabled() && !m_modelEntry->IsInFrustum())
+      if (!m_modelEntry || (IsCursorEnabled() && !m_modelEntry->IsInFrustum()))
       {
         return PRIORITY_NOT_ACTIVE;
       }
