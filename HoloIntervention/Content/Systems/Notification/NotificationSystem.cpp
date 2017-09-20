@@ -93,6 +93,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void NotificationSystem::RemoveMessage(uint64 messageId)
     {
+      std::lock_guard<std::mutex> guard(m_messageQueueMutex);
       if (m_currentMessage.messageId == messageId)
       {
         m_messageTimeElapsedSec = m_currentMessage.messageDuration + 0.5;

@@ -87,6 +87,13 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ModelRenderer::Render()
     {
+#if defined(_DEBUG)
+      if (m_cameraResources == nullptr)
+      {
+        return;
+      }
+#endif
+
       SpatialBoundingFrustum frustum;
       m_cameraResources->GetLatestSpatialBoundingFrustum(frustum);
 

@@ -2,7 +2,7 @@
 <HoloIntervention>
   <Tools IGTConnection="NDITracker">
     <Tool 
-      Model="Assets/Models/Tools/hemisphere_stylus"
+      Model="Tools/hemisphere_stylus"
       From="Tip"
       To="Reference"
       LerpEnabled="false" />
@@ -37,16 +37,16 @@
   <IGTConnections>
     <xConnection
       Name="2DImage"
-      Host="192.168.0.28"
+      Host="192.168.0.26"
       Port="18944"
       EmbeddedImageTransformName="ImageToReference" />
     <Connection
       Name="NDITracker"
-      Host="192.168.0.28"
+      Host="192.168.0.26"
       Port="18944" />
     <xConnection
       Name="3DImage"
-      Host="192.168.0.28"
+      Host="192.168.0.26"
       Port="18945"
       EmbeddedImageTransformName="VolumeToReference" />
   </IGTConnections>
