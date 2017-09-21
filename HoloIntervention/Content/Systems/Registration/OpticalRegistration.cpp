@@ -95,8 +95,6 @@ namespace HoloIntervention
           return false;
         }
 
-        m_transformRepository->WriteConfiguration(document);
-
         auto rootNode = document->SelectNodes(xpath)->Item(0);
 
         auto elem = document->CreateElement("OpticalRegistration");
@@ -115,11 +113,6 @@ namespace HoloIntervention
     {
       return create_task([this, document]()
       {
-        if (!m_transformRepository->ReadConfiguration(document))
-        {
-          return false;
-        }
-
         Platform::String^ xpath = L"/HoloIntervention/OpticalRegistration";
         if (document->SelectNodes(xpath)->Length != 1)
         {
@@ -191,6 +184,19 @@ namespace HoloIntervention
     {
       m_started = false;
       m_notificationSystem.QueueMessage(L"Registration stopped.");
+
+#if defined(_DEBUG)
+      // Log point lists to file for analysis
+      for (auto& point : m_opticalPositionList)
+      {
+        LOG(LogLevelType::LOG_LEVEL_INFO, L"opt: " + point.x.ToString() + L", " + point.y.ToString() + L", " + point.z.ToString());
+      }
+      for (auto& point : m_hololensInAnchorPositionList)
+      {
+        LOG(LogLevelType::LOG_LEVEL_INFO, L"holo: " + point.x.ToString() + L", " + point.y.ToString() + L", " + point.z.ToString());
+      }
+#endif
+
       return task_from_result<bool>(true);
     }
 
@@ -203,6 +209,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void OpticalRegistration::ResetRegistration()
     {
+      std::lock_guard<std::mutex> lock(m_pointAccessMutex);
       m_opticalPositionList.clear();
       m_hololensInAnchorPositionList.clear();
       m_latestTimestamp = 0.0;
@@ -225,12 +232,11 @@ namespace HoloIntervention
 
       // grab latest transform
       auto transform = m_networkSystem.GetTransform(m_hashedConnectionName, m_opticalHMDToOpticalReferenceName, m_latestTimestamp);
-      if (transform == nullptr)
+      if (transform == nullptr || !transform->Valid)
       {
         return;
       }
       m_latestTimestamp = transform->Timestamp;
-      m_transformRepository->SetTransform(m_opticalHMDToOpticalReferenceName, transform->Matrix, transform->Valid);
 
       // Grab latest head pose
       auto HMDToAnchor = float4x4::identity();
@@ -252,12 +258,12 @@ namespace HoloIntervention
           return;
         }
       }
+
+      std::lock_guard<std::mutex> lock(m_pointAccessMutex);
       m_opticalPositionList.push_back(newOpticalPosition);
       m_previousOpticalPosition = newOpticalPosition;
-
       m_hololensInAnchorPositionList.push_back(newHoloLensPosition);
       m_previousHoloLensPosition = newHoloLensPosition;
-
       m_currentNewPointCount++;
 
       if (m_currentNewPointCount >= m_poseListRecalcThresholdCount && !m_calculating)
@@ -273,7 +279,11 @@ namespace HoloIntervention
           try
           {
             float4x4 result = regTask.get();
-            m_completeCallback(result);
+            if (m_completeCallback)
+            {
+              m_completeCallback(result);
+            }
+            m_referenceToAnchor = result;
           }
           catch (const std::exception&)
           {

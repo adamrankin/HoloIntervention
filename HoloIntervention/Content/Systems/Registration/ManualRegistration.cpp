@@ -198,7 +198,7 @@ namespace HoloIntervention
 
       // grab latest network frame
       auto transform = m_networkSystem.GetTransform(m_hashedConnectionName, m_toolCoordinateFrameName, m_latestTimestamp);
-      if (transform == nullptr)
+      if (transform == nullptr || !transform->Valid)
       {
         return;
       }
@@ -222,6 +222,10 @@ namespace HoloIntervention
       if (!invert(opticalPose * m_baselineInverse, &m_accumulatorMatrix))
       {
         m_baselineNeeded = true;
+      }
+      else if (m_completeCallback)
+      {
+        m_completeCallback(m_accumulatorMatrix * m_registrationMatrix);
       }
     }
 

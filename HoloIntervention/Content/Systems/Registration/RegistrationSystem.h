@@ -87,6 +87,7 @@ namespace HoloIntervention
       bool GetReferenceToCoordinateSystemTransformation(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem, Windows::Foundation::Numerics::float4x4& outTransform);
 
       void OnRegistrationComplete(Windows::Foundation::Numerics::float4x4);
+      void OnCorrectionComplete(Windows::Foundation::Numerics::float4x4);
 
     protected:
       bool CheckRegistrationValidity(Windows::Foundation::Numerics::float4x4);
@@ -114,6 +115,7 @@ namespace HoloIntervention
       std::shared_ptr<IRegistrationMethod>                          m_currentRegistrationMethod;
       std::shared_ptr<IRegistrationMethod>                          m_correctionMethod;
       Windows::Foundation::Numerics::float4x4                       m_cachedRegistrationTransform = Windows::Foundation::Numerics::float4x4::identity();
+      Windows::Foundation::Numerics::float4x4                       m_cachedCorrectionTransform = Windows::Foundation::Numerics::float4x4::identity();
 
       // Constants
       static Platform::String^                        REGISTRATION_ANCHOR_NAME;

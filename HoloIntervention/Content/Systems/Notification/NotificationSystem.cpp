@@ -244,6 +244,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void NotificationSystem::GrabNextMessage()
     {
+      std::lock_guard<std::mutex> guard(m_messageQueueMutex);
       if (m_messages.size() == 0)
       {
         return;

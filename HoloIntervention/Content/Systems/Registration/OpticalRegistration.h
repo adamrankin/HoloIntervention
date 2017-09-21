@@ -69,9 +69,6 @@ namespace HoloIntervention
       NotificationSystem&                   m_notificationSystem;
       NetworkSystem&                        m_networkSystem;
 
-      // IGTLink variables
-      UWPOpenIGTLink::TransformRepository^  m_transformRepository = ref new UWPOpenIGTLink::TransformRepository();
-
       // Landmark registration
       std::shared_ptr<LandmarkRegistration> m_landmarkRegistration;
 
@@ -88,6 +85,7 @@ namespace HoloIntervention
       uint32                                m_currentNewPointCount = 0;
 
       // Point data
+      std::mutex                            m_pointAccessMutex;
       PositionList                          m_opticalPositionList;
       PositionList                          m_hololensInAnchorPositionList;
       Position                              m_previousOpticalPosition = Position::zero();

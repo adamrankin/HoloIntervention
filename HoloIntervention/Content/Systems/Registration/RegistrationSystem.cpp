@@ -456,7 +456,7 @@ namespace HoloIntervention
         }
       };
 
-      callbackMap[L"start correction"] = [this](SpeechRecognitionResult ^ result)
+      callbackMap[L"correct translation"] = [this](SpeechRecognitionResult ^ result)
       {
         if (m_correctionMethod->IsStarted())
         {
@@ -464,6 +464,7 @@ namespace HoloIntervention
           return;
         }
 
+        m_correctionMethod->RegisterTransformUpdatedCallback(std::bind(&RegistrationSystem::OnCorrectionComplete, this, std::placeholders::_1));
         m_correctionMethod->StartAsync().then([this](bool result)
         {
           if (!result)
@@ -544,7 +545,11 @@ namespace HoloIntervention
           return false;
         }
 
-        outTransform = m_correctionMethod->GetRegistrationTransformation() * m_cachedRegistrationTransform * anchorToRequestedBox->Value;
+        float4x4 correctedRegistration = m_cachedRegistrationTransform;
+        correctedRegistration.m41 += m_cachedCorrectionTransform.m41;
+        correctedRegistration.m42 += m_cachedCorrectionTransform.m42;
+        correctedRegistration.m43 += m_cachedCorrectionTransform.m43;
+        outTransform = correctedRegistration * anchorToRequestedBox->Value;
         return true;
       }
       catch (Platform::Exception^ e)
@@ -577,6 +582,25 @@ namespace HoloIntervention
       else
       {
         m_cachedRegistrationTransform = registrationTransformation;
+      }
+    }
+
+    //-----------------------------------------------------------------------------
+    void RegistrationSystem::OnCorrectionComplete(float4x4 correctionTransformation)
+    {
+      m_cachedCorrectionTransform = correctionTransformation;
+
+      if (m_cachedRegistrationTransform != float4x4::identity())
+      {
+        // Apply rotation to correction (correction is relative translation only for now)
+        float4x4 regToAnchorRot = m_cachedRegistrationTransform;
+        regToAnchorRot.m41 = 0.f;
+        regToAnchorRot.m42 = 0.f;
+        regToAnchorRot.m43 = 0.f;
+
+        float3 pose_ref(correctionTransformation.m41, correctionTransformation.m42, correctionTransformation.m43);
+        float3 pose_anch = transform(pose_ref, regToAnchorRot);
+        m_cachedCorrectionTransform = make_float4x4_translation(pose_anch);
       }
     }
 
