@@ -129,7 +129,7 @@ struct VSOutput
 #if defined(USE_VPRT)
   uint rvtId : SV_RenderTargetArrayIndex;
 #else
-  uint viewId : TEXCOORD5;
+  uint rvtId : TEXCOORD5;
 #endif
 };
 
@@ -140,7 +140,7 @@ struct VSOutputNoFog
 #if defined(USE_VPRT)
   uint rvtId : SV_RenderTargetArrayIndex;
 #else
-  uint viewId : TEXCOORD5;
+  uint rvtId : TEXCOORD5;
 #endif
 };
 
@@ -153,7 +153,7 @@ struct VSOutputTx
 #if defined(USE_VPRT)
   uint rvtId : SV_RenderTargetArrayIndex;
 #else
-  uint viewId : TEXCOORD5;
+  uint rvtId : TEXCOORD5;
 #endif
 };
 
@@ -165,7 +165,7 @@ struct VSOutputTxNoFog
 #if defined(USE_VPRT)
   uint rvtId : SV_RenderTargetArrayIndex;
 #else
-  uint viewId : TEXCOORD5;
+  uint rvtId : TEXCOORD5;
 #endif
 };
 
@@ -178,7 +178,7 @@ struct VSOutputPixelLighting
 #if defined(USE_VPRT)
   uint rvtId : SV_RenderTargetArrayIndex;
 #else
-  uint viewId : TEXCOORD5;
+  uint rvtId : TEXCOORD5;
 #endif
 };
 
@@ -192,7 +192,7 @@ struct VSOutputPixelLightingTx
 #if defined(USE_VPRT)
   uint rvtId : SV_RenderTargetArrayIndex;
 #else
-  uint viewId : TEXCOORD5;
+  uint rvtId : TEXCOORD5;
 #endif
 };
 
@@ -207,7 +207,7 @@ struct VSOutputPixelLightingTxTangent
 #if defined(USE_VPRT)
   uint rvtId : SV_RenderTargetArrayIndex;
 #else
-  uint viewId : TEXCOORD5;
+  uint rvtId : TEXCOORD5;
 #endif
 };
 
@@ -221,7 +221,7 @@ struct VSOutputTx2
 #if defined(USE_VPRT)
   uint rvtId : SV_RenderTargetArrayIndex;
 #else
-  uint viewId : TEXCOORD5;
+  uint rvtId : TEXCOORD5;
 #endif
 };
 
@@ -234,7 +234,7 @@ struct VSOutputTx2NoFog
 #if defined(USE_VPRT)
   uint rvtId : SV_RenderTargetArrayIndex;
 #else
-  uint viewId : TEXCOORD5;
+  uint rvtId : TEXCOORD5;
 #endif
 };
 
@@ -248,7 +248,7 @@ struct VSOutputTxEnvMap
 #if defined(USE_VPRT)
   uint rvtId : SV_RenderTargetArrayIndex;
 #else
-  uint viewId : TEXCOORD5;
+  uint rvtId : TEXCOORD5;
 #endif
 };
 

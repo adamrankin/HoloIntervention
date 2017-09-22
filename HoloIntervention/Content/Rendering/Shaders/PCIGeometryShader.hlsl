@@ -14,7 +14,7 @@ struct GeometryShaderInput
 {
   min16float4 pos     : SV_POSITION;
   min16float4 color   : COLOR0;
-  uint        instId  : TEXCOORD5;
+  uint        instId  : TEXCOORD9;
 };
 
 // Per-vertex data passed to the rasterizer.

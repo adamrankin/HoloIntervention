@@ -52,20 +52,9 @@ CommonVSOutput ComputeCommonVSOutput(float4 position, uint instId)
     vout.PositionPS = min16float4(cout.Pos_ps); \
     vout.Diffuse = min16float4(cout.Diffuse); \
     vout.Specular = min16float4(cout.Specular, cout.FogFactor); \
-    vout.viewId = idx;
-
-#define SetCommonVSOutputParamsNoFog \
-    vout.PositionPS = min16float4(cout.Pos_ps); \
-    vout.Diffuse = min16float4(cout.Diffuse);\
-    vout.viewId = idx;
-
-#define SetCommonVSOutputParamsVPRT \
-    vout.PositionPS = min16float4(cout.Pos_ps); \
-    vout.Diffuse = min16float4(cout.Diffuse); \
-    vout.Specular = min16float4(cout.Specular, cout.FogFactor); \
     vout.rvtId = idx;
 
-#define SetCommonVSOutputParamsNoFogVPRT \
+#define SetCommonVSOutputParamsNoFog \
     vout.PositionPS = min16float4(cout.Pos_ps); \
     vout.Diffuse = min16float4(cout.Diffuse);\
     vout.rvtId = idx;

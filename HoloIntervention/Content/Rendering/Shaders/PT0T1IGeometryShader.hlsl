@@ -15,7 +15,7 @@ struct GeometryShaderInput
   min16float4 PositionPS  : SV_Position;
   min16float3 TexCoord0   : TEXCOORD0;
   min16float4 TexCoord1   : TEXCOORD1;
-  uint instId             : TEXCOORD5;  // SV_InstanceID % 2
+  uint instId             : TEXCOORD9;  // SV_InstanceID % 2
 };
 
 struct GeometryShaderOutput

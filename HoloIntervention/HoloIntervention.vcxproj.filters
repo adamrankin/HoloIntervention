@@ -183,9 +183,6 @@
     <ClInclude Include="Content\SpatialMapping\SpatialSurfaceCollection.h">
       <Filter>Content\Spatial</Filter>
     </ClInclude>
-    <ClInclude Include="Content\Rendering\DirectXTK\InstancedEffectFactory.h">
-      <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
-    </ClInclude>
     <ClInclude Include="Content\Rendering\DirectXTK\InstancedEffectCommon.h">
       <Filter>Content\Rendering\ModelRenderer\DirectXTK</Filter>
     </ClInclude>

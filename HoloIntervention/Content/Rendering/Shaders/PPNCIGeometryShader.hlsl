@@ -16,7 +16,7 @@ struct GeometryShaderInput
     min16float3 worldPos    : POSITION0;
     min16float3 worldNorm   : NORMAL0;
     min16float3 color       : COLOR0;
-    uint        instId      : TEXCOORD5;
+    uint        instId      : TEXCOORD9;
 };
 
 // Per-vertex data passed to the rasterizer.

@@ -55,11 +55,7 @@ VSOutput VSBasic(VSInput vin)
   VSOutput vout;
 
   CommonVSOutput cout = ComputeCommonVSOutput(vin.Position, idx);
-#if defined(USE_VPRT)
-  SetCommonVSOutputParamsVPRT;
-#else
   SetCommonVSOutputParams;
-#endif
 
   return vout;
 }
@@ -73,11 +69,7 @@ VSOutputNoFog VSBasicNoFog(VSInput vin)
   VSOutputNoFog vout;
 
   CommonVSOutput cout = ComputeCommonVSOutput(vin.Position, idx);
-#if defined(USE_VPRT)
-  SetCommonVSOutputParamsNoFogVPRT;
-#else
   SetCommonVSOutputParamsNoFog;
-#endif
 
   return vout;
 }
@@ -91,11 +83,7 @@ VSOutput VSBasicVc(VSInputVc vin)
   VSOutput vout;
 
   CommonVSOutput cout = ComputeCommonVSOutput(vin.Position, idx);
-#if defined(USE_VPRT)
-  SetCommonVSOutputParamsVPRT;
-#else
   SetCommonVSOutputParams;
-#endif
 
   vout.Diffuse *= vin.Color;
 
@@ -111,11 +99,7 @@ VSOutputNoFog VSBasicVcNoFog(VSInputVc vin)
   VSOutputNoFog vout;
 
   CommonVSOutput cout = ComputeCommonVSOutput(vin.Position, idx);
-#if defined(USE_VPRT)
-  SetCommonVSOutputParamsNoFogVPRT;
-#else
   SetCommonVSOutputParamsNoFog;
-#endif
 
   vout.Diffuse *= vin.Color;
 
@@ -131,11 +115,7 @@ VSOutputTx VSBasicTx(VSInputTx vin)
   VSOutputTx vout;
 
   CommonVSOutput cout = ComputeCommonVSOutput(vin.Position, idx);
-#if defined(USE_VPRT)
-  SetCommonVSOutputParamsVPRT;
-#else
   SetCommonVSOutputParams;
-#endif
 
   vout.TexCoord = vin.TexCoord;
 
@@ -151,11 +131,7 @@ VSOutputTxNoFog VSBasicTxNoFog(VSInputTx vin)
   VSOutputTxNoFog vout;
 
   CommonVSOutput cout = ComputeCommonVSOutput(vin.Position, idx);
-#if defined(USE_VPRT)
-  SetCommonVSOutputParamsNoFogVPRT;
-#else
   SetCommonVSOutputParamsNoFog;
-#endif
 
   vout.TexCoord = vin.TexCoord;
 
@@ -171,11 +147,7 @@ VSOutputTx VSBasicTxVc(VSInputTxVc vin)
   VSOutputTx vout;
 
   CommonVSOutput cout = ComputeCommonVSOutput(vin.Position, idx);
-#if defined(USE_VPRT)
-  SetCommonVSOutputParamsVPRT;
-#else
   SetCommonVSOutputParams;
-#endif
 
   vout.TexCoord = vin.TexCoord;
   vout.Diffuse *= vin.Color;
@@ -192,11 +164,7 @@ VSOutputTxNoFog VSBasicTxVcNoFog(VSInputTxVc vin)
   VSOutputTxNoFog vout;
 
   CommonVSOutput cout = ComputeCommonVSOutput(vin.Position, idx);
-#if defined(USE_VPRT)
-  SetCommonVSOutputParamsNoFogVPRT;
-#else
   SetCommonVSOutputParamsNoFog;
-#endif
 
   vout.TexCoord = vin.TexCoord;
   vout.Diffuse *= vin.Color;
@@ -213,11 +181,7 @@ VSOutput VSBasicVertexLighting(VSInputNm vin)
   VSOutput vout;
 
   CommonVSOutput cout = ComputeCommonVSOutputWithLighting(vin.Position, vin.Normal, 3, idx);
-#if defined(USE_VPRT)
-  SetCommonVSOutputParamsVPRT;
-#else
   SetCommonVSOutputParams;
-#endif
 
   return vout;
 }
@@ -231,11 +195,7 @@ VSOutput VSBasicVertexLightingVc(VSInputNmVc vin)
   VSOutput vout;
 
   CommonVSOutput cout = ComputeCommonVSOutputWithLighting(vin.Position, vin.Normal, 3, idx);
-#if defined(USE_VPRT)
-  SetCommonVSOutputParamsVPRT;
-#else
   SetCommonVSOutputParams;
-#endif
 
   vout.Diffuse *= vin.Color;
 
@@ -251,11 +211,7 @@ VSOutputTx VSBasicVertexLightingTx(VSInputNmTx vin)
   VSOutputTx vout;
 
   CommonVSOutput cout = ComputeCommonVSOutputWithLighting(vin.Position, vin.Normal, 3, idx);
-#if defined(USE_VPRT)
-  SetCommonVSOutputParamsVPRT;
-#else
   SetCommonVSOutputParams;
-#endif
 
   vout.TexCoord = vin.TexCoord;
 
@@ -271,11 +227,7 @@ VSOutputTx VSBasicVertexLightingTxVc(VSInputNmTxVc vin)
   VSOutputTx vout;
 
   CommonVSOutput cout = ComputeCommonVSOutputWithLighting(vin.Position, vin.Normal, 3, idx);
-#if defined(USE_VPRT)
-  SetCommonVSOutputParamsVPRT;
-#else
   SetCommonVSOutputParams;
-#endif
 
   vout.TexCoord = vin.TexCoord;
   vout.Diffuse *= vin.Color;
@@ -292,11 +244,7 @@ VSOutput VSBasicOneLight(VSInputNm vin)
   VSOutput vout;
 
   CommonVSOutput cout = ComputeCommonVSOutputWithLighting(vin.Position, vin.Normal, 1, idx);
-#if defined(USE_VPRT)
-  SetCommonVSOutputParamsVPRT;
-#else
   SetCommonVSOutputParams;
-#endif
 
   return vout;
 }
@@ -310,11 +258,7 @@ VSOutput VSBasicOneLightVc(VSInputNmVc vin)
   VSOutput vout;
 
   CommonVSOutput cout = ComputeCommonVSOutputWithLighting(vin.Position, vin.Normal, 1, idx);
-#if defined(USE_VPRT)
-  SetCommonVSOutputParamsVPRT;
-#else
   SetCommonVSOutputParams;
-#endif
 
   vout.Diffuse *= vin.Color;
 
@@ -330,11 +274,7 @@ VSOutputTx VSBasicOneLightTx(VSInputNmTx vin)
   VSOutputTx vout;
 
   CommonVSOutput cout = ComputeCommonVSOutputWithLighting(vin.Position, vin.Normal, 1, idx);
-#if defined(USE_VPRT)
-  SetCommonVSOutputParamsVPRT;
-#else
   SetCommonVSOutputParams;
-#endif
 
   vout.TexCoord = vin.TexCoord;
 
@@ -350,11 +290,7 @@ VSOutputTx VSBasicOneLightTxVc(VSInputNmTxVc vin)
   VSOutputTx vout;
 
   CommonVSOutput cout = ComputeCommonVSOutputWithLighting(vin.Position, vin.Normal, 1, idx);
-#if defined(USE_VPRT)
-  SetCommonVSOutputParamsVPRT;
-#else
   SetCommonVSOutputParams;
-#endif
 
   vout.TexCoord = vin.TexCoord;
   vout.Diffuse *= vin.Color;
@@ -371,11 +307,7 @@ VSOutputPixelLighting VSBasicPixelLighting(VSInputNm vin)
   VSOutputPixelLighting vout;
 
   CommonVSOutputPixelLighting cout = ComputeCommonVSOutputPixelLighting(vin.Position, vin.Normal, idx);
-#if defined(USE_VPRT)
-  SetCommonVSOutputParamsPixelLightingVPRT;
-#else
   SetCommonVSOutputParamsPixelLighting;
-#endif
 
   vout.Diffuse = float4(1, 1, 1, DiffuseColor.a);
 
@@ -391,11 +323,7 @@ VSOutputPixelLighting VSBasicPixelLightingVc(VSInputNmVc vin)
   VSOutputPixelLighting vout;
 
   CommonVSOutputPixelLighting cout = ComputeCommonVSOutputPixelLighting(vin.Position, vin.Normal, idx);
-#if defined(USE_VPRT)
-  SetCommonVSOutputParamsPixelLightingVPRT;
-#else
   SetCommonVSOutputParamsPixelLighting;
-#endif
 
   vout.Diffuse.rgb = vin.Color.rgb;
   vout.Diffuse.a = vin.Color.a * DiffuseColor.a;
@@ -412,11 +340,7 @@ VSOutputPixelLightingTx VSBasicPixelLightingTx(VSInputNmTx vin)
   VSOutputPixelLightingTx vout;
 
   CommonVSOutputPixelLighting cout = ComputeCommonVSOutputPixelLighting(vin.Position, vin.Normal, idx);
-#if defined(USE_VPRT)
-  SetCommonVSOutputParamsPixelLightingVPRT;
-#else
   SetCommonVSOutputParamsPixelLighting;
-#endif
 
   vout.Diffuse = float4(1, 1, 1, DiffuseColor.a);
   vout.TexCoord = vin.TexCoord;
@@ -433,11 +357,7 @@ VSOutputPixelLightingTx VSBasicPixelLightingTxVc(VSInputNmTxVc vin)
   VSOutputPixelLightingTx vout;
 
   CommonVSOutputPixelLighting cout = ComputeCommonVSOutputPixelLighting(vin.Position, vin.Normal, idx);
-#if defined(USE_VPRT)
-  SetCommonVSOutputParamsPixelLightingVPRT;
-#else
   SetCommonVSOutputParamsPixelLighting;
-#endif
 
   vout.Diffuse.rgb = vin.Color.rgb;
   vout.Diffuse.a = vin.Color.a * DiffuseColor.a;

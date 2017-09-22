@@ -23,6 +23,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
+// Local includes
+#include "InstancedEffects.h"
+
 // DirectXTK includes
 #include <ConstantBuffer.h>
 #include <DemandCreate.h>

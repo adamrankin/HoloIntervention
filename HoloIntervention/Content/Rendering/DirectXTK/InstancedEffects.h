@@ -106,4 +106,36 @@ namespace DirectX
 
     std::unique_ptr<Impl> pImpl;
   };
+
+  class InstancedEffectFactory : public IEffectFactory
+  {
+  public:
+    explicit InstancedEffectFactory(_In_ ID3D11Device* device);
+    InstancedEffectFactory(InstancedEffectFactory&& moveFrom);
+    InstancedEffectFactory& operator= (InstancedEffectFactory&& moveFrom);
+
+    InstancedEffectFactory(InstancedEffectFactory const&) = delete;
+    InstancedEffectFactory& operator= (InstancedEffectFactory const&) = delete;
+
+    virtual ~InstancedEffectFactory();
+
+    // IEffectFactory methods.
+    virtual std::shared_ptr<IEffect> __cdecl CreateEffect(_In_ const EffectInfo& info, _In_opt_ ID3D11DeviceContext* deviceContext) override;
+    virtual void __cdecl CreateTexture(_In_z_ const wchar_t* name, _In_opt_ ID3D11DeviceContext* deviceContext, _Outptr_ ID3D11ShaderResourceView** textureView) override;
+
+    // Settings.
+    void __cdecl ReleaseCache();
+
+    void __cdecl SetSharing(bool enabled);
+
+    void __cdecl SetUseNormalMapEffect(bool enabled);
+
+    void __cdecl SetDirectory(_In_opt_z_ const wchar_t* path);
+
+  private:
+    // Private implementation.
+    class Impl;
+
+    std::shared_ptr<Impl> pImpl;
+  };
 }

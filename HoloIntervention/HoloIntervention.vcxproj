@@ -110,7 +110,6 @@
     <ClInclude Include="Content\Physics\PhysicsAPI.h" />
     <ClInclude Include="Content\Rendering\DirectXTK\InstancedEffects.h" />
     <ClInclude Include="Content\Rendering\DirectXTK\InstancedEffectCommon.h" />
-    <ClInclude Include="Content\Rendering\DirectXTK\InstancedEffectFactory.h" />
     <ClInclude Include="Content\Rendering\DirectXTK\InstancedGeometricPrimitive.h" />
     <ClInclude Include="Content\Rendering\Mesh\Mesh.h" />
     <ClInclude Include="Content\Rendering\Mesh\MeshRenderer.h" />

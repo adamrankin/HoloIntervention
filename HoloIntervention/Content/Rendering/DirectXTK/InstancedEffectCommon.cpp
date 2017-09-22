@@ -23,7 +23,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #include "pch.h"
 #include "InstancedEffectCommon.h"
-#include "InstancedEffects.h"
 
 using Microsoft::WRL::ComPtr;
 

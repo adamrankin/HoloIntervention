@@ -23,17 +23,13 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "pch.h"
-#include "InstancedEffectFactory.h"
-
-// Effect type includes
 #include "InstancedEffects.h"
 
 // DirectXTK Includes
-#include <Effects.h>
-#include <DemandCreate.h>
-#include <SharedResourcePool.h>
-
 #include <DDSTextureLoader.h>
+#include <DemandCreate.h>
+#include <Effects.h>
+#include <SharedResourcePool.h>
 #include <WICTextureLoader.h>
 
 using Microsoft::WRL::ComPtr;
@@ -67,8 +63,8 @@ namespace DirectX
   private:
     ComPtr<ID3D11Device> device;
 
-    typedef std::map< std::wstring, std::shared_ptr<IEffect> > EffectCache;
-    typedef std::map< std::wstring, ComPtr<ID3D11ShaderResourceView> > TextureCache;
+    typedef std::map<std::wstring, std::shared_ptr<IEffect>> EffectCache;
+    typedef std::map<std::wstring, ComPtr<ID3D11ShaderResourceView>> TextureCache;
 
     EffectCache  mEffectCache;
     EffectCache  mEffectCacheSkinning;
@@ -82,9 +78,11 @@ namespace DirectX
     std::mutex mutex;
   };
 
-  // Global instance pool.
+  //----------------------------------------------------------------------------
+  // Global instance pool
   SharedResourcePool<ID3D11Device*, InstancedEffectFactory::Impl> InstancedEffectFactory::Impl::instancePool;
 
+  //----------------------------------------------------------------------------
   _Use_decl_annotations_
   std::shared_ptr<IEffect> InstancedEffectFactory::Impl::CreateEffect(IEffectFactory* factory, const IEffectFactory::EffectInfo& info, ID3D11DeviceContext* deviceContext)
   {
@@ -305,7 +303,6 @@ namespace DirectX
     }
 
     // Basic Effect does not have an ambient material color
-
     XMVECTOR color = XMLoadFloat3(&info.diffuseColor);
     effect->SetDiffuseColor(color);
 
@@ -347,6 +344,7 @@ namespace DirectX
     //}
   }
 
+  //----------------------------------------------------------------------------
   _Use_decl_annotations_
   void InstancedEffectFactory::Impl::CreateTexture(const wchar_t* name, ID3D11DeviceContext* deviceContext, ID3D11ShaderResourceView** textureView)
   {
@@ -421,6 +419,7 @@ namespace DirectX
     }
   }
 
+  //----------------------------------------------------------------------------
   void InstancedEffectFactory::Impl::ReleaseCache()
   {
     std::lock_guard<std::mutex> lock(mutex);
@@ -437,48 +436,57 @@ namespace DirectX
   {
   }
 
+  //----------------------------------------------------------------------------
   InstancedEffectFactory::~InstancedEffectFactory()
   {
   }
 
+  //----------------------------------------------------------------------------
   InstancedEffectFactory::InstancedEffectFactory(InstancedEffectFactory&& moveFrom)
     : pImpl(std::move(moveFrom.pImpl))
   {
   }
 
+  //----------------------------------------------------------------------------
   InstancedEffectFactory& InstancedEffectFactory::operator= (InstancedEffectFactory&& moveFrom)
   {
     pImpl = std::move(moveFrom.pImpl);
     return *this;
   }
 
+  //----------------------------------------------------------------------------
   _Use_decl_annotations_
   std::shared_ptr<IEffect> InstancedEffectFactory::CreateEffect(const EffectInfo& info, ID3D11DeviceContext* deviceContext)
   {
     return pImpl->CreateEffect(this, info, deviceContext);
   }
 
+  //----------------------------------------------------------------------------
   _Use_decl_annotations_
   void InstancedEffectFactory::CreateTexture(const wchar_t* name, ID3D11DeviceContext* deviceContext, ID3D11ShaderResourceView** textureView)
   {
     return pImpl->CreateTexture(name, deviceContext, textureView);
   }
 
+  //----------------------------------------------------------------------------
   void InstancedEffectFactory::ReleaseCache()
   {
     pImpl->ReleaseCache();
   }
 
+  //----------------------------------------------------------------------------
   void InstancedEffectFactory::SetSharing(bool enabled)
   {
     pImpl->SetSharing(enabled);
   }
 
+  //----------------------------------------------------------------------------
   void InstancedEffectFactory::SetUseNormalMapEffect(bool enabled)
   {
     pImpl->SetUseNormalMapEffect(enabled);
   }
 
+  //----------------------------------------------------------------------------
   void InstancedEffectFactory::SetDirectory(_In_opt_z_ const wchar_t* path)
   {
     if (path && *path != 0)

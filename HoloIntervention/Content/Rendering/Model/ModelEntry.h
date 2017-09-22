@@ -24,7 +24,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
-#include "InstancedEffectFactory.h"
 #include "InstancedEffects.h"
 
 // STL includes

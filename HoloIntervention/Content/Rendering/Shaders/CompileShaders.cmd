@@ -10,25 +10,18 @@ rem Modifications:
 rem   August 2016 - Adam Rankin, Robarts Research Institute
 rem     - Refactoring to create instanced shaders with appropriately named variables
 rem     - Support for basic effect only
+rem   September 2017 - Adam Rankin, Robarts Research Institute
+rem     - Readding support for instanced DGSL shaders
 
 setlocal
 set error=0
 
 mkdir Compiled
 
-if %1.==xbox. goto continuexbox
 if %1.==vprt. goto continue
 if %1.==. goto continue
 echo usage: CompileShaders [xbox] | [vprt]
 exit /b
-
-:continuexbox
-set XBOXFXC="%XboxOneXDKLatest%xdk\FXC\amd64\FXC.exe"
-if exist %XBOXFXC% goto continue
-set XBOXFXC="%XboxOneXDKBuild%xdk\FXC\amd64\FXC.exe"
-if exist %XBOXFXC% goto continue
-set XBOXFXC="%DurangoXDK%xdk\FXC\amd64\FXC.exe"
-if not exist %XBOXFXC% goto needxdk
 
 :continue
 
@@ -131,30 +124,6 @@ rem
 rem call :CompileShader%1 SpriteEffect vs SpriteVertexShader
 rem call :CompileShader%1 SpriteEffect ps SpritePixelShader
 rem 
-rem call :CompileShader%1 DGSLEffect vs main
-rem call :CompileShader%1 DGSLEffect vs mainVc
-rem call :CompileShader%1 DGSLEffect vs main1Bones
-rem call :CompileShader%1 DGSLEffect vs main1BonesVc
-rem call :CompileShader%1 DGSLEffect vs main2Bones
-rem call :CompileShader%1 DGSLEffect vs main2BonesVc
-rem call :CompileShader%1 DGSLEffect vs main4Bones
-rem call :CompileShader%1 DGSLEffect vs main4BonesVc
-rem 
-rem call :CompileShaderHLSL%1 DGSLUnlit ps main
-rem call :CompileShaderHLSL%1 DGSLLambert ps main
-rem call :CompileShaderHLSL%1 DGSLPhong ps main
-rem 
-rem call :CompileShaderHLSL%1 DGSLUnlit ps mainTk
-rem call :CompileShaderHLSL%1 DGSLLambert ps mainTk
-rem call :CompileShaderHLSL%1 DGSLPhong ps mainTk
-rem 
-rem call :CompileShaderHLSL%1 DGSLUnlit ps mainTx
-rem call :CompileShaderHLSL%1 DGSLLambert ps mainTx
-rem call :CompileShaderHLSL%1 DGSLPhong ps mainTx
-rem 
-rem call :CompileShaderHLSL%1 DGSLUnlit ps mainTxTk
-rem call :CompileShaderHLSL%1 DGSLLambert ps mainTxTk
-rem call :CompileShaderHLSL%1 DGSLPhong ps mainTxTk
 echo.
 
 :end
@@ -184,20 +153,6 @@ echo %fxc%
 %fxc% || set error=1
 exit /b
 
-:CompileShaderxbox
-set fxc=%XBOXFXC% /nologo %1.fx /T%2_5_0 /Zpc /Zi /Qstrip_reflect /Qstrip_debug /D__XBOX_DISABLE_SHADER_NAME_EMPLACEMENT /E%3 /FhCompiled\XboxOne%1_%3.inc /FdCompiled\XboxOne%1_%3.pdb /Vn%1_%3
-echo.
-echo %fxc%
-%fxc% || set error=1
-exit /b
-
-:CompileShaderHLSLxbox
-set fxc=%XBOXFXC% /nologo %1.hlsl /T%2_5_0 /Zpc /Zi /Qstrip_reflect /Qstrip_debug /D__XBOX_DISABLE_SHADER_NAME_EMPLACEMENT /E%3 /FhCompiled\XboxOne%1_%3.inc /FdCompiled\XboxOne%1_%3.pdb /Vn%1_%3
-echo.
-echo %fxc%
-%fxc% || set error=1
-exit /b
-
 :CompileShadervprt
 rem /Qstrip_debug temporarily removed during development
 set fxc=fxc /nologo %1.fx /T%2_5_0 /Zi /Zpc /Qstrip_reflect /E%3 /FhCompiled\%1_%3_VPRT.inc /FdCompiled\%1_%3_VPRT.pdb /Vn%1_%3VPRT /DUSE_VPRT
@@ -213,7 +168,3 @@ echo.
 echo %fxc%
 %fxc% || set error=1
 exit /b
-
-:needxdk
-echo ERROR: CompileShaders xbox requires the Microsoft Xbox One XDK
-echo        (try re-running from the XDK Command Prompt)

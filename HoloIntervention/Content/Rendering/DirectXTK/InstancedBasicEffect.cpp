@@ -23,7 +23,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "pch.h"
-#include "InstancedEffects.h"
 #include "InstancedEffectCommon.h"
 
 // DirectXTK includes

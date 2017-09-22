@@ -16,7 +16,7 @@ struct GeometryShaderInput
   min16float4 Diffuse     : COLOR0;
   min16float4 Specular    : COLOR1;
   float2 TexCoord         : TEXCOORD0;
-  uint instId             : TEXCOORD5;  // SV_InstanceID % 2
+  uint instId             : TEXCOORD9;  // SV_InstanceID % 2
 };
 
 struct GeometryShaderOutput
