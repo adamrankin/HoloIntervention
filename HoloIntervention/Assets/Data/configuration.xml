@@ -2,17 +2,34 @@
 <HoloIntervention>
   <Tools IGTConnection="NDITracker">
     <Tool 
-      Model="Tools/hemisphere_stylus"
+      Model="Tools/8700248"
       From="Tip"
       To="Reference"
-      LerpEnabled="false" />
+      LerpEnabled="false" 
+      />
   </Tools>
+
+  <TouchingSphereTask
+    IGTConnection="NDITracker"
+    PhantomFrom="Phantom"
+    PhantomTo="Reference"
+    StylusFrom="StylusTip"
+    >
+    <Region
+      XMinMeters="0.2"
+      XMaxMeters="0.8"
+      YMinMeters="0.2"
+      YMaxMeters="0.8"
+      ZMinMeters="0.2"
+      ZMaxMeters="0.8"
+    />
+  </TouchingSphereTask>
 
   <CoordinateDefinitions>
   </CoordinateDefinitions>
 
   <CameraRegistration
-    IGTConnection="2DImage"
+    IGTConnection="NDITracker"
     Dp="2"
     MinDistanceDivisor="16"
     Param1="255"
@@ -35,20 +52,24 @@
     />
 
   <IGTConnections>
+    <Connection
+      Name="NDITracker"
+      Host="192.168.0.26"
+      Port="18944" 
+      />
+
     <xConnection
       Name="2DImage"
       Host="192.168.0.26"
       Port="18944"
-      EmbeddedImageTransformName="ImageToReference" />
-    <Connection
-      Name="NDITracker"
-      Host="192.168.0.26"
-      Port="18944" />
+      EmbeddedImageTransformName="ImageToReference" 
+      />
     <xConnection
       Name="3DImage"
       Host="192.168.0.26"
       Port="18945"
-      EmbeddedImageTransformName="VolumeToReference" />
+      EmbeddedImageTransformName="VolumeToReference" 
+      />
   </IGTConnections>
 
   <SliceRendering 
@@ -56,11 +77,13 @@
     To="HMD"
     WhiteMapColour="1.0 0.0 0.0 1.0"
     BlackMapColour="0.0 0.0 1.0 1.0"
-    IGTConnection="2DImage" />
+    IGTConnection="2DImage" 
+    />
 
   <VolumeRendering 
     From="Volume" 
     To="HMD"
-    IGTConnection="3DImage" />
+    IGTConnection="3DImage" 
+    />
 
 </HoloIntervention>

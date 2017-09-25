@@ -37,6 +37,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // STL includes
 #include <array>
+#include <random>
 
 namespace DX
 {
@@ -69,7 +70,7 @@ namespace HoloIntervention
 
     namespace Tasks
     {
-      class PhantomTask : public IStabilizedComponent, public Input::IVoiceInput, public IConfigurable
+      class TouchingSphereTask : public IStabilizedComponent, public Input::IVoiceInput, public IConfigurable
       {
       public:
         virtual concurrency::task<bool> WriteConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
@@ -84,8 +85,11 @@ namespace HoloIntervention
         virtual void RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap);
         virtual void Update(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem, DX::StepTimer& stepTimer);
 
-        PhantomTask(NotificationSystem& notificationSystem, NetworkSystem& networkSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer);
-        ~PhantomTask();
+        TouchingSphereTask(NotificationSystem& notificationSystem, NetworkSystem& networkSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer);
+        ~TouchingSphereTask();
+
+      protected:
+        void GenerateNextRandomPoint();
 
       protected:
         // Cached system variables
@@ -94,17 +98,32 @@ namespace HoloIntervention
         RegistrationSystem&                                     m_registrationSystem;
         Rendering::ModelRenderer&                               m_modelRenderer;
 
-        std::wstring                                            m_modelName = L"";
         std::wstring                                            m_connectionName = L"";
         uint64                                                  m_hashedConnectionName = 0;
-        UWPOpenIGTLink::TransformName^                          m_transformName = ref new UWPOpenIGTLink::TransformName();
+        UWPOpenIGTLink::TransformName^                          m_phantomToReferenceName = ref new UWPOpenIGTLink::TransformName();
         double                                                  m_latestTimestamp = 0.0;
+
+        // Phantom rendering variables
+        std::shared_ptr<Rendering::PrimitiveEntry>              m_targetModel = nullptr;
+        Windows::Foundation::Numerics::float3                   m_targetPosition;
+        std::atomic_bool                                        m_phantomWasValid = false;
+        std::array<float, 6>                                    m_boundsMeters = { 0.f, 0.f, 0.f, 0.f, 0.f, 0.f };
+        const Windows::Foundation::Numerics::float3             DEFAULT_TARGET_COLOUR = { 0.f, 1.f, 0.f };
+        const Windows::Foundation::Numerics::float3             HIGHLIGHT_TARGET_COLOUR = { 1.f, 0.f, 0.f };
 
         // Phantom task behaviour
         std::atomic_bool                                        m_taskStarted = false;
+        std::atomic_bool                                        m_recordPointOnUpdate = false;
         UWPOpenIGTLink::TrackedFrame^                           m_trackedFrame = ref new UWPOpenIGTLink::TrackedFrame();
-        UWPOpenIGTLink::TransformName^                          m_stylusTipTransformName = ref new UWPOpenIGTLink::TransformName();
+        UWPOpenIGTLink::TransformName^                          m_stylusTipToPhantomName = ref new UWPOpenIGTLink::TransformName();
         UWPOpenIGTLink::TransformRepository^                    m_transformRepository = ref new UWPOpenIGTLink::TransformRepository();
+
+        // Random number generation
+        std::random_device                                      m_randomDevice;
+        std::mt19937                                            m_randomGenerator;
+        std::uniform_real_distribution<float>                   m_xDistribution;
+        std::uniform_real_distribution<float>                   m_yDistribution;
+        std::uniform_real_distribution<float>                   m_zDistribution;
       };
     }
   }

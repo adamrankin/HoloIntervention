@@ -160,6 +160,9 @@
     <ClCompile Include="Content\Input\SpatialSourceHandler.cpp">
       <Filter>Content\Input\SpatialInput</Filter>
     </ClCompile>
+    <ClCompile Include="Content\Tasks\TouchingSphereTask.cpp">
+      <Filter>Content\Systems\Tasks</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Content\Sound\OmnidirectionalSound.h">
@@ -347,6 +350,9 @@
     </ClInclude>
     <ClInclude Include="Content\Input\SpatialSourceHandler.h">
       <Filter>Content\Input\SpatialInput</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Tasks\TouchingSphereTask.h">
+      <Filter>Content\Systems\Tasks</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
