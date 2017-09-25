@@ -176,7 +176,12 @@ namespace HoloIntervention
 
   int IsLittleEndian();
 
+  bool IsEqualInsensitive(std::string const& a, std::string const& b);
   bool IsEqualInsensitive(std::wstring const& a, std::wstring const& b);
+  bool IsEqualInsensitive(std::wstring const& a, Platform::String^ b);
+  bool IsEqualInsensitive(Platform::String^ a, std::wstring const& b);
+  bool IsEqualInsensitive(Platform::String^ a, Platform::String^ b);
+
   uint64 HashString(const std::wstring& string);
   uint64 HashString(Platform::String^ string);
 
