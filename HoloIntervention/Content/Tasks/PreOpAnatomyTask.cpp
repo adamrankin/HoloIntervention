@@ -24,7 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "pch.h"
 #include "Common.h"
-#include "PhantomTask.h"
+#include "PreOpAnatomyTask.h"
 #include "StepTimer.h"
 
 // System includes
@@ -57,7 +57,7 @@ namespace HoloIntervention
     namespace Tasks
     {
       //----------------------------------------------------------------------------
-      task<bool> PhantomTask::WriteConfigurationAsync(XmlDocument^ document)
+      task<bool> PreOpAnatomyTask::WriteConfigurationAsync(XmlDocument^ document)
       {
         return create_task([this, document]()
         {
@@ -74,11 +74,11 @@ namespace HoloIntervention
       }
 
       //----------------------------------------------------------------------------
-      task<bool> PhantomTask::ReadConfigurationAsync(XmlDocument^ document)
+      task<bool> PreOpAnatomyTask::ReadConfigurationAsync(XmlDocument^ document)
       {
         return create_task([this, document]()
         {
-          auto xpath = ref new Platform::String(L"/HoloIntervention/PhantomTask");
+          auto xpath = ref new Platform::String(L"/HoloIntervention/PreOpAnatomyTask");
           if (document->SelectNodes(xpath)->Length == 0)
           {
             return false;
@@ -98,7 +98,7 @@ namespace HoloIntervention
       }
 
       //----------------------------------------------------------------------------
-      float3 PhantomTask::GetStabilizedPosition(SpatialPointerPose^ pose) const
+      float3 PreOpAnatomyTask::GetStabilizedPosition(SpatialPointerPose^ pose) const
       {
         if (m_componentReady)
         {
@@ -109,7 +109,7 @@ namespace HoloIntervention
       }
 
       //----------------------------------------------------------------------------
-      float3 PhantomTask::GetStabilizedVelocity() const
+      float3 PreOpAnatomyTask::GetStabilizedVelocity() const
       {
         if (m_componentReady)
         {
@@ -120,13 +120,13 @@ namespace HoloIntervention
       }
 
       //----------------------------------------------------------------------------
-      float PhantomTask::GetStabilizePriority() const
+      float PreOpAnatomyTask::GetStabilizePriority() const
       {
         return m_componentReady ? PRIORITY_PHANTOM_TASK : PRIORITY_NOT_ACTIVE;
       }
 
       //----------------------------------------------------------------------------
-      PhantomTask::PhantomTask(NotificationSystem& notificationSystem, NetworkSystem& networkSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer)
+      PreOpAnatomyTask::PreOpAnatomyTask(NotificationSystem& notificationSystem, NetworkSystem& networkSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer)
         : m_notificationSystem(notificationSystem)
         , m_networkSystem(networkSystem)
         , m_registrationSystem(registrationSystem)
@@ -135,13 +135,13 @@ namespace HoloIntervention
       }
 
       //----------------------------------------------------------------------------
-      PhantomTask::~PhantomTask()
+      PreOpAnatomyTask::~PreOpAnatomyTask()
       {
       }
 
 
       //----------------------------------------------------------------------------
-      void PhantomTask::Update(SpatialCoordinateSystem^ coordinateSystem, DX::StepTimer& timer)
+      void PreOpAnatomyTask::Update(SpatialCoordinateSystem^ coordinateSystem, DX::StepTimer& timer)
       {
         if (!m_componentReady)
         {
@@ -167,7 +167,7 @@ namespace HoloIntervention
       }
 
       //----------------------------------------------------------------------------
-      void PhantomTask::RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap)
+      void PreOpAnatomyTask::RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap)
       {
         callbackMap[L"start phantom task"] = [this](SpeechRecognitionResult ^ result)
         {

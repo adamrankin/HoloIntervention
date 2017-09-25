@@ -148,7 +148,7 @@
     <ClInclude Include="Content\Systems\Splash\SplashSystem.h" />
     <ClInclude Include="Content\Systems\Tool\ToolEntry.h" />
     <ClInclude Include="Content\Systems\Tool\ToolSystem.h" />
-    <ClInclude Include="Content\Tasks\PhantomTask.h" />
+    <ClInclude Include="Content\Tasks\PreOpAnatomyTask.h" />
     <ClInclude Include="Content\Tasks\TouchingSphereTask.h" />
     <ClInclude Include="Core\Common.h" />
     <ClInclude Include="Core\Configuration.h" />
@@ -209,7 +209,7 @@
     <ClCompile Include="Content\Systems\Splash\SplashSystem.cpp" />
     <ClCompile Include="Content\Systems\Tool\ToolEntry.cpp" />
     <ClCompile Include="Content\Systems\Tool\ToolSystem.cpp" />
-    <ClCompile Include="Content\Tasks\PhantomTask.cpp" />
+    <ClCompile Include="Content\Tasks\PreOpAnatomyTask.cpp" />
     <ClCompile Include="Content\Tasks\TouchingSphereTask.cpp" />
     <ClCompile Include="Core\Common.cpp" />
     <ClCompile Include="Core\HoloInterventionCore.cpp" />

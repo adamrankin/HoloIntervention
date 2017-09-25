@@ -69,7 +69,7 @@ namespace HoloIntervention
 
     namespace Tasks
     {
-      class PhantomTask : public IStabilizedComponent, public Input::IVoiceInput, public IConfigurable
+      class PreOpAnatomyTask : public IStabilizedComponent, public Input::IVoiceInput, public IConfigurable
       {
       public:
         virtual concurrency::task<bool> WriteConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
@@ -84,8 +84,8 @@ namespace HoloIntervention
         virtual void RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap);
         virtual void Update(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem, DX::StepTimer& stepTimer);
 
-        PhantomTask(NotificationSystem& notificationSystem, NetworkSystem& networkSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer);
-        ~PhantomTask();
+        PreOpAnatomyTask(NotificationSystem& notificationSystem, NetworkSystem& networkSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer);
+        ~PreOpAnatomyTask();
 
       protected:
         // Cached system variables

@@ -148,9 +148,6 @@
     <ClCompile Include="Content\Systems\Registration\ManualRegistration.cpp">
       <Filter>Content\Systems\Registration\Manual</Filter>
     </ClCompile>
-    <ClCompile Include="Content\Tasks\PhantomTask.cpp">
-      <Filter>Content\Systems\Tasks</Filter>
-    </ClCompile>
     <ClCompile Include="Content\Systems\Registration\LandmarkRegistration.cpp">
       <Filter>Content\Systems\Registration</Filter>
     </ClCompile>
@@ -161,6 +158,9 @@
       <Filter>Content\Input\SpatialInput</Filter>
     </ClCompile>
     <ClCompile Include="Content\Tasks\TouchingSphereTask.cpp">
+      <Filter>Content\Systems\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Tasks\PreOpAnatomyTask.cpp">
       <Filter>Content\Systems\Tasks</Filter>
     </ClCompile>
   </ItemGroup>
@@ -339,9 +339,6 @@
     <ClInclude Include="Core\Configuration.h">
       <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="Content\Tasks\PhantomTask.h">
-      <Filter>Content\Systems\Tasks</Filter>
-    </ClInclude>
     <ClInclude Include="Content\Systems\Registration\LandmarkRegistration.h">
       <Filter>Content\Systems\Registration</Filter>
     </ClInclude>
@@ -352,6 +349,9 @@
       <Filter>Content\Input\SpatialInput</Filter>
     </ClInclude>
     <ClInclude Include="Content\Tasks\TouchingSphereTask.h">
+      <Filter>Content\Systems\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Tasks\PreOpAnatomyTask.h">
       <Filter>Content\Systems\Tasks</Filter>
     </ClInclude>
   </ItemGroup>
