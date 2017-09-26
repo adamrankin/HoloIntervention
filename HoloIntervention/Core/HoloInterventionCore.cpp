@@ -39,6 +39,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "NotificationSystem.h"
 #include "RegistrationSystem.h"
 #include "SplashSystem.h"
+#include "TaskSystem.h"
 #include "ToolSystem.h"
 
 // Physics includes
@@ -133,6 +134,7 @@ namespace HoloIntervention
     m_gazeSystem = std::make_unique<System::GazeSystem> (*m_notificationSystem.get(), *m_physicsAPI.get(), *m_modelRenderer.get());
     m_imagingSystem = std::make_unique<System::ImagingSystem> (*m_registrationSystem.get(), *m_notificationSystem.get(), *m_sliceRenderer.get(), *m_volumeRenderer.get(), *m_networkSystem.get());
     m_splashSystem = std::make_unique<System::SplashSystem> (*m_sliceRenderer.get());
+    m_taskSystem = std::make_unique<System::TaskSystem> (*m_notificationSystem.get(), *m_networkSystem.get(), *m_registrationSystem.get(), *m_modelRenderer.get());
 
     m_engineComponents.push_back(m_modelRenderer.get());
     m_engineComponents.push_back(m_sliceRenderer.get());
@@ -150,12 +152,14 @@ namespace HoloIntervention
     m_engineComponents.push_back(m_imagingSystem.get());
     m_engineComponents.push_back(m_iconSystem.get());
     m_engineComponents.push_back(m_splashSystem.get());
+    m_engineComponents.push_back(m_taskSystem.get());
 
     m_configurableComponents.push_back(m_toolSystem.get());
     m_configurableComponents.push_back(m_registrationSystem.get());
     m_configurableComponents.push_back(m_networkSystem.get());
     m_configurableComponents.push_back(m_imagingSystem.get());
     m_configurableComponents.push_back(m_iconSystem.get());
+    m_configurableComponents.push_back(m_taskSystem.get());
 
     ReadConfigurationAsync();
 

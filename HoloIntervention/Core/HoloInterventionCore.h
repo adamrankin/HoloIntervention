@@ -52,6 +52,7 @@ namespace HoloIntervention
     class NotificationSystem;
     class RegistrationSystem;
     class SplashSystem;
+    class TaskSystem;
     class ToolSystem;
   }
 
@@ -188,6 +189,7 @@ namespace HoloIntervention
     std::unique_ptr<System::RegistrationSystem>           m_registrationSystem;
     std::unique_ptr<System::SplashSystem>                 m_splashSystem;
     std::unique_ptr<System::ToolSystem>                   m_toolSystem;
+    std::unique_ptr<System::TaskSystem>                   m_taskSystem;
 
     // Physics
     std::unique_ptr<Physics::PhysicsAPI>                  m_physicsAPI;
