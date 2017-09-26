@@ -77,6 +77,13 @@ namespace HoloIntervention
       void SetHeadlocked(bool headLocked);
       bool GetHeadlocked() const;
 
+      void SetUseHeadUpDirection(bool use);
+      bool GetUseHeadUpDirection() const;
+
+      void SetScalingFactor(float uniformScale);
+      void SetScalingFactor(float x, float y);
+      void SetScalingFactor(const Windows::Foundation::Numerics::float2& scale);
+
       void SetId(uint64 id);
       uint64 GetId() const;
 
@@ -104,18 +111,22 @@ namespace HoloIntervention
       uint64                                              m_id = 0;
       SliceConstantBuffer                                 m_constantBuffer;
       std::atomic_bool                                    m_sliceValid = false;
-      std::atomic_bool                                    m_headLocked = false;
       std::atomic_bool                                    m_visible = true;
+      std::atomic_bool                                    m_firstFrame = true;
       Windows::Foundation::Numerics::float4x4             m_desiredPose = Windows::Foundation::Numerics::float4x4::identity();
       Windows::Foundation::Numerics::float4x4             m_currentPose = Windows::Foundation::Numerics::float4x4::identity();
       Windows::Foundation::Numerics::float4x4             m_lastPose = Windows::Foundation::Numerics::float4x4::identity();
       Windows::Foundation::Numerics::float3               m_velocity = { 0.f, 0.f, 0.f };
       Windows::Foundation::Numerics::float4               m_whiteMapColour = { 1.f, 1.f, 1.f, 1.f };
       Windows::Foundation::Numerics::float4               m_blackMapColour = { 0.f, 0.f, 0.f, 1.f };
-      float                                               m_scalingFactor = 1.f;
+      Windows::Foundation::Numerics::float2               m_scalingFactor = { 1.f, 1.f };
       DXGI_FORMAT                                         m_pixelFormat = DXGI_FORMAT_UNKNOWN;
       mutable std::atomic_bool                            m_isInFrustum = false;
       mutable uint64                                      m_frustumCheckFrameNumber = 0;
+
+      // Headlocked vars
+      std::atomic_bool                                    m_headLocked = false;
+      std::atomic_bool                                    m_useHeadUpDirection = true;
 
       // Image data vars
       UWPOpenIGTLink::TrackedFrame^                       m_frame = nullptr;
@@ -127,7 +138,6 @@ namespace HoloIntervention
       // Constants relating to slice renderer behavior
       static const Windows::Foundation::Numerics::float3  LOCKED_SLICE_SCREEN_OFFSET;
       static const float                                  LOCKED_SLICE_DISTANCE_OFFSET;
-      static const float                                  LOCKED_SLICE_SCALE_FACTOR;
       static const float                                  LERP_RATE;
     };
   }

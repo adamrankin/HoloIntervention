@@ -101,6 +101,10 @@ namespace HoloIntervention
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
           }
         }
+
+        m_sliceEntry->SetScalingFactor(1.f, 1349.f / 3836.f);
+        m_sliceEntry->SetUseHeadUpDirection(false);
+        m_sliceEntry->SetHeadlocked(true);
       });
     }
 
@@ -145,23 +149,6 @@ namespace HoloIntervention
       {
         m_componentReady = true;
         return;
-      }
-
-      if (headPose != nullptr && m_sliceEntry != nullptr)
-      {
-        const float3 offsetFromGazeAtTwoMeters = headPose->Head->Position + (float3(NOTIFICATION_DISTANCE_OFFSET) * headPose->Head->ForwardDirection);
-        const float4x4 worldTransform = make_float4x4_world(offsetFromGazeAtTwoMeters, headPose->Head->ForwardDirection, float3(0.f, 1.f, 0.f));
-        const float4x4 scaleTransform = make_float4x4_scale(1.f, 1349.f / 3836.f, 1.f); // Keep aspect ratio of 3836x1349
-
-        if (m_firstFrame)
-        {
-          m_sliceEntry->ForceCurrentPose(scaleTransform * worldTransform);
-          m_firstFrame = false;
-        }
-        else
-        {
-          m_sliceEntry->SetDesiredPose(scaleTransform * worldTransform);
-        }
       }
     }
   }

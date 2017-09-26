@@ -53,13 +53,12 @@ namespace HoloIntervention
   {
     const float3 SliceEntry::LOCKED_SLICE_SCREEN_OFFSET = { 0.12f, 0.f, 0.f };
     const float SliceEntry::LOCKED_SLICE_DISTANCE_OFFSET = 2.1f;
-    const float SliceEntry::LOCKED_SLICE_SCALE_FACTOR = 10.f;
     const float SliceEntry::LERP_RATE = 2.5f;
 
     //----------------------------------------------------------------------------
     float3 SliceEntry::GetStabilizedPosition(SpatialPointerPose^ pose) const
     {
-      return transform(float3(0.f, 0.f, 0.f), m_currentPose);
+      return float3(m_currentPose.m41, m_currentPose.m42, m_currentPose.m43);
     }
 
     //----------------------------------------------------------------------------
@@ -137,28 +136,43 @@ namespace HoloIntervention
       // Calculate new smoothed currentPose
       if (!m_headLocked)
       {
-        m_currentPose = lerp(m_currentPose, m_desiredPose, deltaTime * LERP_RATE);
+        if (m_firstFrame)
+        {
+          m_currentPose = m_desiredPose;
+          m_firstFrame = false;
+        }
+        else
+        {
+          m_currentPose = lerp(m_currentPose, m_desiredPose, deltaTime * LERP_RATE);
+        }
       }
       else
       {
         // Get the gaze direction relative to the given coordinate system.
-        const float3 headPosition = pose->Head->Position;
-        const float3 headDirection = pose->Head->ForwardDirection;
-
-        // Offset the view to centered, lower quadrant
-        const float3 offsetFromGaze = headPosition + (float3(LOCKED_SLICE_DISTANCE_OFFSET) * (headDirection + LOCKED_SLICE_SCREEN_OFFSET));
+        const float3 offsetFromGaze = pose->Head->Position + (float3(LOCKED_SLICE_DISTANCE_OFFSET) * pose->Head->ForwardDirection);
 
         // Use linear interpolation to smooth the position over time
-        const float3 smoothedPosition = lerp(currentTranslation, offsetFromGaze, deltaTime * LERP_RATE);
+        float3 smoothedPosition;
+        if (m_firstFrame)
+        {
+          smoothedPosition = offsetFromGaze;
+          m_firstFrame = false;
+        }
+        else
+        {
+          smoothedPosition = lerp(currentTranslation, offsetFromGaze, deltaTime * LERP_RATE);
+        }
 
-        XMVECTOR facingNormal = XMVector3Normalize(-XMLoadFloat3(&smoothedPosition));
-        XMVECTOR xAxisRotation = XMVector3Normalize(XMVectorSet(XMVectorGetZ(facingNormal), 0.f, -XMVectorGetX(facingNormal), 0.f));
-        XMVECTOR yAxisRotation = XMVector3Normalize(XMVector3Cross(facingNormal, xAxisRotation));
-
-        // Construct the 4x4 pose matrix.
-        float4x4 rotationMatrix;
-        XMStoreFloat4x4(&rotationMatrix, XMMATRIX(xAxisRotation, yAxisRotation, facingNormal, XMVectorSet(0.f, 0.f, 0.f, 1.f)));
-        m_currentPose = make_float4x4_scale(m_scalingFactor, m_scalingFactor, 1.f) * rotationMatrix * make_float4x4_translation(smoothedPosition); // TODO : this order may need to be reversed due to column-major change
+        float4x4 worldTransform;
+        if (m_useHeadUpDirection)
+        {
+          worldTransform = make_float4x4_world(smoothedPosition, pose->Head->ForwardDirection, pose->Head->UpDirection);
+        }
+        else
+        {
+          worldTransform = make_float4x4_world(smoothedPosition, pose->Head->ForwardDirection, float3(0.f, 1.f, 0.f));
+        }
+        m_currentPose = make_float4x4_scale(m_scalingFactor.x, m_scalingFactor.y, 1.f) * worldTransform;
       }
 
       XMStoreFloat4x4(&m_constantBuffer.worldMatrix, XMLoadFloat4x4(&m_currentPose));
@@ -301,6 +315,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void SliceEntry::ForceCurrentPose(const Windows::Foundation::Numerics::float4x4& matrix)
     {
+      m_firstFrame = true;
       m_currentPose = m_desiredPose = m_lastPose = matrix;
     }
 
@@ -326,20 +341,42 @@ namespace HoloIntervention
     void SliceEntry::SetHeadlocked(bool headLocked)
     {
       m_headLocked = headLocked;
-      if (m_headLocked)
-      {
-        m_scalingFactor = LOCKED_SLICE_SCALE_FACTOR;
-      }
-      else
-      {
-        m_scalingFactor = 1.f;
-      }
     }
 
     //----------------------------------------------------------------------------
     bool SliceEntry::GetHeadlocked() const
     {
       return m_headLocked;
+    }
+
+    //-----------------------------------------------------------------------------
+    void SliceEntry::SetUseHeadUpDirection(bool use)
+    {
+      m_useHeadUpDirection = use;
+    }
+
+    //-----------------------------------------------------------------------------
+    bool SliceEntry::GetUseHeadUpDirection() const
+    {
+      return m_useHeadUpDirection;
+    }
+
+    //-----------------------------------------------------------------------------
+    void SliceEntry::SetScalingFactor(float x, float y)
+    {
+      m_scalingFactor = float2(x, y);
+    }
+
+    //-----------------------------------------------------------------------------
+    void SliceEntry::SetScalingFactor(const float2& scale)
+    {
+      m_scalingFactor = scale;
+    }
+
+    //-----------------------------------------------------------------------------
+    void SliceEntry::SetScalingFactor(float uniformScale)
+    {
+      m_scalingFactor = float2(uniformScale, uniformScale);
     }
 
     //----------------------------------------------------------------------------

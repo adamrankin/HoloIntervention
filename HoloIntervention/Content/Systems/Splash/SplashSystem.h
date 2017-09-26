@@ -63,10 +63,6 @@ namespace HoloIntervention
 
       uint64                                              m_sliceToken = INVALID_TOKEN;
       std::shared_ptr<Rendering::SliceEntry>              m_sliceEntry = nullptr;
-
-      Windows::Foundation::Numerics::float3               m_position;
-
-      std::atomic_bool                                    m_firstFrame = true;
       float                                               m_welcomeTimerSec = 0.f;
       std::wstring                                        m_splashImageFilename = L"Assets\\Images\\HoloIntervention.png";
 

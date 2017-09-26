@@ -44,6 +44,7 @@ namespace HoloIntervention
     //-----------------------------------------------------------------------------
     task<bool> TaskSystem::ReadConfigurationAsync(XmlDocument^ document)
     {
+      m_componentReady = true;
       return task_from_result(true);
     }
 
