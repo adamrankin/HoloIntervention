@@ -607,24 +607,20 @@ namespace HoloIntervention
       HolographicCameraRenderingParameters^ renderingParameters = holographicFrame->GetRenderingParameters(cameraPose);
 
       float3 focusPointPosition = winningComponent->GetStabilizedPosition(pose);
-      float3 focusPointNormal = pose->Head->UpDirection;
       float3 focusPointVelocity = winningComponent->GetStabilizedVelocity();
 
-      if (focusPointNormal != float3::zero())
+      try
       {
-        try
-        {
-          renderingParameters->SetFocusPoint(
-            currentCoordinateSystem,
-            focusPointPosition,
-            focusPointNormal,
-            focusPointVelocity
-          );
-        }
-        catch (Platform::Exception^ e)
-        {
-          LOG(LogLevelType::LOG_LEVEL_ERROR, e->Message);
-        }
+        renderingParameters->SetFocusPoint(
+          currentCoordinateSystem,
+          focusPointPosition,
+          -pose->Head->ForwardDirection,
+          focusPointVelocity
+        );
+      }
+      catch (Platform::Exception^ e)
+      {
+        LOG(LogLevelType::LOG_LEVEL_ERROR, e->Message);
       }
     }
   }

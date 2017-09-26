@@ -136,7 +136,6 @@ namespace HoloIntervention
       std::mutex                                          m_imageAccessMutex;
 
       // Constants relating to slice renderer behavior
-      static const Windows::Foundation::Numerics::float3  LOCKED_SLICE_SCREEN_OFFSET;
       static const float                                  LOCKED_SLICE_DISTANCE_OFFSET;
       static const float                                  LERP_RATE;
     };

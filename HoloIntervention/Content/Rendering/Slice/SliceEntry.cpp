@@ -51,7 +51,6 @@ namespace HoloIntervention
 {
   namespace Rendering
   {
-    const float3 SliceEntry::LOCKED_SLICE_SCREEN_OFFSET = { 0.12f, 0.f, 0.f };
     const float SliceEntry::LOCKED_SLICE_DISTANCE_OFFSET = 2.1f;
     const float SliceEntry::LERP_RATE = 2.5f;
 
