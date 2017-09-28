@@ -102,7 +102,7 @@ namespace HoloIntervention
     protected:
       std::shared_ptr<SliceEntry> AddSliceCommon(const Windows::Foundation::Numerics::float4x4& desiredPose);
       bool FindSlice(uint64 sliceToken, std::shared_ptr<SliceEntry>& sliceEntry) const;
-      HRESULT CreateVertexBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer> comPtr, float bottom, float left, float right, float top);
+      HRESULT CreateVertexBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer>& comPtr, float bottom, float left, float right, float top);
 
     protected:
       // Cached pointer to device resources.

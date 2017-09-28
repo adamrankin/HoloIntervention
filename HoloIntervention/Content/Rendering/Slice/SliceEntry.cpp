@@ -87,6 +87,8 @@ namespace HoloIntervention
     SliceEntry::~SliceEntry()
     {
       ReleaseDeviceDependentResources();
+
+      m_vertexBuffer = nullptr;
     }
 
     //----------------------------------------------------------------------------
@@ -452,7 +454,6 @@ namespace HoloIntervention
       m_shaderResourceView.Reset();
       m_imageTexture.Reset();
       m_imageStagingTexture.Reset();
-      m_vertexBuffer = nullptr;
     }
 
     //----------------------------------------------------------------------------

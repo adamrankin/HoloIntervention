@@ -491,6 +491,7 @@ namespace HoloIntervention
       std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources, m_timer);
       entry->SetId(m_nextUnusedSliceId);
       entry->ForceCurrentPose(desiredPose);
+      entry->SetVertexBuffer(m_centerVertexBuffer);
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
       m_slices.push_back(entry);
       m_nextUnusedSliceId++;
@@ -513,7 +514,7 @@ namespace HoloIntervention
     }
 
     //-----------------------------------------------------------------------------
-    HRESULT SliceRenderer::CreateVertexBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer> comPtr, float bottom, float left, float right, float top)
+    HRESULT SliceRenderer::CreateVertexBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer>& comPtr, float bottom, float left, float right, float top)
     {
       std::array<VertexPositionTexture, 4> quadVertices;
       quadVertices[0].pos = XMFLOAT3(left, top, 0.f);
