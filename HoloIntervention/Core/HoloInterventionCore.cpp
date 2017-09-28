@@ -320,6 +320,7 @@ namespace HoloIntervention
         }
         m_imagingSystem->Update(m_timer, hmdCoordinateSystem);
         m_toolSystem->Update(m_timer, hmdCoordinateSystem);
+        m_networkSystem->Update();
 
         m_physicsAPI->Update(hmdCoordinateSystem);
 

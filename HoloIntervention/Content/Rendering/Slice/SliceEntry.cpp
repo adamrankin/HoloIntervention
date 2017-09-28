@@ -28,6 +28,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "DirectXHelper.h"
 #include "RenderingCommon.h"
 #include "SliceEntry.h"
+#include "SliceRenderer.h"
 #include "StepTimer.h"
 
 // DirectXTex includes
@@ -123,6 +124,11 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void SliceEntry::Update(SpatialPointerPose^ pose)
     {
+      if (!m_sliceValid)
+      {
+        return;
+      }
+
       const float& deltaTime = static_cast<float>(m_timer.GetElapsedSeconds());
 
       float3 currentTranslation = { m_currentPose.m41, m_currentPose.m42, m_currentPose.m43 };
@@ -188,6 +194,10 @@ namespace HoloIntervention
       }
 
       const auto context = m_deviceResources->GetD3DDeviceContext();
+
+      const UINT stride = sizeof(VertexPositionTexture);
+      const UINT offset = 0;
+      context->IASetVertexBuffers(0, 1, m_vertexBuffer.GetAddressOf(), &stride, &offset);
 
       context->VSSetConstantBuffers(0, 1, m_sliceConstantBuffer.GetAddressOf());
       context->PSSetConstantBuffers(0, 1, m_sliceConstantBuffer.GetAddressOf());
@@ -303,6 +313,12 @@ namespace HoloIntervention
     std::shared_ptr<byte> SliceEntry::GetImageData() const
     {
       return m_imageData;
+    }
+
+    //-----------------------------------------------------------------------------
+    void SliceEntry::SetVertexBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer)
+    {
+      m_vertexBuffer = vertexBuffer;
     }
 
     //----------------------------------------------------------------------------
@@ -436,6 +452,7 @@ namespace HoloIntervention
       m_shaderResourceView.Reset();
       m_imageTexture.Reset();
       m_imageStagingTexture.Reset();
+      m_vertexBuffer = nullptr;
     }
 
     //----------------------------------------------------------------------------

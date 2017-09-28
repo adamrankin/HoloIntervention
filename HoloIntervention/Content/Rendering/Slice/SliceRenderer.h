@@ -62,23 +62,31 @@ namespace HoloIntervention
       typedef std::list<std::shared_ptr<SliceEntry>> SliceList;
 
     public:
+      enum SliceOrigin
+      {
+        ORIGIN_CENTER,
+        ORIGIN_TOPLEFT
+      };
+
+    public:
       SliceRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& timer);
       ~SliceRenderer();
 
       uint64 AddSlice(const std::wstring& fileName, Windows::Foundation::Numerics::float4x4 desiredPose = Windows::Foundation::Numerics::float4x4::identity());
       uint64 AddSlice(UWPOpenIGTLink::TrackedFrame^ frame, Windows::Foundation::Numerics::float4x4 desiredPose = Windows::Foundation::Numerics::float4x4::identity());
-      uint64 AddSlice(std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 desiredPose);
-      uint64 AddSlice(Windows::Storage::Streams::IBuffer^ imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 desiredPose);
+      uint64 AddSlice(std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 desiredPose = Windows::Foundation::Numerics::float4x4::identity());
+      uint64 AddSlice(Windows::Storage::Streams::IBuffer^ imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 desiredPose = Windows::Foundation::Numerics::float4x4::identity());
       void RemoveSlice(uint64 sliceToken);
       std::shared_ptr<SliceEntry> GetSlice(uint64 sliceToken);
 
-      void UpdateSlice(uint64 sliceToken, std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 desiredPose);
-      void UpdateSlice(uint64 sliceToken, UWPOpenIGTLink::TrackedFrame^ frame, Windows::Foundation::Numerics::float4x4 desiredPose);
+      void UpdateSlice(uint64 sliceToken, std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 desiredPose = Windows::Foundation::Numerics::float4x4::identity());
+      void UpdateSlice(uint64 sliceToken, UWPOpenIGTLink::TrackedFrame^ frame, Windows::Foundation::Numerics::float4x4 desiredPose = Windows::Foundation::Numerics::float4x4::identity());
 
       void ShowSlice(uint64 sliceToken);
       void HideSlice(uint64 sliceToken);
       void SetSliceVisible(uint64 sliceToken, bool show);
       void SetSliceHeadlocked(uint64 sliceToken, bool headlocked);
+      void SetSliceRenderOrigin(uint64 sliceToken, SliceOrigin origin);
 
       void ForceSlicePose(uint64 sliceToken, const Windows::Foundation::Numerics::float4x4& pose);
       Windows::Foundation::Numerics::float4x4 GetSlicePose(uint64 sliceToken) const;
@@ -92,7 +100,9 @@ namespace HoloIntervention
       void Render();
 
     protected:
+      std::shared_ptr<SliceEntry> AddSliceCommon(const Windows::Foundation::Numerics::float4x4& desiredPose);
       bool FindSlice(uint64 sliceToken, std::shared_ptr<SliceEntry>& sliceEntry) const;
+      HRESULT CreateVertexBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer> comPtr, float bottom, float left, float right, float top);
 
     protected:
       // Cached pointer to device resources.
@@ -103,11 +113,14 @@ namespace HoloIntervention
       // Direct3D resources
       Microsoft::WRL::ComPtr<ID3D11InputLayout>           m_inputLayout;
       Microsoft::WRL::ComPtr<ID3D11Buffer>                m_indexBuffer;
-      Microsoft::WRL::ComPtr<ID3D11Buffer>                m_vertexBuffer;
       Microsoft::WRL::ComPtr<ID3D11VertexShader>          m_vertexShader;
       Microsoft::WRL::ComPtr<ID3D11GeometryShader>        m_geometryShader;
       Microsoft::WRL::ComPtr<ID3D11PixelShader>           m_colourPixelShader;
       Microsoft::WRL::ComPtr<ID3D11PixelShader>           m_greyPixelShader;
+
+      // Vertex buffers, one for image origin at top left, one for image origin at center
+      Microsoft::WRL::ComPtr<ID3D11Buffer>                m_topLeftVertexBuffer;
+      Microsoft::WRL::ComPtr<ID3D11Buffer>                m_centerVertexBuffer;
 
       // Direct3D resources for the texture.
       Microsoft::WRL::ComPtr<ID3D11SamplerState>          m_quadTextureSamplerState;

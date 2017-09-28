@@ -22,7 +22,7 @@ namespace HoloIntervention
     class VideoFrameProcessor
     {
     public:
-      static Concurrency::task<std::shared_ptr<VideoFrameProcessor>> CreateAsync(void);
+      static Concurrency::task<std::shared_ptr<VideoFrameProcessor>> CreateAsync(Windows::Media::Capture::Frames::MediaFrameSourceInfo^ details = nullptr, Windows::Media::Capture::MediaCaptureInitializationSettings^ settings = nullptr);
 
       VideoFrameProcessor(
         Platform::Agile<Windows::Media::Capture::MediaCapture> mediaCapture,

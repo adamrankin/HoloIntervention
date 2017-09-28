@@ -144,7 +144,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    Concurrency::task<bool> NetworkSystem::ConnectAsync(uint64 hashedConnectionName, double timeoutSec /*= CONNECT_TIMEOUT_SEC*/, Concurrency::task_options& options /*= Concurrency::task_options()*/)
+    task<bool> NetworkSystem::ConnectAsync(uint64 hashedConnectionName, double timeoutSec /*= CONNECT_TIMEOUT_SEC*/, task_options& options /*= Concurrency::task_options()*/)
     {
       std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
       auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
@@ -192,10 +192,19 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    Concurrency::task<bool> NetworkSystem::ConnectAsync(double timeoutSec /*= CONNECT_TIMEOUT_SEC*/, Concurrency::task_options& options /*= Concurrency::task_options()*/)
+    task<std::vector<bool>> NetworkSystem::ConnectAsync(double timeoutSec /*= CONNECT_TIMEOUT_SEC*/, task_options& options /*= Concurrency::task_options()*/)
     {
-      // TODO : to implement
-      return task_from_result(false);
+      // Connect all connectors
+      auto tasks = std::vector<task<bool>>();
+
+      std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
+      for (auto entry : m_connectors)
+      {
+        auto task = this->ConnectAsync(entry.HashedName, 4.0);
+        tasks.push_back(task);
+      }
+
+      return when_all(begin(tasks), end(tasks));
     }
 
     //----------------------------------------------------------------------------
@@ -335,36 +344,8 @@ namespace HoloIntervention
     {
       callbackMap[L"connect"] = [this](SpeechRecognitionResult ^ result)
       {
-        // Connect all connectors
-        auto tasks = std::vector<task<bool>>();
-
         uint64 connectMessageId = m_notificationSystem.QueueMessage(L"Connecting...");
-        {
-          std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
-          for (auto entry : m_connectors)
-          {
-            auto task = this->ConnectAsync(entry.HashedName, 4.0);
-            tasks.push_back(task);
-          }
-        }
-
-        auto joinTask = when_all(begin(tasks), end(tasks)).then([this, connectMessageId](std::vector<bool> results)
-        {
-          bool result(true);
-          for (auto res : results)
-          {
-            result &= res;
-          }
-          m_notificationSystem.RemoveMessage(connectMessageId);
-          if (result)
-          {
-            m_notificationSystem.QueueMessage(L"Connection successful.");
-          }
-          else
-          {
-            m_notificationSystem.QueueMessage(L"Connection failed.");
-          }
-        });
+        auto task = this->ConnectAsync(4.0);
       };
 
       callbackMap[L"set IP"] = [this](SpeechRecognitionResult ^ result)
@@ -627,6 +608,26 @@ namespace HoloIntervention
         return polydata;
       }
       return nullptr;
+    }
+
+    //-----------------------------------------------------------------------------
+    void NetworkSystem::Update()
+    {
+      if (!m_componentReady)
+      {
+        return;
+      }
+
+      for (auto& connector : m_connectors)
+      {
+        if (connector.State == CONNECTION_STATE_CONNECTED && !connector.Connector->Connected)
+        {
+          // Other end has likely dropped us, update the state (and thus the UI), and reconnect
+          LOG_INFO("Connection dropped by server. Reconnecting.");
+          connector.State = CONNECTION_STATE_DISCONNECTED;
+          ConnectAsync(connector.HashedName, 4.0);
+        }
+      }
     }
 
     //----------------------------------------------------------------------------

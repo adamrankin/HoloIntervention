@@ -39,20 +39,31 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<std::shared_ptr<VideoFrameProcessor>> VideoFrameProcessor::CreateAsync(void)
+    task<std::shared_ptr<VideoFrameProcessor>> VideoFrameProcessor::CreateAsync(MediaFrameSourceInfo^ details, MediaCaptureInitializationSettings^ settings)
     {
-      return create_task(MediaFrameSourceGroup::FindAllAsync()).then([](IVectorView<MediaFrameSourceGroup^>^ groups)
+      return create_task(MediaFrameSourceGroup::FindAllAsync()).then([details, &settings](IVectorView<MediaFrameSourceGroup^>^ groups)
       {
         MediaFrameSourceGroup^ selectedGroup = nullptr;
         MediaFrameSourceInfo^ selectedSourceInfo = nullptr;
+        MediaStreamType type;
+        MediaFrameSourceKind kind;
+        if (details != nullptr)
+        {
+          type = details->MediaStreamType;
+          kind = details->SourceKind;
+        }
+        else
+        {
+          type = MediaStreamType::VideoRecord;
+          kind = MediaFrameSourceKind::Color;
+        }
 
         // Pick first color source.
         for (MediaFrameSourceGroup^ sourceGroup : groups)
         {
           for (MediaFrameSourceInfo^ sourceInfo : sourceGroup->SourceInfos)
           {
-            if (sourceInfo->MediaStreamType == MediaStreamType::VideoRecord
-                && sourceInfo->SourceKind == MediaFrameSourceKind::Color)
+            if (sourceInfo->MediaStreamType == type && sourceInfo->SourceKind == kind)
             {
               selectedSourceInfo = sourceInfo;
               break;
@@ -72,10 +83,13 @@ namespace HoloIntervention
           return task_from_result(std::shared_ptr<VideoFrameProcessor>(nullptr));
         }
 
-        MediaCaptureInitializationSettings^ settings = ref new MediaCaptureInitializationSettings();
-        settings->MemoryPreference = MediaCaptureMemoryPreference::Cpu; // Need SoftwareBitmaps
-        settings->StreamingCaptureMode = StreamingCaptureMode::Video;   // Only need to stream video
-        settings->SourceGroup = selectedGroup;
+        if (settings == nullptr)
+        {
+          settings = ref new MediaCaptureInitializationSettings();
+          settings->MemoryPreference = MediaCaptureMemoryPreference::Cpu; // Need SoftwareBitmaps
+          settings->StreamingCaptureMode = StreamingCaptureMode::Video;   // Only need to stream video
+          settings->SourceGroup = selectedGroup;
+        }
 
         Platform::Agile<MediaCapture> mediaCapture(ref new MediaCapture());
 

@@ -90,7 +90,7 @@ namespace HoloIntervention
       void RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap);
 
       /// Connect all known connectors
-      Concurrency::task<bool> ConnectAsync(double timeoutSec = CONNECT_TIMEOUT_SEC, Concurrency::task_options& options = Concurrency::task_options());
+      Concurrency::task<std::vector<bool>> ConnectAsync(double timeoutSec = CONNECT_TIMEOUT_SEC, Concurrency::task_options& options = Concurrency::task_options());
 
       /// Connect a specific connector
       Concurrency::task<bool> ConnectAsync(uint64 hashedConnectionName, double timeoutSec = CONNECT_TIMEOUT_SEC, Concurrency::task_options& options = Concurrency::task_options());
@@ -119,6 +119,8 @@ namespace HoloIntervention
       UWPOpenIGTLink::TransformListABI^ GetTDataFrame(uint64 hashedConnectionName, double& latestTimestamp);
       UWPOpenIGTLink::Transform^ GetTransform(uint64 hashedConnectionName, UWPOpenIGTLink::TransformName^ transformName, double& latestTimestamp);
       UWPOpenIGTLink::Polydata^ GetPolydata(uint64 hashedConnectionName, Platform::String^ name);
+
+      void Update();
 
     protected:
       Concurrency::task<bool> InitAsync(Windows::Data::Xml::Dom::XmlDocument^ document);

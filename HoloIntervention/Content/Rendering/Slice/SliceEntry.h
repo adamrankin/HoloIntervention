@@ -67,6 +67,8 @@ namespace HoloIntervention
       void SetImageData(std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat);
       std::shared_ptr<byte> GetImageData() const;
 
+      void SetVertexBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer);
+
       void SetDesiredPose(const Windows::Foundation::Numerics::float4x4& matrix);
       void ForceCurrentPose(const Windows::Foundation::Numerics::float4x4& matrix);
       Windows::Foundation::Numerics::float4x4 GetCurrentPose() const;
@@ -106,6 +108,9 @@ namespace HoloIntervention
       Microsoft::WRL::ComPtr<ID3D11Texture2D>             m_imageStagingTexture;
       Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>    m_shaderResourceView;
       Microsoft::WRL::ComPtr<ID3D11Buffer>                m_sliceConstantBuffer;
+
+      // Slice renderer owned D3D resources
+      Microsoft::WRL::ComPtr<ID3D11Buffer>                m_vertexBuffer;
 
       // State vars
       uint64                                              m_id = 0;

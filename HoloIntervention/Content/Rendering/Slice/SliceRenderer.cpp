@@ -102,15 +102,9 @@ namespace HoloIntervention
         return INVALID_TOKEN;
       }
 
-      std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources, m_timer);
-      entry->SetId(m_nextUnusedSliceId);
-      entry->ForceCurrentPose(desiredPose);
+      auto entry = AddSliceCommon(desiredPose);
       entry->SetImageData(imageData, width, height, pixelFormat);
 
-      std::lock_guard<std::mutex> guard(m_sliceMapMutex);
-      m_slices.push_back(entry);
-
-      m_nextUnusedSliceId++;
       return m_nextUnusedSliceId - 1;
     }
 
@@ -122,18 +116,11 @@ namespace HoloIntervention
         return INVALID_TOKEN;
       }
 
-      std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources, m_timer);
-      entry->SetId(m_nextUnusedSliceId);
-      entry->ForceCurrentPose(desiredPose);
-
+      auto entry = AddSliceCommon(desiredPose);
       std::shared_ptr<byte> imDataPtr(new byte[imageData->Length], std::default_delete<byte[]>());
       memcpy(imDataPtr.get(), HoloIntervention::GetDataFromIBuffer(imageData), imageData->Length * sizeof(byte));
       entry->SetImageData(imDataPtr, width, height, pixelFormat);
 
-      std::lock_guard<std::mutex> guard(m_sliceMapMutex);
-      m_slices.push_back(entry);
-
-      m_nextUnusedSliceId++;
       return m_nextUnusedSliceId - 1;
     }
 
@@ -145,15 +132,9 @@ namespace HoloIntervention
         return INVALID_TOKEN;
       }
 
-      std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources, m_timer);
-      entry->SetId(m_nextUnusedSliceId);
-      entry->SetDesiredPose(desiredPose);
+      auto entry = AddSliceCommon(desiredPose);
       entry->SetImageData(fileName);
 
-      std::lock_guard<std::mutex> guard(m_sliceMapMutex);
-      m_slices.push_back(entry);
-
-      m_nextUnusedSliceId++;
       return m_nextUnusedSliceId - 1;
     }
 
@@ -165,15 +146,9 @@ namespace HoloIntervention
         return INVALID_TOKEN;
       }
 
-      std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources, m_timer);
-      entry->SetId(m_nextUnusedSliceId);
-      entry->SetDesiredPose(desiredPose);
+      auto entry = AddSliceCommon(desiredPose);
       entry->SetFrame(frame);
 
-      std::lock_guard<std::mutex> guard(m_sliceMapMutex);
-      m_slices.push_back(entry);
-
-      m_nextUnusedSliceId++;
       return m_nextUnusedSliceId - 1;
     }
 
@@ -268,6 +243,24 @@ namespace HoloIntervention
       if (FindSlice(sliceToken, entry))
       {
         entry->SetHeadlocked(headlocked);
+      }
+    }
+
+    //-----------------------------------------------------------------------------
+    void SliceRenderer::SetSliceRenderOrigin(uint64 sliceToken, SliceOrigin origin)
+    {
+      std::lock_guard<std::mutex> guard(m_sliceMapMutex);
+      std::shared_ptr<SliceEntry> entry;
+      if (FindSlice(sliceToken, entry))
+      {
+        if (origin == ORIGIN_CENTER)
+        {
+          entry->SetVertexBuffer(m_centerVertexBuffer);
+        }
+        else
+        {
+          entry->SetVertexBuffer(m_topLeftVertexBuffer);
+        }
       }
     }
 
@@ -374,27 +367,8 @@ namespace HoloIntervention
         });
       }
 
-      float bottom = -0.5;
-      float left = -0.5;
-      float right = 0.5;
-      float top = 0.5;
-
-      std::array<VertexPositionTexture, 4> quadVertices;
-      quadVertices[0].pos = XMFLOAT3(left, top, 0.f);
-      quadVertices[0].texCoord = XMFLOAT2(0.f, 0.f);
-      quadVertices[1].pos = XMFLOAT3(right, top, 0.f);
-      quadVertices[1].texCoord = XMFLOAT2(1.f, 0.f);
-      quadVertices[2].pos = XMFLOAT3(right, bottom, 0.f);
-      quadVertices[2].texCoord = XMFLOAT2(1.f, 1.f);
-      quadVertices[3].pos = XMFLOAT3(left, bottom, 0.f);
-      quadVertices[3].texCoord = XMFLOAT2(0.f, 1.f);
-
-      D3D11_SUBRESOURCE_DATA vertexBufferData = { 0 };
-      vertexBufferData.pSysMem = quadVertices.data();
-      vertexBufferData.SysMemPitch = 0;
-      vertexBufferData.SysMemSlicePitch = 0;
-      const CD3D11_BUFFER_DESC vertexBufferDesc(sizeof(VertexPositionTexture) * quadVertices.size(), D3D11_BIND_VERTEX_BUFFER);
-      DX::ThrowIfFailed(m_deviceResources->GetD3DDevice()->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &m_vertexBuffer));
+      DX::ThrowIfFailed(CreateVertexBuffer(m_centerVertexBuffer, -0.5f, -0.5f, 0.5f, 0.5f));
+      DX::ThrowIfFailed(CreateVertexBuffer(m_topLeftVertexBuffer, -1.f, 0.f, 1.f, 0.f));
 
       auto psTask = createColourPSTask && createGreyPSTask;
       task<void> shaderTaskGroup = m_usingVprtShaders ? (psTask && createVSTask) : (psTask && createVSTask && createGSTask);
@@ -436,7 +410,8 @@ namespace HoloIntervention
       m_componentReady = false;
       m_inputLayout.Reset();
       m_indexBuffer.Reset();
-      m_vertexBuffer.Reset();
+      m_centerVertexBuffer.Reset();
+      m_topLeftVertexBuffer.Reset();
       m_vertexShader.Reset();
       m_geometryShader.Reset();
       m_colourPixelShader.Reset();
@@ -470,9 +445,6 @@ namespace HoloIntervention
 
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
 
-      const UINT stride = sizeof(VertexPositionTexture);
-      const UINT offset = 0;
-      context->IASetVertexBuffers(0, 1, m_vertexBuffer.GetAddressOf(), &stride, &offset);
       context->IASetIndexBuffer(m_indexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
       context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
       context->IASetInputLayout(m_inputLayout.Get());
@@ -490,7 +462,6 @@ namespace HoloIntervention
         m_cameraResources->GetLatestSpatialBoundingFrustum(frustum);
       }
 
-      // TODO : implement instance rendering (instance of instance?)
       for (auto sliceEntry : m_slices)
       {
         if (sliceEntry->IsInFrustum(frustum) && sliceEntry->GetVisible())
@@ -514,6 +485,18 @@ namespace HoloIntervention
       context->PSSetSamplers(0, 1, ppNullPtr2);
     }
 
+    //-----------------------------------------------------------------------------
+    std::shared_ptr<SliceEntry> SliceRenderer::AddSliceCommon(const float4x4& desiredPose)
+    {
+      std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources, m_timer);
+      entry->SetId(m_nextUnusedSliceId);
+      entry->ForceCurrentPose(desiredPose);
+      std::lock_guard<std::mutex> guard(m_sliceMapMutex);
+      m_slices.push_back(entry);
+      m_nextUnusedSliceId++;
+      return entry;
+    }
+
     //----------------------------------------------------------------------------
     bool SliceRenderer::FindSlice(uint64 sliceToken, std::shared_ptr<SliceEntry>& sliceEntry) const
     {
@@ -527,6 +510,27 @@ namespace HoloIntervention
       }
 
       return false;
+    }
+
+    //-----------------------------------------------------------------------------
+    HRESULT SliceRenderer::CreateVertexBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer> comPtr, float bottom, float left, float right, float top)
+    {
+      std::array<VertexPositionTexture, 4> quadVertices;
+      quadVertices[0].pos = XMFLOAT3(left, top, 0.f);
+      quadVertices[0].texCoord = XMFLOAT2(0.f, 0.f);
+      quadVertices[1].pos = XMFLOAT3(right, top, 0.f);
+      quadVertices[1].texCoord = XMFLOAT2(1.f, 0.f);
+      quadVertices[2].pos = XMFLOAT3(right, bottom, 0.f);
+      quadVertices[2].texCoord = XMFLOAT2(1.f, 1.f);
+      quadVertices[3].pos = XMFLOAT3(left, bottom, 0.f);
+      quadVertices[3].texCoord = XMFLOAT2(0.f, 1.f);
+
+      D3D11_SUBRESOURCE_DATA vertexBufferData = { 0 };
+      vertexBufferData.pSysMem = quadVertices.data();
+      vertexBufferData.SysMemPitch = 0;
+      vertexBufferData.SysMemSlicePitch = 0;
+      const CD3D11_BUFFER_DESC vertexBufferDesc(sizeof(VertexPositionTexture) * quadVertices.size(), D3D11_BIND_VERTEX_BUFFER);
+      return m_deviceResources->GetD3DDevice()->CreateBuffer(&vertexBufferDesc, &vertexBufferData, comPtr.GetAddressOf());
     }
   }
 }
