@@ -321,6 +321,7 @@ namespace HoloIntervention
         m_imagingSystem->Update(m_timer, hmdCoordinateSystem);
         m_toolSystem->Update(m_timer, hmdCoordinateSystem);
         m_networkSystem->Update();
+        m_taskSystem->Update(hmdCoordinateSystem, m_timer);
 
         m_physicsAPI->Update(hmdCoordinateSystem);
 
@@ -532,6 +533,7 @@ namespace HoloIntervention
     m_imagingSystem->RegisterVoiceCallbacks(callbacks);
     m_meshRenderer->RegisterVoiceCallbacks(callbacks);
     m_registrationSystem->RegisterVoiceCallbacks(callbacks);
+    m_taskSystem->RegisterVoiceCallbacks(callbacks);
 
     callbacks[L"end session"] = [this](SpeechRecognitionResult ^ result)
     {

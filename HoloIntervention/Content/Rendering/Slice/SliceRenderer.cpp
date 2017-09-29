@@ -70,53 +70,29 @@ namespace HoloIntervention
       ReleaseDeviceDependentResources();
     }
 
-    /*
     //----------------------------------------------------------------------------
-    uint64 SliceRenderer::AddSlice()
+    uint64 SliceRenderer::AddSlice(std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, float4x4 desiredPose, bool headLocked)
     {
       if (!m_componentReady)
       {
         return INVALID_TOKEN;
       }
 
-      std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources, m_timer);
-      entry->m_id = m_nextUnusedSliceId;
-      entry->SetVisible(false);
-      std::lock_guard<std::mutex> guard(m_sliceMapMutex);
-      m_slices.push_back(entry);
-
-      // Initialize the constant buffer of the slice
-      entry->ReleaseDeviceDependentResources();
-      entry->CreateDeviceDependentResources();
-
-      m_nextUnusedSliceId++;
-      return m_nextUnusedSliceId - 1;
-    }
-    */
-
-    //----------------------------------------------------------------------------
-    uint64 SliceRenderer::AddSlice(std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, float4x4 desiredPose)
-    {
-      if (!m_componentReady)
-      {
-        return INVALID_TOKEN;
-      }
-
-      auto entry = AddSliceCommon(desiredPose);
+      auto entry = AddSliceCommon(desiredPose, headLocked);
       entry->SetImageData(imageData, width, height, pixelFormat);
 
       return m_nextUnusedSliceId - 1;
     }
 
     //----------------------------------------------------------------------------
-    uint64 SliceRenderer::AddSlice(IBuffer^ imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, float4x4 desiredPose)
+    uint64 SliceRenderer::AddSlice(IBuffer^ imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, float4x4 desiredPose, bool headLocked)
     {
       if (!m_componentReady)
       {
         return INVALID_TOKEN;
       }
 
-      auto entry = AddSliceCommon(desiredPose);
+      auto entry = AddSliceCommon(desiredPose, headLocked);
       std::shared_ptr<byte> imDataPtr(new byte[imageData->Length], std::default_delete<byte[]>());
       memcpy(imDataPtr.get(), HoloIntervention::GetDataFromIBuffer(imageData), imageData->Length * sizeof(byte));
       entry->SetImageData(imDataPtr, width, height, pixelFormat);
@@ -125,28 +101,28 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    uint64 SliceRenderer::AddSlice(const std::wstring& fileName, float4x4 desiredPose)
+    uint64 SliceRenderer::AddSlice(const std::wstring& fileName, float4x4 desiredPose, bool headLocked)
     {
       if (!m_componentReady)
       {
         return INVALID_TOKEN;
       }
 
-      auto entry = AddSliceCommon(desiredPose);
+      auto entry = AddSliceCommon(desiredPose, headLocked);
       entry->SetImageData(fileName);
 
       return m_nextUnusedSliceId - 1;
     }
 
     //----------------------------------------------------------------------------
-    uint64 SliceRenderer::AddSlice(UWPOpenIGTLink::TrackedFrame^ frame, float4x4 desiredPose)
+    uint64 SliceRenderer::AddSlice(UWPOpenIGTLink::TrackedFrame^ frame, float4x4 desiredPose, bool headLocked)
     {
       if (!m_componentReady)
       {
         return INVALID_TOKEN;
       }
 
-      auto entry = AddSliceCommon(desiredPose);
+      auto entry = AddSliceCommon(desiredPose, headLocked);
       entry->SetFrame(frame);
 
       return m_nextUnusedSliceId - 1;
@@ -486,11 +462,12 @@ namespace HoloIntervention
     }
 
     //-----------------------------------------------------------------------------
-    std::shared_ptr<SliceEntry> SliceRenderer::AddSliceCommon(const float4x4& desiredPose)
+    std::shared_ptr<SliceEntry> SliceRenderer::AddSliceCommon(const float4x4& desiredPose, bool headLocked)
     {
       std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources, m_timer);
       entry->SetId(m_nextUnusedSliceId);
       entry->ForceCurrentPose(desiredPose);
+      entry->SetHeadlocked(headLocked);
       entry->SetVertexBuffer(m_centerVertexBuffer);
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
       m_slices.push_back(entry);

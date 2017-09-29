@@ -93,7 +93,7 @@ namespace HoloIntervention
       {
         while (m_sliceToken == INVALID_TOKEN)
         {
-          m_sliceToken = m_sliceRenderer.AddSlice(m_splashImageFilename);
+          m_sliceToken = m_sliceRenderer.AddSlice(m_splashImageFilename, float4x4::identity(), true);
           m_sliceEntry = m_sliceRenderer.GetSlice(m_sliceToken);
 
           if (m_sliceToken == INVALID_TOKEN)

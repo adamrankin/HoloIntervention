@@ -26,6 +26,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "StepTimer.h"
 #include "TaskSystem.h"
 
+// Task includes
+#include "PreOpImageTask.h"
+#include "TouchingSphereTask.h"
+
 using namespace Windows::Data::Xml::Dom;
 using namespace Windows::Foundation::Numerics;
 using namespace Windows::UI::Input::Spatial;
@@ -51,25 +55,26 @@ namespace HoloIntervention
     //-----------------------------------------------------------------------------
     float3 TaskSystem::GetStabilizedPosition(SpatialPointerPose^ pose) const
     {
-      return float3(0.f, 0.f, 0.f);
+      return m_touchingSphereTask->GetStabilizePriority() > m_preopImageTask->GetStabilizePriority() ? m_touchingSphereTask->GetStabilizedPosition(pose) : m_preopImageTask->GetStabilizedPosition(pose);
     }
 
     //-----------------------------------------------------------------------------
     float3 TaskSystem::GetStabilizedVelocity() const
     {
-      return float3(0.f, 0.f, 0.f);
+      return m_touchingSphereTask->GetStabilizePriority() > m_preopImageTask->GetStabilizePriority() ? m_touchingSphereTask->GetStabilizedVelocity() : m_preopImageTask->GetStabilizedVelocity();
     }
 
     //-----------------------------------------------------------------------------
     float TaskSystem::GetStabilizePriority() const
     {
-      return PRIORITY_NOT_ACTIVE;
+      return std::fmax(m_touchingSphereTask->GetStabilizePriority(), m_preopImageTask->GetStabilizePriority());
     }
 
     //-----------------------------------------------------------------------------
     void TaskSystem::RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap)
     {
-
+      m_touchingSphereTask->RegisterVoiceCallbacks(callbackMap);
+      m_preopImageTask->RegisterVoiceCallbacks(callbackMap);
     }
 
     //----------------------------------------------------------------------------
@@ -79,16 +84,22 @@ namespace HoloIntervention
       , m_registrationSystem(registrationSystem)
       , m_modelRenderer(modelRenderer)
     {
+      m_touchingSphereTask = std::make_shared<Tasks::TouchingSphereTask>(notificationSystem, networkSystem, registrationSystem, modelRenderer);
+      m_preopImageTask = std::make_shared<Tasks::PreOpImageTask>(notificationSystem, networkSystem, registrationSystem, modelRenderer);
     }
 
     //----------------------------------------------------------------------------
     TaskSystem::~TaskSystem()
     {
+      m_touchingSphereTask = nullptr;
+      m_preopImageTask = nullptr;
     }
 
     //-----------------------------------------------------------------------------
     void TaskSystem::Update(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem, DX::StepTimer& stepTimer)
     {
+      m_touchingSphereTask->Update(coordinateSystem, stepTimer);
+      m_preopImageTask->Update(coordinateSystem, stepTimer);
     }
   }
 }

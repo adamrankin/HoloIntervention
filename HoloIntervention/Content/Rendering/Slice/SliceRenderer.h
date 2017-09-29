@@ -72,10 +72,10 @@ namespace HoloIntervention
       SliceRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& timer);
       ~SliceRenderer();
 
-      uint64 AddSlice(const std::wstring& fileName, Windows::Foundation::Numerics::float4x4 desiredPose = Windows::Foundation::Numerics::float4x4::identity());
-      uint64 AddSlice(UWPOpenIGTLink::TrackedFrame^ frame, Windows::Foundation::Numerics::float4x4 desiredPose = Windows::Foundation::Numerics::float4x4::identity());
-      uint64 AddSlice(std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 desiredPose = Windows::Foundation::Numerics::float4x4::identity());
-      uint64 AddSlice(Windows::Storage::Streams::IBuffer^ imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 desiredPose = Windows::Foundation::Numerics::float4x4::identity());
+      uint64 AddSlice(const std::wstring& fileName, Windows::Foundation::Numerics::float4x4 desiredPose = Windows::Foundation::Numerics::float4x4::identity(), bool headLocked = false);
+      uint64 AddSlice(UWPOpenIGTLink::TrackedFrame^ frame, Windows::Foundation::Numerics::float4x4 desiredPose = Windows::Foundation::Numerics::float4x4::identity(), bool headLocked = false);
+      uint64 AddSlice(std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 desiredPose = Windows::Foundation::Numerics::float4x4::identity(), bool headLocked = false);
+      uint64 AddSlice(Windows::Storage::Streams::IBuffer^ imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 desiredPose = Windows::Foundation::Numerics::float4x4::identity(), bool headLocked = false);
       void RemoveSlice(uint64 sliceToken);
       std::shared_ptr<SliceEntry> GetSlice(uint64 sliceToken);
 
@@ -100,7 +100,7 @@ namespace HoloIntervention
       void Render();
 
     protected:
-      std::shared_ptr<SliceEntry> AddSliceCommon(const Windows::Foundation::Numerics::float4x4& desiredPose);
+      std::shared_ptr<SliceEntry> AddSliceCommon(const Windows::Foundation::Numerics::float4x4& desiredPose, bool headLocked);
       bool FindSlice(uint64 sliceToken, std::shared_ptr<SliceEntry>& sliceEntry) const;
       HRESULT CreateVertexBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer>& comPtr, float bottom, float left, float right, float top);
 
