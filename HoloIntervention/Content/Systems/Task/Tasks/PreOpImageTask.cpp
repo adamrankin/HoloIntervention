@@ -149,7 +149,7 @@ namespace HoloIntervention
       //----------------------------------------------------------------------------
       float3 PreOpImageTask::GetStabilizedPosition(SpatialPointerPose^ pose) const
       {
-        if (m_componentReady)
+        if (m_componentReady && m_model != nullptr)
         {
           return float3(m_model->GetCurrentPose().m41, m_model->GetCurrentPose().m42, m_model->GetCurrentPose().m43);
         }
@@ -159,7 +159,7 @@ namespace HoloIntervention
       //----------------------------------------------------------------------------
       float3 PreOpImageTask::GetStabilizedVelocity() const
       {
-        if (m_componentReady)
+        if (m_componentReady && m_model != nullptr)
         {
           return m_model->GetVelocity();
         }
@@ -169,7 +169,7 @@ namespace HoloIntervention
       //----------------------------------------------------------------------------
       float PreOpImageTask::GetStabilizePriority() const
       {
-        return m_componentReady ? PRIORITY_PHANTOM_TASK : PRIORITY_NOT_ACTIVE;
+        return m_componentReady && m_model != nullptr ? PRIORITY_PHANTOM_TASK : PRIORITY_NOT_ACTIVE;
       }
 
       //----------------------------------------------------------------------------

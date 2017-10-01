@@ -42,14 +42,26 @@ namespace HoloIntervention
     //-----------------------------------------------------------------------------
     task<bool> TaskSystem::WriteConfigurationAsync(XmlDocument^ document)
     {
-      return task_from_result(true);
+      auto preopTask = m_preopImageTask->WriteConfigurationAsync(document);
+      auto touchingTask = m_touchingSphereTask->WriteConfigurationAsync(document);
+      auto tasks = { preopTask, touchingTask };
+      return when_all(begin(tasks), end(tasks)).then([this](const std::vector<bool>& results)
+      {
+        return results[0] && results[1];
+      });
     }
 
     //-----------------------------------------------------------------------------
     task<bool> TaskSystem::ReadConfigurationAsync(XmlDocument^ document)
     {
-      m_componentReady = true;
-      return task_from_result(true);
+      auto preopTask = m_preopImageTask->ReadConfigurationAsync(document);
+      auto touchingTask = m_touchingSphereTask->ReadConfigurationAsync(document);
+      auto tasks = { preopTask, touchingTask};
+      return when_all(begin(tasks), end(tasks)).then([this](const std::vector<bool>& results)
+      {
+        m_componentReady = results[0] && results[1];
+        return results[0] && results[1];
+      });
     }
 
     //-----------------------------------------------------------------------------
