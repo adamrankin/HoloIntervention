@@ -158,9 +158,9 @@ namespace HoloIntervention
         }
 
         std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
-        if (m_currentRegistrationMethod != nullptr)
+        for (auto& regMethod : m_knownRegistrationMethods)
         {
-          return m_currentRegistrationMethod->WriteConfigurationAsync(document);
+          regMethod.second->WriteConfigurationAsync(document);
         }
 
         return task_from_result(true);

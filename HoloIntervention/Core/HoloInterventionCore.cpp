@@ -60,6 +60,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "VoiceInput.h"
 
 // STL includes
+#include <regex>
 #include <string>
 
 // Windows includes
@@ -471,21 +472,21 @@ namespace HoloIntervention
 
     switch (sender->Locatability)
     {
-      case SpatialLocatability::Unavailable:
-      {
-        m_notificationSystem->QueueMessage(L"Warning! Positional tracking is unavailable.");
-      }
+    case SpatialLocatability::Unavailable:
+    {
+      m_notificationSystem->QueueMessage(L"Warning! Positional tracking is unavailable.");
+    }
+    break;
+
+    case SpatialLocatability::PositionalTrackingActivating:
+    case SpatialLocatability::OrientationOnly:
+    case SpatialLocatability::PositionalTrackingInhibited:
+      // Gaze-locked content still valid
       break;
 
-      case SpatialLocatability::PositionalTrackingActivating:
-      case SpatialLocatability::OrientationOnly:
-      case SpatialLocatability::PositionalTrackingInhibited:
-        // Gaze-locked content still valid
-        break;
-
-      case SpatialLocatability::PositionalTrackingActive:
-        m_notificationSystem->QueueMessage(L"Positional tracking is active.");
-        break;
+    case SpatialLocatability::PositionalTrackingActive:
+      m_notificationSystem->QueueMessage(L"Positional tracking is active.");
+      break;
     }
   }
 
@@ -641,7 +642,11 @@ namespace HoloIntervention
       else
       {
         StorageFile^ file = dynamic_cast<StorageFile^>(item);
-        return create_task(file->CopyAsync(ApplicationData::Current->LocalFolder, L"configuration.xml", Windows::Storage::NameCollisionOption::GenerateUniqueName));
+        auto Calendar = ref new Windows::Globalization::Calendar();
+        Calendar->SetToNow();
+        auto fileName = L"configuration_" + Calendar->YearAsString() + L"-" + Calendar->MonthAsNumericString() + L"-" + Calendar->DayAsString() + L"T" + Calendar->HourAsPaddedString(2) + L"h" + Calendar->MinuteAsPaddedString(2) + L"m" + Calendar->SecondAsPaddedString(2) + L"s.xml";
+
+        return create_task(file->CopyAsync(ApplicationData::Current->LocalFolder, fileName, Windows::Storage::NameCollisionOption::GenerateUniqueName));
       }
     }).then([this](task<StorageFile^> copyTask)
     {
@@ -666,9 +671,19 @@ namespace HoloIntervention
       return when_all(begin(tasks), end(tasks)).then([this, doc](std::vector<bool> results)
       {
         // Write document to disk
-        return create_task(ApplicationData::Current->LocalFolder->CreateFileAsync(L"configuration.xml", Windows::Storage::CreationCollisionOption::ReplaceExisting)).then([this, doc](StorageFile ^ file)
+        return create_task(ApplicationData::Current->LocalFolder->CreateFileAsync(L"configuration.xml", CreationCollisionOption::ReplaceExisting)).then([this, doc](StorageFile ^ file)
         {
-          return create_task(doc->SaveToFileAsync(file)).then([this](task<void> saveAction)
+          return file->OpenAsync(FileAccessMode::ReadWrite);
+        }).then([this, doc](Streams::IRandomAccessStream ^ stream)
+        {
+          auto xmlAsString = std::wstring(doc->GetXml()->Data());
+          // After every > add a \n
+          xmlAsString = std::regex_replace(xmlAsString, std::wregex(L">"), L">\n");
+
+          auto writer = ref new Streams::DataWriter(stream);
+          writer->WriteString(ref new Platform::String(xmlAsString.c_str()));
+
+          return create_task(writer->FlushAsync()).then([this](task<bool> saveAction)
           {
             try
             {

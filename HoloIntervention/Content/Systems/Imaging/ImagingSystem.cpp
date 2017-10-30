@@ -146,9 +146,10 @@ namespace HoloIntervention
       return create_task([this, document]()
       {
         auto xpath = ref new Platform::String(L"/HoloIntervention");
-        if (document->SelectNodes(xpath)->Length != 1)
+        if (document->SelectNodes(xpath)->Length == 0)
         {
-          return false;
+          XmlElement^ rootElem = document->CreateElement(L"HoloIntervention");
+          document->AppendChild(rootElem);
         }
 
         m_transformRepository->WriteConfiguration(document);
@@ -169,7 +170,6 @@ namespace HoloIntervention
           ss << std::fixed << m_blackMapColour.x << " " << m_blackMapColour.y << " " << m_blackMapColour.z << " " << m_blackMapColour.w;
           sliceElem->SetAttribute(L"BlackMapColour", ref new Platform::String(ss.str().c_str()));
         }
-
         rootNode->AppendChild(sliceElem);
 
         auto volumeElem = document->CreateElement("VolumeRendering");
