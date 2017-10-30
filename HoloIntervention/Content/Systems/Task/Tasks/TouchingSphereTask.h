@@ -105,6 +105,7 @@ namespace HoloIntervention
         Windows::Foundation::Numerics::float3                   m_targetPosition;
         std::atomic_bool                                        m_phantomWasValid = false;
         std::array<float, 6>                                    m_boundsMeters = { 0.f, 0.f, 0.f, 0.f, 0.f, 0.f };
+        const Windows::Foundation::Numerics::float3             DISABLE_TARGET_COLOUR = { 0.7f, 0.7f, 0.7f };
         const Windows::Foundation::Numerics::float3             DEFAULT_TARGET_COLOUR = { 0.f, 1.f, 0.f };
         const Windows::Foundation::Numerics::float3             HIGHLIGHT_TARGET_COLOUR = { 1.f, 0.f, 0.f };
 

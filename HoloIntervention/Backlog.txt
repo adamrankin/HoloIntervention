@@ -1,8 +1,5 @@
 Network search on startup
 Volume rendering
-*Registration
-  Replace 3d printed phantom with AR code based registration
-  Registration feedback (move around, etc...)
 Voice feedback
 UI for IP setting - Dictation
 Internationalization (xml database of voice commands and feedback)

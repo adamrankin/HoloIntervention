@@ -297,7 +297,7 @@ namespace HoloIntervention
             if (!result->Key && m_phantomWasValid)
             {
               m_phantomWasValid = false;
-              m_targetModel->SetColour(float3(0.6f, 0.6f, 0.6f));
+              m_targetModel->SetColour(DISABLE_TARGET_COLOUR);
             }
             else if (result->Key && !m_phantomWasValid)
             {
@@ -320,12 +320,12 @@ namespace HoloIntervention
                   ss << "Point: " << stylusTipPose->Value.m41 << " " << stylusTipPose->Value.m42 << " " << stylusTipPose->Value.m43 << std::endl;
                   LOG_INFO(ss.str());
                 }
-
                 {
                   std::stringstream ss;
                   ss << "GroundTruth: " << m_targetPosition.x << " " << m_targetPosition.y << " " << m_targetPosition.z << std::endl;
                   LOG_INFO(ss.str());
                 }
+
                 m_recordPointOnUpdate = false;
 
                 // Generate new one within bounds
@@ -334,6 +334,11 @@ namespace HoloIntervention
             }
           }
         }
+        else
+        {
+          m_phantomWasValid = false;
+          m_targetModel->SetColour(DISABLE_TARGET_COLOUR);
+        }
       }
 
       //----------------------------------------------------------------------------
@@ -341,14 +346,22 @@ namespace HoloIntervention
       {
         callbackMap[L"start touching task"] = [this](SpeechRecognitionResult ^ result)
         {
+          if (m_taskStarted)
+          {
+            m_notificationSystem.QueueMessage(L"Task already running.");
+            return;
+          }
+
           GenerateNextRandomPoint();
 
-          m_notificationSystem.QueueMessage(L"Starting touching task.");
+          m_notificationSystem.QueueMessage(L"Touching task running.");
+          m_targetModel->SetVisible(true);
           m_taskStarted = true;
         };
 
         callbackMap[L"stop touching task"] = [this](SpeechRecognitionResult ^ result)
         {
+          m_targetModel->SetVisible(false);
           m_taskStarted = false;
         };
 
@@ -356,6 +369,7 @@ namespace HoloIntervention
         {
           if (!m_taskStarted)
           {
+            m_notificationSystem.QueueMessage(L"Task not running.");
             return;
           }
 
