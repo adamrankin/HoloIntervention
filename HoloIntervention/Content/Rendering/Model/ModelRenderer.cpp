@@ -168,25 +168,54 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    uint64 ModelRenderer::AddPrimitive(PrimitiveType type, float diameterMeter, size_t tessellation, bool rhcoords, bool invertn)
+    task<uint64> ModelRenderer::AddPrimitiveAsync(PrimitiveType type, float diameterMeter, size_t tessellation, bool rhcoords, bool invertn)
     {
-      std::unique_ptr<DirectX::InstancedGeometricPrimitive> primitive(nullptr);
-      switch (type)
+      return create_task([this, type, diameterMeter, tessellation, rhcoords, invertn]()
       {
-        case PrimitiveType_SPHERE:
-          primitive = std::move(DirectX::InstancedGeometricPrimitive::CreateSphere(m_deviceResources->GetD3DDeviceContext(), diameterMeter, tessellation, rhcoords, invertn));
-          break;
-      }
+        std::unique_ptr<DirectX::InstancedGeometricPrimitive> primitive(nullptr);
+        switch (type)
+        {
+          case PrimitiveType_SPHERE:
+            primitive = std::move(DirectX::InstancedGeometricPrimitive::CreateSphere(m_deviceResources->GetD3DDeviceContext(), diameterMeter, tessellation, rhcoords, invertn));
+            break;
+        }
 
-      std::shared_ptr<PrimitiveEntry> entry = std::make_shared<PrimitiveEntry>(m_deviceResources, std::move(primitive), m_timer);
-      entry->SetId(m_nextUnusedId);
-      entry->SetVisible(true);
+        std::shared_ptr<PrimitiveEntry> entry = std::make_shared<PrimitiveEntry>(m_deviceResources, std::move(primitive), m_timer);
+        entry->SetId(m_nextUnusedId);
+        entry->SetVisible(true);
 
-      std::lock_guard<std::mutex> guard(m_primitiveListMutex);
-      m_primitives.push_back(entry);
+        std::lock_guard<std::mutex> guard(m_primitiveListMutex);
+        m_primitives.push_back(entry);
 
-      m_nextUnusedId++;
-      return m_nextUnusedId - 1;
+        m_nextUnusedId++;
+        return m_nextUnusedId - 1;
+      });
+    }
+
+    //----------------------------------------------------------------------------
+    task<uint64> ModelRenderer::AddPrimitiveAsync(const std::wstring& primitiveName, float diameterMeter, size_t tessellation, bool rhcoords, bool invertn)
+    {
+      return create_task([this, primitiveName, diameterMeter, tessellation, rhcoords, invertn]()
+      {
+        std::unique_ptr<DirectX::InstancedGeometricPrimitive> primitive(nullptr);
+        PrimitiveType type = ModelRenderer::StringToPrimitive(primitiveName);
+        switch (type)
+        {
+          case PrimitiveType_SPHERE:
+            primitive = std::move(DirectX::InstancedGeometricPrimitive::CreateSphere(m_deviceResources->GetD3DDeviceContext(), diameterMeter, tessellation, rhcoords, invertn));
+            break;
+        }
+
+        std::shared_ptr<PrimitiveEntry> entry = std::make_shared<PrimitiveEntry>(m_deviceResources, std::move(primitive), m_timer);
+        entry->SetId(m_nextUnusedId);
+        entry->SetVisible(true);
+
+        std::lock_guard<std::mutex> guard(m_primitiveListMutex);
+        m_primitives.push_back(entry);
+
+        m_nextUnusedId++;
+        return m_nextUnusedId - 1;
+      });
     }
 
     //----------------------------------------------------------------------------
@@ -244,6 +273,17 @@ namespace HoloIntervention
       }
 
       return false;
+    }
+
+    //----------------------------------------------------------------------------
+    Rendering::PrimitiveType ModelRenderer::StringToPrimitive(const std::wstring& primitiveName)
+    {
+      if (IsEqualInsensitive(primitiveName, L"sphere"))
+      {
+        return PrimitiveType_SPHERE;
+      }
+
+      return PrimitiveType_NONE;
     }
 
     //----------------------------------------------------------------------------

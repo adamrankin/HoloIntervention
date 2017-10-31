@@ -46,6 +46,7 @@ namespace HoloIntervention
   {
     enum PrimitiveType
     {
+      PrimitiveType_NONE,
       PrimitiveType_SPHERE
     };
 
@@ -69,13 +70,15 @@ namespace HoloIntervention
       void RemoveModel(uint64 modelId);
       std::shared_ptr<ModelEntry> GetModel(uint64 modelId) const;
 
-      uint64 AddPrimitive(PrimitiveType type, float diameter = 1, size_t tessellation = 16, bool rhcoords = true, bool invertn = false);
+      concurrency::task<uint64> AddPrimitiveAsync(PrimitiveType type, float diameter = 1, size_t tessellation = 16, bool rhcoords = true, bool invertn = false);
+      concurrency::task<uint64> AddPrimitiveAsync(const std::wstring& primitiveName, float diameter = 1, size_t tessellation = 16, bool rhcoords = true, bool invertn = false);
       void RemovePrimitive(uint64 primitiveId);
       std::shared_ptr<PrimitiveEntry> GetPrimitive(uint64 primitiveId) const;
 
     protected:
       bool FindModel(uint64 modelId, std::shared_ptr<ModelEntry>& modelEntry) const;
       bool FindPrimitive(uint64 entryId, std::shared_ptr<PrimitiveEntry>& entry) const;
+      static PrimitiveType StringToPrimitive(const std::wstring& primitiveName);
 
     protected:
       // Cached pointer to device resources.

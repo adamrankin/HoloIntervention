@@ -2,7 +2,7 @@
 <HoloIntervention>
   <Tools IGTConnection="NDITracker">
     <Tool 
-      Model="Tools/8700248"
+      Primitive="Cylinder"
       From="Tip"
       To="Reference"
       LerpEnabled="false" 
@@ -61,19 +61,19 @@
   <IGTConnections>
     <Connection
       Name="NDITracker"
-      Host="192.168.0.26"
+      Host="192.168.0.28"
       Port="18944" 
       />
 
     <xConnection
       Name="2DImage"
-      Host="192.168.0.26"
+      Host="192.168.0.28"
       Port="18944"
       EmbeddedImageTransformName="ImageToReference" 
       />
     <xConnection
       Name="3DImage"
-      Host="192.168.0.26"
+      Host="192.168.0.28"
       Port="18945"
       EmbeddedImageTransformName="VolumeToReference" 
       />

@@ -226,9 +226,18 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<uint64> ToolSystem::RegisterToolAsync(const std::wstring& modelName, UWPOpenIGTLink::TransformName^ coordinateFrame)
+    task<uint64> ToolSystem::RegisterToolAsync(const std::wstring& modelName, const bool isPrimitive, UWPOpenIGTLink::TransformName^ coordinateFrame)
     {
-      return m_modelRenderer.AddModelAsync(modelName).then([this, coordinateFrame](uint64 modelEntryId)
+      task<uint64> modelTask;
+      if (!isPrimitive)
+      {
+        modelTask = m_modelRenderer.AddModelAsync(modelName);
+      }
+      else
+      {
+        modelTask = m_modelRenderer.AddPrimitiveAsync(modelName);
+      }
+      return modelTask.then([this, coordinateFrame](uint64 modelEntryId)
       {
         std::shared_ptr<Tools::ToolEntry> entry = std::make_shared<Tools::ToolEntry>(m_modelRenderer, m_networkSystem, m_hashedConnectionName, coordinateFrame, m_transformRepository);
         auto modelEntry = m_modelRenderer.GetModel(modelEntryId);
@@ -321,18 +330,19 @@ namespace HoloIntervention
         for (auto node : doc->SelectNodes(xpath))
         {
           // model, transform
-          if (!HasAttribute(L"Model", node))
+          if (!HasAttribute(L"Model", node) && !HasAttribute(L"Primitive", node))
           {
-            throw ref new Platform::Exception(E_FAIL, L"Tool entry does not contain model attribute.");
+            throw ref new Platform::Exception(E_FAIL, L"Tool entry does not contain model or primitive attribute.");
           }
           if (!HasAttribute(L"From", node) || !HasAttribute(L"To", node))
           {
             throw ref new Platform::Exception(E_FAIL, L"Tool entry does not contain transform attribute.");
           }
           Platform::String^ modelString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Model")->NodeValue);
+          Platform::String^ primString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Primitive")->NodeValue);
           Platform::String^ fromString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"From")->NodeValue);
           Platform::String^ toString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"To")->NodeValue);
-          if (modelString->IsEmpty() || fromString->IsEmpty() || toString->IsEmpty())
+          if ((modelString != nullptr && modelString->IsEmpty()) || (primString != nullptr && primString->IsEmpty()) || fromString->IsEmpty() || toString->IsEmpty())
           {
             throw ref new Platform::Exception(E_FAIL, L"Tool entry contains an empty attribute.");
           }
@@ -343,7 +353,7 @@ namespace HoloIntervention
             throw ref new Platform::Exception(E_FAIL, L"Tool entry contains invalid transform name.");
           }
 
-          RegisterToolAsync(std::wstring(modelString->Data()), trName).then([this, node](uint64 token)
+          RegisterToolAsync(modelString != nullptr ? std::wstring(modelString->Data()) : std::wstring(primString->Data()), modelString != nullptr ? false : true, trName).then([this, node](uint64 token)
           {
             auto tool = GetTool(token);
 

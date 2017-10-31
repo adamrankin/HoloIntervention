@@ -253,9 +253,11 @@ namespace HoloIntervention
         , m_modelRenderer(modelRenderer)
       {
         // 3 mm diameter
-        auto primId = m_modelRenderer.AddPrimitive(Rendering::PrimitiveType_SPHERE, 0.03f);
-        m_targetModel = m_modelRenderer.GetPrimitive(primId);
-        m_targetModel->SetColour(DEFAULT_TARGET_COLOUR);
+        m_modelRenderer.AddPrimitiveAsync(Rendering::PrimitiveType_SPHERE, 0.03f).then([this](uint64 primId)
+        {
+          m_targetModel = m_modelRenderer.GetPrimitive(primId);
+          m_targetModel->SetColour(DEFAULT_TARGET_COLOUR);
+        });
       }
 
       //----------------------------------------------------------------------------
