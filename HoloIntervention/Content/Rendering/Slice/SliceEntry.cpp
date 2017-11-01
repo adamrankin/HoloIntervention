@@ -409,6 +409,12 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    bool SliceEntry::IsValid() const
+    {
+      return m_sliceValid;
+    }
+
+    //----------------------------------------------------------------------------
     void SliceEntry::SetWhiteMapColour(float4 colour)
     {
       float4 blackMapColour(m_constantBuffer.blackMapColour.x, m_constantBuffer.blackMapColour.y, m_constantBuffer.blackMapColour.z, m_constantBuffer.blackMapColour.w);

@@ -190,6 +190,26 @@ namespace HoloIntervention
   bool GetAttribute(const std::wstring& attributeName, Windows::Data::Xml::Dom::IXmlNode^ node, std::wstring& outValue);
   bool GetBooleanAttribute(const std::wstring& attributeName, Windows::Data::Xml::Dom::IXmlNode^ node, bool& outValue);
   template<typename T> bool GetScalarAttribute(const std::wstring& attributeName, Windows::Data::Xml::Dom::IXmlNode^ node, T& outValue);
+
+  namespace Rendering
+  {
+    enum PrimitiveType
+    {
+      PrimitiveType_NONE,
+      PrimitiveType_CUBE,
+      PrimitiveType_BOX,
+      PrimitiveType_SPHERE,
+      PrimitiveType_GEOSPHERE,
+      PrimitiveType_CYLINDER,
+      PrimitiveType_CONE,
+      PrimitiveType_TORUS,
+      PrimitiveType_TETRAHEDRON,
+      PrimitiveType_OCTAHEDRON,
+      PrimitiveType_DODECAHEDRON,
+      PrimitiveType_ICOSAHEDRON,
+      PrimitiveType_TEAPOT
+    };
+  }
 }
 
 #include "Common.txx"

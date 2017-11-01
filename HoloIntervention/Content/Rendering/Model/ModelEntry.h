@@ -24,6 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
+#include "Common.h"
 #include "InstancedEffects.h"
 
 // STL includes
@@ -64,8 +65,9 @@ namespace HoloIntervention
     {
     public:
       ModelEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, const std::wstring& assetLocation, DX::StepTimer& timer);
-      ModelEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, std::unique_ptr<DirectX::InstancedGeometricPrimitive> primitive, DX::StepTimer& timer, Windows::Foundation::Numerics::float4 colour = Windows::Foundation::Numerics::float4(1.f, 1.f, 1.f, 1.f));
+      ModelEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, PrimitiveType type, DX::StepTimer& timer, Windows::Foundation::Numerics::float3 argument, size_t tessellation, bool rhcoords, bool invertn, Windows::Foundation::Numerics::float4 colour = Windows::Foundation::Numerics::float4(1.f, 1.f, 1.f, 1.f));
       ~ModelEntry();
+      std::shared_ptr<ModelEntry> Clone();
 
       void Update(const DX::CameraResources* cameraResources);
       void Render();
@@ -138,6 +140,11 @@ namespace HoloIntervention
       mutable uint64                                      m_frustumCheckFrameNumber;
 
       // Primitive resources
+      PrimitiveType                                         m_primitiveType = PrimitiveType_NONE;
+      Windows::Foundation::Numerics::float3                 m_argument;
+      size_t                                                m_tessellation;
+      bool                                                  m_rhcoords;
+      bool                                                  m_invertn;
       std::unique_ptr<DirectX::InstancedGeometricPrimitive> m_primitive = nullptr;
       Windows::Foundation::Numerics::float4                 m_colour = { 1.f, 1.f, 1.f, 1.f };
 

@@ -89,6 +89,8 @@ namespace HoloIntervention
       void SetId(uint64 id);
       uint64 GetId() const;
 
+      bool IsValid()const;
+
       void SetWhiteMapColour(Windows::Foundation::Numerics::float4 colour);
       void SetBlackMapColour(Windows::Foundation::Numerics::float4 colour);
 

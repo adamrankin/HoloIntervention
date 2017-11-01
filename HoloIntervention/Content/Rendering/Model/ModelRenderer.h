@@ -43,23 +43,6 @@ namespace HoloIntervention
 {
   namespace Rendering
   {
-    enum PrimitiveType
-    {
-      PrimitiveType_NONE,
-      PrimitiveType_CUBE,
-      PrimitiveType_BOX,
-      PrimitiveType_SPHERE,
-      PrimitiveType_GEOSPHERE,
-      PrimitiveType_CYLINDER,
-      PrimitiveType_CONE,
-      PrimitiveType_TORUS,
-      PrimitiveType_TETRAHEDRON,
-      PrimitiveType_OCTAHEDRON,
-      PrimitiveType_DODECAHEDRON,
-      PrimitiveType_ICOSAHEDRON,
-      PrimitiveType_TEAPOT
-    };
-
     class ModelRenderer : public IEngineComponent
     {
       typedef std::list<std::shared_ptr<ModelEntry>> ModelList;
@@ -78,13 +61,15 @@ namespace HoloIntervention
       concurrency::task<uint64> AddModelAsync(const std::wstring& assetLocation);
       concurrency::task<uint64> AddPrimitiveAsync(PrimitiveType type, Windows::Foundation::Numerics::float3 argument, size_t tessellation = 16, bool rhcoords = true, bool invertn = false);
       concurrency::task<uint64> AddPrimitiveAsync(const std::wstring& primitiveName, Windows::Foundation::Numerics::float3 argument, size_t tessellation = 16, bool rhcoords = true, bool invertn = false);
+      concurrency::task<uint64> CloneAsync(uint64 modelId);
       void RemoveModel(uint64 modelId);
       std::shared_ptr<ModelEntry> GetModel(uint64 modelId) const;
+
+      static std::unique_ptr<DirectX::InstancedGeometricPrimitive> CreatePrimitive(const DX::DeviceResources& deviceResources, PrimitiveType type, Windows::Foundation::Numerics::float3 argument, size_t tessellation, bool rhcoords, bool invertn);
 
     protected:
       bool FindModel(uint64 modelId, std::shared_ptr<ModelEntry>& modelEntry) const;
       static PrimitiveType StringToPrimitive(const std::wstring& primitiveName);
-      std::unique_ptr<DirectX::InstancedGeometricPrimitive> CreatePrimitive(PrimitiveType type, Windows::Foundation::Numerics::float3 argument, size_t tessellation, bool rhcoords, bool invertn);
 
     protected:
       // Cached pointer to device resources.

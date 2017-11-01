@@ -329,6 +329,17 @@ namespace HoloIntervention
 
         for (auto node : doc->SelectNodes(xpath))
         {
+          Platform::String^ modelString = nullptr;
+          Platform::String^ primString = nullptr;
+          Platform::String^ fromString = nullptr;
+          Platform::String^ toString = nullptr;
+          Platform::String^ argument1String = nullptr;
+          Platform::String^ argument2String = nullptr;
+          Platform::String^ argument3String = nullptr;
+          Platform::String^ tessellationString = nullptr;
+          Platform::String^ rhcoordsString = nullptr;
+          Platform::String^ invertnString = nullptr;
+
           // model, transform
           if (!HasAttribute(L"Model", node) && !HasAttribute(L"Primitive", node))
           {
@@ -338,20 +349,44 @@ namespace HoloIntervention
           {
             throw ref new Platform::Exception(E_FAIL, L"Tool entry does not contain transform attribute.");
           }
-          Platform::String^ modelString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Model")->NodeValue);
-          Platform::String^ primString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Primitive")->NodeValue);
-          Platform::String^ fromString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"From")->NodeValue);
-          Platform::String^ toString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"To")->NodeValue);
+          if (HasAttribute(L"Model", node))
+          {
+            modelString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Model")->NodeValue);
+          }
+          if (HasAttribute(L"Primitive", node))
+          {
+            primString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Primitive")->NodeValue);
+          }
+          fromString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"From")->NodeValue);
+          toString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"To")->NodeValue);
           if ((modelString != nullptr && modelString->IsEmpty()) || (primString != nullptr && primString->IsEmpty()) || fromString->IsEmpty() || toString->IsEmpty())
           {
             throw ref new Platform::Exception(E_FAIL, L"Tool entry contains an empty attribute.");
           }
-          Platform::String^ argument1String = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Argument1")->NodeValue);
-          Platform::String^ argument2String = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Argument2")->NodeValue);
-          Platform::String^ argument3String = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Argument3")->NodeValue);
-          Platform::String^ tessellationString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Tessellation")->NodeValue);
-          Platform::String^ rhcoordsString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"RightHandedCoords")->NodeValue);
-          Platform::String^ invertnString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"InvertN")->NodeValue);
+          if (HasAttribute(L"Argument1", node))
+          {
+            argument1String = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Argument1")->NodeValue);
+          }
+          if (HasAttribute(L"Argument2", node))
+          {
+            argument2String = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Argument2")->NodeValue);
+          }
+          if (HasAttribute(L"Argument3", node))
+          {
+            argument3String = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Argument3")->NodeValue);
+          }
+          if (HasAttribute(L"Tessellation", node))
+          {
+            tessellationString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Tessellation")->NodeValue);
+          }
+          if (HasAttribute(L"RightHandedCoords", node))
+          {
+            rhcoordsString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"RightHandedCoords")->NodeValue);
+          }
+          if (HasAttribute(L"InvertN", node))
+          {
+            invertnString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"InvertN")->NodeValue);
+          }
 
           UWPOpenIGTLink::TransformName^ trName = ref new UWPOpenIGTLink::TransformName(fromString, toString);
           if (!trName->IsValid())

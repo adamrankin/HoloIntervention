@@ -3,6 +3,8 @@
   <Tools IGTConnection="NDITracker">
     <Tool 
       Primitive="Cylinder"
+      Argument1="0.1"
+      Argument2="0.005"
       From="Tip"
       To="Reference"
       LerpEnabled="false" 

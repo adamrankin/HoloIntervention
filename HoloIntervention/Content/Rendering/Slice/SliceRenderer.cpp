@@ -440,7 +440,7 @@ namespace HoloIntervention
 
       for (auto sliceEntry : m_slices)
       {
-        if (sliceEntry->IsInFrustum(frustum) && sliceEntry->GetVisible())
+        if (sliceEntry->IsInFrustum(frustum) && sliceEntry->GetVisible() && sliceEntry->IsValid())
         {
           auto format = sliceEntry->GetPixelFormat();
           if (BitsPerPixel(format) / BitsPerColor(format) == 1)

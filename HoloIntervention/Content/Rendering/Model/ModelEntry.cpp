@@ -27,6 +27,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "CameraResources.h"
 #include "DeviceResources.h"
 #include "ModelEntry.h"
+#include "ModelRenderer.h"
 #include "RenderingCommon.h"
 #include "StepTimer.h"
 
@@ -147,19 +148,56 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    ModelEntry::ModelEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, std::unique_ptr<DirectX::InstancedGeometricPrimitive> primitive, DX::StepTimer& timer, float4 colour)
+    ModelEntry::ModelEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, PrimitiveType type, DX::StepTimer& timer, float3 argument, size_t tessellation, bool rhcoords, bool invertn, float4 colour)
       : m_deviceResources(deviceResources)
-      , m_primitive(std::move(primitive))
       , m_timer(timer)
       , m_colour(colour)
+      , m_tessellation(tessellation)
+      , m_rhcoords(rhcoords)
+      , m_invertn(invertn)
+      , m_argument(argument)
     {
+      m_primitive = ModelRenderer::CreatePrimitive(*deviceResources, type, argument, tessellation, rhcoords, invertn);
 
+      if (m_primitive == nullptr)
+      {
+        LOG_ERROR(L"Unable to create primitive, unknown type.");
+      }
     }
 
     //----------------------------------------------------------------------------
     ModelEntry::~ModelEntry()
     {
       ReleaseDeviceDependentResources();
+    }
+
+    //----------------------------------------------------------------------------
+    std::shared_ptr<ModelEntry> ModelEntry::Clone()
+    {
+      std::shared_ptr<ModelEntry> newEntry;
+      if (m_primitive != nullptr)
+      {
+        newEntry = std::make_shared<ModelEntry>(m_deviceResources, m_primitiveType, m_timer, m_argument, m_tessellation, m_rhcoords, m_invertn);
+      }
+      else
+      {
+        newEntry = std::make_shared<ModelEntry>(m_deviceResources, m_assetLocation, m_timer);
+      }
+      newEntry->m_colour = m_colour;
+      newEntry->m_modelBounds = m_modelBounds;
+      newEntry->m_wireframe = m_wireframe ? true : false;
+      newEntry->m_velocity = m_velocity;
+      newEntry->m_lastPose = m_lastPose;
+      newEntry->m_currentPose = m_currentPose;
+      newEntry->m_desiredPose = m_desiredPose;
+      newEntry->m_visible = m_visible ? true : false;
+      newEntry->m_enableLerp = m_enableLerp ? true : false;
+      newEntry->m_isInFrustum = m_isInFrustum ? true : false;
+      newEntry->m_frustumCheckFrameNumber = m_frustumCheckFrameNumber;
+      newEntry->m_poseLerpRate = m_poseLerpRate;
+      newEntry->m_id = INVALID_TOKEN;
+
+      return newEntry;
     }
 
     //----------------------------------------------------------------------------

@@ -286,7 +286,7 @@ namespace HoloIntervention
     task<std::shared_ptr<IconEntry>> IconSystem::AddEntryAsync(std::shared_ptr<Rendering::ModelEntry> modelEntry, std::wstring userValue)
     {
       // Duplicate incoming model entry, so that they have their own independent rendering properties
-      return m_modelRenderer.AddModelAsync(modelEntry->GetAssetLocation()).then([this, userValue](uint64 modelEntryId)
+      return m_modelRenderer.CloneAsync(modelEntry->GetId()).then([this, userValue](uint64 modelEntryId)
       {
         std::lock_guard<std::mutex> guard(m_entryMutex);
         auto entry = std::make_shared<IconEntry>();
