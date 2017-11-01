@@ -26,7 +26,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "IEngineComponent.h"
 #include "ModelEntry.h"
-#include "PrimitiveEntry.h"
 
 namespace DX
 {
@@ -64,7 +63,6 @@ namespace HoloIntervention
     class ModelRenderer : public IEngineComponent
     {
       typedef std::list<std::shared_ptr<ModelEntry>> ModelList;
-      typedef std::list<std::shared_ptr<PrimitiveEntry>> PrimitiveList;
 
     public:
       ModelRenderer(const std::shared_ptr<DX::DeviceResources> deviceResources, DX::StepTimer& timer);
@@ -78,17 +76,13 @@ namespace HoloIntervention
       void Render();
 
       concurrency::task<uint64> AddModelAsync(const std::wstring& assetLocation);
+      concurrency::task<uint64> AddPrimitiveAsync(PrimitiveType type, Windows::Foundation::Numerics::float3 argument, size_t tessellation = 16, bool rhcoords = true, bool invertn = false);
+      concurrency::task<uint64> AddPrimitiveAsync(const std::wstring& primitiveName, Windows::Foundation::Numerics::float3 argument, size_t tessellation = 16, bool rhcoords = true, bool invertn = false);
       void RemoveModel(uint64 modelId);
       std::shared_ptr<ModelEntry> GetModel(uint64 modelId) const;
 
-      concurrency::task<uint64> AddPrimitiveAsync(PrimitiveType type, Windows::Foundation::Numerics::float3 argument, size_t tessellation = 16, bool rhcoords = true, bool invertn = false);
-      concurrency::task<uint64> AddPrimitiveAsync(const std::wstring& primitiveName, Windows::Foundation::Numerics::float3 argument, size_t tessellation = 16, bool rhcoords = true, bool invertn = false);
-      void RemovePrimitive(uint64 primitiveId);
-      std::shared_ptr<PrimitiveEntry> GetPrimitive(uint64 primitiveId) const;
-
     protected:
       bool FindModel(uint64 modelId, std::shared_ptr<ModelEntry>& modelEntry) const;
-      bool FindPrimitive(uint64 entryId, std::shared_ptr<PrimitiveEntry>& entry) const;
       static PrimitiveType StringToPrimitive(const std::wstring& primitiveName);
       std::unique_ptr<DirectX::InstancedGeometricPrimitive> CreatePrimitive(PrimitiveType type, Windows::Foundation::Numerics::float3 argument, size_t tessellation, bool rhcoords, bool invertn);
 
@@ -101,8 +95,6 @@ namespace HoloIntervention
       // Lock protection when accessing image list
       std::mutex                                      m_modelListMutex;
       ModelList                                       m_models;
-      std::mutex                                      m_primitiveListMutex;
-      PrimitiveList                                   m_primitives;
       std::mutex                                      m_idMutex;
       uint64                                          m_nextUnusedId = 1; // start at 1, 0 (INVALID_ENTRY) is considered invalid
     };

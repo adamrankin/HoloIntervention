@@ -46,7 +46,7 @@ namespace HoloIntervention
   namespace Rendering
   {
     class ModelRenderer;
-    class PrimitiveEntry;
+    class ModelEntry;
   }
 
   namespace Input
@@ -101,7 +101,7 @@ namespace HoloIntervention
         double                                                  m_latestTimestamp = 0.0;
 
         // Phantom rendering variables
-        std::shared_ptr<Rendering::PrimitiveEntry>              m_targetModel = nullptr;
+        std::shared_ptr<Rendering::ModelEntry>                  m_targetModel = nullptr;
         Windows::Foundation::Numerics::float3                   m_targetPosition;
         std::atomic_bool                                        m_phantomWasValid = false;
         std::array<float, 6>                                    m_boundsMeters = { 0.f, 0.f, 0.f, 0.f, 0.f, 0.f };

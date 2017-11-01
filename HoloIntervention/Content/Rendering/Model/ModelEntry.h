@@ -45,6 +45,11 @@ namespace DX
   class StepTimer;
 }
 
+namespace DirectX
+{
+  class InstancedGeometricPrimitive;
+}
+
 namespace HoloIntervention
 {
   namespace Rendering
@@ -59,6 +64,7 @@ namespace HoloIntervention
     {
     public:
       ModelEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, const std::wstring& assetLocation, DX::StepTimer& timer);
+      ModelEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, std::unique_ptr<DirectX::InstancedGeometricPrimitive> primitive, DX::StepTimer& timer, Windows::Foundation::Numerics::float4 colour = Windows::Foundation::Numerics::float4(1.f, 1.f, 1.f, 1.f));
       ~ModelEntry();
 
       void Update(const DX::CameraResources* cameraResources);
@@ -101,6 +107,13 @@ namespace HoloIntervention
       bool FailedLoad() const;
       bool IsLoaded() const;
 
+      // Colour control (primitives)
+      void SetColour(Windows::Foundation::Numerics::float4 newColour);
+      void SetColour(Windows::Foundation::Numerics::float3 newColour);
+      void SetColour(float r, float g, float b, float a);
+      void SetColour(float r, float g, float b);
+      Windows::Foundation::Numerics::float4 GetColour() const;
+
     protected:
       void DrawMesh(_In_ const DirectX::ModelMesh& mesh, _In_ bool alpha, _In_opt_ std::function<void __cdecl(std::shared_ptr<DirectX::IEffect>)> setCustomState = nullptr);
       void DrawMeshPart(_In_ const DirectX::ModelMeshPart& part, _In_opt_ std::function<void __cdecl(std::shared_ptr<DirectX::IEffect>)> setCustomState = nullptr);
@@ -123,6 +136,10 @@ namespace HoloIntervention
       // Frustum checking
       mutable std::atomic_bool                            m_isInFrustum;
       mutable uint64                                      m_frustumCheckFrameNumber;
+
+      // Primitive resources
+      std::unique_ptr<DirectX::InstancedGeometricPrimitive> m_primitive = nullptr;
+      Windows::Foundation::Numerics::float4                 m_colour = { 1.f, 1.f, 1.f, 1.f };
 
       // Model state
       std::array<float, 6>                                m_modelBounds = { -1.f };

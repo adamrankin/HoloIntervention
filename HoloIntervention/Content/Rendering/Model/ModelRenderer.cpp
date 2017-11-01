@@ -80,10 +80,6 @@ namespace HoloIntervention
       {
         model->Update(cameraResources);
       }
-      for (auto& primitive : m_primitives)
-      {
-        primitive->Update(cameraResources);
-      }
     }
 
     //----------------------------------------------------------------------------
@@ -104,13 +100,6 @@ namespace HoloIntervention
         if (model->IsVisible() && model->IsInFrustum(frustum))
         {
           model->Render();
-        }
-      }
-      for (auto& primitive : m_primitives)
-      {
-        if (primitive->IsVisible() && primitive->IsInFrustum(frustum))
-        {
-          primitive->Render();
         }
       }
     }
@@ -182,12 +171,12 @@ namespace HoloIntervention
           return INVALID_TOKEN;
         }
 
-        std::shared_ptr<PrimitiveEntry> entry = std::make_shared<PrimitiveEntry>(m_deviceResources, std::move(primitive), m_timer);
+        std::shared_ptr<ModelEntry> entry = std::make_shared<ModelEntry>(m_deviceResources, std::move(primitive), m_timer);
         entry->SetId(m_nextUnusedId);
         entry->SetVisible(true);
 
-        std::lock_guard<std::mutex> guard(m_primitiveListMutex);
-        m_primitives.push_back(entry);
+        std::lock_guard<std::mutex> guard(m_modelListMutex);
+        m_models.push_back(entry);
 
         m_nextUnusedId++;
         return m_nextUnusedId - 1;
@@ -208,43 +197,16 @@ namespace HoloIntervention
           return INVALID_TOKEN;
         }
 
-        std::shared_ptr<PrimitiveEntry> entry = std::make_shared<PrimitiveEntry>(m_deviceResources, std::move(primitive), m_timer);
+        std::shared_ptr<ModelEntry> entry = std::make_shared<ModelEntry>(m_deviceResources, std::move(primitive), m_timer);
         entry->SetId(m_nextUnusedId);
         entry->SetVisible(true);
 
-        std::lock_guard<std::mutex> guard(m_primitiveListMutex);
-        m_primitives.push_back(entry);
+        std::lock_guard<std::mutex> guard(m_modelListMutex);
+        m_models.push_back(entry);
 
         m_nextUnusedId++;
         return m_nextUnusedId - 1;
       });
-    }
-
-    //----------------------------------------------------------------------------
-    void ModelRenderer::RemovePrimitive(uint64 primitiveId)
-    {
-      std::lock_guard<std::mutex> guard(m_primitiveListMutex);
-      std::shared_ptr<PrimitiveEntry> primitive;
-
-      for (auto primIter = m_primitives.begin(); primIter != m_primitives.end(); ++primIter)
-      {
-        if ((*primIter)->GetId() == primitiveId)
-        {
-          m_primitives.erase(primIter);
-          return;
-        }
-      }
-    }
-
-    //----------------------------------------------------------------------------
-    std::shared_ptr<PrimitiveEntry> ModelRenderer::GetPrimitive(uint64 primitiveId) const
-    {
-      std::shared_ptr<PrimitiveEntry> entry;
-      if (FindPrimitive(primitiveId, entry))
-      {
-        return entry;
-      }
-      return nullptr;
     }
 
     //----------------------------------------------------------------------------
@@ -255,21 +217,6 @@ namespace HoloIntervention
         if (model->GetId() == modelId)
         {
           modelEntry = model;
-          return true;
-        }
-      }
-
-      return false;
-    }
-
-    //----------------------------------------------------------------------------
-    bool ModelRenderer::FindPrimitive(uint64 primitiveId, std::shared_ptr<PrimitiveEntry>& entry) const
-    {
-      for (auto primitive : m_primitives)
-      {
-        if (primitive->GetId() == primitiveId)
-        {
-          entry = primitive;
           return true;
         }
       }

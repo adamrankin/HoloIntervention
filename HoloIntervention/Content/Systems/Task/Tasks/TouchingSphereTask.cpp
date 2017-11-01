@@ -34,7 +34,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Rendering includes
 #include "ModelRenderer.h"
-#include "PrimitiveEntry.h"
 
 // Intellisense errors
 #include <WindowsNumerics.h>
@@ -255,7 +254,7 @@ namespace HoloIntervention
         // 3 mm diameter
         m_modelRenderer.AddPrimitiveAsync(Rendering::PrimitiveType_SPHERE, 0.03f).then([this](uint64 primId)
         {
-          m_targetModel = m_modelRenderer.GetPrimitive(primId);
+          m_targetModel = m_modelRenderer.GetModel(primId);
           m_targetModel->SetColour(DEFAULT_TARGET_COLOUR);
         });
       }

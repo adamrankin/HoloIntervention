@@ -115,7 +115,6 @@
     <ClInclude Include="Content\Rendering\Mesh\MeshRenderer.h" />
     <ClInclude Include="Content\Rendering\Model\ModelEntry.h" />
     <ClInclude Include="Content\Rendering\Model\ModelRenderer.h" />
-    <ClInclude Include="Content\Rendering\Model\PrimitiveEntry.h" />
     <ClInclude Include="Content\Rendering\Notification\DistanceFieldRenderer.h" />
     <ClInclude Include="Content\Rendering\Notification\NotificationRenderer.h" />
     <ClInclude Include="Content\Rendering\Notification\TextRenderer.h" />
@@ -180,7 +179,6 @@
     <ClCompile Include="Content\Rendering\Mesh\MeshRenderer.cpp" />
     <ClCompile Include="Content\Rendering\Model\ModelEntry.cpp" />
     <ClCompile Include="Content\Rendering\Model\ModelRenderer.cpp" />
-    <ClCompile Include="Content\Rendering\Model\PrimitiveEntry.cpp" />
     <ClCompile Include="Content\Rendering\Notification\DistanceFieldRenderer.cpp" />
     <ClCompile Include="Content\Rendering\Notification\NotificationRenderer.cpp" />
     <ClCompile Include="Content\Rendering\Notification\TextRenderer.cpp" />

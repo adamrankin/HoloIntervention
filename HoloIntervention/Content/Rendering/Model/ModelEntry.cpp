@@ -35,6 +35,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <DirectXHelper.h>
 #include <Effects.h>
 #include <InstancedEffects.h>
+#include <InstancedGeometricPrimitive.h>
 #include <Model.h>
 
 // STL includes
@@ -146,6 +147,16 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    ModelEntry::ModelEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, std::unique_ptr<DirectX::InstancedGeometricPrimitive> primitive, DX::StepTimer& timer, float4 colour)
+      : m_deviceResources(deviceResources)
+      , m_primitive(std::move(primitive))
+      , m_timer(timer)
+      , m_colour(colour)
+    {
+
+    }
+
+    //----------------------------------------------------------------------------
     ModelEntry::~ModelEntry()
     {
       ReleaseDeviceDependentResources();
@@ -181,32 +192,49 @@ namespace HoloIntervention
 
       const auto context = m_deviceResources->GetD3DDeviceContext();
 
-      // Draw opaque parts
-      for (auto it = m_model->meshes.cbegin(); it != m_model->meshes.cend(); ++it)
+      if (m_primitive != nullptr)
       {
-        auto mesh = it->get();
-        assert(mesh != 0);
-
-        mesh->PrepareForRendering(context, *m_states, false, m_wireframe);
-
-        DrawMesh(*mesh, false);
+        FXMMATRIX view[2] =
+        {
+          XMLoadFloat4x4(&(m_cameraResources->GetLatestViewProjectionBuffer().view[0])),
+          XMLoadFloat4x4(&(m_cameraResources->GetLatestViewProjectionBuffer().view[1]))
+        };
+        FXMMATRIX projection[2] =
+        {
+          XMLoadFloat4x4(&(m_cameraResources->GetLatestViewProjectionBuffer().projection[0])),
+          XMLoadFloat4x4(&(m_cameraResources->GetLatestViewProjectionBuffer().projection[1]))
+        };
+        m_primitive->Draw(XMLoadFloat4x4(&m_currentPose), view, projection, XMLoadFloat4(&m_colour));
       }
-
-      // Draw alpha parts
-      for (auto it = m_model->meshes.cbegin(); it != m_model->meshes.cend(); ++it)
+      else
       {
-        auto mesh = it->get();
-        assert(mesh != 0);
+        // Draw opaque parts
+        for (auto it = m_model->meshes.cbegin(); it != m_model->meshes.cend(); ++it)
+        {
+          auto mesh = it->get();
+          assert(mesh != 0);
 
-        mesh->PrepareForRendering(context, *m_states, true, m_wireframe);
+          mesh->PrepareForRendering(context, *m_states, false, m_wireframe);
 
-        DrawMesh(*mesh, true);
+          DrawMesh(*mesh, false);
+        }
+
+        // Draw alpha parts
+        for (auto it = m_model->meshes.cbegin(); it != m_model->meshes.cend(); ++it)
+        {
+          auto mesh = it->get();
+          assert(mesh != 0);
+
+          mesh->PrepareForRendering(context, *m_states, true, m_wireframe);
+
+          DrawMesh(*mesh, true);
+        }
+
+        // Clean up after rendering
+        context->OMSetBlendState(nullptr, nullptr, 0xffffffff);
+        context->OMSetDepthStencilState(nullptr, 0);
+        context->RSSetState(nullptr);
       }
-
-      // Clean up after rendering
-      context->OMSetBlendState(nullptr, nullptr, 0xffffffff);
-      context->OMSetDepthStencilState(nullptr, 0);
-      context->RSSetState(nullptr);
     }
 
     //----------------------------------------------------------------------------
@@ -431,6 +459,36 @@ namespace HoloIntervention
     bool ModelEntry::IsLoaded() const
     {
       return m_loadingComplete;
+    }
+
+    //----------------------------------------------------------------------------
+    void ModelEntry::SetColour(float3 newColour)
+    {
+      m_colour = float4(newColour.x, newColour.y, newColour.z, m_colour.w);
+    }
+
+    //----------------------------------------------------------------------------
+    void ModelEntry::SetColour(float r, float g, float b, float a)
+    {
+      m_colour = float4(r, g, b, a);
+    }
+
+    //----------------------------------------------------------------------------
+    void ModelEntry::SetColour(Windows::Foundation::Numerics::float4 newColour)
+    {
+      m_colour = newColour;
+    }
+
+    //----------------------------------------------------------------------------
+    void ModelEntry::SetColour(float r, float g, float b)
+    {
+      m_colour = float4{ r, g, b, m_colour.w };
+    }
+
+    //----------------------------------------------------------------------------
+    float4 ModelEntry::GetColour() const
+    {
+      return m_colour;
     }
 
     //----------------------------------------------------------------------------

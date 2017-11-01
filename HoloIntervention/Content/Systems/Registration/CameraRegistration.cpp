@@ -53,7 +53,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <WindowsNumerics.h>
 
 #ifndef SUCCEEDED
-#define SUCCEEDED(hr) (((HRESULT)(hr)) >= 0)
+  #define SUCCEEDED(hr) (((HRESULT)(hr)) >= 0)
 #endif
 
 using namespace Concurrency;
@@ -468,7 +468,7 @@ namespace HoloIntervention
           m_modelRenderer.AddPrimitiveAsync(Rendering::PrimitiveType_SPHERE, VISUALIZATION_SPHERE_RADIUS, 30).then([this, i](uint64 primId)
           {
             m_spherePrimitiveIds[i] = primId;
-            m_spherePrimitives[i] = m_modelRenderer.GetPrimitive(m_spherePrimitiveIds[i]);
+            m_spherePrimitives[i] = m_modelRenderer.GetModel(m_spherePrimitiveIds[i]);
             m_spherePrimitives[i]->SetVisible(true);
             m_spherePrimitives[i]->SetColour(float3(0.803921640f, 0.360784322f, 0.360784322f));
             m_spherePrimitives[i]->SetDesiredPose(float4x4::identity());

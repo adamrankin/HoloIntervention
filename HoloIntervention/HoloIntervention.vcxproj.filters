@@ -127,9 +127,6 @@
     <ClCompile Include="Content\Rendering\Model\ModelRenderer.cpp">
       <Filter>Content\Rendering\ModelRenderer</Filter>
     </ClCompile>
-    <ClCompile Include="Content\Rendering\Model\PrimitiveEntry.cpp">
-      <Filter>Content\Rendering\ModelRenderer</Filter>
-    </ClCompile>
     <ClCompile Include="Content\Rendering\Mesh\Mesh.cpp">
       <Filter>Content\Rendering\MeshRenderer</Filter>
     </ClCompile>
@@ -308,9 +305,6 @@
     </ClInclude>
     <ClInclude Include="Content\Rendering\Notification\NotificationRenderer.h">
       <Filter>Content\Rendering\NotificationRenderer</Filter>
-    </ClInclude>
-    <ClInclude Include="Content\Rendering\Model\PrimitiveEntry.h">
-      <Filter>Content\Rendering\ModelRenderer</Filter>
     </ClInclude>
     <ClInclude Include="Content\Rendering\Model\ModelEntry.h">
       <Filter>Content\Rendering\ModelRenderer</Filter>
