@@ -47,7 +47,18 @@ namespace HoloIntervention
     enum PrimitiveType
     {
       PrimitiveType_NONE,
-      PrimitiveType_SPHERE
+      PrimitiveType_CUBE,
+      PrimitiveType_BOX,
+      PrimitiveType_SPHERE,
+      PrimitiveType_GEOSPHERE,
+      PrimitiveType_CYLINDER,
+      PrimitiveType_CONE,
+      PrimitiveType_TORUS,
+      PrimitiveType_TETRAHEDRON,
+      PrimitiveType_OCTAHEDRON,
+      PrimitiveType_DODECAHEDRON,
+      PrimitiveType_ICOSAHEDRON,
+      PrimitiveType_TEAPOT
     };
 
     class ModelRenderer : public IEngineComponent
@@ -70,8 +81,8 @@ namespace HoloIntervention
       void RemoveModel(uint64 modelId);
       std::shared_ptr<ModelEntry> GetModel(uint64 modelId) const;
 
-      concurrency::task<uint64> AddPrimitiveAsync(PrimitiveType type, float diameter = 1, size_t tessellation = 16, bool rhcoords = true, bool invertn = false);
-      concurrency::task<uint64> AddPrimitiveAsync(const std::wstring& primitiveName, float diameter = 1, size_t tessellation = 16, bool rhcoords = true, bool invertn = false);
+      concurrency::task<uint64> AddPrimitiveAsync(PrimitiveType type, Windows::Foundation::Numerics::float3 argument, size_t tessellation = 16, bool rhcoords = true, bool invertn = false);
+      concurrency::task<uint64> AddPrimitiveAsync(const std::wstring& primitiveName, Windows::Foundation::Numerics::float3 argument, size_t tessellation = 16, bool rhcoords = true, bool invertn = false);
       void RemovePrimitive(uint64 primitiveId);
       std::shared_ptr<PrimitiveEntry> GetPrimitive(uint64 primitiveId) const;
 
@@ -79,6 +90,7 @@ namespace HoloIntervention
       bool FindModel(uint64 modelId, std::shared_ptr<ModelEntry>& modelEntry) const;
       bool FindPrimitive(uint64 entryId, std::shared_ptr<PrimitiveEntry>& entry) const;
       static PrimitiveType StringToPrimitive(const std::wstring& primitiveName);
+      std::unique_ptr<DirectX::InstancedGeometricPrimitive> CreatePrimitive(PrimitiveType type, Windows::Foundation::Numerics::float3 argument, size_t tessellation, bool rhcoords, bool invertn);
 
     protected:
       // Cached pointer to device resources.

@@ -226,7 +226,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<uint64> ToolSystem::RegisterToolAsync(const std::wstring& modelName, const bool isPrimitive, UWPOpenIGTLink::TransformName^ coordinateFrame)
+    task<uint64> ToolSystem::RegisterToolAsync(const std::wstring& modelName, const bool isPrimitive, UWPOpenIGTLink::TransformName^ coordinateFrame, float3 argument, size_t tessellation, bool rhcoords, bool invertn)
     {
       task<uint64> modelTask;
       if (!isPrimitive)
@@ -235,7 +235,7 @@ namespace HoloIntervention
       }
       else
       {
-        modelTask = m_modelRenderer.AddPrimitiveAsync(modelName);
+        modelTask = m_modelRenderer.AddPrimitiveAsync(modelName, argument, tessellation, rhcoords, invertn);
       }
       return modelTask.then([this, coordinateFrame](uint64 modelEntryId)
       {
@@ -346,6 +346,12 @@ namespace HoloIntervention
           {
             throw ref new Platform::Exception(E_FAIL, L"Tool entry contains an empty attribute.");
           }
+          Platform::String^ argument1String = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Argument1")->NodeValue);
+          Platform::String^ argument2String = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Argument2")->NodeValue);
+          Platform::String^ argument3String = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Argument3")->NodeValue);
+          Platform::String^ tessellationString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Tessellation")->NodeValue);
+          Platform::String^ rhcoordsString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"RightHandedCoords")->NodeValue);
+          Platform::String^ invertnString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"InvertN")->NodeValue);
 
           UWPOpenIGTLink::TransformName^ trName = ref new UWPOpenIGTLink::TransformName(fromString, toString);
           if (!trName->IsValid())
@@ -353,7 +359,52 @@ namespace HoloIntervention
             throw ref new Platform::Exception(E_FAIL, L"Tool entry contains invalid transform name.");
           }
 
-          RegisterToolAsync(modelString != nullptr ? std::wstring(modelString->Data()) : std::wstring(primString->Data()), modelString != nullptr ? false : true, trName).then([this, node](uint64 token)
+          task<uint64> registerTask;
+          if (modelString != nullptr)
+          {
+            registerTask = RegisterToolAsync(std::wstring(modelString->Data()), false, trName);
+          }
+          else
+          {
+            size_t tessellation = 16;
+            bool rhcoords = true;
+            bool invertn = false;
+            float3 argument;
+            if (argument1String != nullptr && !argument1String->IsEmpty())
+            {
+              std::wstringstream wss;
+              wss << argument1String->Data();
+              wss >> argument.x;
+            }
+            if (argument2String != nullptr && !argument2String->IsEmpty())
+            {
+              std::wstringstream wss;
+              wss << argument2String->Data();
+              wss >> argument.y;
+            }
+            if (argument3String != nullptr && !argument3String->IsEmpty())
+            {
+              std::wstringstream wss;
+              wss << argument3String->Data();
+              wss >> argument.z;
+            }
+            if (tessellationString != nullptr && !tessellationString->IsEmpty())
+            {
+              std::wstringstream wss;
+              wss << tessellationString->Data();
+              wss >> tessellation;
+            }
+            if (rhcoordsString != nullptr && !rhcoordsString->IsEmpty())
+            {
+              rhcoords = IsEqualInsensitive(rhcoordsString, L"true");
+            }
+            if (invertnString != nullptr && !invertnString->IsEmpty())
+            {
+              invertn = IsEqualInsensitive(invertnString, L"true");
+            }
+            registerTask = RegisterToolAsync(std::wstring(primString->Data()), true, trName, argument, tessellation, rhcoords, invertn);
+          }
+          registerTask.then([this, node](uint64 token)
           {
             auto tool = GetTool(token);
 

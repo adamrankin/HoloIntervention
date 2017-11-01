@@ -24,6 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "pch.h"
 #include "CameraResources.h"
+#include "Common.h"
 #include "DeviceResources.h"
 #include "DirectXHelper.h"
 #include "ModelRenderer.h"
@@ -36,6 +37,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 using namespace Concurrency;
 using namespace DirectX;
+using namespace Windows::Foundation::Numerics;
 using namespace Windows::Foundation;
 using namespace Windows::Perception::Spatial;
 using namespace Windows::Storage::Streams;
@@ -168,16 +170,16 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<uint64> ModelRenderer::AddPrimitiveAsync(PrimitiveType type, float diameterMeter, size_t tessellation, bool rhcoords, bool invertn)
+    task<uint64> ModelRenderer::AddPrimitiveAsync(PrimitiveType type, float3 argument, size_t tessellation, bool rhcoords, bool invertn)
     {
-      return create_task([this, type, diameterMeter, tessellation, rhcoords, invertn]()
+      return create_task([this, type, argument, tessellation, rhcoords, invertn]()
       {
-        std::unique_ptr<DirectX::InstancedGeometricPrimitive> primitive(nullptr);
-        switch (type)
+        std::unique_ptr<DirectX::InstancedGeometricPrimitive> primitive = CreatePrimitive(type, argument, tessellation, rhcoords, invertn);
+
+        if (primitive == nullptr)
         {
-          case PrimitiveType_SPHERE:
-            primitive = std::move(DirectX::InstancedGeometricPrimitive::CreateSphere(m_deviceResources->GetD3DDeviceContext(), diameterMeter, tessellation, rhcoords, invertn));
-            break;
+          LOG_ERROR(L"Unable to create primitive, unknown type.");
+          return INVALID_TOKEN;
         }
 
         std::shared_ptr<PrimitiveEntry> entry = std::make_shared<PrimitiveEntry>(m_deviceResources, std::move(primitive), m_timer);
@@ -193,17 +195,17 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<uint64> ModelRenderer::AddPrimitiveAsync(const std::wstring& primitiveName, float diameterMeter, size_t tessellation, bool rhcoords, bool invertn)
+    task<uint64> ModelRenderer::AddPrimitiveAsync(const std::wstring& primitiveName, float3 argument, size_t tessellation, bool rhcoords, bool invertn)
     {
-      return create_task([this, primitiveName, diameterMeter, tessellation, rhcoords, invertn]()
+      return create_task([this, primitiveName, argument, tessellation, rhcoords, invertn]()
       {
-        std::unique_ptr<DirectX::InstancedGeometricPrimitive> primitive(nullptr);
         PrimitiveType type = ModelRenderer::StringToPrimitive(primitiveName);
-        switch (type)
+        std::unique_ptr<DirectX::InstancedGeometricPrimitive> primitive = CreatePrimitive(type, argument, tessellation, rhcoords, invertn);
+
+        if (primitive == nullptr)
         {
-          case PrimitiveType_SPHERE:
-            primitive = std::move(DirectX::InstancedGeometricPrimitive::CreateSphere(m_deviceResources->GetD3DDeviceContext(), diameterMeter, tessellation, rhcoords, invertn));
-            break;
+          LOG_ERROR(L"Unable to create primitive, unknown type.");
+          return INVALID_TOKEN;
         }
 
         std::shared_ptr<PrimitiveEntry> entry = std::make_shared<PrimitiveEntry>(m_deviceResources, std::move(primitive), m_timer);
@@ -278,12 +280,97 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     Rendering::PrimitiveType ModelRenderer::StringToPrimitive(const std::wstring& primitiveName)
     {
-      if (IsEqualInsensitive(primitiveName, L"sphere"))
+      if (IsEqualInsensitive(primitiveName, L"CUBE"))
+      {
+        return PrimitiveType_CUBE;
+      }
+      else if (IsEqualInsensitive(primitiveName, L"BOX"))
+      {
+        return PrimitiveType_BOX;
+      }
+      else if (IsEqualInsensitive(primitiveName, L"SPHERE"))
       {
         return PrimitiveType_SPHERE;
       }
+      else if (IsEqualInsensitive(primitiveName, L"GEOSPHERE"))
+      {
+        return PrimitiveType_GEOSPHERE;
+      }
+      else if (IsEqualInsensitive(primitiveName, L"CYLINDER"))
+      {
+        return PrimitiveType_CYLINDER;
+      }
+      else if (IsEqualInsensitive(primitiveName, L"CONE"))
+      {
+        return PrimitiveType_CONE;
+      }
+      else if (IsEqualInsensitive(primitiveName, L"TORUS"))
+      {
+        return PrimitiveType_TORUS;
+      }
+      else if (IsEqualInsensitive(primitiveName, L"TETRAHEDRON"))
+      {
+        return PrimitiveType_TETRAHEDRON;
+      }
+      else if (IsEqualInsensitive(primitiveName, L"OCTAHEDRON"))
+      {
+        return PrimitiveType_OCTAHEDRON;
+      }
+      else if (IsEqualInsensitive(primitiveName, L"DODECAHEDRON"))
+      {
+        return PrimitiveType_DODECAHEDRON;
+      }
+      else if (IsEqualInsensitive(primitiveName, L"ICOSAHEDRON"))
+      {
+        return PrimitiveType_ICOSAHEDRON;
+      }
+      else if (IsEqualInsensitive(primitiveName, L"TEAPOT"))
+      {
+        return PrimitiveType_TEAPOT;
+      }
+      else
+      {
+        return PrimitiveType_NONE;
+      }
+    }
 
-      return PrimitiveType_NONE;
+    //----------------------------------------------------------------------------
+    std::unique_ptr<DirectX::InstancedGeometricPrimitive> ModelRenderer::CreatePrimitive(PrimitiveType type, float3 argument, size_t tessellation, bool rhcoords, bool invertn)
+    {
+      XMFLOAT3 vec;
+      vec.x = argument.x;
+      vec.y = argument.y;
+      vec.z = argument.z;
+
+      switch (type)
+      {
+      case PrimitiveType_CUBE:
+        return std::move(DirectX::InstancedGeometricPrimitive::CreateCube(m_deviceResources->GetD3DDeviceContext(), argument.x, rhcoords));
+      case PrimitiveType_BOX:
+        return std::move(DirectX::InstancedGeometricPrimitive::CreateBox(m_deviceResources->GetD3DDeviceContext(), vec, rhcoords, invertn));
+      case PrimitiveType_SPHERE:
+        return std::move(DirectX::InstancedGeometricPrimitive::CreateSphere(m_deviceResources->GetD3DDeviceContext(), argument.x, tessellation, rhcoords, invertn));
+      case PrimitiveType_GEOSPHERE:
+        return std::move(DirectX::InstancedGeometricPrimitive::CreateGeoSphere(m_deviceResources->GetD3DDeviceContext(), argument.x, tessellation, rhcoords));
+      case PrimitiveType_CYLINDER:
+        return std::move(DirectX::InstancedGeometricPrimitive::CreateCylinder(m_deviceResources->GetD3DDeviceContext(), argument.x, argument.y, tessellation, rhcoords));
+      case PrimitiveType_CONE:
+        return std::move(DirectX::InstancedGeometricPrimitive::CreateCone(m_deviceResources->GetD3DDeviceContext(), argument.x, argument.y, tessellation, rhcoords));
+      case PrimitiveType_TORUS:
+        return std::move(DirectX::InstancedGeometricPrimitive::CreateTorus(m_deviceResources->GetD3DDeviceContext(), argument.x, argument.y, tessellation, rhcoords));
+      case PrimitiveType_TETRAHEDRON:
+        return std::move(DirectX::InstancedGeometricPrimitive::CreateTetrahedron(m_deviceResources->GetD3DDeviceContext(), argument.x, rhcoords));
+      case PrimitiveType_OCTAHEDRON:
+        return std::move(DirectX::InstancedGeometricPrimitive::CreateOctahedron(m_deviceResources->GetD3DDeviceContext(), argument.x, rhcoords));
+      case PrimitiveType_DODECAHEDRON:
+        return std::move(DirectX::InstancedGeometricPrimitive::CreateDodecahedron(m_deviceResources->GetD3DDeviceContext(), argument.x, rhcoords));
+      case PrimitiveType_ICOSAHEDRON:
+        return std::move(DirectX::InstancedGeometricPrimitive::CreateIcosahedron(m_deviceResources->GetD3DDeviceContext(), argument.x, rhcoords));
+      case PrimitiveType_TEAPOT:
+        return std::move(DirectX::InstancedGeometricPrimitive::CreateTeapot(m_deviceResources->GetD3DDeviceContext(), argument.x, tessellation, rhcoords));
+      }
+
+      return nullptr;
     }
 
     //----------------------------------------------------------------------------

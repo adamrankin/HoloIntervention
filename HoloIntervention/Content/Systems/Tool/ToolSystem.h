@@ -72,7 +72,7 @@ namespace HoloIntervention
       bool IsToolValid(uint64 token) const;
       bool WasToolValid(uint64 token) const;
 
-      Concurrency::task<uint64> RegisterToolAsync(const std::wstring& modelName, const bool isPrimitive, UWPOpenIGTLink::TransformName^ coordinateFrame);
+      Concurrency::task<uint64> RegisterToolAsync(const std::wstring& modelName, const bool isPrimitive, UWPOpenIGTLink::TransformName^ coordinateFrame, Windows::Foundation::Numerics::float3 argument = Windows::Foundation::Numerics::float3(1.f, 1.f, 1.f), size_t tessellation = 16, bool rhcoords = true, bool invertn = false);
       void UnregisterTool(uint64 toolToken);
       void ClearTools();
 
