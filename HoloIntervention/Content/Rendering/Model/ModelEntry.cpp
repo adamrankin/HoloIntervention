@@ -477,6 +477,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ModelEntry::RenderDefault()
     {
+      // TODO : if prim
       m_model->UpdateEffects([this](IEffect * effect)
       {
         InstancedBasicEffect* basicEffect = dynamic_cast<InstancedBasicEffect*>(effect);
