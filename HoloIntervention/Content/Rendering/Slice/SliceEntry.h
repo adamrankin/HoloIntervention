@@ -66,6 +66,7 @@ namespace HoloIntervention
       void SetImageData(const std::wstring& fileName);
       void SetImageData(std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat);
       std::shared_ptr<byte> GetImageData() const;
+      void SetImageData(Microsoft::WRL::ComPtr<ID3D11Texture2D> imageTexture);
 
       void SetVertexBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer);
 

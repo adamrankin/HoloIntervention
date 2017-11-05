@@ -71,61 +71,109 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    uint64 SliceRenderer::AddSlice(std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, float4x4 desiredPose, bool headLocked)
+    concurrency::task<uint64> SliceRenderer::AddSliceAsync(std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, float4x4 desiredPose, bool headLocked)
     {
-      if (!m_componentReady)
+      return create_task([this, imageData, width, height, pixelFormat, desiredPose, headLocked]()
       {
-        return INVALID_TOKEN;
-      }
+        return AddSliceCommonAsync(desiredPose, headLocked).then([this, imageData, width, height, pixelFormat, headLocked](task<std::shared_ptr<Rendering::SliceEntry>> entryTask)
+        {
+          try
+          {
+            auto entry = entryTask.get();
+            if (entry == nullptr)
+            {
+              return INVALID_TOKEN;
+            }
 
-      auto entry = AddSliceCommon(desiredPose, headLocked);
-      entry->SetImageData(imageData, width, height, pixelFormat);
+            if (imageData == nullptr)
+            {
+              return entry->GetId();
+            }
+            entry->SetImageData(imageData, width, height, pixelFormat);
 
-      return m_nextUnusedSliceId - 1;
+            return entry->GetId();
+          }
+          catch (const std::exception& e)
+          {
+            LOG_ERROR("Unable to get slice entry");
+            return INVALID_TOKEN;
+          }
+        });
+      });
     }
 
     //----------------------------------------------------------------------------
-    uint64 SliceRenderer::AddSlice(IBuffer^ imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, float4x4 desiredPose, bool headLocked)
+    task<uint64> SliceRenderer::AddSliceAsync(IBuffer^ imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, float4x4 desiredPose, bool headLocked)
     {
-      if (!m_componentReady)
+      return create_task([this, imageData, width, height, pixelFormat, desiredPose, headLocked]()
       {
-        return INVALID_TOKEN;
-      }
+        return AddSliceCommonAsync(desiredPose, headLocked).then([this, imageData, width, height, pixelFormat](std::shared_ptr<Rendering::SliceEntry> entry)
+        {
+          if (imageData == nullptr)
+          {
+            return entry->GetId();
+          }
+          std::shared_ptr<byte> imDataPtr(new byte[imageData->Length], std::default_delete<byte[]>());
+          memcpy(imDataPtr.get(), HoloIntervention::GetDataFromIBuffer(imageData), imageData->Length * sizeof(byte));
+          entry->SetImageData(imDataPtr, width, height, pixelFormat);
 
-      auto entry = AddSliceCommon(desiredPose, headLocked);
-      std::shared_ptr<byte> imDataPtr(new byte[imageData->Length], std::default_delete<byte[]>());
-      memcpy(imDataPtr.get(), HoloIntervention::GetDataFromIBuffer(imageData), imageData->Length * sizeof(byte));
-      entry->SetImageData(imDataPtr, width, height, pixelFormat);
-
-      return m_nextUnusedSliceId - 1;
+          return entry->GetId();
+        });
+      });
     }
 
     //----------------------------------------------------------------------------
-    uint64 SliceRenderer::AddSlice(const std::wstring& fileName, float4x4 desiredPose, bool headLocked)
+    task<uint64> SliceRenderer::AddSliceAsync(const std::wstring& fileName, float4x4 desiredPose, bool headLocked)
     {
-      if (!m_componentReady)
+      return create_task([this, fileName, desiredPose, headLocked]()
       {
-        return INVALID_TOKEN;
-      }
+        return AddSliceCommonAsync(desiredPose, headLocked).then([this, fileName](std::shared_ptr<Rendering::SliceEntry> entry)
+        {
+          if (fileName.empty())
+          {
+            return entry->GetId();
+          }
+          entry->SetImageData(fileName);
 
-      auto entry = AddSliceCommon(desiredPose, headLocked);
-      entry->SetImageData(fileName);
-
-      return m_nextUnusedSliceId - 1;
+          return entry->GetId();
+        });
+      });
     }
 
     //----------------------------------------------------------------------------
-    uint64 SliceRenderer::AddSlice(UWPOpenIGTLink::TrackedFrame^ frame, float4x4 desiredPose, bool headLocked)
+    task<uint64> SliceRenderer::AddSliceAsync(UWPOpenIGTLink::TrackedFrame^ frame, float4x4 desiredPose, bool headLocked)
     {
-      if (!m_componentReady)
+      return create_task([this, frame, desiredPose, headLocked]()
       {
-        return INVALID_TOKEN;
-      }
+        return AddSliceCommonAsync(desiredPose, headLocked).then([this, frame](std::shared_ptr<Rendering::SliceEntry> entry)
+        {
+          if (frame == nullptr)
+          {
+            return entry->GetId();
+          }
+          entry->SetFrame(frame);
 
-      auto entry = AddSliceCommon(desiredPose, headLocked);
-      entry->SetFrame(frame);
+          return entry->GetId();
+        });
+      });
+    }
 
-      return m_nextUnusedSliceId - 1;
+    //----------------------------------------------------------------------------
+    task<uint64> SliceRenderer::AddSliceAsync(Microsoft::WRL::ComPtr<ID3D11Texture2D> imageTexture, Windows::Foundation::Numerics::float4x4 desiredPose /*= Windows::Foundation::Numerics::float4x4::identity()*/, bool headLocked /*= false*/)
+    {
+      return create_task([this, imageTexture, desiredPose, headLocked]()
+      {
+        return AddSliceCommonAsync(desiredPose, headLocked).then([this, imageTexture](std::shared_ptr<Rendering::SliceEntry> entry)
+        {
+          if (imageTexture == nullptr)
+          {
+            return entry->GetId();
+          }
+          entry->SetImageData(imageTexture);
+
+          return entry->GetId();
+        });
+      });
     }
 
     //----------------------------------------------------------------------------
@@ -462,17 +510,25 @@ namespace HoloIntervention
     }
 
     //-----------------------------------------------------------------------------
-    std::shared_ptr<SliceEntry> SliceRenderer::AddSliceCommon(const float4x4& desiredPose, bool headLocked)
+    task<std::shared_ptr<SliceEntry>> SliceRenderer::AddSliceCommonAsync(const float4x4& desiredPose, bool headLocked)
     {
-      std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources, m_timer);
-      entry->SetId(m_nextUnusedSliceId);
-      entry->ForceCurrentPose(desiredPose);
-      entry->SetHeadlocked(headLocked);
-      entry->SetVertexBuffer(m_centerVertexBuffer);
-      std::lock_guard<std::mutex> guard(m_sliceMapMutex);
-      m_slices.push_back(entry);
-      m_nextUnusedSliceId++;
-      return entry;
+      return create_task([this, desiredPose, headLocked]()
+      {
+        while (!m_componentReady)
+        {
+          std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        }
+
+        std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources, m_timer);
+        std::lock_guard<std::mutex> guard(m_sliceMapMutex);
+        entry->SetId(m_nextUnusedSliceId);
+        entry->ForceCurrentPose(desiredPose);
+        entry->SetHeadlocked(headLocked);
+        entry->SetVertexBuffer(m_centerVertexBuffer);
+        m_slices.push_back(entry);
+        m_nextUnusedSliceId++;
+        return entry;
+      });
     }
 
     //----------------------------------------------------------------------------

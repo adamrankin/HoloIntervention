@@ -163,8 +163,8 @@
     <ClCompile Include="Content\Systems\Task\Tasks\TouchingSphereTask.cpp">
       <Filter>Content\Systems\Task\Tasks</Filter>
     </ClCompile>
-    <ClCompile Include="Content\Systems\Debug\DebugSystem.cpp">
-      <Filter>Content\Systems\Debug</Filter>
+    <ClCompile Include="Content\Debug\Debug.cpp">
+      <Filter>Content\Debug</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -357,8 +357,8 @@
     <ClInclude Include="Content\Systems\Task\Tasks\PreOpImageTask.h">
       <Filter>Content\Systems\Task\Tasks</Filter>
     </ClInclude>
-    <ClInclude Include="Content\Systems\Debug\DebugSystem.h">
-      <Filter>Content\Systems\Debug</Filter>
+    <ClInclude Include="Content\Debug\Debug.h">
+      <Filter>Content\Debug</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -749,6 +749,9 @@
     </Filter>
     <Filter Include="Content\Systems\Debug">
       <UniqueIdentifier>{092a76ff-94c6-4483-b1a3-e9cac0f561b6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Debug">
+      <UniqueIdentifier>{7c556e33-521e-4cf8-b4ce-ff3be89d2ba7}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

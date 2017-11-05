@@ -123,7 +123,7 @@ namespace HoloIntervention
     {
       m_distanceFieldRenderer->ResetRenderCount();
       m_textRenderer->RenderTextOffscreen(message);
-      m_distanceFieldRenderer->RenderDistanceField(m_textRenderer->GetTexture());
+      m_distanceFieldRenderer->RenderDistanceField(m_textRenderer->GetTextureSRV());
     }
 
     //----------------------------------------------------------------------------

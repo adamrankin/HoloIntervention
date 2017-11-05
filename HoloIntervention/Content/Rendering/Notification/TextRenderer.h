@@ -35,7 +35,8 @@ namespace HoloIntervention
       void CreateDeviceDependentResources();
       void ReleaseDeviceDependentResources();
 
-      ID3D11ShaderResourceView* GetTexture() const;
+      Microsoft::WRL::ComPtr<ID3D11Texture2D> GetTexture() const;
+      ID3D11ShaderResourceView* GetTextureSRV() const;
       ID3D11SamplerState* GetSampler() const;
 
     protected:

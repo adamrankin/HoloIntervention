@@ -37,31 +37,39 @@ namespace HoloIntervention
 {
   namespace Rendering
   {
+    class SliceEntry;
     class SliceRenderer;
+    class TextRenderer;
   }
 
-  namespace System
+  class Debug : public Input::IVoiceInput, public IEngineComponent
   {
-    class DebugSystem : public Input::IVoiceInput, public IEngineComponent
-    {
-    public:
-      DebugSystem(Rendering::SliceRenderer& sliceRenderer);
-      ~DebugSystem();
+  public:
+    Debug(Rendering::SliceRenderer& sliceRenderer, const std::shared_ptr<DX::DeviceResources>& deviceResources);
+    ~Debug();
 
-    public:
-      // IVoiceInput functions
-      virtual void RegisterVoiceCallbacks(HoloIntervention::Input::VoiceInputCallbackMap& callbackMap);
+  public:
+    // IVoiceInput functions
+    virtual void RegisterVoiceCallbacks(HoloIntervention::Input::VoiceInputCallbackMap& callbackMap);
 
-      void UpdateValue(const std::wstring& key, const std::wstring& value);
-      void UpdateValue(const std::wstring& key, const Windows::Foundation::Numerics::float4x4& value);
-      void UpdateValue(Platform::String^ key, Platform::String^ value);
-      void UpdateValue(Platform::String^ key, const Windows::Foundation::Numerics::float4x4& value);
+  public:
+    void Update();
 
-    protected:
-      // Cached values
-      Rendering::SliceRenderer& m_sliceRenderer;
+    void UpdateValue(const std::wstring& key, const std::wstring& value);
+    void UpdateValue(const std::wstring& key, const Windows::Foundation::Numerics::float4x4& value);
+    void UpdateValue(Platform::String^ key, Platform::String^ value);
+    void UpdateValue(Platform::String^ key, const Windows::Foundation::Numerics::float4x4& value);
 
-      std::map<std::wstring, std::wstring>    m_debugValues;
-    };
-  }
+  protected:
+    // Cached variables
+    Rendering::SliceRenderer& m_sliceRenderer;
+
+    // Text rendering variables
+    std::unique_ptr<Rendering::TextRenderer>  m_textRenderer;
+
+    // Class variables
+    std::map<std::wstring, std::wstring>      m_debugValues;
+    std::atomic_bool                          m_worldLocked = false;
+    std::shared_ptr<Rendering::SliceEntry>    m_sliceEntry = nullptr;
+  };
 }

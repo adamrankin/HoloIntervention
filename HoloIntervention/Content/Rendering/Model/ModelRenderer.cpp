@@ -25,6 +25,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "pch.h"
 #include "CameraResources.h"
 #include "Common.h"
+#include "Debug.h"
 #include "DeviceResources.h"
 #include "DirectXHelper.h"
 #include "ModelRenderer.h"
@@ -50,9 +51,10 @@ namespace HoloIntervention
   {
     //----------------------------------------------------------------------------
     // Loads vertex and pixel shaders from files and instantiates the cube geometry.
-    ModelRenderer::ModelRenderer(const std::shared_ptr<DX::DeviceResources> deviceResources, DX::StepTimer& timer)
+    ModelRenderer::ModelRenderer(const std::shared_ptr<DX::DeviceResources> deviceResources, DX::StepTimer& timer, Debug& debug)
       : m_deviceResources(deviceResources)
       , m_timer(timer)
+      , m_debug(debug)
     {
       CreateDeviceDependentResources();
     }
@@ -301,30 +303,30 @@ namespace HoloIntervention
 
       switch (type)
       {
-        case PrimitiveType_CUBE:
-          return std::move(DirectX::InstancedGeometricPrimitive::CreateCube(deviceResources.GetD3DDeviceContext(), argument.x, rhcoords));
-        case PrimitiveType_BOX:
-          return std::move(DirectX::InstancedGeometricPrimitive::CreateBox(deviceResources.GetD3DDeviceContext(), vec, rhcoords, invertn));
-        case PrimitiveType_SPHERE:
-          return std::move(DirectX::InstancedGeometricPrimitive::CreateSphere(deviceResources.GetD3DDeviceContext(), argument.x, tessellation, rhcoords, invertn));
-        case PrimitiveType_GEOSPHERE:
-          return std::move(DirectX::InstancedGeometricPrimitive::CreateGeoSphere(deviceResources.GetD3DDeviceContext(), argument.x, tessellation, rhcoords));
-        case PrimitiveType_CYLINDER:
-          return std::move(DirectX::InstancedGeometricPrimitive::CreateCylinder(deviceResources.GetD3DDeviceContext(), argument.x, argument.y, tessellation, rhcoords));
-        case PrimitiveType_CONE:
-          return std::move(DirectX::InstancedGeometricPrimitive::CreateCone(deviceResources.GetD3DDeviceContext(), argument.x, argument.y, tessellation, rhcoords));
-        case PrimitiveType_TORUS:
-          return std::move(DirectX::InstancedGeometricPrimitive::CreateTorus(deviceResources.GetD3DDeviceContext(), argument.x, argument.y, tessellation, rhcoords));
-        case PrimitiveType_TETRAHEDRON:
-          return std::move(DirectX::InstancedGeometricPrimitive::CreateTetrahedron(deviceResources.GetD3DDeviceContext(), argument.x, rhcoords));
-        case PrimitiveType_OCTAHEDRON:
-          return std::move(DirectX::InstancedGeometricPrimitive::CreateOctahedron(deviceResources.GetD3DDeviceContext(), argument.x, rhcoords));
-        case PrimitiveType_DODECAHEDRON:
-          return std::move(DirectX::InstancedGeometricPrimitive::CreateDodecahedron(deviceResources.GetD3DDeviceContext(), argument.x, rhcoords));
-        case PrimitiveType_ICOSAHEDRON:
-          return std::move(DirectX::InstancedGeometricPrimitive::CreateIcosahedron(deviceResources.GetD3DDeviceContext(), argument.x, rhcoords));
-        case PrimitiveType_TEAPOT:
-          return std::move(DirectX::InstancedGeometricPrimitive::CreateTeapot(deviceResources.GetD3DDeviceContext(), argument.x, tessellation, rhcoords));
+      case PrimitiveType_CUBE:
+        return std::move(DirectX::InstancedGeometricPrimitive::CreateCube(deviceResources.GetD3DDeviceContext(), argument.x, rhcoords));
+      case PrimitiveType_BOX:
+        return std::move(DirectX::InstancedGeometricPrimitive::CreateBox(deviceResources.GetD3DDeviceContext(), vec, rhcoords, invertn));
+      case PrimitiveType_SPHERE:
+        return std::move(DirectX::InstancedGeometricPrimitive::CreateSphere(deviceResources.GetD3DDeviceContext(), argument.x, tessellation, rhcoords, invertn));
+      case PrimitiveType_GEOSPHERE:
+        return std::move(DirectX::InstancedGeometricPrimitive::CreateGeoSphere(deviceResources.GetD3DDeviceContext(), argument.x, tessellation, rhcoords));
+      case PrimitiveType_CYLINDER:
+        return std::move(DirectX::InstancedGeometricPrimitive::CreateCylinder(deviceResources.GetD3DDeviceContext(), argument.x, argument.y, tessellation, rhcoords));
+      case PrimitiveType_CONE:
+        return std::move(DirectX::InstancedGeometricPrimitive::CreateCone(deviceResources.GetD3DDeviceContext(), argument.x, argument.y, tessellation, rhcoords));
+      case PrimitiveType_TORUS:
+        return std::move(DirectX::InstancedGeometricPrimitive::CreateTorus(deviceResources.GetD3DDeviceContext(), argument.x, argument.y, tessellation, rhcoords));
+      case PrimitiveType_TETRAHEDRON:
+        return std::move(DirectX::InstancedGeometricPrimitive::CreateTetrahedron(deviceResources.GetD3DDeviceContext(), argument.x, rhcoords));
+      case PrimitiveType_OCTAHEDRON:
+        return std::move(DirectX::InstancedGeometricPrimitive::CreateOctahedron(deviceResources.GetD3DDeviceContext(), argument.x, rhcoords));
+      case PrimitiveType_DODECAHEDRON:
+        return std::move(DirectX::InstancedGeometricPrimitive::CreateDodecahedron(deviceResources.GetD3DDeviceContext(), argument.x, rhcoords));
+      case PrimitiveType_ICOSAHEDRON:
+        return std::move(DirectX::InstancedGeometricPrimitive::CreateIcosahedron(deviceResources.GetD3DDeviceContext(), argument.x, rhcoords));
+      case PrimitiveType_TEAPOT:
+        return std::move(DirectX::InstancedGeometricPrimitive::CreateTeapot(deviceResources.GetD3DDeviceContext(), argument.x, tessellation, rhcoords));
       }
 
       return nullptr;

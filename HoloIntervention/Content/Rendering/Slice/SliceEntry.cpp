@@ -312,6 +312,18 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    void SliceEntry::SetImageData(Microsoft::WRL::ComPtr<ID3D11Texture2D> imageTexture)
+    {
+      m_imageData = nullptr;
+      m_imageTexture = imageTexture;
+
+      DX::ThrowIfFailed(m_deviceResources->GetD3DDevice()->CreateShaderResourceView(m_imageTexture.Get(), nullptr, &m_shaderResourceView));
+#if _DEBUG
+      m_shaderResourceView->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strnlen_s("sliceEntrySRVFilename", MAX_PATH)), "sliceEntrySRVFilename");
+#endif
+    }
+
+    //----------------------------------------------------------------------------
     std::shared_ptr<byte> SliceEntry::GetImageData() const
     {
       return m_imageData;

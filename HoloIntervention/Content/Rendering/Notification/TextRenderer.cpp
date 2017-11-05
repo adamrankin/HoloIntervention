@@ -85,6 +85,12 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    Microsoft::WRL::ComPtr<ID3D11Texture2D> TextRenderer::GetTexture() const
+    {
+      return m_texture;
+    }
+
+    //----------------------------------------------------------------------------
     void TextRenderer::CreateDeviceDependentResources()
     {
       CD3D11_SAMPLER_DESC desc(D3D11_DEFAULT);
@@ -110,7 +116,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    ID3D11ShaderResourceView* TextRenderer::GetTexture() const
+    ID3D11ShaderResourceView* TextRenderer::GetTextureSRV() const
     {
       return m_shaderResourceView.Get();
     }

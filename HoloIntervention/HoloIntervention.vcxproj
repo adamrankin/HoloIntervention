@@ -50,7 +50,7 @@
     <ClCompile>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)MediaCapture;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink-bin-$(Platform);$(SolutionDir)UWPOpenIGTLink\OpenIGTLink\Source\igtlutil;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink\Source;$(IntermediateOutputPath);$(SolutionDir)DirectXTK\Src;$(SolutionDir)DirectXTK\Inc;$(SolutionDir)$(Configuration)\$(ProjectName);$(ProjectDir)Content\Systems\Tool;$(ProjectDir)Content\Systems\Notification;$(ProjectDir)Content\Systems\Imaging;$(ProjectDir)Content\Systems\Icon;$(ProjectDir)Content\Systems\Splash;$(ProjectDir)Content\Systems\Task;$(ProjectDir)Content\Systems\Task\Tasks;$(ProjectDir)Content\Systems\Debug;$(ProjectDir)Content\Systems\Network;$(ProjectDir)Content\Systems\Gaze;$(ProjectDir)Content\Systems\Registration;$(ProjectDir)Content\Systems;$(ProjectDir)Content\Algorithms;$(ProjectDir)Content\SpatialMapping;$(ProjectDir)Content\Capture;$(ProjectDir)Content\Physics;$(ProjectDir)Content\Network;$(ProjectDir)Content\Rendering\Volume;$(ProjectDir)Content\Rendering\Shaders;$(ProjectDir)Content\Rendering\Shaders\Compiled;$(ProjectDir)Content\Rendering\Model;$(ProjectDir)Content\Rendering\Slice;$(ProjectDir)Content\Rendering\Notification;$(ProjectDir)Content\Rendering\Mesh;$(ProjectDir)Content\Rendering\DirectXTK;$(ProjectDir)Content\Rendering;$(ProjectDir)Content\Input;$(ProjectDir)Content\Sound;$(ProjectDir)Core\Rendering;$(ProjectDir)Core;$(ProjectDir)Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content\Data;$(SolutionDir)DirectXTex\DirectXTex;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)MediaCapture;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink-bin-$(Platform);$(SolutionDir)UWPOpenIGTLink\OpenIGTLink\Source\igtlutil;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink\Source;$(IntermediateOutputPath);$(SolutionDir)DirectXTK\Src;$(SolutionDir)DirectXTK\Inc;$(SolutionDir)$(Configuration)\$(ProjectName);$(ProjectDir)Content\Systems\Tool;$(ProjectDir)Content\Systems\Notification;$(ProjectDir)Content\Systems\Imaging;$(ProjectDir)Content\Systems\Icon;$(ProjectDir)Content\Systems\Splash;$(ProjectDir)Content\Systems\Task;$(ProjectDir)Content\Systems\Task\Tasks;$(ProjectDir)Content\Systems\Network;$(ProjectDir)Content\Systems\Gaze;$(ProjectDir)Content\Systems\Registration;$(ProjectDir)Content\Systems;$(ProjectDir)Content\Algorithms;$(ProjectDir)Content\SpatialMapping;$(ProjectDir)Content\Debug;$(ProjectDir)Content\Capture;$(ProjectDir)Content\Physics;$(ProjectDir)Content\Network;$(ProjectDir)Content\Rendering\Volume;$(ProjectDir)Content\Rendering\Shaders;$(ProjectDir)Content\Rendering\Shaders\Compiled;$(ProjectDir)Content\Rendering\Model;$(ProjectDir)Content\Rendering\Slice;$(ProjectDir)Content\Rendering\Notification;$(ProjectDir)Content\Rendering\Mesh;$(ProjectDir)Content\Rendering\DirectXTK;$(ProjectDir)Content\Rendering;$(ProjectDir)Content\Input;$(ProjectDir)Content\Sound;$(ProjectDir)Core\Rendering;$(ProjectDir)Core;$(ProjectDir)Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content\Data;$(SolutionDir)DirectXTex\DirectXTex;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
@@ -102,6 +102,7 @@
     <ClInclude Include="AppView.h" />
     <ClInclude Include="Content\Algorithms\KalmanFilter.h" />
     <ClInclude Include="Content\Capture\VideoFrameProcessor.h" />
+    <ClInclude Include="Content\Debug\Debug.h" />
     <ClInclude Include="Content\Input\IVoiceInput.h" />
     <ClInclude Include="Content\Input\SpatialSourceHandler.h" />
     <ClInclude Include="Content\Input\SpatialInput.h" />
@@ -132,7 +133,6 @@
     <ClInclude Include="Content\Sound\SoundAPI.h" />
     <ClInclude Include="Content\SpatialMapping\SpatialSurfaceCollection.h" />
     <ClInclude Include="Content\SpatialMapping\SurfaceMesh.h" />
-    <ClInclude Include="Content\Systems\Debug\DebugSystem.h" />
     <ClInclude Include="Content\Systems\Gaze\GazeSystem.h" />
     <ClInclude Include="Content\Systems\Icon\IconEntry.h" />
     <ClInclude Include="Content\Systems\Icon\IconSystem.h" />
@@ -168,6 +168,7 @@
     <ClCompile Include="AppView.cpp" />
     <ClCompile Include="Content\Algorithms\KalmanFilter.cpp" />
     <ClCompile Include="Content\Capture\VideoFrameProcessor.cpp" />
+    <ClCompile Include="Content\Debug\Debug.cpp" />
     <ClCompile Include="Content\Input\SpatialSourceHandler.cpp" />
     <ClCompile Include="Content\Input\SpatialInput.cpp" />
     <ClCompile Include="Content\Input\VoiceInput.cpp" />
@@ -195,7 +196,6 @@
     <ClCompile Include="Content\Sound\SoundAPI.cpp" />
     <ClCompile Include="Content\SpatialMapping\SpatialSurfaceCollection.cpp" />
     <ClCompile Include="Content\SpatialMapping\SurfaceMesh.cpp" />
-    <ClCompile Include="Content\Systems\Debug\DebugSystem.cpp" />
     <ClCompile Include="Content\Systems\Gaze\GazeSystem.cpp" />
     <ClCompile Include="Content\Systems\Icon\IconEntry.cpp" />
     <ClCompile Include="Content\Systems\Icon\IconSystem.cpp" />

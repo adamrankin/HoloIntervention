@@ -25,6 +25,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "pch.h"
 #include "AppView.h"
 #include "Common.h"
+#include "Debug.h"
 #include "DirectXHelper.h"
 #include "HoloInterventionCore.h"
 #include "IConfigurable.h"
@@ -32,7 +33,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "IStabilizedComponent.h"
 
 // System includes
-#include "DebugSystem.h"
 #include "GazeSystem.h"
 #include "IconSystem.h"
 #include "ImagingSystem.h"
@@ -117,8 +117,9 @@ namespace HoloIntervention
     // Initialize the system components
     m_notificationRenderer = std::make_unique<Rendering::NotificationRenderer> (m_deviceResources);
     m_notificationSystem = std::make_unique<System::NotificationSystem> (*m_notificationRenderer.get());
-    m_modelRenderer = std::make_unique<Rendering::ModelRenderer> (m_deviceResources, m_timer);
     m_sliceRenderer = std::make_unique<Rendering::SliceRenderer> (m_deviceResources, m_timer);
+    m_debug = std::make_unique<Debug>(*m_sliceRenderer.get(), m_deviceResources);
+    m_modelRenderer = std::make_unique<Rendering::ModelRenderer>(m_deviceResources, m_timer, *m_debug.get());
     m_volumeRenderer = std::make_unique<Rendering::VolumeRenderer> (m_deviceResources, m_timer);
     m_meshRenderer = std::make_unique<Rendering::MeshRenderer> (*m_notificationSystem.get(), m_deviceResources);
 
@@ -137,7 +138,6 @@ namespace HoloIntervention
     m_imagingSystem = std::make_unique<System::ImagingSystem> (*m_registrationSystem.get(), *m_notificationSystem.get(), *m_sliceRenderer.get(), *m_volumeRenderer.get(), *m_networkSystem.get());
     m_splashSystem = std::make_unique<System::SplashSystem> (*m_sliceRenderer.get());
     m_taskSystem = std::make_unique<System::TaskSystem> (*m_notificationSystem.get(), *m_networkSystem.get(), *m_registrationSystem.get(), *m_modelRenderer.get());
-    m_debugSystem = std::make_unique<System::DebugSystem>(*m_sliceRenderer.get());
 
     m_engineComponents.push_back(m_modelRenderer.get());
     m_engineComponents.push_back(m_sliceRenderer.get());
@@ -336,6 +336,7 @@ namespace HoloIntervention
           m_soundAPI->Update(m_timer, hmdCoordinateSystem);
           m_sliceRenderer->Update(headPose, cameraResources);
           m_notificationSystem->Update(headPose, m_timer);
+          m_debug->Update();
         }
 
         m_meshRenderer->Update(m_timer, hmdCoordinateSystem);
@@ -474,21 +475,21 @@ namespace HoloIntervention
 
     switch (sender->Locatability)
     {
-      case SpatialLocatability::Unavailable:
-      {
-        m_notificationSystem->QueueMessage(L"Warning! Positional tracking is unavailable.");
-      }
+    case SpatialLocatability::Unavailable:
+    {
+      m_notificationSystem->QueueMessage(L"Warning! Positional tracking is unavailable.");
+    }
+    break;
+
+    case SpatialLocatability::PositionalTrackingActivating:
+    case SpatialLocatability::OrientationOnly:
+    case SpatialLocatability::PositionalTrackingInhibited:
+      // Gaze-locked content still valid
       break;
 
-      case SpatialLocatability::PositionalTrackingActivating:
-      case SpatialLocatability::OrientationOnly:
-      case SpatialLocatability::PositionalTrackingInhibited:
-        // Gaze-locked content still valid
-        break;
-
-      case SpatialLocatability::PositionalTrackingActive:
-        m_notificationSystem->QueueMessage(L"Positional tracking is active.");
-        break;
+    case SpatialLocatability::PositionalTrackingActive:
+      m_notificationSystem->QueueMessage(L"Positional tracking is active.");
+      break;
     }
   }
 
@@ -614,6 +615,12 @@ namespace HoloIntervention
 
       float3 focusPointPosition = winningComponent->GetStabilizedPosition(pose);
       float3 focusPointVelocity = winningComponent->GetStabilizedVelocity();
+
+#if defined(_DEBUG)
+      std::string className(typeid(winningComponent).name());
+      std::wstring wClassName(begin(className), end(className));
+      m_debug->UpdateValue(L"WinComp", wClassName);
+#endif
 
       try
       {

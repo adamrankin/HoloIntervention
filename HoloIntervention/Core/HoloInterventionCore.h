@@ -37,6 +37,7 @@ namespace HoloIntervention
 {
   class IConfigurable;
   class IEngineComponent;
+  class Debug;
 
   namespace Physics
   {
@@ -45,7 +46,6 @@ namespace HoloIntervention
 
   namespace System
   {
-    class DebugSystem;
     class GazeSystem;
     class IconSystem;
     class ImagingSystem;
@@ -142,12 +142,13 @@ namespace HoloIntervention
     std::vector<IEngineComponent*>                        m_engineComponents;
     std::vector<IConfigurable*>                           m_configurableComponents;
 
-    // Renderers
+    // Engine components
     std::unique_ptr<Rendering::ModelRenderer>             m_modelRenderer;
     std::unique_ptr<Rendering::NotificationRenderer>      m_notificationRenderer;
     std::unique_ptr<Rendering::SliceRenderer>             m_sliceRenderer;
     std::unique_ptr<Rendering::MeshRenderer>              m_meshRenderer;
     std::unique_ptr<Rendering::VolumeRenderer>            m_volumeRenderer;
+    std::unique_ptr<Debug>                                m_debug;
 
     // Event handlers
     std::unique_ptr<Input::SpatialInput>                  m_spatialInput;
@@ -183,7 +184,6 @@ namespace HoloIntervention
 
     // System pointers
     std::shared_ptr<System::NetworkSystem>                m_networkSystem;
-    std::unique_ptr<System::DebugSystem>                  m_debugSystem;
     std::unique_ptr<System::GazeSystem>                   m_gazeSystem;
     std::unique_ptr<System::IconSystem>                   m_iconSystem;
     std::unique_ptr<System::ImagingSystem>                m_imagingSystem;

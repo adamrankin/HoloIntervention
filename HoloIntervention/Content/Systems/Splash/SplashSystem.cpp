@@ -89,19 +89,10 @@ namespace HoloIntervention
     SplashSystem::SplashSystem(Rendering::SliceRenderer& sliceRenderer)
       : m_sliceRenderer(sliceRenderer)
     {
-      create_task([this]()
+      m_sliceRenderer.AddSliceAsync(m_splashImageFilename, float4x4::identity(), true).then([this](uint64 entryId)
       {
-        while (m_sliceToken == INVALID_TOKEN)
-        {
-          m_sliceToken = m_sliceRenderer.AddSlice(m_splashImageFilename, float4x4::identity(), true);
-          m_sliceEntry = m_sliceRenderer.GetSlice(m_sliceToken);
-
-          if (m_sliceToken == INVALID_TOKEN)
-          {
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-          }
-        }
-
+        m_sliceToken = entryId;
+        m_sliceEntry = m_sliceRenderer.GetSlice(m_sliceToken);
         m_sliceEntry->SetScalingFactor(1.f, 1349.f / 3836.f);
         m_sliceEntry->SetUseHeadUpDirection(false);
         m_sliceEntry->SetHeadlocked(true);

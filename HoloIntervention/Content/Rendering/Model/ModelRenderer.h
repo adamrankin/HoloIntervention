@@ -41,6 +41,8 @@ namespace DirectX
 
 namespace HoloIntervention
 {
+  class Debug;
+
   namespace Rendering
   {
     class ModelRenderer : public IEngineComponent
@@ -48,7 +50,7 @@ namespace HoloIntervention
       typedef std::list<std::shared_ptr<ModelEntry>> ModelList;
 
     public:
-      ModelRenderer(const std::shared_ptr<DX::DeviceResources> deviceResources, DX::StepTimer& timer);
+      ModelRenderer(const std::shared_ptr<DX::DeviceResources> deviceResources, DX::StepTimer& timer, Debug& debug);
       ~ModelRenderer();
 
       // D3D resources
@@ -75,6 +77,7 @@ namespace HoloIntervention
       // Cached pointer to device resources.
       std::shared_ptr<DX::DeviceResources>            m_deviceResources = nullptr;
       const DX::CameraResources*                      m_cameraResources = nullptr;
+      Debug&                                          m_debug;
       DX::StepTimer&                                  m_timer;
 
       // Lock protection when accessing image list

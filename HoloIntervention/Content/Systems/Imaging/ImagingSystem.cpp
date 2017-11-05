@@ -58,32 +58,20 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float3 ImagingSystem::GetStabilizedPosition(SpatialPointerPose^ pose) const
     {
-      std::shared_ptr<Rendering::SliceEntry> sliceEntry(nullptr);
-      if (m_sliceValid)
+      if (m_sliceEntry != nullptr && m_volumeEntry != nullptr)
       {
-        sliceEntry = m_sliceRenderer.GetSlice(m_sliceToken);
-      }
-
-      std::shared_ptr<Rendering::VolumeEntry> volumeEntry(nullptr);
-      if (m_volumeValid)
-      {
-        volumeEntry = m_volumeRenderer.GetVolume(m_volumeToken);
-      }
-
-      if (m_sliceValid && m_volumeValid)
-      {
-        // TODO : which one is close to the view frustrum?
+        // TODO : which one is close to the view frustum?
         // TODO : which one is more recent?
         // TODO : other metrics?
-        return m_latestSliceTimestamp > m_latestVolumeTimestamp ? transform(float3(0.f, 0.f, 0.f), sliceEntry->GetCurrentPose()) : transform(float3(0.f, 0.f, 0.f), volumeEntry->GetCurrentPose());
+        return m_latestSliceTimestamp > m_latestVolumeTimestamp ? transform(float3(0.f, 0.f, 0.f), m_sliceEntry->GetCurrentPose()) : transform(float3(0.f, 0.f, 0.f), m_volumeEntry->GetCurrentPose());
       }
-      else if (m_volumeValid)
+      else if (m_volumeEntry != nullptr)
       {
-        return transform(float3(0.f, 0.f, 0.f), volumeEntry->GetCurrentPose());
+        return transform(float3(0.f, 0.f, 0.f), m_volumeEntry->GetCurrentPose());
       }
-      else if (m_sliceValid)
+      else if (m_sliceEntry != nullptr)
       {
-        return transform(float3(0.f, 0.f, 0.f), sliceEntry->GetCurrentPose());
+        return transform(float3(0.f, 0.f, 0.f), m_sliceEntry->GetCurrentPose());
       }
       else
       {
@@ -94,32 +82,20 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float3 ImagingSystem::GetStabilizedVelocity() const
     {
-      std::shared_ptr<Rendering::SliceEntry> sliceEntry(nullptr);
-      if (m_sliceValid)
+      if (m_sliceEntry != nullptr && m_volumeEntry != nullptr)
       {
-        sliceEntry = m_sliceRenderer.GetSlice(m_sliceToken);
-      }
-
-      std::shared_ptr<Rendering::VolumeEntry> volumeEntry(nullptr);
-      if (m_volumeValid)
-      {
-        volumeEntry = m_volumeRenderer.GetVolume(m_volumeToken);
-      }
-
-      if (m_sliceValid && m_volumeValid)
-      {
-        // TODO : which one is close to the view frustrum?
+        // TODO : which one is close to the view frustum?
         // TODO : which one is more recent?
         // TODO : other metrics?
-        return m_latestSliceTimestamp > m_latestVolumeTimestamp ? sliceEntry->GetStabilizedVelocity() : volumeEntry->GetVelocity();
+        return m_latestSliceTimestamp > m_latestVolumeTimestamp ? m_sliceEntry->GetStabilizedVelocity() : m_volumeEntry->GetVelocity();
       }
-      else if (m_volumeValid)
+      else if (m_volumeEntry != nullptr)
       {
-        return volumeEntry->GetVelocity();
+        return m_volumeEntry->GetVelocity();
       }
-      else if (m_sliceValid)
+      else if (m_sliceEntry != nullptr)
       {
-        return sliceEntry->GetStabilizedVelocity();
+        return m_sliceEntry->GetStabilizedVelocity();
       }
       else
       {
@@ -132,7 +108,7 @@ namespace HoloIntervention
     {
       // TODO : are they in frustum?
 
-      if (m_sliceValid || m_volumeValid)
+      if (m_sliceEntry != nullptr || m_volumeEntry != nullptr)
       {
         return PRIORITY_IMAGING;
       }
@@ -256,6 +232,12 @@ namespace HoloIntervention
       , m_volumeRenderer(volumeRenderer)
       , m_networkSystem(networkSystem)
     {
+      m_sliceRenderer.AddSliceAsync(nullptr).then([this](uint64 entryId)
+      {
+        m_sliceEntry = m_sliceRenderer.GetSlice(entryId);
+        m_sliceEntry->SetWhiteMapColour(m_whiteMapColour);
+        m_sliceEntry->SetBlackMapColour(m_blackMapColour);
+      });
     }
 
     //----------------------------------------------------------------------------
@@ -285,39 +267,25 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     bool ImagingSystem::HasSlice() const
     {
-      return m_sliceToken != INVALID_TOKEN;
+      return m_sliceEntry != nullptr;
     }
 
     //----------------------------------------------------------------------------
     float4x4 ImagingSystem::GetSlicePose() const
     {
-      try
-      {
-        return m_sliceRenderer.GetSlicePose(m_sliceToken);
-      }
-      catch (const std::exception&)
-      {
-        throw std::exception("Unable to retrieve slice pose.");
-      }
+      return m_sliceEntry->GetCurrentPose();
     }
 
     //----------------------------------------------------------------------------
     float3 ImagingSystem::GetSliceVelocity() const
     {
-      try
-      {
-        return m_sliceRenderer.GetSliceVelocity(m_sliceToken);
-      }
-      catch (const std::exception&)
-      {
-        throw std::exception("Unable to retrieve slice velocity.");
-      }
+      return m_sliceEntry->GetStabilizedVelocity();
     }
 
     //----------------------------------------------------------------------------
     bool ImagingSystem::HasVolume() const
     {
-      return m_volumeToken != INVALID_TOKEN;
+      return m_volumeEntry != nullptr;
     }
 
     //----------------------------------------------------------------------------
@@ -328,7 +296,7 @@ namespace HoloIntervention
         if (HasSlice())
         {
           m_notificationSystem.QueueMessage(L"Slice showing.");
-          m_sliceRenderer.ShowSlice(m_sliceToken);
+          m_sliceEntry->SetVisible(true);
           return;
         }
         m_notificationSystem.QueueMessage(L"No slice available.");
@@ -339,7 +307,7 @@ namespace HoloIntervention
         if (HasSlice())
         {
           m_notificationSystem.QueueMessage(L"Slice hidden.");
-          m_sliceRenderer.HideSlice(m_sliceToken);
+          m_sliceEntry->SetVisible(false);
           return;
         }
         m_notificationSystem.QueueMessage(L"No slice available.");
@@ -353,7 +321,7 @@ namespace HoloIntervention
           return;
         }
         m_notificationSystem.QueueMessage(L"Slice is now head-locked.");
-        m_sliceRenderer.SetSliceHeadlocked(m_sliceToken, true);
+        m_sliceEntry->SetHeadlocked(true);
       };
 
       callbackMap[L"unlock slice"] = [this](SpeechRecognitionResult ^ result)
@@ -364,7 +332,7 @@ namespace HoloIntervention
           return;
         }
         m_notificationSystem.QueueMessage(L"Slice is now in world-space.");
-        m_sliceRenderer.SetSliceHeadlocked(m_sliceToken, false);
+        m_sliceEntry->SetHeadlocked(false);
       };
 
       callbackMap[L"piecewise linear transfer function"] = [this](SpeechRecognitionResult ^ result)
@@ -416,17 +384,10 @@ namespace HoloIntervention
       // 0            0             1 0
       // 0            0             0 1
 
-      if (!HasSlice())
+      if (m_sliceEntry != nullptr)
       {
-        m_sliceToken = m_sliceRenderer.AddSlice(frame, modelToHMD);
-        auto sliceEntry = m_sliceRenderer.GetSlice(m_sliceToken);
-        sliceEntry->SetWhiteMapColour(m_whiteMapColour);
-        sliceEntry->SetBlackMapColour(m_blackMapColour);
-        sliceEntry->ForceCurrentPose(modelToHMD);
-      }
-      else
-      {
-        m_sliceRenderer.UpdateSlice(m_sliceToken, frame, modelToHMD);
+        m_sliceEntry->SetFrame(frame);
+        m_sliceEntry->SetDesiredPose(modelToHMD);
       }
     }
 
@@ -455,15 +416,10 @@ namespace HoloIntervention
       }
       float4x4 volumeToHMD = transpose(result->Value);
 
-      if (!HasVolume())
+      if (m_volumeEntry != nullptr)
       {
-        m_volumeToken = m_volumeRenderer.AddVolume(frame, volumeToHMD);
-        auto entry = m_volumeRenderer.GetVolume(m_volumeToken);
-        entry->ForceCurrentPose(volumeToHMD);
-      }
-      else
-      {
-        m_volumeRenderer.UpdateVolume(m_volumeToken, frame, volumeToHMD);
+        m_volumeEntry->SetFrame(frame);
+        m_volumeEntry->SetDesiredPose(volumeToHMD);
       }
     }
   }
