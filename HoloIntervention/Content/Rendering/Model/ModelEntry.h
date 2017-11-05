@@ -114,7 +114,8 @@ namespace HoloIntervention
       void SetColour(Windows::Foundation::Numerics::float3 newColour);
       void SetColour(float r, float g, float b, float a);
       void SetColour(float r, float g, float b);
-      Windows::Foundation::Numerics::float4 GetColour() const;
+      Windows::Foundation::Numerics::float4 GetCurrentColour() const;
+      Windows::Foundation::Numerics::float4 GetOriginalColour() const;
 
     protected:
       void DrawMesh(_In_ const DirectX::ModelMesh& mesh, _In_ bool alpha, _In_opt_ std::function<void __cdecl(std::shared_ptr<DirectX::IEffect>)> setCustomState = nullptr);
@@ -146,7 +147,8 @@ namespace HoloIntervention
       bool                                                  m_rhcoords;
       bool                                                  m_invertn;
       std::unique_ptr<DirectX::InstancedGeometricPrimitive> m_primitive = nullptr;
-      Windows::Foundation::Numerics::float4                 m_colour = { 1.f, 1.f, 1.f, 1.f };
+      Windows::Foundation::Numerics::float4                 m_currentColour = { 1.f, 1.f, 1.f, 1.f };
+      Windows::Foundation::Numerics::float4                 m_originalColour = { 1.f, 1.f, 1.f, 1.f };
 
       // Model state
       std::array<float, 6>                                m_modelBounds = { -1.f };

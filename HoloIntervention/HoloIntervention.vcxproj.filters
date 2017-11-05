@@ -163,6 +163,9 @@
     <ClCompile Include="Content\Systems\Task\Tasks\TouchingSphereTask.cpp">
       <Filter>Content\Systems\Task\Tasks</Filter>
     </ClCompile>
+    <ClCompile Include="Content\Systems\Debug\DebugSystem.cpp">
+      <Filter>Content\Systems\Debug</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Content\Sound\OmnidirectionalSound.h">
@@ -353,6 +356,9 @@
     </ClInclude>
     <ClInclude Include="Content\Systems\Task\Tasks\PreOpImageTask.h">
       <Filter>Content\Systems\Task\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Systems\Debug\DebugSystem.h">
+      <Filter>Content\Systems\Debug</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -740,6 +746,9 @@
     </Filter>
     <Filter Include="Content\Systems\Task\Tasks">
       <UniqueIdentifier>{4d342565-c9df-414e-b523-fdae587fbd9f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Systems\Debug">
+      <UniqueIdentifier>{092a76ff-94c6-4483-b1a3-e9cac0f561b6}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

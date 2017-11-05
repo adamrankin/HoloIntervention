@@ -32,6 +32,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "IStabilizedComponent.h"
 
 // System includes
+#include "DebugSystem.h"
 #include "GazeSystem.h"
 #include "IconSystem.h"
 #include "ImagingSystem.h"
@@ -136,6 +137,7 @@ namespace HoloIntervention
     m_imagingSystem = std::make_unique<System::ImagingSystem> (*m_registrationSystem.get(), *m_notificationSystem.get(), *m_sliceRenderer.get(), *m_volumeRenderer.get(), *m_networkSystem.get());
     m_splashSystem = std::make_unique<System::SplashSystem> (*m_sliceRenderer.get());
     m_taskSystem = std::make_unique<System::TaskSystem> (*m_notificationSystem.get(), *m_networkSystem.get(), *m_registrationSystem.get(), *m_modelRenderer.get());
+    m_debugSystem = std::make_unique<System::DebugSystem>(*m_sliceRenderer.get());
 
     m_engineComponents.push_back(m_modelRenderer.get());
     m_engineComponents.push_back(m_sliceRenderer.get());
@@ -472,21 +474,21 @@ namespace HoloIntervention
 
     switch (sender->Locatability)
     {
-    case SpatialLocatability::Unavailable:
-    {
-      m_notificationSystem->QueueMessage(L"Warning! Positional tracking is unavailable.");
-    }
-    break;
-
-    case SpatialLocatability::PositionalTrackingActivating:
-    case SpatialLocatability::OrientationOnly:
-    case SpatialLocatability::PositionalTrackingInhibited:
-      // Gaze-locked content still valid
+      case SpatialLocatability::Unavailable:
+      {
+        m_notificationSystem->QueueMessage(L"Warning! Positional tracking is unavailable.");
+      }
       break;
 
-    case SpatialLocatability::PositionalTrackingActive:
-      m_notificationSystem->QueueMessage(L"Positional tracking is active.");
-      break;
+      case SpatialLocatability::PositionalTrackingActivating:
+      case SpatialLocatability::OrientationOnly:
+      case SpatialLocatability::PositionalTrackingInhibited:
+        // Gaze-locked content still valid
+        break;
+
+      case SpatialLocatability::PositionalTrackingActive:
+        m_notificationSystem->QueueMessage(L"Positional tracking is active.");
+        break;
     }
   }
 

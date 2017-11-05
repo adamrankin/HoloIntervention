@@ -151,7 +151,8 @@ namespace HoloIntervention
     ModelEntry::ModelEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, PrimitiveType type, DX::StepTimer& timer, float3 argument, size_t tessellation, bool rhcoords, bool invertn, float4 colour)
       : m_deviceResources(deviceResources)
       , m_timer(timer)
-      , m_colour(colour)
+      , m_originalColour(colour)
+      , m_currentColour(colour)
       , m_tessellation(tessellation)
       , m_rhcoords(rhcoords)
       , m_invertn(invertn)
@@ -183,7 +184,8 @@ namespace HoloIntervention
       {
         newEntry = std::make_shared<ModelEntry>(m_deviceResources, m_assetLocation, m_timer);
       }
-      newEntry->m_colour = m_colour;
+      newEntry->m_originalColour = m_originalColour;
+      newEntry->m_originalColour = m_currentColour;
       newEntry->m_modelBounds = m_modelBounds;
       newEntry->m_wireframe = m_wireframe ? true : false;
       newEntry->m_velocity = m_velocity;
@@ -242,7 +244,7 @@ namespace HoloIntervention
           XMLoadFloat4x4(&(m_cameraResources->GetLatestViewProjectionBuffer().projection[0])),
           XMLoadFloat4x4(&(m_cameraResources->GetLatestViewProjectionBuffer().projection[1]))
         };
-        m_primitive->Draw(XMLoadFloat4x4(&m_currentPose), view, projection, XMLoadFloat4(&m_colour));
+        m_primitive->Draw(XMLoadFloat4x4(&m_currentPose), view, projection, XMLoadFloat4(&m_currentColour));
       }
       else
       {
@@ -464,28 +466,41 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ModelEntry::RenderGreyscale()
     {
-      m_model->UpdateEffects([this](IEffect * effect)
+      if (m_model != nullptr)
       {
-        InstancedBasicEffect* basicEffect = dynamic_cast<InstancedBasicEffect*>(effect);
-        if (basicEffect != nullptr)
+        m_model->UpdateEffects([this](IEffect * effect)
         {
-          basicEffect->SetColorAndAlpha(XMLoadFloat4(&float4(0.8f, 0.8f, 0.8f, 1.0f)));
-        }
-      });
+          InstancedBasicEffect* basicEffect = dynamic_cast<InstancedBasicEffect*>(effect);
+          if (basicEffect != nullptr)
+          {
+            basicEffect->SetColorAndAlpha(XMLoadFloat4(&float4(0.8f, 0.8f, 0.8f, 1.0f)));
+          }
+        });
+      }
+      else
+      {
+        m_currentColour = float4(1.f, 1.f, 1.f, 1.f);
+      }
     }
 
     //----------------------------------------------------------------------------
     void ModelEntry::RenderDefault()
     {
-      // TODO : if prim
-      m_model->UpdateEffects([this](IEffect * effect)
+      if (m_model != nullptr)
       {
-        InstancedBasicEffect* basicEffect = dynamic_cast<InstancedBasicEffect*>(effect);
-        if (basicEffect != nullptr)
+        m_model->UpdateEffects([this](IEffect * effect)
         {
-          basicEffect->SetColorAndAlpha(XMLoadFloat4(&m_defaultColours[effect]));
-        }
-      });
+          InstancedBasicEffect* basicEffect = dynamic_cast<InstancedBasicEffect*>(effect);
+          if (basicEffect != nullptr)
+          {
+            basicEffect->SetColorAndAlpha(XMLoadFloat4(&m_defaultColours[effect]));
+          }
+        });
+      }
+      else
+      {
+        m_currentColour = m_originalColour;
+      }
     }
 
     //----------------------------------------------------------------------------
@@ -503,31 +518,37 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ModelEntry::SetColour(float3 newColour)
     {
-      m_colour = float4(newColour.x, newColour.y, newColour.z, m_colour.w);
+      m_currentColour = float4(newColour.x, newColour.y, newColour.z, m_currentColour.w);
     }
 
     //----------------------------------------------------------------------------
     void ModelEntry::SetColour(float r, float g, float b, float a)
     {
-      m_colour = float4(r, g, b, a);
+      m_currentColour = float4(r, g, b, a);
     }
 
     //----------------------------------------------------------------------------
     void ModelEntry::SetColour(Windows::Foundation::Numerics::float4 newColour)
     {
-      m_colour = newColour;
+      m_currentColour = newColour;
     }
 
     //----------------------------------------------------------------------------
     void ModelEntry::SetColour(float r, float g, float b)
     {
-      m_colour = float4{ r, g, b, m_colour.w };
+      m_currentColour = float4{ r, g, b, m_currentColour.w };
     }
 
     //----------------------------------------------------------------------------
-    float4 ModelEntry::GetColour() const
+    float4 ModelEntry::GetCurrentColour() const
     {
-      return m_colour;
+      return m_currentColour;
+    }
+
+    //----------------------------------------------------------------------------
+    float4 ModelEntry::GetOriginalColour() const
+    {
+      return m_originalColour;
     }
 
     //----------------------------------------------------------------------------

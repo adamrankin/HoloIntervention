@@ -45,6 +45,7 @@ namespace HoloIntervention
 
   namespace System
   {
+    class DebugSystem;
     class GazeSystem;
     class IconSystem;
     class ImagingSystem;
@@ -182,14 +183,15 @@ namespace HoloIntervention
 
     // System pointers
     std::shared_ptr<System::NetworkSystem>                m_networkSystem;
+    std::unique_ptr<System::DebugSystem>                  m_debugSystem;
     std::unique_ptr<System::GazeSystem>                   m_gazeSystem;
     std::unique_ptr<System::IconSystem>                   m_iconSystem;
     std::unique_ptr<System::ImagingSystem>                m_imagingSystem;
     std::unique_ptr<System::NotificationSystem>           m_notificationSystem;
     std::unique_ptr<System::RegistrationSystem>           m_registrationSystem;
     std::unique_ptr<System::SplashSystem>                 m_splashSystem;
-    std::unique_ptr<System::ToolSystem>                   m_toolSystem;
     std::unique_ptr<System::TaskSystem>                   m_taskSystem;
+    std::unique_ptr<System::ToolSystem>                   m_toolSystem;
 
     // Physics
     std::unique_ptr<Physics::PhysicsAPI>                  m_physicsAPI;

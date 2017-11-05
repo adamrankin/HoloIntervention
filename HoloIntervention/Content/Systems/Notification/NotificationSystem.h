@@ -92,7 +92,7 @@ namespace HoloIntervention
       // Override the current lerp and force the position
       void SetPose(Windows::UI::Input::Spatial::SpatialPointerPose^ pointerPose);
 
-      // ISystem functions
+      // IVoiceInput functions
       virtual void RegisterVoiceCallbacks(HoloIntervention::Input::VoiceInputCallbackMap& callbackMap);
 
     protected:
