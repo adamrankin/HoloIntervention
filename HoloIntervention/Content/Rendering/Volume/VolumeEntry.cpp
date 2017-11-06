@@ -307,12 +307,6 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    UWPOpenIGTLink::TrackedFrame^ VolumeEntry::GetFrame() const
-    {
-      return m_frame;
-    }
-
-    //----------------------------------------------------------------------------
     void VolumeEntry::SetShowing(bool showing)
     {
       m_showing = showing;
@@ -510,15 +504,15 @@ namespace HoloIntervention
         delete m_opacityTransferFunction;
         switch (functionType)
         {
-          case VolumeEntry::TransferFunction_Piecewise_Linear:
-          {
-            m_opacityTFType = VolumeEntry::TransferFunction_Piecewise_Linear;
-            m_opacityTransferFunction = new PiecewiseLinearTransferFunction();
-            break;
-          }
-          default:
-            throw std::invalid_argument("Function type not recognized.");
-            break;
+        case VolumeEntry::TransferFunction_Piecewise_Linear:
+        {
+          m_opacityTFType = VolumeEntry::TransferFunction_Piecewise_Linear;
+          m_opacityTransferFunction = new PiecewiseLinearTransferFunction();
+          break;
+        }
+        default:
+          throw std::invalid_argument("Function type not recognized.");
+          break;
         }
 
         for (auto& point : controlPoints)

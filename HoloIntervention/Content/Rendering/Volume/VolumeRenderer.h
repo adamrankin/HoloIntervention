@@ -55,8 +55,8 @@ namespace HoloIntervention
       VolumeRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& timer);
       ~VolumeRenderer();
 
-      uint64 AddVolume(std::shared_ptr<byte> imageData, uint16 width, uint16 height, uint16 depth, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 desiredPose);
-      uint64 AddVolume(UWPOpenIGTLink::TrackedFrame^ frame, Windows::Foundation::Numerics::float4x4 desiredPose = Windows::Foundation::Numerics::float4x4::identity());
+      concurrency::task<uint64> AddVolumeAsync(std::shared_ptr<byte> imageData, uint16 width, uint16 height, uint16 depth, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 desiredPose);
+      concurrency::task<uint64> AddVolumeAsync(UWPOpenIGTLink::TrackedFrame^ frame, Windows::Foundation::Numerics::float4x4 desiredPose = Windows::Foundation::Numerics::float4x4::identity());
       void RemoveVolume(uint64 volumeToken);
       std::shared_ptr<VolumeEntry> GetVolume(uint64 volumeToken);
 

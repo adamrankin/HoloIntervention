@@ -98,8 +98,8 @@ namespace HoloIntervention
       void Update();
       void Render(uint32 indexCount);
 
+
       void SetFrame(UWPOpenIGTLink::TrackedFrame^ frame);
-      UWPOpenIGTLink::TrackedFrame^ GetFrame() const;
       void SetShowing(bool showing);
       uint64 GetToken() const;
 

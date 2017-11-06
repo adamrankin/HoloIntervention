@@ -74,39 +74,90 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    uint64 VolumeRenderer::AddVolume(UWPOpenIGTLink::TrackedFrame^ frame, float4x4 desiredPose)
+    task<uint64> VolumeRenderer::AddVolumeAsync(UWPOpenIGTLink::TrackedFrame^ frame, float4x4 desiredPose)
     {
-      if (!m_componentReady)
+      return create_task([this, frame, desiredPose]()
       {
-        return INVALID_TOKEN;
-      }
+        while (!m_componentReady)
+        {
+          std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        }
 
-      std::shared_ptr<VolumeEntry> entry = std::make_shared<VolumeEntry>(m_deviceResources,
-                                           m_nextUnusedVolumeToken,
-                                           m_cwIndexBuffer.Get(),
-                                           m_ccwIndexBuffer.Get(),
-                                           m_inputLayout.Get(),
-                                           m_vertexBuffer.Get(),
-                                           m_volRenderVertexShader.Get(),
-                                           m_volRenderGeometryShader.Get(),
-                                           m_volRenderPixelShader.Get(),
-                                           m_faceCalcPixelShader.Get(),
-                                           m_frontPositionTextureArray.Get(),
-                                           m_backPositionTextureArray.Get(),
-                                           m_frontPositionRTV.Get(),
-                                           m_backPositionRTV.Get(),
-                                           m_frontPositionSRV.Get(),
-                                           m_backPositionSRV.Get(),
-                                           m_timer);
-      entry->SetDesiredPose(desiredPose);
-      entry->SetFrame(frame);
-      entry->SetShowing(true);
+        std::shared_ptr<VolumeEntry> entry = std::make_shared<VolumeEntry>(m_deviceResources,
+                                             m_nextUnusedVolumeToken,
+                                             m_cwIndexBuffer.Get(),
+                                             m_ccwIndexBuffer.Get(),
+                                             m_inputLayout.Get(),
+                                             m_vertexBuffer.Get(),
+                                             m_volRenderVertexShader.Get(),
+                                             m_volRenderGeometryShader.Get(),
+                                             m_volRenderPixelShader.Get(),
+                                             m_faceCalcPixelShader.Get(),
+                                             m_frontPositionTextureArray.Get(),
+                                             m_backPositionTextureArray.Get(),
+                                             m_frontPositionRTV.Get(),
+                                             m_backPositionRTV.Get(),
+                                             m_frontPositionSRV.Get(),
+                                             m_backPositionSRV.Get(),
+                                             m_timer);
+        entry->SetDesiredPose(desiredPose);
 
-      std::lock_guard<std::mutex> guard(m_volumeMapMutex);
-      m_volumes.push_back(entry);
+        if (frame != nullptr)
+        {
+          entry->SetFrame(frame);
+          entry->SetShowing(true);
+        }
 
-      m_nextUnusedVolumeToken++;
-      return m_nextUnusedVolumeToken - 1;
+        std::lock_guard<std::mutex> guard(m_volumeMapMutex);
+        m_volumes.push_back(entry);
+
+        m_nextUnusedVolumeToken++;
+        return m_nextUnusedVolumeToken - 1;
+      });
+    }
+
+    //----------------------------------------------------------------------------
+    task<uint64> VolumeRenderer::AddVolumeAsync(std::shared_ptr<byte> imageData, uint16 width, uint16 height, uint16 depth, DXGI_FORMAT pixelFormat, float4x4 desiredPose)
+    {
+      return create_task([this, imageData, width, height, depth, pixelFormat, desiredPose]()
+      {
+        while (!m_componentReady)
+        {
+          std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        }
+
+        std::shared_ptr<VolumeEntry> entry = std::make_shared<VolumeEntry>(m_deviceResources,
+                                             m_nextUnusedVolumeToken,
+                                             m_cwIndexBuffer.Get(),
+                                             m_ccwIndexBuffer.Get(),
+                                             m_inputLayout.Get(),
+                                             m_vertexBuffer.Get(),
+                                             m_volRenderVertexShader.Get(),
+                                             m_volRenderGeometryShader.Get(),
+                                             m_volRenderPixelShader.Get(),
+                                             m_faceCalcPixelShader.Get(),
+                                             m_frontPositionTextureArray.Get(),
+                                             m_backPositionTextureArray.Get(),
+                                             m_frontPositionRTV.Get(),
+                                             m_backPositionRTV.Get(),
+                                             m_frontPositionSRV.Get(),
+                                             m_backPositionSRV.Get(),
+                                             m_timer);
+        entry->SetDesiredPose(desiredPose);
+
+        if (imageData != nullptr)
+        {
+          // TODO : implement byte accessor
+          //entry->SetFrame()
+          //entry->SetShowing(true);
+        }
+
+        std::lock_guard<std::mutex> guard(m_volumeMapMutex);
+        m_volumes.push_back(entry);
+
+        m_nextUnusedVolumeToken++;
+        return m_nextUnusedVolumeToken - 1;
+      });
     }
 
     //----------------------------------------------------------------------------

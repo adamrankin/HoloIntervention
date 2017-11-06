@@ -237,6 +237,11 @@ namespace HoloIntervention
         m_sliceEntry->SetWhiteMapColour(m_whiteMapColour);
         m_sliceEntry->SetBlackMapColour(m_blackMapColour);
       });
+
+      m_volumeRenderer.AddVolumeAsync(nullptr).then([this](uint64 entryId)
+      {
+        m_volumeEntry = m_volumeRenderer.GetVolume(entryId);
+      });
     }
 
     //----------------------------------------------------------------------------
