@@ -24,6 +24,8 @@
 #include <dwrite.h>
 #include <DirectXColors.h>
 
+using namespace Microsoft::WRL;
+
 namespace HoloIntervention
 {
   namespace Rendering
@@ -35,6 +37,9 @@ namespace HoloIntervention
       , m_textureHeight(textureHeight)
     {
       CreateDeviceDependentResources();
+      SetFont(m_fontName, m_fontWeight, m_fontStyle, m_fontStretch, m_fontSize, m_fontLocale);
+
+      SetFontLocale(L"");
     }
 
     //----------------------------------------------------------------------------
@@ -49,7 +54,7 @@ namespace HoloIntervention
       m_deviceResources->GetD3DDeviceContext()->ClearRenderTargetView(m_renderTargetView.Get(), DirectX::Colors::Transparent);
       m_d2dRenderTarget->BeginDraw();
 
-      Microsoft::WRL::ComPtr<IDWriteTextLayout> textLayout;
+      ComPtr<IDWriteTextLayout> textLayout;
       m_deviceResources->GetDWriteFactory()->CreateTextLayout(str.c_str(), static_cast<UINT32>(str.length()), m_textFormat.Get(), (float)m_textureWidth, (float)m_textureHeight, &textLayout);
 
       DWRITE_TEXT_METRICS metrics;
@@ -73,21 +78,70 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void TextRenderer::ReleaseDeviceDependentResources()
+    ComPtr<ID3D11Texture2D> TextRenderer::GetTexture() const
     {
-      m_texture.Reset();
-      m_shaderResourceView.Reset();
-      m_pointSampler.Reset();
-      m_renderTargetView.Reset();
-      m_d2dRenderTarget.Reset();
-      m_whiteBrush.Reset();
-      m_textFormat.Reset();
+      return m_texture;
     }
 
     //----------------------------------------------------------------------------
-    Microsoft::WRL::ComPtr<ID3D11Texture2D> TextRenderer::GetTexture() const
+    bool TextRenderer::SetFontName(const std::wstring& fontName)
     {
-      return m_texture;
+      ComPtr<IDWriteFontCollection> fontCollection;
+      if (FAILED(m_deviceResources->GetDWriteFactory()->GetSystemFontCollection(fontCollection.GetAddressOf())))
+      {
+        return false;
+      }
+
+      uint32 index;
+      BOOL exists;
+      if (FAILED(fontCollection->FindFamilyName(fontName.c_str(), &index, &exists)))
+      {
+        return false;
+      }
+
+      if (exists)
+      {
+        m_fontName = fontName;
+        SetFont(m_fontName, m_fontWeight, m_fontStyle, m_fontStretch, m_fontSize, m_fontLocale);
+        return true;
+      }
+
+      return false;
+    }
+
+    //----------------------------------------------------------------------------
+    void TextRenderer::SetFontWeight(DWRITE_FONT_WEIGHT fontWeight)
+    {
+      m_fontWeight = fontWeight;
+      SetFont(m_fontName, m_fontWeight, m_fontStyle, m_fontStretch, m_fontSize, m_fontLocale);
+    }
+
+    //----------------------------------------------------------------------------
+    void TextRenderer::SetFontSize(float fontSize)
+    {
+      m_fontSize = fontSize;
+      SetFont(m_fontName, m_fontWeight, m_fontStyle, m_fontStretch, m_fontSize, m_fontLocale);
+    }
+
+    //----------------------------------------------------------------------------
+    bool TextRenderer::SetFontLocale(const std::wstring& locale)
+    {
+      // TODO: localization support, strings based on resource file and identifier
+      return false;
+    }
+
+    //----------------------------------------------------------------------------
+    void TextRenderer::SetFontStyle(DWRITE_FONT_STYLE fontStyle)
+    {
+      m_fontStyle = fontStyle;
+      SetFont(m_fontName, m_fontWeight, m_fontStyle, m_fontStretch, m_fontSize, m_fontLocale);
+    }
+
+    //----------------------------------------------------------------------------
+    void TextRenderer::SetFontStretch(DWRITE_FONT_STRETCH fontStretch)
+    {
+      m_fontStretch = fontStretch;
+      SetFont(m_fontName, m_fontWeight, m_fontStyle, m_fontStretch, m_fontSize, m_fontLocale);
     }
 
     //----------------------------------------------------------------------------
@@ -110,9 +164,21 @@ namespace HoloIntervention
 
       DX::ThrowIfFailed(m_d2dRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Cornsilk), &m_whiteBrush));
 
-      SetFont(m_font.c_str(), DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, 200.0f, L"");
+      SetFont(m_fontName.c_str(), DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, 200.0f, L"");
       DX::ThrowIfFailed(m_textFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER));
       DX::ThrowIfFailed(m_textFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER));
+    }
+
+    //----------------------------------------------------------------------------
+    void TextRenderer::ReleaseDeviceDependentResources()
+    {
+      m_texture.Reset();
+      m_shaderResourceView.Reset();
+      m_pointSampler.Reset();
+      m_renderTargetView.Reset();
+      m_d2dRenderTarget.Reset();
+      m_whiteBrush.Reset();
+      m_textFormat.Reset();
     }
 
     //----------------------------------------------------------------------------

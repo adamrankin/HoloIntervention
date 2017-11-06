@@ -2,7 +2,7 @@ Network search on startup
 Volume rendering
 Voice feedback
 UI for IP setting - Dictation
-Internationalization (xml database of voice commands and feedback)
+Internationalization (xml database of voice commands and feedback, strings based on resource file and identifer)
 Refactor isinfrustum to abstract base class
 Reconsider headlocked UI design
   body locked UI
@@ -14,3 +14,4 @@ Slice views of anatomical imaging
 Refactor model entry infrastructure so that app controlled rendering properties are unique, but underlying model data (on GPU) is shared
 Add on/off voice commands to notification system
 Add hide/show commands to tool system
+Extend voice command registration to prevent collision of commands 

@@ -107,8 +107,7 @@ namespace HoloIntervention
     float ImagingSystem::GetStabilizePriority() const
     {
       // TODO : are they in frustum?
-
-      if (m_sliceEntry != nullptr || m_volumeEntry != nullptr)
+      if ((m_sliceEntry != nullptr && m_sliceEntry->IsValid()) || (m_volumeEntry != nullptr && m_volumeEntry->IsValid()))
       {
         return PRIORITY_IMAGING;
       }

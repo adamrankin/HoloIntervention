@@ -151,6 +151,12 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    bool VolumeEntry::IsValid() const
+    {
+      return m_volumeReady;
+    }
+
+    //----------------------------------------------------------------------------
     void VolumeEntry::Update()
     {
       if (!m_tfResourcesReady)

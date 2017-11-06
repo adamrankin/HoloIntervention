@@ -475,21 +475,21 @@ namespace HoloIntervention
 
     switch (sender->Locatability)
     {
-    case SpatialLocatability::Unavailable:
-    {
-      m_notificationSystem->QueueMessage(L"Warning! Positional tracking is unavailable.");
-    }
-    break;
-
-    case SpatialLocatability::PositionalTrackingActivating:
-    case SpatialLocatability::OrientationOnly:
-    case SpatialLocatability::PositionalTrackingInhibited:
-      // Gaze-locked content still valid
+      case SpatialLocatability::Unavailable:
+      {
+        m_notificationSystem->QueueMessage(L"Warning! Positional tracking is unavailable.");
+      }
       break;
 
-    case SpatialLocatability::PositionalTrackingActive:
-      m_notificationSystem->QueueMessage(L"Positional tracking is active.");
-      break;
+      case SpatialLocatability::PositionalTrackingActivating:
+      case SpatialLocatability::OrientationOnly:
+      case SpatialLocatability::PositionalTrackingInhibited:
+        // Gaze-locked content still valid
+        break;
+
+      case SpatialLocatability::PositionalTrackingActive:
+        m_notificationSystem->QueueMessage(L"Positional tracking is active.");
+        break;
     }
   }
 
@@ -530,6 +530,7 @@ namespace HoloIntervention
   {
     Input::VoiceInputCallbackMap callbacks;
 
+    m_debug->RegisterVoiceCallbacks(callbacks);
     m_gazeSystem->RegisterVoiceCallbacks(callbacks);
     m_networkSystem->RegisterVoiceCallbacks(callbacks);
     m_physicsAPI->RegisterVoiceCallbacks(callbacks);
@@ -617,7 +618,7 @@ namespace HoloIntervention
       float3 focusPointVelocity = winningComponent->GetStabilizedVelocity();
 
 #if defined(_DEBUG)
-      std::string className(typeid(winningComponent).name());
+      std::string className(typeid(*winningComponent).name());
       std::wstring wClassName(begin(className), end(className));
       m_debug->UpdateValue(L"WinComp", wClassName);
 #endif

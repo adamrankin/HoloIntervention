@@ -93,6 +93,8 @@ namespace HoloIntervention
       bool IsInFrustum() const;
       bool IsInFrustum(const Windows::Perception::Spatial::SpatialBoundingFrustum& frustum) const;
 
+      bool IsValid() const;
+
       void Update();
       void Render(uint32 indexCount);
 

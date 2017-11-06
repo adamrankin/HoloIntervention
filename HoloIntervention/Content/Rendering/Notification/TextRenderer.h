@@ -31,6 +31,12 @@ namespace HoloIntervention
       void RenderTextOffscreen(const std::wstring& str);
 
       void SetFont(const std::wstring& fontName, DWRITE_FONT_WEIGHT fontWeight, DWRITE_FONT_STYLE fontStyle, DWRITE_FONT_STRETCH fontStretch, float fontSize, const std::wstring& locale = L"");
+      bool SetFontName(const std::wstring& fontName);
+      void SetFontWeight(DWRITE_FONT_WEIGHT fontWeight);
+      void SetFontStyle(DWRITE_FONT_STYLE fontStyle);
+      void SetFontStretch(DWRITE_FONT_STRETCH fontStretch);
+      void SetFontSize(float fontSize);
+      bool SetFontLocale(const std::wstring& locale);
 
       void CreateDeviceDependentResources();
       void ReleaseDeviceDependentResources();
@@ -57,7 +63,15 @@ namespace HoloIntervention
       const unsigned int                                  m_textureHeight;
 
       // The font used to create the text
-      std::wstring                                        m_font = L"Consolas";
+      std::wstring                                        m_fontName = L"Consolas";
+      DWRITE_FONT_WEIGHT                                  m_fontWeight = DWRITE_FONT_WEIGHT_NORMAL;
+      DWRITE_FONT_STYLE                                   m_fontStyle = DWRITE_FONT_STYLE_NORMAL;
+      DWRITE_FONT_STRETCH                                 m_fontStretch = DWRITE_FONT_STRETCH_NORMAL;
+      float                                               m_fontSize = 18;
+      std::wstring                                        m_fontLocale = L""; // Blank means use current user selection
+
+      // Collector of locale information
+      std::vector<std::wstring>                           m_localeBuffer;
     };
   }
 }

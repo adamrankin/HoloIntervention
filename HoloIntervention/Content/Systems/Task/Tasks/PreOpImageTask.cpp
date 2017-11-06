@@ -169,7 +169,7 @@ namespace HoloIntervention
       //----------------------------------------------------------------------------
       float PreOpImageTask::GetStabilizePriority() const
       {
-        return m_componentReady && m_model != nullptr ? PRIORITY_PHANTOM_TASK : PRIORITY_NOT_ACTIVE;
+        return (m_taskStarted && m_model != nullptr) ? PRIORITY_PHANTOM_TASK : PRIORITY_NOT_ACTIVE;
       }
 
       //----------------------------------------------------------------------------
