@@ -314,13 +314,26 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void SliceEntry::SetImageData(Microsoft::WRL::ComPtr<ID3D11Texture2D> imageTexture)
     {
+      if (imageTexture == nullptr)
+      {
+        return;
+      }
+
+      ReleaseDeviceDependentResources();
+
+      m_ownTexture = false;
       m_imageData = nullptr;
       m_imageTexture = imageTexture;
+      m_imageStagingTexture = nullptr;
 
-      DX::ThrowIfFailed(m_deviceResources->GetD3DDevice()->CreateShaderResourceView(m_imageTexture.Get(), nullptr, &m_shaderResourceView));
-#if _DEBUG
-      m_shaderResourceView->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strnlen_s("sliceEntrySRVFilename", MAX_PATH)), "sliceEntrySRVFilename");
-#endif
+      D3D11_TEXTURE2D_DESC desc;
+      imageTexture->GetDesc(&desc);
+
+      m_width = desc.Width;
+      m_height = desc.Height;
+      m_pixelFormat = desc.Format;
+
+      CreateDeviceDependentResources();
     }
 
     //----------------------------------------------------------------------------
@@ -450,11 +463,14 @@ namespace HoloIntervention
 
       if (GetPixelFormat() != DXGI_FORMAT_UNKNOWN && m_width > 0 && m_height > 0)
       {
-        CD3D11_TEXTURE2D_DESC textureDesc(GetPixelFormat(), m_width, m_height, 1, 0, 0, D3D11_USAGE_STAGING, D3D11_CPU_ACCESS_WRITE | D3D11_CPU_ACCESS_READ);
-        DX::ThrowIfFailed(device->CreateTexture2D(&textureDesc, nullptr, &m_imageStagingTexture));
+        if (m_ownTexture)
+        {
+          CD3D11_TEXTURE2D_DESC textureDesc(GetPixelFormat(), m_width, m_height, 1, 0, 0, D3D11_USAGE_STAGING, D3D11_CPU_ACCESS_WRITE | D3D11_CPU_ACCESS_READ);
+          DX::ThrowIfFailed(device->CreateTexture2D(&textureDesc, nullptr, &m_imageStagingTexture));
 
-        textureDesc = CD3D11_TEXTURE2D_DESC(GetPixelFormat(), m_width, m_height, 1, 0, D3D11_BIND_SHADER_RESOURCE);
-        DX::ThrowIfFailed(device->CreateTexture2D(&textureDesc, nullptr, &m_imageTexture));
+          textureDesc = CD3D11_TEXTURE2D_DESC(GetPixelFormat(), m_width, m_height, 1, 0, D3D11_BIND_SHADER_RESOURCE);
+          DX::ThrowIfFailed(device->CreateTexture2D(&textureDesc, nullptr, &m_imageTexture));
+        }
         DX::ThrowIfFailed(device->CreateShaderResourceView(m_imageTexture.Get(), nullptr, &m_shaderResourceView));
 #if _DEBUG
         m_shaderResourceView->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strnlen_s("sliceEntrySRV", MAX_PATH)), "sliceEntrySRV");

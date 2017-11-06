@@ -107,6 +107,7 @@ namespace HoloIntervention
       DX::StepTimer&                                      m_timer;
 
       // D3D resources
+      std::atomic_bool                                    m_ownTexture = true;
       Microsoft::WRL::ComPtr<ID3D11Texture2D>             m_imageTexture;
       Microsoft::WRL::ComPtr<ID3D11Texture2D>             m_imageStagingTexture;
       Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>    m_shaderResourceView;

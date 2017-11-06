@@ -93,7 +93,7 @@ namespace HoloIntervention
 
             return entry->GetId();
           }
-          catch (const std::exception& e)
+          catch (...)
           {
             LOG_ERROR("Unable to get slice entry");
             return INVALID_TOKEN;
