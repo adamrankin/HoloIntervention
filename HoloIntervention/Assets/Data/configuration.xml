@@ -2,7 +2,7 @@
 <HoloIntervention>
   <Tools IGTConnection="NDITracker">
     <Tool 
-      Model="Tools/Stylus"
+      Model="Tools/hemisphere_stylus"
       From="Tip"
       To="Reference"
       LerpEnabled="false" 
