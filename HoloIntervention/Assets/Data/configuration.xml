@@ -2,9 +2,7 @@
 <HoloIntervention>
   <Tools IGTConnection="NDITracker">
     <Tool 
-      Primitive="Cylinder"
-      Argument1="0.1"
-      Argument2="0.005"
+      Model="Tools/Stylus"
       From="Tip"
       To="Reference"
       LerpEnabled="false" 
@@ -63,7 +61,7 @@
   <IGTConnections>
     <Connection
       Name="NDITracker"
-      Host="192.168.0.28"
+      Host="192.168.0.29"
       Port="18944" 
       />
 

@@ -592,6 +592,9 @@
     <None Include="Assets\Models\Tools\8700248.cmo">
       <Filter>Assets\Models\Tools</Filter>
     </None>
+    <None Include="Assets\Models\Tools\stylus.cmo">
+      <Filter>Assets\Models\Tools</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Content">

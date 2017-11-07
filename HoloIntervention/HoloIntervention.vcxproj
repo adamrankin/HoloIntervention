@@ -259,6 +259,10 @@
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
     </None>
+    <None Include="Assets\Models\Tools\stylus.cmo">
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
+    </None>
     <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_PSBasic.inc" />
     <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_PSBasicNoFog.inc" />
     <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_PSBasicPixelLighting.inc" />

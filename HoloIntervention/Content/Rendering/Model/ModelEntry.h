@@ -100,7 +100,7 @@ namespace HoloIntervention
       bool IsPrimitive() const;
       PrimitiveType GetPrimitiveType() const;
       Windows::Foundation::Numerics::float3 GetArgument() const;
-      float GetTessellation() const;
+      size_t GetTessellation() const;
       bool GetRHCoords() const;
       bool GetInvertN() const;
       bool GetLerpEnabled() const;

@@ -128,8 +128,19 @@ namespace HoloIntervention
           filename.append(extStr);
           std::wstring wFilename(filename.begin(), filename.end());
 
-          Concurrency::create_task(folder->GetFileAsync(ref new Platform::String(wFilename.c_str()))).then([ this ](StorageFile ^ file)
+          create_task(folder->GetFileAsync(ref new Platform::String(wFilename.c_str()))).then([ this ](task<StorageFile^> fileTask)
           {
+            StorageFile^ file(nullptr);
+            try
+            {
+              file = fileTask.get();
+            }
+            catch (Platform::Exception^ e)
+            {
+              WLOG_ERROR(L"Unable to open file: " + e->Message);
+              m_failedLoad = true;
+            }
+
             if (file != nullptr)
             {
               try
@@ -140,8 +151,11 @@ namespace HoloIntervention
               {
                 HoloIntervention::LOG(LogLevelType::LOG_LEVEL_ERROR, std::string("Unable to load model. ") + e.what());
                 m_failedLoad = true;
-                return;
               }
+            }
+            else
+            {
+              m_failedLoad = true;
             }
           });
         });
@@ -369,7 +383,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    float ModelEntry::GetTessellation() const
+    size_t ModelEntry::GetTessellation() const
     {
       return m_tessellation;
     }
