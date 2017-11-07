@@ -53,6 +53,8 @@ namespace DirectX
 
 namespace HoloIntervention
 {
+  class Debug;
+
   namespace Rendering
   {
     enum ModelRenderingState
@@ -64,8 +66,8 @@ namespace HoloIntervention
     class ModelEntry
     {
     public:
-      ModelEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, const std::wstring& assetLocation, DX::StepTimer& timer);
-      ModelEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, PrimitiveType type, DX::StepTimer& timer, Windows::Foundation::Numerics::float3 argument, size_t tessellation, bool rhcoords, bool invertn, Windows::Foundation::Numerics::float4 colour = Windows::Foundation::Numerics::float4(1.f, 1.f, 1.f, 1.f));
+      ModelEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, const std::wstring& assetLocation, DX::StepTimer& timer, Debug& debug);
+      ModelEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, PrimitiveType type, DX::StepTimer& timer, Debug& debug, Windows::Foundation::Numerics::float3 argument, size_t tessellation, bool rhcoords, bool invertn, Windows::Foundation::Numerics::float4 colour = Windows::Foundation::Numerics::float4(1.f, 1.f, 1.f, 1.f));
       ~ModelEntry();
       std::shared_ptr<ModelEntry> Clone();
 
@@ -95,6 +97,12 @@ namespace HoloIntervention
       std::array<float, 6> GetBounds() const;
 
       std::wstring GetAssetLocation() const;
+      bool IsPrimitive() const;
+      PrimitiveType GetPrimitiveType() const;
+      Windows::Foundation::Numerics::float3 GetArgument() const;
+      float GetTessellation() const;
+      bool GetRHCoords() const;
+      bool GetInvertN() const;
       bool GetLerpEnabled() const;
       float GetLerpRate() const;
 
@@ -130,6 +138,7 @@ namespace HoloIntervention
       std::shared_ptr<DX::DeviceResources>                m_deviceResources = nullptr;
       const DX::CameraResources*                          m_cameraResources = nullptr;
       DX::StepTimer&                                      m_timer;
+      Debug&                                              m_debug;
 
       // DirectXTK resources
       std::unique_ptr<DirectX::CommonStates>              m_states = nullptr;

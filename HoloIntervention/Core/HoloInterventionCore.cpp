@@ -61,6 +61,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "VoiceInput.h"
 
 // STL includes
+#include <iomanip>
 #include <regex>
 #include <string>
 
@@ -234,7 +235,9 @@ namespace HoloIntervention
         }
 
         m_notificationSystem->RemoveMessage(messageId);
-        messageId = m_notificationSystem->QueueMessage(L"Loading ... " + ((double)componentsReady / m_engineComponents.size() * 100).ToString() + L"%");
+        std::wstringstream wss;
+        wss << L"Loading ... " << std::setprecision(0) << ((double)componentsReady / m_engineComponents.size() * 100) << L"%";
+        messageId = m_notificationSystem->QueueMessage(wss.str());
       }
       while (!engineReady);
 
@@ -475,21 +478,21 @@ namespace HoloIntervention
 
     switch (sender->Locatability)
     {
-      case SpatialLocatability::Unavailable:
-      {
-        m_notificationSystem->QueueMessage(L"Warning! Positional tracking is unavailable.");
-      }
+    case SpatialLocatability::Unavailable:
+    {
+      m_notificationSystem->QueueMessage(L"Warning! Positional tracking is unavailable.");
+    }
+    break;
+
+    case SpatialLocatability::PositionalTrackingActivating:
+    case SpatialLocatability::OrientationOnly:
+    case SpatialLocatability::PositionalTrackingInhibited:
+      // Gaze-locked content still valid
       break;
 
-      case SpatialLocatability::PositionalTrackingActivating:
-      case SpatialLocatability::OrientationOnly:
-      case SpatialLocatability::PositionalTrackingInhibited:
-        // Gaze-locked content still valid
-        break;
-
-      case SpatialLocatability::PositionalTrackingActive:
-        m_notificationSystem->QueueMessage(L"Positional tracking is active.");
-        break;
+    case SpatialLocatability::PositionalTrackingActive:
+      m_notificationSystem->QueueMessage(L"Positional tracking is active.");
+      break;
     }
   }
 
@@ -660,7 +663,14 @@ namespace HoloIntervention
       }
     }).then([this](task<StorageFile^> copyTask)
     {
-      copyTask.wait();
+      try
+      {
+        copyTask.wait();
+      }
+      catch (Platform::Exception^ e)
+      {
+        WLOG_ERROR(L"Unable to backup existing configuration. Data loss may occur. Error: " + e->Message);
+      }
 
       // Create new document
       auto doc = ref new XmlDocument();
@@ -683,26 +693,22 @@ namespace HoloIntervention
         // Write document to disk
         return create_task(ApplicationData::Current->LocalFolder->CreateFileAsync(L"configuration.xml", CreationCollisionOption::ReplaceExisting)).then([this, doc](StorageFile ^ file)
         {
-          return file->OpenAsync(FileAccessMode::ReadWrite);
-        }).then([this, doc](Streams::IRandomAccessStream ^ stream)
-        {
           auto xmlAsString = std::wstring(doc->GetXml()->Data());
           // After every > add a \n
           xmlAsString = std::regex_replace(xmlAsString, std::wregex(L">"), L">\n");
 
-          auto writer = ref new Streams::DataWriter(stream);
-          writer->WriteString(ref new Platform::String(xmlAsString.c_str()));
-
-          return create_task(writer->FlushAsync()).then([this](task<bool> saveAction)
+          return create_task(Windows::Storage::FileIO::WriteTextAsync(file, ref new Platform::String(xmlAsString.c_str()))).then([this](task<void> writeTask)
           {
             try
             {
-              saveAction.wait();
+              writeTask.wait();
             }
-            catch (Platform::Exception^ e)
+            catch (const std::exception& e)
             {
+              LOG_ERROR(std::string("Unable to write to file: ") + e.what());
               return false;
             }
+
             return true;
           });
         });

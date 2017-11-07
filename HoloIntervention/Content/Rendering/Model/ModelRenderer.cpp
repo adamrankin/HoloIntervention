@@ -112,7 +112,7 @@ namespace HoloIntervention
       return create_task([this, assetLocation]()
       {
         uint64 myId(0);
-        std::shared_ptr<ModelEntry> entry = std::make_shared<ModelEntry>(m_deviceResources, assetLocation, m_timer);
+        std::shared_ptr<ModelEntry> entry = std::make_shared<ModelEntry>(m_deviceResources, assetLocation, m_timer, m_debug);
         {
           std::lock_guard<std::mutex> guard(m_idMutex);
           entry->SetId(m_nextUnusedId++);
@@ -165,7 +165,7 @@ namespace HoloIntervention
     {
       return create_task([this, type, argument, tessellation, rhcoords, invertn]()
       {
-        std::shared_ptr<ModelEntry> entry = std::make_shared<ModelEntry>(m_deviceResources, type, m_timer, argument, tessellation, rhcoords, invertn);
+        std::shared_ptr<ModelEntry> entry = std::make_shared<ModelEntry>(m_deviceResources, type, m_timer, m_debug, argument, tessellation, rhcoords, invertn);
         entry->SetId(m_nextUnusedId);
         entry->SetVisible(true);
 
@@ -184,7 +184,7 @@ namespace HoloIntervention
       {
         PrimitiveType type = ModelRenderer::StringToPrimitive(primitiveName);
 
-        std::shared_ptr<ModelEntry> entry = std::make_shared<ModelEntry>(m_deviceResources, type, m_timer, argument, tessellation, rhcoords, invertn);
+        std::shared_ptr<ModelEntry> entry = std::make_shared<ModelEntry>(m_deviceResources, type, m_timer, m_debug, argument, tessellation, rhcoords, invertn);
         entry->SetId(m_nextUnusedId);
         entry->SetVisible(true);
 
@@ -290,6 +290,41 @@ namespace HoloIntervention
       else
       {
         return PrimitiveType_NONE;
+      }
+    }
+
+    //----------------------------------------------------------------------------
+    std::wstring ModelRenderer::PrimitiveToString(PrimitiveType type)
+    {
+      switch (type)
+      {
+      case PrimitiveType_CUBE:
+        return L"Cube";
+      case PrimitiveType_BOX:
+        return L"Box";
+      case PrimitiveType_SPHERE:
+        return L"Sphere";
+      case PrimitiveType_GEOSPHERE:
+        return L"Geosphere";
+      case PrimitiveType_CYLINDER:
+        return L"Cylinder";
+      case PrimitiveType_CONE:
+        return L"Cone";
+      case PrimitiveType_TORUS:
+        return L"Torus";
+      case PrimitiveType_TETRAHEDRON:
+        return L"Tetrahedron";
+      case PrimitiveType_OCTAHEDRON:
+        return L"Octahedron";
+      case PrimitiveType_DODECAHEDRON:
+        return L"Dodecahedron";
+      case PrimitiveType_ICOSAHEDRON:
+        return L"Icosahedron";
+      case PrimitiveType_TEAPOT:
+        return L"Teapot";
+      case PrimitiveType_NONE:
+      default:
+        return L"None";
       }
     }
 

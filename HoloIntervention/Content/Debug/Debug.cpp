@@ -46,8 +46,8 @@ namespace HoloIntervention
     m_textRenderer->SetFontSize(28);
     m_sliceRenderer.AddSliceAsync(m_textRenderer->GetTexture(), float4x4::identity(), true).then([this](uint64 entryId)
     {
-      //m_sliceEntry->SetVisible(false); // off by default
       m_sliceEntry = m_sliceRenderer.GetSlice(entryId);
+      m_sliceEntry->SetVisible(false); // off by default
       m_sliceEntry->SetScalingFactor(0.6f);
     });
   }
@@ -85,6 +85,11 @@ namespace HoloIntervention
   //----------------------------------------------------------------------------
   void Debug::Update()
   {
+    if (!m_sliceEntry->GetVisible())
+    {
+      return;
+    }
+
     std::wstringstream wss;
     for (auto& pair : m_debugValues)
     {

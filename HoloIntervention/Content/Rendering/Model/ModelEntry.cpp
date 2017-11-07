@@ -59,9 +59,10 @@ namespace HoloIntervention
   namespace Rendering
   {
     //----------------------------------------------------------------------------
-    ModelEntry::ModelEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, const std::wstring& assetLocation, DX::StepTimer& timer)
+    ModelEntry::ModelEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, const std::wstring& assetLocation, DX::StepTimer& timer, Debug& debug)
       : m_deviceResources(deviceResources)
       , m_timer(timer)
+      , m_debug(debug)
     {
       // Validate asset location
       Platform::String^ mainFolderLocation = Windows::ApplicationModel::Package::Current->InstalledLocation->Path;
@@ -148,21 +149,27 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    ModelEntry::ModelEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, PrimitiveType type, DX::StepTimer& timer, float3 argument, size_t tessellation, bool rhcoords, bool invertn, float4 colour)
+    ModelEntry::ModelEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, PrimitiveType type, DX::StepTimer& timer, Debug& debug, float3 argument, size_t tessellation, bool rhcoords, bool invertn, float4 colour)
       : m_deviceResources(deviceResources)
       , m_timer(timer)
+      , m_debug(debug)
       , m_originalColour(colour)
       , m_currentColour(colour)
+      , m_primitiveType(type)
       , m_tessellation(tessellation)
       , m_rhcoords(rhcoords)
       , m_invertn(invertn)
       , m_argument(argument)
     {
-      m_primitive = ModelRenderer::CreatePrimitive(*deviceResources, type, argument, tessellation, rhcoords, invertn);
-
-      if (m_primitive == nullptr)
+      try
       {
-        LOG_ERROR(L"Unable to create primitive, unknown type.");
+        CreateDeviceDependentResources();
+      }
+      catch (const std::exception& e)
+      {
+        HoloIntervention::LOG(LogLevelType::LOG_LEVEL_ERROR, std::string("Unable to load primitive. ") + e.what());
+        m_failedLoad = true;
+        return;
       }
     }
 
@@ -178,11 +185,11 @@ namespace HoloIntervention
       std::shared_ptr<ModelEntry> newEntry;
       if (m_primitive != nullptr)
       {
-        newEntry = std::make_shared<ModelEntry>(m_deviceResources, m_primitiveType, m_timer, m_argument, m_tessellation, m_rhcoords, m_invertn);
+        newEntry = std::make_shared<ModelEntry>(m_deviceResources, m_primitiveType, m_timer, m_debug, m_argument, m_tessellation, m_rhcoords, m_invertn);
       }
       else
       {
-        newEntry = std::make_shared<ModelEntry>(m_deviceResources, m_assetLocation, m_timer);
+        newEntry = std::make_shared<ModelEntry>(m_deviceResources, m_assetLocation, m_timer, m_debug);
       }
       newEntry->m_originalColour = m_originalColour;
       newEntry->m_originalColour = m_currentColour;
@@ -280,25 +287,36 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ModelEntry::CreateDeviceDependentResources()
     {
-      m_states = std::make_unique<DirectX::CommonStates>(m_deviceResources->GetD3DDevice());
-      m_effectFactory = std::make_unique<DirectX::InstancedEffectFactory>(m_deviceResources->GetD3DDevice());
-      m_effectFactory->SetSharing(false);   // Disable re-use of effect shaders, as this prevents us from rendering different colours
-      m_model = std::shared_ptr<DirectX::Model>(std::move(DirectX::Model::CreateFromCMO(m_deviceResources->GetD3DDevice(), m_assetLocation.c_str(), *m_effectFactory)));
-      CalculateBounds();
-
-      // Cache default effect colours
-      m_model->UpdateEffects([this](IEffect * effect)
+      if (m_primitiveType != PrimitiveType_NONE)
       {
-        InstancedBasicEffect* basicEffect = dynamic_cast<InstancedBasicEffect*>(effect);
-        if (basicEffect != nullptr)
-        {
-          XMFLOAT4 temp(0.f, 0.f, 0.f, 1.f);
-          XMStoreFloat4(&temp, basicEffect->GetDiffuseColor());
-          temp.w = basicEffect->GetAlpha();
-          m_defaultColours[effect] = temp;
-        }
-      });
+        m_primitive = ModelRenderer::CreatePrimitive(*m_deviceResources, m_primitiveType, m_argument, m_tessellation, m_rhcoords, m_invertn);
 
+        if (m_primitive == nullptr)
+        {
+          LOG_ERROR(L"Unable to create primitive, unknown type.");
+        }
+      }
+      else
+      {
+        m_states = std::make_unique<DirectX::CommonStates>(m_deviceResources->GetD3DDevice());
+        m_effectFactory = std::make_unique<DirectX::InstancedEffectFactory>(m_deviceResources->GetD3DDevice());
+        m_effectFactory->SetSharing(false);   // Disable re-use of effect shaders, as this prevents us from rendering different colours
+        m_model = std::shared_ptr<DirectX::Model>(std::move(DirectX::Model::CreateFromCMO(m_deviceResources->GetD3DDevice(), m_assetLocation.c_str(), *m_effectFactory)));
+        CalculateBounds();
+
+        // Cache default effect colours
+        m_model->UpdateEffects([this](IEffect * effect)
+        {
+          InstancedBasicEffect* basicEffect = dynamic_cast<InstancedBasicEffect*>(effect);
+          if (basicEffect != nullptr)
+          {
+            XMFLOAT4 temp(0.f, 0.f, 0.f, 1.f);
+            XMStoreFloat4(&temp, basicEffect->GetDiffuseColor());
+            temp.w = basicEffect->GetAlpha();
+            m_defaultColours[effect] = temp;
+          }
+        });
+      }
       m_loadingComplete = true;
     }
 
@@ -311,6 +329,7 @@ namespace HoloIntervention
       m_model = nullptr;
       m_effectFactory = nullptr;
       m_states = nullptr;
+      m_primitive = nullptr;
     }
 
     //----------------------------------------------------------------------------
@@ -329,6 +348,42 @@ namespace HoloIntervention
     bool ModelEntry::IsVisible() const
     {
       return m_visible;
+    }
+
+    //----------------------------------------------------------------------------
+    bool ModelEntry::IsPrimitive() const
+    {
+      return m_primitive != nullptr;
+    }
+
+    //----------------------------------------------------------------------------
+    HoloIntervention::Rendering::PrimitiveType ModelEntry::GetPrimitiveType() const
+    {
+      return m_primitiveType;
+    }
+
+    //----------------------------------------------------------------------------
+    Windows::Foundation::Numerics::float3 ModelEntry::GetArgument() const
+    {
+      return m_argument;
+    }
+
+    //----------------------------------------------------------------------------
+    float ModelEntry::GetTessellation() const
+    {
+      return m_tessellation;
+    }
+
+    //----------------------------------------------------------------------------
+    bool ModelEntry::GetRHCoords() const
+    {
+      return m_rhcoords;
+    }
+
+    //----------------------------------------------------------------------------
+    bool ModelEntry::GetInvertN() const
+    {
+      return m_invertn;
     }
 
     //----------------------------------------------------------------------------

@@ -127,7 +127,22 @@ namespace HoloIntervention
         for (auto tool : m_toolEntries)
         {
           auto toolElem = document->CreateElement("Tool");
-          toolElem->SetAttribute(L"Model", ref new Platform::String(tool->GetModelEntry()->GetAssetLocation().c_str()));
+          if (tool->GetModelEntry()->IsPrimitive())
+          {
+            toolElem->SetAttribute(L"Primitive", ref new Platform::String(Rendering::ModelRenderer::PrimitiveToString(tool->GetModelEntry()->GetPrimitiveType()).c_str()));
+
+            toolElem->SetAttribute(L"Argument1", tool->GetModelEntry()->GetArgument().x.ToString());
+            toolElem->SetAttribute(L"Argument2", tool->GetModelEntry()->GetArgument().y.ToString());
+            toolElem->SetAttribute(L"Argument3", tool->GetModelEntry()->GetArgument().z.ToString());
+
+            toolElem->SetAttribute(L"Tessellation", tool->GetModelEntry()->GetTessellation().ToString());
+            toolElem->SetAttribute(L"RightHandedCoords", tool->GetModelEntry()->GetRHCoords().ToString());
+            toolElem->SetAttribute(L"InvertN", tool->GetModelEntry()->GetInvertN().ToString());
+          }
+          else
+          {
+            toolElem->SetAttribute(L"Model", ref new Platform::String(tool->GetModelEntry()->GetAssetLocation().c_str()));
+          }
           toolElem->SetAttribute(L"From", tool->GetCoordinateFrame()->From());
           toolElem->SetAttribute(L"To", tool->GetCoordinateFrame()->To());
           toolElem->SetAttribute(L"LerpEnabled", tool->GetModelEntry()->GetLerpEnabled() ? L"true" : L"false");
@@ -404,7 +419,7 @@ namespace HoloIntervention
             size_t tessellation = 16;
             bool rhcoords = true;
             bool invertn = false;
-            float3 argument;
+            float3 argument = { 0.f, 0.f, 0.f };
             if (argument1String != nullptr && !argument1String->IsEmpty())
             {
               std::wstringstream wss;
