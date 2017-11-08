@@ -90,7 +90,7 @@ namespace
 
 namespace HoloIntervention
 {
-  namespace System
+  namespace Algorithm
   {
     const float CameraRegistration::VISUALIZATION_SPHERE_RADIUS = 0.03f;
 
@@ -228,7 +228,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    CameraRegistration::CameraRegistration(NotificationSystem& notificationSystem, NetworkSystem& networkSystem, Rendering::ModelRenderer& modelRenderer)
+    CameraRegistration::CameraRegistration(System::NotificationSystem& notificationSystem, System::NetworkSystem& networkSystem, Rendering::ModelRenderer& modelRenderer)
       : m_modelRenderer(modelRenderer)
       , m_notificationSystem(notificationSystem)
       , m_networkSystem(networkSystem)

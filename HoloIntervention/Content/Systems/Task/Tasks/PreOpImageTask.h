@@ -45,6 +45,11 @@ namespace DX
 
 namespace HoloIntervention
 {
+  namespace Algorithm
+  {
+    class LandmarkRegistration;
+  }
+
   namespace Rendering
   {
     class ModelRenderer;
@@ -94,16 +99,23 @@ namespace HoloIntervention
         RegistrationSystem&                                     m_registrationSystem;
         Rendering::ModelRenderer&                               m_modelRenderer;
 
-        std::shared_ptr<Rendering::ModelEntry>                  m_model = nullptr;
+        std::shared_ptr<Rendering::ModelEntry>                  m_modelEntry = nullptr;
         std::wstring                                            m_modelName = L"";
         std::wstring                                            m_connectionName = L"";
         uint64                                                  m_hashedConnectionName = 0;
         UWPOpenIGTLink::TransformName^                          m_preopToReferenceName = ref new UWPOpenIGTLink::TransformName();
         double                                                  m_latestTimestamp = 0.0;
+        uint32                                                  m_commandId;
+
+        // Registration variables
+        std::vector<Windows::Foundation::Numerics::float3>      m_points;
+        std::shared_ptr<Algorithm::LandmarkRegistration>        m_landmarkRegistration;
 
         // Phantom task behaviour
         std::atomic_bool                                        m_taskStarted = false;
-        UWPOpenIGTLink::TrackedFrame^                           m_trackedFrame = ref new UWPOpenIGTLink::TrackedFrame();
+        UWPOpenIGTLink::TrackedFrame^                           m_trackedFrame = nullptr;
+        UWPOpenIGTLink::Polydata^                               m_polydata = nullptr;
+        UWPOpenIGTLink::Transform^                              m_transform = nullptr;
         UWPOpenIGTLink::TransformName^                          m_stylusTipTransformName = ref new UWPOpenIGTLink::TransformName();
         UWPOpenIGTLink::TransformRepository^                    m_transformRepository = ref new UWPOpenIGTLink::TransformRepository();
       };

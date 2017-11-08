@@ -27,7 +27,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 namespace HoloIntervention
 {
-  namespace Algorithms
+  namespace Algorithm
   {
     class KalmanFilter
     {

@@ -44,7 +44,7 @@ using namespace Windows::UI::Input::Spatial;
 
 namespace HoloIntervention
 {
-  namespace System
+  namespace Algorithm
   {
     //----------------------------------------------------------------------------
     float3 ManualRegistration::GetStabilizedPosition(SpatialPointerPose^ pose) const

@@ -177,7 +177,7 @@ namespace HoloIntervention
       OutputDebugStringW((L"Audio Error" + e->Message)->Data());
     }
 
-    InitializeVoiceSystem();
+    RegisterVoiceCallbacks();
 
     // Use the default SpatialLocator to track the motion of the device.
     m_locator = SpatialLocator::GetDefault();
@@ -529,7 +529,7 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
-  void HoloInterventionCore::InitializeVoiceSystem()
+  void HoloInterventionCore::RegisterVoiceCallbacks()
   {
     Input::VoiceInputCallbackMap callbacks;
 
@@ -551,16 +551,19 @@ namespace HoloIntervention
 
     callbacks[L"save config"] = [this](SpeechRecognitionResult ^ result)
     {
-      WriteConfigurationAsync().then([this](bool result)
+      m_physicsAPI->SaveAppStateAsync().then([this]()
       {
-        if (result)
+        WriteConfigurationAsync().then([this](bool result)
         {
-          m_notificationSystem->QueueMessage(L"Save successful.");
-        }
-        else
-        {
-          m_notificationSystem->QueueMessage(L"Save failed.");
-        }
+          if (result)
+          {
+            m_notificationSystem->QueueMessage(L"Save successful.");
+          }
+          else
+          {
+            m_notificationSystem->QueueMessage(L"Save failed.");
+          }
+        });
       });
     };
 
@@ -584,7 +587,8 @@ namespace HoloIntervention
       }
       catch (const std::exception& e)
       {
-        LOG(LogLevelType::LOG_LEVEL_ERROR, std::string("Failed to compile callbacks: ") + e.what());
+        LOG(LogLevelType::LOG_LEVEL_ERROR, std::string("Failed to compile voice callbacks: ") + e.what());
+        m_notificationSystem->QueueMessage(L"Unable to initialize voice input system. Critical failure.");
       }
     });
   }

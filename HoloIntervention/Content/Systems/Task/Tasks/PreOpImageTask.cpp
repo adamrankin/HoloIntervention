@@ -35,6 +35,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Rendering includes
 #include "ModelRenderer.h"
 
+// Algorithms includes
+#include "LandmarkRegistration.h"
+
 // STL includes
 #include <random>
 
@@ -69,8 +72,9 @@ namespace HoloIntervention
           auto rootNode = document->SelectNodes(xpath)->Item(0);
 
           auto preopElement = document->CreateElement("PreOpImageTask");
-          preopElement->SetAttribute(L"From", m_preopToReferenceName->From());
-          preopElement->SetAttribute(L"To", m_preopToReferenceName->To());
+          preopElement->SetAttribute(L"PhantomFrom", m_preopToReferenceName->From());
+          preopElement->SetAttribute(L"PhantomTo", m_preopToReferenceName->To());
+          preopElement->SetAttribute(L"StylusFrom", m_stylusTipTransformName->From());
           preopElement->SetAttribute(L"ModelName", ref new Platform::String(m_modelName.c_str()));
           preopElement->SetAttribute(L"IGTConnection", ref new Platform::String(m_connectionName.c_str()));
 
@@ -102,14 +106,19 @@ namespace HoloIntervention
             LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to locate \"IGTConnection\" attributes. Cannot configure PreOpImageTask.");
             return false;
           }
-          if (!HasAttribute(L"From", node))
+          if (!HasAttribute(L"PhantomFrom", node))
           {
-            LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to locate \"From\" attributes. Cannot configure PreOpImageTask.");
+            LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to locate \"PhantomFrom\" attribute. Cannot configure TouchingSphereTask.");
             return false;
           }
-          if (!HasAttribute(L"To", node))
+          if (!HasAttribute(L"PhantomTo", node))
           {
-            LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to locate \"To\" attributes. Cannot configure PreOpImageTask.");
+            LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to locate \"PhantomTo\" attribute. Cannot configure TouchingSphereTask.");
+            return false;
+          }
+          if (!HasAttribute(L"StylusFrom", node))
+          {
+            LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to locate \"StylusFrom\" attribute. Cannot configure TouchingSphereTask.");
             return false;
           }
           if (!HasAttribute(L"ModelName", node))
@@ -126,8 +135,8 @@ namespace HoloIntervention
           m_connectionName = std::wstring(igtConnection->Data());
           m_hashedConnectionName = HashString(igtConnection);
 
-          auto fromName = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"From")->NodeValue);
-          auto toName = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"To")->NodeValue);
+          auto fromName = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"PhantomFrom")->NodeValue);
+          auto toName = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"PhantomTo")->NodeValue);
           if (!fromName->IsEmpty() && !toName->IsEmpty())
           {
             try
@@ -136,7 +145,21 @@ namespace HoloIntervention
             }
             catch (Platform::Exception^)
             {
-              LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to construct PreOpToReferenceName from " + fromName + L" and " + toName + L" attributes. Cannot configure PreOpImageTask.");
+              LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to construct PhantomTransformName from " + fromName + L" and " + toName + L" attributes. Cannot configure TouchingSphereTask.");
+              return false;
+            }
+          }
+
+          fromName = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"StylusFrom")->NodeValue);
+          if (!fromName->IsEmpty() && !toName->IsEmpty())
+          {
+            try
+            {
+              m_stylusTipTransformName = ref new UWPOpenIGTLink::TransformName(fromName, m_preopToReferenceName->From());
+            }
+            catch (Platform::Exception^)
+            {
+              LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to construct StylusTipTransformName from " + fromName + L" and " + m_preopToReferenceName->From() + L" attributes. Cannot configure TouchingSphereTask.");
               return false;
             }
           }
@@ -149,9 +172,9 @@ namespace HoloIntervention
       //----------------------------------------------------------------------------
       float3 PreOpImageTask::GetStabilizedPosition(SpatialPointerPose^ pose) const
       {
-        if (m_componentReady && m_model != nullptr)
+        if (m_componentReady && m_modelEntry != nullptr)
         {
-          return float3(m_model->GetCurrentPose().m41, m_model->GetCurrentPose().m42, m_model->GetCurrentPose().m43);
+          return float3(m_modelEntry->GetCurrentPose().m41, m_modelEntry->GetCurrentPose().m42, m_modelEntry->GetCurrentPose().m43);
         }
         return float3(0.f, 0.f, 0.f);
       }
@@ -159,9 +182,9 @@ namespace HoloIntervention
       //----------------------------------------------------------------------------
       float3 PreOpImageTask::GetStabilizedVelocity() const
       {
-        if (m_componentReady && m_model != nullptr)
+        if (m_componentReady && m_modelEntry != nullptr)
         {
-          return m_model->GetVelocity();
+          return m_modelEntry->GetVelocity();
         }
         return float3(0.f, 0.f, 0.f);
       }
@@ -169,7 +192,7 @@ namespace HoloIntervention
       //----------------------------------------------------------------------------
       float PreOpImageTask::GetStabilizePriority() const
       {
-        return (m_taskStarted && m_model != nullptr) ? PRIORITY_PHANTOM_TASK : PRIORITY_NOT_ACTIVE;
+        return (m_taskStarted && m_modelEntry != nullptr) ? PRIORITY_PHANTOM_TASK : PRIORITY_NOT_ACTIVE;
       }
 
       //----------------------------------------------------------------------------
@@ -190,7 +213,7 @@ namespace HoloIntervention
       //----------------------------------------------------------------------------
       void PreOpImageTask::Update(SpatialCoordinateSystem^ coordinateSystem, DX::StepTimer& timer)
       {
-        if (!m_componentReady)
+        if (!m_componentReady || !m_taskStarted)
         {
           return;
         }
@@ -200,15 +223,24 @@ namespace HoloIntervention
           m_trackedFrame = m_networkSystem.GetTrackedFrame(m_hashedConnectionName, m_latestTimestamp);
           if (m_trackedFrame == nullptr || !m_transformRepository->SetTransforms(m_trackedFrame))
           {
-            return;
+            m_transform = m_networkSystem.GetTransform(m_hashedConnectionName, m_preopToReferenceName, m_latestTimestamp);
+            if (m_transform == nullptr || !m_transformRepository->SetTransform(m_preopToReferenceName, m_transform->Matrix, m_transform->Valid))
+            {
+              return;
+            }
           }
 
           float4x4 registration;
           if (m_registrationSystem.GetReferenceToCoordinateSystemTransformation(coordinateSystem, registration))
           {
             m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", L"HoloLens"), registration, true);
-            auto result = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(m_preopToReferenceName->From(), L"HoloLens"));
+          }
 
+          auto result = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"HeartModel", L"HoloLens"));
+
+          if (result->Key)
+          {
+            m_modelEntry->SetDesiredPose(result->Value);
           }
         }
       }
@@ -218,7 +250,14 @@ namespace HoloIntervention
       {
         callbackMap[L"start pre op"] = [this](SpeechRecognitionResult ^ result)
         {
-          if (m_model != nullptr)
+          m_modelRenderer.AddModelAsync(L"heart.cmo").then([this](uint64 modelId)
+          {
+            m_modelEntry = m_modelRenderer.GetModel(modelId);
+          });
+          /*
+          // TODO : get this up and running
+          // for demo, load from file
+          if (m_modelEntry != nullptr)
           {
             m_notificationSystem.QueueMessage(L"Starting phantom task.");
             m_taskStarted = true;
@@ -239,6 +278,27 @@ namespace HoloIntervention
                 {
                   return false;
                 }
+                m_commandId = cmdInfo.CommandId;
+                create_task([this]()
+                {
+                  while (true)
+                  {
+                    auto poly = m_networkSystem.GetPolydata(m_hashedConnectionName, ref new Platform::String(m_modelName.c_str()));
+                    if (poly == nullptr)
+                    {
+                      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                    }
+                    else
+                    {
+                      // Parse polydata into a model
+                      m_modelRenderer.AddModelAsync(m_polydata).then([this](uint64 modelId)
+                      {
+                        m_modelEntry = m_modelRenderer.GetModel(modelId);
+                      });
+                      break;
+                    }
+                  }
+                });
                 return true;
               });
             }).then([this](bool result)
@@ -253,6 +313,43 @@ namespace HoloIntervention
               m_taskStarted = true;
             });
           }
+          */
+        };
+
+        callbackMap[L"record point"] = [this](SpeechRecognitionResult ^ result)
+        {
+          auto pair = m_transformRepository->GetTransform(m_stylusTipTransformName);
+          if (pair->Key)
+          {
+            m_points.push_back(float3(pair->Value.m41, pair->Value.m42, pair->Value.m43));
+          }
+
+          // TODO : for now, hardcoded, in the future, dynamic from command result sent back
+          if (m_points.size() == 6)
+          {
+            std::vector<float3> landmarks = { {57.5909f, 161.627f, -98.7764f},
+              {7.68349f, 169.246f, -24.3985f},
+              {29.3939f, 155.906f, 103.148f},
+              {-22.046f, 155.464f, 98.6673f},
+              {-25.1729f, 167.911f, -43.6009f},
+              {18.3745f, 163.052f, -103.733f}
+            };
+            for (auto& landmark : landmarks)
+            {
+              landmark = landmark / 1000.0f; // from millimeters to meters
+            }
+            m_landmarkRegistration->SetSourceLandmarks(landmarks);
+            m_landmarkRegistration->SetTargetLandmarks(m_points);
+            m_landmarkRegistration->CalculateTransformationAsync().then([this](float4x4 result)
+            {
+              m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"HeartModel", m_preopToReferenceName->From()), result, true);
+            });
+          }
+        };
+
+        callbackMap[L"reset points"] = [this](SpeechRecognitionResult ^ result)
+        {
+          m_points.clear();
         };
 
         callbackMap[L"stop pre op"] = [this](SpeechRecognitionResult ^ result)

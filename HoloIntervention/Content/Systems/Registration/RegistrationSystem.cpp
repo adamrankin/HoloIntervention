@@ -189,9 +189,9 @@ namespace HoloIntervention
         // Test each known registration method ReadConfigurationAsync and store if known
         for (auto pair :
              {
-               std::pair<std::wstring, std::shared_ptr<IRegistrationMethod>>(L"Optical", std::make_shared<OpticalRegistration>(m_notificationSystem, m_networkSystem)),
-               std::pair<std::wstring, std::shared_ptr<IRegistrationMethod>>(L"Camera", std::make_shared<CameraRegistration>(m_notificationSystem, m_networkSystem, m_modelRenderer)),
-               std::pair<std::wstring, std::shared_ptr<IRegistrationMethod>>(L"Manual", std::make_shared<ManualRegistration>(m_networkSystem))
+               std::pair<std::wstring, std::shared_ptr<Algorithm::IRegistrationMethod>>(L"Optical", std::make_shared<Algorithm::OpticalRegistration>(m_notificationSystem, m_networkSystem)),
+               std::pair<std::wstring, std::shared_ptr<Algorithm::IRegistrationMethod>>(L"Camera", std::make_shared<Algorithm::CameraRegistration>(m_notificationSystem, m_networkSystem, m_modelRenderer)),
+               std::pair<std::wstring, std::shared_ptr<Algorithm::IRegistrationMethod>>(L"Manual", std::make_shared<Algorithm::ManualRegistration>(m_networkSystem))
              })
         {
           bool result = pair.second->ReadConfigurationAsync(document).get();
@@ -221,7 +221,7 @@ namespace HoloIntervention
       , m_modelRenderer(modelRenderer)
       , m_physicsAPI(physicsAPI)
       , m_currentRegistrationMethod(nullptr)
-      , m_correctionMethod(std::make_shared<System::ManualRegistration>(networkSystem))
+      , m_correctionMethod(std::make_shared<Algorithm::ManualRegistration>(networkSystem))
     {
       m_modelRenderer.AddModelAsync(REGISTRATION_ANCHOR_MODEL_FILENAME).then([this](uint64 m_regAnchorModelId)
       {
@@ -320,7 +320,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     bool RegistrationSystem::IsCameraActive() const
     {
-      auto camReg = dynamic_cast<CameraRegistration*>(m_currentRegistrationMethod.get());
+      auto camReg = dynamic_cast<Algorithm::CameraRegistration*>(m_currentRegistrationMethod.get());
       return camReg != nullptr && camReg->IsCameraActive();
     }
 
@@ -351,7 +351,7 @@ namespace HoloIntervention
       callbackMap[L"start camera registration"] = [this](SpeechRecognitionResult ^ result)
       {
         std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
-        if (dynamic_cast<CameraRegistration*>(m_currentRegistrationMethod.get()) != nullptr && m_currentRegistrationMethod->IsStarted())
+        if (dynamic_cast<Algorithm::CameraRegistration*>(m_currentRegistrationMethod.get()) != nullptr && m_currentRegistrationMethod->IsStarted())
         {
           m_notificationSystem.QueueMessage(L"Registration already running.");
           return;
@@ -393,7 +393,7 @@ namespace HoloIntervention
       callbackMap[L"start optical registration"] = [this](SpeechRecognitionResult ^ result)
       {
         std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
-        if (dynamic_cast<OpticalRegistration*>(m_currentRegistrationMethod.get()) != nullptr && m_currentRegistrationMethod->IsStarted())
+        if (dynamic_cast<Algorithm::OpticalRegistration*>(m_currentRegistrationMethod.get()) != nullptr && m_currentRegistrationMethod->IsStarted())
         {
           m_notificationSystem.QueueMessage(L"Registration already running.");
           return;

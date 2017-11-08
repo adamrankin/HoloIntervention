@@ -188,6 +188,24 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    ModelEntry::ModelEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, UWPOpenIGTLink::Polydata^ polydata, DX::StepTimer& timer, Debug& debug)
+      : m_deviceResources(deviceResources)
+      , m_timer(timer)
+      , m_debug(debug)
+    {
+      try
+      {
+        CreateDeviceDependentResources();
+      }
+      catch (const std::exception& e)
+      {
+        HoloIntervention::LOG(LogLevelType::LOG_LEVEL_ERROR, std::string("Unable to load primitive. ") + e.what());
+        m_failedLoad = true;
+        return;
+      }
+    }
+
+    //----------------------------------------------------------------------------
     ModelEntry::~ModelEntry()
     {
       ReleaseDeviceDependentResources();

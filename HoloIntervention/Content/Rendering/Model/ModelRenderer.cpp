@@ -134,6 +134,33 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    concurrency::task<uint64> ModelRenderer::AddModelAsync(UWPOpenIGTLink::Polydata^ polydata)
+    {
+      return create_task([this, polydata]()
+      {
+        uint64 myId(0);
+        std::shared_ptr<ModelEntry> entry = std::make_shared<ModelEntry>(m_deviceResources, polydata, m_timer, m_debug);
+        {
+          std::lock_guard<std::mutex> guard(m_idMutex);
+          entry->SetId(m_nextUnusedId++);
+          myId = m_nextUnusedId - 1;
+        }
+        entry->SetVisible(true);
+
+        {
+          std::lock_guard<std::mutex> guard(m_modelListMutex);
+          m_models.push_back(entry);
+        }
+
+        while (!entry->IsLoaded() && !entry->FailedLoad())
+        {
+          std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+        return myId;
+      });
+    }
+
+    //----------------------------------------------------------------------------
     void ModelRenderer::RemoveModel(uint64 modelId)
     {
       std::lock_guard<std::mutex> guard(m_modelListMutex);

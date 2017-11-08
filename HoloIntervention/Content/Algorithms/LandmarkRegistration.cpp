@@ -37,7 +37,7 @@ using namespace Windows::Foundation::Numerics;
 
 namespace HoloIntervention
 {
-  namespace System
+  namespace Algorithm
   {
     namespace
     {

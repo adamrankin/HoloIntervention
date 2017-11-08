@@ -34,7 +34,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 namespace HoloIntervention
 {
-  namespace System
+  namespace Algorithm
   {
     class LandmarkRegistration
     {

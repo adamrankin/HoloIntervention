@@ -100,7 +100,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AppView.h" />
+    <ClInclude Include="Content\Algorithms\CameraRegistration.h" />
+    <ClInclude Include="Content\Algorithms\IRegistrationMethod.h" />
     <ClInclude Include="Content\Algorithms\KalmanFilter.h" />
+    <ClInclude Include="Content\Algorithms\LandmarkRegistration.h" />
+    <ClInclude Include="Content\Algorithms\ManualRegistration.h" />
+    <ClInclude Include="Content\Algorithms\OpticalRegistration.h" />
     <ClInclude Include="Content\Capture\VideoFrameProcessor.h" />
     <ClInclude Include="Content\Debug\Debug.h" />
     <ClInclude Include="Content\Input\IVoiceInput.h" />
@@ -139,11 +144,6 @@
     <ClInclude Include="Content\Systems\Imaging\ImagingSystem.h" />
     <ClInclude Include="Content\Systems\Network\NetworkSystem.h" />
     <ClInclude Include="Content\Systems\Notification\NotificationSystem.h" />
-    <ClInclude Include="Content\Systems\Registration\CameraRegistration.h" />
-    <ClInclude Include="Content\Systems\Registration\IRegistrationMethod.h" />
-    <ClInclude Include="Content\Systems\Registration\LandmarkRegistration.h" />
-    <ClInclude Include="Content\Systems\Registration\ManualRegistration.h" />
-    <ClInclude Include="Content\Systems\Registration\OpticalRegistration.h" />
     <ClInclude Include="Content\Systems\Registration\RegistrationSystem.h" />
     <ClInclude Include="Content\Systems\Splash\SplashSystem.h" />
     <ClInclude Include="Content\Systems\Task\TaskSystem.h" />
@@ -166,7 +166,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AppView.cpp" />
+    <ClCompile Include="Content\Algorithms\CameraRegistration.cpp" />
     <ClCompile Include="Content\Algorithms\KalmanFilter.cpp" />
+    <ClCompile Include="Content\Algorithms\LandmarkRegistration.cpp" />
+    <ClCompile Include="Content\Algorithms\ManualRegistration.cpp" />
+    <ClCompile Include="Content\Algorithms\OpticalRegistration.cpp" />
     <ClCompile Include="Content\Capture\VideoFrameProcessor.cpp" />
     <ClCompile Include="Content\Debug\Debug.cpp" />
     <ClCompile Include="Content\Input\SpatialSourceHandler.cpp" />
@@ -202,10 +206,6 @@
     <ClCompile Include="Content\Systems\Imaging\ImagingSystem.cpp" />
     <ClCompile Include="Content\Systems\Network\NetworkSystem.cpp" />
     <ClCompile Include="Content\Systems\Notification\NotificationSystem.cpp" />
-    <ClCompile Include="Content\Systems\Registration\CameraRegistration.cpp" />
-    <ClCompile Include="Content\Systems\Registration\LandmarkRegistration.cpp" />
-    <ClCompile Include="Content\Systems\Registration\ManualRegistration.cpp" />
-    <ClCompile Include="Content\Systems\Registration\OpticalRegistration.cpp" />
     <ClCompile Include="Content\Systems\Registration\RegistrationSystem.cpp" />
     <ClCompile Include="Content\Systems\Splash\SplashSystem.cpp" />
     <ClCompile Include="Content\Systems\Task\TaskSystem.cpp" />
@@ -236,6 +236,10 @@
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
     </None>
     <None Include="Assets\Models\gaze_cursor.cmo">
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
+    </None>
+    <None Include="Assets\Models\heart.cmo">
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
     </None>

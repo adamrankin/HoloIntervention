@@ -124,7 +124,7 @@ namespace HoloIntervention
     void UnregisterHolographicEventHandlers();
 
     // Check for any voice input commands
-    void InitializeVoiceSystem();
+    void RegisterVoiceCallbacks();
 
     // Set the focus point depending on the state of all the systems
     void SetHolographicFocusPoint(Windows::Graphics::Holographic::HolographicFramePrediction^ prediction,

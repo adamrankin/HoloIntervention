@@ -50,7 +50,7 @@ namespace HoloIntervention
     class ModelRenderer;
   }
 
-  namespace Algorithms
+  namespace Algorithm
   {
     class KalmanFilter;
   }
@@ -93,7 +93,7 @@ namespace HoloIntervention
       double                                      m_latestTimestamp = 0.0;
 
       // Kalman filter for smoothing and prediction
-      std::shared_ptr<Algorithms::KalmanFilter>   m_kalmanFilter = nullptr;
+      std::shared_ptr<Algorithm::KalmanFilter>    m_kalmanFilter = nullptr;
       std::atomic_bool                            m_firstDataPoint = true;
       cv::Mat                                     m_correctionMatrix = cv::Mat(7, 1, CV_32F);
     };

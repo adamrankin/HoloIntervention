@@ -70,7 +70,10 @@ namespace HoloIntervention
   {
     class NetworkSystem;
     class NotificationSystem;
+  }
 
+  namespace Algorithm
+  {
     class CameraRegistration : public IRegistrationMethod
     {
       typedef std::vector<uint32> ColourToCircleList;
@@ -110,7 +113,7 @@ namespace HoloIntervention
       virtual void Update(Windows::UI::Input::Spatial::SpatialPointerPose^ headPose, Windows::Perception::Spatial::SpatialCoordinateSystem^ hmdCoordinateSystem, Platform::IBox<Windows::Foundation::Numerics::float4x4>^ anchorToHMDBox);
 
     public:
-      CameraRegistration(NotificationSystem& notificationSystem, NetworkSystem& networkSystem, Rendering::ModelRenderer& modelRenderer);
+      CameraRegistration(System::NotificationSystem& notificationSystem, System::NetworkSystem& networkSystem, Rendering::ModelRenderer& modelRenderer);
       ~CameraRegistration();
 
       bool IsCameraActive() const;
@@ -141,8 +144,8 @@ namespace HoloIntervention
     protected:
       // Cached entries
       Rendering::ModelRenderer&                                             m_modelRenderer;
-      NotificationSystem&                                                   m_notificationSystem;
-      NetworkSystem&                                                        m_networkSystem;
+      System::NotificationSystem&                                           m_notificationSystem;
+      System::NetworkSystem&                                                m_networkSystem;
 
       // Visualization resources
       std::atomic_bool                                                      m_visualizationEnabled = false;

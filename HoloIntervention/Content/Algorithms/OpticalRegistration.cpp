@@ -42,12 +42,12 @@ using namespace Windows::UI::Input::Spatial;
 
 namespace HoloIntervention
 {
-  namespace System
+  namespace Algorithm
   {
     const float OpticalRegistration::MIN_DISTANCE_BETWEEN_POINTS_METER = 0.001f;
 
     //----------------------------------------------------------------------------
-    OpticalRegistration::OpticalRegistration(NotificationSystem& notificationSystem, NetworkSystem& networkSystem)
+    OpticalRegistration::OpticalRegistration(System::NotificationSystem& notificationSystem, System::NetworkSystem& networkSystem)
       : m_notificationSystem(notificationSystem)
       , m_networkSystem(networkSystem)
       , m_landmarkRegistration(std::make_shared<LandmarkRegistration>())

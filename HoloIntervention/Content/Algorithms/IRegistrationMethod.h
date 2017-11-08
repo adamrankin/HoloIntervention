@@ -32,7 +32,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 namespace HoloIntervention
 {
-  namespace System
+  namespace Algorithm
   {
     class IRegistrationMethod : public IStabilizedComponent, public IConfigurable
     {

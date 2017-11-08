@@ -66,6 +66,7 @@ namespace HoloIntervention
     class ModelEntry
     {
     public:
+      ModelEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, UWPOpenIGTLink::Polydata^ polydata, DX::StepTimer& timer, Debug& debug);
       ModelEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, const std::wstring& assetLocation, DX::StepTimer& timer, Debug& debug);
       ModelEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, PrimitiveType type, DX::StepTimer& timer, Debug& debug, Windows::Foundation::Numerics::float3 argument, size_t tessellation, bool rhcoords, bool invertn, Windows::Foundation::Numerics::float4 colour = Windows::Foundation::Numerics::float4(1.f, 1.f, 1.f, 1.f));
       ~ModelEntry();
@@ -135,19 +136,19 @@ namespace HoloIntervention
 
     protected:
       // Cached pointer to device resources.
-      std::shared_ptr<DX::DeviceResources>                m_deviceResources = nullptr;
-      const DX::CameraResources*                          m_cameraResources = nullptr;
-      DX::StepTimer&                                      m_timer;
-      Debug&                                              m_debug;
+      std::shared_ptr<DX::DeviceResources>                  m_deviceResources = nullptr;
+      const DX::CameraResources*                            m_cameraResources = nullptr;
+      DX::StepTimer&                                        m_timer;
+      Debug&                                                m_debug;
 
       // DirectXTK resources
-      std::unique_ptr<DirectX::CommonStates>              m_states = nullptr;
-      std::unique_ptr<DirectX::InstancedEffectFactory>    m_effectFactory = nullptr;
-      std::shared_ptr<DirectX::Model>                     m_model = nullptr;
+      std::unique_ptr<DirectX::CommonStates>                m_states = nullptr;
+      std::unique_ptr<DirectX::InstancedEffectFactory>      m_effectFactory = nullptr;
+      std::shared_ptr<DirectX::Model>                       m_model = nullptr;
 
       // Frustum checking
-      mutable std::atomic_bool                            m_isInFrustum;
-      mutable uint64                                      m_frustumCheckFrameNumber;
+      mutable std::atomic_bool                              m_isInFrustum;
+      mutable uint64                                        m_frustumCheckFrameNumber;
 
       // Primitive resources
       PrimitiveType                                         m_primitiveType = PrimitiveType_NONE;
@@ -160,24 +161,24 @@ namespace HoloIntervention
       Windows::Foundation::Numerics::float4                 m_originalColour = { 1.f, 1.f, 1.f, 1.f };
 
       // Model state
-      std::array<float, 6>                                m_modelBounds = { -1.f };
-      std::wstring                                        m_assetLocation;
-      std::map<DirectX::IEffect*, DirectX::XMFLOAT4>      m_defaultColours;
-      std::atomic_bool                                    m_wireframe = false;
-      Windows::Foundation::Numerics::float3               m_velocity = { 0.f, 0.f, 0.f };
-      Windows::Foundation::Numerics::float4x4             m_lastPose = Windows::Foundation::Numerics::float4x4::identity();
-      Windows::Foundation::Numerics::float4x4             m_currentPose = Windows::Foundation::Numerics::float4x4::identity();
-      Windows::Foundation::Numerics::float4x4             m_desiredPose = Windows::Foundation::Numerics::float4x4::identity();
+      std::array<float, 6>                                  m_modelBounds = { -1.f };
+      std::wstring                                          m_assetLocation;
+      std::map<DirectX::IEffect*, DirectX::XMFLOAT4>        m_defaultColours;
+      std::atomic_bool                                      m_wireframe = false;
+      Windows::Foundation::Numerics::float3                 m_velocity = { 0.f, 0.f, 0.f };
+      Windows::Foundation::Numerics::float4x4               m_lastPose = Windows::Foundation::Numerics::float4x4::identity();
+      Windows::Foundation::Numerics::float4x4               m_currentPose = Windows::Foundation::Numerics::float4x4::identity();
+      Windows::Foundation::Numerics::float4x4               m_desiredPose = Windows::Foundation::Numerics::float4x4::identity();
 
       // Model behavior
-      std::atomic_bool                                    m_visible = false;
-      std::atomic_bool                                    m_enableLerp = true;
-      float                                               m_poseLerpRate = 4.f;
-      uint64                                              m_id = INVALID_TOKEN;
+      std::atomic_bool                                      m_visible = false;
+      std::atomic_bool                                      m_enableLerp = true;
+      float                                                 m_poseLerpRate = 4.f;
+      uint64                                                m_id = INVALID_TOKEN;
 
       // Variables used with the rendering loop.
-      std::atomic_bool                                    m_loadingComplete = false;
-      std::atomic_bool                                    m_failedLoad = false;
+      std::atomic_bool                                      m_loadingComplete = false;
+      std::atomic_bool                                      m_failedLoad = false;
     };
   }
 }

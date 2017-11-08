@@ -28,8 +28,9 @@
   <PreOpImageTask
     IGTConnection="NDITracker"
     ModelName="LegoPhantom.stl"
-    From="PreOp"
-    To="Reference"
+    PhantomFrom="Phantom"
+    PhantomTo="Reference"
+    StylusFrom="StylusTip"
     />
 
   <CoordinateDefinitions>

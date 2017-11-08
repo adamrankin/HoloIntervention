@@ -61,6 +61,7 @@ namespace HoloIntervention
       void Render();
 
       concurrency::task<uint64> AddModelAsync(const std::wstring& assetLocation);
+      concurrency::task<uint64> AddModelAsync(UWPOpenIGTLink::Polydata^ polydata);
       concurrency::task<uint64> AddPrimitiveAsync(PrimitiveType type, Windows::Foundation::Numerics::float3 argument, size_t tessellation = 16, bool rhcoords = true, bool invertn = false);
       concurrency::task<uint64> AddPrimitiveAsync(const std::wstring& primitiveName, Windows::Foundation::Numerics::float3 argument, size_t tessellation = 16, bool rhcoords = true, bool invertn = false);
       concurrency::task<uint64> CloneAsync(uint64 modelId);

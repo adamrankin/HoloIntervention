@@ -90,7 +90,7 @@ namespace HoloIntervention
       , m_hashedConnectionName(hashedConnectionName)
       , m_transformRepository(transformRepository)
       , m_coordinateFrame(coordinateFrame)
-      , m_kalmanFilter(std::make_shared<Algorithms::KalmanFilter>(18, 6, 0))
+      , m_kalmanFilter(std::make_shared<Algorithm::KalmanFilter>(18, 6, 0))
     {
       m_componentReady = true;
     }
@@ -101,7 +101,7 @@ namespace HoloIntervention
       , m_networkSystem(networkSystem)
       , m_hashedConnectionName(hashedConnectionName)
       , m_transformRepository(transformRepository)
-      , m_kalmanFilter(std::make_shared<Algorithms::KalmanFilter>(21, 7, 0)) // position as x, y, z -- rotation as quaternion x, y, z, w
+      , m_kalmanFilter(std::make_shared<Algorithm::KalmanFilter>(21, 7, 0)) // position as x, y, z -- rotation as quaternion x, y, z, w
     {
       m_coordinateFrame = ref new UWPOpenIGTLink::TransformName(ref new Platform::String(coordinateFrame.c_str()));
 

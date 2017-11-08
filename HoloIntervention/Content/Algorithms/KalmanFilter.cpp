@@ -30,7 +30,7 @@ using namespace cv;
 
 namespace HoloIntervention
 {
-  namespace Algorithms
+  namespace Algorithm
   {
     //----------------------------------------------------------------------------
     KalmanFilter::KalmanFilter(int dynamParams, int measureParams, int controlParams)

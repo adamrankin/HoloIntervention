@@ -52,9 +52,6 @@
     <ClCompile Include="Content\Systems\Tool\ToolSystem.cpp">
       <Filter>Content\Systems\Tools</Filter>
     </ClCompile>
-    <ClCompile Include="Content\Systems\Registration\CameraRegistration.cpp">
-      <Filter>Content\Systems\Registration\Camera</Filter>
-    </ClCompile>
     <ClCompile Include="Content\Capture\VideoFrameProcessor.cpp">
       <Filter>Content\Capture</Filter>
     </ClCompile>
@@ -136,17 +133,8 @@
     <ClCompile Include="Content\Rendering\RenderingCommon.cxx">
       <Filter>Content\Rendering</Filter>
     </ClCompile>
-    <ClCompile Include="Content\Systems\Registration\OpticalRegistration.cpp">
-      <Filter>Content\Systems\Registration\Optical</Filter>
-    </ClCompile>
     <ClCompile Include="Content\Algorithms\KalmanFilter.cpp">
       <Filter>Content\Algorithms\Kalman</Filter>
-    </ClCompile>
-    <ClCompile Include="Content\Systems\Registration\ManualRegistration.cpp">
-      <Filter>Content\Systems\Registration\Manual</Filter>
-    </ClCompile>
-    <ClCompile Include="Content\Systems\Registration\LandmarkRegistration.cpp">
-      <Filter>Content\Systems\Registration</Filter>
     </ClCompile>
     <ClCompile Include="Content\Input\SpatialInput.cpp">
       <Filter>Content\Input\SpatialInput</Filter>
@@ -165,6 +153,18 @@
     </ClCompile>
     <ClCompile Include="Content\Debug\Debug.cpp">
       <Filter>Content\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Algorithms\LandmarkRegistration.cpp">
+      <Filter>Content\Algorithms</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Algorithms\OpticalRegistration.cpp">
+      <Filter>Content\Algorithms\Optical</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Algorithms\ManualRegistration.cpp">
+      <Filter>Content\Algorithms\Manual</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Algorithms\CameraRegistration.cpp">
+      <Filter>Content\Algorithms\Camera</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -215,9 +215,6 @@
     </ClInclude>
     <ClInclude Include="Content\Systems\Tool\ToolSystem.h">
       <Filter>Content\Systems\Tools</Filter>
-    </ClInclude>
-    <ClInclude Include="Content\Systems\Registration\CameraRegistration.h">
-      <Filter>Content\Systems\Registration\Camera</Filter>
     </ClInclude>
     <ClInclude Include="Content\Capture\VideoFrameProcessor.h">
       <Filter>Content\Capture</Filter>
@@ -324,23 +321,11 @@
     <ClInclude Include="Core\IConfigurable.h">
       <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="Content\Systems\Registration\OpticalRegistration.h">
-      <Filter>Content\Systems\Registration\Optical</Filter>
-    </ClInclude>
-    <ClInclude Include="Content\Systems\Registration\IRegistrationMethod.h">
-      <Filter>Content\Systems\Registration</Filter>
-    </ClInclude>
     <ClInclude Include="Content\Algorithms\KalmanFilter.h">
       <Filter>Content\Algorithms\Kalman</Filter>
     </ClInclude>
-    <ClInclude Include="Content\Systems\Registration\ManualRegistration.h">
-      <Filter>Content\Systems\Registration\Manual</Filter>
-    </ClInclude>
     <ClInclude Include="Core\Configuration.h">
       <Filter>Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Content\Systems\Registration\LandmarkRegistration.h">
-      <Filter>Content\Systems\Registration</Filter>
     </ClInclude>
     <ClInclude Include="Content\Input\SpatialInput.h">
       <Filter>Content\Input\SpatialInput</Filter>
@@ -359,6 +344,21 @@
     </ClInclude>
     <ClInclude Include="Content\Debug\Debug.h">
       <Filter>Content\Debug</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Algorithms\IRegistrationMethod.h">
+      <Filter>Content\Algorithms</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Algorithms\LandmarkRegistration.h">
+      <Filter>Content\Algorithms</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Algorithms\OpticalRegistration.h">
+      <Filter>Content\Algorithms\Optical</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Algorithms\ManualRegistration.h">
+      <Filter>Content\Algorithms\Manual</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Algorithms\CameraRegistration.h">
+      <Filter>Content\Algorithms\Camera</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -595,6 +595,9 @@
     <None Include="Assets\Models\Tools\stylus.cmo">
       <Filter>Assets\Models\Tools</Filter>
     </None>
+    <None Include="Assets\Models\heart.cmo">
+      <Filter>Assets\Models</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Content">
@@ -687,9 +690,6 @@
     <Filter Include="Content\Systems\Imaging">
       <UniqueIdentifier>{4a1cdeda-e9eb-485e-8933-79c8c9ef49b4}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Content\Systems\Registration\Camera">
-      <UniqueIdentifier>{51115ad3-67e3-4e0f-8bc0-c4d42023c829}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Content\Capture">
       <UniqueIdentifier>{1037916d-19bc-4828-8cac-31114b66c211}</UniqueIdentifier>
     </Filter>
@@ -729,17 +729,11 @@
     <Filter Include="Content\Rendering\MeshRenderer\Shaders">
       <UniqueIdentifier>{d194b49e-a3a5-46c4-aa82-0ac812d4d39d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Content\Systems\Registration\Optical">
-      <UniqueIdentifier>{6acd74ab-a1e7-4c51-a802-a913e17d4fbb}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Content\Algorithms">
       <UniqueIdentifier>{2325d3d6-534b-4373-a158-8566da345b58}</UniqueIdentifier>
     </Filter>
     <Filter Include="Content\Algorithms\Kalman">
       <UniqueIdentifier>{fc7a8fed-30a1-4440-8eb7-efeba82be2f8}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Content\Systems\Registration\Manual">
-      <UniqueIdentifier>{da06830a-f055-4454-998b-362184d66f4b}</UniqueIdentifier>
     </Filter>
     <Filter Include="Content\Input\SpatialInput">
       <UniqueIdentifier>{646177ae-08c6-4de3-b4c4-77ba1ad9e48f}</UniqueIdentifier>
@@ -752,6 +746,15 @@
     </Filter>
     <Filter Include="Content\Debug">
       <UniqueIdentifier>{7c556e33-521e-4cf8-b4ce-ff3be89d2ba7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Algorithms\Camera">
+      <UniqueIdentifier>{51115ad3-67e3-4e0f-8bc0-c4d42023c829}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Algorithms\Manual">
+      <UniqueIdentifier>{da06830a-f055-4454-998b-362184d66f4b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Algorithms\Optical">
+      <UniqueIdentifier>{6acd74ab-a1e7-4c51-a802-a913e17d4fbb}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
