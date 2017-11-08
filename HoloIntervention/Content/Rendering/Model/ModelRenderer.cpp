@@ -94,12 +94,12 @@ namespace HoloIntervention
       }
 #endif
 
-      //SpatialBoundingFrustum frustum;
-      //m_cameraResources->GetLatestSpatialBoundingFrustum(frustum);
+      SpatialBoundingFrustum frustum;
+      m_cameraResources->GetLatestSpatialBoundingFrustum(frustum);
 
       for (auto& model : m_models)
       {
-        if (model->IsVisible()) //&& model->IsInFrustum(frustum))
+        if (model->IsVisible() && model->IsInFrustum(frustum))
         {
           model->Render();
         }

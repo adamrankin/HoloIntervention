@@ -205,49 +205,46 @@ namespace HoloIntervention
         // TODO : add more robust error handling
         m_notificationSystem->QueueMessage("Unable to initialize surface observer.");
       }
-    });
 
-    LoadAppStateAsync();
-
-    LOG(LogLevelType::LOG_LEVEL_INFO, "Engine loading...");
-
-    create_task([this]()
-    {
-      uint32 componentsReady(0);
-      bool engineReady(true);
-
-      auto messageId = m_notificationSystem->QueueMessage(L"Loading ... 0%");
-
-      do
+      LoadAppStateAsync().then([this]()
       {
-        componentsReady = 0;
-        engineReady = true;
+        LOG(LogLevelType::LOG_LEVEL_INFO, "Engine loading...");
+        uint32 componentsReady(0);
+        bool engineReady(true);
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(16));
+        auto messageId = m_notificationSystem->QueueMessage(L"Loading ... 0%");
 
-        for (auto& component : m_engineComponents)
+        do
         {
-          engineReady = engineReady && component->IsReady();
-          if (component->IsReady())
+          componentsReady = 0;
+          engineReady = true;
+
+          std::this_thread::sleep_for(std::chrono::milliseconds(16));
+
+          for (auto& component : m_engineComponents)
           {
-            componentsReady++;
+            engineReady = engineReady && component->IsReady();
+            if (component->IsReady())
+            {
+              componentsReady++;
+            }
           }
+
+          m_notificationSystem->RemoveMessage(messageId);
+          std::wstringstream wss;
+          wss << L"Loading ... " << std::fixed << std::setprecision(1) << ((double)componentsReady / m_engineComponents.size() * 100) << L"%";
+          messageId = m_notificationSystem->QueueMessage(wss.str());
         }
+        while (!engineReady);
 
-        m_notificationSystem->RemoveMessage(messageId);
-        std::wstringstream wss;
-        wss << L"Loading ... " << std::fixed << std::setprecision(1) << ((double)componentsReady / m_engineComponents.size() * 100) << L"%";
-        messageId = m_notificationSystem->QueueMessage(wss.str());
-      }
-      while (!engineReady);
+        m_engineReady = true;
+      }).then([this]()
+      {
+        LOG(LogLevelType::LOG_LEVEL_INFO, "Engine loaded.");
 
-      m_engineReady = true;
-    }).then([this]()
-    {
-      LOG(LogLevelType::LOG_LEVEL_INFO, "Engine loaded.");
-
-      m_splashSystem->EndSplash();
-      m_voiceInput->EnableVoiceAnalysis(true);
+        m_splashSystem->EndSplash();
+        m_voiceInput->EnableVoiceAnalysis(true);
+      });
     });
   }
 
@@ -431,17 +428,18 @@ namespace HoloIntervention
   //----------------------------------------------------------------------------
   task<void> HoloInterventionCore::LoadAppStateAsync()
   {
-    if (m_physicsAPI == nullptr || m_registrationSystem == nullptr ||
-        !m_physicsAPI->IsReady() || !m_registrationSystem->IsReady())
+    return create_task([this]()
     {
-      // This can happen when the app is starting
-      return create_task([]() {});
-    }
+      while (m_physicsAPI == nullptr || m_registrationSystem == nullptr || !m_physicsAPI->IsReady() || !m_registrationSystem->IsReady())
+      {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      }
 
-    return m_physicsAPI->LoadAppStateAsync().then([ = ]()
-    {
-      // Registration must follow spatial due to anchor store
-      m_registrationSystem->LoadAppStateAsync();
+      return m_physicsAPI->LoadAppStateAsync().then([this]()
+      {
+        // Registration must follow spatial due to anchor store
+        m_registrationSystem->LoadAppStateAsync();
+      });
     });
   }
 
@@ -478,21 +476,21 @@ namespace HoloIntervention
 
     switch (sender->Locatability)
     {
-      case SpatialLocatability::Unavailable:
-      {
-        m_notificationSystem->QueueMessage(L"Warning! Positional tracking is unavailable.");
-      }
+    case SpatialLocatability::Unavailable:
+    {
+      m_notificationSystem->QueueMessage(L"Warning! Positional tracking is unavailable.");
+    }
+    break;
+
+    case SpatialLocatability::PositionalTrackingActivating:
+    case SpatialLocatability::OrientationOnly:
+    case SpatialLocatability::PositionalTrackingInhibited:
+      // Gaze-locked content still valid
       break;
 
-      case SpatialLocatability::PositionalTrackingActivating:
-      case SpatialLocatability::OrientationOnly:
-      case SpatialLocatability::PositionalTrackingInhibited:
-        // Gaze-locked content still valid
-        break;
-
-      case SpatialLocatability::PositionalTrackingActive:
-        m_notificationSystem->QueueMessage(L"Positional tracking is active.");
-        break;
+    case SpatialLocatability::PositionalTrackingActive:
+      m_notificationSystem->QueueMessage(L"Positional tracking is active.");
+      break;
     }
   }
 

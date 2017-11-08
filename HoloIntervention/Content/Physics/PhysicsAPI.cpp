@@ -210,67 +210,66 @@ namespace HoloIntervention
         m_surfaceObserver = nullptr;
       }
 
-      auto initSurfaceObserverTask = create_task(SpatialSurfaceObserver::RequestAccessAsync());
-      return initSurfaceObserverTask.then([this, coordinateSystem](Windows::Perception::Spatial::SpatialPerceptionAccessStatus status)
+      return create_task(SpatialSurfaceObserver::RequestAccessAsync()).then([this, coordinateSystem](Windows::Perception::Spatial::SpatialPerceptionAccessStatus status)
       {
         switch (status)
         {
-          case SpatialPerceptionAccessStatus::Allowed:
-          {
-            m_surfaceMeshOptions = ref new SpatialSurfaceMeshOptions();
+        case SpatialPerceptionAccessStatus::Allowed:
+        {
+          m_surfaceMeshOptions = ref new SpatialSurfaceMeshOptions();
 
-            IVectorView<DirectXPixelFormat>^ supportedVertexPositionFormats = m_surfaceMeshOptions->SupportedVertexPositionFormats;
-            unsigned int formatIndex = 0;
-            if (supportedVertexPositionFormats->IndexOf(DirectXPixelFormat::R32G32B32Float, &formatIndex))
-            {
-              m_surfaceMeshOptions->VertexPositionFormat = DirectXPixelFormat::R32G32B32Float;
-            }
-            else if (supportedVertexPositionFormats->IndexOf(DirectXPixelFormat::R32G32B32A32Float, &formatIndex))
-            {
-              m_surfaceMeshOptions->VertexPositionFormat = DirectXPixelFormat::R32G32B32A32Float;
-            }
-            else
-            {
-              LOG(LogLevelType::LOG_LEVEL_WARNING, "Cannot load desired vertex position format.");
-            }
+          IVectorView<DirectXPixelFormat>^ supportedVertexPositionFormats = m_surfaceMeshOptions->SupportedVertexPositionFormats;
+          unsigned int formatIndex = 0;
+          if (supportedVertexPositionFormats->IndexOf(DirectXPixelFormat::R32G32B32Float, &formatIndex))
+          {
+            m_surfaceMeshOptions->VertexPositionFormat = DirectXPixelFormat::R32G32B32Float;
+          }
+          else if (supportedVertexPositionFormats->IndexOf(DirectXPixelFormat::R32G32B32A32Float, &formatIndex))
+          {
+            m_surfaceMeshOptions->VertexPositionFormat = DirectXPixelFormat::R32G32B32A32Float;
+          }
+          else
+          {
+            LOG(LogLevelType::LOG_LEVEL_WARNING, "Cannot load desired vertex position format.");
+          }
 
-            // Our shader pipeline can handle a variety of triangle index formats
-            IVectorView<DirectXPixelFormat>^ supportedTriangleIndexFormats = m_surfaceMeshOptions->SupportedTriangleIndexFormats;
-            if (supportedTriangleIndexFormats->IndexOf(DirectXPixelFormat::R32UInt, &formatIndex))
-            {
-              m_surfaceMeshOptions->TriangleIndexFormat = DirectXPixelFormat::R32UInt;
-            }
-            else
-            {
-              LOG(LogLevelType::LOG_LEVEL_WARNING, "Cannot load desired index format.");
-            }
+          // Our shader pipeline can handle a variety of triangle index formats
+          IVectorView<DirectXPixelFormat>^ supportedTriangleIndexFormats = m_surfaceMeshOptions->SupportedTriangleIndexFormats;
+          if (supportedTriangleIndexFormats->IndexOf(DirectXPixelFormat::R32UInt, &formatIndex))
+          {
+            m_surfaceMeshOptions->TriangleIndexFormat = DirectXPixelFormat::R32UInt;
+          }
+          else
+          {
+            LOG(LogLevelType::LOG_LEVEL_WARNING, "Cannot load desired index format.");
+          }
 
-            if (m_surfaceObserver == nullptr)
-            {
-              m_surfaceObserver = ref new SpatialSurfaceObserver();
-              UpdateSurfaceObserverPosition(coordinateSystem);
-            }
-          }
-          break;
-          case SpatialPerceptionAccessStatus::DeniedBySystem:
+          if (m_surfaceObserver == nullptr)
           {
-            LOG(LogLevelType::LOG_LEVEL_ERROR, "Error: Cannot initialize surface observer because the system denied access to the spatialPerception capability.");
+            m_surfaceObserver = ref new SpatialSurfaceObserver();
+            UpdateSurfaceObserverPosition(coordinateSystem);
           }
+        }
+        break;
+        case SpatialPerceptionAccessStatus::DeniedBySystem:
+        {
+          LOG(LogLevelType::LOG_LEVEL_ERROR, "Error: Cannot initialize surface observer because the system denied access to the spatialPerception capability.");
+        }
+        break;
+        case SpatialPerceptionAccessStatus::DeniedByUser:
+        {
+          LOG(LogLevelType::LOG_LEVEL_ERROR, "Error: Cannot initialize surface observer because the user denied access to the spatialPerception capability.");
+        }
+        break;
+        case SpatialPerceptionAccessStatus::Unspecified:
+        {
+          LOG(LogLevelType::LOG_LEVEL_ERROR, "Error: Cannot initialize surface observer. Access was denied for an unspecified reason.");
+        }
+        break;
+        default:
+          // unreachable
+          assert(false);
           break;
-          case SpatialPerceptionAccessStatus::DeniedByUser:
-          {
-            LOG(LogLevelType::LOG_LEVEL_ERROR, "Error: Cannot initialize surface observer because the user denied access to the spatialPerception capability.");
-          }
-          break;
-          case SpatialPerceptionAccessStatus::Unspecified:
-          {
-            LOG(LogLevelType::LOG_LEVEL_ERROR, "Error: Cannot initialize surface observer. Access was denied for an unspecified reason.");
-          }
-          break;
-          default:
-            // unreachable
-            assert(false);
-            break;
         }
 
         if (m_surfaceObserver != nullptr)
@@ -307,7 +306,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     task<void> PhysicsAPI::SaveAppStateAsync()
     {
-      return task<SpatialAnchorStore^>(SpatialAnchorManager::RequestStoreAsync()).then([ = ](SpatialAnchorStore ^ store)
+      return create_task(SpatialAnchorManager::RequestStoreAsync()).then([this](SpatialAnchorStore ^ store)
       {
         std::lock_guard<std::mutex> guard(m_anchorMutex);
         if (store == nullptr)
@@ -317,14 +316,14 @@ namespace HoloIntervention
 
         for (auto pair : m_spatialAnchors)
         {
-          if (!store->TrySave(pair.first, pair.second))
+          bool result;
+          try
           {
-            // Only retry once
-            store->Remove(pair.first);
-            if (!store->TrySave(pair.first, pair.second))
-            {
-              m_notificationSystem.QueueMessage(L"Unable to save spatial anchor " + pair.first);
-            }
+            result = store->TrySave(pair.first, pair.second);
+          }
+          catch (Platform::Exception^ e)
+          {
+            WLOG_ERROR(L"Unable to save anchor: " + e->Message);
           }
         }
       });
@@ -335,7 +334,7 @@ namespace HoloIntervention
     {
       m_spatialAnchors.clear();
 
-      return task<SpatialAnchorStore^>(SpatialAnchorManager::RequestStoreAsync()).then([ = ](SpatialAnchorStore ^ store)
+      return create_task(SpatialAnchorManager::RequestStoreAsync()).then([this](SpatialAnchorStore ^ store)
       {
         std::lock_guard<std::mutex> guard(m_anchorMutex);
         if (store == nullptr)
@@ -347,7 +346,10 @@ namespace HoloIntervention
         Windows::Foundation::Collections::IMapView<Platform::String^, SpatialAnchor^>^ output = store->GetAllSavedAnchors();
         for (auto pair : output)
         {
-          m_spatialAnchors[pair->Key] = pair->Value;
+          if (m_spatialAnchors.find(pair->Key) == end(m_spatialAnchors))
+          {
+            m_spatialAnchors[pair->Key] = pair->Value;
+          }
         }
       });
     }
