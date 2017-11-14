@@ -65,7 +65,7 @@ namespace HoloIntervention
   namespace System
   {
     Platform::String^ RegistrationSystem::REGISTRATION_ANCHOR_NAME = ref new Platform::String(L"Registration");
-    const std::wstring RegistrationSystem::REGISTRATION_ANCHOR_MODEL_FILENAME = L"Assets/Models/anchor.cmo";
+    const std::wstring RegistrationSystem::REGISTRATION_ANCHOR_MODEL_FILENAME = L"anchor";
 
     //----------------------------------------------------------------------------
     float3 RegistrationSystem::GetStabilizedPosition(SpatialPointerPose^ pose) const
@@ -102,34 +102,19 @@ namespace HoloIntervention
       {
         m_currentRegistrationMethod->GetStabilizedVelocity();
       }
-      if (m_regAnchor != nullptr)
-      {
-        return m_regAnchorModel->GetVelocity();
-      }
 
-      // Nothing completed yet, this shouldn't even be called because in this case, priority returns not active
-      assert(false);
-      return float3(0.f, 0.f, 0.f);
+      return m_regAnchor != nullptr ? m_regAnchorModel->GetVelocity() : float3(0.f, 0.f, 0.f);
     }
 
     //----------------------------------------------------------------------------
     float RegistrationSystem::GetStabilizePriority() const
     {
       std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
-      if (m_currentRegistrationMethod == nullptr)
-      {
-        return PRIORITY_NOT_ACTIVE;
-      }
       if (m_currentRegistrationMethod->IsStabilizationActive())
       {
         return m_currentRegistrationMethod->GetStabilizePriority();
       }
-      if (m_regAnchor != nullptr)
-      {
-        return m_regAnchorModel->IsInFrustum() ? PRIORITY_REGISTRATION : PRIORITY_NOT_ACTIVE;
-      }
-
-      return PRIORITY_NOT_ACTIVE;
+      return m_regAnchorModel != nullptr && m_regAnchorModel->IsInFrustum() ? PRIORITY_REGISTRATION : PRIORITY_NOT_ACTIVE;
     }
 
     //----------------------------------------------------------------------------
@@ -148,22 +133,35 @@ namespace HoloIntervention
         auto trName = ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD");
         repo->SetTransform(trName, m_correctionMethod->GetRegistrationTransformation() * m_cachedRegistrationTransform, true);
         repo->SetTransformPersistent(trName, true);
+        trName = ref new UWPOpenIGTLink::TransformName(L"Correction", L"HMD");
+        repo->SetTransform(trName, m_correctionMethod->GetRegistrationTransformation(), true);
+        repo->SetTransformPersistent(trName, true);
         repo->WriteConfiguration(document);
 
-        auto task = m_correctionMethod->WriteConfigurationAsync(document);
-        auto result = task.get();
-        if (!result)
+        return m_correctionMethod->WriteConfigurationAsync(document).then([this, document](bool result)
         {
-          return task_from_result(false);
-        }
+          if (!result)
+          {
+            return task_from_result(false);
+          }
 
-        std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
-        for (auto& regMethod : m_knownRegistrationMethods)
-        {
-          regMethod.second->WriteConfigurationAsync(document);
-        }
+          std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
+          std::vector<task<bool>> taskList;
+          for (auto& regMethod : m_knownRegistrationMethods)
+          {
+            taskList.push_back(regMethod.second->WriteConfigurationAsync(document));
+          }
 
-        return task_from_result(true);
+          return when_all(begin(taskList), end(taskList)).then([this](std::vector<bool> results)
+          {
+            bool result(true);
+            for (auto r : results)
+            {
+              result &= r;
+            }
+            return result;
+          });
+        });
       });
     }
 
@@ -206,6 +204,13 @@ namespace HoloIntervention
         if (!result)
         {
           return false;
+        }
+
+        trName = ref new UWPOpenIGTLink::TransformName(L"Correction", L"HMD");
+        temp = repo->GetTransform(trName);
+        if (temp->Key)
+        {
+          m_cachedCorrectionTransform = transpose(temp->Value);
         }
         m_configDocument = document;
         m_componentReady = true;

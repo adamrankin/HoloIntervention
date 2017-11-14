@@ -155,11 +155,11 @@ namespace HoloIntervention
           {
             try
             {
-              m_stylusTipTransformName = ref new UWPOpenIGTLink::TransformName(fromName, m_preopToReferenceName->From());
+              m_stylusTipTransformName = ref new UWPOpenIGTLink::TransformName(fromName, m_preopToReferenceName->To());
             }
             catch (Platform::Exception^)
             {
-              LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to construct StylusTipTransformName from " + fromName + L" and " + m_preopToReferenceName->From() + L" attributes. Cannot configure TouchingSphereTask.");
+              LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to construct StylusTipTransformName from " + fromName + L" and " + m_preopToReferenceName->To() + L" attributes. Cannot configure TouchingSphereTask.");
               return false;
             }
           }
@@ -192,7 +192,7 @@ namespace HoloIntervention
       //----------------------------------------------------------------------------
       float PreOpImageTask::GetStabilizePriority() const
       {
-        return (m_taskStarted && m_modelEntry != nullptr) ? PRIORITY_PHANTOM_TASK : PRIORITY_NOT_ACTIVE;
+        return (m_taskStarted && m_modelEntry != nullptr && m_modelEntry->IsInFrustum()) ? PRIORITY_PHANTOM_TASK : PRIORITY_NOT_ACTIVE;
       }
 
       //----------------------------------------------------------------------------

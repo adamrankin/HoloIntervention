@@ -241,7 +241,7 @@ namespace HoloIntervention
       //----------------------------------------------------------------------------
       float TouchingSphereTask::GetStabilizePriority() const
       {
-        return m_taskStarted ? PRIORITY_PHANTOM_TASK : PRIORITY_NOT_ACTIVE;
+        return m_taskStarted && m_targetModel != nullptr && m_targetModel->IsInFrustum() ? PRIORITY_PHANTOM_TASK : PRIORITY_NOT_ACTIVE;
       }
 
       //----------------------------------------------------------------------------
