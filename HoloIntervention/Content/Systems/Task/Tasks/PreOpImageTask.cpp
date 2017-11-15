@@ -254,9 +254,7 @@ namespace HoloIntervention
           {
             m_modelEntry = m_modelRenderer.GetModel(modelId);
           });
-          /*
-          // TODO : get this up and running
-          // for demo, load from file
+
           if (m_modelEntry != nullptr)
           {
             m_notificationSystem.QueueMessage(L"Starting phantom task.");
@@ -313,7 +311,6 @@ namespace HoloIntervention
               m_taskStarted = true;
             });
           }
-          */
         };
 
         callbackMap[L"record point"] = [this](SpeechRecognitionResult ^ result)

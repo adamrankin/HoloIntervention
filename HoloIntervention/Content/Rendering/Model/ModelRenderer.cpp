@@ -134,7 +134,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    concurrency::task<uint64> ModelRenderer::AddModelAsync(UWPOpenIGTLink::Polydata^ polydata)
+    task<uint64> ModelRenderer::AddModelAsync(UWPOpenIGTLink::Polydata^ polydata)
     {
       return create_task([this, polydata]()
       {

@@ -193,6 +193,8 @@ namespace HoloIntervention
       , m_timer(timer)
       , m_debug(debug)
     {
+
+
       try
       {
         CreateDeviceDependentResources();
