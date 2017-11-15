@@ -34,6 +34,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 // DirectXTK includes
 #include <CommonStates.h>
 #include <DirectXHelper.h>
+#include <DirectXHelpers.h>
 #include <Effects.h>
 #include <InstancedEffects.h>
 #include <InstancedGeometricPrimitive.h>
@@ -53,6 +54,203 @@ using namespace Windows::Foundation::Numerics;
 using namespace Windows::Perception::Spatial;
 using namespace Windows::Storage;
 using namespace Windows::UI::Input::Spatial;
+
+namespace DirectX
+{
+  struct Material
+  {
+    DirectX::XMFLOAT4   Ambient;
+    DirectX::XMFLOAT4   Diffuse;
+    DirectX::XMFLOAT4   Specular;
+    float               SpecularPower;
+    DirectX::XMFLOAT4   Emissive;
+    DirectX::XMFLOAT4X4 UVTransform;
+  };
+
+  const Material DEFAULT_MATERIAL =
+  {
+    { 0.2f, 0.2f, 0.2f, 1.f },
+    { 0.8f, 0.8f, 0.8f, 1.f },
+    { 0.0f, 0.0f, 0.0f, 1.f },
+    1.f,
+    { 0.0f, 0.0f, 0.0f, 1.0f },
+    {
+      1.f, 0.f, 0.f, 0.f,
+      0.f, 1.f, 0.f, 0.f,
+      0.f, 0.f, 1.f, 0.f,
+      0.f, 0.f, 0.f, 1.f
+    },
+  };
+
+  //----------------------------------------------------------------------------
+  // Helper for creating a D3D input layout.
+  static void CreateInputLayout(_In_ ID3D11Device* device, IEffect* effect, _Out_ ID3D11InputLayout** pInputLayout)
+  {
+    void const* shaderByteCode;
+    size_t byteCodeLength;
+
+    effect->GetVertexShaderBytecode(&shaderByteCode, &byteCodeLength);
+
+    DX::ThrowIfFailed(
+      device->CreateInputLayout(VertexPositionNormalColorTexture::InputElements,
+                                VertexPositionNormalColorTexture::InputElementCount,
+                                shaderByteCode, byteCodeLength,
+                                pInputLayout)
+    );
+    _Analysis_assume_(*pInputLayout != 0);
+
+    SetDebugObjectName(*pInputLayout, "ModelCMO");
+  }
+
+  //----------------------------------------------------------------------------
+  std::unique_ptr<DirectX::Model> CreateFromPolyData(ID3D11Device* d3dDevice, IEffectFactory& fxFactory, UWPOpenIGTLink::Polydata^ polyData)
+  {
+    std::unique_ptr<Model> model(new Model());
+
+    //polyData->Indices
+    //polyData->Normals
+    //polyData->Points
+    //polyData->Colours
+    //polyData->TextureCoords
+
+    // Mesh name
+    auto mesh = std::make_shared<ModelMesh>();
+    mesh->name = L"PolyDataMesh";
+    mesh->ccw = true;
+    mesh->pmalpha = false;
+
+    // Indices
+    size_t ibBytes = sizeof(USHORT) * polyData->Indices->Size;
+
+    ComPtr<ID3D11Buffer> indexBuffer;
+    D3D11_BUFFER_DESC buffer_desc = {};
+    buffer_desc.Usage = D3D11_USAGE_DEFAULT;
+    buffer_desc.ByteWidth = static_cast<UINT>(ibBytes);
+    buffer_desc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+
+    D3D11_SUBRESOURCE_DATA indexBufferInitData = {};
+    std::vector<uint16> indices;
+    std::copy(begin(polyData->Indices), end(polyData->Indices), begin(indices));
+    indexBufferInitData.pSysMem = &indices.front();
+
+    DX::ThrowIfFailed(d3dDevice->CreateBuffer(&buffer_desc, &indexBufferInitData, &indexBuffer));
+#if defined(_DEBUG)
+    DirectX::SetDebugObjectName(indexBuffer.Get(), "ModelPolyData");
+#endif
+
+    // Determine extents while constructing vertex entries
+    float minX = polyData->Points->GetAt(0).x;
+    float maxX = polyData->Points->GetAt(0).x;
+    float minY = polyData->Points->GetAt(0).y;
+    float maxY = polyData->Points->GetAt(0).y;
+    float minZ = polyData->Points->GetAt(0).z;
+    float maxZ = polyData->Points->GetAt(0).z;
+
+    std::vector<VertexPositionNormalColorTexture> vertices;
+    for (uint32 i = 0; i < polyData->Points->Size; ++i)
+    {
+      VertexPositionNormalColorTexture entry;
+      entry.position = XMFLOAT3(polyData->Points->GetAt(i).x, polyData->Points->GetAt(i).y, polyData->Points->GetAt(i).z);
+
+      entry.normal = XMFLOAT3(0.f, 0.f, 0.f);
+      if (polyData->Normals->Size == polyData->Points->Size)
+      {
+        entry.normal = XMFLOAT3(polyData->Normals->GetAt(i).x, polyData->Normals->GetAt(i).y, polyData->Normals->GetAt(i).z);
+      }
+      entry.color = XMFLOAT4(1.f, 1.f, 1.f, 1.f);
+      if (polyData->Colours->Size == polyData->Colours->Size)
+      {
+        entry.color = XMFLOAT4(polyData->Colours->GetAt(i).x, polyData->Colours->GetAt(i).y, polyData->Colours->GetAt(i).z, polyData->Colours->GetAt(i).w);
+      }
+      entry.textureCoordinate = XMFLOAT2(0.f, 0.f);
+      if (polyData->TextureCoords->Size == polyData->TextureCoords->Size)
+      {
+        entry.textureCoordinate = XMFLOAT2(polyData->TextureCoords->GetAt(i).x, polyData->TextureCoords->GetAt(i).y);
+      }
+
+      minX = entry.position.x < minX ? entry.position.x : minX;
+      maxX = entry.position.x > maxX ? entry.position.x : maxX;
+
+      minY = entry.position.y < minY ? entry.position.y : minY;
+      maxY = entry.position.y > maxY ? entry.position.y : maxY;
+
+      minZ = entry.position.z < minZ ? entry.position.z : minZ;
+      maxZ = entry.position.z > maxZ ? entry.position.z : maxZ;
+    }
+
+    // Extents
+    mesh->boundingSphere.Center.x = (minX + maxX) / 2.f;
+    mesh->boundingSphere.Center.y = (minY + maxY) / 2.f;
+    mesh->boundingSphere.Center.z = (minZ + maxZ) / 2.f;
+    mesh->boundingSphere.Radius = length(float3(maxX, maxY, maxZ) - float3(mesh->boundingSphere.Center.x, mesh->boundingSphere.Center.y, mesh->boundingSphere.Center.z));
+
+    XMVECTOR min = XMVectorSet(minX, minY, minZ, 0.f);
+    XMVECTOR max = XMVectorSet(maxX, maxY, maxZ, 0.f);
+    BoundingBox::CreateFromPoints(mesh->boundingBox, min, max);
+
+    // Build vertex buffers
+    ComPtr<ID3D11Buffer> vertexBuffer;
+    const size_t stride = sizeof(VertexPositionNormalColorTexture);
+
+    size_t nVerts = vertices.size();
+    size_t bytes = stride * nVerts;
+
+    buffer_desc.Usage = D3D11_USAGE_DEFAULT;
+    buffer_desc.ByteWidth = static_cast<UINT>(bytes);
+    buffer_desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+
+    // Create vertex buffer from temporary buffer
+    D3D11_SUBRESOURCE_DATA vertexBufferInitData = {};
+    vertexBufferInitData.pSysMem = &vertices.front();
+
+    DX::ThrowIfFailed(d3dDevice->CreateBuffer(&buffer_desc, &vertexBufferInitData, &vertexBuffer));
+#if defined(_DEBUG)
+    SetDebugObjectName(vertexBuffer.Get(), "ModelPolyData");
+#endif
+
+    Material m = DEFAULT_MATERIAL;
+
+    // Create Effects
+    EffectFactory::EffectInfo info;
+    info.name = std::wstring(L"PolyDataMaterial").c_str();
+    info.specularPower = m.SpecularPower;
+    info.perVertexColor = true;
+    info.enableSkinning = false;
+    info.alpha = m.Diffuse.w;
+    info.ambientColor = XMFLOAT3(m.Ambient.x, m.Ambient.y, m.Ambient.z);
+    info.diffuseColor = XMFLOAT3(m.Diffuse.x, m.Diffuse.y, m.Diffuse.z);
+    info.specularColor = XMFLOAT3(m.Specular.x, m.Specular.y, m.Specular.z);
+    info.emissiveColor = XMFLOAT3(m.Emissive.x, m.Emissive.y, m.Emissive.z);
+    info.diffuseTexture = nullptr;
+
+    auto effect = fxFactory.CreateEffect(info, nullptr);
+
+    ComPtr<ID3D11InputLayout> il;
+    CreateInputLayout(d3dDevice, effect.get(), il.GetAddressOf());
+
+    // Build mesh parts
+    auto part = std::unique_ptr<ModelMeshPart>(new ModelMeshPart());
+
+    if (m.Diffuse.w < 1)
+    {
+      part->isAlpha = true;
+    }
+
+    part->indexCount = polyData->Indices->Size;
+    part->startIndex = 0;
+    part->vertexStride = static_cast<UINT>(stride);
+    part->inputLayout = il;
+    part->indexBuffer = indexBuffer;
+    part->vertexBuffer = vertexBuffer;
+    part->effect = effect;
+    auto vec = std::make_shared<std::vector<D3D11_INPUT_ELEMENT_DESC>>(VertexPositionNormalColorTexture::InputElements, VertexPositionNormalColorTexture::InputElements + VertexPositionNormalColorTexture::InputElementCount);
+    part->vbDecl = vec;
+
+    mesh->meshParts.push_back(std::move(part));
+
+    return model;
+  }
+}
 
 namespace HoloIntervention
 {
@@ -743,400 +941,6 @@ namespace HoloIntervention
     void ModelEntry::UpdateEffects(_In_ std::function<void __cdecl(DirectX::IEffect*)> setEffect)
     {
       m_model->UpdateEffects(setEffect);
-    }
-
-    //----------------------------------------------------------------------------
-    std::unique_ptr<DirectX::Model> ModelEntry::CreateFromPolyData(ID3D11Device* d3dDevice, UWPOpenIGTLink::Polydata^ polyData)
-    {
-      std::unique_ptr<Model> model(new Model());
-
-      polyData->Indices
-      polyData->Normals
-      polyData->Points
-      polyData->Colours
-      polyData->TextureCoords
-
-      for (UINT meshIndex = 0; meshIndex < *nMesh; ++meshIndex)
-      {
-        // Mesh name
-        auto mesh = std::make_shared<ModelMesh>();
-        mesh->name = L"PolyDataMesh";
-        mesh->ccw = true;
-        mesh->pmalpha = false;
-
-        // Materials
-        std::vector<MaterialRecordCMO> materials;
-        materials.reserve(*nMats);
-        for (UINT j = 0; j < *nMats; ++j)
-        {
-          MaterialRecordCMO m;
-
-          // Material name
-          nName = reinterpret_cast<const UINT*>(meshData + usedSize);
-          auto matName = reinterpret_cast<const wchar_t*>(meshData + usedSize);
-          m.name.assign(matName, *nName);
-
-          // Material settings
-          auto matSetting = reinterpret_cast<const VSD3DStarter::Material*>(meshData + usedSize);
-          m.pMaterial = matSetting;
-
-          // Pixel shader name
-          nName = reinterpret_cast<const UINT*>(meshData + usedSize);
-          auto psName = reinterpret_cast<const wchar_t*>(meshData + usedSize);
-
-          m.pixelShader.assign(psName, *nName);
-
-          for (UINT t = 0; t < VSD3DStarter::MAX_TEXTURE; ++t)
-          {
-            nName = reinterpret_cast<const UINT*>(meshData + usedSize);
-            auto txtName = reinterpret_cast<const wchar_t*>(meshData + usedSize);
-            m.texture[t].assign(txtName, *nName);
-          }
-
-          materials.emplace_back(m);
-        }
-
-        if (materials.empty())
-        {
-          // Add default material if none defined
-          MaterialRecordCMO m;
-          m.pMaterial = &VSD3DStarter::s_defMaterial;
-          m.name = L"Default";
-          materials.emplace_back(m);
-        }
-
-        // Skeletal data?
-        auto bSkeleton = reinterpret_cast<const BYTE*>(meshData + usedSize);
-
-        // Submeshes
-        auto nSubmesh = reinterpret_cast<const UINT*>(meshData + usedSize);
-        if (!*nSubmesh)
-        {
-          throw std::exception("No submeshes found\n");
-        }
-
-        auto subMesh = reinterpret_cast<const VSD3DStarter::SubMesh*>(meshData + usedSize);
-
-        // Index buffers
-        auto nIBs = reinterpret_cast<const UINT*>(meshData + usedSize);
-        if (!*nIBs)
-        {
-          throw std::exception("No index buffers found\n");
-        }
-
-        struct IBData
-        {
-          size_t          nIndices;
-          const USHORT*   ptr;
-        };
-
-        std::vector<IBData> ibData;
-        ibData.reserve(*nIBs);
-
-        std::vector<ComPtr<ID3D11Buffer>> ibs;
-        ibs.resize(*nIBs);
-
-        for (UINT j = 0; j < *nIBs; ++j)
-        {
-          auto nIndexes = reinterpret_cast<const UINT*>(meshData + usedSize);
-          if (!*nIndexes)
-          {
-            throw std::exception("Empty index buffer found\n");
-          }
-
-          size_t ibBytes = sizeof(USHORT) * (*(nIndexes));
-
-          auto indexes = reinterpret_cast<const USHORT*>(meshData + usedSize);
-
-          IBData ib;
-          ib.nIndices = *nIndexes;
-          ib.ptr = indexes;
-          ibData.emplace_back(ib);
-
-          D3D11_BUFFER_DESC desc = {};
-          desc.Usage = D3D11_USAGE_DEFAULT;
-          desc.ByteWidth = static_cast<UINT>(ibBytes);
-          desc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-
-          D3D11_SUBRESOURCE_DATA initData = {};
-          initData.pSysMem = indexes;
-
-          DX::ThrowIfFailed(d3dDevice->CreateBuffer(&desc, &initData, &ibs[j]));
-
-          SetDebugObjectName(ibs[j].Get(), "ModelCMO");
-        }
-
-        assert(ibData.size() == *nIBs);
-        assert(ibs.size() == *nIBs);
-
-        // Vertex buffers
-        auto nVBs = reinterpret_cast<const UINT*>(meshData + usedSize);
-        if (!*nVBs)
-        {
-          throw std::exception("No vertex buffers found\n");
-        }
-
-        struct VBData
-        {
-          size_t                                          nVerts;
-          const VertexPositionNormalTangentColorTexture*  ptr;
-          const VSD3DStarter::SkinningVertex*             skinPtr;
-        };
-
-        std::vector<VBData> vbData;
-        vbData.reserve(*nVBs);
-        for (UINT j = 0; j < *nVBs; ++j)
-        {
-          auto nVerts = reinterpret_cast<const UINT*>(meshData + usedSize);
-          if (!*nVerts)
-          {
-            throw std::exception("Empty vertex buffer found\n");
-          }
-
-          size_t vbBytes = sizeof(VertexPositionNormalTangentColorTexture) * (*(nVerts));
-
-          auto verts = reinterpret_cast<const VertexPositionNormalTangentColorTexture*>(meshData + usedSize);
-
-          VBData vb;
-          vb.nVerts = *nVerts;
-          vb.ptr = verts;
-          vb.skinPtr = nullptr;
-          vbData.emplace_back(vb);
-        }
-
-        assert(vbData.size() == *nVBs);
-
-        // Skinning vertex buffers
-        auto nSkinVBs = reinterpret_cast<const UINT*>(meshData + usedSize);
-
-        if (*nSkinVBs)
-        {
-          if (*nSkinVBs != *nVBs)
-          {
-            throw std::exception("Number of VBs not equal to number of skin VBs");
-          }
-
-          for (UINT j = 0; j < *nSkinVBs; ++j)
-          {
-            auto nVerts = reinterpret_cast<const UINT*>(meshData + usedSize);
-            if (!*nVerts)
-            {
-              throw std::exception("Empty skinning vertex buffer found\n");
-            }
-
-            if (vbData[j].nVerts != *nVerts)
-            {
-              throw std::exception("Mismatched number of verts for skin VBs");
-            }
-
-            size_t vbBytes = sizeof(VSD3DStarter::SkinningVertex) * (*(nVerts));
-
-            auto verts = reinterpret_cast<const VSD3DStarter::SkinningVertex*>(meshData + usedSize);
-            vbData[j].skinPtr = verts;
-          }
-        }
-
-        // Extents
-        auto extents = reinterpret_cast<const VSD3DStarter::MeshExtents*>(meshData + usedSize);
-
-        mesh->boundingSphere.Center.x = extents->CenterX;
-        mesh->boundingSphere.Center.y = extents->CenterY;
-        mesh->boundingSphere.Center.z = extents->CenterZ;
-        mesh->boundingSphere.Radius = extents->Radius;
-
-        XMVECTOR min = XMVectorSet(extents->MinX, extents->MinY, extents->MinZ, 0.f);
-        XMVECTOR max = XMVectorSet(extents->MaxX, extents->MaxY, extents->MaxZ, 0.f);
-        BoundingBox::CreateFromPoints(mesh->boundingBox, min, max);
-
-        UNREFERENCED_PARAMETER(bSkeleton);
-
-        bool enableSkinning = (*nSkinVBs) != 0;
-
-        // Build vertex buffers
-        std::vector<ComPtr<ID3D11Buffer>> vbs;
-        vbs.resize(*nVBs);
-
-        const size_t stride = enableSkinning ? sizeof(VertexPositionNormalTangentColorTextureSkinning)
-                              : sizeof(VertexPositionNormalTangentColorTexture);
-
-        for (UINT j = 0; j < *nVBs; ++j)
-        {
-          size_t nVerts = vbData[j].nVerts;
-
-          size_t bytes = stride * nVerts;
-
-          D3D11_BUFFER_DESC desc = {};
-          desc.Usage = D3D11_USAGE_DEFAULT;
-          desc.ByteWidth = static_cast<UINT>(bytes);
-          desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-
-          std::unique_ptr<uint8_t[]> temp(new uint8_t[bytes + (sizeof(UINT) * nVerts)]);
-
-          auto visited = reinterpret_cast<UINT*>(temp.get() + bytes);
-          memset(visited, 0xff, sizeof(UINT) * nVerts);
-
-          assert(vbData[j].ptr != 0);
-
-          if (enableSkinning)
-          {
-            // Combine CMO multi-stream data into a single stream
-            auto skinptr = vbData[j].skinPtr;
-            assert(skinptr != 0);
-
-            uint8_t* ptr = temp.get();
-
-            auto sptr = vbData[j].ptr;
-
-            for (size_t v = 0; v < nVerts; ++v)
-            {
-              *reinterpret_cast<VertexPositionNormalTangentColorTexture*>(ptr) = *sptr;
-              ++sptr;
-
-              auto skinv = reinterpret_cast<VertexPositionNormalTangentColorTextureSkinning*>(ptr);
-              skinv->SetBlendIndices(*reinterpret_cast<const XMUINT4*>(skinptr->boneIndex));
-              skinv->SetBlendWeights(*reinterpret_cast<const XMFLOAT4*>(skinptr->boneWeight));
-
-              ptr += stride;
-            }
-          }
-          else
-          {
-            memcpy(temp.get(), vbData[j].ptr, bytes);
-          }
-
-          // Need to fix up VB tex coords for UV transform which is not supported by basic effects
-          for (UINT k = 0; k < *nSubmesh; ++k)
-          {
-            auto& sm = subMesh[k];
-
-            if (sm.VertexBufferIndex != j)
-            {
-              continue;
-            }
-
-            if ((sm.IndexBufferIndex >= *nIBs)
-                || (sm.MaterialIndex >= materials.size()))
-            {
-              throw std::exception("Invalid submesh found\n");
-            }
-
-            XMMATRIX uvTransform = XMLoadFloat4x4(&materials[sm.MaterialIndex].pMaterial->UVTransform);
-
-            auto ib = ibData[sm.IndexBufferIndex].ptr;
-
-            size_t count = ibData[sm.IndexBufferIndex].nIndices;
-
-            for (size_t q = 0; q < count; ++q)
-            {
-              size_t v = ib[q];
-
-              if (v >= nVerts)
-              {
-                throw std::exception("Invalid index found\n");
-              }
-
-              auto verts = reinterpret_cast<VertexPositionNormalTangentColorTexture*>(temp.get() + (v * stride));
-              if (visited[v] == UINT(-1))
-              {
-                visited[v] = sm.MaterialIndex;
-
-                XMVECTOR t = XMLoadFloat2(&verts->textureCoordinate);
-
-                t = XMVectorSelect(g_XMIdentityR3, t, g_XMSelect1110);
-
-                t = XMVector4Transform(t, uvTransform);
-
-                XMStoreFloat2(&verts->textureCoordinate, t);
-              }
-              else if (visited[v] != sm.MaterialIndex)
-              {
-#ifdef _DEBUG
-                XMMATRIX uv2 = XMLoadFloat4x4(&materials[visited[v]].pMaterial->UVTransform);
-
-                if (XMVector4NotEqual(uvTransform.r[0], uv2.r[0])
-                    || XMVector4NotEqual(uvTransform.r[1], uv2.r[1])
-                    || XMVector4NotEqual(uvTransform.r[2], uv2.r[2])
-                    || XMVector4NotEqual(uvTransform.r[3], uv2.r[3]))
-                {
-                  DebugTrace("WARNING: %ls - mismatched UV transforms for the same vertex; texture coordinates may not be correct\n", mesh->name.c_str());
-                }
-#endif
-              }
-            }
-
-            // Create vertex buffer from temporary buffer
-            D3D11_SUBRESOURCE_DATA initData = {};
-            initData.pSysMem = temp.get();
-
-            ThrowIfFailed(
-              d3dDevice->CreateBuffer(&desc, &initData, &vbs[j])
-            );
-          }
-
-          SetDebugObjectName(vbs[j].Get(), "ModelCMO");
-        }
-
-        assert(vbs.size() == *nVBs);
-
-        // Create Effects
-        for (size_t j = 0; j < materials.size(); ++j)
-        {
-          auto& m = materials[j];
-
-          EffectFactory::EffectInfo info;
-          info.name = m.name.c_str();
-          info.specularPower = m.pMaterial->SpecularPower;
-          info.perVertexColor = true;
-          info.enableSkinning = enableSkinning;
-          info.alpha = m.pMaterial->Diffuse.w;
-          info.ambientColor = XMFLOAT3(m.pMaterial->Ambient.x, m.pMaterial->Ambient.y, m.pMaterial->Ambient.z);
-          info.diffuseColor = XMFLOAT3(m.pMaterial->Diffuse.x, m.pMaterial->Diffuse.y, m.pMaterial->Diffuse.z);
-          info.specularColor = XMFLOAT3(m.pMaterial->Specular.x, m.pMaterial->Specular.y, m.pMaterial->Specular.z);
-          info.emissiveColor = XMFLOAT3(m.pMaterial->Emissive.x, m.pMaterial->Emissive.y, m.pMaterial->Emissive.z);
-          info.diffuseTexture = m.texture[0].c_str();
-
-          m.effect = fxFactory.CreateEffect(info, nullptr);
-
-          CreateInputLayout(d3dDevice, m.effect.get(), &m.il, enableSkinning);
-        }
-
-        // Build mesh parts
-        for (UINT j = 0; j < *nSubmesh; ++j)
-        {
-          auto& sm = subMesh[j];
-
-          if ((sm.IndexBufferIndex >= *nIBs)
-              || (sm.VertexBufferIndex >= *nVBs)
-              || (sm.MaterialIndex >= materials.size()))
-          {
-            throw std::exception("Invalid submesh found\n");
-          }
-
-          auto& mat = materials[sm.MaterialIndex];
-
-          auto part = new ModelMeshPart();
-
-          if (mat.pMaterial->Diffuse.w < 1)
-          {
-            part->isAlpha = true;
-          }
-
-          part->indexCount = sm.PrimCount * 3;
-          part->startIndex = sm.StartIndex;
-          part->vertexStride = static_cast<UINT>(stride);
-          part->inputLayout = mat.il;
-          part->indexBuffer = ibs[sm.IndexBufferIndex];
-          part->vertexBuffer = vbs[sm.VertexBufferIndex];
-          part->effect = mat.effect;
-          part->vbDecl = enableSkinning ? g_vbdeclSkinning : g_vbdecl;
-
-          mesh->meshParts.emplace_back(part);
-        }
-
-        model->meshes.emplace_back(mesh);
-      }
-
-      return model;
     }
 
     //----------------------------------------------------------------------------
