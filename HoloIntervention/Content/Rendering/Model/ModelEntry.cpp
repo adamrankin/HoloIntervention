@@ -746,6 +746,400 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    std::unique_ptr<DirectX::Model> ModelEntry::CreateFromPolyData(ID3D11Device* d3dDevice, UWPOpenIGTLink::Polydata^ polyData)
+    {
+      std::unique_ptr<Model> model(new Model());
+
+      polyData->Indices
+      polyData->Normals
+      polyData->Points
+      polyData->Colours
+      polyData->TextureCoords
+
+      for (UINT meshIndex = 0; meshIndex < *nMesh; ++meshIndex)
+      {
+        // Mesh name
+        auto mesh = std::make_shared<ModelMesh>();
+        mesh->name = L"PolyDataMesh";
+        mesh->ccw = true;
+        mesh->pmalpha = false;
+
+        // Materials
+        std::vector<MaterialRecordCMO> materials;
+        materials.reserve(*nMats);
+        for (UINT j = 0; j < *nMats; ++j)
+        {
+          MaterialRecordCMO m;
+
+          // Material name
+          nName = reinterpret_cast<const UINT*>(meshData + usedSize);
+          auto matName = reinterpret_cast<const wchar_t*>(meshData + usedSize);
+          m.name.assign(matName, *nName);
+
+          // Material settings
+          auto matSetting = reinterpret_cast<const VSD3DStarter::Material*>(meshData + usedSize);
+          m.pMaterial = matSetting;
+
+          // Pixel shader name
+          nName = reinterpret_cast<const UINT*>(meshData + usedSize);
+          auto psName = reinterpret_cast<const wchar_t*>(meshData + usedSize);
+
+          m.pixelShader.assign(psName, *nName);
+
+          for (UINT t = 0; t < VSD3DStarter::MAX_TEXTURE; ++t)
+          {
+            nName = reinterpret_cast<const UINT*>(meshData + usedSize);
+            auto txtName = reinterpret_cast<const wchar_t*>(meshData + usedSize);
+            m.texture[t].assign(txtName, *nName);
+          }
+
+          materials.emplace_back(m);
+        }
+
+        if (materials.empty())
+        {
+          // Add default material if none defined
+          MaterialRecordCMO m;
+          m.pMaterial = &VSD3DStarter::s_defMaterial;
+          m.name = L"Default";
+          materials.emplace_back(m);
+        }
+
+        // Skeletal data?
+        auto bSkeleton = reinterpret_cast<const BYTE*>(meshData + usedSize);
+
+        // Submeshes
+        auto nSubmesh = reinterpret_cast<const UINT*>(meshData + usedSize);
+        if (!*nSubmesh)
+        {
+          throw std::exception("No submeshes found\n");
+        }
+
+        auto subMesh = reinterpret_cast<const VSD3DStarter::SubMesh*>(meshData + usedSize);
+
+        // Index buffers
+        auto nIBs = reinterpret_cast<const UINT*>(meshData + usedSize);
+        if (!*nIBs)
+        {
+          throw std::exception("No index buffers found\n");
+        }
+
+        struct IBData
+        {
+          size_t          nIndices;
+          const USHORT*   ptr;
+        };
+
+        std::vector<IBData> ibData;
+        ibData.reserve(*nIBs);
+
+        std::vector<ComPtr<ID3D11Buffer>> ibs;
+        ibs.resize(*nIBs);
+
+        for (UINT j = 0; j < *nIBs; ++j)
+        {
+          auto nIndexes = reinterpret_cast<const UINT*>(meshData + usedSize);
+          if (!*nIndexes)
+          {
+            throw std::exception("Empty index buffer found\n");
+          }
+
+          size_t ibBytes = sizeof(USHORT) * (*(nIndexes));
+
+          auto indexes = reinterpret_cast<const USHORT*>(meshData + usedSize);
+
+          IBData ib;
+          ib.nIndices = *nIndexes;
+          ib.ptr = indexes;
+          ibData.emplace_back(ib);
+
+          D3D11_BUFFER_DESC desc = {};
+          desc.Usage = D3D11_USAGE_DEFAULT;
+          desc.ByteWidth = static_cast<UINT>(ibBytes);
+          desc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+
+          D3D11_SUBRESOURCE_DATA initData = {};
+          initData.pSysMem = indexes;
+
+          DX::ThrowIfFailed(d3dDevice->CreateBuffer(&desc, &initData, &ibs[j]));
+
+          SetDebugObjectName(ibs[j].Get(), "ModelCMO");
+        }
+
+        assert(ibData.size() == *nIBs);
+        assert(ibs.size() == *nIBs);
+
+        // Vertex buffers
+        auto nVBs = reinterpret_cast<const UINT*>(meshData + usedSize);
+        if (!*nVBs)
+        {
+          throw std::exception("No vertex buffers found\n");
+        }
+
+        struct VBData
+        {
+          size_t                                          nVerts;
+          const VertexPositionNormalTangentColorTexture*  ptr;
+          const VSD3DStarter::SkinningVertex*             skinPtr;
+        };
+
+        std::vector<VBData> vbData;
+        vbData.reserve(*nVBs);
+        for (UINT j = 0; j < *nVBs; ++j)
+        {
+          auto nVerts = reinterpret_cast<const UINT*>(meshData + usedSize);
+          if (!*nVerts)
+          {
+            throw std::exception("Empty vertex buffer found\n");
+          }
+
+          size_t vbBytes = sizeof(VertexPositionNormalTangentColorTexture) * (*(nVerts));
+
+          auto verts = reinterpret_cast<const VertexPositionNormalTangentColorTexture*>(meshData + usedSize);
+
+          VBData vb;
+          vb.nVerts = *nVerts;
+          vb.ptr = verts;
+          vb.skinPtr = nullptr;
+          vbData.emplace_back(vb);
+        }
+
+        assert(vbData.size() == *nVBs);
+
+        // Skinning vertex buffers
+        auto nSkinVBs = reinterpret_cast<const UINT*>(meshData + usedSize);
+
+        if (*nSkinVBs)
+        {
+          if (*nSkinVBs != *nVBs)
+          {
+            throw std::exception("Number of VBs not equal to number of skin VBs");
+          }
+
+          for (UINT j = 0; j < *nSkinVBs; ++j)
+          {
+            auto nVerts = reinterpret_cast<const UINT*>(meshData + usedSize);
+            if (!*nVerts)
+            {
+              throw std::exception("Empty skinning vertex buffer found\n");
+            }
+
+            if (vbData[j].nVerts != *nVerts)
+            {
+              throw std::exception("Mismatched number of verts for skin VBs");
+            }
+
+            size_t vbBytes = sizeof(VSD3DStarter::SkinningVertex) * (*(nVerts));
+
+            auto verts = reinterpret_cast<const VSD3DStarter::SkinningVertex*>(meshData + usedSize);
+            vbData[j].skinPtr = verts;
+          }
+        }
+
+        // Extents
+        auto extents = reinterpret_cast<const VSD3DStarter::MeshExtents*>(meshData + usedSize);
+
+        mesh->boundingSphere.Center.x = extents->CenterX;
+        mesh->boundingSphere.Center.y = extents->CenterY;
+        mesh->boundingSphere.Center.z = extents->CenterZ;
+        mesh->boundingSphere.Radius = extents->Radius;
+
+        XMVECTOR min = XMVectorSet(extents->MinX, extents->MinY, extents->MinZ, 0.f);
+        XMVECTOR max = XMVectorSet(extents->MaxX, extents->MaxY, extents->MaxZ, 0.f);
+        BoundingBox::CreateFromPoints(mesh->boundingBox, min, max);
+
+        UNREFERENCED_PARAMETER(bSkeleton);
+
+        bool enableSkinning = (*nSkinVBs) != 0;
+
+        // Build vertex buffers
+        std::vector<ComPtr<ID3D11Buffer>> vbs;
+        vbs.resize(*nVBs);
+
+        const size_t stride = enableSkinning ? sizeof(VertexPositionNormalTangentColorTextureSkinning)
+                              : sizeof(VertexPositionNormalTangentColorTexture);
+
+        for (UINT j = 0; j < *nVBs; ++j)
+        {
+          size_t nVerts = vbData[j].nVerts;
+
+          size_t bytes = stride * nVerts;
+
+          D3D11_BUFFER_DESC desc = {};
+          desc.Usage = D3D11_USAGE_DEFAULT;
+          desc.ByteWidth = static_cast<UINT>(bytes);
+          desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+
+          std::unique_ptr<uint8_t[]> temp(new uint8_t[bytes + (sizeof(UINT) * nVerts)]);
+
+          auto visited = reinterpret_cast<UINT*>(temp.get() + bytes);
+          memset(visited, 0xff, sizeof(UINT) * nVerts);
+
+          assert(vbData[j].ptr != 0);
+
+          if (enableSkinning)
+          {
+            // Combine CMO multi-stream data into a single stream
+            auto skinptr = vbData[j].skinPtr;
+            assert(skinptr != 0);
+
+            uint8_t* ptr = temp.get();
+
+            auto sptr = vbData[j].ptr;
+
+            for (size_t v = 0; v < nVerts; ++v)
+            {
+              *reinterpret_cast<VertexPositionNormalTangentColorTexture*>(ptr) = *sptr;
+              ++sptr;
+
+              auto skinv = reinterpret_cast<VertexPositionNormalTangentColorTextureSkinning*>(ptr);
+              skinv->SetBlendIndices(*reinterpret_cast<const XMUINT4*>(skinptr->boneIndex));
+              skinv->SetBlendWeights(*reinterpret_cast<const XMFLOAT4*>(skinptr->boneWeight));
+
+              ptr += stride;
+            }
+          }
+          else
+          {
+            memcpy(temp.get(), vbData[j].ptr, bytes);
+          }
+
+          // Need to fix up VB tex coords for UV transform which is not supported by basic effects
+          for (UINT k = 0; k < *nSubmesh; ++k)
+          {
+            auto& sm = subMesh[k];
+
+            if (sm.VertexBufferIndex != j)
+            {
+              continue;
+            }
+
+            if ((sm.IndexBufferIndex >= *nIBs)
+                || (sm.MaterialIndex >= materials.size()))
+            {
+              throw std::exception("Invalid submesh found\n");
+            }
+
+            XMMATRIX uvTransform = XMLoadFloat4x4(&materials[sm.MaterialIndex].pMaterial->UVTransform);
+
+            auto ib = ibData[sm.IndexBufferIndex].ptr;
+
+            size_t count = ibData[sm.IndexBufferIndex].nIndices;
+
+            for (size_t q = 0; q < count; ++q)
+            {
+              size_t v = ib[q];
+
+              if (v >= nVerts)
+              {
+                throw std::exception("Invalid index found\n");
+              }
+
+              auto verts = reinterpret_cast<VertexPositionNormalTangentColorTexture*>(temp.get() + (v * stride));
+              if (visited[v] == UINT(-1))
+              {
+                visited[v] = sm.MaterialIndex;
+
+                XMVECTOR t = XMLoadFloat2(&verts->textureCoordinate);
+
+                t = XMVectorSelect(g_XMIdentityR3, t, g_XMSelect1110);
+
+                t = XMVector4Transform(t, uvTransform);
+
+                XMStoreFloat2(&verts->textureCoordinate, t);
+              }
+              else if (visited[v] != sm.MaterialIndex)
+              {
+#ifdef _DEBUG
+                XMMATRIX uv2 = XMLoadFloat4x4(&materials[visited[v]].pMaterial->UVTransform);
+
+                if (XMVector4NotEqual(uvTransform.r[0], uv2.r[0])
+                    || XMVector4NotEqual(uvTransform.r[1], uv2.r[1])
+                    || XMVector4NotEqual(uvTransform.r[2], uv2.r[2])
+                    || XMVector4NotEqual(uvTransform.r[3], uv2.r[3]))
+                {
+                  DebugTrace("WARNING: %ls - mismatched UV transforms for the same vertex; texture coordinates may not be correct\n", mesh->name.c_str());
+                }
+#endif
+              }
+            }
+
+            // Create vertex buffer from temporary buffer
+            D3D11_SUBRESOURCE_DATA initData = {};
+            initData.pSysMem = temp.get();
+
+            ThrowIfFailed(
+              d3dDevice->CreateBuffer(&desc, &initData, &vbs[j])
+            );
+          }
+
+          SetDebugObjectName(vbs[j].Get(), "ModelCMO");
+        }
+
+        assert(vbs.size() == *nVBs);
+
+        // Create Effects
+        for (size_t j = 0; j < materials.size(); ++j)
+        {
+          auto& m = materials[j];
+
+          EffectFactory::EffectInfo info;
+          info.name = m.name.c_str();
+          info.specularPower = m.pMaterial->SpecularPower;
+          info.perVertexColor = true;
+          info.enableSkinning = enableSkinning;
+          info.alpha = m.pMaterial->Diffuse.w;
+          info.ambientColor = XMFLOAT3(m.pMaterial->Ambient.x, m.pMaterial->Ambient.y, m.pMaterial->Ambient.z);
+          info.diffuseColor = XMFLOAT3(m.pMaterial->Diffuse.x, m.pMaterial->Diffuse.y, m.pMaterial->Diffuse.z);
+          info.specularColor = XMFLOAT3(m.pMaterial->Specular.x, m.pMaterial->Specular.y, m.pMaterial->Specular.z);
+          info.emissiveColor = XMFLOAT3(m.pMaterial->Emissive.x, m.pMaterial->Emissive.y, m.pMaterial->Emissive.z);
+          info.diffuseTexture = m.texture[0].c_str();
+
+          m.effect = fxFactory.CreateEffect(info, nullptr);
+
+          CreateInputLayout(d3dDevice, m.effect.get(), &m.il, enableSkinning);
+        }
+
+        // Build mesh parts
+        for (UINT j = 0; j < *nSubmesh; ++j)
+        {
+          auto& sm = subMesh[j];
+
+          if ((sm.IndexBufferIndex >= *nIBs)
+              || (sm.VertexBufferIndex >= *nVBs)
+              || (sm.MaterialIndex >= materials.size()))
+          {
+            throw std::exception("Invalid submesh found\n");
+          }
+
+          auto& mat = materials[sm.MaterialIndex];
+
+          auto part = new ModelMeshPart();
+
+          if (mat.pMaterial->Diffuse.w < 1)
+          {
+            part->isAlpha = true;
+          }
+
+          part->indexCount = sm.PrimCount * 3;
+          part->startIndex = sm.StartIndex;
+          part->vertexStride = static_cast<UINT>(stride);
+          part->inputLayout = mat.il;
+          part->indexBuffer = ibs[sm.IndexBufferIndex];
+          part->vertexBuffer = vbs[sm.VertexBufferIndex];
+          part->effect = mat.effect;
+          part->vbDecl = enableSkinning ? g_vbdeclSkinning : g_vbdecl;
+
+          mesh->meshParts.emplace_back(part);
+        }
+
+        model->meshes.emplace_back(mesh);
+      }
+
+      return model;
+    }
+
+    //----------------------------------------------------------------------------
     void ModelEntry::CalculateBounds()
     {
       if (m_model->meshes.size() == 0)

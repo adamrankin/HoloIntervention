@@ -134,6 +134,8 @@ namespace HoloIntervention
       // Update all effects used by the model
       void __cdecl UpdateEffects(_In_ std::function<void __cdecl(DirectX::IEffect*)> setEffect);
 
+      static std::unique_ptr<DirectX::Model> CreateFromPolyData(ID3D11Device* d3dDevice, UWPOpenIGTLink::Polydata^ polyData);
+
     protected:
       // Cached pointer to device resources.
       std::shared_ptr<DX::DeviceResources>                  m_deviceResources = nullptr;
