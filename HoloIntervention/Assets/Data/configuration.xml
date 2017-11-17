@@ -25,11 +25,11 @@
     />
   </TouchingSphereTask>
 
-  <PreOpImageTask
+  <RegisterModelTask
     IGTConnection="NDITracker"
     ModelName="LegoPhantom.stl"
-    PhantomFrom="Phantom"
-    PhantomTo="Reference"
+    ModelFrom="Phantom"
+    ModelTo="Reference"
     StylusFrom="StylusTip"
     />
 
@@ -62,7 +62,7 @@
   <IGTConnections>
     <Connection
       Name="NDITracker"
-      Host="192.168.0.29"
+      Host="169.254.80.80"
       Port="18944" 
       />
 

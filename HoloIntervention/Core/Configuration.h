@@ -35,4 +35,4 @@ static const float PRIORITY_OPTICAL = 0.5f; // no display component, for now
 static const float PRIORITY_SPLASH = 4.f; // slice
 static const float PRIORITY_INVALID_TOOL = 0.25f; // greyscale model
 static const float PRIORITY_VALID_TOOL = 2.5f; // colour model
-static const float PRIORITY_PHANTOM_TASK = 3.f; // phantom model
+static const float PRIORITY_MODEL_TASK = 3.f; // phantom model

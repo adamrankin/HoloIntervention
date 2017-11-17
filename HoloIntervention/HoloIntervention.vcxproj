@@ -147,7 +147,7 @@
     <ClInclude Include="Content\Systems\Registration\RegistrationSystem.h" />
     <ClInclude Include="Content\Systems\Splash\SplashSystem.h" />
     <ClInclude Include="Content\Systems\Task\TaskSystem.h" />
-    <ClInclude Include="Content\Systems\Task\Tasks\PreOpImageTask.h" />
+    <ClInclude Include="Content\Systems\Task\Tasks\RegisterModelTask.h" />
     <ClInclude Include="Content\Systems\Task\Tasks\TouchingSphereTask.h" />
     <ClInclude Include="Content\Systems\Tool\ToolEntry.h" />
     <ClInclude Include="Content\Systems\Tool\ToolSystem.h" />
@@ -209,7 +209,7 @@
     <ClCompile Include="Content\Systems\Registration\RegistrationSystem.cpp" />
     <ClCompile Include="Content\Systems\Splash\SplashSystem.cpp" />
     <ClCompile Include="Content\Systems\Task\TaskSystem.cpp" />
-    <ClCompile Include="Content\Systems\Task\Tasks\PreOpImageTask.cpp" />
+    <ClCompile Include="Content\Systems\Task\Tasks\RegisterModelTask.cpp" />
     <ClCompile Include="Content\Systems\Task\Tasks\TouchingSphereTask.cpp" />
     <ClCompile Include="Content\Systems\Tool\ToolEntry.cpp" />
     <ClCompile Include="Content\Systems\Tool\ToolSystem.cpp" />

@@ -145,9 +145,6 @@
     <ClCompile Include="Content\Systems\Task\TaskSystem.cpp">
       <Filter>Content\Systems\Task</Filter>
     </ClCompile>
-    <ClCompile Include="Content\Systems\Task\Tasks\PreOpImageTask.cpp">
-      <Filter>Content\Systems\Task\Tasks</Filter>
-    </ClCompile>
     <ClCompile Include="Content\Systems\Task\Tasks\TouchingSphereTask.cpp">
       <Filter>Content\Systems\Task\Tasks</Filter>
     </ClCompile>
@@ -165,6 +162,9 @@
     </ClCompile>
     <ClCompile Include="Content\Algorithms\CameraRegistration.cpp">
       <Filter>Content\Algorithms\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Systems\Task\Tasks\RegisterModelTask.cpp">
+      <Filter>Content\Systems\Task\Tasks</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -339,9 +339,6 @@
     <ClInclude Include="Content\Systems\Task\Tasks\TouchingSphereTask.h">
       <Filter>Content\Systems\Task\Tasks</Filter>
     </ClInclude>
-    <ClInclude Include="Content\Systems\Task\Tasks\PreOpImageTask.h">
-      <Filter>Content\Systems\Task\Tasks</Filter>
-    </ClInclude>
     <ClInclude Include="Content\Debug\Debug.h">
       <Filter>Content\Debug</Filter>
     </ClInclude>
@@ -359,6 +356,9 @@
     </ClInclude>
     <ClInclude Include="Content\Algorithms\CameraRegistration.h">
       <Filter>Content\Algorithms\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Systems\Task\Tasks\RegisterModelTask.h">
+      <Filter>Content\Systems\Task\Tasks</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -74,7 +74,7 @@ namespace HoloIntervention
 
     namespace Tasks
     {
-      class PreOpImageTask : public IStabilizedComponent, public Input::IVoiceInput, public IConfigurable
+      class RegisterModelTask : public IStabilizedComponent, public Input::IVoiceInput, public IConfigurable
       {
       public:
         virtual concurrency::task<bool> WriteConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
@@ -89,8 +89,8 @@ namespace HoloIntervention
         virtual void RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap);
         virtual void Update(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem, DX::StepTimer& stepTimer);
 
-        PreOpImageTask(NotificationSystem& notificationSystem, NetworkSystem& networkSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer);
-        ~PreOpImageTask();
+        RegisterModelTask(NotificationSystem& notificationSystem, NetworkSystem& networkSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer);
+        ~RegisterModelTask();
 
       protected:
         // Cached system variables
@@ -103,9 +103,9 @@ namespace HoloIntervention
         std::wstring                                            m_modelName = L"";
         std::wstring                                            m_connectionName = L"";
         uint64                                                  m_hashedConnectionName = 0;
-        UWPOpenIGTLink::TransformName^                          m_preopToReferenceName = ref new UWPOpenIGTLink::TransformName();
+        UWPOpenIGTLink::TransformName^                          m_modelToReferenceName = ref new UWPOpenIGTLink::TransformName();
         double                                                  m_latestTimestamp = 0.0;
-        uint32                                                  m_commandId;
+        uint32                                                  m_commandId = 0;
 
         // Registration variables
         std::vector<Windows::Foundation::Numerics::float3>      m_points;

@@ -27,7 +27,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "TaskSystem.h"
 
 // Task includes
-#include "PreOpImageTask.h"
+#include "RegisterModelTask.h"
 #include "TouchingSphereTask.h"
 
 using namespace Windows::Data::Xml::Dom;
@@ -42,7 +42,7 @@ namespace HoloIntervention
     //-----------------------------------------------------------------------------
     task<bool> TaskSystem::WriteConfigurationAsync(XmlDocument^ document)
     {
-      auto preopTask = m_preopImageTask->WriteConfigurationAsync(document);
+      auto preopTask = m_regModelTask->WriteConfigurationAsync(document);
       auto touchingTask = m_touchingSphereTask->WriteConfigurationAsync(document);
       auto tasks = { preopTask, touchingTask };
       return when_all(begin(tasks), end(tasks)).then([this](const std::vector<bool>& results)
@@ -54,7 +54,7 @@ namespace HoloIntervention
     //-----------------------------------------------------------------------------
     task<bool> TaskSystem::ReadConfigurationAsync(XmlDocument^ document)
     {
-      auto preopTask = m_preopImageTask->ReadConfigurationAsync(document);
+      auto preopTask = m_regModelTask->ReadConfigurationAsync(document);
       auto touchingTask = m_touchingSphereTask->ReadConfigurationAsync(document);
       auto tasks = { preopTask, touchingTask};
       return when_all(begin(tasks), end(tasks)).then([this](const std::vector<bool>& results)
@@ -67,26 +67,26 @@ namespace HoloIntervention
     //-----------------------------------------------------------------------------
     float3 TaskSystem::GetStabilizedPosition(SpatialPointerPose^ pose) const
     {
-      return m_touchingSphereTask->GetStabilizePriority() > m_preopImageTask->GetStabilizePriority() ? m_touchingSphereTask->GetStabilizedPosition(pose) : m_preopImageTask->GetStabilizedPosition(pose);
+      return m_touchingSphereTask->GetStabilizePriority() > m_regModelTask->GetStabilizePriority() ? m_touchingSphereTask->GetStabilizedPosition(pose) : m_regModelTask->GetStabilizedPosition(pose);
     }
 
     //-----------------------------------------------------------------------------
     float3 TaskSystem::GetStabilizedVelocity() const
     {
-      return m_touchingSphereTask->GetStabilizePriority() > m_preopImageTask->GetStabilizePriority() ? m_touchingSphereTask->GetStabilizedVelocity() : m_preopImageTask->GetStabilizedVelocity();
+      return m_touchingSphereTask->GetStabilizePriority() > m_regModelTask->GetStabilizePriority() ? m_touchingSphereTask->GetStabilizedVelocity() : m_regModelTask->GetStabilizedVelocity();
     }
 
     //-----------------------------------------------------------------------------
     float TaskSystem::GetStabilizePriority() const
     {
-      return std::fmax(m_touchingSphereTask->GetStabilizePriority(), m_preopImageTask->GetStabilizePriority());
+      return std::fmax(m_touchingSphereTask->GetStabilizePriority(), m_regModelTask->GetStabilizePriority());
     }
 
     //-----------------------------------------------------------------------------
     void TaskSystem::RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap)
     {
       m_touchingSphereTask->RegisterVoiceCallbacks(callbackMap);
-      m_preopImageTask->RegisterVoiceCallbacks(callbackMap);
+      m_regModelTask->RegisterVoiceCallbacks(callbackMap);
     }
 
     //----------------------------------------------------------------------------
@@ -97,21 +97,21 @@ namespace HoloIntervention
       , m_modelRenderer(modelRenderer)
     {
       m_touchingSphereTask = std::make_shared<Tasks::TouchingSphereTask>(notificationSystem, networkSystem, registrationSystem, modelRenderer);
-      m_preopImageTask = std::make_shared<Tasks::PreOpImageTask>(notificationSystem, networkSystem, registrationSystem, modelRenderer);
+      m_regModelTask = std::make_shared<Tasks::RegisterModelTask>(notificationSystem, networkSystem, registrationSystem, modelRenderer);
     }
 
     //----------------------------------------------------------------------------
     TaskSystem::~TaskSystem()
     {
       m_touchingSphereTask = nullptr;
-      m_preopImageTask = nullptr;
+      m_regModelTask = nullptr;
     }
 
     //-----------------------------------------------------------------------------
     void TaskSystem::Update(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem, DX::StepTimer& stepTimer)
     {
       m_touchingSphereTask->Update(coordinateSystem, stepTimer);
-      m_preopImageTask->Update(coordinateSystem, stepTimer);
+      m_regModelTask->Update(coordinateSystem, stepTimer);
     }
   }
 }

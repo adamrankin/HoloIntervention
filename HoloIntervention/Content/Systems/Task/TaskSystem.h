@@ -54,7 +54,7 @@ namespace HoloIntervention
     namespace Tasks
     {
       class TouchingSphereTask;
-      class PreOpImageTask;
+      class RegisterModelTask;
     }
 
     class TaskSystem : public IStabilizedComponent, public Input::IVoiceInput, public IConfigurable
@@ -85,7 +85,7 @@ namespace HoloIntervention
       Rendering::ModelRenderer&                   m_modelRenderer;
 
       std::shared_ptr<Tasks::TouchingSphereTask>  m_touchingSphereTask;
-      std::shared_ptr<Tasks::PreOpImageTask>      m_preopImageTask;
+      std::shared_ptr<Tasks::RegisterModelTask>      m_regModelTask;
     };
   }
 }

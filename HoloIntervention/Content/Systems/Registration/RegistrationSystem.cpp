@@ -110,7 +110,7 @@ namespace HoloIntervention
     float RegistrationSystem::GetStabilizePriority() const
     {
       std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
-      if (m_currentRegistrationMethod->IsStabilizationActive())
+      if (m_currentRegistrationMethod != nullptr && m_currentRegistrationMethod->IsStabilizationActive())
       {
         return m_currentRegistrationMethod->GetStabilizePriority();
       }
