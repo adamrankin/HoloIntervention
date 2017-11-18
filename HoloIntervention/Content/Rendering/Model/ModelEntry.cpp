@@ -57,30 +57,7 @@ using namespace Windows::UI::Input::Spatial;
 
 namespace DirectX
 {
-  struct Material
-  {
-    DirectX::XMFLOAT4   Ambient;
-    DirectX::XMFLOAT4   Diffuse;
-    DirectX::XMFLOAT4   Specular;
-    float               SpecularPower;
-    DirectX::XMFLOAT4   Emissive;
-    DirectX::XMFLOAT4X4 UVTransform;
-  };
 
-  const Material DEFAULT_MATERIAL =
-  {
-    { 0.2f, 0.2f, 0.2f, 1.f },
-    { 0.8f, 0.8f, 0.8f, 1.f },
-    { 0.0f, 0.0f, 0.0f, 1.f },
-    1.f,
-    { 0.0f, 0.0f, 0.0f, 1.0f },
-    {
-      1.f, 0.f, 0.f, 0.f,
-      0.f, 1.f, 0.f, 0.f,
-      0.f, 0.f, 1.f, 0.f,
-      0.f, 0.f, 0.f, 1.f
-    },
-  };
 
   //----------------------------------------------------------------------------
   // Helper for creating a D3D input layout.
@@ -99,19 +76,15 @@ namespace DirectX
     );
     _Analysis_assume_(*pInputLayout != 0);
 
-    SetDebugObjectName(*pInputLayout, "ModelCMO");
+#if defined(_DEBUG)
+    SetDebugObjectName(*pInputLayout, "ModelPolyData");
+#endif
   }
 
   //----------------------------------------------------------------------------
   std::unique_ptr<DirectX::Model> CreateFromPolyData(ID3D11Device* d3dDevice, IEffectFactory& fxFactory, UWPOpenIGTLink::Polydata^ polyData)
   {
     std::unique_ptr<Model> model(new Model());
-
-    //polyData->Indices
-    //polyData->Normals
-    //polyData->Points
-    //polyData->Colours
-    //polyData->TextureCoords
 
     // Mesh name
     auto mesh = std::make_shared<ModelMesh>();
@@ -208,19 +181,17 @@ namespace DirectX
     SetDebugObjectName(vertexBuffer.Get(), "ModelPolyData");
 #endif
 
-    Material m = DEFAULT_MATERIAL;
-
     // Create Effects
     EffectFactory::EffectInfo info;
-    info.name = std::wstring(L"PolyDataMaterial").c_str();
-    info.specularPower = m.SpecularPower;
+    info.name = polyData->Mat->Name->Data();
+    info.specularPower = polyData->Mat->SpecularExponent;
     info.perVertexColor = true;
     info.enableSkinning = false;
-    info.alpha = m.Diffuse.w;
-    info.ambientColor = XMFLOAT3(m.Ambient.x, m.Ambient.y, m.Ambient.z);
-    info.diffuseColor = XMFLOAT3(m.Diffuse.x, m.Diffuse.y, m.Diffuse.z);
-    info.specularColor = XMFLOAT3(m.Specular.x, m.Specular.y, m.Specular.z);
-    info.emissiveColor = XMFLOAT3(m.Emissive.x, m.Emissive.y, m.Emissive.z);
+    info.alpha = polyData->Mat->Diffuse.w;
+    info.ambientColor = XMFLOAT3(polyData->Mat->Ambient.x, polyData->Mat->Ambient.y, polyData->Mat->Ambient.z);
+    info.diffuseColor = XMFLOAT3(polyData->Mat->Diffuse.x, polyData->Mat->Diffuse.y, polyData->Mat->Diffuse.z);
+    info.specularColor = XMFLOAT3(polyData->Mat->Specular.x, polyData->Mat->Specular.y, polyData->Mat->Specular.z);
+    info.emissiveColor = XMFLOAT3(polyData->Mat->Emissive.x, polyData->Mat->Emissive.y, polyData->Mat->Emissive.z);
     info.diffuseTexture = nullptr;
 
     auto effect = fxFactory.CreateEffect(info, nullptr);
@@ -231,7 +202,7 @@ namespace DirectX
     // Build mesh parts
     auto part = std::unique_ptr<ModelMeshPart>(new ModelMeshPart());
 
-    if (m.Diffuse.w < 1)
+    if (info.alpha < 1)
     {
       part->isAlpha = true;
     }
