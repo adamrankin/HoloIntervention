@@ -298,7 +298,7 @@ namespace HoloIntervention
             {
               if (!result)
               {
-                m_notificationSystem.QueueMessage(L"Unable to start model task. Check connection.");
+                m_notificationSystem.QueueMessage(L"Unable to start model registration task. Check connection.");
                 return;
               }
 
@@ -314,6 +314,12 @@ namespace HoloIntervention
 
         callbackMap[L"record point"] = [this](SpeechRecognitionResult ^ result)
         {
+          if (!m_taskStarted || !m_componentReady)
+          {
+            m_notificationSystem.QueueMessage(L"Model registration not running.");
+            return;
+          }
+
           auto pair = m_transformRepository->GetTransform(m_stylusTipTransformName);
           if (pair->Key)
           {
