@@ -298,6 +298,7 @@ namespace HoloIntervention
         m_currentRegistrationMethod->Update(headPose, coordinateSystem, transformContainer);
       }
 
+      std::lock_guard<std::mutex> guard(m_correctionMethodMutex);
       if (m_correctionMethod->IsStarted())
       {
         m_correctionMethod->Update(headPose, coordinateSystem, transformContainer);
@@ -463,6 +464,7 @@ namespace HoloIntervention
 
       callbackMap[L"correct translation"] = [this](SpeechRecognitionResult ^ result)
       {
+        std::lock_guard<std::mutex> guard(m_correctionMethodMutex);
         if (m_correctionMethod->IsStarted())
         {
           m_notificationSystem.QueueMessage(L"Correction already running.");
@@ -485,6 +487,7 @@ namespace HoloIntervention
 
       callbackMap[L"stop correction"] = [this](SpeechRecognitionResult ^ result)
       {
+        std::lock_guard<std::mutex> guard(m_correctionMethodMutex);
         if (!m_correctionMethod->IsStarted())
         {
           m_notificationSystem.QueueMessage(L"Already stopped.");
@@ -505,6 +508,7 @@ namespace HoloIntervention
 
       callbackMap[L"reset correction"] = [this](SpeechRecognitionResult ^ result)
       {
+        std::lock_guard<std::mutex> guard(m_correctionMethodMutex);
         m_correctionMethod->ResetRegistration();
       };
 
