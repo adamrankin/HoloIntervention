@@ -1,4 +1,4 @@
-/*====================================================================
+update/*====================================================================
 Copyright(c) 2017 Adam Rankin
 
 
@@ -24,6 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "pch.h"
 #include "Common.h"
+#include "CameraResources.h"
 #include "ManualRegistration.h"
 
 // System includes
@@ -189,7 +190,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ManualRegistration::Update(SpatialPointerPose^ headPose, SpatialCoordinateSystem^ hmdCoordinateSystem, IBox<float4x4>^ anchorToHMDBox)
+    void ManualRegistration::Update(SpatialPointerPose^ headPose, SpatialCoordinateSystem^ hmdCoordinateSystem, IBox<float4x4>^ anchorToHMDBox, DX::CameraResources& cameraResources)
     {
       if (!m_started)
       {

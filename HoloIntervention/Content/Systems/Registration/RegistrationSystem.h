@@ -38,7 +38,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 namespace DX
 {
   class StepTimer;
-  struct ViewProjectionConstantBuffer;
+  class CameraResources;
 }
 
 namespace HoloIntervention
@@ -78,7 +78,8 @@ namespace HoloIntervention
 
       void Update(DX::StepTimer& timer,
                   Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem,
-                  Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
+                  Windows::UI::Input::Spatial::SpatialPointerPose^ headPose,
+                  DX::CameraResources& cameraResources);
 
       Concurrency::task<void> LoadAppStateAsync();
       bool IsCameraActive() const;
@@ -94,35 +95,35 @@ namespace HoloIntervention
 
     protected:
       // Cached references
-      NotificationSystem&                             m_notificationSystem;
-      NetworkSystem&                                  m_networkSystem;
-      Rendering::ModelRenderer&                       m_modelRenderer;
-      Physics::PhysicsAPI&                            m_physicsAPI;
-      Windows::Data::Xml::Dom::XmlDocument^           m_configDocument = nullptr;
+      NotificationSystem&                                                       m_notificationSystem;
+      NetworkSystem&                                                            m_networkSystem;
+      Rendering::ModelRenderer&                                                 m_modelRenderer;
+      Physics::PhysicsAPI&                                                      m_physicsAPI;
+      Windows::Data::Xml::Dom::XmlDocument^                                     m_configDocument = nullptr;
 
       // State variables
-      std::atomic_bool                                m_forcePose = false;
+      std::atomic_bool                                                          m_forcePose = false;
 
       // Anchor variables
-      std::atomic_bool                                m_regAnchorRequested = false;
-      uint64_t                                        m_regAnchorModelId = 0;
-      std::shared_ptr<Rendering::ModelEntry>          m_regAnchorModel = nullptr;
-      Windows::Perception::Spatial::SpatialAnchor^    m_regAnchor = nullptr;
+      std::atomic_bool                                                          m_regAnchorRequested = false;
+      uint64_t                                                                  m_regAnchorModelId = 0;
+      std::shared_ptr<Rendering::ModelEntry>                                    m_regAnchorModel = nullptr;
+      Windows::Perception::Spatial::SpatialAnchor^                              m_regAnchor = nullptr;
 
       // Registration methods
       std::map<std::wstring, std::shared_ptr<Algorithm::IRegistrationMethod>>   m_knownRegistrationMethods;
 
       mutable std::mutex                                                        m_registrationMethodMutex;
       std::shared_ptr<Algorithm::IRegistrationMethod>                           m_currentRegistrationMethod;
-      Windows::Foundation::Numerics::float4x4                                   m_cachedRegistrationTransform = Windows::Foundation::Numerics::float4x4::identity();
+      Windows::Foundation::Numerics::float4x4                                   m_cachedReferenceToAnchor = Windows::Foundation::Numerics::float4x4::identity();
 
       mutable std::mutex                                                        m_correctionMethodMutex;
       std::shared_ptr<Algorithm::IRegistrationMethod>                           m_correctionMethod;
-      Windows::Foundation::Numerics::float4x4                                   m_cachedCorrectionTransform = Windows::Foundation::Numerics::float4x4::identity();
+      Windows::Foundation::Numerics::float4x4                                   m_cachedHoloLensToHMD = Windows::Foundation::Numerics::float4x4::identity();
 
       // Constants
-      static Platform::String^                        REGISTRATION_ANCHOR_NAME;
-      static const std::wstring                       REGISTRATION_ANCHOR_MODEL_FILENAME;
+      static Platform::String^                                                  REGISTRATION_ANCHOR_NAME;
+      static const std::wstring                                                 REGISTRATION_ANCHOR_MODEL_FILENAME;
     };
   }
 }

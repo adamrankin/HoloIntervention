@@ -71,39 +71,29 @@ namespace HoloIntervention
     float3 RegistrationSystem::GetStabilizedPosition(SpatialPointerPose^ pose) const
     {
       std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
-      if (m_currentRegistrationMethod == nullptr)
+      if (m_currentRegistrationMethod != nullptr && m_currentRegistrationMethod->IsStabilizationActive())
       {
-        return float3(0.f, 0.f, 0.f);
+        return m_currentRegistrationMethod->GetStabilizedPosition(pose);
       }
-      if (m_currentRegistrationMethod->IsStabilizationActive())
-      {
-        m_currentRegistrationMethod->GetStabilizedPosition(pose);
-      }
-      if (m_regAnchor != nullptr)
+      else
       {
         const float4x4& pose = m_regAnchorModel->GetCurrentPose();
         return float3(pose.m41, pose.m42, pose.m43);
       }
-
-      // Nothing completed yet, this shouldn't even be called because in this case, priority returns not active
-      assert(false);
-      return float3(0.f, 0.f, 0.f);
     }
 
     //----------------------------------------------------------------------------
     float3 RegistrationSystem::GetStabilizedVelocity() const
     {
       std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
-      if (m_currentRegistrationMethod == nullptr)
+      if (m_currentRegistrationMethod != nullptr && m_currentRegistrationMethod->IsStabilizationActive())
       {
-        return float3(0.f, 0.f, 0.f);
+        return m_currentRegistrationMethod->GetStabilizedVelocity();
       }
-      if (m_currentRegistrationMethod->IsStabilizationActive())
+      else
       {
-        m_currentRegistrationMethod->GetStabilizedVelocity();
+        return m_regAnchorModel->GetVelocity();
       }
-
-      return m_regAnchor != nullptr ? m_regAnchorModel->GetVelocity() : float3(0.f, 0.f, 0.f);
     }
 
     //----------------------------------------------------------------------------
@@ -114,7 +104,14 @@ namespace HoloIntervention
       {
         return m_currentRegistrationMethod->GetStabilizePriority();
       }
-      return m_regAnchorModel != nullptr && m_regAnchorModel->IsInFrustum() ? PRIORITY_REGISTRATION : PRIORITY_NOT_ACTIVE;
+      else if (m_currentRegistrationMethod != nullptr && !m_currentRegistrationMethod->IsStabilizationActive() && m_regAnchorModel != nullptr)
+      {
+        return PRIORITY_REGISTRATION;
+      }
+      else
+      {
+        return PRIORITY_NOT_ACTIVE;
+      }
     }
 
     //----------------------------------------------------------------------------
@@ -130,10 +127,10 @@ namespace HoloIntervention
         auto rootNode = document->SelectNodes(L"/HoloIntervention")->Item(0);
 
         auto repo = ref new UWPOpenIGTLink::TransformRepository();
-        auto trName = ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD");
-        repo->SetTransform(trName, m_correctionMethod->GetRegistrationTransformation() * m_cachedRegistrationTransform, true);
+        auto trName = ref new UWPOpenIGTLink::TransformName(L"Reference", L"Anchor");
+        repo->SetTransform(trName, m_cachedReferenceToAnchor, true);
         repo->SetTransformPersistent(trName, true);
-        trName = ref new UWPOpenIGTLink::TransformName(L"Correction", L"HMD");
+        trName = ref new UWPOpenIGTLink::TransformName(L"HoloLens", L"HMD");
         repo->SetTransform(trName, m_correctionMethod->GetRegistrationTransformation(), true);
         repo->SetTransformPersistent(trName, true);
         repo->WriteConfiguration(document);
@@ -171,7 +168,7 @@ namespace HoloIntervention
       return create_task([this, document]()
       {
         auto repo = ref new UWPOpenIGTLink::TransformRepository();
-        auto trName = ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD");
+        auto trName = ref new UWPOpenIGTLink::TransformName(L"Reference", L"Anchor");
         if (!repo->ReadConfiguration(document))
         {
           return false;
@@ -181,7 +178,7 @@ namespace HoloIntervention
         temp = repo->GetTransform(trName);
         if (temp->Key)
         {
-          m_cachedRegistrationTransform = transpose(temp->Value);
+          m_cachedReferenceToAnchor = transpose(temp->Value);
         }
 
         // Test each known registration method ReadConfigurationAsync and store if known
@@ -205,12 +202,13 @@ namespace HoloIntervention
         {
           return false;
         }
+        m_correctionMethod->RegisterTransformUpdatedCallback(std::bind(&RegistrationSystem::OnCorrectionComplete, this, std::placeholders::_1));
 
-        trName = ref new UWPOpenIGTLink::TransformName(L"Correction", L"HMD");
+        trName = ref new UWPOpenIGTLink::TransformName(L"HoloLens", L"HMD");
         temp = repo->GetTransform(trName);
         if (temp->Key)
         {
-          m_cachedCorrectionTransform = transpose(temp->Value);
+          m_cachedHoloLensToHMD = transpose(temp->Value);
         }
         m_configDocument = document;
         m_componentReady = true;
@@ -253,7 +251,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void RegistrationSystem::Update(DX::StepTimer& timer, SpatialCoordinateSystem^ coordinateSystem, SpatialPointerPose^ headPose)
+    void RegistrationSystem::Update(DX::StepTimer& timer, SpatialCoordinateSystem^ coordinateSystem, SpatialPointerPose^ headPose, DX::CameraResources& cameraResources)
     {
       // Anchor placement logic
       if (m_regAnchorRequested)
@@ -295,13 +293,13 @@ namespace HoloIntervention
       std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
       if (m_currentRegistrationMethod != nullptr && m_currentRegistrationMethod->IsStarted() && transformContainer != nullptr)
       {
-        m_currentRegistrationMethod->Update(headPose, coordinateSystem, transformContainer);
+        m_currentRegistrationMethod->Update(headPose, coordinateSystem, transformContainer, cameraResources);
       }
 
-      std::lock_guard<std::mutex> guard(m_correctionMethodMutex);
+      std::lock_guard<std::mutex> corr_guard(m_correctionMethodMutex);
       if (m_correctionMethod->IsStarted())
       {
-        m_correctionMethod->Update(headPose, coordinateSystem, transformContainer);
+        m_correctionMethod->Update(headPose, coordinateSystem, transformContainer, cameraResources);
       }
     }
 
@@ -315,6 +313,7 @@ namespace HoloIntervention
           m_forcePose = true;
           m_regAnchor = m_physicsAPI.GetAnchor(REGISTRATION_ANCHOR_NAME);
           m_regAnchorModel->SetVisible(true);
+          std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
           if (m_currentRegistrationMethod != nullptr)
           {
             m_currentRegistrationMethod->SetWorldAnchor(m_regAnchor);
@@ -326,6 +325,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     bool RegistrationSystem::IsCameraActive() const
     {
+      std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
       auto camReg = dynamic_cast<Algorithm::CameraRegistration*>(m_currentRegistrationMethod.get());
       return camReg != nullptr && camReg->IsCameraActive();
     }
@@ -379,11 +379,11 @@ namespace HoloIntervention
         m_currentRegistrationMethod->RegisterTransformUpdatedCallback(std::bind(&RegistrationSystem::OnRegistrationComplete, this, std::placeholders::_1));
         m_currentRegistrationMethod->ReadConfigurationAsync(m_configDocument).then([this](bool result)
         {
-          std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
           if (!result)
           {
             return task_from_result(false);
           }
+          std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
           return m_currentRegistrationMethod->StartAsync();
         }).then([this](bool result)
         {
@@ -421,11 +421,11 @@ namespace HoloIntervention
         m_currentRegistrationMethod->RegisterTransformUpdatedCallback(std::bind(&RegistrationSystem::OnRegistrationComplete, this, std::placeholders::_1));
         m_currentRegistrationMethod->ReadConfigurationAsync(m_configDocument).then([this](bool result)
         {
-          std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
           if (!result)
           {
             return task_from_result(false);
           }
+          std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
           return m_currentRegistrationMethod->StartAsync();
         }).then([this](bool result)
         {
@@ -471,7 +471,6 @@ namespace HoloIntervention
           return;
         }
 
-        m_correctionMethod->RegisterTransformUpdatedCallback(std::bind(&RegistrationSystem::OnCorrectionComplete, this, std::placeholders::_1));
         m_correctionMethod->StartAsync().then([this](bool result)
         {
           if (!result)
@@ -536,7 +535,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     bool RegistrationSystem::GetReferenceToCoordinateSystemTransformation(SpatialCoordinateSystem^ requestedCoordinateSystem, float4x4& outTransform)
     {
-      if (m_cachedRegistrationTransform == float4x4::identity())
+      if (m_cachedReferenceToAnchor == float4x4::identity())
       {
         return false;
       }
@@ -554,10 +553,10 @@ namespace HoloIntervention
           return false;
         }
 
-        float4x4 correctedRegistration = m_cachedRegistrationTransform;
-        correctedRegistration.m41 += m_cachedCorrectionTransform.m41;
-        correctedRegistration.m42 += m_cachedCorrectionTransform.m42;
-        correctedRegistration.m43 += m_cachedCorrectionTransform.m43;
+        float4x4 correctedRegistration = m_cachedReferenceToAnchor;
+        correctedRegistration.m41 += m_cachedHoloLensToHMD.m41;
+        correctedRegistration.m42 += m_cachedHoloLensToHMD.m42;
+        correctedRegistration.m43 += m_cachedHoloLensToHMD.m43;
         outTransform = correctedRegistration * anchorToRequestedBox->Value;
         return true;
       }
@@ -586,30 +585,30 @@ namespace HoloIntervention
 
         LOG(LogLevelType::LOG_LEVEL_INFO, L"Registration matrix scaling: " + scaling.x.ToString() + L", " + scaling.y.ToString() + L", " + scaling.z.ToString());
 
-        m_cachedRegistrationTransform = unscaledMatrix;
+        m_cachedReferenceToAnchor = unscaledMatrix;
       }
       else
       {
-        m_cachedRegistrationTransform = registrationTransformation;
+        m_cachedReferenceToAnchor = registrationTransformation;
       }
     }
 
     //-----------------------------------------------------------------------------
     void RegistrationSystem::OnCorrectionComplete(float4x4 correctionTransformation)
     {
-      m_cachedCorrectionTransform = correctionTransformation;
+      m_cachedHoloLensToHMD = correctionTransformation;
 
-      if (m_cachedRegistrationTransform != float4x4::identity())
+      if (m_cachedReferenceToAnchor != float4x4::identity())
       {
         // Apply rotation to correction (correction is relative translation only for now)
-        float4x4 regToAnchorRot = m_cachedRegistrationTransform;
+        float4x4 regToAnchorRot = m_cachedReferenceToAnchor;
         regToAnchorRot.m41 = 0.f;
         regToAnchorRot.m42 = 0.f;
         regToAnchorRot.m43 = 0.f;
 
         float3 pose_ref(correctionTransformation.m41, correctionTransformation.m42, correctionTransformation.m43);
         float3 pose_anch = transform(pose_ref, regToAnchorRot);
-        m_cachedCorrectionTransform = make_float4x4_translation(pose_anch);
+        m_cachedHoloLensToHMD = make_float4x4_translation(pose_anch);
       }
     }
 

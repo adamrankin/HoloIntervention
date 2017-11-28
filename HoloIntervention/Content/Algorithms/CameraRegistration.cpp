@@ -30,6 +30,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Common includes
 #include "Common.h"
+#include "CameraResources.h"
 #include "DeviceResources.h"
 
 // System includes
@@ -243,7 +244,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void CameraRegistration::Update(SpatialPointerPose^ headPose, SpatialCoordinateSystem^ hmdCoordinateSystem, Platform::IBox<Windows::Foundation::Numerics::float4x4>^ anchorToHMDBox)
+    void CameraRegistration::Update(SpatialPointerPose^ headPose, SpatialCoordinateSystem^ hmdCoordinateSystem, Platform::IBox<Windows::Foundation::Numerics::float4x4>^ anchorToHMDBox, DX::CameraResources& cameraResources)
     {
       if (anchorToHMDBox == nullptr)
       {

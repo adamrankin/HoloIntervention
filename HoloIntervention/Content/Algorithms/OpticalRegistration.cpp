@@ -24,6 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "pch.h"
 #include "Common.h"
+#include "CameraResources.h"
 #include "OpticalRegistration.h"
 #include "LandmarkRegistration.h"
 
@@ -100,8 +101,8 @@ namespace HoloIntervention
         auto elem = document->CreateElement("OpticalRegistration");
         elem->SetAttribute(L"IGTConnection", ref new Platform::String(m_connectionName.c_str()));
         elem->SetAttribute(L"RecalcThresholdCount", m_poseListRecalcThresholdCount.ToString());
-        elem->SetAttribute(L"From", m_opticalHMDToOpticalReferenceName->From());
-        elem->SetAttribute(L"To", m_opticalHMDToOpticalReferenceName->To());
+        elem->SetAttribute(L"From", m_holoLensToReferenceName->From());
+        elem->SetAttribute(L"To", m_holoLensToReferenceName->To());
         rootNode->AppendChild(elem);
 
         return true;
@@ -149,10 +150,10 @@ namespace HoloIntervention
           LOG(LogLevelType::LOG_LEVEL_ERROR, L"OpticalReferenceCoordinateFrame attribute not defined for optical registration. Aborting.");
           return false;
         }
-        m_opticalHMDToOpticalReferenceName = ref new UWPOpenIGTLink::TransformName(
-                                               ref new Platform::String(hmdCoordinateFrameName.c_str()),
-                                               ref new Platform::String(referenceCoordinateFrameName.c_str())
-                                             );
+        m_holoLensToReferenceName = ref new UWPOpenIGTLink::TransformName(
+                                      ref new Platform::String(hmdCoordinateFrameName.c_str()),
+                                      ref new Platform::String(referenceCoordinateFrameName.c_str())
+                                    );
 
         m_componentReady = true;
         return true;
@@ -223,7 +224,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void OpticalRegistration::Update(SpatialPointerPose^ headPose, SpatialCoordinateSystem^ hmdCoordinateSystem, Platform::IBox<float4x4>^ anchorToHMDBox)
+    void OpticalRegistration::Update(SpatialPointerPose^ headPose, SpatialCoordinateSystem^ hmdCoordinateSystem, Platform::IBox<float4x4>^ anchorToHMDBox, DX::CameraResources& cameraResources)
     {
       if (!m_started || !m_componentReady)
       {
@@ -231,7 +232,7 @@ namespace HoloIntervention
       }
 
       // grab latest transform
-      auto transform = m_networkSystem.GetTransform(m_hashedConnectionName, m_opticalHMDToOpticalReferenceName, m_latestTimestamp);
+      auto transform = m_networkSystem.GetTransform(m_hashedConnectionName, m_holoLensToReferenceName, m_latestTimestamp);
       if (transform == nullptr || !transform->Valid)
       {
         return;

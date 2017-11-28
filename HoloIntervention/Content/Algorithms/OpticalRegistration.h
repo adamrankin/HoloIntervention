@@ -62,7 +62,7 @@ namespace HoloIntervention
       virtual void ResetRegistration();
 
       virtual void EnableVisualization(bool enabled);
-      virtual void Update(Windows::UI::Input::Spatial::SpatialPointerPose^ headPose, Windows::Perception::Spatial::SpatialCoordinateSystem^ hmdCoordinateSystem, Platform::IBox<Windows::Foundation::Numerics::float4x4>^ anchorToHMDBox);
+      virtual void Update(Windows::UI::Input::Spatial::SpatialPointerPose^ headPose, Windows::Perception::Spatial::SpatialCoordinateSystem^ hmdCoordinateSystem, Platform::IBox<Windows::Foundation::Numerics::float4x4>^ anchorToHMDBox, DX::CameraResources& cameraResources);
 
     public:
       OpticalRegistration(System::NotificationSystem& notificationSystem, System::NetworkSystem& networkSystem);
@@ -80,7 +80,7 @@ namespace HoloIntervention
       std::wstring                          m_connectionName;
       uint64                                m_hashedConnectionName;
       double                                m_latestTimestamp = 0.0;
-      UWPOpenIGTLink::TransformName^        m_opticalHMDToOpticalReferenceName;
+      UWPOpenIGTLink::TransformName^        m_holoLensToReferenceName;
       std::atomic_bool                      m_started = false;
       std::atomic_bool                      m_calculating = false;
 
