@@ -38,7 +38,7 @@ namespace HoloIntervention
 
   namespace Algorithm
   {
-    class ManualRegistration : public IRegistrationMethod
+    class ToolBasedRegistration : public IRegistrationMethod
     {
     public:
       virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition(Windows::UI::Input::Spatial::SpatialPointerPose^ pose) const;
@@ -66,8 +66,8 @@ namespace HoloIntervention
       virtual Windows::Foundation::Numerics::float4x4 GetRegistrationTransformation() const;
 
     public:
-      ManualRegistration(System::NetworkSystem& networkSystem);
-      ~ManualRegistration();
+      ToolBasedRegistration(System::NetworkSystem& networkSystem);
+      ~ToolBasedRegistration();
 
     protected:
       // Cached systems

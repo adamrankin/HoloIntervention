@@ -70,8 +70,8 @@ namespace HoloIntervention
 
     protected:
       // Cached references
-      System::NotificationSystem&          m_notificationSystem;
-      System::NetworkSystem&               m_networkSystem;
+      System::NotificationSystem&           m_notificationSystem;
+      System::NetworkSystem&                m_networkSystem;
 
       // Landmark registration
       std::shared_ptr<LandmarkRegistration> m_landmarkRegistration;

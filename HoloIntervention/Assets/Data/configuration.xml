@@ -62,7 +62,7 @@
   <IGTConnections>
     <Connection
       Name="NDITracker"
-      Host="169.254.80.80"
+      Host="192.168.0.28"
       Port="18944" 
       />
 

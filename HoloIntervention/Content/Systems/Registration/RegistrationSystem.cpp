@@ -31,7 +31,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Registration types
 #include "CameraRegistration.h"
-#include "ManualRegistration.h"
+#include "ToolBasedRegistration.h"
 #include "OpticalRegistration.h"
 
 // Rendering includes
@@ -186,7 +186,7 @@ namespace HoloIntervention
              {
                std::pair<std::wstring, std::shared_ptr<Algorithm::IRegistrationMethod>>(L"Optical", std::make_shared<Algorithm::OpticalRegistration>(m_notificationSystem, m_networkSystem)),
                std::pair<std::wstring, std::shared_ptr<Algorithm::IRegistrationMethod>>(L"Camera", std::make_shared<Algorithm::CameraRegistration>(m_notificationSystem, m_networkSystem, m_modelRenderer)),
-               std::pair<std::wstring, std::shared_ptr<Algorithm::IRegistrationMethod>>(L"Manual", std::make_shared<Algorithm::ManualRegistration>(m_networkSystem))
+               std::pair<std::wstring, std::shared_ptr<Algorithm::IRegistrationMethod>>(L"Manual", std::make_shared<Algorithm::ToolBasedRegistration>(m_networkSystem))
              })
         {
           bool result = pair.second->ReadConfigurationAsync(document).get();
@@ -224,7 +224,7 @@ namespace HoloIntervention
       , m_modelRenderer(modelRenderer)
       , m_physicsAPI(physicsAPI)
       , m_currentRegistrationMethod(nullptr)
-      , m_correctionMethod(std::make_shared<Algorithm::ManualRegistration>(networkSystem))
+      , m_correctionMethod(std::make_shared<Algorithm::ToolBasedRegistration>(networkSystem))
     {
       m_modelRenderer.AddModelAsync(REGISTRATION_ANCHOR_MODEL_FILENAME).then([this](uint64 m_regAnchorModelId)
       {

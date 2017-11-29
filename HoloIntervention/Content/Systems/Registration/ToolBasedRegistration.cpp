@@ -25,7 +25,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "pch.h"
 #include "Common.h"
 #include "CameraResources.h"
-#include "ManualRegistration.h"
+#include "ToolBasedRegistration.h"
 
 // System includes
 #include "NetworkSystem.h"
@@ -48,25 +48,25 @@ namespace HoloIntervention
   namespace Algorithm
   {
     //----------------------------------------------------------------------------
-    float3 ManualRegistration::GetStabilizedPosition(SpatialPointerPose^ pose) const
+    float3 ToolBasedRegistration::GetStabilizedPosition(SpatialPointerPose^ pose) const
     {
       return float3(0.f, 0.f, 0.f);
     }
 
     //----------------------------------------------------------------------------
-    float3 ManualRegistration::GetStabilizedVelocity() const
+    float3 ToolBasedRegistration::GetStabilizedVelocity() const
     {
       return float3(0.f, 0.f, 0.f);
     }
 
     //----------------------------------------------------------------------------
-    float ManualRegistration::GetStabilizePriority() const
+    float ToolBasedRegistration::GetStabilizePriority() const
     {
       return PRIORITY_MANUAL;
     }
 
     //----------------------------------------------------------------------------
-    task<bool> ManualRegistration::WriteConfigurationAsync(XmlDocument^ document)
+    task<bool> ToolBasedRegistration::WriteConfigurationAsync(XmlDocument^ document)
     {
       return create_task([this, document]()
       {
@@ -88,7 +88,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<bool> ManualRegistration::ReadConfigurationAsync(XmlDocument^ document)
+    task<bool> ToolBasedRegistration::ReadConfigurationAsync(XmlDocument^ document)
     {
       return create_task([this, document]()
       {
@@ -136,24 +136,24 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ManualRegistration::SetWorldAnchor(Windows::Perception::Spatial::SpatialAnchor^ worldAnchor)
+    void ToolBasedRegistration::SetWorldAnchor(Windows::Perception::Spatial::SpatialAnchor^ worldAnchor)
     {
 
     }
 
     //----------------------------------------------------------------------------
-    ManualRegistration::ManualRegistration(System::NetworkSystem& networkSystem)
+    ToolBasedRegistration::ToolBasedRegistration(System::NetworkSystem& networkSystem)
       : m_networkSystem(networkSystem)
     {
     }
 
     //----------------------------------------------------------------------------
-    ManualRegistration::~ManualRegistration()
+    ToolBasedRegistration::~ToolBasedRegistration()
     {
     }
 
     //----------------------------------------------------------------------------
-    task<bool> ManualRegistration::StartAsync()
+    task<bool> ToolBasedRegistration::StartAsync()
     {
       m_baselineNeeded = true;
       m_started = true;
@@ -161,7 +161,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<bool> ManualRegistration::StopAsync()
+    task<bool> ToolBasedRegistration::StopAsync()
     {
       m_started = false;
       m_registrationMatrix = m_accumulatorMatrix * m_registrationMatrix;
@@ -170,13 +170,13 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool ManualRegistration::IsStarted()
+    bool ToolBasedRegistration::IsStarted()
     {
       return m_started;
     }
 
     //----------------------------------------------------------------------------
-    void ManualRegistration::ResetRegistration()
+    void ToolBasedRegistration::ResetRegistration()
     {
       m_baselineNeeded = true;
       m_registrationMatrix = float4x4::identity();
@@ -184,13 +184,13 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ManualRegistration::EnableVisualization(bool enabled)
+    void ToolBasedRegistration::EnableVisualization(bool enabled)
     {
 
     }
 
     //----------------------------------------------------------------------------
-    void ManualRegistration::Update(SpatialPointerPose^ headPose, SpatialCoordinateSystem^ hmdCoordinateSystem, IBox<float4x4>^ anchorToHMDBox, DX::CameraResources& cameraResources)
+    void ToolBasedRegistration::Update(SpatialPointerPose^ headPose, SpatialCoordinateSystem^ hmdCoordinateSystem, IBox<float4x4>^ anchorToHMDBox, DX::CameraResources& cameraResources)
     {
       if (!m_started)
       {
@@ -231,7 +231,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    float4x4 ManualRegistration::GetRegistrationTransformation() const
+    float4x4 ToolBasedRegistration::GetRegistrationTransformation() const
     {
       return m_accumulatorMatrix * m_registrationMatrix;
     }
