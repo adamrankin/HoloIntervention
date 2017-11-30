@@ -131,16 +131,22 @@ namespace HoloIntervention
       {
         if (document->SelectNodes(L"/HoloIntervention")->Length != 1)
         {
-          return task_from_result(false);
+          return false;
         }
 
         auto rootNode = document->SelectNodes(L"/HoloIntervention")->Item(0);
 
         auto repo = ref new UWPOpenIGTLink::TransformRepository();
         auto trName = ref new UWPOpenIGTLink::TransformName(L"Reference", L"Anchor");
-        repo->SetTransform(trName, m_cachedReferenceToAnchor, true);
-        repo->SetTransformPersistent(trName, true);
-        repo->WriteConfiguration(document);
+        if (!repo->SetTransform(trName, m_cachedReferenceToAnchor, true); =)
+        {
+          return false;
+        }
+        if (!repo->SetTransformPersistent(trName, true))
+        {
+          return false;
+        }
+        return repo->WriteConfiguration(document);
       });
     }
 
