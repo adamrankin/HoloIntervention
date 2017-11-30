@@ -71,6 +71,7 @@ namespace HoloIntervention
       static std::unique_ptr<DirectX::InstancedGeometricPrimitive> CreatePrimitive(const DX::DeviceResources& deviceResources, PrimitiveType type, Windows::Foundation::Numerics::float3 argument, size_t tessellation, bool rhcoords, bool invertn);
 
       static PrimitiveType StringToPrimitive(const std::wstring& primitiveName);
+      static PrimitiveType StringToPrimitive(Platform::String^ primitiveName);
       static std::wstring PrimitiveToString(PrimitiveType type);
     protected:
       bool FindModel(uint64 modelId, std::shared_ptr<ModelEntry>& modelEntry) const;

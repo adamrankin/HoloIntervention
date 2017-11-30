@@ -43,7 +43,7 @@ using namespace Windows::UI::Input::Spatial;
 
 namespace HoloIntervention
 {
-  namespace Algorithm
+  namespace System
   {
     const float OpticalRegistration::MIN_DISTANCE_BETWEEN_POINTS_METER = 0.001f;
 
@@ -51,7 +51,7 @@ namespace HoloIntervention
     OpticalRegistration::OpticalRegistration(System::NotificationSystem& notificationSystem, System::NetworkSystem& networkSystem)
       : m_notificationSystem(notificationSystem)
       , m_networkSystem(networkSystem)
-      , m_landmarkRegistration(std::make_shared<LandmarkRegistration>())
+      , m_landmarkRegistration(std::make_shared<Algorithm::LandmarkRegistration>())
     {
 
     }
@@ -202,7 +202,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool OpticalRegistration::IsStarted()
+    bool OpticalRegistration::IsStarted() const
     {
       return m_started;
     }

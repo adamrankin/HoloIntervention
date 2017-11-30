@@ -37,6 +37,9 @@ namespace HoloIntervention
       void OnInteractionDetected(Windows::UI::Input::Spatial::SpatialInteraction^ interaction, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem);
       void OnSourcePressed(Windows::UI::Input::Spatial::SpatialInteractionSourceEventArgs^ args);
 
+      Windows::UI::Input::Spatial::SpatialInteractionSourceKind Kind() const;
+      uint32 Id() const;
+
     protected:
       // For Hands, we map commands based on Gestures detection
       void OnTapped(Windows::UI::Input::Spatial::SpatialGestureRecognizer^ sender, Windows::UI::Input::Spatial::SpatialTappedEventArgs^ args);
@@ -50,7 +53,7 @@ namespace HoloIntervention
       bool DetectIntersection(Windows::UI::Input::Spatial::SpatialPointerPose^ pointerPose);
 
     protected:
-      unsigned int                                              m_sourceId;
+      uint32                                                    m_sourceId;
       Windows::UI::Input::Spatial::SpatialInteractionSourceKind m_sourceKind;
 
       Windows::UI::Input::Spatial::SpatialGestureRecognizer^    m_gestureRecognizer;

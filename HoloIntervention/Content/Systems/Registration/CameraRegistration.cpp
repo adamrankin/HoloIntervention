@@ -91,7 +91,7 @@ namespace
 
 namespace HoloIntervention
 {
-  namespace Algorithm
+  namespace System
   {
     const float CameraRegistration::VISUALIZATION_SPHERE_RADIUS = 0.03f;
 
@@ -435,7 +435,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool CameraRegistration::IsStarted()
+    bool CameraRegistration::IsStarted() const
     {
       return IsCameraActive();
     }
@@ -619,7 +619,7 @@ namespace HoloIntervention
             continue;
           }
 
-          LandmarkRegistration::VecFloat3 sphereInReferenceResults;
+          Algorithm::LandmarkRegistration::VecFloat3 sphereInReferenceResults;
           if (!RetrieveTrackerFrameLocations(sphereInReferenceResults))
           {
             continue;
@@ -638,7 +638,7 @@ namespace HoloIntervention
           if (ComputePhantomToCameraTransform(frame, l_initialized, l_height, l_width, l_hsv, l_redMat, l_redMatWrap, l_imageRGB, l_mask, l_rvec, l_tvec, l_canny_output, phantomToCameraTransform))
           {
             // Transform points in model space to anchor space
-            LandmarkRegistration::VecFloat3 sphereInAnchorResults;
+            Algorithm::LandmarkRegistration::VecFloat3 sphereInAnchorResults;
             int i = 0;
             for (auto& sphereToPhantom : m_sphereToPhantomPoses)
             {
@@ -952,7 +952,7 @@ done:
     }
 
     //----------------------------------------------------------------------------
-    bool CameraRegistration::RetrieveTrackerFrameLocations(LandmarkRegistration::VecFloat3& outSphereInReferencePositions)
+    bool CameraRegistration::RetrieveTrackerFrameLocations(Algorithm::LandmarkRegistration::VecFloat3& outSphereInReferencePositions)
     {
       float4x4 sphereXToReferenceTransform[PHANTOM_SPHERE_COUNT];
 

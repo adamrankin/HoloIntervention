@@ -37,7 +37,7 @@ namespace DX
 
 namespace HoloIntervention
 {
-  namespace Algorithm
+  namespace System
   {
     class IRegistrationMethod : public IStabilizedComponent, public IConfigurable
     {
@@ -55,7 +55,7 @@ namespace HoloIntervention
 
       virtual Concurrency::task<bool> StartAsync() = 0;
       virtual Concurrency::task<bool> StopAsync() = 0;
-      virtual bool IsStarted() = 0;
+      virtual bool IsStarted() const = 0;
       virtual void ResetRegistration() = 0;
 
       virtual void EnableVisualization(bool enabled) = 0;

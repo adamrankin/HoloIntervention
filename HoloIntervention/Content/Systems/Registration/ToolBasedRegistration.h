@@ -36,7 +36,7 @@ namespace HoloIntervention
     class NetworkSystem;
   }
 
-  namespace Algorithm
+  namespace System
   {
     class ToolBasedRegistration : public IRegistrationMethod
     {
@@ -54,7 +54,7 @@ namespace HoloIntervention
 
       virtual Concurrency::task<bool> StartAsync();
       virtual Concurrency::task<bool> StopAsync();
-      virtual bool IsStarted();
+      virtual bool IsStarted() const;
       virtual void ResetRegistration();
 
       virtual void EnableVisualization(bool enabled);

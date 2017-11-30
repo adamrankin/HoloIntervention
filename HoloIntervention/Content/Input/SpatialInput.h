@@ -47,7 +47,8 @@ namespace HoloIntervention
       void OnSourcePressed(Windows::UI::Input::Spatial::SpatialInteractionManager^ sender, Windows::UI::Input::Spatial::SpatialInteractionSourceEventArgs^ args);
       void OnSourceUpdated(Windows::UI::Input::Spatial::SpatialInteractionManager^ sender, Windows::UI::Input::Spatial::SpatialInteractionSourceEventArgs^ args);
 
-      SpatialSourceHandler* GetSourceHandler(unsigned int sourceId);
+      std::shared_ptr<SpatialSourceHandler> GetSourceHandlerById(uint32 sourceId);
+      std::shared_ptr<SpatialSourceHandler> GetFirstSourceHandlerByKind(Windows::UI::Input::Spatial::SpatialInteractionSourceKind kind);
 
     protected:
       Windows::UI::Input::Spatial::SpatialInteractionManager^     m_interactionManager = nullptr;

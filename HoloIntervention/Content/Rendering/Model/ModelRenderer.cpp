@@ -321,6 +321,12 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    PrimitiveType ModelRenderer::StringToPrimitive(Platform::String^ primitiveName)
+    {
+      return ModelRenderer::StringToPrimitive(std::wstring(primitiveName->Data()));
+    }
+
+    //----------------------------------------------------------------------------
     std::wstring ModelRenderer::PrimitiveToString(PrimitiveType type)
     {
       switch (type)

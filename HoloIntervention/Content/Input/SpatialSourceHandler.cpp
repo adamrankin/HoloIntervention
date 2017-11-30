@@ -124,6 +124,18 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    Windows::UI::Input::Spatial::SpatialInteractionSourceKind SpatialSourceHandler::Kind() const
+    {
+      return m_sourceKind;
+    }
+
+    //----------------------------------------------------------------------------
+  default::uint32 SpatialSourceHandler::Id() const
+    {
+      return m_sourceId;
+    }
+
+    //----------------------------------------------------------------------------
     void SpatialSourceHandler::OnNavigationStarted(SpatialGestureRecognizer^ sender, SpatialNavigationStartedEventArgs^ args)
     {
       if (DetectIntersection(args->TryGetPointerPose(m_coordinateSystem)))

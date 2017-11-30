@@ -47,16 +47,34 @@ namespace HoloIntervention
   {
     class PhysicsAPI;
   }
+
   namespace Rendering
   {
     class ModelEntry;
     class ModelRenderer;
   }
 
+  namespace Algorithm
+  {
+    class LandmarkRegistration;
+  }
+
   namespace System
   {
     class NetworkSystem;
     class NotificationSystem;
+
+    enum RegistrationType
+    {
+      REGISTRATIONTYPE_NONE,
+      REGISTRATIONTYPE_TOOLBASED,
+      REGISTRATIONTYPE_OPTICAL,
+      REGISTRATIONTYPE_CAMERA,
+      REGISTRATIONTYPE_MODELALIGNMENT,
+
+
+      REGISTRATIONTYPE_COUNT
+    };
 
     class RegistrationSystem : public Input::IVoiceInput, public IStabilizedComponent, public IConfigurable
     {
@@ -88,42 +106,39 @@ namespace HoloIntervention
       bool GetReferenceToCoordinateSystemTransformation(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem, Windows::Foundation::Numerics::float4x4& outTransform);
 
       void OnRegistrationComplete(Windows::Foundation::Numerics::float4x4);
-      void OnCorrectionComplete(Windows::Foundation::Numerics::float4x4);
 
     protected:
       bool CheckRegistrationValidity(Windows::Foundation::Numerics::float4x4);
 
     protected:
       // Cached references
-      NotificationSystem&                                                       m_notificationSystem;
-      NetworkSystem&                                                            m_networkSystem;
-      Rendering::ModelRenderer&                                                 m_modelRenderer;
-      Physics::PhysicsAPI&                                                      m_physicsAPI;
-      Windows::Data::Xml::Dom::XmlDocument^                                     m_configDocument = nullptr;
+      NotificationSystem&                                             m_notificationSystem;
+      NetworkSystem&                                                  m_networkSystem;
+      Rendering::ModelRenderer&                                       m_modelRenderer;
+      Physics::PhysicsAPI&                                            m_physicsAPI;
+      Windows::Data::Xml::Dom::XmlDocument^                           m_configDocument = nullptr;
 
       // State variables
-      std::atomic_bool                                                          m_forcePose = false;
+      std::atomic_bool                                                m_forcePose = false;
 
       // Anchor variables
-      std::atomic_bool                                                          m_regAnchorRequested = false;
-      uint64_t                                                                  m_regAnchorModelId = 0;
-      std::shared_ptr<Rendering::ModelEntry>                                    m_regAnchorModel = nullptr;
-      Windows::Perception::Spatial::SpatialAnchor^                              m_regAnchor = nullptr;
+      std::atomic_bool                                                m_regAnchorRequested = false;
+      uint64_t                                                        m_regAnchorModelId = 0;
+      std::shared_ptr<Rendering::ModelEntry>                          m_regAnchorModel = nullptr;
+      Windows::Perception::Spatial::SpatialAnchor^                    m_regAnchor = nullptr;
 
       // Registration methods
-      std::map<std::wstring, std::shared_ptr<Algorithm::IRegistrationMethod>>   m_knownRegistrationMethods;
+      std::map<std::wstring, std::shared_ptr<IRegistrationMethod>>    m_knownRegistrationMethods;
 
-      mutable std::mutex                                                        m_registrationMethodMutex;
-      std::shared_ptr<Algorithm::IRegistrationMethod>                           m_currentRegistrationMethod;
-      Windows::Foundation::Numerics::float4x4                                   m_cachedReferenceToAnchor = Windows::Foundation::Numerics::float4x4::identity();
-
-      mutable std::mutex                                                        m_correctionMethodMutex;
-      std::shared_ptr<Algorithm::IRegistrationMethod>                           m_correctionMethod;
-      Windows::Foundation::Numerics::float4x4                                   m_cachedHoloLensToHMD = Windows::Foundation::Numerics::float4x4::identity();
+      mutable std::mutex                                              m_registrationMethodMutex;
+      std::shared_ptr<IRegistrationMethod>                            m_currentRegistrationMethod;
+      Windows::Foundation::Numerics::float4x4                         m_cachedReferenceToAnchor = Windows::Foundation::Numerics::float4x4::identity();
 
       // Constants
-      static Platform::String^                                                  REGISTRATION_ANCHOR_NAME;
-      static const std::wstring                                                 REGISTRATION_ANCHOR_MODEL_FILENAME;
+      static Platform::String^                                        REGISTRATION_ANCHOR_NAME;
+      static const std::wstring                                       REGISTRATION_ANCHOR_MODEL_FILENAME;
+
+      static std::array<std::wstring, REGISTRATIONTYPE_COUNT>         REGISTRATION_TYPE_NAMES;
     };
   }
 }

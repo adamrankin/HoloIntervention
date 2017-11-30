@@ -24,24 +24,27 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
+#include "Common.h"
 #include "IRegistrationMethod.h"
+#include "IVoiceInput.h"
 
 namespace HoloIntervention
 {
+  namespace Rendering
+  {
+    class ModelRenderer;
+    class ModelEntry;
+  }
+
   namespace System
   {
     class NotificationSystem;
     class NetworkSystem;
   }
 
-  namespace Algorithm
-  {
-    class LandmarkRegistration;
-  }
-
   namespace System
   {
-    class OpticalRegistration : public IRegistrationMethod
+    class ModelAlignmentRegistration : public IRegistrationMethod
     {
       // First = head pose, second = tracker pose
       typedef Windows::Foundation::Numerics::float3 Position;
@@ -63,44 +66,43 @@ namespace HoloIntervention
       virtual Concurrency::task<bool> StopAsync();
       virtual bool IsStarted() const;
       virtual void ResetRegistration();
-
       virtual void EnableVisualization(bool enabled);
+
       virtual void Update(Windows::UI::Input::Spatial::SpatialPointerPose^ headPose, Windows::Perception::Spatial::SpatialCoordinateSystem^ hmdCoordinateSystem, Platform::IBox<Windows::Foundation::Numerics::float4x4>^ anchorToHMDBox, DX::CameraResources& cameraResources);
 
     public:
-      OpticalRegistration(System::NotificationSystem& notificationSystem, System::NetworkSystem& networkSystem);
-      ~OpticalRegistration();
+      ModelAlignmentRegistration(System::NotificationSystem& notificationSystem, System::NetworkSystem& networkSystem, Rendering::ModelRenderer& modelRenderer);
+      ~ModelAlignmentRegistration();
 
     protected:
       // Cached references
-      System::NotificationSystem&                       m_notificationSystem;
-      System::NetworkSystem&                            m_networkSystem;
-
-      // Landmark registration
-      std::shared_ptr<Algorithm::LandmarkRegistration>  m_landmarkRegistration;
+      System::NotificationSystem&             m_notificationSystem;
+      System::NetworkSystem&                  m_networkSystem;
+      Rendering::ModelRenderer&               m_modelRenderer;
 
       // State variables
-      std::wstring                                      m_connectionName;
-      uint64                                            m_hashedConnectionName;
-      double                                            m_latestTimestamp = 0.0;
-      UWPOpenIGTLink::TransformName^                    m_holoLensToReferenceName;
-      std::atomic_bool                                  m_started = false;
-      std::atomic_bool                                  m_calculating = false;
+      std::wstring                            m_connectionName;
+      uint64                                  m_hashedConnectionName;
+      double                                  m_latestTimestamp = 0.0;
+      UWPOpenIGTLink::TransformName^          m_pointToReferenceTransformName;
+      std::atomic_bool                        m_started = false;
+      std::atomic_bool                        m_calculating = false;
 
-      // Behavior variables
-      uint32                                            m_poseListRecalcThresholdCount;
-      uint32                                            m_currentNewPointCount = 0;
+      // Behaviour variables
+      std::atomic_bool                        m_pointCaptureRequested = false;
 
       // Point data
-      std::mutex                                        m_pointAccessMutex;
-      PositionList                                      m_opticalPositionList;
-      PositionList                                      m_hololensInAnchorPositionList;
-      Position                                          m_previousOpticalPosition = Position::zero();
-      Position                                          m_previousHoloLensPosition = Position::zero();
+      std::mutex                              m_pointAccessMutex;
+      uint32                                  m_numberOfPointsToCollect = 12;
+      Position                                m_previousPointPosition = Position::zero();
+      PositionList                            m_pointReferenceList;
+
+      // Model visualization
+      Rendering::PrimitiveType                m_primitiveType = Rendering::PrimitiveType_NONE;
+      std::shared_ptr<Rendering::ModelEntry>  m_modelEntry = nullptr;
 
       // Constants
-      static const uint32                               DEFAULT_LIST_RECALC_THRESHOLD = 100;
-      static const float                                MIN_DISTANCE_BETWEEN_POINTS_METER; // (5mm)
+      static const float                      MIN_DISTANCE_BETWEEN_POINTS_METER; // (currently 10mm)
     };
   }
 }

@@ -72,7 +72,7 @@ namespace HoloIntervention
     class NotificationSystem;
   }
 
-  namespace Algorithm
+  namespace System
   {
     class CameraRegistration : public IRegistrationMethod
     {
@@ -107,7 +107,7 @@ namespace HoloIntervention
 
       virtual Concurrency::task<bool> StopAsync();
       virtual Concurrency::task<bool> StartAsync();
-      virtual bool IsStarted();
+      virtual bool IsStarted() const;
       virtual void ResetRegistration();
       virtual void EnableVisualization(bool enabled);
       virtual void Update(Windows::UI::Input::Spatial::SpatialPointerPose^ headPose, Windows::Perception::Spatial::SpatialCoordinateSystem^ hmdCoordinateSystem, Platform::IBox<Windows::Foundation::Numerics::float4x4>^ anchorToHMDBox, DX::CameraResources& cameraResources);
@@ -124,7 +124,7 @@ namespace HoloIntervention
       bool IsPhantomToCameraSane(const Windows::Foundation::Numerics::float4x4& phantomToCameraTransform);
       void ProcessAvailableFrames(Concurrency::cancellation_token token);
       void PerformLandmarkRegistration(Concurrency::cancellation_token token);
-      bool RetrieveTrackerFrameLocations(LandmarkRegistration::VecFloat3& outSphereInReferencePositions);
+      bool RetrieveTrackerFrameLocations(Algorithm::LandmarkRegistration::VecFloat3& outSphereInReferencePositions);
       bool ComputePhantomToCameraTransform(Windows::Media::Capture::Frames::VideoMediaFrame^ videoFrame, bool& initialized, int32_t& height, int32_t& width,
                                            cv::Mat& hsv, cv::Mat& redMat, cv::Mat& redMatWrap, cv::Mat& imageRGB, cv::Mat& mask, cv::Mat& rvec,
                                            cv::Mat& tvec, cv::Mat& cannyOutput, Windows::Foundation::Numerics::float4x4& modelToCameraTransform);
@@ -179,14 +179,14 @@ namespace HoloIntervention
 
       // Output
       std::mutex                                                            m_outputFramesLock;
-      LandmarkRegistration::DetectionFrames                                 m_sphereInAnchorResultFrames;
-      LandmarkRegistration::DetectionFrames                                 m_sphereInReferenceResultFrames;
+      Algorithm::LandmarkRegistration::DetectionFrames                      m_sphereInAnchorResultFrames;
+      Algorithm::LandmarkRegistration::DetectionFrames                      m_sphereInReferenceResultFrames;
 
       // State
       Concurrency::cancellation_token_source                                m_tokenSource;
       std::atomic_bool                                                      m_pnpNeedsInit = true;
       uint32                                                                m_lastRegistrationResultCount = NUMBER_OF_FRAMES_BETWEEN_REGISTRATION;
-      std::shared_ptr<LandmarkRegistration>                                 m_landmarkRegistration = std::make_shared<LandmarkRegistration>();
+      std::shared_ptr<Algorithm::LandmarkRegistration>                      m_landmarkRegistration = std::make_shared<Algorithm::LandmarkRegistration>();
 
       static const uint32                                                   NUMBER_OF_FRAMES_BETWEEN_REGISTRATION = 3;
       static const uint32                                                   PHANTOM_SPHERE_COUNT = 5;

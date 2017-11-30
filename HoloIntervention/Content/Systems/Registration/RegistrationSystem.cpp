@@ -31,8 +31,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Registration types
 #include "CameraRegistration.h"
-#include "ToolBasedRegistration.h"
+#include "ModelAlignmentRegistration.h"
 #include "OpticalRegistration.h"
+#include "ToolBasedRegistration.h"
 
 // Rendering includes
 #include "ModelRenderer.h"
@@ -66,6 +67,15 @@ namespace HoloIntervention
   {
     Platform::String^ RegistrationSystem::REGISTRATION_ANCHOR_NAME = ref new Platform::String(L"Registration");
     const std::wstring RegistrationSystem::REGISTRATION_ANCHOR_MODEL_FILENAME = L"anchor";
+
+    std::array<std::wstring, REGISTRATIONTYPE_COUNT> RegistrationSystem::REGISTRATION_TYPE_NAMES =
+    {
+      L"None",
+      L"ToolBased",
+      L"Optical",
+      L"Camera",
+      L"ModelAlignment"
+    };
 
     //----------------------------------------------------------------------------
     float3 RegistrationSystem::GetStabilizedPosition(SpatialPointerPose^ pose) const
@@ -130,35 +140,7 @@ namespace HoloIntervention
         auto trName = ref new UWPOpenIGTLink::TransformName(L"Reference", L"Anchor");
         repo->SetTransform(trName, m_cachedReferenceToAnchor, true);
         repo->SetTransformPersistent(trName, true);
-        trName = ref new UWPOpenIGTLink::TransformName(L"HoloLens", L"HMD");
-        repo->SetTransform(trName, m_correctionMethod->GetRegistrationTransformation(), true);
-        repo->SetTransformPersistent(trName, true);
         repo->WriteConfiguration(document);
-
-        return m_correctionMethod->WriteConfigurationAsync(document).then([this, document](bool result)
-        {
-          if (!result)
-          {
-            return task_from_result(false);
-          }
-
-          std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
-          std::vector<task<bool>> taskList;
-          for (auto& regMethod : m_knownRegistrationMethods)
-          {
-            taskList.push_back(regMethod.second->WriteConfigurationAsync(document));
-          }
-
-          return when_all(begin(taskList), end(taskList)).then([this](std::vector<bool> results)
-          {
-            bool result(true);
-            for (auto r : results)
-            {
-              result &= r;
-            }
-            return result;
-          });
-        });
       });
     }
 
@@ -184,9 +166,10 @@ namespace HoloIntervention
         // Test each known registration method ReadConfigurationAsync and store if known
         for (auto pair :
              {
-               std::pair<std::wstring, std::shared_ptr<Algorithm::IRegistrationMethod>>(L"Optical", std::make_shared<Algorithm::OpticalRegistration>(m_notificationSystem, m_networkSystem)),
-               std::pair<std::wstring, std::shared_ptr<Algorithm::IRegistrationMethod>>(L"Camera", std::make_shared<Algorithm::CameraRegistration>(m_notificationSystem, m_networkSystem, m_modelRenderer)),
-               std::pair<std::wstring, std::shared_ptr<Algorithm::IRegistrationMethod>>(L"Manual", std::make_shared<Algorithm::ToolBasedRegistration>(m_networkSystem))
+               std::pair<std::wstring, std::shared_ptr<IRegistrationMethod>>(REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_OPTICAL], std::make_shared<OpticalRegistration>(m_notificationSystem, m_networkSystem)),
+               std::pair<std::wstring, std::shared_ptr<IRegistrationMethod>>(REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_MODELALIGNMENT], std::make_shared<ModelAlignmentRegistration>(m_notificationSystem, m_networkSystem, m_modelRenderer)),
+               std::pair<std::wstring, std::shared_ptr<IRegistrationMethod>>(REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_CAMERA], std::make_shared<CameraRegistration>(m_notificationSystem, m_networkSystem, m_modelRenderer)),
+               std::pair<std::wstring, std::shared_ptr<IRegistrationMethod>>(REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_TOOLBASED], std::make_shared<ToolBasedRegistration>(m_networkSystem))
              })
         {
           bool result = pair.second->ReadConfigurationAsync(document).get();
@@ -196,20 +179,6 @@ namespace HoloIntervention
           }
         }
 
-        auto task = m_correctionMethod->ReadConfigurationAsync(document);
-        auto result = task.get();
-        if (!result)
-        {
-          return false;
-        }
-        m_correctionMethod->RegisterTransformUpdatedCallback(std::bind(&RegistrationSystem::OnCorrectionComplete, this, std::placeholders::_1));
-
-        trName = ref new UWPOpenIGTLink::TransformName(L"HoloLens", L"HMD");
-        temp = repo->GetTransform(trName);
-        if (temp->Key)
-        {
-          m_cachedHoloLensToHMD = transpose(temp->Value);
-        }
         m_configDocument = document;
         m_componentReady = true;
 
@@ -224,7 +193,6 @@ namespace HoloIntervention
       , m_modelRenderer(modelRenderer)
       , m_physicsAPI(physicsAPI)
       , m_currentRegistrationMethod(nullptr)
-      , m_correctionMethod(std::make_shared<Algorithm::ToolBasedRegistration>(networkSystem))
     {
       m_modelRenderer.AddModelAsync(REGISTRATION_ANCHOR_MODEL_FILENAME).then([this](uint64 m_regAnchorModelId)
       {
@@ -295,12 +263,6 @@ namespace HoloIntervention
       {
         m_currentRegistrationMethod->Update(headPose, coordinateSystem, transformContainer, cameraResources);
       }
-
-      std::lock_guard<std::mutex> corr_guard(m_correctionMethodMutex);
-      if (m_correctionMethod->IsStarted())
-      {
-        m_correctionMethod->Update(headPose, coordinateSystem, transformContainer, cameraResources);
-      }
     }
 
     //----------------------------------------------------------------------------
@@ -326,7 +288,7 @@ namespace HoloIntervention
     bool RegistrationSystem::IsCameraActive() const
     {
       std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
-      auto camReg = dynamic_cast<Algorithm::CameraRegistration*>(m_currentRegistrationMethod.get());
+      auto camReg = dynamic_cast<CameraRegistration*>(m_currentRegistrationMethod.get());
       return camReg != nullptr && camReg->IsCameraActive();
     }
 
@@ -357,7 +319,7 @@ namespace HoloIntervention
       callbackMap[L"start camera registration"] = [this](SpeechRecognitionResult ^ result)
       {
         std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
-        if (dynamic_cast<Algorithm::CameraRegistration*>(m_currentRegistrationMethod.get()) != nullptr && m_currentRegistrationMethod->IsStarted())
+        if (dynamic_cast<CameraRegistration*>(m_currentRegistrationMethod.get()) != nullptr && m_currentRegistrationMethod->IsStarted())
         {
           m_notificationSystem.QueueMessage(L"Registration already running.");
           return;
@@ -369,12 +331,12 @@ namespace HoloIntervention
           return;
         }
 
-        if (m_knownRegistrationMethods.find(L"Camera") == m_knownRegistrationMethods.end())
+        if (m_knownRegistrationMethods.find(REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_CAMERA]) == m_knownRegistrationMethods.end())
         {
           m_notificationSystem.QueueMessage(L"No camera configuration defined. Please add the necessary information to the configuration file and try again.");
           return;
         }
-        m_currentRegistrationMethod = m_knownRegistrationMethods[L"Camera"];
+        m_currentRegistrationMethod = m_knownRegistrationMethods[REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_CAMERA]];
         m_currentRegistrationMethod->SetWorldAnchor(m_regAnchor);
         m_currentRegistrationMethod->RegisterTransformUpdatedCallback(std::bind(&RegistrationSystem::OnRegistrationComplete, this, std::placeholders::_1));
         m_currentRegistrationMethod->ReadConfigurationAsync(m_configDocument).then([this](bool result)
@@ -399,7 +361,7 @@ namespace HoloIntervention
       callbackMap[L"start optical registration"] = [this](SpeechRecognitionResult ^ result)
       {
         std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
-        if (dynamic_cast<Algorithm::OpticalRegistration*>(m_currentRegistrationMethod.get()) != nullptr && m_currentRegistrationMethod->IsStarted())
+        if (dynamic_cast<OpticalRegistration*>(m_currentRegistrationMethod.get()) != nullptr && m_currentRegistrationMethod->IsStarted())
         {
           m_notificationSystem.QueueMessage(L"Registration already running.");
           return;
@@ -411,12 +373,54 @@ namespace HoloIntervention
           return;
         }
 
-        if (m_knownRegistrationMethods.find(L"Optical") == m_knownRegistrationMethods.end())
+        if (m_knownRegistrationMethods.find(REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_OPTICAL]) == m_knownRegistrationMethods.end())
         {
           m_notificationSystem.QueueMessage(L"No optical configuration defined. Please add the necessary information to the configuration file and try again.");
           return;
         }
-        m_currentRegistrationMethod = m_knownRegistrationMethods[L"Optical"];
+        m_currentRegistrationMethod = m_knownRegistrationMethods[REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_OPTICAL]];
+        m_currentRegistrationMethod->SetWorldAnchor(m_regAnchor);
+        m_currentRegistrationMethod->RegisterTransformUpdatedCallback(std::bind(&RegistrationSystem::OnRegistrationComplete, this, std::placeholders::_1));
+        m_currentRegistrationMethod->ReadConfigurationAsync(m_configDocument).then([this](bool result)
+        {
+          if (!result)
+          {
+            return task_from_result(false);
+          }
+          std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
+          return m_currentRegistrationMethod->StartAsync();
+        }).then([this](bool result)
+        {
+          if (!result)
+          {
+            std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
+            m_currentRegistrationMethod = nullptr;
+            m_notificationSystem.QueueMessage(L"Unable to start optical registration.");
+          }
+        });
+      };
+
+      callbackMap[L"start alignment registration"] = [this](SpeechRecognitionResult ^ result)
+      {
+        std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
+        if (dynamic_cast<ModelAlignmentRegistration*>(m_currentRegistrationMethod.get()) != nullptr && m_currentRegistrationMethod->IsStarted())
+        {
+          m_notificationSystem.QueueMessage(L"Registration already running.");
+          return;
+        }
+
+        if (m_regAnchor == nullptr)
+        {
+          m_notificationSystem.QueueMessage(L"Anchor required. Please place an anchor with 'drop anchor'.");
+          return;
+        }
+
+        if (m_knownRegistrationMethods.find(REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_MODELALIGNMENT]) == m_knownRegistrationMethods.end())
+        {
+          m_notificationSystem.QueueMessage(L"No optical configuration defined. Please add the necessary information to the configuration file and try again.");
+          return;
+        }
+        m_currentRegistrationMethod = m_knownRegistrationMethods[REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_MODELALIGNMENT]];
         m_currentRegistrationMethod->SetWorldAnchor(m_regAnchor);
         m_currentRegistrationMethod->RegisterTransformUpdatedCallback(std::bind(&RegistrationSystem::OnRegistrationComplete, this, std::placeholders::_1));
         m_currentRegistrationMethod->ReadConfigurationAsync(m_configDocument).then([this](bool result)
@@ -462,55 +466,6 @@ namespace HoloIntervention
         }
       };
 
-      callbackMap[L"correct translation"] = [this](SpeechRecognitionResult ^ result)
-      {
-        std::lock_guard<std::mutex> guard(m_correctionMethodMutex);
-        if (m_correctionMethod->IsStarted())
-        {
-          m_notificationSystem.QueueMessage(L"Correction already running.");
-          return;
-        }
-
-        m_correctionMethod->StartAsync().then([this](bool result)
-        {
-          if (!result)
-          {
-            m_notificationSystem.QueueMessage(L"Unable to start correction.");
-          }
-          else
-          {
-            m_notificationSystem.QueueMessage(L"Correction started...");
-          }
-        });
-      };
-
-      callbackMap[L"stop correction"] = [this](SpeechRecognitionResult ^ result)
-      {
-        std::lock_guard<std::mutex> guard(m_correctionMethodMutex);
-        if (!m_correctionMethod->IsStarted())
-        {
-          m_notificationSystem.QueueMessage(L"Already stopped.");
-          return;
-        }
-        m_correctionMethod->StopAsync().then([this](bool result)
-        {
-          if (result)
-          {
-            m_notificationSystem.QueueMessage(L"Correction stopped.");
-          }
-          else
-          {
-            m_notificationSystem.QueueMessage(L"Error when stopping correction.");
-          }
-        });
-      };
-
-      callbackMap[L"reset correction"] = [this](SpeechRecognitionResult ^ result)
-      {
-        std::lock_guard<std::mutex> guard(m_correctionMethodMutex);
-        m_correctionMethod->ResetRegistration();
-      };
-
       callbackMap[L"enable registration viz"] = [this](SpeechRecognitionResult ^ result)
       {
         std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
@@ -553,11 +508,7 @@ namespace HoloIntervention
           return false;
         }
 
-        float4x4 correctedRegistration = m_cachedReferenceToAnchor;
-        correctedRegistration.m41 += m_cachedHoloLensToHMD.m41;
-        correctedRegistration.m42 += m_cachedHoloLensToHMD.m42;
-        correctedRegistration.m43 += m_cachedHoloLensToHMD.m43;
-        outTransform = correctedRegistration * anchorToRequestedBox->Value;
+        outTransform = m_cachedReferenceToAnchor * anchorToRequestedBox->Value;
         return true;
       }
       catch (Platform::Exception^ e)
@@ -590,25 +541,6 @@ namespace HoloIntervention
       else
       {
         m_cachedReferenceToAnchor = registrationTransformation;
-      }
-    }
-
-    //-----------------------------------------------------------------------------
-    void RegistrationSystem::OnCorrectionComplete(float4x4 correctionTransformation)
-    {
-      m_cachedHoloLensToHMD = correctionTransformation;
-
-      if (m_cachedReferenceToAnchor != float4x4::identity())
-      {
-        // Apply rotation to correction (correction is relative translation only for now)
-        float4x4 regToAnchorRot = m_cachedReferenceToAnchor;
-        regToAnchorRot.m41 = 0.f;
-        regToAnchorRot.m42 = 0.f;
-        regToAnchorRot.m43 = 0.f;
-
-        float3 pose_ref(correctionTransformation.m41, correctionTransformation.m42, correctionTransformation.m43);
-        float3 pose_anch = transform(pose_ref, regToAnchorRot);
-        m_cachedHoloLensToHMD = make_float4x4_translation(pose_anch);
       }
     }
 

@@ -121,7 +121,7 @@ namespace HoloIntervention
     {
       SpatialInteractionSourceState^ state = args->State;
       SpatialInteractionSource^ source = state->Source;
-      SpatialSourceHandler* sourceHandler = GetSourceHandler(source->Id);
+      std::shared_ptr<SpatialSourceHandler> sourceHandler = GetSourceHandlerById(source->Id);
       if (sourceHandler != nullptr)
       {
         sourceHandler->OnSourcePressed(args);
@@ -133,7 +133,7 @@ namespace HoloIntervention
     {
       SpatialInteractionSourceState^ state = args->State;
       SpatialInteractionSource^ source = state->Source;
-      SpatialSourceHandler* sourceHandler = GetSourceHandler(source->Id);
+      std::shared_ptr<SpatialSourceHandler> sourceHandler = GetSourceHandlerById(source->Id);
       if (sourceHandler != nullptr)
       {
         sourceHandler->OnSourceUpdated(state, m_referenceFrame);
@@ -141,10 +141,24 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    HoloIntervention::Input::SpatialSourceHandler* SpatialInput::GetSourceHandler(unsigned int sourceId)
+    std::shared_ptr<SpatialSourceHandler> SpatialInput::GetSourceHandlerById(uint32 sourceId)
     {
       auto it = m_sourceMap.find(sourceId);
-      return (it == m_sourceMap.end()) ? nullptr : it->second.get();
+      return (it == m_sourceMap.end()) ? nullptr : it->second;
+    }
+
+    //----------------------------------------------------------------------------
+    std::shared_ptr<SpatialSourceHandler> SpatialInput::GetFirstSourceHandlerByKind(Windows::UI::Input::Spatial::SpatialInteractionSourceKind kind)
+    {
+      for (auto& source : m_sourceMap)
+      {
+        if (source.second->Kind() == kind)
+        {
+          return source.second;
+        }
+      }
+
+      return nullptr;
     }
   }
 }

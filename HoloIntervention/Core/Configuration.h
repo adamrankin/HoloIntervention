@@ -30,6 +30,7 @@ static const float PRIORITY_GAZE = 1.f; // gaze cursor
 static const float PRIORITY_ICON = 0.5f; // icons
 static const float PRIORITY_IMAGING = 3.f; // slices
 static const float PRIORITY_CAMERA = 3.f; // spheres (will be changing)
+static const float PRIORITY_MODELALIGNMENT = 3.f; // sphere
 static const float PRIORITY_MANUAL = PRIORITY_NOT_ACTIVE; // has no display component
 static const float PRIORITY_OPTICAL = 0.5f; // no display component, for now
 static const float PRIORITY_SPLASH = 4.f; // slice

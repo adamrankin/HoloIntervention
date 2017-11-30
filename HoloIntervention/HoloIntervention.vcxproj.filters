@@ -166,6 +166,9 @@
     <ClCompile Include="Content\Systems\Registration\ToolBasedRegistration.cpp">
       <Filter>Content\Systems\Registration\ToolBased</Filter>
     </ClCompile>
+    <ClCompile Include="Content\Systems\Registration\ModelAlignmentRegistration.cpp">
+      <Filter>Content\Systems\Registration\ModelAlignment</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Content\Sound\OmnidirectionalSound.h">
@@ -359,6 +362,9 @@
     </ClInclude>
     <ClInclude Include="Content\Systems\Registration\ToolBasedRegistration.h">
       <Filter>Content\Systems\Registration\ToolBased</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Systems\Registration\ModelAlignmentRegistration.h">
+      <Filter>Content\Systems\Registration\ModelAlignment</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -761,6 +767,9 @@
     </Filter>
     <Filter Include="Content\Systems\Registration\ToolBased">
       <UniqueIdentifier>{d46066e4-7ccd-4eef-b07e-0c438434151e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Systems\Registration\ModelAlignment">
+      <UniqueIdentifier>{af9ab162-c38d-448b-8dc7-ab2c1fd5724a}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
