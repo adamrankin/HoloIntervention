@@ -60,12 +60,11 @@ namespace HoloIntervention
     *
     * O + a * D = R * X + t
     *
-    * INPUTS: X - 3xn points
-    *         O - 3xn line origin
-    *         D - 3xn line orientation
+    * INPUTS: X - copied from m_points
+    *         O - copied from m_lines.first (origin)
+    *         D - copied from m_lines.second (direction)
     *
-    * OUTPUTS: R - 3x3 rotation
-    *          t - 3x1 translation
+    * OUTPUTS: 4x4 rotation + translation
     */
     task<float4x4> PointToLineRegistration::ComputeAsync(float& outError)
     {
