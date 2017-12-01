@@ -23,46 +23,31 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-// STL includes
-#include <vector>
-
-// WinRt includes
-#include <ppltasks.h>
-
-// OpenCV includes
-#include <opencv2/core.hpp>
+#include "Math.h"
 
 namespace HoloIntervention
 {
   namespace Algorithm
   {
-    class LandmarkRegistration
+    class PointToLineRegistration
     {
     public:
-      typedef std::vector<Windows::Foundation::Numerics::float2> VecFloat2;
-      typedef std::vector<Windows::Foundation::Numerics::float3> VecFloat3;
-      typedef std::vector<Windows::Foundation::Numerics::float4> VecFloat4;
-      typedef std::vector<Windows::Foundation::Numerics::float4x4> VecFloat4x4;
-      typedef std::vector<VecFloat3> DetectionFrames;
-      typedef std::vector<cv::Point3f> LandmarkListCv;
+      void AddPoint(const Point& point);
+      void AddLine(const Line& line);
 
-      LandmarkRegistration();
-      ~LandmarkRegistration();
+      void Reset();
 
-      void SetSourceLandmarks(const DetectionFrames& frames);
-      void SetTargetLandmarks(const DetectionFrames& frames);
-      void SetSourceLandmarks(const VecFloat3& landmarks);
-      void SetTargetLandmarks(const VecFloat3& landmarks);
-      void SetSourceLandmarks(const LandmarkListCv& landmarks);
-      void SetTargetLandmarks(const LandmarkListCv& landmarks);
-      void SetSourceLandmarks(const cv::Mat& landmarks);
-      void SetTargetLandmarks(const cv::Mat& landmarks);
+      Concurrency::task<Windows::Foundation::Numerics::float4x4> ComputeAsync(float& outError);
 
-      Concurrency::task<Windows::Foundation::Numerics::float4x4> CalculateTransformationAsync();
+    public:
+      PointToLineRegistration();
+      ~PointToLineRegistration();
 
     protected:
-      VecFloat3 m_sourceLandmarks;
-      VecFloat3 m_targetLandmarks;
+      std::vector<Point>      m_points;
+      std::vector<Line>       m_lines;
+
+      const float             EXIT_CONDITION_TOLERANCE = 1e-9f;
     };
   }
 }

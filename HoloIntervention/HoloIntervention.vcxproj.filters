@@ -169,6 +169,10 @@
     <ClCompile Include="Content\Systems\Registration\ModelAlignmentRegistration.cpp">
       <Filter>Content\Systems\Registration\ModelAlignment</Filter>
     </ClCompile>
+    <ClCompile Include="Content\Math\Math.cpp">
+      <Filter>Content\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Algorithms\PointToLineRegistration.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Content\Sound\OmnidirectionalSound.h">
@@ -366,6 +370,10 @@
     <ClInclude Include="Content\Systems\Registration\ModelAlignmentRegistration.h">
       <Filter>Content\Systems\Registration\ModelAlignment</Filter>
     </ClInclude>
+    <ClInclude Include="Content\Math\Math.h">
+      <Filter>Content\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Algorithms\PointToLineRegistration.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\LockScreenLogo.scale-200.png">
@@ -770,6 +778,12 @@
     </Filter>
     <Filter Include="Content\Systems\Registration\ModelAlignment">
       <UniqueIdentifier>{af9ab162-c38d-448b-8dc7-ab2c1fd5724a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Math">
+      <UniqueIdentifier>{e88588ef-79fa-4f1d-aa25-7cc42ccb6b21}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Algorithms\Registration\PointToLine">
+      <UniqueIdentifier>{5fa330e2-29cc-48f8-a134-b4bcdabf169b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

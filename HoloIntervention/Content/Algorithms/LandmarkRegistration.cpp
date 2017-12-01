@@ -151,6 +151,27 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    void LandmarkRegistration::SetSourceLandmarks(const cv::Mat& landmarks)
+    {
+      m_sourceLandmarks.clear();
+
+      // Assume 3xN matrix layout
+      if (landmarks.rows != 3 || landmarks.depth() != CV_32F)
+      {
+        return;
+      }
+
+      for (int i = 0; i < landmarks.cols; ++i)
+      {
+        float3 point;
+        point.x = landmarks.at<float>(0, i);
+        point.y = landmarks.at<float>(1, i);
+        point.z = landmarks.at<float>(2, i);
+        m_sourceLandmarks.push_back(point);
+      }
+    }
+
+    //----------------------------------------------------------------------------
     void LandmarkRegistration::SetTargetLandmarks(const VecFloat3& landmarks)
     {
       m_targetLandmarks = landmarks;
@@ -173,6 +194,27 @@ namespace HoloIntervention
       for (auto& frame : frames)
       {
         m_targetLandmarks.insert(end(m_targetLandmarks), begin(frame), end(frame));
+      }
+    }
+
+    //----------------------------------------------------------------------------
+    void LandmarkRegistration::SetTargetLandmarks(const cv::Mat& landmarks)
+    {
+      m_targetLandmarks.clear();
+
+      // Assume 3xN matrix layout
+      if (landmarks.rows != 3 || landmarks.depth() != CV_32F)
+      {
+        return;
+      }
+
+      for (int i = 0; i < landmarks.cols; ++i)
+      {
+        float3 point;
+        point.x = landmarks.at<float>(0, i);
+        point.y = landmarks.at<float>(1, i);
+        point.z = landmarks.at<float>(2, i);
+        m_targetLandmarks.push_back(point);
       }
     }
 
