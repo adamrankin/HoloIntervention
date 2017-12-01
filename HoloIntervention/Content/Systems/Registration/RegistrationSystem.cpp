@@ -138,7 +138,7 @@ namespace HoloIntervention
 
         auto repo = ref new UWPOpenIGTLink::TransformRepository();
         auto trName = ref new UWPOpenIGTLink::TransformName(L"Reference", L"Anchor");
-        if (!repo->SetTransform(trName, m_cachedReferenceToAnchor, true); =)
+        if (!repo->SetTransform(trName, m_cachedReferenceToAnchor, true))
         {
           return false;
         }
@@ -183,6 +183,7 @@ namespace HoloIntervention
           {
             m_knownRegistrationMethods[pair.first] = pair.second;
           }
+          pair.second->RegisterTransformUpdatedCallback(std::bind(&RegistrationSystem::OnRegistrationComplete, this, std::placeholders::_1));
         }
 
         m_configDocument = document;
@@ -301,6 +302,11 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void RegistrationSystem::RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap)
     {
+      for (auto& method : m_knownRegistrationMethods)
+      {
+        method.second->RegisterVoiceCallbacks(callbackMap);
+      }
+
       callbackMap[L"drop anchor"] = [this](SpeechRecognitionResult ^ result)
       {
         m_regAnchorRequested = true;
@@ -344,16 +350,7 @@ namespace HoloIntervention
         }
         m_currentRegistrationMethod = m_knownRegistrationMethods[REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_CAMERA]];
         m_currentRegistrationMethod->SetWorldAnchor(m_regAnchor);
-        m_currentRegistrationMethod->RegisterTransformUpdatedCallback(std::bind(&RegistrationSystem::OnRegistrationComplete, this, std::placeholders::_1));
-        m_currentRegistrationMethod->ReadConfigurationAsync(m_configDocument).then([this](bool result)
-        {
-          if (!result)
-          {
-            return task_from_result(false);
-          }
-          std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
-          return m_currentRegistrationMethod->StartAsync();
-        }).then([this](bool result)
+        m_currentRegistrationMethod->StartAsync().then([this](bool result)
         {
           if (!result)
           {
@@ -386,16 +383,7 @@ namespace HoloIntervention
         }
         m_currentRegistrationMethod = m_knownRegistrationMethods[REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_OPTICAL]];
         m_currentRegistrationMethod->SetWorldAnchor(m_regAnchor);
-        m_currentRegistrationMethod->RegisterTransformUpdatedCallback(std::bind(&RegistrationSystem::OnRegistrationComplete, this, std::placeholders::_1));
-        m_currentRegistrationMethod->ReadConfigurationAsync(m_configDocument).then([this](bool result)
-        {
-          if (!result)
-          {
-            return task_from_result(false);
-          }
-          std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
-          return m_currentRegistrationMethod->StartAsync();
-        }).then([this](bool result)
+        m_currentRegistrationMethod->StartAsync().then([this](bool result)
         {
           if (!result)
           {
@@ -423,27 +411,18 @@ namespace HoloIntervention
 
         if (m_knownRegistrationMethods.find(REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_MODELALIGNMENT]) == m_knownRegistrationMethods.end())
         {
-          m_notificationSystem.QueueMessage(L"No optical configuration defined. Please add the necessary information to the configuration file and try again.");
+          m_notificationSystem.QueueMessage(L"No alignment configuration defined. Please add the necessary information to the configuration file and try again.");
           return;
         }
         m_currentRegistrationMethod = m_knownRegistrationMethods[REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_MODELALIGNMENT]];
         m_currentRegistrationMethod->SetWorldAnchor(m_regAnchor);
-        m_currentRegistrationMethod->RegisterTransformUpdatedCallback(std::bind(&RegistrationSystem::OnRegistrationComplete, this, std::placeholders::_1));
-        m_currentRegistrationMethod->ReadConfigurationAsync(m_configDocument).then([this](bool result)
-        {
-          if (!result)
-          {
-            return task_from_result(false);
-          }
-          std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
-          return m_currentRegistrationMethod->StartAsync();
-        }).then([this](bool result)
+        m_currentRegistrationMethod->StartAsync().then([this](bool result)
         {
           if (!result)
           {
             std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
             m_currentRegistrationMethod = nullptr;
-            m_notificationSystem.QueueMessage(L"Unable to start optical registration.");
+            m_notificationSystem.QueueMessage(L"Unable to start alignment registration.");
           }
         });
       };

@@ -26,6 +26,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "IConfigurable.h"
 #include "IStabilizedComponent.h"
+#include "IVoiceInput.h"
 
 // STL includes
 #include <functional>
@@ -39,7 +40,7 @@ namespace HoloIntervention
 {
   namespace System
   {
-    class IRegistrationMethod : public IStabilizedComponent, public IConfigurable
+    class IRegistrationMethod : public IStabilizedComponent, public IConfigurable, public Input::IVoiceInput
     {
     public:
       virtual void RegisterTransformUpdatedCallback(std::function<void(Windows::Foundation::Numerics::float4x4)> function) { m_completeCallback = function; }

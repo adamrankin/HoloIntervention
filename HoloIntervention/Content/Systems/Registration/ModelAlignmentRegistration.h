@@ -47,8 +47,13 @@ namespace HoloIntervention
     class ModelAlignmentRegistration : public IRegistrationMethod
     {
       // First = head pose, second = tracker pose
+      typedef Windows::Foundation::Numerics::float4x4 Pose;
+      typedef std::vector<Pose> PoseList;
       typedef Windows::Foundation::Numerics::float3 Position;
       typedef std::vector<Position> PositionList;
+
+    public:
+      virtual void RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap);
 
     public:
       virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition(Windows::UI::Input::Spatial::SpatialPointerPose^ pose) const;

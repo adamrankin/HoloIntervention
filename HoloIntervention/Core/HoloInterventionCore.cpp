@@ -165,7 +165,16 @@ namespace HoloIntervention
     m_configurableComponents.push_back(m_iconSystem.get());
     m_configurableComponents.push_back(m_taskSystem.get());
 
-    ReadConfigurationAsync();
+    ReadConfigurationAsync().then([this](bool result)
+    {
+      if (!result)
+      {
+        LOG_ERROR("Unable to initialize system. Loading of configuration failed.");
+        Log::instance().EndSessionAsync();
+      }
+
+      RegisterVoiceCallbacks();
+    });
 
     try
     {
@@ -176,8 +185,6 @@ namespace HoloIntervention
       m_notificationSystem->QueueMessage(L"Unable to initialize audio system. See log.");
       OutputDebugStringW((L"Audio Error" + e->Message)->Data());
     }
-
-    RegisterVoiceCallbacks();
 
     // Use the default SpatialLocator to track the motion of the device.
     m_locator = SpatialLocator::GetDefault();
@@ -476,21 +483,21 @@ namespace HoloIntervention
 
     switch (sender->Locatability)
     {
-    case SpatialLocatability::Unavailable:
-    {
-      m_notificationSystem->QueueMessage(L"Warning! Positional tracking is unavailable.");
-    }
-    break;
-
-    case SpatialLocatability::PositionalTrackingActivating:
-    case SpatialLocatability::OrientationOnly:
-    case SpatialLocatability::PositionalTrackingInhibited:
-      // Gaze-locked content still valid
+      case SpatialLocatability::Unavailable:
+      {
+        m_notificationSystem->QueueMessage(L"Warning! Positional tracking is unavailable.");
+      }
       break;
 
-    case SpatialLocatability::PositionalTrackingActive:
-      m_notificationSystem->QueueMessage(L"Positional tracking is active.");
-      break;
+      case SpatialLocatability::PositionalTrackingActivating:
+      case SpatialLocatability::OrientationOnly:
+      case SpatialLocatability::PositionalTrackingInhibited:
+        // Gaze-locked content still valid
+        break;
+
+      case SpatialLocatability::PositionalTrackingActive:
+        m_notificationSystem->QueueMessage(L"Positional tracking is active.");
+        break;
     }
   }
 

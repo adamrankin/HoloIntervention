@@ -68,6 +68,15 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    void ModelAlignmentRegistration::RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbacks)
+    {
+      callbacks[L"capture"] = [this](SpeechRecognitionResult ^ result)
+      {
+        m_pointCaptureRequested = true;
+      };
+    }
+
+    //----------------------------------------------------------------------------
     float3 ModelAlignmentRegistration::GetStabilizedPosition(SpatialPointerPose^ pose) const
     {
       auto modelPose = m_modelEntry->GetCurrentPose();
@@ -265,31 +274,35 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     Concurrency::task<bool> ModelAlignmentRegistration::StartAsync()
     {
-      if (!m_componentReady || m_worldAnchor == nullptr)
+      return create_task([this]()
       {
-        return task_from_result<bool>(false);
-      }
-      m_started = true;
-      ResetRegistration();
-      m_notificationSystem.QueueMessage(L"Capturing...");
-      return task_from_result<bool>(true);
+        if (!m_componentReady || m_worldAnchor == nullptr)
+        {
+          return false;
+        }
+        if (m_started)
+        {
+          m_notificationSystem.QueueMessage(L"Already running. Please capture " + (m_numberOfPointsToCollect - m_pointReferenceList.size()).ToString() + L" more points.");
+          return true;
+        }
+
+        m_started = true;
+        ResetRegistration();
+        m_notificationSystem.QueueMessage(L"Capturing...");
+        return true;
+      });
     }
 
     //----------------------------------------------------------------------------
     Concurrency::task<bool> ModelAlignmentRegistration::StopAsync()
     {
-      m_started = false;
-      m_notificationSystem.QueueMessage(L"Registration stopped.");
-
-#if defined(_DEBUG)
-      // Log point lists to file for analysis
-      for (auto& point : m_pointReferenceList)
+      return create_task([this]()
       {
-        LOG(LogLevelType::LOG_LEVEL_INFO, L"point in reference: " + point.x.ToString() + L", " + point.y.ToString() + L", " + point.z.ToString());
-      }
-#endif
+        m_started = false;
+        m_notificationSystem.QueueMessage(L"Registration stopped.");
 
-      return task_from_result<bool>(true);
+        return true;
+      });
     }
 
     //----------------------------------------------------------------------------
@@ -321,7 +334,6 @@ namespace HoloIntervention
         return;
       }
 
-
       // grab latest transform
       auto transform = m_networkSystem.GetTransform(m_hashedConnectionName, m_pointToReferenceTransformName, m_latestTimestamp);
       if (transform == nullptr || !transform->Valid)
@@ -330,6 +342,12 @@ namespace HoloIntervention
       }
       m_latestTimestamp = transform->Timestamp;
 
+      float4x4 hmdToAnchor;
+      if (!invert(anchorToHMDBox->Value, &hmdToAnchor))
+      {
+        // This had better be impossible!
+        return;
+      }
       Position newPointPosition(transform->Matrix.m41, transform->Matrix.m42, transform->Matrix.m43);
 
       if (m_previousPointPosition != Position::zero())

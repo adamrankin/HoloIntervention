@@ -41,6 +41,9 @@ namespace HoloIntervention
     class ToolBasedRegistration : public IRegistrationMethod
     {
     public:
+      virtual void RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap) {};
+
+    public:
       virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition(Windows::UI::Input::Spatial::SpatialPointerPose^ pose) const;
       virtual Windows::Foundation::Numerics::float3 GetStabilizedVelocity() const;
       virtual float GetStabilizePriority() const;
