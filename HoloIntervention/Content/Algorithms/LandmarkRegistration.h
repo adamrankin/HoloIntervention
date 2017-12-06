@@ -39,15 +39,20 @@ namespace HoloIntervention
     class LandmarkRegistration
     {
     public:
+      enum Mode
+      {
+        MODE_RIGID,
+        MODE_SIMILARITY,
+        MODE_AFFINE
+      };
+
+    public:
       typedef std::vector<Windows::Foundation::Numerics::float2> VecFloat2;
       typedef std::vector<Windows::Foundation::Numerics::float3> VecFloat3;
       typedef std::vector<Windows::Foundation::Numerics::float4> VecFloat4;
       typedef std::vector<Windows::Foundation::Numerics::float4x4> VecFloat4x4;
       typedef std::vector<VecFloat3> DetectionFrames;
       typedef std::vector<cv::Point3f> LandmarkListCv;
-
-      LandmarkRegistration();
-      ~LandmarkRegistration();
 
       void SetSourceLandmarks(const DetectionFrames& frames);
       void SetTargetLandmarks(const DetectionFrames& frames);
@@ -58,11 +63,25 @@ namespace HoloIntervention
       void SetSourceLandmarks(const cv::Mat& landmarks);
       void SetTargetLandmarks(const cv::Mat& landmarks);
 
+      void Inverse();
+
+      Mode GetMode() const;
+      void SetMode(Mode arg);
+      void SetModeToRigid();
+      void SetModeToSimilarity();
+      void SetModeToAffine();
+
       Concurrency::task<Windows::Foundation::Numerics::float4x4> CalculateTransformationAsync();
 
+    public:
+      LandmarkRegistration();
+      ~LandmarkRegistration();
+
     protected:
-      VecFloat3 m_sourceLandmarks;
-      VecFloat3 m_targetLandmarks;
+      VecFloat3     m_sourceLandmarks;
+      VecFloat3     m_targetLandmarks;
+
+      Mode          m_mode = MODE_SIMILARITY;
     };
   }
 }

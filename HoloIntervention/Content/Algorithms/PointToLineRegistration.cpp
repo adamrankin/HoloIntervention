@@ -34,9 +34,34 @@ namespace HoloIntervention
   namespace Algorithm
   {
     //----------------------------------------------------------------------------
+    PointToLineRegistration::PointToLineRegistration()
+    {
+
+    }
+
+    //----------------------------------------------------------------------------
+    PointToLineRegistration::PointToLineRegistration(const std::vector<Point>& points, const std::vector<Line>& lines)
+      : m_points(points)
+      , m_lines(lines)
+    {
+
+    }
+
+    //----------------------------------------------------------------------------
+    PointToLineRegistration::~PointToLineRegistration()
+    {
+    }
+
+    //----------------------------------------------------------------------------
     void PointToLineRegistration::AddPoint(const Point& point)
     {
       m_points.push_back(point);
+    }
+
+    //----------------------------------------------------------------------------
+    void PointToLineRegistration::AddPoint(float x, float y, float z)
+    {
+      m_points.push_back(float3(x, y, z));
     }
 
     //----------------------------------------------------------------------------
@@ -46,10 +71,34 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    void PointToLineRegistration::AddLine(float originX, float originY, float originZ, float directionI, float directionJ, float directionK)
+    {
+      m_lines.push_back(Line(Point(originX, originY, originZ), Vector3(directionI, directionJ, directionK)));
+    }
+
+    //----------------------------------------------------------------------------
     void PointToLineRegistration::Reset()
     {
       m_points.clear();
       m_lines.clear();
+    }
+
+    //----------------------------------------------------------------------------
+    void PointToLineRegistration::SetTolerance(float arg)
+    {
+      m_tolerance = arg;
+    }
+
+    //----------------------------------------------------------------------------
+    float PointToLineRegistration::GetTolerance() const
+    {
+      return m_tolerance;
+    }
+
+    //----------------------------------------------------------------------------
+    uint32 PointToLineRegistration::Count() const
+    {
+      return m_points.size();
     }
 
     //----------------------------------------------------------------------------
@@ -108,12 +157,13 @@ namespace HoloIntervention
 
         cv::Mat d(1, n, CV_32F);
         cv::Mat tempM;
-        cv::Mat R(3, 3, CV_32F);
-        cv::Mat t(3, 1, CV_32F);
+        cv::Mat R = cv::Mat::eye(3, 3, CV_32F);
+        cv::Mat t = cv::Mat::zeros(3, 1, CV_32F);
 
         LandmarkRegistration landmark;
+        landmark.SetModeToRigid();
 
-        while (outError > EXIT_CONDITION_TOLERANCE)
+        while (outError > m_tolerance)
         {
           landmark.SetSourceLandmarks(X);
           landmark.SetTargetLandmarks(Y);
@@ -136,21 +186,23 @@ namespace HoloIntervention
           t.at<float>(1, 0) = result.m24;
           t.at<float>(2, 0) = result.m34;
 
-          tempM = R * X + t * e - O;
+          tempM = (R * X) + (t * e) - O;
           for (std::vector<Point>::size_type i = 0; i < m_points.size(); ++i)
           {
             d.at<float>(0, i) = tempM.at<float>(0, i) * D.at<float>(0, i) + tempM.at<float>(1, i) * D.at<float>(1, i) + tempM.at<float>(2, i) * D.at<float>(2, i);
           }
 
           for (int i = 0; i < n; i++)
+          {
             for (int j = 0; j < 3; j++)
             {
               Y.at<float>(j, i) = O.at<float>(j, i) + d.at<float>(0, i) * D.at<float>(j, i);
             }
+          }
 
-          E = Y - R * X - t * e;
+          E = Y - (R * X) - (t * e);
           outError = static_cast<float>(cv::norm(E - E_old));
-          E_old = E;
+          E.copyTo(E_old);
         }
 
         // compute the Euclidean distance between points and lines
@@ -180,16 +232,6 @@ namespace HoloIntervention
 
         return transpose(result);
       });
-    }
-
-    //----------------------------------------------------------------------------
-    PointToLineRegistration::PointToLineRegistration()
-    {
-    }
-
-    //----------------------------------------------------------------------------
-    PointToLineRegistration::~PointToLineRegistration()
-    {
     }
   }
 }

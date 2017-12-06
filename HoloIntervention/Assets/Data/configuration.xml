@@ -59,6 +59,14 @@
     To="Reference"
     />
 
+  <ModelAlignmentRegistration
+    IGTConnection="NDITracker"
+    From="Sphere"
+    To="Reference"
+    NumberOfPointsToCollectPerEye="12"
+    Primitive="Sphere"
+    Argument1="0.4"/> <!-- 40mm diameter in meters -->
+
   <IGTConnections>
     <Connection
       Name="NDITracker"

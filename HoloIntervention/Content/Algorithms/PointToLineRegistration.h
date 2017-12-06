@@ -33,13 +33,19 @@ namespace HoloIntervention
     {
     public:
       void AddPoint(const Point& point);
+      void AddPoint(float x, float y, float z);
       void AddLine(const Line& line);
+      void AddLine(float originX, float originY, float originZ, float directionI, float directionJ, float directionK);
 
       void Reset();
+      void SetTolerance(float arg);
+      float GetTolerance() const;
+      uint32 Count() const;
 
       Concurrency::task<Windows::Foundation::Numerics::float4x4> ComputeAsync(float& outError);
 
     public:
+      PointToLineRegistration(const std::vector<Point>& points, const std::vector<Line>& lines);
       PointToLineRegistration();
       ~PointToLineRegistration();
 
@@ -47,7 +53,7 @@ namespace HoloIntervention
       std::vector<Point>      m_points;
       std::vector<Line>       m_lines;
 
-      const float             EXIT_CONDITION_TOLERANCE = 1e-9f;
+      float                   m_tolerance = 1e-4f;
     };
   }
 }

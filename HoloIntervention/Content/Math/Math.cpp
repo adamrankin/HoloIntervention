@@ -30,7 +30,7 @@ using namespace Windows::Foundation::Numerics;
 namespace HoloIntervention
 {
   //----------------------------------------------------------------------------
-  bool OpenCVToFloat4x4(const cv::InputArray& inMatrix, Windows::Foundation::Numerics::float4x4& outMatrix)
+  bool OpenCVToFloat4x4(const cv::InputArray& inMatrix, float4x4& outMatrix)
   {
     if (inMatrix.cols() != 4 || inMatrix.rows() != 4 || inMatrix.channels() != 1 || inMatrix.depth() != CV_32F)
     {
@@ -62,7 +62,7 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
-  bool Float4x4ToOpenCV(const Windows::Foundation::Numerics::float4x4& inMatrix, cv::Mat& outMatrix)
+  bool Float4x4ToOpenCV(const float4x4& inMatrix, cv::Mat& outMatrix)
   {
     float array[16];
     if (!Float4x4ToArray(inMatrix, array))
@@ -76,7 +76,7 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
-  bool Float4x4ToArray(const Windows::Foundation::Numerics::float4x4& inMatrix, float outMatrix[16])
+  bool Float4x4ToArray(const float4x4& inMatrix, float outMatrix[16])
   {
     outMatrix[0] = inMatrix.m11;
     outMatrix[1] = inMatrix.m12;
@@ -102,13 +102,13 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
-  bool Float4x4ToArray(const Windows::Foundation::Numerics::float4x4& inMatrix, std::array<float, 16> outMatrix)
+  bool Float4x4ToArray(const float4x4& inMatrix, std::array<float, 16> outMatrix)
   {
     return Float4x4ToArray(inMatrix, outMatrix.data());
   }
 
   //----------------------------------------------------------------------------
-  bool ArrayToFloat4x4(const float inMatrix[16], Windows::Foundation::Numerics::float4x4& outMatrix)
+  bool ArrayToFloat4x4(const float (&inMatrix)[16], float4x4& outMatrix)
   {
     outMatrix.m11 = inMatrix[0];
     outMatrix.m12 = inMatrix[1];
@@ -134,13 +134,133 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
-  bool ArrayToFloat4x4(const std::array<float, 16>& inMatrix, Windows::Foundation::Numerics::float4x4& outMatrix)
+  bool ArrayToFloat4x4(const std::array<float, 16>& inMatrix, float4x4& outMatrix)
   {
-    return ArrayToFloat4x4(inMatrix.data(), outMatrix);
+    return ArrayToFloat4x4(inMatrix.data(), 16, outMatrix);
   }
 
   //----------------------------------------------------------------------------
-  void LinesIntersection(const std::vector<Line>& lines, float3& outPoint, float& outFRE)
+  bool ArrayToFloat4x4(const float (&inMatrix)[9], float4x4& outMatrix)
+  {
+    outMatrix = float4x4::identity();
+
+    outMatrix.m11 = inMatrix[0];
+    outMatrix.m12 = inMatrix[1];
+    outMatrix.m13 = inMatrix[2];
+
+    outMatrix.m21 = inMatrix[4];
+    outMatrix.m22 = inMatrix[5];
+    outMatrix.m23 = inMatrix[6];
+
+    outMatrix.m31 = inMatrix[8];
+    outMatrix.m32 = inMatrix[9];
+    outMatrix.m33 = inMatrix[10];
+
+    return true;
+  }
+
+  //----------------------------------------------------------------------------
+  bool ArrayToFloat4x4(const std::array<float, 9>& inMatrix, float4x4& outMatrix)
+  {
+    return ArrayToFloat4x4(inMatrix.data(), 9, outMatrix);
+  }
+
+  //----------------------------------------------------------------------------
+  bool ArrayToFloat4x4(const float* inMatrix, uint32 matrixSize, Windows::Foundation::Numerics::float4x4& outMatrix)
+  {
+    if (matrixSize != 3 && matrixSize != 4)
+    {
+      return false;
+    }
+
+    outMatrix = float4x4::identity();
+
+    if (matrixSize == 3)
+    {
+      outMatrix.m11 = inMatrix[0];
+      outMatrix.m12 = inMatrix[1];
+      outMatrix.m13 = inMatrix[2];
+
+      outMatrix.m21 = inMatrix[3];
+      outMatrix.m22 = inMatrix[4];
+      outMatrix.m23 = inMatrix[5];
+
+      outMatrix.m31 = inMatrix[6];
+      outMatrix.m32 = inMatrix[7];
+      outMatrix.m33 = inMatrix[8];
+    }
+    else
+    {
+      outMatrix.m11 = inMatrix[0];
+      outMatrix.m12 = inMatrix[1];
+      outMatrix.m13 = inMatrix[2];
+      outMatrix.m14 = inMatrix[3];
+
+      outMatrix.m21 = inMatrix[4];
+      outMatrix.m22 = inMatrix[5];
+      outMatrix.m23 = inMatrix[6];
+      outMatrix.m24 = inMatrix[7];
+
+      outMatrix.m31 = inMatrix[8];
+      outMatrix.m32 = inMatrix[9];
+      outMatrix.m33 = inMatrix[10];
+      outMatrix.m34 = inMatrix[11];
+
+      outMatrix.m41 = inMatrix[12];
+      outMatrix.m42 = inMatrix[13];
+      outMatrix.m43 = inMatrix[14];
+      outMatrix.m44 = inMatrix[15];
+    }
+
+    return true;
+  }
+
+  //----------------------------------------------------------------------------
+  bool ArrayToFloat4x4(const float(&inMatrix)[4][4], Windows::Foundation::Numerics::float4x4& outMatrix)
+  {
+    outMatrix.m11 = inMatrix[0][0];
+    outMatrix.m12 = inMatrix[0][1];
+    outMatrix.m13 = inMatrix[0][2];
+    outMatrix.m14 = inMatrix[0][3];
+
+    outMatrix.m21 = inMatrix[1][0];
+    outMatrix.m22 = inMatrix[1][1];
+    outMatrix.m23 = inMatrix[1][2];
+    outMatrix.m24 = inMatrix[1][3];
+
+    outMatrix.m31 = inMatrix[2][0];
+    outMatrix.m32 = inMatrix[2][1];
+    outMatrix.m33 = inMatrix[2][2];
+    outMatrix.m34 = inMatrix[2][3];
+
+    outMatrix.m41 = inMatrix[3][0];
+    outMatrix.m42 = inMatrix[3][1];
+    outMatrix.m43 = inMatrix[3][2];
+    outMatrix.m44 = inMatrix[3][3];
+
+    return true;
+  }
+
+  //----------------------------------------------------------------------------
+  bool ArrayToFloat4x4(const float(&inMatrix)[3][3], Windows::Foundation::Numerics::float4x4& outMatrix)
+  {
+    outMatrix.m11 = inMatrix[0][0];
+    outMatrix.m12 = inMatrix[0][1];
+    outMatrix.m13 = inMatrix[0][2];
+
+    outMatrix.m21 = inMatrix[1][0];
+    outMatrix.m22 = inMatrix[1][1];
+    outMatrix.m23 = inMatrix[1][2];
+
+    outMatrix.m31 = inMatrix[2][0];
+    outMatrix.m32 = inMatrix[2][1];
+    outMatrix.m33 = inMatrix[2][2];
+
+    return true;
+  }
+
+  //----------------------------------------------------------------------------
+  void LinesIntersection(const std::vector<Line>& lines, Point& outPoint, float& outFRE)
   {
     /*
     based on the following doc by Johannes Traa (UIUC 2013)

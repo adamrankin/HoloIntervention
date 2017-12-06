@@ -40,8 +40,13 @@ namespace HoloIntervention
 
   bool Float4x4ToArray(const Windows::Foundation::Numerics::float4x4& inMatrix, float outMatrix[16]);
   bool Float4x4ToArray(const Windows::Foundation::Numerics::float4x4& inMatrix, std::array<float, 16> outMatrix);
-  bool ArrayToFloat4x4(const float inMatrix[16], Windows::Foundation::Numerics::float4x4& outMatrix);
+  bool ArrayToFloat4x4(const float* inMatrix, uint32 matrixSize, Windows::Foundation::Numerics::float4x4& outMatrix);
+  bool ArrayToFloat4x4(const float (&inMatrix)[16], Windows::Foundation::Numerics::float4x4& outMatrix);
+  bool ArrayToFloat4x4(const float(&inMatrix)[4][4], Windows::Foundation::Numerics::float4x4& outMatrix);
   bool ArrayToFloat4x4(const std::array<float, 16>& inMatrix, Windows::Foundation::Numerics::float4x4& outMatrix);
+  bool ArrayToFloat4x4(const float (&inMatrix)[9], Windows::Foundation::Numerics::float4x4& outMatrix);
+  bool ArrayToFloat4x4(const float(&inMatrix)[3][3], Windows::Foundation::Numerics::float4x4& outMatrix);
+  bool ArrayToFloat4x4(const std::array<float, 9>& inMatrix, Windows::Foundation::Numerics::float4x4& outMatrix);
 
   /*
   Copyright (c) Elvis C. S. Chen, elvis.chen@gmail.com
