@@ -126,6 +126,10 @@ namespace HoloIntervention
       void SetColour(Windows::Foundation::Numerics::float3 newColour);
       void SetColour(float r, float g, float b, float a);
       void SetColour(float r, float g, float b);
+      void SetOriginalColour(Windows::Foundation::Numerics::float4 newColour);
+      void SetOriginalColour(Windows::Foundation::Numerics::float3 newColour);
+      void SetOriginalColour(float r, float g, float b, float a);
+      void SetOriginalColour(float r, float g, float b);
       Windows::Foundation::Numerics::float4 GetCurrentColour() const;
       Windows::Foundation::Numerics::float4 GetOriginalColour() const;
 

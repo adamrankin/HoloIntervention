@@ -77,6 +77,12 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    void PointToLineRegistration::AddLine(const Point& origin, const Vector3& direction)
+    {
+      m_lines.push_back(Line(origin, direction));
+    }
+
+    //----------------------------------------------------------------------------
     void PointToLineRegistration::Reset()
     {
       m_points.clear();

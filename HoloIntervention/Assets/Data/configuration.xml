@@ -61,11 +61,14 @@
 
   <ModelAlignmentRegistration
     IGTConnection="NDITracker"
-    From="Sphere"
-    To="Reference"
-    NumberOfPointsToCollectPerEye="12"
+    SphereFrom="Sphere"
+    SphereTo="Reference"
+    HoloLensFrom="HoloLens"
+    HoloLensTo="Reference"
+    NumberOfPointsToCollectPerEye="5"
     Primitive="Sphere"
-    Argument1="0.4"/> <!-- 40mm diameter in meters -->
+    Colour="0.0 0.0 0.8 1.0"
+    Argument="0.04 0.0 0.0"/> <!-- 40mm diameter in meters -->
 
   <IGTConnections>
     <Connection

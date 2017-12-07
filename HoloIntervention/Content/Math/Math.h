@@ -48,6 +48,8 @@ namespace HoloIntervention
   bool ArrayToFloat4x4(const float(&inMatrix)[3][3], Windows::Foundation::Numerics::float4x4& outMatrix);
   bool ArrayToFloat4x4(const std::array<float, 9>& inMatrix, Windows::Foundation::Numerics::float4x4& outMatrix);
 
+  std::wstring PrintMatrix(const Windows::Foundation::Numerics::float4x4& matrix);
+
   /*
   Copyright (c) Elvis C. S. Chen, elvis.chen@gmail.com
 

@@ -24,16 +24,19 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "pch.h"
 #include "Common.h"
-#include "CameraResources.h"
 #include "Math.h"
 #include "ModelAlignmentRegistration.h"
 #include "PointToLineRegistration.h"
+
+// Core includes
+#include "CameraResources.h"
 
 // Rendering includes
 #include "ModelEntry.h"
 #include "ModelRenderer.h"
 
 // System includes
+#include "IconSystem.h"
 #include "NetworkSystem.h"
 #include "NotificationSystem.h"
 
@@ -56,10 +59,11 @@ namespace HoloIntervention
     const float ModelAlignmentRegistration::MIN_DISTANCE_BETWEEN_POINTS_METER = 0.1f;
 
     //----------------------------------------------------------------------------
-    ModelAlignmentRegistration::ModelAlignmentRegistration(System::NotificationSystem& notificationSystem, System::NetworkSystem& networkSystem, Rendering::ModelRenderer& modelRenderer)
+    ModelAlignmentRegistration::ModelAlignmentRegistration(System::NotificationSystem& notificationSystem, System::NetworkSystem& networkSystem, Rendering::ModelRenderer& modelRenderer, System::IconSystem& iconSystem)
       : m_notificationSystem(notificationSystem)
       , m_networkSystem(networkSystem)
       , m_modelRenderer(modelRenderer)
+      , m_iconSystem(iconSystem)
       , m_numberOfPointsToCollectPerEye(DEFAULT_NUMBER_OF_POINTS_TO_COLLECT)
       , m_pointToLineRegistration(std::make_shared<Algorithm::PointToLineRegistration>())
     {
@@ -105,13 +109,14 @@ namespace HoloIntervention
 
         auto elem = document->CreateElement("ModelAlignmentRegistration");
         elem->SetAttribute(L"IGTConnection", ref new Platform::String(m_connectionName.c_str()));
-        elem->SetAttribute(L"From", m_sphereToReferenceTransformName->From());
-        elem->SetAttribute(L"To", m_sphereToReferenceTransformName->To());
+        elem->SetAttribute(L"SphereFrom", m_sphereToReferenceTransformName->From());
+        elem->SetAttribute(L"SphereTo", m_sphereToReferenceTransformName->To());
+        elem->SetAttribute(L"HoloLensFrom", m_sphereToReferenceTransformName->From());
+        elem->SetAttribute(L"HoloLensTo", m_sphereToReferenceTransformName->To());
         elem->SetAttribute(L"NumberOfPointsToCollectPerEye", m_numberOfPointsToCollectPerEye.ToString());
         elem->SetAttribute(L"Primitive", ref new Platform::String(Rendering::ModelRenderer::PrimitiveToString(m_primitiveType).c_str()));
-        elem->SetAttribute(L"Argument1", m_argument.x.ToString());
-        elem->SetAttribute(L"Argument2", m_argument.y.ToString());
-        elem->SetAttribute(L"Argument3", m_argument.z.ToString());
+        elem->SetAttribute(L"Argument", m_argument.x.ToString() + L" " + m_argument.y.ToString() + L" " + m_argument.z.ToString());
+        elem->SetAttribute(L"Colour", m_colour.x.ToString() + L" " + m_colour.y.ToString() + L" " + m_colour.z.ToString() + L" " + m_colour.w.ToString());
         elem->SetAttribute(L"Tessellation", m_tessellation ? L"True" : L"False");
         elem->SetAttribute(L"RightHandedCoords", m_rhCoords ? L"True" : L"False");
         elem->SetAttribute(L"InvertN", m_invertN ? L"True" : L"False");
@@ -121,7 +126,6 @@ namespace HoloIntervention
         return true;
       });
     }
-#include <opencv2/core.hpp>
 
     //----------------------------------------------------------------------------
     task<bool> ModelAlignmentRegistration::ReadConfigurationAsync(XmlDocument^ document)
@@ -146,29 +150,40 @@ namespace HoloIntervention
 
         m_hashedConnectionName = HashString(m_connectionName);
 
-        std::wstring sphereCenterCoordFrameName;
-        std::wstring referenceCoordinateFrameName;
-        if (!GetAttribute(L"From", node, sphereCenterCoordFrameName))
+        std::wstring fromName;
+        std::wstring toName;
+        if (!GetAttribute(L"SphereFrom", node, fromName))
         {
-          LOG(LogLevelType::LOG_LEVEL_ERROR, L"From coordinate system name attribute not defined for pivot calibrated phantom. Aborting.");
-          return task_from_result(false);
+          LOG_WARNING(L"From coordinate system name attribute not defined for pivot calibrated phantom. Defaulting to \"Sphere\".");
         }
-        if (!GetAttribute(L"To", node, referenceCoordinateFrameName))
+        if (!GetAttribute(L"SphereTo", node, toName))
         {
-          LOG(LogLevelType::LOG_LEVEL_ERROR, L"To cooordinate system name attribute not defined for pivot calibrated phantom. Aborting.");
-          return task_from_result(false);
+          LOG_WARNING(L"To cooordinate system name attribute not defined for pivot calibrated phantom. Defaulting to \"Reference\".");
         }
         m_sphereToReferenceTransformName = ref new UWPOpenIGTLink::TransformName(
-                                             ref new Platform::String(sphereCenterCoordFrameName.c_str()),
-                                             ref new Platform::String(referenceCoordinateFrameName.c_str())
+                                             ref new Platform::String(fromName.c_str()),
+                                             ref new Platform::String(toName.c_str())
                                            );
+
+        if (!GetAttribute(L"HoloLensFrom", node, fromName))
+        {
+          LOG_WARNING(L"From coordinate system name attribute not defined for hololens. Defaulting to \"HoloLens\".");
+        }
+        if (!GetAttribute(L"HoloLensTo", node, toName))
+        {
+          LOG_WARNING(L"To cooordinate system name attribute not defined for hololens. Defaulting to \"Reference\".");
+        }
+        m_holoLensToReferenceTransformName = ref new UWPOpenIGTLink::TransformName(
+                                               ref new Platform::String(fromName.c_str()),
+                                               ref new Platform::String(toName.c_str())
+                                             );
 
         if (!GetScalarAttribute<uint32>(L"NumberOfPointsToCollectPerEye", node, m_numberOfPointsToCollectPerEye))
         {
-          LOG(LogLevelType::LOG_LEVEL_WARNING, L"Buffer size not defined for optical registration. Defaulting to " + DEFAULT_NUMBER_OF_POINTS_TO_COLLECT.ToString());
+          LOG_WARNING(L"Buffer size not defined for optical registration. Defaulting to " + DEFAULT_NUMBER_OF_POINTS_TO_COLLECT.ToString());
         }
 
-        Rendering::PrimitiveType type = Rendering::PrimitiveType_SPHERE;
+        m_primitiveType = Rendering::PrimitiveType_SPHERE;
         if (!HasAttribute(L"Primitive", node))
         {
           LOG_WARNING("Primitive type not defined. Defaulting to sphere.");
@@ -176,27 +191,22 @@ namespace HoloIntervention
         else
         {
           auto primTypeString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Primitive")->NodeValue);
-          type = Rendering::ModelRenderer::StringToPrimitive(primTypeString);
+          m_primitiveType = Rendering::ModelRenderer::StringToPrimitive(primTypeString);
         }
 
-        Platform::String^ argument1String = nullptr;
-        Platform::String^ argument2String = nullptr;
-        Platform::String^ argument3String = nullptr;
+        Platform::String^ argumentString = nullptr;
+        Platform::String^ colourString = nullptr;
         Platform::String^ tessellationString = nullptr;
         Platform::String^ rhcoordsString = nullptr;
         Platform::String^ invertnString = nullptr;
 
-        if (HasAttribute(L"Argument1", node))
+        if (HasAttribute(L"Argument", node))
         {
-          argument1String = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Argument1")->NodeValue);
+          argumentString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Argument")->NodeValue);
         }
-        if (HasAttribute(L"Argument2", node))
+        if (HasAttribute(L"Colour", node))
         {
-          argument2String = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Argument2")->NodeValue);
-        }
-        if (HasAttribute(L"Argument3", node))
-        {
-          argument3String = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Argument3")->NodeValue);
+          colourString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Colour")->NodeValue);
         }
         if (HasAttribute(L"Tessellation", node))
         {
@@ -211,23 +221,22 @@ namespace HoloIntervention
           invertnString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"InvertN")->NodeValue);
         }
 
-        if (argument1String != nullptr && !argument1String->IsEmpty())
+        if (argumentString != nullptr && !argumentString->IsEmpty())
         {
           std::wstringstream wss;
-          wss << argument1String->Data();
+          wss << argumentString->Data();
           wss >> m_argument.x;
-        }
-        if (argument2String != nullptr && !argument2String->IsEmpty())
-        {
-          std::wstringstream wss;
-          wss << argument2String->Data();
           wss >> m_argument.y;
+          wss >> m_argument.z;
         }
-        if (argument3String != nullptr && !argument3String->IsEmpty())
+        if (colourString != nullptr && !colourString->IsEmpty())
         {
           std::wstringstream wss;
-          wss << argument3String->Data();
-          wss >> m_argument.z;
+          wss << colourString->Data();
+          wss >> m_colour.x;
+          wss >> m_colour.y;
+          wss >> m_colour.z;
+          wss >> m_colour.w;
         }
         if (tessellationString != nullptr && !tessellationString->IsEmpty())
         {
@@ -263,6 +272,8 @@ namespace HoloIntervention
             LOG_ERROR("Unable to load primitive for model alignment registration.");
             return false;
           }
+          m_modelEntry->SetColour(m_colour);
+          m_modelEntry->SetVisible(false);
 
           m_componentReady = true;
           return true;
@@ -284,19 +295,26 @@ namespace HoloIntervention
       {
         if (!m_componentReady || m_worldAnchor == nullptr)
         {
-          return false;
+          return task_from_result(false);
         }
         if (m_started)
         {
           auto remainingPoints = m_numberOfPointsToCollectPerEye - m_pointToLineRegistration->Count();
           m_notificationSystem.QueueMessage(L"Already running. Please capture " + remainingPoints.ToString() + L" more point" + (remainingPoints > 1 ? L"s" : L"") + L".");
-          return true;
+          return task_from_result(true);
         }
 
-        m_started = true;
-        ResetRegistration();
-        m_notificationSystem.QueueMessage(L"Please use only your LEFT eye to align the real and virtual sphere centers.");
-        return true;
+        return m_iconSystem.AddEntryAsync(m_modelEntry, 0).then([this](std::shared_ptr<System::IconEntry> entry)
+        {
+          m_iconEntry = entry;
+          m_iconEntry->GetModelEntry()->SetVisible(true);
+          m_iconEntry->GetModelEntry()->SetOriginalColour(0.f, 0.9f, 0.f, 1.f);
+          m_modelEntry->SetVisible(true);
+          m_started = true;
+          ResetRegistration();
+          m_notificationSystem.QueueMessage(L"Please use only your LEFT eye to align the real and virtual sphere centers.", 15);
+          return true;
+        });
       });
     }
 
@@ -305,6 +323,10 @@ namespace HoloIntervention
     {
       return create_task([this]()
       {
+        m_iconSystem.RemoveEntry(m_iconEntry->GetId());
+        m_iconEntry = nullptr;
+
+        m_modelEntry->SetVisible(false);
         m_started = false;
         m_notificationSystem.QueueMessage(L"Registration stopped.");
         m_latestTimestamp = 0.0;
@@ -341,12 +363,36 @@ namespace HoloIntervention
       {
         m_pointCaptureRequested = true;
       };
+
+      callbacks[L"dump records"] = [this](SpeechRecognitionResult ^ result)
+      {
+        LOG_INFO("SphereToReferenceTransforms");
+        for (auto& xForm : m_sphereToReferenceTransforms)
+        {
+          WLOG_INFO(PrintMatrix(xForm));
+        }
+        LOG_INFO("EyeToHMDTransforms");
+        for (auto& xForm : m_eyeToHMDTransforms)
+        {
+          WLOG_INFO(PrintMatrix(xForm));
+        }
+        LOG_INFO("HMDToAnchorTransforms");
+        for (auto& xForm : m_HMDToAnchorTransforms)
+        {
+          WLOG_INFO(PrintMatrix(xForm));
+        }
+        LOG_INFO("HoloLensToReferenceTransforms");
+        for (auto& xForm : m_holoLensToReferenceTransforms)
+        {
+          WLOG_INFO(PrintMatrix(xForm));
+        }
+      };
     }
 
     //----------------------------------------------------------------------------
     void ModelAlignmentRegistration::Update(SpatialPointerPose^ headPose, SpatialCoordinateSystem^ hmdCoordinateSystem, Platform::IBox<float4x4>^ anchorToHMDBox, DX::CameraResources& cameraResources)
     {
-      if (!m_started || !m_componentReady || !m_networkSystem.IsConnected(m_hashedConnectionName))
+      if (!m_started || !m_componentReady || !m_networkSystem.IsConnected(m_hashedConnectionName) || m_modelEntry == nullptr)
       {
         return;
       }
@@ -358,33 +404,33 @@ namespace HoloIntervention
         return;
       }
 
-      float4x4 eyeToHMD;
-      switch (m_currentEye)
-      {
-      case EYE_LEFT:
-        // vpBuffer->view[0] = left
-        float4x4 leftEyeToHMD;
-        XMStoreFloat4x4(&leftEyeToHMD, XMLoadFloat4x4(&cameraResources.GetLatestViewProjectionBuffer().view[0]));
-        eyeToHMD = leftEyeToHMD;
-        break;
-      case EYE_RIGHT:
-        // vpBuffer->view[1] = right
-        float4x4 rightEyeToHMD;
-        XMStoreFloat4x4(&rightEyeToHMD, XMLoadFloat4x4(&cameraResources.GetLatestViewProjectionBuffer().view[1]));
-        eyeToHMD = rightEyeToHMD;
-        break;
-      }
+      float4x4 HMDToEye;
+
+      XMStoreFloat4x4(&HMDToEye, XMLoadFloat4x4(&cameraResources.GetLatestViewProjectionBuffer().view[m_currentEye == EYE_LEFT ? 0 : 1]));
 
       // Separately, update the virtual model to be 1m in front of the current eye
-      auto point = transform(float3(0, 0, 1), eyeToHMD);
+      float4x4 eyeToHMD;
+      invert(HMDToEye, &eyeToHMD);
+      auto point = transform(float3(0, 0, -1), eyeToHMD);
       m_modelEntry->SetDesiredPose(make_float4x4_translation(point));
+
+      // Update icon logic
+      auto sphereToReferenceTransform = m_networkSystem.GetTransform(m_hashedConnectionName, m_sphereToReferenceTransformName, m_latestTimestamp);
+      if (sphereToReferenceTransform == nullptr || !sphereToReferenceTransform->Valid)
+      {
+        if (sphereToReferenceTransform != nullptr && !sphereToReferenceTransform->Valid)
+        {
+          m_iconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
+        }
+        return;
+      }
+      m_latestTimestamp = sphereToReferenceTransform->Timestamp;
+      m_iconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
 
       if (m_pointCaptureRequested)
       {
-        // grab latest transform
-        auto sphereToReferenceTransform = m_networkSystem.GetTransform(m_hashedConnectionName, m_sphereToReferenceTransformName, m_latestTimestamp);
-        m_latestTimestamp = sphereToReferenceTransform->Timestamp;
-        if (sphereToReferenceTransform == nullptr || !sphereToReferenceTransform->Valid)
+        auto holoLensToReferenceTransform = m_networkSystem.GetTransform(m_hashedConnectionName, m_holoLensToReferenceTransformName, m_latestTimestamp);
+        if (holoLensToReferenceTransform == nullptr || !holoLensToReferenceTransform->Valid)
         {
           return;
         }
@@ -404,18 +450,24 @@ namespace HoloIntervention
         //----------------------------------------------------------------------------
         // HoloLens ray collection
         auto eyeToAnchor = eyeToHMD * hmdToAnchor;
-        float3 eyeOrigin_Anchor(eyeToAnchor.m41, eyeToAnchor.m42, eyeToAnchor.m43);
-        float3 eyeForwardRay_Anchor(eyeToAnchor.m31, eyeToAnchor.m32, eyeToAnchor.m33);
+        Point eyeOrigin_Anchor(eyeToAnchor.m41, eyeToAnchor.m42, eyeToAnchor.m43);
+        Vector3 eyeForwardRay_Anchor(eyeToAnchor.m31, eyeToAnchor.m32, eyeToAnchor.m33);
 
         std::lock_guard<std::mutex> lock(m_registrationAccessMutex);
         // Only add them as pairs!
-        m_pointToLineRegistration->AddLine(Line(eyeOrigin_Anchor, eyeForwardRay_Anchor));
+        m_pointToLineRegistration->AddLine(eyeOrigin_Anchor, eyeForwardRay_Anchor);
         m_pointToLineRegistration->AddPoint(spherePosition_Ref);
         m_previousSpherePosition_Ref = spherePosition_Ref;
 
+        // Store entries for later calculation of HMDtoHoloLens
+        m_sphereToReferenceTransforms.push_back(sphereToReferenceTransform->Matrix);
+        m_eyeToHMDTransforms.push_back(eyeToHMD);
+        m_HMDToAnchorTransforms.push_back(hmdToAnchor);
+        m_holoLensToReferenceTransforms.push_back(holoLensToReferenceTransform->Matrix);
+
         if (m_pointToLineRegistration->Count() == m_numberOfPointsToCollectPerEye)
         {
-          m_notificationSystem.QueueMessage(L"Please use only your RIGHT eye to align the real and virtual sphere centers.");
+          m_notificationSystem.QueueMessage(L"Please use only your RIGHT eye to align the real and virtual sphere centers.", 15);
           m_currentEye = EYE_RIGHT;
         }
         else if (m_pointToLineRegistration->Count() == (m_numberOfPointsToCollectPerEye * 2))
@@ -434,6 +486,10 @@ namespace HoloIntervention
             m_notificationSystem.QueueMessage(L"Registration finished with an error of " + error.ToString() + L"mm.");
             LOG_INFO(L"Registration finished with an error of " + error.ToString() + L"mm.");
           });
+        }
+        else
+        {
+          m_notificationSystem.QueueMessage(L"Captured.");
         }
 
         m_pointCaptureRequested = false;

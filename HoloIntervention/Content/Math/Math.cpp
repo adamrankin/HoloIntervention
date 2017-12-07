@@ -260,6 +260,29 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
+  std::wstring PrintMatrix(const Windows::Foundation::Numerics::float4x4& matrix)
+  {
+    std::wostringstream woss;
+    woss << matrix.m11 << " "
+         << matrix.m12 << " "
+         << matrix.m13 << " "
+         << matrix.m14 << "    "
+         << matrix.m21 << " "
+         << matrix.m22 << " "
+         << matrix.m23 << " "
+         << matrix.m24 << "    "
+         << matrix.m31 << " "
+         << matrix.m32 << " "
+         << matrix.m33 << " "
+         << matrix.m34 << "    "
+         << matrix.m41 << " "
+         << matrix.m42 << " "
+         << matrix.m43 << " "
+         << matrix.m44 << std::endl;
+    return woss.str();
+  }
+
+  //----------------------------------------------------------------------------
   void LinesIntersection(const std::vector<Line>& lines, Point& outPoint, float& outFRE)
   {
     /*

@@ -27,6 +27,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "IConfigurable.h"
 #include "IStabilizedComponent.h"
 #include "IVoiceInput.h"
+#include "IconEntry.h"
 
 // Rendering includes
 #include "ModelEntry.h"
@@ -58,9 +59,7 @@ namespace HoloIntervention
 
   namespace System
   {
-    class IconEntry;
     class NotificationSystem;
-    class RegistrationSystem;
     class ToolSystem;
 
     typedef std::vector<std::shared_ptr<IconEntry>> IconEntryList;
@@ -80,7 +79,7 @@ namespace HoloIntervention
       virtual void RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap);
 
     public:
-      IconSystem(NotificationSystem& notificationSystem, RegistrationSystem& registrationSystem, NetworkSystem& networkSystem, ToolSystem& toolSystem, Input::VoiceInput& voiceInput, Rendering::ModelRenderer& modelRenderer);
+      IconSystem(NotificationSystem& notificationSystem, NetworkSystem& networkSystem, Input::VoiceInput& voiceInput, Rendering::ModelRenderer& modelRenderer);
       ~IconSystem();
 
       void Update(DX::StepTimer& timer, Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
@@ -94,56 +93,45 @@ namespace HoloIntervention
 
     protected:
       void ProcessNetworkLogic(DX::StepTimer&);
-      void ProcessCameraLogic(DX::StepTimer&);
       void ProcessMicrophoneLogic(DX::StepTimer&);
-      void ProcessToolLogic(DX::StepTimer&);
 
     protected:
-      std::mutex                      m_entryMutex;
-      uint64                          m_nextValidEntry = 0;
-      IconEntryList                   m_iconEntries;
-      std::atomic_bool                m_iconsShowing = true;
+      std::mutex                                m_entryMutex;
+      uint64                                    m_nextValidEntry = 0;
+      IconEntryList                             m_iconEntries;
+      std::atomic_bool                          m_iconsShowing = true;
 
       // Cached entries to model renderer
-      Rendering::ModelRenderer&       m_modelRenderer;
-      NotificationSystem&             m_notificationSystem;
-      RegistrationSystem&             m_registrationSystem;
-      NetworkSystem&                  m_networkSystem;
-      ToolSystem&                     m_toolSystem;
-      Input::VoiceInput&              m_voiceInput;
+      Rendering::ModelRenderer&                 m_modelRenderer;
+      NotificationSystem&                       m_notificationSystem;
+      NetworkSystem&                            m_networkSystem;
+      Input::VoiceInput&                        m_voiceInput;
 
       // Icons that this subsystem manages
-      std::vector<std::shared_ptr<IconEntry>> m_networkIcons;
-      std::shared_ptr<IconEntry>              m_cameraIcon = nullptr;
-      std::shared_ptr<IconEntry>              m_microphoneIcon = nullptr;
-      std::vector<std::shared_ptr<IconEntry>> m_toolIcons;
+      std::vector<std::shared_ptr<IconEntry>>   m_networkIcons;
+      std::shared_ptr<IconEntry>                m_microphoneIcon = nullptr;
 
       // Network logic variables
       struct NetworkLogicEntry
       {
-        bool                            m_wasNetworkConnected = true;
-        bool                            m_networkIsBlinking = true;
-        NetworkSystem::ConnectionState  m_networkPreviousState = NetworkSystem::CONNECTION_STATE_UNKNOWN;
-        float                           m_networkBlinkTimer = 0.f;
+        bool                                    m_wasNetworkConnected = true;
+        bool                                    m_networkIsBlinking = true;
+        NetworkSystem::ConnectionState          m_networkPreviousState = NetworkSystem::CONNECTION_STATE_UNKNOWN;
+        float                                   m_networkBlinkTimer = 0.f;
       };
-      std::vector<NetworkLogicEntry>    m_networkLogicEntries;
-      static const float                NETWORK_BLINK_TIME_SEC;
-
-      // Camera logic variables
-      float                           m_cameraBlinkTimer = 0.f;
-      bool                            m_wasCameraOn = true;
-      static const float              CAMERA_BLINK_TIME_SEC;
+      std::vector<NetworkLogicEntry>            m_networkLogicEntries;
+      static const float                        NETWORK_BLINK_TIME_SEC;
 
       // Microphone logic variables
-      float                           m_microphoneBlinkTimer = 0.f;
-      bool                            m_wasHearingSound = true;
-      static const float              MICROPHONE_BLINK_TIME_SEC;
+      float                                     m_microphoneBlinkTimer = 0.f;
+      bool                                      m_wasHearingSound = true;
+      static const float                        MICROPHONE_BLINK_TIME_SEC;
 
       // Shared variables
-      static const float              ANGLE_BETWEEN_ICONS_RAD;
-      static const float              ICON_START_ANGLE;
-      static const float              ICON_UP_ANGLE;
-      static const float              ICON_SIZE_METER;
+      static const float                        ANGLE_BETWEEN_ICONS_RAD;
+      static const float                        ICON_START_ANGLE;
+      static const float                        ICON_UP_ANGLE;
+      static const float                        ICON_SIZE_METER;
     };
   }
 }

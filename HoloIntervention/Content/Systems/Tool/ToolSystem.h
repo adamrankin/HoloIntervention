@@ -44,6 +44,7 @@ namespace HoloIntervention
 
   namespace System
   {
+    class IconSystem;
     class NetworkSystem;
     class NotificationSystem;
     class RegistrationSystem;
@@ -63,7 +64,8 @@ namespace HoloIntervention
       ToolSystem(NotificationSystem& notificationSystem,
                  RegistrationSystem& registrationSystem,
                  Rendering::ModelRenderer& modelRenderer,
-                 NetworkSystem& networkSystem);
+                 NetworkSystem& networkSystem,
+                 IconSystem& iconSystem);
       ~ToolSystem();
 
       uint32 GetToolCount() const;
@@ -72,7 +74,7 @@ namespace HoloIntervention
       bool IsToolValid(uint64 token) const;
       bool WasToolValid(uint64 token) const;
 
-      Concurrency::task<uint64> RegisterToolAsync(const std::wstring& modelName, const bool isPrimitive, UWPOpenIGTLink::TransformName^ coordinateFrame, Windows::Foundation::Numerics::float3 argument = Windows::Foundation::Numerics::float3(1.f, 1.f, 1.f), size_t tessellation = 16, bool rhcoords = true, bool invertn = false);
+      Concurrency::task<uint64> RegisterToolAsync(const std::wstring& modelName, const bool isPrimitive, UWPOpenIGTLink::TransformName^ coordinateFrame, Windows::Foundation::Numerics::float4 colour = Windows::Foundation::Numerics::float4::one(), Windows::Foundation::Numerics::float3 argument = Windows::Foundation::Numerics::float3::one(), size_t tessellation = 16, bool rhcoords = true, bool invertn = false);
       void UnregisterTool(uint64 toolToken);
       void ClearTools();
 
@@ -82,13 +84,11 @@ namespace HoloIntervention
       virtual void RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap);
 
     protected:
-      Concurrency::task<void> InitAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
-
-    protected:
       // Cached entries
       NotificationSystem&                               m_notificationSystem;
       RegistrationSystem&                               m_registrationSystem;
       NetworkSystem&                                    m_networkSystem;
+      IconSystem&                                       m_iconSystem;
       Rendering::ModelRenderer&                         m_modelRenderer;
 
       std::wstring                                      m_connectionName; // For config saving

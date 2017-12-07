@@ -38,6 +38,8 @@ namespace HoloIntervention
 
   namespace System
   {
+    class IconEntry;
+    class IconSystem;
     class NotificationSystem;
     class NetworkSystem;
   }
@@ -87,45 +89,58 @@ namespace HoloIntervention
       virtual void Update(Windows::UI::Input::Spatial::SpatialPointerPose^ headPose, Windows::Perception::Spatial::SpatialCoordinateSystem^ hmdCoordinateSystem, Platform::IBox<Windows::Foundation::Numerics::float4x4>^ anchorToHMDBox, DX::CameraResources& cameraResources);
 
     public:
-      ModelAlignmentRegistration(System::NotificationSystem& notificationSystem, System::NetworkSystem& networkSystem, Rendering::ModelRenderer& modelRenderer);
+      ModelAlignmentRegistration(System::NotificationSystem& notificationSystem,
+                                 System::NetworkSystem& networkSystem,
+                                 Rendering::ModelRenderer& modelRenderer,
+                                 System::IconSystem& iconSystem);
       ~ModelAlignmentRegistration();
 
     protected:
       // Cached references
-      System::NotificationSystem&                         m_notificationSystem;
-      System::NetworkSystem&                              m_networkSystem;
-      Rendering::ModelRenderer&                           m_modelRenderer;
+      System::NotificationSystem&                           m_notificationSystem;
+      System::NetworkSystem&                                m_networkSystem;
+      Rendering::ModelRenderer&                             m_modelRenderer;
+      System::IconSystem&                                   m_iconSystem;
 
       // State variables
-      std::wstring                                        m_connectionName;
-      uint64                                              m_hashedConnectionName;
-      double                                              m_latestTimestamp = 0.0;
-      UWPOpenIGTLink::TransformName^                      m_sphereToReferenceTransformName = ref new UWPOpenIGTLink::TransformName(L"Sphere", L"Reference");
-      std::atomic_bool                                    m_started = false;
-      std::atomic_bool                                    m_calculating = false;
+      std::wstring                                          m_connectionName;
+      uint64                                                m_hashedConnectionName;
+      double                                                m_latestTimestamp = 0.0;
+      UWPOpenIGTLink::TransformName^                        m_sphereToReferenceTransformName = ref new UWPOpenIGTLink::TransformName(L"Sphere", L"Reference");
+      UWPOpenIGTLink::TransformName^                        m_holoLensToReferenceTransformName = ref new UWPOpenIGTLink::TransformName(L"HoloLens", L"Reference");
+      std::atomic_bool                                      m_started = false;
+      std::atomic_bool                                      m_calculating = false;
+      std::shared_ptr<System::IconEntry>                    m_iconEntry = nullptr;
 
       // Behaviour variables
-      std::atomic_bool                                    m_pointCaptureRequested = false;
-      Eye                                                 m_currentEye = EYE_LEFT;
+      std::atomic_bool                                      m_pointCaptureRequested = false;
+      Eye                                                   m_currentEye = EYE_LEFT;
 
       // Registration data
-      std::mutex                                          m_registrationAccessMutex;
-      uint32                                              m_numberOfPointsToCollectPerEye;
-      Position                                            m_previousSpherePosition_Ref = Position::zero();
-      std::shared_ptr<Algorithm::PointToLineRegistration> m_pointToLineRegistration;
-      float                                               m_registrationError = 0.f;
+      std::mutex                                            m_registrationAccessMutex;
+      uint32                                                m_numberOfPointsToCollectPerEye;
+      Position                                              m_previousSpherePosition_Ref = Position::zero();
+      std::shared_ptr<Algorithm::PointToLineRegistration>   m_pointToLineRegistration;
+      float                                                 m_registrationError = 0.f;
+
+      // Stored data for back calculation of HMDtoHoloLens
+      std::vector<Windows::Foundation::Numerics::float4x4>  m_sphereToReferenceTransforms;
+      std::vector<Windows::Foundation::Numerics::float4x4>  m_eyeToHMDTransforms;
+      std::vector<Windows::Foundation::Numerics::float4x4>  m_HMDToAnchorTransforms;
+      std::vector<Windows::Foundation::Numerics::float4x4>  m_holoLensToReferenceTransforms;
 
       // Model visualization
-      Rendering::PrimitiveType                            m_primitiveType = Rendering::PrimitiveType_NONE;
-      Windows::Foundation::Numerics::float3               m_argument = Windows::Foundation::Numerics::float3::zero();
-      size_t                                              m_tessellation;
-      std::atomic_bool                                    m_invertN;
-      std::atomic_bool                                    m_rhCoords;
-      std::shared_ptr<Rendering::ModelEntry>              m_modelEntry = nullptr;
+      Rendering::PrimitiveType                              m_primitiveType = Rendering::PrimitiveType_NONE;
+      Windows::Foundation::Numerics::float4                 m_colour = Windows::Foundation::Numerics::float4::one();
+      Windows::Foundation::Numerics::float3                 m_argument = Windows::Foundation::Numerics::float3::zero();
+      size_t                                                m_tessellation = 16;
+      std::atomic_bool                                      m_invertN = false;
+      std::atomic_bool                                      m_rhCoords = true;
+      std::shared_ptr<Rendering::ModelEntry>                m_modelEntry = nullptr;
 
       // Constants
-      static const float                                  MIN_DISTANCE_BETWEEN_POINTS_METER; // (currently 10mm)
-      static const uint32                                 DEFAULT_NUMBER_OF_POINTS_TO_COLLECT = 12;
+      static const float                                    MIN_DISTANCE_BETWEEN_POINTS_METER; // (currently 10mm)
+      static const uint32                                   DEFAULT_NUMBER_OF_POINTS_TO_COLLECT = 12;
     };
   }
 }

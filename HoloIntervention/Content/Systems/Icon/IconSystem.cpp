@@ -31,7 +31,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 // System includes
 #include "NetworkSystem.h"
 #include "NotificationSystem.h"
-#include "RegistrationSystem.h"
 #include "ToolSystem.h"
 #include "ToolEntry.h"
 
@@ -57,7 +56,6 @@ namespace HoloIntervention
   namespace System
   {
     const float IconSystem::NETWORK_BLINK_TIME_SEC = 0.75;
-    const float IconSystem::CAMERA_BLINK_TIME_SEC = 1.25f;
     const float IconSystem::MICROPHONE_BLINK_TIME_SEC = 1.f;
     const float IconSystem::ANGLE_BETWEEN_ICONS_RAD = 0.035f;
     const float IconSystem::ICON_START_ANGLE = 0.225f;
@@ -116,76 +114,35 @@ namespace HoloIntervention
       {
         modelLoadingTasks.push_back(AddEntryAsync(L"Assets/Models/network_icon.cmo", conn.HashedName).then([this](std::shared_ptr<IconEntry> entry)
         {
-          m_networkIcons.push_back(entry);
           m_networkLogicEntries.push_back(NetworkLogicEntry());
-          return entry;
-        }));
-      }
-
-      // Create camera icon
-      modelLoadingTasks.push_back(AddEntryAsync(L"Assets/Models/camera_icon.cmo", 0).then([this](std::shared_ptr<IconEntry> entry)
-      {
-        m_cameraIcon = entry;
-        return entry;
-      }));
-
-      // Create microphone icon
-      modelLoadingTasks.push_back(AddEntryAsync(L"Assets/Models/microphone_icon.cmo", 0).then([this](std::shared_ptr<IconEntry> entry)
-      {
-        m_microphoneIcon = entry;
-        return entry;
-      }));
-
-      // Create tool icons
-      for (auto& tool : m_toolSystem.GetTools())
-      {
-        modelLoadingTasks.push_back(AddEntryAsync(tool->GetModelEntry(), std::wstring(tool->GetCoordinateFrame()->GetTransformName()->Data())).then([this, tool](std::shared_ptr<IconEntry> entry)
-        {
-          entry->SetUserValue(tool->GetId());
-          m_toolIcons.push_back(entry);
           return entry;
         }));
       }
 
       return when_all(begin(modelLoadingTasks), end(modelLoadingTasks)).then([this](std::vector<std::shared_ptr<IconEntry>> entries)
       {
-        // Determine scale factors for the models
         for (auto& entry : entries)
+        {
+          m_networkIcons.push_back(entry);
+        }
+        return AddEntryAsync(L"Assets/Models/microphone_icon.cmo", 0);
+      }).then([this](std::shared_ptr<IconEntry> entry)
+      {
+        m_microphoneIcon = entry;
+      }).then([this]()
+      {
+        // Determine scale factors for all loaded entries
+        for (auto& entry : m_iconEntries)
         {
           auto& bounds = entry->GetModelEntry()->GetBounds();
           auto scale = ICON_SIZE_METER / (bounds[1] - bounds[0]);
           entry->SetScaleFactor(scale);
-        }
-
-        // Fixed order below, so that they appear in the same order on screen every run
-        for (auto& conn : m_networkIcons)
-        {
-          conn->GetModelEntry()->EnablePoseLerp(true);
-          conn->GetModelEntry()->SetPoseLerpRate(8.f);
-          m_iconEntries.push_back(conn);
-        }
-
-        m_cameraIcon->GetModelEntry()->EnablePoseLerp(true);
-        m_cameraIcon->GetModelEntry()->SetPoseLerpRate(8.f);
-
-        m_microphoneIcon->GetModelEntry()->EnablePoseLerp(true);
-        m_microphoneIcon->GetModelEntry()->SetPoseLerpRate(8.f);
-
-        m_iconEntries.push_back(m_cameraIcon);
-        m_iconEntries.push_back(m_microphoneIcon);
-
-        for (auto& tool : m_toolIcons)
-        {
-          tool->GetModelEntry()->EnablePoseLerp(true);
-          tool->GetModelEntry()->SetPoseLerpRate(8.f);
-          m_iconEntries.push_back(tool);
+          entry->GetModelEntry()->EnablePoseLerp(true);
+          entry->GetModelEntry()->SetPoseLerpRate(8.f);
         }
 
         m_componentReady = true;
         return true;
-      }).then([this](bool loaded)
-      {
-        return loaded;
       });
     }
 
@@ -213,12 +170,10 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    IconSystem::IconSystem(NotificationSystem& notificationSystem, RegistrationSystem& registrationSystem, NetworkSystem& networkSystem, ToolSystem& toolSystem, Input::VoiceInput& voiceInput, Rendering::ModelRenderer& modelRenderer)
+    IconSystem::IconSystem(NotificationSystem& notificationSystem, NetworkSystem& networkSystem, Input::VoiceInput& voiceInput, Rendering::ModelRenderer& modelRenderer)
       : m_modelRenderer(modelRenderer)
       , m_notificationSystem(notificationSystem)
-      , m_registrationSystem(registrationSystem)
       , m_networkSystem(networkSystem)
-      , m_toolSystem(toolSystem)
       , m_voiceInput(voiceInput)
     {
     }
@@ -237,9 +192,7 @@ namespace HoloIntervention
       }
 
       ProcessNetworkLogic(timer);
-      ProcessCameraLogic(timer);
       ProcessMicrophoneLogic(timer);
-      ProcessToolLogic(timer);
 
       // Calculate forward vector 2m ahead
       float3 basePosition = headPose->Head->Position + (float3(2.f) * headPose->Head->ForwardDirection);
@@ -275,8 +228,11 @@ namespace HoloIntervention
         auto modelEntry = m_modelRenderer.GetModel(modelId);
         auto entry = std::make_shared<IconEntry>();
         entry->SetModelEntry(modelEntry);
+        entry->GetModelEntry()->EnablePoseLerp(true);
+        entry->GetModelEntry()->SetPoseLerpRate(8.f);
         entry->SetUserValue(userValue);
         entry->SetId(m_nextValidEntry++);
+        m_iconEntries.push_back(entry);
 
         return entry;
       });
@@ -293,8 +249,11 @@ namespace HoloIntervention
         auto duplicateEntry = m_modelRenderer.GetModel(modelEntryId);
         duplicateEntry->SetRenderingState(Rendering::RENDERING_GREYSCALE);
         entry->SetModelEntry(duplicateEntry);
+        entry->GetModelEntry()->EnablePoseLerp(true);
+        entry->GetModelEntry()->SetPoseLerpRate(8.f);
         entry->SetUserValue(userValue);
         entry->SetId(m_nextValidEntry++);
+        m_iconEntries.push_back(entry);
 
         return entry;
       });
@@ -309,8 +268,11 @@ namespace HoloIntervention
         auto modelEntry = m_modelRenderer.GetModel(modelId);
         auto entry = std::make_shared<IconEntry>();
         entry->SetModelEntry(modelEntry);
+        entry->GetModelEntry()->EnablePoseLerp(true);
+        entry->GetModelEntry()->SetPoseLerpRate(8.f);
         entry->SetUserValue(userValue);
         entry->SetId(m_nextValidEntry++);
+        m_iconEntries.push_back(entry);
 
         return entry;
       });
@@ -320,14 +282,22 @@ namespace HoloIntervention
     task<std::shared_ptr<IconEntry>> IconSystem::AddEntryAsync(std::shared_ptr<Rendering::ModelEntry> modelEntry, uint64 userValue /*= 0*/)
     {
       // Duplicate incoming model entry, so that they have their own independent rendering properties
-      return m_modelRenderer.AddModelAsync(modelEntry->GetAssetLocation()).then([this, userValue](uint64 modelEntryId)
+      return m_modelRenderer.CloneAsync(modelEntry->GetId()).then([this, userValue](uint64 modelEntryId) -> std::shared_ptr<IconEntry>
       {
+        if (modelEntryId == INVALID_TOKEN)
+        {
+          return nullptr;
+        }
+
         std::lock_guard<std::mutex> guard(m_entryMutex);
         auto entry = std::make_shared<IconEntry>();
         auto duplicateEntry = m_modelRenderer.GetModel(modelEntryId);
         entry->SetModelEntry(duplicateEntry);
+        entry->GetModelEntry()->EnablePoseLerp(true);
+        entry->GetModelEntry()->SetPoseLerpRate(8.f);
         entry->SetUserValue(userValue);
         entry->SetId(m_nextValidEntry++);
+        m_iconEntries.push_back(entry);
 
         return entry;
       });
@@ -381,76 +351,46 @@ namespace HoloIntervention
 
         switch (state)
         {
-          case NetworkSystem::CONNECTION_STATE_CONNECTING:
-          case NetworkSystem::CONNECTION_STATE_DISCONNECTING:
-            if (m_networkLogicEntries[i].m_networkPreviousState != state)
+        case NetworkSystem::CONNECTION_STATE_CONNECTING:
+        case NetworkSystem::CONNECTION_STATE_DISCONNECTING:
+          if (m_networkLogicEntries[i].m_networkPreviousState != state)
+          {
+            m_networkLogicEntries[i].m_networkBlinkTimer = 0.f;
+          }
+          else
+          {
+            m_networkLogicEntries[i].m_networkBlinkTimer += static_cast<float>(timer.GetElapsedSeconds());
+            if (m_networkLogicEntries[i].m_networkBlinkTimer >= NETWORK_BLINK_TIME_SEC)
             {
               m_networkLogicEntries[i].m_networkBlinkTimer = 0.f;
+              conn->GetModelEntry()->ToggleVisible();
             }
-            else
-            {
-              m_networkLogicEntries[i].m_networkBlinkTimer += static_cast<float>(timer.GetElapsedSeconds());
-              if (m_networkLogicEntries[i].m_networkBlinkTimer >= NETWORK_BLINK_TIME_SEC)
-              {
-                m_networkLogicEntries[i].m_networkBlinkTimer = 0.f;
-                conn->GetModelEntry()->ToggleVisible();
-              }
-            }
-            m_networkLogicEntries[i].m_networkIsBlinking = true;
-            break;
-          case NetworkSystem::CONNECTION_STATE_UNKNOWN:
-          case NetworkSystem::CONNECTION_STATE_DISCONNECTED:
-          case NetworkSystem::CONNECTION_STATE_CONNECTION_LOST:
-            conn->GetModelEntry()->SetVisible(true);
-            m_networkLogicEntries[i].m_networkIsBlinking = false;
-            if (m_networkLogicEntries[i].m_wasNetworkConnected)
-            {
-              conn->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
-              m_networkLogicEntries[i].m_wasNetworkConnected = false;
-            }
-            break;
-          case NetworkSystem::CONNECTION_STATE_CONNECTED:
-            conn->GetModelEntry()->SetVisible(true);
-            m_networkLogicEntries[i].m_networkIsBlinking = false;
-            if (!m_networkLogicEntries[i].m_wasNetworkConnected)
-            {
-              m_networkLogicEntries[i].m_wasNetworkConnected = true;
-              conn->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
-            }
-            break;
+          }
+          m_networkLogicEntries[i].m_networkIsBlinking = true;
+          break;
+        case NetworkSystem::CONNECTION_STATE_UNKNOWN:
+        case NetworkSystem::CONNECTION_STATE_DISCONNECTED:
+        case NetworkSystem::CONNECTION_STATE_CONNECTION_LOST:
+          conn->GetModelEntry()->SetVisible(true);
+          m_networkLogicEntries[i].m_networkIsBlinking = false;
+          if (m_networkLogicEntries[i].m_wasNetworkConnected)
+          {
+            conn->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
+            m_networkLogicEntries[i].m_wasNetworkConnected = false;
+          }
+          break;
+        case NetworkSystem::CONNECTION_STATE_CONNECTED:
+          conn->GetModelEntry()->SetVisible(true);
+          m_networkLogicEntries[i].m_networkIsBlinking = false;
+          if (!m_networkLogicEntries[i].m_wasNetworkConnected)
+          {
+            m_networkLogicEntries[i].m_wasNetworkConnected = true;
+            conn->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
+          }
+          break;
         }
 
         m_networkLogicEntries[i].m_networkPreviousState = state;
-      }
-    }
-
-    //----------------------------------------------------------------------------
-    void IconSystem::ProcessCameraLogic(DX::StepTimer& timer)
-    {
-      if (!m_cameraIcon->GetModelEntry()->IsLoaded())
-      {
-        return;
-      }
-
-      if (!m_wasCameraOn && m_registrationSystem.IsCameraActive())
-      {
-        m_wasCameraOn = true;
-        m_cameraIcon->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
-      }
-      else if (m_wasCameraOn && !m_registrationSystem.IsCameraActive())
-      {
-        m_wasCameraOn = false;
-        m_cameraIcon->GetModelEntry()->SetVisible(true);
-        m_cameraIcon->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
-      }
-      else if (m_wasCameraOn && m_registrationSystem.IsCameraActive())
-      {
-        m_cameraBlinkTimer += static_cast<float>(timer.GetElapsedSeconds());
-        if (m_cameraBlinkTimer >= NETWORK_BLINK_TIME_SEC)
-        {
-          m_cameraBlinkTimer = 0.f;
-          m_cameraIcon->GetModelEntry()->ToggleVisible();
-        }
       }
     }
 
@@ -484,31 +424,6 @@ namespace HoloIntervention
         {
           m_microphoneBlinkTimer = 0.f;
           m_microphoneIcon->GetModelEntry()->ToggleVisible();
-        }
-      }
-    }
-
-    //----------------------------------------------------------------------------
-    void IconSystem::ProcessToolLogic(DX::StepTimer&)
-    {
-      for (auto& toolIcon : m_toolIcons)
-      {
-        if (!toolIcon->GetModelEntry()->IsLoaded())
-        {
-          continue;
-        }
-
-        auto coordFrame = toolIcon->GetUserValueString();
-        auto id = toolIcon->GetUserValueNumber();
-        auto isValid = m_toolSystem.IsToolValid(id);
-        auto wasValid = m_toolSystem.WasToolValid(id);
-        if (isValid && !wasValid)
-        {
-          toolIcon->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
-        }
-        else if (!isValid && wasValid)
-        {
-          toolIcon->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
         }
       }
     }

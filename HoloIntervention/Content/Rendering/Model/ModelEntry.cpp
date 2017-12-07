@@ -407,6 +407,7 @@ namespace HoloIntervention
       newEntry->m_isInFrustum = m_isInFrustum ? true : false;
       newEntry->m_frustumCheckFrameNumber = m_frustumCheckFrameNumber;
       newEntry->m_poseLerpRate = m_poseLerpRate;
+      newEntry->m_cameraResources = m_cameraResources;
       newEntry->m_id = INVALID_TOKEN;
 
       return newEntry;
@@ -795,6 +796,30 @@ namespace HoloIntervention
     void ModelEntry::SetColour(float r, float g, float b)
     {
       m_currentColour = float4{ r, g, b, m_currentColour.w };
+    }
+
+    //----------------------------------------------------------------------------
+    void ModelEntry::SetOriginalColour(Windows::Foundation::Numerics::float4 newColour)
+    {
+      m_originalColour = newColour;
+    }
+
+    //----------------------------------------------------------------------------
+    void ModelEntry::SetOriginalColour(Windows::Foundation::Numerics::float3 newColour)
+    {
+      m_originalColour = float4(newColour.x, newColour.y, newColour.z, m_originalColour.w);
+    }
+
+    //----------------------------------------------------------------------------
+    void ModelEntry::SetOriginalColour(float r, float g, float b, float a)
+    {
+      m_originalColour = float4(r, g, b, a);
+    }
+
+    //----------------------------------------------------------------------------
+    void ModelEntry::SetOriginalColour(float r, float g, float b)
+    {
+      m_originalColour = float4(r, g, b, m_originalColour.w);
     }
 
     //----------------------------------------------------------------------------

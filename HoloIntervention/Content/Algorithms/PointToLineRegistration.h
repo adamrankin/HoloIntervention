@@ -36,6 +36,7 @@ namespace HoloIntervention
       void AddPoint(float x, float y, float z);
       void AddLine(const Line& line);
       void AddLine(float originX, float originY, float originZ, float directionI, float directionJ, float directionK);
+      void AddLine(const Point& origin, const Vector3& direction);
 
       void Reset();
       void SetTolerance(float arg);

@@ -33,9 +33,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "ModelRenderer.h"
 
 // System includes
-#include "RegistrationSystem.h"
-#include "NotificationSystem.h"
+#include "IconSystem.h"
 #include "NetworkSystem.h"
+#include "NotificationSystem.h"
+#include "RegistrationSystem.h"
 
 using namespace Concurrency;
 using namespace Windows::Data::Xml::Dom;
@@ -131,10 +132,8 @@ namespace HoloIntervention
           {
             toolElem->SetAttribute(L"Primitive", ref new Platform::String(Rendering::ModelRenderer::PrimitiveToString(tool->GetModelEntry()->GetPrimitiveType()).c_str()));
 
-            toolElem->SetAttribute(L"Argument1", tool->GetModelEntry()->GetArgument().x.ToString());
-            toolElem->SetAttribute(L"Argument2", tool->GetModelEntry()->GetArgument().y.ToString());
-            toolElem->SetAttribute(L"Argument3", tool->GetModelEntry()->GetArgument().z.ToString());
-
+            toolElem->SetAttribute(L"Argument", tool->GetModelEntry()->GetArgument().x.ToString() + L" " + tool->GetModelEntry()->GetArgument().y.ToString() + L" " + tool->GetModelEntry()->GetArgument().z.ToString());
+            toolElem->SetAttribute(L"Colour", tool->GetModelEntry()->GetCurrentColour().x.ToString() + L" " + tool->GetModelEntry()->GetCurrentColour().y.ToString() + L" " + tool->GetModelEntry()->GetCurrentColour().z.ToString() + L" " + tool->GetModelEntry()->GetCurrentColour().w.ToString());
             toolElem->SetAttribute(L"Tessellation", tool->GetModelEntry()->GetTessellation().ToString());
             toolElem->SetAttribute(L"RightHandedCoords", tool->GetModelEntry()->GetRHCoords().ToString());
             toolElem->SetAttribute(L"InvertN", tool->GetModelEntry()->GetInvertN().ToString());
@@ -167,17 +166,166 @@ namespace HoloIntervention
         return task_from_result(false);
       }
 
-      return InitAsync(document).then([this]()
+      return create_task([this, document]()
       {
+        auto xpath = ref new Platform::String(L"/HoloIntervention/Tools");
+        if (document->SelectNodes(xpath)->Length != 1)
+        {
+          throw ref new Platform::Exception(E_INVALIDARG, L"Invalid \"Tools\" tag in configuration.");
+        }
+
+        for (auto node : document->SelectNodes(xpath))
+        {
+          if (!HasAttribute(L"IGTConnection", node))
+          {
+            throw ref new Platform::Exception(E_FAIL, L"Tool configuration does not contain \"IGTConnection\" attribute.");
+          }
+          Platform::String^ connectionName = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"IGTConnection")->NodeValue);
+          m_connectionName = std::wstring(connectionName->Data());
+          m_hashedConnectionName = HashString(connectionName);
+        }
+
+        xpath = ref new Platform::String(L"/HoloIntervention/Tools/Tool");
+        if (document->SelectNodes(xpath)->Length == 0)
+        {
+          throw ref new Platform::Exception(E_INVALIDARG, L"No tools defined in the configuration file. Check for the existence of Tools/Tool");
+        }
+
+        for (auto node : document->SelectNodes(xpath))
+        {
+          Platform::String^ modelString = nullptr;
+          Platform::String^ primString = nullptr;
+          Platform::String^ fromString = nullptr;
+          Platform::String^ toString = nullptr;
+          Platform::String^ argumentString = nullptr;
+          Platform::String^ colourString = nullptr;
+          Platform::String^ tessellationString = nullptr;
+          Platform::String^ rhcoordsString = nullptr;
+          Platform::String^ invertnString = nullptr;
+
+          // model, transform
+          if (!HasAttribute(L"Model", node) && !HasAttribute(L"Primitive", node))
+          {
+            throw ref new Platform::Exception(E_FAIL, L"Tool entry does not contain model or primitive attribute.");
+          }
+          if (!HasAttribute(L"From", node) || !HasAttribute(L"To", node))
+          {
+            throw ref new Platform::Exception(E_FAIL, L"Tool entry does not contain transform attribute.");
+          }
+          if (HasAttribute(L"Model", node))
+          {
+            modelString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Model")->NodeValue);
+          }
+          if (HasAttribute(L"Primitive", node))
+          {
+            primString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Primitive")->NodeValue);
+          }
+          fromString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"From")->NodeValue);
+          toString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"To")->NodeValue);
+          if ((modelString != nullptr && modelString->IsEmpty()) || (primString != nullptr && primString->IsEmpty()) || fromString->IsEmpty() || toString->IsEmpty())
+          {
+            throw ref new Platform::Exception(E_FAIL, L"Tool entry contains an empty attribute.");
+          }
+          if (HasAttribute(L"Argument", node))
+          {
+            argumentString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Argument")->NodeValue);
+          }
+          if (HasAttribute(L"Colour", node))
+          {
+            colourString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Colour")->NodeValue);
+          }
+          if (HasAttribute(L"Tessellation", node))
+          {
+            tessellationString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Tessellation")->NodeValue);
+          }
+          if (HasAttribute(L"RightHandedCoords", node))
+          {
+            rhcoordsString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"RightHandedCoords")->NodeValue);
+          }
+          if (HasAttribute(L"InvertN", node))
+          {
+            invertnString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"InvertN")->NodeValue);
+          }
+
+          UWPOpenIGTLink::TransformName^ trName = ref new UWPOpenIGTLink::TransformName(fromString, toString);
+          if (!trName->IsValid())
+          {
+            throw ref new Platform::Exception(E_FAIL, L"Tool entry contains invalid transform name.");
+          }
+
+          task<uint64> registerTask;
+          if (modelString != nullptr)
+          {
+            registerTask = RegisterToolAsync(std::wstring(modelString->Data()), false, trName);
+          }
+          else
+          {
+            size_t tessellation = 16;
+            float4 colour(float4::one());
+            bool rhcoords = true;
+            bool invertn = false;
+            float3 argument = { 0.f, 0.f, 0.f };
+            if (argumentString != nullptr && !argumentString->IsEmpty())
+            {
+              std::wstringstream wss;
+              wss << argumentString->Data();
+              wss >> argument.x;
+              wss >> argument.y;
+              wss >> argument.z;
+            }
+            if (colourString != nullptr && !colourString->IsEmpty())
+            {
+              std::wstringstream wss;
+              wss << colourString->Data();
+              wss >> colour.x;
+              wss >> colour.y;
+              wss >> colour.z;
+              wss >> colour.w;
+            }
+            if (tessellationString != nullptr && !tessellationString->IsEmpty())
+            {
+              std::wstringstream wss;
+              wss << tessellationString->Data();
+              wss >> tessellation;
+            }
+            if (rhcoordsString != nullptr && !rhcoordsString->IsEmpty())
+            {
+              rhcoords = IsEqualInsensitive(rhcoordsString, L"true");
+            }
+            if (invertnString != nullptr && !invertnString->IsEmpty())
+            {
+              invertn = IsEqualInsensitive(invertnString, L"true");
+            }
+            registerTask = RegisterToolAsync(std::wstring(primString->Data()), true, trName, colour, argument, tessellation, rhcoords, invertn);
+          }
+          registerTask.then([this, node](uint64 token)
+          {
+            auto tool = GetTool(token);
+
+            bool lerpEnabled;
+            if (GetBooleanAttribute(L"LerpEnabled", node, lerpEnabled))
+            {
+              tool->GetModelEntry()->EnablePoseLerp(lerpEnabled);
+            }
+
+            float lerpRate;
+            if (GetScalarAttribute<float>(L"LerpRate", node, lerpRate))
+            {
+              tool->GetModelEntry()->SetPoseLerpRate(lerpRate);
+            }
+          });
+        }
+
         m_componentReady = true;
         return true;
       });
     }
 
     //----------------------------------------------------------------------------
-    ToolSystem::ToolSystem(NotificationSystem& notificationSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer, NetworkSystem& networkSystem)
+    ToolSystem::ToolSystem(NotificationSystem& notificationSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer, NetworkSystem& networkSystem, IconSystem& iconSystem)
       : m_notificationSystem(notificationSystem)
       , m_registrationSystem(registrationSystem)
+      , m_iconSystem(iconSystem)
       , m_modelRenderer(modelRenderer)
       , m_transformRepository(ref new UWPOpenIGTLink::TransformRepository())
       , m_networkSystem(networkSystem)
@@ -241,7 +389,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<uint64> ToolSystem::RegisterToolAsync(const std::wstring& modelName, const bool isPrimitive, UWPOpenIGTLink::TransformName^ coordinateFrame, float3 argument, size_t tessellation, bool rhcoords, bool invertn)
+    task<uint64> ToolSystem::RegisterToolAsync(const std::wstring& modelName, const bool isPrimitive, UWPOpenIGTLink::TransformName^ coordinateFrame, float4 colour, float3 argument, size_t tessellation, bool rhcoords, bool invertn)
     {
       task<uint64> modelTask;
       if (!isPrimitive)
@@ -252,12 +400,13 @@ namespace HoloIntervention
       {
         modelTask = m_modelRenderer.AddPrimitiveAsync(modelName, argument, tessellation, rhcoords, invertn);
       }
-      return modelTask.then([this, coordinateFrame](uint64 modelEntryId)
+      return modelTask.then([this, coordinateFrame, colour](uint64 modelEntryId)
       {
         std::shared_ptr<Tools::ToolEntry> entry = std::make_shared<Tools::ToolEntry>(m_modelRenderer, m_networkSystem, m_hashedConnectionName, coordinateFrame, m_transformRepository);
         auto modelEntry = m_modelRenderer.GetModel(modelEntryId);
         entry->SetModelEntry(modelEntry);
         modelEntry->SetVisible(false);
+        modelEntry->SetColour(colour);
         std::lock_guard<std::mutex> guard(m_entriesMutex);
         m_toolEntries.push_back(entry);
         return entry->GetId();
@@ -313,166 +462,5 @@ namespace HoloIntervention
     {
 
     }
-
-    //----------------------------------------------------------------------------
-    task<void> ToolSystem::InitAsync(XmlDocument^ doc)
-    {
-      return create_task([this, doc]()
-      {
-        auto xpath = ref new Platform::String(L"/HoloIntervention/Tools");
-        if (doc->SelectNodes(xpath)->Length != 1)
-        {
-          throw ref new Platform::Exception(E_INVALIDARG, L"Invalid \"Tools\" tag in configuration.");
-        }
-
-        for (auto node : doc->SelectNodes(xpath))
-        {
-          if (!HasAttribute(L"IGTConnection", node))
-          {
-            throw ref new Platform::Exception(E_FAIL, L"Tool configuration does not contain \"IGTConnection\" attribute.");
-          }
-          Platform::String^ connectionName = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"IGTConnection")->NodeValue);
-          m_connectionName = std::wstring(connectionName->Data());
-          m_hashedConnectionName = HashString(connectionName);
-        }
-
-        xpath = ref new Platform::String(L"/HoloIntervention/Tools/Tool");
-        if (doc->SelectNodes(xpath)->Length == 0)
-        {
-          throw ref new Platform::Exception(E_INVALIDARG, L"No tools defined in the configuration file. Check for the existence of Tools/Tool");
-        }
-
-        for (auto node : doc->SelectNodes(xpath))
-        {
-          Platform::String^ modelString = nullptr;
-          Platform::String^ primString = nullptr;
-          Platform::String^ fromString = nullptr;
-          Platform::String^ toString = nullptr;
-          Platform::String^ argument1String = nullptr;
-          Platform::String^ argument2String = nullptr;
-          Platform::String^ argument3String = nullptr;
-          Platform::String^ tessellationString = nullptr;
-          Platform::String^ rhcoordsString = nullptr;
-          Platform::String^ invertnString = nullptr;
-
-          // model, transform
-          if (!HasAttribute(L"Model", node) && !HasAttribute(L"Primitive", node))
-          {
-            throw ref new Platform::Exception(E_FAIL, L"Tool entry does not contain model or primitive attribute.");
-          }
-          if (!HasAttribute(L"From", node) || !HasAttribute(L"To", node))
-          {
-            throw ref new Platform::Exception(E_FAIL, L"Tool entry does not contain transform attribute.");
-          }
-          if (HasAttribute(L"Model", node))
-          {
-            modelString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Model")->NodeValue);
-          }
-          if (HasAttribute(L"Primitive", node))
-          {
-            primString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Primitive")->NodeValue);
-          }
-          fromString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"From")->NodeValue);
-          toString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"To")->NodeValue);
-          if ((modelString != nullptr && modelString->IsEmpty()) || (primString != nullptr && primString->IsEmpty()) || fromString->IsEmpty() || toString->IsEmpty())
-          {
-            throw ref new Platform::Exception(E_FAIL, L"Tool entry contains an empty attribute.");
-          }
-          if (HasAttribute(L"Argument1", node))
-          {
-            argument1String = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Argument1")->NodeValue);
-          }
-          if (HasAttribute(L"Argument2", node))
-          {
-            argument2String = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Argument2")->NodeValue);
-          }
-          if (HasAttribute(L"Argument3", node))
-          {
-            argument3String = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Argument3")->NodeValue);
-          }
-          if (HasAttribute(L"Tessellation", node))
-          {
-            tessellationString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Tessellation")->NodeValue);
-          }
-          if (HasAttribute(L"RightHandedCoords", node))
-          {
-            rhcoordsString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"RightHandedCoords")->NodeValue);
-          }
-          if (HasAttribute(L"InvertN", node))
-          {
-            invertnString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"InvertN")->NodeValue);
-          }
-
-          UWPOpenIGTLink::TransformName^ trName = ref new UWPOpenIGTLink::TransformName(fromString, toString);
-          if (!trName->IsValid())
-          {
-            throw ref new Platform::Exception(E_FAIL, L"Tool entry contains invalid transform name.");
-          }
-
-          task<uint64> registerTask;
-          if (modelString != nullptr)
-          {
-            registerTask = RegisterToolAsync(std::wstring(modelString->Data()), false, trName);
-          }
-          else
-          {
-            size_t tessellation = 16;
-            bool rhcoords = true;
-            bool invertn = false;
-            float3 argument = { 0.f, 0.f, 0.f };
-            if (argument1String != nullptr && !argument1String->IsEmpty())
-            {
-              std::wstringstream wss;
-              wss << argument1String->Data();
-              wss >> argument.x;
-            }
-            if (argument2String != nullptr && !argument2String->IsEmpty())
-            {
-              std::wstringstream wss;
-              wss << argument2String->Data();
-              wss >> argument.y;
-            }
-            if (argument3String != nullptr && !argument3String->IsEmpty())
-            {
-              std::wstringstream wss;
-              wss << argument3String->Data();
-              wss >> argument.z;
-            }
-            if (tessellationString != nullptr && !tessellationString->IsEmpty())
-            {
-              std::wstringstream wss;
-              wss << tessellationString->Data();
-              wss >> tessellation;
-            }
-            if (rhcoordsString != nullptr && !rhcoordsString->IsEmpty())
-            {
-              rhcoords = IsEqualInsensitive(rhcoordsString, L"true");
-            }
-            if (invertnString != nullptr && !invertnString->IsEmpty())
-            {
-              invertn = IsEqualInsensitive(invertnString, L"true");
-            }
-            registerTask = RegisterToolAsync(std::wstring(primString->Data()), true, trName, argument, tessellation, rhcoords, invertn);
-          }
-          registerTask.then([this, node](uint64 token)
-          {
-            auto tool = GetTool(token);
-
-            bool lerpEnabled;
-            if (GetBooleanAttribute(L"LerpEnabled", node, lerpEnabled))
-            {
-              tool->GetModelEntry()->EnablePoseLerp(lerpEnabled);
-            }
-
-            float lerpRate;
-            if (GetScalarAttribute<float>(L"LerpRate", node, lerpRate))
-            {
-              tool->GetModelEntry()->SetPoseLerpRate(lerpRate);
-            }
-          });
-        }
-      });
-    }
-
   }
 }

@@ -132,9 +132,9 @@ namespace HoloIntervention
     m_networkSystem = std::make_unique<System::NetworkSystem> (*m_notificationSystem.get(), *m_voiceInput.get());
     m_physicsAPI = std::make_unique<Physics::PhysicsAPI> (*m_notificationSystem.get(), m_deviceResources, m_timer);
 
-    m_registrationSystem = std::make_unique<System::RegistrationSystem> (*m_networkSystem.get(), *m_physicsAPI.get(), *m_notificationSystem.get(), *m_modelRenderer.get());
-    m_toolSystem = std::make_unique<System::ToolSystem> (*m_notificationSystem.get(), *m_registrationSystem.get(), *m_modelRenderer.get(), *m_networkSystem.get());
-    m_iconSystem = std::make_unique<System::IconSystem> (*m_notificationSystem.get(), *m_registrationSystem.get(), *m_networkSystem.get(), *m_toolSystem.get(), *m_voiceInput.get(), *m_modelRenderer.get());
+    m_iconSystem = std::make_unique<System::IconSystem> (*m_notificationSystem.get(), *m_networkSystem.get(), *m_voiceInput.get(), *m_modelRenderer.get());
+    m_registrationSystem = std::make_unique<System::RegistrationSystem>(*m_networkSystem.get(), *m_physicsAPI.get(), *m_notificationSystem.get(), *m_modelRenderer.get(), *m_iconSystem.get());
+    m_toolSystem = std::make_unique<System::ToolSystem>(*m_notificationSystem.get(), *m_registrationSystem.get(), *m_modelRenderer.get(), *m_networkSystem.get(), *m_iconSystem.get());
     m_gazeSystem = std::make_unique<System::GazeSystem> (*m_notificationSystem.get(), *m_physicsAPI.get(), *m_modelRenderer.get());
     m_imagingSystem = std::make_unique<System::ImagingSystem> (*m_registrationSystem.get(), *m_notificationSystem.get(), *m_sliceRenderer.get(), *m_volumeRenderer.get(), *m_networkSystem.get());
     m_splashSystem = std::make_unique<System::SplashSystem> (*m_sliceRenderer.get());
@@ -483,21 +483,21 @@ namespace HoloIntervention
 
     switch (sender->Locatability)
     {
-      case SpatialLocatability::Unavailable:
-      {
-        m_notificationSystem->QueueMessage(L"Warning! Positional tracking is unavailable.");
-      }
+    case SpatialLocatability::Unavailable:
+    {
+      m_notificationSystem->QueueMessage(L"Warning! Positional tracking is unavailable.");
+    }
+    break;
+
+    case SpatialLocatability::PositionalTrackingActivating:
+    case SpatialLocatability::OrientationOnly:
+    case SpatialLocatability::PositionalTrackingInhibited:
+      // Gaze-locked content still valid
       break;
 
-      case SpatialLocatability::PositionalTrackingActivating:
-      case SpatialLocatability::OrientationOnly:
-      case SpatialLocatability::PositionalTrackingInhibited:
-        // Gaze-locked content still valid
-        break;
-
-      case SpatialLocatability::PositionalTrackingActive:
-        m_notificationSystem->QueueMessage(L"Positional tracking is active.");
-        break;
+    case SpatialLocatability::PositionalTrackingActive:
+      m_notificationSystem->QueueMessage(L"Positional tracking is active.");
+      break;
     }
   }
 

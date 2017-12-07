@@ -61,6 +61,7 @@ namespace HoloIntervention
 
   namespace System
   {
+    class IconSystem;
     class NetworkSystem;
     class NotificationSystem;
 
@@ -91,7 +92,8 @@ namespace HoloIntervention
       RegistrationSystem(NetworkSystem& networkSystem,
                          Physics::PhysicsAPI& physicsAPI,
                          NotificationSystem& notificationSystem,
-                         Rendering::ModelRenderer& modelRenderer);
+                         Rendering::ModelRenderer& modelRenderer,
+                         System::IconSystem& iconSystem);
       ~RegistrationSystem();
 
       void Update(DX::StepTimer& timer,
@@ -116,6 +118,7 @@ namespace HoloIntervention
       NetworkSystem&                                                  m_networkSystem;
       Rendering::ModelRenderer&                                       m_modelRenderer;
       Physics::PhysicsAPI&                                            m_physicsAPI;
+      System::IconSystem&                                             m_iconSystem;
       Windows::Data::Xml::Dom::XmlDocument^                           m_configDocument = nullptr;
 
       // State variables
