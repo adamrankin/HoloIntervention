@@ -36,12 +36,10 @@ namespace HoloIntervention
     class ModelEntry;
   }
 
-  namespace System
+  namespace UI
   {
     class IconEntry;
-    class IconSystem;
-    class NotificationSystem;
-    class NetworkSystem;
+    class Icons;
   }
 
   namespace Algorithm
@@ -51,6 +49,9 @@ namespace HoloIntervention
 
   namespace System
   {
+    class NotificationSystem;
+    class NetworkSystem;
+
     class ModelAlignmentRegistration : public IRegistrationMethod
     {
       // First = head pose, second = tracker pose
@@ -92,7 +93,7 @@ namespace HoloIntervention
       ModelAlignmentRegistration(System::NotificationSystem& notificationSystem,
                                  System::NetworkSystem& networkSystem,
                                  Rendering::ModelRenderer& modelRenderer,
-                                 System::IconSystem& iconSystem);
+                                 UI::Icons& icons);
       ~ModelAlignmentRegistration();
 
     protected:
@@ -100,7 +101,7 @@ namespace HoloIntervention
       System::NotificationSystem&                           m_notificationSystem;
       System::NetworkSystem&                                m_networkSystem;
       Rendering::ModelRenderer&                             m_modelRenderer;
-      System::IconSystem&                                   m_iconSystem;
+      UI::Icons&                                            m_icons;
 
       // State variables
       std::wstring                                          m_connectionName;
@@ -110,7 +111,8 @@ namespace HoloIntervention
       UWPOpenIGTLink::TransformName^                        m_holoLensToReferenceTransformName = ref new UWPOpenIGTLink::TransformName(L"HoloLens", L"Reference");
       std::atomic_bool                                      m_started = false;
       std::atomic_bool                                      m_calculating = false;
-      std::shared_ptr<System::IconEntry>                    m_iconEntry = nullptr;
+      std::shared_ptr<UI::IconEntry>                        m_sphereIconEntry = nullptr;
+      std::shared_ptr<UI::IconEntry>                        m_holoLensIconEntry = nullptr;
 
       // Behaviour variables
       std::atomic_bool                                      m_pointCaptureRequested = false;

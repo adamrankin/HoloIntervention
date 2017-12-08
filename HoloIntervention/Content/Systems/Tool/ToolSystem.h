@@ -42,9 +42,13 @@ namespace HoloIntervention
     class ToolEntry;
   }
 
+  namespace UI
+  {
+    class Icons;
+  }
+
   namespace System
   {
-    class IconSystem;
     class NetworkSystem;
     class NotificationSystem;
     class RegistrationSystem;
@@ -65,7 +69,7 @@ namespace HoloIntervention
                  RegistrationSystem& registrationSystem,
                  Rendering::ModelRenderer& modelRenderer,
                  NetworkSystem& networkSystem,
-                 IconSystem& iconSystem);
+                 UI::Icons& icons);
       ~ToolSystem();
 
       uint32 GetToolCount() const;
@@ -88,7 +92,7 @@ namespace HoloIntervention
       NotificationSystem&                               m_notificationSystem;
       RegistrationSystem&                               m_registrationSystem;
       NetworkSystem&                                    m_networkSystem;
-      IconSystem&                                       m_iconSystem;
+      UI::Icons&                                        m_icons;
       Rendering::ModelRenderer&                         m_modelRenderer;
 
       std::wstring                                      m_connectionName; // For config saving

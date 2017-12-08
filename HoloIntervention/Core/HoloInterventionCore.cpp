@@ -34,7 +34,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // System includes
 #include "GazeSystem.h"
-#include "IconSystem.h"
 #include "ImagingSystem.h"
 #include "NetworkSystem.h"
 #include "NotificationSystem.h"
@@ -42,6 +41,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "SplashSystem.h"
 #include "TaskSystem.h"
 #include "ToolSystem.h"
+
+// UI includes
+#include "Icons.h"
 
 // Physics includes
 #include "PhysicsAPI.h"
@@ -126,15 +128,16 @@ namespace HoloIntervention
 
     m_soundAPI = std::make_unique<Sound::SoundAPI>();
 
+    m_icons = std::make_unique<UI::Icons>(*m_notificationSystem.get(), *m_networkSystem.get(), *m_modelRenderer.get());
+
     m_spatialInput = std::make_unique<Input::SpatialInput>();
     m_voiceInput = std::make_unique<Input::VoiceInput> (*m_notificationSystem.get(), *m_soundAPI.get());
 
     m_networkSystem = std::make_unique<System::NetworkSystem> (*m_notificationSystem.get(), *m_voiceInput.get());
     m_physicsAPI = std::make_unique<Physics::PhysicsAPI> (*m_notificationSystem.get(), m_deviceResources, m_timer);
 
-    m_iconSystem = std::make_unique<System::IconSystem> (*m_notificationSystem.get(), *m_networkSystem.get(), *m_voiceInput.get(), *m_modelRenderer.get());
-    m_registrationSystem = std::make_unique<System::RegistrationSystem>(*m_networkSystem.get(), *m_physicsAPI.get(), *m_notificationSystem.get(), *m_modelRenderer.get(), *m_iconSystem.get());
-    m_toolSystem = std::make_unique<System::ToolSystem>(*m_notificationSystem.get(), *m_registrationSystem.get(), *m_modelRenderer.get(), *m_networkSystem.get(), *m_iconSystem.get());
+    m_registrationSystem = std::make_unique<System::RegistrationSystem>(*m_networkSystem.get(), *m_physicsAPI.get(), *m_notificationSystem.get(), *m_modelRenderer.get(), *m_icons.get());
+    m_toolSystem = std::make_unique<System::ToolSystem>(*m_notificationSystem.get(), *m_registrationSystem.get(), *m_modelRenderer.get(), *m_networkSystem.get(), *m_icons.get());
     m_gazeSystem = std::make_unique<System::GazeSystem> (*m_notificationSystem.get(), *m_physicsAPI.get(), *m_modelRenderer.get());
     m_imagingSystem = std::make_unique<System::ImagingSystem> (*m_registrationSystem.get(), *m_notificationSystem.get(), *m_sliceRenderer.get(), *m_volumeRenderer.get(), *m_networkSystem.get());
     m_splashSystem = std::make_unique<System::SplashSystem> (*m_sliceRenderer.get());
@@ -154,7 +157,7 @@ namespace HoloIntervention
     m_engineComponents.push_back(m_toolSystem.get());
     m_engineComponents.push_back(m_registrationSystem.get());
     m_engineComponents.push_back(m_imagingSystem.get());
-    m_engineComponents.push_back(m_iconSystem.get());
+    m_engineComponents.push_back(m_icons.get());
     m_engineComponents.push_back(m_splashSystem.get());
     m_engineComponents.push_back(m_taskSystem.get());
 
@@ -162,7 +165,7 @@ namespace HoloIntervention
     m_configurableComponents.push_back(m_registrationSystem.get());
     m_configurableComponents.push_back(m_networkSystem.get());
     m_configurableComponents.push_back(m_imagingSystem.get());
-    m_configurableComponents.push_back(m_iconSystem.get());
+    m_configurableComponents.push_back(m_icons.get());
     m_configurableComponents.push_back(m_taskSystem.get());
 
     ReadConfigurationAsync().then([this](bool result)
@@ -339,7 +342,7 @@ namespace HoloIntervention
         {
           m_registrationSystem->Update(m_timer, hmdCoordinateSystem, headPose, *cameraResources);
           m_gazeSystem->Update(m_timer, hmdCoordinateSystem, headPose);
-          m_iconSystem->Update(m_timer, headPose);
+          m_icons->Update(m_timer, headPose);
           m_soundAPI->Update(m_timer, hmdCoordinateSystem);
           m_sliceRenderer->Update(headPose, cameraResources);
           m_notificationSystem->Update(headPose, m_timer);

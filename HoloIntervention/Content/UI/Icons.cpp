@@ -25,7 +25,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "pch.h"
 #include "Common.h"
 #include "IconEntry.h"
-#include "IconSystem.h"
+#include "Icons.h"
 #include "StepTimer.h"
 
 // System includes
@@ -53,17 +53,17 @@ using namespace Windows::UI::Input::Spatial;
 
 namespace HoloIntervention
 {
-  namespace System
+  namespace UI
   {
-    const float IconSystem::NETWORK_BLINK_TIME_SEC = 0.75;
-    const float IconSystem::MICROPHONE_BLINK_TIME_SEC = 1.f;
-    const float IconSystem::ANGLE_BETWEEN_ICONS_RAD = 0.035f;
-    const float IconSystem::ICON_START_ANGLE = 0.225f;
-    const float IconSystem::ICON_UP_ANGLE = 0.1f;
-    const float IconSystem::ICON_SIZE_METER = 0.025f;
+    const float Icons::NETWORK_BLINK_TIME_SEC = 0.75;
+    const float Icons::MICROPHONE_BLINK_TIME_SEC = 1.f;
+    const float Icons::ANGLE_BETWEEN_ICONS_RAD = 0.035f;
+    const float Icons::ICON_START_ANGLE = 0.225f;
+    const float Icons::ICON_UP_ANGLE = 0.1f;
+    const float Icons::ICON_SIZE_METER = 0.025f;
 
     //----------------------------------------------------------------------------
-    float3 IconSystem::GetStabilizedPosition(SpatialPointerPose^ pose) const
+    float3 Icons::GetStabilizedPosition(SpatialPointerPose^ pose) const
     {
       float3 pos = { 0.f, 0.f, 0.f };
       for (auto& icon : m_iconEntries)
@@ -78,7 +78,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    float3 IconSystem::GetStabilizedVelocity() const
+    float3 Icons::GetStabilizedVelocity() const
     {
       float3 accumulator = { 0.f, 0.f, 0.f };
       for (auto& icon : m_iconEntries)
@@ -93,19 +93,19 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    float IconSystem::GetStabilizePriority() const
+    float Icons::GetStabilizePriority() const
     {
       return m_componentReady ? PRIORITY_ICON : PRIORITY_NOT_ACTIVE;
     }
 
     //----------------------------------------------------------------------------
-    task<bool> IconSystem::WriteConfigurationAsync(XmlDocument^ document)
+    task<bool> Icons::WriteConfigurationAsync(XmlDocument^ document)
     {
       return task_from_result(true);
     }
 
     //----------------------------------------------------------------------------
-    task<bool> IconSystem::ReadConfigurationAsync(XmlDocument^ document)
+    task<bool> Icons::ReadConfigurationAsync(XmlDocument^ document)
     {
       std::vector<task<std::shared_ptr<IconEntry>>> modelLoadingTasks;
 
@@ -147,44 +147,20 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void IconSystem::RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap)
-    {
-      callbackMap[L"hide icons"] = [this](SpeechRecognitionResult ^ result)
-      {
-        for (auto& icon : m_iconEntries)
-        {
-          icon->GetModelEntry()->SetVisible(false);
-        }
-        m_iconsShowing = false;
-      };
-
-      callbackMap[L"show icons"] = [this](SpeechRecognitionResult ^ result)
-      {
-        for (auto& icon : m_iconEntries)
-        {
-          icon->SetFirstFrame(true); // Forces an update to current pose instead of interpolating from last visible point
-          icon->GetModelEntry()->SetVisible(true);
-        }
-        m_iconsShowing = true;
-      };
-    }
-
-    //----------------------------------------------------------------------------
-    IconSystem::IconSystem(NotificationSystem& notificationSystem, NetworkSystem& networkSystem, Input::VoiceInput& voiceInput, Rendering::ModelRenderer& modelRenderer)
+    Icons::Icons(System::NotificationSystem& notificationSystem, System::NetworkSystem& networkSystem, Rendering::ModelRenderer& modelRenderer)
       : m_modelRenderer(modelRenderer)
       , m_notificationSystem(notificationSystem)
       , m_networkSystem(networkSystem)
-      , m_voiceInput(voiceInput)
     {
     }
 
     //----------------------------------------------------------------------------
-    IconSystem::~IconSystem()
+    Icons::~Icons()
     {
     }
 
     //----------------------------------------------------------------------------
-    void IconSystem::Update(DX::StepTimer& timer, SpatialPointerPose^ headPose)
+    void Icons::Update(DX::StepTimer& timer, SpatialPointerPose^ headPose)
     {
       if (!m_componentReady || !m_iconsShowing)
       {
@@ -220,7 +196,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<std::shared_ptr<IconEntry>> IconSystem::AddEntryAsync(const std::wstring& modelName, std::wstring userValue)
+    task<std::shared_ptr<IconEntry>> Icons::AddEntryAsync(const std::wstring& modelName, std::wstring userValue)
     {
       return m_modelRenderer.AddModelAsync(modelName).then([this, userValue](uint64 modelId)
       {
@@ -239,7 +215,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<std::shared_ptr<IconEntry>> IconSystem::AddEntryAsync(std::shared_ptr<Rendering::ModelEntry> modelEntry, std::wstring userValue)
+    task<std::shared_ptr<IconEntry>> Icons::AddEntryAsync(std::shared_ptr<Rendering::ModelEntry> modelEntry, std::wstring userValue)
     {
       // Duplicate incoming model entry, so that they have their own independent rendering properties
       return m_modelRenderer.CloneAsync(modelEntry->GetId()).then([this, userValue](uint64 modelEntryId)
@@ -260,7 +236,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<std::shared_ptr<IconEntry>> IconSystem::AddEntryAsync(const std::wstring& modelName, uint64 userValue /*= 0*/)
+    task<std::shared_ptr<IconEntry>> Icons::AddEntryAsync(const std::wstring& modelName, uint64 userValue /*= 0*/)
     {
       return m_modelRenderer.AddModelAsync(modelName).then([this, userValue](uint64 modelId)
       {
@@ -279,7 +255,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<std::shared_ptr<IconEntry>> IconSystem::AddEntryAsync(std::shared_ptr<Rendering::ModelEntry> modelEntry, uint64 userValue /*= 0*/)
+    task<std::shared_ptr<IconEntry>> Icons::AddEntryAsync(std::shared_ptr<Rendering::ModelEntry> modelEntry, uint64 userValue /*= 0*/)
     {
       // Duplicate incoming model entry, so that they have their own independent rendering properties
       return m_modelRenderer.CloneAsync(modelEntry->GetId()).then([this, userValue](uint64 modelEntryId) -> std::shared_ptr<IconEntry>
@@ -304,7 +280,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool IconSystem::RemoveEntry(uint64 entryId)
+    bool Icons::RemoveEntry(uint64 entryId)
     {
       for (auto it = m_iconEntries.begin(); it != m_iconEntries.end(); ++it)
       {
@@ -319,7 +295,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    std::shared_ptr<HoloIntervention::System::IconEntry> IconSystem::GetEntry(uint64 entryId)
+    std::shared_ptr<IconEntry> Icons::GetEntry(uint64 entryId)
     {
       for (auto& entry : m_iconEntries)
       {
@@ -333,7 +309,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void IconSystem::ProcessNetworkLogic(DX::StepTimer& timer)
+    void Icons::ProcessNetworkLogic(DX::StepTimer& timer)
     {
       for (uint32 i = 0; i < m_networkIcons.size(); ++i)
       {
@@ -343,7 +319,7 @@ namespace HoloIntervention
           continue;
         }
 
-        NetworkSystem::ConnectionState state;
+        System::NetworkSystem::ConnectionState state;
         if (!m_networkSystem.GetConnectionState(conn->GetUserValueNumber(), state))
         {
           return;
@@ -351,8 +327,8 @@ namespace HoloIntervention
 
         switch (state)
         {
-        case NetworkSystem::CONNECTION_STATE_CONNECTING:
-        case NetworkSystem::CONNECTION_STATE_DISCONNECTING:
+        case System::NetworkSystem::CONNECTION_STATE_CONNECTING:
+        case System::NetworkSystem::CONNECTION_STATE_DISCONNECTING:
           if (m_networkLogicEntries[i].m_networkPreviousState != state)
           {
             m_networkLogicEntries[i].m_networkBlinkTimer = 0.f;
@@ -368,9 +344,9 @@ namespace HoloIntervention
           }
           m_networkLogicEntries[i].m_networkIsBlinking = true;
           break;
-        case NetworkSystem::CONNECTION_STATE_UNKNOWN:
-        case NetworkSystem::CONNECTION_STATE_DISCONNECTED:
-        case NetworkSystem::CONNECTION_STATE_CONNECTION_LOST:
+        case System::NetworkSystem::CONNECTION_STATE_UNKNOWN:
+        case System::NetworkSystem::CONNECTION_STATE_DISCONNECTED:
+        case System::NetworkSystem::CONNECTION_STATE_CONNECTION_LOST:
           conn->GetModelEntry()->SetVisible(true);
           m_networkLogicEntries[i].m_networkIsBlinking = false;
           if (m_networkLogicEntries[i].m_wasNetworkConnected)
@@ -379,7 +355,7 @@ namespace HoloIntervention
             m_networkLogicEntries[i].m_wasNetworkConnected = false;
           }
           break;
-        case NetworkSystem::CONNECTION_STATE_CONNECTED:
+        case System::NetworkSystem::CONNECTION_STATE_CONNECTED:
           conn->GetModelEntry()->SetVisible(true);
           m_networkLogicEntries[i].m_networkIsBlinking = false;
           if (!m_networkLogicEntries[i].m_wasNetworkConnected)
@@ -395,7 +371,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void IconSystem::ProcessMicrophoneLogic(DX::StepTimer& timer)
+    void Icons::ProcessMicrophoneLogic(DX::StepTimer& timer)
     {
       if (!m_microphoneIcon->GetModelEntry()->IsLoaded())
       {

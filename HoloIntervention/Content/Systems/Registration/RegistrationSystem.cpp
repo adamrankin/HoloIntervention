@@ -45,8 +45,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Physics includes
 #include "PhysicsAPI.h"
 
+// UI includes
+#include "Icons.h"
+
 // System includes
-#include "IconSystem.h"
 #include "NotificationSystem.h"
 
 // Unnecessary, but removes Intellisense errors
@@ -174,7 +176,7 @@ namespace HoloIntervention
         for (auto pair :
              {
                std::pair<std::wstring, std::shared_ptr<IRegistrationMethod>>(REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_OPTICAL], std::make_shared<OpticalRegistration>(m_notificationSystem, m_networkSystem)),
-               std::pair<std::wstring, std::shared_ptr<IRegistrationMethod>>(REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_MODELALIGNMENT], std::make_shared<ModelAlignmentRegistration>(m_notificationSystem, m_networkSystem, m_modelRenderer, m_iconSystem)),
+               std::pair<std::wstring, std::shared_ptr<IRegistrationMethod>>(REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_MODELALIGNMENT], std::make_shared<ModelAlignmentRegistration>(m_notificationSystem, m_networkSystem, m_modelRenderer, m_icons)),
                std::pair<std::wstring, std::shared_ptr<IRegistrationMethod>>(REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_CAMERA], std::make_shared<CameraRegistration>(m_notificationSystem, m_networkSystem, m_modelRenderer)),
                std::pair<std::wstring, std::shared_ptr<IRegistrationMethod>>(REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_TOOLBASED], std::make_shared<ToolBasedRegistration>(m_networkSystem))
              })
@@ -195,12 +197,12 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    RegistrationSystem::RegistrationSystem(NetworkSystem& networkSystem, Physics::PhysicsAPI& physicsAPI, NotificationSystem& notificationSystem, Rendering::ModelRenderer& modelRenderer, System::IconSystem& iconSystem)
+    RegistrationSystem::RegistrationSystem(NetworkSystem& networkSystem, Physics::PhysicsAPI& physicsAPI, NotificationSystem& notificationSystem, Rendering::ModelRenderer& modelRenderer, UI::Icons& icons)
       : m_notificationSystem(notificationSystem)
       , m_networkSystem(networkSystem)
       , m_modelRenderer(modelRenderer)
       , m_physicsAPI(physicsAPI)
-      , m_iconSystem(iconSystem)
+      , m_icons(icons)
       , m_currentRegistrationMethod(nullptr)
     {
       m_modelRenderer.AddModelAsync(REGISTRATION_ANCHOR_MODEL_FILENAME).then([this](uint64 m_regAnchorModelId)

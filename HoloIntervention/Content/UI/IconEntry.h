@@ -33,7 +33,7 @@ namespace HoloIntervention
     class ModelEntry;
   }
 
-  namespace System
+  namespace UI
   {
     class IconEntry
     {

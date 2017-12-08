@@ -35,8 +35,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "ModelEntry.h"
 #include "ModelRenderer.h"
 
+// UI includes
+#include "Icons.h"
+
 // System includes
-#include "IconSystem.h"
 #include "NetworkSystem.h"
 #include "NotificationSystem.h"
 
@@ -59,11 +61,11 @@ namespace HoloIntervention
     const float ModelAlignmentRegistration::MIN_DISTANCE_BETWEEN_POINTS_METER = 0.1f;
 
     //----------------------------------------------------------------------------
-    ModelAlignmentRegistration::ModelAlignmentRegistration(System::NotificationSystem& notificationSystem, System::NetworkSystem& networkSystem, Rendering::ModelRenderer& modelRenderer, System::IconSystem& iconSystem)
+    ModelAlignmentRegistration::ModelAlignmentRegistration(System::NotificationSystem& notificationSystem, System::NetworkSystem& networkSystem, Rendering::ModelRenderer& modelRenderer, UI::Icons& icons)
       : m_notificationSystem(notificationSystem)
       , m_networkSystem(networkSystem)
       , m_modelRenderer(modelRenderer)
-      , m_iconSystem(iconSystem)
+      , m_icons(icons)
       , m_numberOfPointsToCollectPerEye(DEFAULT_NUMBER_OF_POINTS_TO_COLLECT)
       , m_pointToLineRegistration(std::make_shared<Algorithm::PointToLineRegistration>())
     {
@@ -289,7 +291,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    Concurrency::task<bool> ModelAlignmentRegistration::StartAsync()
+    task<bool> ModelAlignmentRegistration::StartAsync()
     {
       return create_task([this]()
       {
@@ -304,16 +306,23 @@ namespace HoloIntervention
           return task_from_result(true);
         }
 
-        return m_iconSystem.AddEntryAsync(m_modelEntry, 0).then([this](std::shared_ptr<System::IconEntry> entry)
+        return m_icons.AddEntryAsync(m_modelEntry, 0).then([this](std::shared_ptr<UI::IconEntry> entry)
         {
-          m_iconEntry = entry;
-          m_iconEntry->GetModelEntry()->SetVisible(true);
-          m_iconEntry->GetModelEntry()->SetOriginalColour(0.f, 0.9f, 0.f, 1.f);
-          m_modelEntry->SetVisible(true);
-          m_started = true;
-          ResetRegistration();
-          m_notificationSystem.QueueMessage(L"Please use only your LEFT eye to align the real and virtual sphere centers.", 15);
-          return true;
+          m_sphereIconEntry = entry;
+          m_sphereIconEntry->GetModelEntry()->SetVisible(true);
+          m_sphereIconEntry->GetModelEntry()->SetOriginalColour(0.f, 0.9f, 0.f, 1.f);
+
+          return m_iconSystem.AddEntryAsync(L"HoloLens.cmo", 0).then([this](std::shared_ptr<UI::IconEntry> entry)
+          {
+            m_holoLensIconEntry = entry;
+            m_holoLensIconEntry->GetModelEntry()->SetVisible(true);
+
+            m_modelEntry->SetVisible(true);
+            m_started = true;
+            ResetRegistration();
+            m_notificationSystem.QueueMessage(L"Please use only your LEFT eye to align the real and virtual sphere centers.", 15);
+            return true;
+          });
         });
       });
     }
@@ -323,8 +332,10 @@ namespace HoloIntervention
     {
       return create_task([this]()
       {
-        m_iconSystem.RemoveEntry(m_iconEntry->GetId());
-        m_iconEntry = nullptr;
+        m_icons.RemoveEntry(m_sphereIconEntry->GetId());
+        m_icons.RemoveEntry(m_holoLensIconEntry->GetId());
+        m_sphereIconEntry = nullptr;
+        m_holoLensIconEntry = nullptr;
 
         m_modelEntry->SetVisible(false);
         m_started = false;
@@ -420,20 +431,25 @@ namespace HoloIntervention
       {
         if (sphereToReferenceTransform != nullptr && !sphereToReferenceTransform->Valid)
         {
-          m_iconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
+          m_sphereIconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
         }
         return;
       }
       m_latestTimestamp = sphereToReferenceTransform->Timestamp;
-      m_iconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
+      m_sphereIconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
 
       if (m_pointCaptureRequested)
       {
         auto holoLensToReferenceTransform = m_networkSystem.GetTransform(m_hashedConnectionName, m_holoLensToReferenceTransformName, m_latestTimestamp);
         if (holoLensToReferenceTransform == nullptr || !holoLensToReferenceTransform->Valid)
         {
+          if (holoLensToReferenceTransform != nullptr && !holoLensToReferenceTransform->Valid)
+          {
+            m_holoLensIconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
+          }
           return;
         }
+        m_holoLensIconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
 
         //----------------------------------------------------------------------------
         // Optical tracking collection

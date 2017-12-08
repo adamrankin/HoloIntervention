@@ -44,10 +44,14 @@ namespace HoloIntervention
     class PhysicsAPI;
   }
 
+  namespace UI
+  {
+    class Icons;
+  }
+
   namespace System
   {
     class GazeSystem;
-    class IconSystem;
     class ImagingSystem;
     class NetworkSystem;
     class NotificationSystem;
@@ -149,6 +153,7 @@ namespace HoloIntervention
     std::unique_ptr<Rendering::MeshRenderer>              m_meshRenderer;
     std::unique_ptr<Rendering::VolumeRenderer>            m_volumeRenderer;
     std::unique_ptr<Debug>                                m_debug;
+    std::unique_ptr<UI::Icons>                            m_icons;
 
     // Event handlers
     std::unique_ptr<Input::SpatialInput>                  m_spatialInput;
@@ -185,7 +190,6 @@ namespace HoloIntervention
     // System pointers
     std::shared_ptr<System::NetworkSystem>                m_networkSystem;
     std::unique_ptr<System::GazeSystem>                   m_gazeSystem;
-    std::unique_ptr<System::IconSystem>                   m_iconSystem;
     std::unique_ptr<System::ImagingSystem>                m_imagingSystem;
     std::unique_ptr<System::NotificationSystem>           m_notificationSystem;
     std::unique_ptr<System::RegistrationSystem>           m_registrationSystem;

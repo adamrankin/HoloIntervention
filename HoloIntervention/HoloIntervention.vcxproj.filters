@@ -67,12 +67,6 @@
     <ClCompile Include="Content\Input\VoiceInput.cpp">
       <Filter>Content\Input</Filter>
     </ClCompile>
-    <ClCompile Include="Content\Systems\Icon\IconSystem.cpp">
-      <Filter>Content\Systems\Icon</Filter>
-    </ClCompile>
-    <ClCompile Include="Content\Systems\Icon\IconEntry.cpp">
-      <Filter>Content\Systems\Icon</Filter>
-    </ClCompile>
     <ClCompile Include="Content\Rendering\Volume\BaseTransferFunction.cpp">
       <Filter>Content\Rendering\VolumeRenderer\Transfer Functions</Filter>
     </ClCompile>
@@ -173,6 +167,12 @@
       <Filter>Content\Math</Filter>
     </ClCompile>
     <ClCompile Include="Content\Algorithms\PointToLineRegistration.cpp" />
+    <ClCompile Include="Content\UI\IconEntry.cpp">
+      <Filter>Content\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\UI\Icons.cpp">
+      <Filter>Content\UI</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Content\Sound\OmnidirectionalSound.h">
@@ -243,12 +243,6 @@
     </ClInclude>
     <ClInclude Include="Content\Input\IVoiceInput.h">
       <Filter>Content\Input</Filter>
-    </ClInclude>
-    <ClInclude Include="Content\Systems\Icon\IconSystem.h">
-      <Filter>Content\Systems\Icon</Filter>
-    </ClInclude>
-    <ClInclude Include="Content\Systems\Icon\IconEntry.h">
-      <Filter>Content\Systems\Icon</Filter>
     </ClInclude>
     <ClInclude Include="Content\Rendering\Volume\PiecewiseLinearTransferFunction.h">
       <Filter>Content\Rendering\VolumeRenderer\Transfer Functions</Filter>
@@ -374,6 +368,12 @@
       <Filter>Content\Math</Filter>
     </ClInclude>
     <ClInclude Include="Content\Algorithms\PointToLineRegistration.h" />
+    <ClInclude Include="Content\UI\IconEntry.h">
+      <Filter>Content\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\UI\Icons.h">
+      <Filter>Content\UI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\LockScreenLogo.scale-200.png">
@@ -612,6 +612,9 @@
     <None Include="Assets\Models\heart.cmo">
       <Filter>Assets\Models</Filter>
     </None>
+    <None Include="Assets\Models\HoloLens.cmo">
+      <Filter>Assets\Models</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Content">
@@ -719,9 +722,6 @@
     <Filter Include="Core">
       <UniqueIdentifier>{0508fb3b-5346-4e2e-9fc6-f720b2bf9c87}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Content\Systems\Icon">
-      <UniqueIdentifier>{fe11c5fa-8399-4d3e-b999-11f76d17b462}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Core\Rendering">
       <UniqueIdentifier>{95d794f9-895c-466e-a741-249b2e0914d8}</UniqueIdentifier>
     </Filter>
@@ -784,6 +784,9 @@
     </Filter>
     <Filter Include="Content\Algorithms\Registration\PointToLine">
       <UniqueIdentifier>{5fa330e2-29cc-48f8-a134-b4bcdabf169b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\UI">
+      <UniqueIdentifier>{144a93c4-b453-4b62-af5e-222e587c59fe}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

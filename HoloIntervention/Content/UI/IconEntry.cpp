@@ -30,7 +30,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 namespace HoloIntervention
 {
-  namespace System
+  namespace UI
   {
     //----------------------------------------------------------------------------
     IconEntry::IconEntry()

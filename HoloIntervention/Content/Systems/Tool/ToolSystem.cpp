@@ -32,8 +32,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Rendering includes
 #include "ModelRenderer.h"
 
+// UI includes
+#include "Icons.h"
+
 // System includes
-#include "IconSystem.h"
 #include "NetworkSystem.h"
 #include "NotificationSystem.h"
 #include "RegistrationSystem.h"
@@ -322,10 +324,10 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    ToolSystem::ToolSystem(NotificationSystem& notificationSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer, NetworkSystem& networkSystem, IconSystem& iconSystem)
+    ToolSystem::ToolSystem(NotificationSystem& notificationSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer, NetworkSystem& networkSystem, UI::Icons& icons)
       : m_notificationSystem(notificationSystem)
       , m_registrationSystem(registrationSystem)
-      , m_iconSystem(iconSystem)
+      , m_icons(icons)
       , m_modelRenderer(modelRenderer)
       , m_transformRepository(ref new UWPOpenIGTLink::TransformRepository())
       , m_networkSystem(networkSystem)
@@ -402,13 +404,14 @@ namespace HoloIntervention
       }
       return modelTask.then([this, coordinateFrame, colour](uint64 modelEntryId)
       {
-        std::shared_ptr<Tools::ToolEntry> entry = std::make_shared<Tools::ToolEntry>(m_modelRenderer, m_networkSystem, m_hashedConnectionName, coordinateFrame, m_transformRepository);
+        std::shared_ptr<Tools::ToolEntry> entry = std::make_shared<Tools::ToolEntry>(m_modelRenderer, m_networkSystem, m_icons, m_hashedConnectionName, coordinateFrame, m_transformRepository);
         auto modelEntry = m_modelRenderer.GetModel(modelEntryId);
         entry->SetModelEntry(modelEntry);
         modelEntry->SetVisible(false);
         modelEntry->SetColour(colour);
         std::lock_guard<std::mutex> guard(m_entriesMutex);
         m_toolEntries.push_back(entry);
+
         return entry->GetId();
       });
     }

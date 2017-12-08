@@ -26,7 +26,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "IConfigurable.h"
 #include "IStabilizedComponent.h"
-#include "IVoiceInput.h"
 #include "IconEntry.h"
 
 // Rendering includes
@@ -47,11 +46,6 @@ namespace HoloIntervention
     class ModelRenderer;
   }
 
-  namespace Input
-  {
-    class VoiceInput;
-  }
-
   namespace Network
   {
     class IGTConnector;
@@ -61,10 +55,13 @@ namespace HoloIntervention
   {
     class NotificationSystem;
     class ToolSystem;
+  }
 
+  namespace UI
+  {
     typedef std::vector<std::shared_ptr<IconEntry>> IconEntryList;
 
-    class IconSystem : public IConfigurable, public IStabilizedComponent, public Input::IVoiceInput
+    class Icons : public IConfigurable, public IStabilizedComponent
     {
     public:
       virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition(Windows::UI::Input::Spatial::SpatialPointerPose^ pose) const;
@@ -76,11 +73,8 @@ namespace HoloIntervention
       virtual concurrency::task<bool> ReadConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
 
     public:
-      virtual void RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap);
-
-    public:
-      IconSystem(NotificationSystem& notificationSystem, NetworkSystem& networkSystem, Input::VoiceInput& voiceInput, Rendering::ModelRenderer& modelRenderer);
-      ~IconSystem();
+      Icons(System::NotificationSystem& notificationSystem, System::NetworkSystem& networkSystem, Rendering::ModelRenderer& modelRenderer);
+      ~Icons();
 
       void Update(DX::StepTimer& timer, Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
 
@@ -103,8 +97,8 @@ namespace HoloIntervention
 
       // Cached entries to model renderer
       Rendering::ModelRenderer&                 m_modelRenderer;
-      NotificationSystem&                       m_notificationSystem;
-      NetworkSystem&                            m_networkSystem;
+      System::NotificationSystem&               m_notificationSystem;
+      System::NetworkSystem&                    m_networkSystem;
       Input::VoiceInput&                        m_voiceInput;
 
       // Icons that this subsystem manages
@@ -116,7 +110,7 @@ namespace HoloIntervention
       {
         bool                                    m_wasNetworkConnected = true;
         bool                                    m_networkIsBlinking = true;
-        NetworkSystem::ConnectionState          m_networkPreviousState = NetworkSystem::CONNECTION_STATE_UNKNOWN;
+        System::NetworkSystem::ConnectionState  m_networkPreviousState = System::NetworkSystem::CONNECTION_STATE_UNKNOWN;
         float                                   m_networkBlinkTimer = 0.f;
       };
       std::vector<NetworkLogicEntry>            m_networkLogicEntries;

@@ -26,6 +26,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "Common.h"
 #include "ToolEntry.h"
 
+// UI includes
+#include "Icons.h"
+
 // System includes
 #include "NetworkSystem.h"
 
@@ -84,9 +87,10 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    ToolEntry::ToolEntry(Rendering::ModelRenderer& modelRenderer, System::NetworkSystem& networkSystem, uint64 hashedConnectionName, UWPOpenIGTLink::TransformName^ coordinateFrame, UWPOpenIGTLink::TransformRepository^ transformRepository)
+    ToolEntry::ToolEntry(Rendering::ModelRenderer& modelRenderer, System::NetworkSystem& networkSystem, UI::Icons& icons, uint64 hashedConnectionName, UWPOpenIGTLink::TransformName^ coordinateFrame, UWPOpenIGTLink::TransformRepository^ transformRepository)
       : m_modelRenderer(modelRenderer)
       , m_networkSystem(networkSystem)
+      , m_icons(icons)
       , m_hashedConnectionName(hashedConnectionName)
       , m_transformRepository(transformRepository)
       , m_coordinateFrame(coordinateFrame)
@@ -96,11 +100,13 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    ToolEntry::ToolEntry(Rendering::ModelRenderer& modelRenderer, System::NetworkSystem& networkSystem, uint64 hashedConnectionName, const std::wstring& coordinateFrame, UWPOpenIGTLink::TransformRepository^ transformRepository)
+    ToolEntry::ToolEntry(Rendering::ModelRenderer& modelRenderer, System::NetworkSystem& networkSystem, UI::Icons& icons, uint64 hashedConnectionName, const std::wstring& coordinateFrame, UWPOpenIGTLink::TransformRepository^ transformRepository)
       : m_modelRenderer(modelRenderer)
       , m_networkSystem(networkSystem)
+      , m_icons(icons)
       , m_hashedConnectionName(hashedConnectionName)
       , m_transformRepository(transformRepository)
+
       , m_kalmanFilter(std::make_shared<Algorithm::KalmanFilter>(21, 7, 0)) // position as x, y, z -- rotation as quaternion x, y, z, w
     {
       m_coordinateFrame = ref new UWPOpenIGTLink::TransformName(ref new Platform::String(coordinateFrame.c_str()));
@@ -160,26 +166,32 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ToolEntry::Update(const DX::StepTimer& timer)
     {
-      // m_transformRepository has already been initialized with the transforms for this update
+      // m_transformRepository has already been initialized with the network transforms for this update
       auto toolToRefTransform = m_networkSystem.GetTransform(m_hashedConnectionName, m_coordinateFrame, m_latestTimestamp);
+
       if (toolToRefTransform == nullptr)
       {
-        m_isValid = false;
+        // No new transform since last timestamp
         return;
       }
+
       m_latestTimestamp = toolToRefTransform->Timestamp;
 
-      if (!m_transformRepository->SetTransform(m_coordinateFrame, toolToRefTransform->Matrix, toolToRefTransform->Valid))
-      {
-        return;
-      }
+      m_transformRepository->SetTransform(m_coordinateFrame, toolToRefTransform->Matrix, toolToRefTransform->Valid);
 
       IKeyValuePair<bool, float4x4>^ result = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(m_coordinateFrame->From(), L"HMD"));
       m_isValid = result->Key;
       if (!m_isValid && m_wasValid)
       {
         m_wasValid = false;
-        m_modelEntry->RenderGreyscale();
+        if (m_modelEntry != nullptr)
+        {
+          m_modelEntry->RenderGreyscale();
+        }
+        if (m_iconEntry != nullptr)
+        {
+          m_iconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
+        }
         return;
       }
 
@@ -187,7 +199,14 @@ namespace HoloIntervention
       {
         if (!m_wasValid)
         {
-          m_modelEntry->RenderDefault();
+          if (m_iconEntry != nullptr)
+          {
+            m_iconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
+          }
+          if (m_modelEntry != nullptr)
+          {
+            m_modelEntry->RenderDefault();
+          }
         }
 
         /*
@@ -228,7 +247,10 @@ namespace HoloIntervention
 
         m_kalmanFilter->Correct(m_correctionMatrix);
         */
-        m_modelEntry->SetDesiredPose(transpose(result->Value));
+        if (m_modelEntry != nullptr)
+        {
+          m_modelEntry->SetDesiredPose(transpose(result->Value));
+        }
         m_wasValid = true;
       }
     }
@@ -236,7 +258,18 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ToolEntry::SetModelEntry(std::shared_ptr<Rendering::ModelEntry> entry)
     {
-      m_modelEntry = entry;
+      if (m_modelEntry == entry)
+      {
+        return;
+      }
+
+      m_icons.RemoveEntry(m_iconEntry->GetId());
+
+      m_icons.AddEntryAsync(m_modelEntry, 0).then([this, entry](std::shared_ptr<UI::IconEntry> iconEntry)
+      {
+        m_iconEntry = iconEntry;
+        iconEntry->GetModelEntry()->SetVisible(true);
+      });
     }
 
     //----------------------------------------------------------------------------
