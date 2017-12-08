@@ -33,8 +33,19 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <mutex>
 #include <string>
 
+namespace DX
+{
+  class StepTimer;
+}
+
 namespace HoloIntervention
 {
+  namespace UI
+  {
+    class IconEntry;
+    class Icons;
+  }
+
   namespace Sound
   {
     class SoundAPI;
@@ -45,7 +56,7 @@ namespace HoloIntervention
     class VoiceInput : public IEngineComponent
     {
     public:
-      VoiceInput(System::NotificationSystem& notificationSystem, Sound::SoundAPI& soundAPI);
+      VoiceInput(System::NotificationSystem& notificationSystem, Sound::SoundAPI& soundAPI, UI::Icons& icons);
       ~VoiceInput();
 
       void EnableVoiceAnalysis(bool enable);
@@ -63,6 +74,8 @@ namespace HoloIntervention
       uint64 RegisterDictationMatcher(std::function<bool(const std::wstring& text)> func);
       void RemoveDictationMatcher(uint64 token);
 
+      void Update(DX::StepTimer& timer);
+
     protected:
       Concurrency::task<bool> SwitchRecognitionAsync(Windows::Media::SpeechRecognition::SpeechRecognizer^ desiredRecognizer);
 
@@ -73,14 +86,24 @@ namespace HoloIntervention
       void HandleCommandResult(Windows::Media::SpeechRecognition::SpeechContinuousRecognitionResultGeneratedEventArgs^ args);
       void HandleDictationResult(Windows::Media::SpeechRecognition::SpeechContinuousRecognitionResultGeneratedEventArgs^ args);
 
+      void ProcessMicrophoneLogic(DX::StepTimer& timer);
+
     protected:
       // Cached entries
       System::NotificationSystem&                                       m_notificationSystem;
       Sound::SoundAPI&                                                  m_soundAPI;
+      UI::Icons&                                                        m_icons;
 
       std::atomic_bool                                                  m_hearingSound = false;
       std::atomic_bool                                                  m_inputEnabled = false;
 
+      // UI variables
+      std::shared_ptr<UI::IconEntry>                                    m_iconEntry = nullptr;
+      float                                                             m_microphoneBlinkTimer = 0.f;
+      bool                                                              m_wasHearingSound = true;
+      static const float                                                MICROPHONE_BLINK_TIME_SEC;
+
+      // Voice input variables
       Windows::Media::SpeechRecognition::SpeechRecognizer^              m_activeRecognizer = nullptr;
 
       Windows::Media::SpeechRecognition::SpeechRecognizer^              m_commandRecognizer = ref new Windows::Media::SpeechRecognition::SpeechRecognizer(Windows::Media::SpeechRecognition::SpeechRecognizer::SystemSpeechLanguage);

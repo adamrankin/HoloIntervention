@@ -56,7 +56,6 @@ namespace HoloIntervention
   namespace UI
   {
     const float Icons::NETWORK_BLINK_TIME_SEC = 0.75;
-    const float Icons::MICROPHONE_BLINK_TIME_SEC = 1.f;
     const float Icons::ANGLE_BETWEEN_ICONS_RAD = 0.035f;
     const float Icons::ICON_START_ANGLE = 0.225f;
     const float Icons::ICON_UP_ANGLE = 0.1f;
@@ -125,12 +124,7 @@ namespace HoloIntervention
         {
           m_networkIcons.push_back(entry);
         }
-        return AddEntryAsync(L"Assets/Models/microphone_icon.cmo", 0);
-      }).then([this](std::shared_ptr<IconEntry> entry)
-      {
-        m_microphoneIcon = entry;
-      }).then([this]()
-      {
+
         // Determine scale factors for all loaded entries
         for (auto& entry : m_iconEntries)
         {
@@ -168,7 +162,6 @@ namespace HoloIntervention
       }
 
       ProcessNetworkLogic(timer);
-      ProcessMicrophoneLogic(timer);
 
       // Calculate forward vector 2m ahead
       float3 basePosition = headPose->Head->Position + (float3(2.f) * headPose->Head->ForwardDirection);
@@ -367,40 +360,6 @@ namespace HoloIntervention
         }
 
         m_networkLogicEntries[i].m_networkPreviousState = state;
-      }
-    }
-
-    //----------------------------------------------------------------------------
-    void Icons::ProcessMicrophoneLogic(DX::StepTimer& timer)
-    {
-      if (!m_microphoneIcon->GetModelEntry()->IsLoaded())
-      {
-        return;
-      }
-
-      if (!m_wasHearingSound && m_voiceInput.IsHearingSound())
-      {
-        // Colour!
-        m_wasHearingSound = true;
-        m_microphoneIcon->GetModelEntry()->SetVisible(true);
-        m_microphoneIcon->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
-      }
-      else if (m_wasHearingSound && !m_voiceInput.IsHearingSound())
-      {
-        // Greyscale
-        m_wasHearingSound = false;
-        m_microphoneIcon->GetModelEntry()->SetVisible(true);
-        m_microphoneIcon->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
-      }
-      else if (m_wasHearingSound && m_voiceInput.IsHearingSound())
-      {
-        // Blink!
-        m_microphoneBlinkTimer += static_cast<float>(timer.GetElapsedSeconds());
-        if (m_microphoneBlinkTimer >= MICROPHONE_BLINK_TIME_SEC)
-        {
-          m_microphoneBlinkTimer = 0.f;
-          m_microphoneIcon->GetModelEntry()->ToggleVisible();
-        }
       }
     }
   }

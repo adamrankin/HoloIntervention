@@ -163,12 +163,12 @@
     <ClCompile Include="Content\Systems\Registration\ModelAlignmentRegistration.cpp">
       <Filter>Content\Systems\Registration\ModelAlignment</Filter>
     </ClCompile>
-    <ClCompile Include="Content\Math\Math.cpp">
-      <Filter>Content\Math</Filter>
-    </ClCompile>
     <ClCompile Include="Content\Algorithms\PointToLineRegistration.cpp" />
     <ClCompile Include="Content\UI\IconEntry.cpp">
       <Filter>Content\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Math\MathCommon.cpp">
+      <Filter>Content\Math</Filter>
     </ClCompile>
     <ClCompile Include="Content\UI\Icons.cpp">
       <Filter>Content\UI</Filter>
@@ -364,12 +364,12 @@
     <ClInclude Include="Content\Systems\Registration\ModelAlignmentRegistration.h">
       <Filter>Content\Systems\Registration\ModelAlignment</Filter>
     </ClInclude>
-    <ClInclude Include="Content\Math\Math.h">
-      <Filter>Content\Math</Filter>
-    </ClInclude>
     <ClInclude Include="Content\Algorithms\PointToLineRegistration.h" />
     <ClInclude Include="Content\UI\IconEntry.h">
       <Filter>Content\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Math\MathCommon.h">
+      <Filter>Content\Math</Filter>
     </ClInclude>
     <ClInclude Include="Content\UI\Icons.h">
       <Filter>Content\UI</Filter>

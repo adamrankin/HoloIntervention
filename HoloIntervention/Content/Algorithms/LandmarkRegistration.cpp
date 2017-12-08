@@ -24,7 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "pch.h"
 #include "LandmarkRegistration.h"
-#include "Math.h"
+#include "MathCommon.h"
 
 // OpenCV includes
 #include <opencv2/core.hpp>

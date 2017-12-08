@@ -1,6 +1,6 @@
 #pragma once
 
-// Local includes
+//// Local includes
 #include "Log.h"
 #include "Common.h"
 
@@ -34,7 +34,7 @@
 #include <wincodec.h>
 #include <wrl.h>
 
-// STL includes
+//// STL includes
 #include <map>
 #include <memory>
 #include <mutex>

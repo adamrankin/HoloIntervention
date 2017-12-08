@@ -27,6 +27,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "VoiceInput.h"
 #include "NotificationSystem.h"
 
+// UI includes
+#include "Icons.h"
+
 // STL includes
 #include <algorithm>
 
@@ -45,15 +48,23 @@ namespace HoloIntervention
 {
   namespace Input
   {
+    const float VoiceInput::MICROPHONE_BLINK_TIME_SEC = 1.f;
+
     //----------------------------------------------------------------------------
-    VoiceInput::VoiceInput(System::NotificationSystem& notificationSystem, Sound::SoundAPI& soundAPI)
+    VoiceInput::VoiceInput(System::NotificationSystem& notificationSystem, Sound::SoundAPI& soundAPI, UI::Icons& icons)
       : m_notificationSystem(notificationSystem)
       , m_soundAPI(soundAPI)
+      , m_icons(icons)
       , m_callbacks(std::make_unique<Input::VoiceInputCallbackMap>())
     {
       // Apply the dictation topic constraint to optimize for dictated freeform speech.
       auto dictationConstraint = ref new SpeechRecognitionTopicConstraint(SpeechRecognitionScenario::Dictation, "dictation");
       m_dictationRecognizer->Constraints->Append(dictationConstraint);
+
+      m_icons.AddEntryAsync(L"Assets/Models/microphone_icon.cmo", 0).then([this](std::shared_ptr<UI::IconEntry> entry)
+      {
+        m_iconEntry = entry;
+      });
 
       create_task(m_dictationRecognizer->CompileConstraintsAsync()).then([this](task<SpeechRecognitionCompilationResult^> compilationTask)
       {
@@ -245,6 +256,12 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    void VoiceInput::Update(DX::StepTimer& timer)
+    {
+      ProcessMicrophoneLogic(timer);
+    }
+
+    //----------------------------------------------------------------------------
     task<bool> VoiceInput::SwitchRecognitionAsync(SpeechRecognizer^ desiredRecognizer)
     {
       return create_task([this, desiredRecognizer]()
@@ -265,7 +282,7 @@ namespace HoloIntervention
             }
             catch (Platform::Exception^ e)
             {
-              LOG(LogLevelType::LOG_LEVEL_ERROR, L"Failed to stop current recognizer: " + e->Message);
+              LOG_ERROR(L"Failed to stop current recognizer: " + e->Message);
               return task_from_result(false);
             }
 
@@ -283,7 +300,7 @@ namespace HoloIntervention
               }
               catch (Platform::Exception^ e)
               {
-                LOG(LogLevelType::LOG_LEVEL_ERROR, L"Failed to start desired recognizer: " + e->Message);
+                LOG_ERROR(L"Failed to start desired recognizer: " + e->Message);
                 return false;
               }
 
@@ -307,7 +324,7 @@ namespace HoloIntervention
             }
             catch (Platform::Exception^ e)
             {
-              LOG(LogLevelType::LOG_LEVEL_ERROR, L"Failed to start command recognizer: " + e->Message);
+              LOG_ERROR(L"Failed to start command recognizer: " + e->Message);
               return false;
             }
 
@@ -379,6 +396,40 @@ namespace HoloIntervention
       for (auto pair : m_dictationMatchers)
       {
         pair.second(std::wstring(args->Result->Text->Data()));
+      }
+    }
+
+    //----------------------------------------------------------------------------
+    void VoiceInput::ProcessMicrophoneLogic(DX::StepTimer& timer)
+    {
+      if (!m_iconEntry->GetModelEntry()->IsLoaded())
+      {
+        return;
+      }
+
+      if (!m_wasHearingSound && IsHearingSound())
+      {
+        // Colour!
+        m_wasHearingSound = true;
+        m_iconEntry->GetModelEntry()->SetVisible(true);
+        m_iconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
+      }
+      else if (m_wasHearingSound && !IsHearingSound())
+      {
+        // Greyscale
+        m_wasHearingSound = false;
+        m_iconEntry->GetModelEntry()->SetVisible(true);
+        m_iconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
+      }
+      else if (m_wasHearingSound && IsHearingSound())
+      {
+        // Blink!
+        m_microphoneBlinkTimer += static_cast<float>(timer.GetElapsedSeconds());
+        if (m_microphoneBlinkTimer >= MICROPHONE_BLINK_TIME_SEC)
+        {
+          m_microphoneBlinkTimer = 0.f;
+          m_iconEntry->GetModelEntry()->ToggleVisible();
+        }
       }
     }
   }

@@ -23,7 +23,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "pch.h"
-#include "Math.h"
+#include "MathCommon.h"
 
 using namespace Windows::Foundation::Numerics;
 

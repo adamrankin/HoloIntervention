@@ -24,7 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "pch.h"
 #include "Common.h"
-#include "Math.h"
+#include "MathCommon.h"
 #include "ModelAlignmentRegistration.h"
 #include "PointToLineRegistration.h"
 
@@ -312,7 +312,7 @@ namespace HoloIntervention
           m_sphereIconEntry->GetModelEntry()->SetVisible(true);
           m_sphereIconEntry->GetModelEntry()->SetOriginalColour(0.f, 0.9f, 0.f, 1.f);
 
-          return m_iconSystem.AddEntryAsync(L"HoloLens.cmo", 0).then([this](std::shared_ptr<UI::IconEntry> entry)
+          return m_icons.AddEntryAsync(L"HoloLens.cmo", 0).then([this](std::shared_ptr<UI::IconEntry> entry)
           {
             m_holoLensIconEntry = entry;
             m_holoLensIconEntry->GetModelEntry()->SetVisible(true);

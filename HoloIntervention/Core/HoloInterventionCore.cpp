@@ -131,7 +131,7 @@ namespace HoloIntervention
     m_icons = std::make_unique<UI::Icons>(*m_notificationSystem.get(), *m_networkSystem.get(), *m_modelRenderer.get());
 
     m_spatialInput = std::make_unique<Input::SpatialInput>();
-    m_voiceInput = std::make_unique<Input::VoiceInput> (*m_notificationSystem.get(), *m_soundAPI.get());
+    m_voiceInput = std::make_unique<Input::VoiceInput> (*m_notificationSystem.get(), *m_soundAPI.get(), *m_icons.get());
 
     m_networkSystem = std::make_unique<System::NetworkSystem> (*m_notificationSystem.get(), *m_voiceInput.get());
     m_physicsAPI = std::make_unique<Physics::PhysicsAPI> (*m_notificationSystem.get(), m_deviceResources, m_timer);
@@ -327,6 +327,8 @@ namespace HoloIntervention
       }
       else
       {
+        m_voiceInput->Update(m_timer);
+
         if (headPose != nullptr)
         {
           m_volumeRenderer->Update(cameraResources, hmdCoordinateSystem, headPose);

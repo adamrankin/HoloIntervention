@@ -87,7 +87,6 @@ namespace HoloIntervention
 
     protected:
       void ProcessNetworkLogic(DX::StepTimer&);
-      void ProcessMicrophoneLogic(DX::StepTimer&);
 
     protected:
       std::mutex                                m_entryMutex;
@@ -99,11 +98,9 @@ namespace HoloIntervention
       Rendering::ModelRenderer&                 m_modelRenderer;
       System::NotificationSystem&               m_notificationSystem;
       System::NetworkSystem&                    m_networkSystem;
-      Input::VoiceInput&                        m_voiceInput;
 
       // Icons that this subsystem manages
       std::vector<std::shared_ptr<IconEntry>>   m_networkIcons;
-      std::shared_ptr<IconEntry>                m_microphoneIcon = nullptr;
 
       // Network logic variables
       struct NetworkLogicEntry
@@ -115,11 +112,6 @@ namespace HoloIntervention
       };
       std::vector<NetworkLogicEntry>            m_networkLogicEntries;
       static const float                        NETWORK_BLINK_TIME_SEC;
-
-      // Microphone logic variables
-      float                                     m_microphoneBlinkTimer = 0.f;
-      bool                                      m_wasHearingSound = true;
-      static const float                        MICROPHONE_BLINK_TIME_SEC;
 
       // Shared variables
       static const float                        ANGLE_BETWEEN_ICONS_RAD;
