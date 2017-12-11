@@ -56,7 +56,7 @@ namespace HoloIntervention
     class VoiceInput : public IEngineComponent
     {
     public:
-      VoiceInput(System::NotificationSystem& notificationSystem, Sound::SoundAPI& soundAPI, UI::Icons& icons);
+      VoiceInput(Sound::SoundAPI& soundAPI, UI::Icons& icons);
       ~VoiceInput();
 
       void EnableVoiceAnalysis(bool enable);
@@ -90,12 +90,12 @@ namespace HoloIntervention
 
     protected:
       // Cached entries
-      System::NotificationSystem&                                       m_notificationSystem;
       Sound::SoundAPI&                                                  m_soundAPI;
       UI::Icons&                                                        m_icons;
 
       std::atomic_bool                                                  m_hearingSound = false;
       std::atomic_bool                                                  m_inputEnabled = false;
+      std::atomic_bool                                                  m_loadFailed = false;
 
       // UI variables
       std::shared_ptr<UI::IconEntry>                                    m_iconEntry = nullptr;

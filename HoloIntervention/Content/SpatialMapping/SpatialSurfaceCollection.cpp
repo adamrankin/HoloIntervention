@@ -24,13 +24,13 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "pch.h"
 #include "AppView.h"
+#include "Common.h"
+#include "SpatialSurfaceCollection.h"
+
+// Common includes
 #include "DeviceResources.h"
 #include "DirectXHelper.h"
-#include "SpatialSurfaceCollection.h"
 #include "StepTimer.h"
-
-// System includes
-#include "NotificationSystem.h"
 
 // Windows includes
 #include <comdef.h>
@@ -66,9 +66,8 @@ namespace HoloIntervention
     const uint64_t SpatialSurfaceCollection::FRAMES_BEFORE_EXPIRED = 2;
 
     //----------------------------------------------------------------------------
-    SpatialSurfaceCollection::SpatialSurfaceCollection(System::NotificationSystem& notificationSystem, const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer)
+    SpatialSurfaceCollection::SpatialSurfaceCollection(const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer)
       : m_deviceResources(deviceResources)
-      , m_notificationSystem(notificationSystem)
       , m_stepTimer(stepTimer)
     {
       try
@@ -77,7 +76,7 @@ namespace HoloIntervention
       }
       catch (const std::exception& e)
       {
-        HoloIntervention::LOG(LogLevelType::LOG_LEVEL_ERROR, e.what());
+        LOG_ERROR(std::string("Cannot create device resources: ") + e.what());
       }
     };
 

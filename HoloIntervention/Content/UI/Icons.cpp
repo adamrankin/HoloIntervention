@@ -110,9 +110,8 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    Icons::Icons(System::NotificationSystem& notificationSystem, Rendering::ModelRenderer& modelRenderer)
+    Icons::Icons(Rendering::ModelRenderer& modelRenderer)
       : m_modelRenderer(modelRenderer)
-      , m_notificationSystem(notificationSystem)
     {
     }
 

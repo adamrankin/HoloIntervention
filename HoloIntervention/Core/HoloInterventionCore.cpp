@@ -117,25 +117,22 @@ namespace HoloIntervention
 
     m_holographicSpace = holographicSpace;
 
-    // Initialize the system components
+    // Core components (aka, engine behaviour)
     m_notificationRenderer = std::make_unique<Rendering::NotificationRenderer> (m_deviceResources);
-    m_notificationSystem = std::make_unique<System::NotificationSystem> (*m_notificationRenderer.get());
     m_sliceRenderer = std::make_unique<Rendering::SliceRenderer> (m_deviceResources, m_timer);
     m_debug = std::make_unique<Debug>(*m_sliceRenderer.get(), m_deviceResources);
     m_modelRenderer = std::make_unique<Rendering::ModelRenderer>(m_deviceResources, m_timer, *m_debug.get());
     m_volumeRenderer = std::make_unique<Rendering::VolumeRenderer> (m_deviceResources, m_timer);
-    m_meshRenderer = std::make_unique<Rendering::MeshRenderer> (*m_notificationSystem.get(), m_deviceResources);
-
+    m_meshRenderer = std::make_unique<Rendering::MeshRenderer> (m_deviceResources);
+    m_icons = std::make_unique<UI::Icons>(*m_modelRenderer.get());
     m_soundAPI = std::make_unique<Sound::SoundAPI>();
-
-    m_icons = std::make_unique<UI::Icons>(*m_notificationSystem.get(), *m_modelRenderer.get());
-
     m_spatialInput = std::make_unique<Input::SpatialInput>();
-    m_voiceInput = std::make_unique<Input::VoiceInput> (*m_notificationSystem.get(), *m_soundAPI.get(), *m_icons.get());
+    m_voiceInput = std::make_unique<Input::VoiceInput> (*m_soundAPI.get(), *m_icons.get());
+    m_physicsAPI = std::make_unique<Physics::PhysicsAPI>(m_deviceResources, m_timer);
 
+    // Systems (aka, apps-specific behaviour)
+    m_notificationSystem = std::make_unique<System::NotificationSystem>(*m_notificationRenderer.get());
     m_networkSystem = std::make_unique<System::NetworkSystem> (*m_notificationSystem.get(), *m_voiceInput.get(), *m_icons.get());
-    m_physicsAPI = std::make_unique<Physics::PhysicsAPI> (*m_notificationSystem.get(), m_deviceResources, m_timer);
-
     m_registrationSystem = std::make_unique<System::RegistrationSystem>(*m_networkSystem.get(), *m_physicsAPI.get(), *m_notificationSystem.get(), *m_modelRenderer.get(), *m_icons.get());
     m_toolSystem = std::make_unique<System::ToolSystem>(*m_notificationSystem.get(), *m_registrationSystem.get(), *m_modelRenderer.get(), *m_networkSystem.get(), *m_icons.get());
     m_gazeSystem = std::make_unique<System::GazeSystem> (*m_notificationSystem.get(), *m_physicsAPI.get(), *m_modelRenderer.get());
@@ -478,7 +475,7 @@ namespace HoloIntervention
     m_meshRenderer->CreateDeviceDependentResources();
     m_modelRenderer->CreateDeviceDependentResources();
     m_sliceRenderer->CreateDeviceDependentResources();
-    m_physicsAPI->CreateDeviceDependentResources();
+    m_physicsAPI->CreateDeviceDependentResourcesAsync();
   }
 
   //----------------------------------------------------------------------------
@@ -549,7 +546,6 @@ namespace HoloIntervention
     m_physicsAPI->RegisterVoiceCallbacks(callbacks);
     m_toolSystem->RegisterVoiceCallbacks(callbacks);
     m_imagingSystem->RegisterVoiceCallbacks(callbacks);
-    m_meshRenderer->RegisterVoiceCallbacks(callbacks);
     m_registrationSystem->RegisterVoiceCallbacks(callbacks);
     m_taskSystem->RegisterVoiceCallbacks(callbacks);
 
@@ -585,6 +581,32 @@ namespace HoloIntervention
     callbacks[L"show all"] = [this](SpeechRecognitionResult ^ result)
     {
       m_engineUserEnabled = true;
+    };
+
+    callbacks[L"mesh on"] = [this](SpeechRecognitionResult ^ result)
+    {
+      m_notificationSystem->QueueMessage(L"Mesh showing.");
+      m_meshRenderer->SetEnabled(true);
+    };
+
+    callbacks[L"mesh off"] = [this](SpeechRecognitionResult ^ result)
+    {
+      m_notificationSystem->QueueMessage(L"Mesh disabled.");
+      m_meshRenderer->SetEnabled(false);
+    };
+
+    callbacks[L"mesh solid"] = [this](SpeechRecognitionResult ^ result)
+    {
+      m_notificationSystem->QueueMessage(L"Solid mesh on.");
+      m_meshRenderer->SetWireFrame(false);
+      m_meshRenderer->SetEnabled(true);
+    };
+
+    callbacks[L"mesh wireframe"] = [this](SpeechRecognitionResult ^ result)
+    {
+      m_notificationSystem->QueueMessage(L"Wireframe mesh on.");
+      m_meshRenderer->SetWireFrame(true);
+      m_meshRenderer->SetEnabled(true);
     };
 
     m_voiceInput->CompileCallbacksAsync(callbacks).then([this](task<bool> compileTask)

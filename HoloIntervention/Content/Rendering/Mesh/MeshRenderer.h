@@ -13,7 +13,6 @@
 
 // Local includes
 #include "IEngineComponent.h"
-#include "IVoiceInput.h"
 #include "Mesh.h"
 
 // STL includes
@@ -28,25 +27,23 @@ namespace DX
 
 namespace HoloIntervention
 {
-  namespace System
-  {
-    class NotificationSystem;
-  }
-
   namespace Rendering
   {
-    class MeshRenderer : public Input::IVoiceInput, public IEngineComponent
+    class MeshRenderer : public IEngineComponent
     {
       typedef std::map<Platform::Guid, Mesh> GuidMeshMap;
 
     public:
-      MeshRenderer(System::NotificationSystem& notificationSystem, const std::shared_ptr<DX::DeviceResources>& deviceResources);
+      MeshRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources);
 
       void Update(const DX::StepTimer& timer, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem);
       void Render();
 
       void SetEnabled(bool arg);
       bool GetEnabled() const;
+
+      void SetWireFrame(bool arg);
+      bool GetWireFrame() const;
 
       bool HasSurface(Platform::Guid id);
       void AddSurface(Platform::Guid id, Windows::Perception::Spatial::Surfaces::SpatialSurfaceInfo^ newSurface);
@@ -63,9 +60,6 @@ namespace HoloIntervention
 
       void Reset();
 
-      // IVoiceInput functions
-      virtual void RegisterVoiceCallbacks(HoloIntervention::Input::VoiceInputCallbackMap& callbackMap);
-
     protected:
       void InitObserver(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem);
       void RequestAccessAsync(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem);
@@ -74,38 +68,37 @@ namespace HoloIntervention
 
     protected:
       // Cached pointer to device resources.
-      std::shared_ptr<DX::DeviceResources>            m_deviceResources;
-      System::NotificationSystem&                     m_notificationSystem;
+      std::shared_ptr<DX::DeviceResources>                                  m_deviceResources;
 
       // Direct3D resources for SR mesh rendering pipeline.
-      Microsoft::WRL::ComPtr<ID3D11InputLayout>       m_inputLayout;
-      Microsoft::WRL::ComPtr<ID3D11VertexShader>      m_vertexShader;
-      Microsoft::WRL::ComPtr<ID3D11GeometryShader>    m_geometryShader;
-      Microsoft::WRL::ComPtr<ID3D11PixelShader>       m_lightingPixelShader;
-      Microsoft::WRL::ComPtr<ID3D11PixelShader>       m_colorPixelShader;
+      Microsoft::WRL::ComPtr<ID3D11InputLayout>                             m_inputLayout;
+      Microsoft::WRL::ComPtr<ID3D11VertexShader>                            m_vertexShader;
+      Microsoft::WRL::ComPtr<ID3D11GeometryShader>                          m_geometryShader;
+      Microsoft::WRL::ComPtr<ID3D11PixelShader>                             m_lightingPixelShader;
+      Microsoft::WRL::ComPtr<ID3D11PixelShader>                             m_colorPixelShader;
 
       // Control variables
-      std::atomic_bool                                m_renderEnabled = false;
+      std::atomic_bool                                                      m_renderEnabled = false;
 
-      GuidMeshMap                                     m_meshCollection;
-      std::mutex                                      m_meshCollectionLock;
-      unsigned int                                    m_surfaceMeshCount;
-      double                                          m_maxTrianglesPerCubicMeter = 1000.0;
-      bool                                            m_usingVprtShaders = false;
+      GuidMeshMap                                                           m_meshCollection;
+      std::mutex                                                            m_meshCollectionLock;
+      unsigned int                                                          m_surfaceMeshCount;
+      double                                                                m_maxTrianglesPerCubicMeter = 1000.0;
+      bool                                                                  m_usingVprtShaders = false;
 
-      Microsoft::WRL::ComPtr<ID3D11RasterizerState>   m_defaultRasterizerState;
-      Microsoft::WRL::ComPtr<ID3D11RasterizerState>   m_wireframeRasterizerState;
-      Windows::Foundation::EventRegistrationToken     m_surfacesChangedToken;
-      std::atomic_bool                                m_surfaceAccessAllowed = false;
-      std::atomic_bool                                m_spatialPerceptionAccessRequested = false;
+      Microsoft::WRL::ComPtr<ID3D11RasterizerState>                         m_defaultRasterizerState;
+      Microsoft::WRL::ComPtr<ID3D11RasterizerState>                         m_wireframeRasterizerState;
+      Windows::Foundation::EventRegistrationToken                           m_surfacesChangedToken;
+      std::atomic_bool                                                      m_surfaceAccessAllowed = false;
+      std::atomic_bool                                                      m_spatialPerceptionAccessRequested = false;
 
-      Windows::Perception::Spatial::Surfaces::SpatialSurfaceObserver^               m_surfaceObserver;
-      Windows::Perception::Spatial::Surfaces::SpatialSurfaceMeshOptions^            m_surfaceMeshOptions;
+      Windows::Perception::Spatial::Surfaces::SpatialSurfaceObserver^       m_surfaceObserver;
+      Windows::Perception::Spatial::Surfaces::SpatialSurfaceMeshOptions^    m_surfaceMeshOptions;
 
-      std::atomic_bool                                m_drawWireframe = true;
+      std::atomic_bool                                                      m_drawWireframe = true;
 
-      const float                                     MAX_INACTIVE_MESH_TIME = 120.f;
-      const float                                     SURFACE_MESH_FADE_IN_TIME = 3.0f;
+      const float                                                           MAX_INACTIVE_MESH_TIME = 120.f;
+      const float                                                           SURFACE_MESH_FADE_IN_TIME = 3.0f;
     };
   }
 }

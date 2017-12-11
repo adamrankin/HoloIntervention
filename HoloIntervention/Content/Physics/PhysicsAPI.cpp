@@ -30,9 +30,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "DeviceResources.h"
 #include "StepTimer.h"
 
-// System includes
-#include "NotificationSystem.h"
-
 // WinRT includes
 #include <agents.h>
 #include <functional>
@@ -66,12 +63,11 @@ namespace HoloIntervention
     const uint32 PhysicsAPI::INIT_SURFACE_RETRY_DELAY_MS = 100;
 
     //----------------------------------------------------------------------------
-    PhysicsAPI::PhysicsAPI(System::NotificationSystem& notificationSystem, const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer)
+    PhysicsAPI::PhysicsAPI(const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer)
       : m_deviceResources(deviceResources)
-      , m_notificationSystem(notificationSystem)
       , m_stepTimer(stepTimer)
     {
-      m_surfaceCollection = std::make_unique<Spatial::SpatialSurfaceCollection>(m_notificationSystem, m_deviceResources, stepTimer);
+      m_surfaceCollection = std::make_unique<Spatial::SpatialSurfaceCollection>(m_deviceResources, stepTimer);
     }
 
     //----------------------------------------------------------------------------
@@ -95,18 +91,20 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void PhysicsAPI::CreateDeviceDependentResources()
+    task<bool> PhysicsAPI::CreateDeviceDependentResourcesAsync()
     {
       try
       {
-        m_surfaceCollection->CreateDeviceDependentResourcesAsync().then([this]()
+        return m_surfaceCollection->CreateDeviceDependentResourcesAsync().then([this]()
         {
           m_componentReady = true;
+          return true;
         });
       }
       catch (const std::exception&)
       {
-        m_notificationSystem.QueueMessage("Unable to start spatial system.");
+        LOG_ERROR("Unable to start spatial system.");
+        return task_from_result(false);
       }
     }
 
@@ -274,11 +272,11 @@ namespace HoloIntervention
 
         if (m_surfaceObserver != nullptr)
         {
-          return create_task([this]() -> bool
+          return create_task([this]()
           {
             if (!wait_until_condition([this]() {return m_surfaceObserver->GetObservedSurfaces()->Size > 0; }, 5000))
             {
-              return false;
+              return task_from_result(false);
             }
 
             for (auto const& pair : m_surfaceObserver->GetObservedSurfaces())
@@ -289,13 +287,13 @@ namespace HoloIntervention
             }
 
             m_surfaceObserverEventToken = m_surfaceObserver->ObservedSurfacesChanged +=
-            ref new Windows::Foundation::TypedEventHandler<SpatialSurfaceObserver^, Platform::Object^>(std::bind(&PhysicsAPI::OnSurfacesChanged, this, std::placeholders::_1, std::placeholders::_2));
+                                            ref new Windows::Foundation::TypedEventHandler<SpatialSurfaceObserver^, Platform::Object^>(std::bind(&PhysicsAPI::OnSurfacesChanged, this, std::placeholders::_1, std::placeholders::_2));
 
-            CreateDeviceDependentResources();
-
-            m_componentReady = true;
-
-            return true;
+            return CreateDeviceDependentResourcesAsync().then([this](bool result)
+            {
+              m_componentReady = true;
+              return true;
+            });
           });
         }
 
@@ -359,7 +357,7 @@ namespace HoloIntervention
     {
       if (anchorName == nullptr)
       {
-        m_notificationSystem.QueueMessage(L"Unable to create anchor. No name specified.");
+        LOG_ERROR(L"Unable to create anchor. No name specified.");
         return false;
       }
 
@@ -375,7 +373,7 @@ namespace HoloIntervention
 
       if (!hit)
       {
-        m_notificationSystem.QueueMessage(L"Unable to compute mesh intersection hit.");
+        LOG_ERROR(L"Unable to compute mesh intersection hit.");
         return false;
       }
 
@@ -385,14 +383,12 @@ namespace HoloIntervention
 
       if (anchor == nullptr)
       {
-        m_notificationSystem.QueueMessage(L"Unable to create anchor.");
+        LOG_ERROR(L"Unable to create anchor.");
         return false;
       }
 
       std::lock_guard<std::mutex> lock(m_anchorMutex);
       m_spatialAnchors[anchorName] = anchor;
-
-      m_notificationSystem.QueueMessage(L"Anchor " + anchorName + L" created.");
 
       return true;
     }

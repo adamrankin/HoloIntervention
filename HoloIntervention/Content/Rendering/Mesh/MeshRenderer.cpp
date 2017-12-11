@@ -44,9 +44,8 @@ namespace HoloIntervention
   namespace Rendering
   {
     //----------------------------------------------------------------------------
-    MeshRenderer::MeshRenderer(System::NotificationSystem& notificationSystem, const std::shared_ptr<DX::DeviceResources>& deviceResources)
+    MeshRenderer::MeshRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources)
       : m_deviceResources(deviceResources)
-      , m_notificationSystem(notificationSystem)
     {
       m_meshCollection.clear();
       CreateDeviceDependentResources();
@@ -204,12 +203,12 @@ namespace HoloIntervention
         {
           switch (status)
           {
-            case SpatialPerceptionAccessStatus::Allowed:
-              m_surfaceAccessAllowed = true;
-              break;
-            default:
-              m_surfaceAccessAllowed = false;
-              break;
+          case SpatialPerceptionAccessStatus::Allowed:
+            m_surfaceAccessAllowed = true;
+            break;
+          default:
+            m_surfaceAccessAllowed = false;
+            break;
           }
         });
 
@@ -357,6 +356,18 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    void MeshRenderer::SetWireFrame(bool arg)
+    {
+      m_drawWireframe = arg;
+    }
+
+    //----------------------------------------------------------------------------
+    bool MeshRenderer::GetWireFrame() const
+    {
+      return m_drawWireframe;
+    }
+
+    //----------------------------------------------------------------------------
     void MeshRenderer::CreateDeviceDependentResources()
     {
       m_usingVprtShaders = m_deviceResources->GetDeviceSupportsVprt();
@@ -488,36 +499,6 @@ namespace HoloIntervention
       m_surfaceMeshOptions = nullptr;
       m_surfaceObserver = nullptr;
       m_drawWireframe = true;
-    }
-
-    //----------------------------------------------------------------------------
-    void MeshRenderer::RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap)
-    {
-      callbackMap[L"mesh on"] = [this](SpeechRecognitionResult ^ result)
-      {
-        m_notificationSystem.QueueMessage(L"Mesh showing.");
-        SetEnabled(true);
-      };
-
-      callbackMap[L"mesh off"] = [this](SpeechRecognitionResult ^ result)
-      {
-        m_notificationSystem.QueueMessage(L"Mesh disabled.");
-        SetEnabled(false);
-      };
-
-      callbackMap[L"mesh solid"] = [this](SpeechRecognitionResult ^ result)
-      {
-        m_notificationSystem.QueueMessage(L"Solid mesh on.");
-        m_drawWireframe = false;
-        SetEnabled(true);
-      };
-
-      callbackMap[L"mesh wireframe"] = [this](SpeechRecognitionResult ^ result)
-      {
-        m_notificationSystem.QueueMessage(L"Wireframe mesh on.");
-        m_drawWireframe = true;
-        SetEnabled(true);
-      };
     }
 
     //----------------------------------------------------------------------------

@@ -777,25 +777,37 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ModelEntry::SetColour(float3 newColour)
     {
-      m_currentColour = float4(newColour.x, newColour.y, newColour.z, m_currentColour.w);
+      SetColour(float4(newColour.x, newColour.y, newColour.z, m_currentColour.w));
     }
 
     //----------------------------------------------------------------------------
     void ModelEntry::SetColour(float r, float g, float b, float a)
     {
-      m_currentColour = float4(r, g, b, a);
+      SetColour(float4(r, g, b, a));
     }
 
     //----------------------------------------------------------------------------
     void ModelEntry::SetColour(Windows::Foundation::Numerics::float4 newColour)
     {
       m_currentColour = newColour;
+
+      if (m_model != nullptr)
+      {
+        m_model->UpdateEffects([this, newColour](IEffect * effect)
+        {
+          InstancedBasicEffect* basicEffect = dynamic_cast<InstancedBasicEffect*>(effect);
+          if (basicEffect != nullptr)
+          {
+            basicEffect->SetColorAndAlpha(XMLoadFloat4(&newColour));
+          }
+        });
+      }
     }
 
     //----------------------------------------------------------------------------
     void ModelEntry::SetColour(float r, float g, float b)
     {
-      m_currentColour = float4{ r, g, b, m_currentColour.w };
+      SetColour(float4{ r, g, b, m_currentColour.w });
     }
 
     //----------------------------------------------------------------------------

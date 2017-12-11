@@ -28,9 +28,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "IVoiceInput.h"
 #include "SpatialSurfaceCollection.h"
 
-// WinRT includes
-#include <ppltasks.h>
-
 namespace DX
 {
   class DeviceResources;
@@ -54,12 +51,12 @@ namespace HoloIntervention
     class PhysicsAPI : public Input::IVoiceInput, public IEngineComponent
     {
     public:
-      PhysicsAPI(System::NotificationSystem& notificationSystem, const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer);
+      PhysicsAPI(const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer);
       ~PhysicsAPI();
 
       void Update(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem);
 
-      void CreateDeviceDependentResources();
+      Concurrency::task<bool> CreateDeviceDependentResourcesAsync();
       void ReleaseDeviceDependentResources();
 
       /// Handle surface change events.
@@ -99,7 +96,6 @@ namespace HoloIntervention
 
       // Cached entries
       std::shared_ptr<DX::DeviceResources>                                      m_deviceResources;
-      System::NotificationSystem&                                               m_notificationSystem;
       DX::StepTimer&                                                            m_stepTimer;
 
       // Anchor interaction variables

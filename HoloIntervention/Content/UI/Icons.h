@@ -43,17 +43,6 @@ namespace HoloIntervention
     class ModelRenderer;
   }
 
-  namespace Network
-  {
-    class IGTConnector;
-  }
-
-  namespace System
-  {
-    class NotificationSystem;
-    class ToolSystem;
-  }
-
   namespace UI
   {
     typedef std::vector<std::shared_ptr<IconEntry>> IconEntryList;
@@ -70,7 +59,7 @@ namespace HoloIntervention
       virtual concurrency::task<bool> ReadConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
 
     public:
-      Icons(System::NotificationSystem& notificationSystem, Rendering::ModelRenderer& modelRenderer);
+      Icons(Rendering::ModelRenderer& modelRenderer);
       ~Icons();
 
       void Update(DX::StepTimer& timer, Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
@@ -90,7 +79,6 @@ namespace HoloIntervention
 
       // Cached entries to model renderer
       Rendering::ModelRenderer&                 m_modelRenderer;
-      System::NotificationSystem&               m_notificationSystem;
 
       // Shared variables
       static const float                        ANGLE_BETWEEN_ICONS_RAD;

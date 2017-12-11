@@ -24,8 +24,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "pch.h"
 #include "AppView.h"
+#include "Common.h"
 #include "VoiceInput.h"
-#include "NotificationSystem.h"
 
 // UI includes
 #include "Icons.h"
@@ -51,9 +51,8 @@ namespace HoloIntervention
     const float VoiceInput::MICROPHONE_BLINK_TIME_SEC = 1.f;
 
     //----------------------------------------------------------------------------
-    VoiceInput::VoiceInput(System::NotificationSystem& notificationSystem, Sound::SoundAPI& soundAPI, UI::Icons& icons)
-      : m_notificationSystem(notificationSystem)
-      , m_soundAPI(soundAPI)
+    VoiceInput::VoiceInput(Sound::SoundAPI& soundAPI, UI::Icons& icons)
+      : m_soundAPI(soundAPI)
       , m_icons(icons)
       , m_callbacks(std::make_unique<Input::VoiceInputCallbackMap>())
     {
@@ -215,7 +214,8 @@ namespace HoloIntervention
         }
         else
         {
-          m_notificationSystem.QueueMessage(L"Unable to compile speech patterns.");
+          LOG_ERROR(L"Unable to compile speech patterns.");
+          m_loadFailed = true;
         }
 
         return m_componentReady ? true : false;
@@ -228,7 +228,8 @@ namespace HoloIntervention
         }
         else
         {
-          m_notificationSystem.QueueMessage(L"Cannot start speech recognition.");
+          LOG_ERROR(L"Cannot start speech recognition.");
+          m_loadFailed = true;
           return false;
         }
       });
@@ -404,6 +405,13 @@ namespace HoloIntervention
     {
       if (m_iconEntry == nullptr || !m_iconEntry->GetModelEntry()->IsLoaded())
       {
+        return;
+      }
+
+      if (m_loadFailed)
+      {
+        m_iconEntry->GetModelEntry()->SetVisible(true);
+        m_iconEntry->GetModelEntry()->SetColour(1.f, 0.f, 0.f, 1.f);
         return;
       }
 
