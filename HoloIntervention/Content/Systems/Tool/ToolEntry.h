@@ -87,7 +87,7 @@ namespace HoloIntervention
 
       void Update(const DX::StepTimer& timer);
 
-      void SetModelEntry(std::shared_ptr<Rendering::ModelEntry> entry);
+      Concurrency::task<void> SetModelEntryAsync(std::shared_ptr<Rendering::ModelEntry> entry);
       std::shared_ptr<Rendering::ModelEntry> GetModelEntry();
       UWPOpenIGTLink::TransformName^ GetCoordinateFrame() const;
       bool IsValid() const;

@@ -162,8 +162,14 @@ namespace HoloIntervention
         auto modelEntry = m_modelRenderer.GetModel(modelId);
         auto entry = std::make_shared<IconEntry>();
         entry->SetModelEntry(modelEntry);
+
+        // Determine scale factor for new entry
+        auto& bounds = entry->GetModelEntry()->GetBounds();
+        auto scale = ICON_SIZE_METER / (bounds[1] - bounds[0]);
+        entry->SetScaleFactor(scale);
         entry->GetModelEntry()->EnablePoseLerp(true);
         entry->GetModelEntry()->SetPoseLerpRate(8.f);
+        entry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
         entry->SetUserValue(userValue);
         entry->SetId(m_nextValidEntry++);
         m_iconEntries.push_back(entry);
@@ -181,10 +187,15 @@ namespace HoloIntervention
         std::lock_guard<std::mutex> guard(m_entryMutex);
         auto entry = std::make_shared<IconEntry>();
         auto duplicateEntry = m_modelRenderer.GetModel(modelEntryId);
-        duplicateEntry->SetRenderingState(Rendering::RENDERING_GREYSCALE);
         entry->SetModelEntry(duplicateEntry);
+
+        // Determine scale factor for new entry
+        auto& bounds = entry->GetModelEntry()->GetBounds();
+        auto scale = ICON_SIZE_METER / (bounds[1] - bounds[0]);
+        entry->SetScaleFactor(scale);
         entry->GetModelEntry()->EnablePoseLerp(true);
         entry->GetModelEntry()->SetPoseLerpRate(8.f);
+        entry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
         entry->SetUserValue(userValue);
         entry->SetId(m_nextValidEntry++);
         m_iconEntries.push_back(entry);
@@ -202,8 +213,14 @@ namespace HoloIntervention
         auto modelEntry = m_modelRenderer.GetModel(modelId);
         auto entry = std::make_shared<IconEntry>();
         entry->SetModelEntry(modelEntry);
+
+        // Determine scale factor for new entry
+        auto& bounds = entry->GetModelEntry()->GetBounds();
+        auto scale = ICON_SIZE_METER / (bounds[1] - bounds[0]);
+        entry->SetScaleFactor(scale);
         entry->GetModelEntry()->EnablePoseLerp(true);
         entry->GetModelEntry()->SetPoseLerpRate(8.f);
+        entry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
         entry->SetUserValue(userValue);
         entry->SetId(m_nextValidEntry++);
         m_iconEntries.push_back(entry);
@@ -227,8 +244,14 @@ namespace HoloIntervention
         auto entry = std::make_shared<IconEntry>();
         auto duplicateEntry = m_modelRenderer.GetModel(modelEntryId);
         entry->SetModelEntry(duplicateEntry);
+
+        // Determine scale factor for new entry
+        auto& bounds = entry->GetModelEntry()->GetBounds();
+        auto scale = ICON_SIZE_METER / (bounds[1] - bounds[0]);
+        entry->SetScaleFactor(scale);
         entry->GetModelEntry()->EnablePoseLerp(true);
         entry->GetModelEntry()->SetPoseLerpRate(8.f);
+        entry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
         entry->SetUserValue(userValue);
         entry->SetId(m_nextValidEntry++);
         m_iconEntries.push_back(entry);

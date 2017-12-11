@@ -46,6 +46,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 // OpenCV includes
 #include <opencv2/core/mat.hpp>
 
+using namespace Concurrency;
 using namespace Windows::Foundation::Collections;
 using namespace Windows::Foundation::Numerics;
 using namespace Windows::UI::Input::Spatial;
@@ -166,6 +167,14 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ToolEntry::Update(const DX::StepTimer& timer)
     {
+      bool registrationTransformValid = m_transformRepository->GetTransformValid(ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD"));
+      if (!registrationTransformValid)
+      {
+        m_modelEntry->SetVisible(false);
+        m_iconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
+        return;
+      }
+
       // m_transformRepository has already been initialized with the network transforms for this update
       auto toolToRefTransform = m_networkSystem.GetTransform(m_hashedConnectionName, m_coordinateFrame, m_latestTimestamp);
 
@@ -176,7 +185,6 @@ namespace HoloIntervention
       }
 
       m_latestTimestamp = toolToRefTransform->Timestamp;
-
       m_transformRepository->SetTransform(m_coordinateFrame, toolToRefTransform->Matrix, toolToRefTransform->Valid);
 
       IKeyValuePair<bool, float4x4>^ result = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(m_coordinateFrame->From(), L"HMD"));
@@ -256,24 +264,32 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ToolEntry::SetModelEntry(std::shared_ptr<Rendering::ModelEntry> entry)
+    task<void> ToolEntry::SetModelEntryAsync(std::shared_ptr<Rendering::ModelEntry> entry)
     {
-      if (m_modelEntry == entry)
+      return create_task([this, entry]()
       {
-        return;
-      }
 
-      m_icons.RemoveEntry(m_iconEntry->GetId());
+        if (m_modelEntry == entry)
+        {
+          return create_task([]() {});
+        }
 
-      m_icons.AddEntryAsync(m_modelEntry, 0).then([this, entry](std::shared_ptr<UI::IconEntry> iconEntry)
-      {
-        m_iconEntry = iconEntry;
-        iconEntry->GetModelEntry()->SetVisible(true);
+        if (m_iconEntry != nullptr)
+        {
+          m_icons.RemoveEntry(m_iconEntry->GetId());
+        }
+
+        return m_icons.AddEntryAsync(entry, 0).then([this, entry](std::shared_ptr<UI::IconEntry> iconEntry) -> void
+        {
+          m_modelEntry = entry;
+          m_iconEntry = iconEntry;
+          iconEntry->GetModelEntry()->SetVisible(true);
+        });
       });
     }
 
     //----------------------------------------------------------------------------
-    std::shared_ptr<HoloIntervention::Rendering::ModelEntry> ToolEntry::GetModelEntry()
+    std::shared_ptr<Rendering::ModelEntry> ToolEntry::GetModelEntry()
     {
       return m_modelEntry;
     }

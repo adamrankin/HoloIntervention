@@ -111,7 +111,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    concurrency::task<bool> ToolSystem::WriteConfigurationAsync(XmlDocument^ document)
+    task<bool> ToolSystem::WriteConfigurationAsync(XmlDocument^ document)
     {
       return create_task([this, document]()
       {
@@ -161,7 +161,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    concurrency::task<bool> ToolSystem::ReadConfigurationAsync(XmlDocument^ document)
+    task<bool> ToolSystem::ReadConfigurationAsync(XmlDocument^ document)
     {
       if (!m_transformRepository->ReadConfiguration(document))
       {
@@ -347,7 +347,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    std::shared_ptr<HoloIntervention::Tools::ToolEntry> ToolSystem::GetTool(uint64 token) const
+    std::shared_ptr<Tools::ToolEntry> ToolSystem::GetTool(uint64 token) const
     {
       std::lock_guard<std::mutex> guard(m_entriesMutex);
       for (auto iter = m_toolEntries.begin(); iter != m_toolEntries.end(); ++iter)
@@ -361,7 +361,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    std::vector<std::shared_ptr<HoloIntervention::Tools::ToolEntry>> ToolSystem::GetTools()
+    std::vector<std::shared_ptr<Tools::ToolEntry>> ToolSystem::GetTools()
     {
       return m_toolEntries;
     }
@@ -406,13 +406,15 @@ namespace HoloIntervention
       {
         std::shared_ptr<Tools::ToolEntry> entry = std::make_shared<Tools::ToolEntry>(m_modelRenderer, m_networkSystem, m_icons, m_hashedConnectionName, coordinateFrame, m_transformRepository);
         auto modelEntry = m_modelRenderer.GetModel(modelEntryId);
-        entry->SetModelEntry(modelEntry);
-        modelEntry->SetVisible(false);
-        modelEntry->SetColour(colour);
-        std::lock_guard<std::mutex> guard(m_entriesMutex);
-        m_toolEntries.push_back(entry);
+        return entry->SetModelEntryAsync(modelEntry).then([this, entry, modelEntry, colour]()
+        {
+          modelEntry->SetVisible(false);
+          modelEntry->SetColour(colour);
+          std::lock_guard<std::mutex> guard(m_entriesMutex);
+          m_toolEntries.push_back(entry);
 
-        return entry->GetId();
+          return entry->GetId();
+        });
       });
     }
 
@@ -442,20 +444,12 @@ namespace HoloIntervention
     {
       // Update the transform repository with the latest registration
       float4x4 referenceToHMD(float4x4::identity());
-      if (!m_registrationSystem.GetReferenceToCoordinateSystemTransformation(hmdCoordinateSystem, referenceToHMD))
-      {
-        return;
-      }
-
-      if (!m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD"), transpose(referenceToHMD), true))
-      {
-        return;
-      }
+      bool registrationAvailable = m_registrationSystem.GetReferenceToCoordinateSystemTransformation(hmdCoordinateSystem, referenceToHMD);
+      m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD"), transpose(referenceToHMD), registrationAvailable);
 
       std::lock_guard<std::mutex> guard(m_entriesMutex);
       for (auto entry : m_toolEntries)
       {
-        entry->GetModelEntry()->SetVisible(true);
         entry->Update(timer);
       }
     }

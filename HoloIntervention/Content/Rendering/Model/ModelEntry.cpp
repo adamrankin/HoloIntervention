@@ -506,7 +506,6 @@ namespace HoloIntervention
         m_effectFactory = std::make_unique<DirectX::InstancedEffectFactory>(m_deviceResources->GetD3DDevice());
         m_effectFactory->SetSharing(false);   // Disable re-use of effect shaders, as this prevents us from rendering different colours
         m_model = std::shared_ptr<DirectX::Model>(std::move(DirectX::Model::CreateFromCMO(m_deviceResources->GetD3DDevice(), m_assetLocation.c_str(), *m_effectFactory)));
-        CalculateBounds();
 
         // Cache default effect colours
         m_model->UpdateEffects([this](IEffect * effect)
@@ -521,6 +520,8 @@ namespace HoloIntervention
           }
         });
       }
+      CalculateBounds();
+
       m_loadingComplete = true;
     }
 
@@ -954,7 +955,12 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ModelEntry::CalculateBounds()
     {
-      if (m_model->meshes.size() == 0)
+      if (m_model == nullptr)
+      {
+        std::copy(begin(m_primitive->GetBounds()), end(m_primitive->GetBounds()), begin(m_modelBounds));
+        return;
+      }
+      else if (m_model->meshes.size() == 0)
       {
         return;
       }
