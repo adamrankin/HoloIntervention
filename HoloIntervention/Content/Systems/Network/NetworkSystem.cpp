@@ -24,8 +24,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "pch.h"
 #include "Common.h"
+#include "Icons.h"
 #include "Log.h"
 #include "NetworkSystem.h"
+#include "StepTimer.h"
 
 // System includes
 #include "NotificationSystem.h"
@@ -49,6 +51,7 @@ namespace HoloIntervention
 {
   namespace System
   {
+    const float NetworkSystem::NETWORK_BLINK_TIME_SEC = 0.75;
     const double NetworkSystem::CONNECT_TIMEOUT_SEC = 3.0;
     const uint32_t NetworkSystem::RECONNECT_RETRY_DELAY_MSEC = 100;
     const uint32_t NetworkSystem::RECONNECT_RETRY_COUNT = 10;
@@ -73,18 +76,18 @@ namespace HoloIntervention
         for (auto connector : m_connectors)
         {
           auto connectionElem = document->CreateElement(L"Connection");
-          connectionElem->SetAttribute(L"Name", ref new Platform::String(connector.Name.c_str()));
-          if (connector.Connector->ServerHost != nullptr)
+          connectionElem->SetAttribute(L"Name", ref new Platform::String(connector->Name.c_str()));
+          if (connector->Connector->ServerHost != nullptr)
           {
-            connectionElem->SetAttribute(L"Host", connector.Connector->ServerHost->DisplayName);
+            connectionElem->SetAttribute(L"Host", connector->Connector->ServerHost->DisplayName);
           }
-          if (connector.Connector->ServerPort != nullptr)
+          if (connector->Connector->ServerPort != nullptr)
           {
-            connectionElem->SetAttribute(L"Port", connector.Connector->ServerPort);
+            connectionElem->SetAttribute(L"Port", connector->Connector->ServerPort);
           }
-          if (connector.Connector->EmbeddedImageTransformName != nullptr)
+          if (connector->Connector->EmbeddedImageTransformName != nullptr)
           {
-            connectionElem->SetAttribute(L"EmbeddedImageTransformName", connector.Connector->EmbeddedImageTransformName->GetTransformName());
+            connectionElem->SetAttribute(L"EmbeddedImageTransformName", connector->Connector->EmbeddedImageTransformName->GetTransformName());
           }
           connectionsElem->AppendChild(connectionElem);
         }
@@ -98,28 +101,90 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     task<bool> NetworkSystem::ReadConfigurationAsync(XmlDocument^ document)
     {
-      return InitAsync(document).then([this](task<bool> initTask)
+      return create_task([this, document]()
       {
-        bool result;
-        try
+        auto xpath = ref new Platform::String(L"/HoloIntervention/IGTConnections/Connection");
+        if (document->SelectNodes(xpath)->Length == 0)
         {
-          result = initTask.get();
-        }
-        catch (const std::exception& e)
-        {
-          LOG(LogLevelType::LOG_LEVEL_ERROR, std::string("Unable to initialize network system: ") + e.what());
-          return false;
+          return task_from_result(false);
         }
 
-        m_componentReady = true;
-        return result;
+        std::vector<task<std::shared_ptr<UI::IconEntry>>> modelLoadingTasks;
+
+        for (auto node : document->SelectNodes(xpath))
+        {
+          if (!HasAttribute(L"Name", node))
+          {
+            return task_from_result(false);
+          }
+          if (!HasAttribute(L"Host", node))
+          {
+            return task_from_result(false);
+          }
+          if (!HasAttribute(L"Port", node))
+          {
+            return task_from_result(false);
+          }
+
+          Platform::String^ name = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Name")->NodeValue);
+          Platform::String^ host = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Host")->NodeValue);
+          Platform::String^ port = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Port")->NodeValue);
+          if (name->IsEmpty() || host->IsEmpty() || port->IsEmpty())
+          {
+            return task_from_result(false);
+          }
+
+          std::shared_ptr<ConnectorEntry> entry = std::make_shared<ConnectorEntry>();
+          entry->Name = std::wstring(name->Data());
+          entry->HashedName = HashString(name->Data());
+          entry->Connector = ref new UWPOpenIGTLink::IGTClient();
+          entry->Connector->ServerHost = ref new HostName(host);
+
+          try
+          {
+            std::stoi(port->Data());
+            entry->Connector->ServerPort = port;
+          }
+          catch (const std::exception&) {}
+
+          if (HasAttribute(L"EmbeddedImageTransformName", node))
+          {
+            Platform::String^ embeddedImageTransformName = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"EmbeddedImageTransformName")->NodeValue);
+            if (!embeddedImageTransformName->IsEmpty())
+            {
+              try
+              {
+                auto transformName = ref new UWPOpenIGTLink::TransformName(embeddedImageTransformName);
+                entry->Connector->EmbeddedImageTransformName = transformName;
+              }
+              catch (Platform::Exception^) {}
+            }
+          }
+
+          // Create icon
+          modelLoadingTasks.push_back(m_icons.AddEntryAsync(L"Assets/Models/network_icon.cmo", entry->HashedName).then([this, entry](std::shared_ptr<UI::IconEntry> iconEntry)
+          {
+            entry->Icon.m_iconEntry = iconEntry;
+            return iconEntry;
+          }));
+
+          std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
+          m_connectors.push_back(entry);
+        }
+
+        return when_all(begin(modelLoadingTasks), end(modelLoadingTasks)).then([this](std::vector<std::shared_ptr<UI::IconEntry>> entries)
+        {
+          m_componentReady = true;
+          return true;
+        });
       });
     }
 
     //----------------------------------------------------------------------------
-    NetworkSystem::NetworkSystem(System::NotificationSystem& notificationSystem, Input::VoiceInput& voiceInput)
+    NetworkSystem::NetworkSystem(System::NotificationSystem& notificationSystem, Input::VoiceInput& voiceInput, UI::Icons& icons)
       : m_notificationSystem(notificationSystem)
       , m_voiceInput(voiceInput)
+      , m_icons(icons)
     {
       /*
       disabled, currently crashes
@@ -147,18 +212,18 @@ namespace HoloIntervention
     task<bool> NetworkSystem::ConnectAsync(uint64 hashedConnectionName, double timeoutSec /*= CONNECT_TIMEOUT_SEC*/, task_options& options /*= Concurrency::task_options()*/)
     {
       std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
-      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
+      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](std::shared_ptr<ConnectorEntry> entry)
       {
-        return hashedConnectionName == entry.HashedName;
+        return hashedConnectionName == entry->HashedName;
       });
 
       if (iter != end(m_connectors))
       {
-        assert(iter->Connector != nullptr);
+        assert((*iter)->Connector != nullptr);
 
-        iter->State = CONNECTION_STATE_CONNECTING;
+        (*iter)->State = CONNECTION_STATE_CONNECTING;
 
-        return create_task(iter->Connector->ConnectAsync(timeoutSec), options).then([this, hashedConnectionName](task<bool> connectTask)
+        return create_task((*iter)->Connector->ConnectAsync(timeoutSec), options).then([this, hashedConnectionName](task<bool> connectTask)
         {
           bool result(false);
           try
@@ -172,18 +237,18 @@ namespace HoloIntervention
           }
 
           std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
-          auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
+          auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](std::shared_ptr<ConnectorEntry> entry)
           {
-            return hashedConnectionName == entry.HashedName;
+            return hashedConnectionName == entry->HashedName;
           });
 
           if (result)
           {
-            iter->State = CONNECTION_STATE_CONNECTED;
+            (*iter)->State = CONNECTION_STATE_CONNECTED;
           }
           else
           {
-            iter->State = CONNECTION_STATE_DISCONNECTED;
+            (*iter)->State = CONNECTION_STATE_DISCONNECTED;
           }
           return result;
         });
@@ -200,7 +265,7 @@ namespace HoloIntervention
       std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
       for (auto entry : m_connectors)
       {
-        auto task = this->ConnectAsync(entry.HashedName, 4.0);
+        auto task = this->ConnectAsync(entry->HashedName, 4.0);
         tasks.push_back(task);
       }
 
@@ -211,11 +276,11 @@ namespace HoloIntervention
     bool NetworkSystem::IsConnected(uint64 hashedConnectionName) const
     {
       std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
-      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
+      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](std::shared_ptr<ConnectorEntry> entry)
       {
-        return hashedConnectionName == entry.HashedName;
+        return hashedConnectionName == entry->HashedName;
       });
-      return iter == end(m_connectors) ? false : iter->Connector->Connected;
+      return iter == end(m_connectors) ? false : (*iter)->Connector->Connected;
     }
 
     //----------------------------------------------------------------------------
@@ -231,9 +296,9 @@ namespace HoloIntervention
       UWPOpenIGTLink::CommandData cmdData = {0, false};
 
       std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
-      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
+      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](std::shared_ptr<ConnectorEntry> entry)
       {
-        return hashedConnectionName == entry.HashedName;
+        return hashedConnectionName == entry->HashedName;
       });
 
       if (iter == end(m_connectors))
@@ -249,16 +314,16 @@ namespace HoloIntervention
                     ref new Platform::String(pair.second.c_str()));
       }
 
-      return create_task(iter->Connector->SendCommandAsync(ref new Platform::String(commandName.c_str()), map));
+      return create_task((*iter)->Connector->SendCommandAsync(ref new Platform::String(commandName.c_str()), map));
     }
 
     //----------------------------------------------------------------------------
     bool NetworkSystem::IsCommandComplete(uint64 hashedConnectionName, uint32 commandId)
     {
       std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
-      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
+      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](std::shared_ptr<ConnectorEntry> entry)
       {
-        return hashedConnectionName == entry.HashedName;
+        return hashedConnectionName == entry->HashedName;
       });
 
       if (iter == end(m_connectors))
@@ -267,76 +332,62 @@ namespace HoloIntervention
         return false;
       }
 
-      return iter->Connector->IsCommandComplete(commandId);
+      return (*iter)->Connector->IsCommandComplete(commandId);
     }
 
     //----------------------------------------------------------------------------
-    task<bool> NetworkSystem::InitAsync(XmlDocument^ xmlDoc)
+    void NetworkSystem::ProcessNetworkLogic(DX::StepTimer& timer)
     {
-      return create_task([this, xmlDoc]()
+      for (auto& connector : m_connectors)
       {
-        auto xpath = ref new Platform::String(L"/HoloIntervention/IGTConnections/Connection");
-        if (xmlDoc->SelectNodes(xpath)->Length == 0)
+        if (!connector->Icon.m_iconEntry->GetModelEntry()->IsLoaded())
         {
-          return false;
+          continue;
         }
 
-        for (auto node : xmlDoc->SelectNodes(xpath))
+        switch (connector->State)
         {
-          if (!HasAttribute(L"Name", node))
+        case System::NetworkSystem::CONNECTION_STATE_CONNECTING:
+        case System::NetworkSystem::CONNECTION_STATE_DISCONNECTING:
+          if (connector->Icon.m_networkPreviousState != connector->State)
           {
-            return false;
+            connector->Icon.m_networkBlinkTimer = 0.f;
           }
-          if (!HasAttribute(L"Host", node))
+          else
           {
-            return false;
-          }
-          if (!HasAttribute(L"Port", node))
-          {
-            return false;
-          }
-
-          Platform::String^ name = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Name")->NodeValue);
-          Platform::String^ host = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Host")->NodeValue);
-          Platform::String^ port = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Port")->NodeValue);
-          if (name->IsEmpty() || host->IsEmpty() || port->IsEmpty())
-          {
-            return false;
-          }
-
-          ConnectorEntry entry;
-          entry.Name = std::wstring(name->Data());
-          entry.HashedName = HashString(name->Data());
-          entry.Connector = ref new UWPOpenIGTLink::IGTClient();
-          entry.Connector->ServerHost = ref new HostName(host);
-
-          try
-          {
-            std::stoi(port->Data());
-            entry.Connector->ServerPort = port;
-          }
-          catch (const std::exception&) {}
-
-          if (HasAttribute(L"EmbeddedImageTransformName", node))
-          {
-            Platform::String^ embeddedImageTransformName = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"EmbeddedImageTransformName")->NodeValue);
-            if (!embeddedImageTransformName->IsEmpty())
+            connector->Icon.m_networkBlinkTimer += static_cast<float>(timer.GetElapsedSeconds());
+            if (connector->Icon.m_networkBlinkTimer >= NETWORK_BLINK_TIME_SEC)
             {
-              try
-              {
-                auto transformName = ref new UWPOpenIGTLink::TransformName(embeddedImageTransformName);
-                entry.Connector->EmbeddedImageTransformName = transformName;
-              }
-              catch (Platform::Exception^) {}
+              connector->Icon.m_networkBlinkTimer = 0.f;
+              connector->Icon.m_iconEntry->GetModelEntry()->ToggleVisible();
             }
           }
-
-          std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
-          m_connectors.push_back(entry);
+          connector->Icon.m_networkIsBlinking = true;
+          break;
+        case System::NetworkSystem::CONNECTION_STATE_UNKNOWN:
+        case System::NetworkSystem::CONNECTION_STATE_DISCONNECTED:
+        case System::NetworkSystem::CONNECTION_STATE_CONNECTION_LOST:
+          connector->Icon.m_iconEntry->GetModelEntry()->SetVisible(true);
+          connector->Icon.m_networkIsBlinking = false;
+          if (connector->Icon.m_wasNetworkConnected)
+          {
+            connector->Icon.m_iconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
+            connector->Icon.m_wasNetworkConnected = false;
+          }
+          break;
+        case System::NetworkSystem::CONNECTION_STATE_CONNECTED:
+          connector->Icon.m_iconEntry->GetModelEntry()->SetVisible(true);
+          connector->Icon.m_networkIsBlinking = false;
+          if (!connector->Icon.m_wasNetworkConnected)
+          {
+            connector->Icon.m_wasNetworkConnected = true;
+            connector->Icon.m_iconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
+          }
+          break;
         }
 
-        return true;
-      });
+        connector->Icon.m_networkPreviousState = connector->State;
+      }
     }
 
     //----------------------------------------------------------------------------
@@ -385,10 +436,10 @@ namespace HoloIntervention
       callbackMap[L"disconnect"] = [this](SpeechRecognitionResult ^ result)
       {
         std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
-        for (auto& entry : m_connectors)
+        for (auto entry : m_connectors)
         {
-          entry.Connector->Disconnect();
-          entry.State = CONNECTION_STATE_DISCONNECTED;
+          entry->Connector->Disconnect();
+          entry->State = CONNECTION_STATE_DISCONNECTED;
         }
         m_notificationSystem.QueueMessage(L"Disconnected.");
       };
@@ -399,24 +450,24 @@ namespace HoloIntervention
     UWPOpenIGTLink::TransformName^ NetworkSystem::GetEmbeddedImageTransformName(uint64 hashedConnectionName) const
     {
       std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
-      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
+      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](std::shared_ptr<ConnectorEntry> entry)
       {
-        return hashedConnectionName == entry.HashedName;
+        return hashedConnectionName == entry->HashedName;
       });
-      return iter == end(m_connectors) ? nullptr : iter->Connector->EmbeddedImageTransformName;
+      return iter == end(m_connectors) ? nullptr : (*iter)->Connector->EmbeddedImageTransformName;
     }
 
     //----------------------------------------------------------------------------
     void NetworkSystem::SetEmbeddedImageTransformName(uint64 hashedConnectionName, UWPOpenIGTLink::TransformName^ name)
     {
       std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
-      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
+      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](std::shared_ptr<ConnectorEntry> entry)
       {
-        return hashedConnectionName == entry.HashedName;
+        return hashedConnectionName == entry->HashedName;
       });
       if (iter != end(m_connectors))
       {
-        iter->Connector->EmbeddedImageTransformName = name;
+        (*iter)->Connector->EmbeddedImageTransformName = name;
       }
     }
 
@@ -424,15 +475,15 @@ namespace HoloIntervention
     void NetworkSystem::Disconnect(uint64 hashedConnectionName)
     {
       std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
-      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
+      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](std::shared_ptr<ConnectorEntry> entry)
       {
-        return hashedConnectionName == entry.HashedName;
+        return hashedConnectionName == entry->HashedName;
       });
 
       if (iter != end(m_connectors))
       {
-        iter->Connector->Disconnect();
-        iter->State = CONNECTION_STATE_DISCONNECTED;
+        (*iter)->Connector->Disconnect();
+        (*iter)->State = CONNECTION_STATE_DISCONNECTED;
       }
     }
 
@@ -440,13 +491,13 @@ namespace HoloIntervention
     bool NetworkSystem::GetConnectionState(uint64 hashedConnectionName, ConnectionState& state) const
     {
       std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
-      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
+      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](std::shared_ptr<ConnectorEntry> entry)
       {
-        return hashedConnectionName == entry.HashedName;
+        return hashedConnectionName == entry->HashedName;
       });
       if (iter != end(m_connectors))
       {
-        state = iter->State;
+        state = (*iter)->State;
         return true;
       }
       return false;
@@ -456,13 +507,13 @@ namespace HoloIntervention
     void NetworkSystem::SetHostname(uint64 hashedConnectionName, const std::wstring& hostname)
     {
       std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
-      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
+      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](std::shared_ptr<ConnectorEntry> entry)
       {
-        return hashedConnectionName == entry.HashedName;
+        return hashedConnectionName == entry->HashedName;
       });
       if (iter != end(m_connectors))
       {
-        iter->Connector->ServerHost = ref new HostName(ref new Platform::String(hostname.c_str()));
+        (*iter)->Connector->ServerHost = ref new HostName(ref new Platform::String(hostname.c_str()));
       }
     }
 
@@ -470,13 +521,13 @@ namespace HoloIntervention
     bool NetworkSystem::GetHostname(uint64 hashedConnectionName, std::wstring& hostName) const
     {
       std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
-      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
+      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](std::shared_ptr<ConnectorEntry> entry)
       {
-        return hashedConnectionName == entry.HashedName;
+        return hashedConnectionName == entry->HashedName;
       });
       if (iter != end(m_connectors))
       {
-        hostName = iter->Connector->ServerHost->DisplayName->Data();
+        hostName = (*iter)->Connector->ServerHost->DisplayName->Data();
         return true;
       }
       return false;
@@ -486,13 +537,13 @@ namespace HoloIntervention
     void NetworkSystem::SetPort(uint64 hashedConnectionName, int32 port)
     {
       std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
-      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
+      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](std::shared_ptr<ConnectorEntry> entry)
       {
-        return hashedConnectionName == entry.HashedName;
+        return hashedConnectionName == entry->HashedName;
       });
       if (iter != end(m_connectors))
       {
-        iter->Connector->ServerPort = port.ToString();
+        (*iter)->Connector->ServerPort = port.ToString();
       }
     }
 
@@ -500,13 +551,13 @@ namespace HoloIntervention
     bool NetworkSystem::GetPort(uint64 hashedConnectionName, int32& port) const
     {
       std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
-      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
+      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](std::shared_ptr<ConnectorEntry> entry)
       {
-        return hashedConnectionName == entry.HashedName;
+        return hashedConnectionName == entry->HashedName;
       });
       if (iter != end(m_connectors))
       {
-        port = std::stoi(iter->Connector->ServerPort->Data());
+        port = std::stoi((*iter)->Connector->ServerPort->Data());
         return true;
       }
       return false;
@@ -516,13 +567,13 @@ namespace HoloIntervention
     UWPOpenIGTLink::TrackedFrame^ NetworkSystem::GetTrackedFrame(uint64 hashedConnectionName, double& latestTimestamp)
     {
       std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
-      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
+      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](std::shared_ptr<ConnectorEntry> entry)
       {
-        return hashedConnectionName == entry.HashedName;
+        return hashedConnectionName == entry->HashedName;
       });
       if (iter != end(m_connectors))
       {
-        auto latestFrame = iter->Connector->GetTrackedFrame(latestTimestamp);
+        auto latestFrame = (*iter)->Connector->GetTrackedFrame(latestTimestamp);
         if (latestFrame == nullptr)
         {
           return nullptr;
@@ -541,13 +592,13 @@ namespace HoloIntervention
     UWPOpenIGTLink::TransformListABI^ NetworkSystem::GetTDataFrame(uint64 hashedConnectionName, double& latestTimestamp)
     {
       std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
-      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
+      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](std::shared_ptr<ConnectorEntry> entry)
       {
-        return hashedConnectionName == entry.HashedName;
+        return hashedConnectionName == entry->HashedName;
       });
       if (iter != end(m_connectors))
       {
-        auto latestFrame = iter->Connector->GetTDataFrame(latestTimestamp);
+        auto latestFrame = (*iter)->Connector->GetTDataFrame(latestTimestamp);
         if (latestFrame == nullptr)
         {
           return nullptr;
@@ -573,13 +624,13 @@ namespace HoloIntervention
     UWPOpenIGTLink::Transform^ NetworkSystem::GetTransform(uint64 hashedConnectionName, UWPOpenIGTLink::TransformName^ transformName, double& latestTimestamp)
     {
       std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
-      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
+      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](std::shared_ptr<ConnectorEntry> entry)
       {
-        return hashedConnectionName == entry.HashedName;
+        return hashedConnectionName == entry->HashedName;
       });
       if (iter != end(m_connectors))
       {
-        auto latestFrame = iter->Connector->GetTransform(transformName, latestTimestamp);
+        auto latestFrame = (*iter)->Connector->GetTransform(transformName, latestTimestamp);
         if (latestFrame == nullptr)
         {
           return nullptr;
@@ -598,34 +649,36 @@ namespace HoloIntervention
     UWPOpenIGTLink::Polydata^ NetworkSystem::GetPolydata(uint64 hashedConnectionName, Platform::String^ name)
     {
       std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
-      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](const ConnectorEntry & entry)
+      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](std::shared_ptr<ConnectorEntry> entry)
       {
-        return hashedConnectionName == entry.HashedName;
+        return hashedConnectionName == entry->HashedName;
       });
       if (iter != end(m_connectors))
       {
-        auto polydata = iter->Connector->GetPolydata(name);
+        auto polydata = (*iter)->Connector->GetPolydata(name);
         return polydata;
       }
       return nullptr;
     }
 
     //-----------------------------------------------------------------------------
-    void NetworkSystem::Update()
+    void NetworkSystem::Update(DX::StepTimer& timer)
     {
       if (!m_componentReady)
       {
         return;
       }
 
-      for (auto& connector : m_connectors)
+      ProcessNetworkLogic(timer);
+
+      for (auto connector : m_connectors)
       {
-        if (connector.State == CONNECTION_STATE_CONNECTED && !connector.Connector->Connected)
+        if (connector->State == CONNECTION_STATE_CONNECTED && !connector->Connector->Connected)
         {
           // Other end has likely dropped us, update the state (and thus the UI), and reconnect
           LOG_INFO("Connection dropped by server. Reconnecting.");
-          connector.State = CONNECTION_STATE_DISCONNECTED;
-          ConnectAsync(connector.HashedName, 4.0);
+          connector->State = CONNECTION_STATE_DISCONNECTED;
+          ConnectAsync(connector->HashedName, 4.0);
         }
       }
     }

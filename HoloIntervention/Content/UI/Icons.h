@@ -31,9 +31,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Rendering includes
 #include "ModelEntry.h"
 
-// System includes
-#include "NetworkSystem.h"
-
 namespace DX
 {
   class StepTimer;
@@ -73,7 +70,7 @@ namespace HoloIntervention
       virtual concurrency::task<bool> ReadConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
 
     public:
-      Icons(System::NotificationSystem& notificationSystem, System::NetworkSystem& networkSystem, Rendering::ModelRenderer& modelRenderer);
+      Icons(System::NotificationSystem& notificationSystem, Rendering::ModelRenderer& modelRenderer);
       ~Icons();
 
       void Update(DX::StepTimer& timer, Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
@@ -86,9 +83,6 @@ namespace HoloIntervention
       std::shared_ptr<IconEntry> GetEntry(uint64 entryId);
 
     protected:
-      void ProcessNetworkLogic(DX::StepTimer&);
-
-    protected:
       std::mutex                                m_entryMutex;
       uint64                                    m_nextValidEntry = 0;
       IconEntryList                             m_iconEntries;
@@ -97,21 +91,6 @@ namespace HoloIntervention
       // Cached entries to model renderer
       Rendering::ModelRenderer&                 m_modelRenderer;
       System::NotificationSystem&               m_notificationSystem;
-      System::NetworkSystem&                    m_networkSystem;
-
-      // Icons that this subsystem manages
-      std::vector<std::shared_ptr<IconEntry>>   m_networkIcons;
-
-      // Network logic variables
-      struct NetworkLogicEntry
-      {
-        bool                                    m_wasNetworkConnected = true;
-        bool                                    m_networkIsBlinking = true;
-        System::NetworkSystem::ConnectionState  m_networkPreviousState = System::NetworkSystem::CONNECTION_STATE_UNKNOWN;
-        float                                   m_networkBlinkTimer = 0.f;
-      };
-      std::vector<NetworkLogicEntry>            m_networkLogicEntries;
-      static const float                        NETWORK_BLINK_TIME_SEC;
 
       // Shared variables
       static const float                        ANGLE_BETWEEN_ICONS_RAD;

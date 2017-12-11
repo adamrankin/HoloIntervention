@@ -55,7 +55,6 @@ namespace HoloIntervention
 {
   namespace UI
   {
-    const float Icons::NETWORK_BLINK_TIME_SEC = 0.75;
     const float Icons::ANGLE_BETWEEN_ICONS_RAD = 0.035f;
     const float Icons::ICON_START_ANGLE = 0.225f;
     const float Icons::ICON_UP_ANGLE = 0.1f;
@@ -106,45 +105,14 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     task<bool> Icons::ReadConfigurationAsync(XmlDocument^ document)
     {
-      std::vector<task<std::shared_ptr<IconEntry>>> modelLoadingTasks;
-
-      // Create network icons
-      for (auto& conn : m_networkSystem.GetConnectors())
-      {
-        modelLoadingTasks.push_back(AddEntryAsync(L"Assets/Models/network_icon.cmo", conn.HashedName).then([this](std::shared_ptr<IconEntry> entry)
-        {
-          m_networkLogicEntries.push_back(NetworkLogicEntry());
-          return entry;
-        }));
-      }
-
-      return when_all(begin(modelLoadingTasks), end(modelLoadingTasks)).then([this](std::vector<std::shared_ptr<IconEntry>> entries)
-      {
-        for (auto& entry : entries)
-        {
-          m_networkIcons.push_back(entry);
-        }
-
-        // Determine scale factors for all loaded entries
-        for (auto& entry : m_iconEntries)
-        {
-          auto& bounds = entry->GetModelEntry()->GetBounds();
-          auto scale = ICON_SIZE_METER / (bounds[1] - bounds[0]);
-          entry->SetScaleFactor(scale);
-          entry->GetModelEntry()->EnablePoseLerp(true);
-          entry->GetModelEntry()->SetPoseLerpRate(8.f);
-        }
-
-        m_componentReady = true;
-        return true;
-      });
+      m_componentReady = true;
+      return task_from_result(true);
     }
 
     //----------------------------------------------------------------------------
-    Icons::Icons(System::NotificationSystem& notificationSystem, System::NetworkSystem& networkSystem, Rendering::ModelRenderer& modelRenderer)
+    Icons::Icons(System::NotificationSystem& notificationSystem, Rendering::ModelRenderer& modelRenderer)
       : m_modelRenderer(modelRenderer)
       , m_notificationSystem(notificationSystem)
-      , m_networkSystem(networkSystem)
     {
     }
 
@@ -160,8 +128,6 @@ namespace HoloIntervention
       {
         return;
       }
-
-      ProcessNetworkLogic(timer);
 
       // Calculate forward vector 2m ahead
       float3 basePosition = headPose->Head->Position + (float3(2.f) * headPose->Head->ForwardDirection);
@@ -299,68 +265,6 @@ namespace HoloIntervention
       }
 
       return nullptr;
-    }
-
-    //----------------------------------------------------------------------------
-    void Icons::ProcessNetworkLogic(DX::StepTimer& timer)
-    {
-      for (uint32 i = 0; i < m_networkIcons.size(); ++i)
-      {
-        auto conn = m_networkIcons[i];
-        if (!conn->GetModelEntry()->IsLoaded())
-        {
-          continue;
-        }
-
-        System::NetworkSystem::ConnectionState state;
-        if (!m_networkSystem.GetConnectionState(conn->GetUserValueNumber(), state))
-        {
-          return;
-        }
-
-        switch (state)
-        {
-        case System::NetworkSystem::CONNECTION_STATE_CONNECTING:
-        case System::NetworkSystem::CONNECTION_STATE_DISCONNECTING:
-          if (m_networkLogicEntries[i].m_networkPreviousState != state)
-          {
-            m_networkLogicEntries[i].m_networkBlinkTimer = 0.f;
-          }
-          else
-          {
-            m_networkLogicEntries[i].m_networkBlinkTimer += static_cast<float>(timer.GetElapsedSeconds());
-            if (m_networkLogicEntries[i].m_networkBlinkTimer >= NETWORK_BLINK_TIME_SEC)
-            {
-              m_networkLogicEntries[i].m_networkBlinkTimer = 0.f;
-              conn->GetModelEntry()->ToggleVisible();
-            }
-          }
-          m_networkLogicEntries[i].m_networkIsBlinking = true;
-          break;
-        case System::NetworkSystem::CONNECTION_STATE_UNKNOWN:
-        case System::NetworkSystem::CONNECTION_STATE_DISCONNECTED:
-        case System::NetworkSystem::CONNECTION_STATE_CONNECTION_LOST:
-          conn->GetModelEntry()->SetVisible(true);
-          m_networkLogicEntries[i].m_networkIsBlinking = false;
-          if (m_networkLogicEntries[i].m_wasNetworkConnected)
-          {
-            conn->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
-            m_networkLogicEntries[i].m_wasNetworkConnected = false;
-          }
-          break;
-        case System::NetworkSystem::CONNECTION_STATE_CONNECTED:
-          conn->GetModelEntry()->SetVisible(true);
-          m_networkLogicEntries[i].m_networkIsBlinking = false;
-          if (!m_networkLogicEntries[i].m_wasNetworkConnected)
-          {
-            m_networkLogicEntries[i].m_wasNetworkConnected = true;
-            conn->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
-          }
-          break;
-        }
-
-        m_networkLogicEntries[i].m_networkPreviousState = state;
-      }
     }
   }
 }

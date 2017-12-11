@@ -402,7 +402,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void VoiceInput::ProcessMicrophoneLogic(DX::StepTimer& timer)
     {
-      if (!m_iconEntry->GetModelEntry()->IsLoaded())
+      if (m_iconEntry == nullptr || !m_iconEntry->GetModelEntry()->IsLoaded())
       {
         return;
       }

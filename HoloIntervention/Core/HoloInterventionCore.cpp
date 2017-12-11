@@ -128,12 +128,12 @@ namespace HoloIntervention
 
     m_soundAPI = std::make_unique<Sound::SoundAPI>();
 
-    m_icons = std::make_unique<UI::Icons>(*m_notificationSystem.get(), *m_networkSystem.get(), *m_modelRenderer.get());
+    m_icons = std::make_unique<UI::Icons>(*m_notificationSystem.get(), *m_modelRenderer.get());
 
     m_spatialInput = std::make_unique<Input::SpatialInput>();
     m_voiceInput = std::make_unique<Input::VoiceInput> (*m_notificationSystem.get(), *m_soundAPI.get(), *m_icons.get());
 
-    m_networkSystem = std::make_unique<System::NetworkSystem> (*m_notificationSystem.get(), *m_voiceInput.get());
+    m_networkSystem = std::make_unique<System::NetworkSystem> (*m_notificationSystem.get(), *m_voiceInput.get(), *m_icons.get());
     m_physicsAPI = std::make_unique<Physics::PhysicsAPI> (*m_notificationSystem.get(), m_deviceResources, m_timer);
 
     m_registrationSystem = std::make_unique<System::RegistrationSystem>(*m_networkSystem.get(), *m_physicsAPI.get(), *m_notificationSystem.get(), *m_modelRenderer.get(), *m_icons.get());
@@ -335,7 +335,7 @@ namespace HoloIntervention
         }
         m_imagingSystem->Update(m_timer, hmdCoordinateSystem);
         m_toolSystem->Update(m_timer, hmdCoordinateSystem);
-        m_networkSystem->Update();
+        m_networkSystem->Update(m_timer);
         m_taskSystem->Update(hmdCoordinateSystem, m_timer);
 
         m_physicsAPI->Update(hmdCoordinateSystem);

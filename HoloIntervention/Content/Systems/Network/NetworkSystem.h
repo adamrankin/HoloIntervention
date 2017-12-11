@@ -39,11 +39,22 @@ namespace igtl
   class TrackedFrameMessage;
 }
 
+namespace DX
+{
+  class StepTimer;
+}
+
 namespace HoloIntervention
 {
   namespace Input
   {
     class VoiceInput;
+  }
+
+  namespace UI
+  {
+    class IconEntry;
+    class Icons;
   }
 
   namespace Network
@@ -69,21 +80,31 @@ namespace HoloIntervention
       };
 
     private:
+      struct UILogicEntry
+      {
+        bool                                        m_wasNetworkConnected = true;
+        bool                                        m_networkIsBlinking = true;
+        ConnectionState                             m_networkPreviousState = CONNECTION_STATE_UNKNOWN;
+        float                                       m_networkBlinkTimer = 0.f;
+        std::shared_ptr<UI::IconEntry>              m_iconEntry = nullptr;
+      };
+
       struct ConnectorEntry
       {
         std::wstring                            Name = L""; // For saving back to disk
         uint64                                  HashedName = 0;
         ConnectionState                         State = CONNECTION_STATE_UNKNOWN;
         UWPOpenIGTLink::IGTClient^              Connector = nullptr;
+        UILogicEntry                            Icon;
       };
-      typedef std::vector<ConnectorEntry> ConnectorList;
+      typedef std::vector<std::shared_ptr<ConnectorEntry>> ConnectorList;
 
     public:
       virtual concurrency::task<bool> WriteConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
       virtual concurrency::task<bool> ReadConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
 
     public:
-      NetworkSystem(System::NotificationSystem& notificationSystem, Input::VoiceInput& voiceInput);
+      NetworkSystem(System::NotificationSystem& notificationSystem, Input::VoiceInput& voiceInput, UI::Icons& icons);
       virtual ~NetworkSystem();
 
       /// IVoiceInput functions
@@ -120,19 +141,23 @@ namespace HoloIntervention
       UWPOpenIGTLink::Transform^ GetTransform(uint64 hashedConnectionName, UWPOpenIGTLink::TransformName^ transformName, double& latestTimestamp);
       UWPOpenIGTLink::Polydata^ GetPolydata(uint64 hashedConnectionName, Platform::String^ name);
 
-      void Update();
+      void Update(DX::StepTimer& timer);
 
     protected:
-      Concurrency::task<bool> InitAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
+      void ProcessNetworkLogic(DX::StepTimer& timer);
       Concurrency::task<std::vector<std::wstring>> FindServersAsync();
 
     protected:
       // Cached entries
       System::NotificationSystem&                   m_notificationSystem;
       Input::VoiceInput&                            m_voiceInput;
+      UI::Icons&                                    m_icons;
 
       std::wstring                                  m_accumulatedDictationResult;
       uint64                                        m_dictationMatcherToken;
+
+      // Icons that this subsystem manages
+      static const float                            NETWORK_BLINK_TIME_SEC;
 
       mutable std::recursive_mutex                  m_connectorsMutex;
       ConnectorList                                 m_connectors;
