@@ -44,11 +44,13 @@ namespace HoloIntervention
       void SetId(uint64 id);
       uint64 GetId() const;
 
-      void SetScaleFactor(float scaleFactor);
-      float GetScaleFactor() const;
-
       std::shared_ptr<Rendering::ModelEntry> GetModelEntry() const;
       void SetModelEntry(std::shared_ptr<Rendering::ModelEntry> entry);
+
+      void SetUserRotation(float pitch, float yaw, float roll);
+      void SetUserRotation(Windows::Foundation::Numerics::quaternion rotation);
+      void SetUserRotation(Windows::Foundation::Numerics::float4x4 rotation);
+      Windows::Foundation::Numerics::float4x4 GetUserRotation() const;
 
       bool GetFirstFrame() const;
       void SetFirstFrame(bool firstFrame);
@@ -62,7 +64,9 @@ namespace HoloIntervention
       uint64                                          m_id;
       std::atomic_bool                                m_firstFrame = true;
       std::shared_ptr<Rendering::ModelEntry>          m_modelEntry;
-      float                                           m_scaleFactor = 1.f;
+
+      // Allow a custom rotation for optical icon viewing angles
+      Windows::Foundation::Numerics::float4x4         m_userRotation = Windows::Foundation::Numerics::float4x4::identity();
 
       uint64                                          m_userValueNumber = 0;
       std::wstring                                    m_userValueString = L"";

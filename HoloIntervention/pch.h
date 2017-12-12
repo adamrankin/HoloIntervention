@@ -21,6 +21,7 @@
 #include <windows.h>
 #include <wrl\client.h>
 #include <wrl\implements.h>
+#include <corecrt_math_defines.h>
 
 // DirectX includes
 #include <DirectXColors.h>

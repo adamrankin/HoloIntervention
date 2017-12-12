@@ -59,6 +59,9 @@ namespace HoloIntervention
   {
     // If this distance not achieved between points, ask the user to move the marker further
     const float ModelAlignmentRegistration::MIN_DISTANCE_BETWEEN_POINTS_METER = 0.1f;
+    const float ModelAlignmentRegistration::HOLOLENS_ICON_PITCH_RAD = static_cast<float>(-M_PI_4 * 3 / 2);
+    const float ModelAlignmentRegistration::HOLOLENS_ICON_YAW_RAD = static_cast<float>(-M_PI_4 * 2 / 3);
+    const float ModelAlignmentRegistration::HOLOLENS_ICON_ROLL_RAD = 0.f;
 
     //----------------------------------------------------------------------------
     ModelAlignmentRegistration::ModelAlignmentRegistration(System::NotificationSystem& notificationSystem, System::NetworkSystem& networkSystem, Rendering::ModelRenderer& modelRenderer, UI::Icons& icons)
@@ -316,6 +319,7 @@ namespace HoloIntervention
           {
             m_holoLensIconEntry = entry;
             m_holoLensIconEntry->GetModelEntry()->SetVisible(true);
+            m_holoLensIconEntry->SetUserRotation(HOLOLENS_ICON_PITCH_RAD, HOLOLENS_ICON_YAW_RAD, HOLOLENS_ICON_ROLL_RAD);
 
             m_modelEntry->SetVisible(true);
             m_started = true;
@@ -340,7 +344,7 @@ namespace HoloIntervention
         m_modelEntry->SetVisible(false);
         m_started = false;
         m_notificationSystem.QueueMessage(L"Registration stopped.");
-        m_latestTimestamp = 0.0;
+        m_latestSphereTimestamp = 0.0;
 
         return true;
       });
@@ -357,7 +361,7 @@ namespace HoloIntervention
     {
       std::lock_guard<std::mutex> lock(m_registrationAccessMutex);
       m_pointToLineRegistration->Reset();
-      m_latestTimestamp = 0.0;
+      m_latestSphereTimestamp = 0.0;
       m_referenceToAnchor = float4x4::identity();
     }
 
@@ -426,7 +430,7 @@ namespace HoloIntervention
       m_modelEntry->SetDesiredPose(make_float4x4_translation(point));
 
       // Update icon logic
-      auto sphereToReferenceTransform = m_networkSystem.GetTransform(m_hashedConnectionName, m_sphereToReferenceTransformName, m_latestTimestamp);
+      auto sphereToReferenceTransform = m_networkSystem.GetTransform(m_hashedConnectionName, m_sphereToReferenceTransformName, m_latestSphereTimestamp);
       if (sphereToReferenceTransform == nullptr || !sphereToReferenceTransform->Valid)
       {
         if (sphereToReferenceTransform != nullptr && !sphereToReferenceTransform->Valid)
@@ -435,22 +439,23 @@ namespace HoloIntervention
         }
         return;
       }
-      m_latestTimestamp = sphereToReferenceTransform->Timestamp;
+      m_latestSphereTimestamp = sphereToReferenceTransform->Timestamp;
       m_sphereIconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
+
+      auto holoLensToReferenceTransform = m_networkSystem.GetTransform(m_hashedConnectionName, m_holoLensToReferenceTransformName, m_latestHoloLensTimestamp);
+      if (holoLensToReferenceTransform == nullptr || !holoLensToReferenceTransform->Valid)
+      {
+        if (holoLensToReferenceTransform != nullptr && !holoLensToReferenceTransform->Valid)
+        {
+          m_holoLensIconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
+        }
+        return;
+      }
+      m_latestHoloLensTimestamp = holoLensToReferenceTransform->Timestamp;
+      m_holoLensIconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
 
       if (m_pointCaptureRequested)
       {
-        auto holoLensToReferenceTransform = m_networkSystem.GetTransform(m_hashedConnectionName, m_holoLensToReferenceTransformName, m_latestTimestamp);
-        if (holoLensToReferenceTransform == nullptr || !holoLensToReferenceTransform->Valid)
-        {
-          if (holoLensToReferenceTransform != nullptr && !holoLensToReferenceTransform->Valid)
-          {
-            m_holoLensIconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
-          }
-          return;
-        }
-        m_holoLensIconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
-
         //----------------------------------------------------------------------------
         // Optical tracking collection
         Position spherePosition_Ref(sphereToReferenceTransform->Matrix.m41, sphereToReferenceTransform->Matrix.m42, sphereToReferenceTransform->Matrix.m43);

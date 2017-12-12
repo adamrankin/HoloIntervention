@@ -134,19 +134,22 @@ namespace HoloIntervention
       uint32 i = 0;
       for (auto& entry : m_iconEntries)
       {
-        float4x4 scale = make_float4x4_scale(entry->GetScaleFactor());
         float4x4 rotate = make_float4x4_from_axis_angle(headPose->Head->UpDirection, ICON_START_ANGLE - i * ANGLE_BETWEEN_ICONS_RAD) * make_float4x4_from_axis_angle(cross(headPose->Head->UpDirection, -headPose->Head->ForwardDirection), ICON_UP_ANGLE);
-        float4x4 transformed = translation * rotate;
+
+        float4x4 transformed = translation * rotate; // rotation first, then translation
         float4x4 world = make_float4x4_world(float3(transformed.m41, transformed.m42, transformed.m43), headPose->Head->ForwardDirection, headPose->Head->UpDirection);
 
+        auto bounds = entry->GetModelEntry()->GetBounds();
+        auto scaleFactor = ICON_SIZE_METER / (bounds[1] - bounds[0]);
+        float4x4 scale = make_float4x4_scale(scaleFactor);
         if (entry->GetFirstFrame())
         {
-          entry->GetModelEntry()->SetCurrentPose(scale * world);
+          entry->GetModelEntry()->SetCurrentPose(entry->GetUserRotation() * scale * world); // world first, then scale
           entry->SetFirstFrame(false);
         }
         else
         {
-          entry->GetModelEntry()->SetDesiredPose(scale * world);
+          entry->GetModelEntry()->SetDesiredPose(entry->GetUserRotation() * scale * world);
         }
 
         ++i;
@@ -164,9 +167,6 @@ namespace HoloIntervention
         entry->SetModelEntry(modelEntry);
 
         // Determine scale factor for new entry
-        auto& bounds = entry->GetModelEntry()->GetBounds();
-        auto scale = ICON_SIZE_METER / (bounds[1] - bounds[0]);
-        entry->SetScaleFactor(scale);
         entry->GetModelEntry()->EnablePoseLerp(true);
         entry->GetModelEntry()->SetPoseLerpRate(8.f);
         entry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
@@ -191,8 +191,6 @@ namespace HoloIntervention
 
         // Determine scale factor for new entry
         auto& bounds = entry->GetModelEntry()->GetBounds();
-        auto scale = ICON_SIZE_METER / (bounds[1] - bounds[0]);
-        entry->SetScaleFactor(scale);
         entry->GetModelEntry()->EnablePoseLerp(true);
         entry->GetModelEntry()->SetPoseLerpRate(8.f);
         entry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
@@ -216,8 +214,6 @@ namespace HoloIntervention
 
         // Determine scale factor for new entry
         auto& bounds = entry->GetModelEntry()->GetBounds();
-        auto scale = ICON_SIZE_METER / (bounds[1] - bounds[0]);
-        entry->SetScaleFactor(scale);
         entry->GetModelEntry()->EnablePoseLerp(true);
         entry->GetModelEntry()->SetPoseLerpRate(8.f);
         entry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
@@ -247,8 +243,6 @@ namespace HoloIntervention
 
         // Determine scale factor for new entry
         auto& bounds = entry->GetModelEntry()->GetBounds();
-        auto scale = ICON_SIZE_METER / (bounds[1] - bounds[0]);
-        entry->SetScaleFactor(scale);
         entry->GetModelEntry()->EnablePoseLerp(true);
         entry->GetModelEntry()->SetPoseLerpRate(8.f);
         entry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);

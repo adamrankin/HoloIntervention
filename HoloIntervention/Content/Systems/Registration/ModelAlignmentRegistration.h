@@ -106,7 +106,8 @@ namespace HoloIntervention
       // State variables
       std::wstring                                          m_connectionName;
       uint64                                                m_hashedConnectionName;
-      double                                                m_latestTimestamp = 0.0;
+      double                                                m_latestSphereTimestamp = 0.0;
+      double                                                m_latestHoloLensTimestamp = 0.0;
       UWPOpenIGTLink::TransformName^                        m_sphereToReferenceTransformName = ref new UWPOpenIGTLink::TransformName(L"Sphere", L"Reference");
       UWPOpenIGTLink::TransformName^                        m_holoLensToReferenceTransformName = ref new UWPOpenIGTLink::TransformName(L"HoloLens", L"Reference");
       std::atomic_bool                                      m_started = false;
@@ -143,6 +144,9 @@ namespace HoloIntervention
       // Constants
       static const float                                    MIN_DISTANCE_BETWEEN_POINTS_METER; // (currently 10mm)
       static const uint32                                   DEFAULT_NUMBER_OF_POINTS_TO_COLLECT = 12;
+      static const float                                    HOLOLENS_ICON_PITCH_RAD;
+      static const float                                    HOLOLENS_ICON_YAW_RAD;
+      static const float                                    HOLOLENS_ICON_ROLL_RAD;
     };
   }
 }

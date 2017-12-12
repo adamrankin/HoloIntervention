@@ -28,6 +28,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Rendering includes
 #include "ModelEntry.h"
 
+using namespace Windows::Foundation::Numerics;
+
 namespace HoloIntervention
 {
   namespace UI
@@ -55,18 +57,6 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void IconEntry::SetScaleFactor(float scaleFactor)
-    {
-      m_scaleFactor = scaleFactor;
-    }
-
-    //----------------------------------------------------------------------------
-    float IconEntry::GetScaleFactor() const
-    {
-      return m_scaleFactor;
-    }
-
-    //----------------------------------------------------------------------------
     std::shared_ptr<HoloIntervention::Rendering::ModelEntry> IconEntry::GetModelEntry() const
     {
       return m_modelEntry;
@@ -76,6 +66,38 @@ namespace HoloIntervention
     void IconEntry::SetModelEntry(std::shared_ptr<Rendering::ModelEntry> entry)
     {
       m_modelEntry = entry;
+    }
+
+    //----------------------------------------------------------------------------
+    void IconEntry::SetUserRotation(float pitch, float yaw, float roll)
+    {
+      m_userRotation = make_float4x4_from_quaternion(make_quaternion_from_yaw_pitch_roll(yaw, pitch, roll));
+    }
+
+    //----------------------------------------------------------------------------
+    void IconEntry::SetUserRotation(quaternion rotation)
+    {
+      m_userRotation = make_float4x4_from_quaternion(rotation);
+    }
+
+    //----------------------------------------------------------------------------
+    void IconEntry::SetUserRotation(float4x4 rotation)
+    {
+      float3 scale;
+      quaternion rotationQuat;
+      float3 transformation;
+      if (!decompose(rotation, &scale, &rotationQuat, &transformation))
+      {
+        return;
+      }
+
+      m_userRotation = make_float4x4_from_quaternion(rotationQuat);
+    }
+
+    //----------------------------------------------------------------------------
+    Windows::Foundation::Numerics::float4x4 IconEntry::GetUserRotation() const
+    {
+      return m_userRotation;
     }
 
     //----------------------------------------------------------------------------
