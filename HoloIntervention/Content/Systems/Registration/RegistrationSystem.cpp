@@ -59,6 +59,7 @@ using namespace Concurrency;
 using namespace Windows::Data::Xml::Dom;
 using namespace Windows::Foundation::Collections;
 using namespace Windows::Foundation::Numerics;
+using namespace Windows::Graphics::Holographic;
 using namespace Windows::Media::SpeechRecognition;
 using namespace Windows::Perception::Spatial;
 using namespace Windows::Storage;
@@ -176,7 +177,7 @@ namespace HoloIntervention
         for (auto pair :
              {
                std::pair<std::wstring, std::shared_ptr<IRegistrationMethod>>(REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_OPTICAL], std::make_shared<OpticalRegistration>(m_notificationSystem, m_networkSystem)),
-               std::pair<std::wstring, std::shared_ptr<IRegistrationMethod>>(REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_MODELALIGNMENT], std::make_shared<ModelAlignmentRegistration>(m_notificationSystem, m_networkSystem, m_modelRenderer, m_icons)),
+               std::pair<std::wstring, std::shared_ptr<IRegistrationMethod>>(REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_MODELALIGNMENT], std::make_shared<ModelAlignmentRegistration>(m_notificationSystem, m_networkSystem, m_modelRenderer, m_icons, m_debug)),
                std::pair<std::wstring, std::shared_ptr<IRegistrationMethod>>(REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_CAMERA], std::make_shared<CameraRegistration>(m_notificationSystem, m_networkSystem, m_modelRenderer)),
                std::pair<std::wstring, std::shared_ptr<IRegistrationMethod>>(REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_TOOLBASED], std::make_shared<ToolBasedRegistration>(m_networkSystem))
              })
@@ -197,12 +198,13 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    RegistrationSystem::RegistrationSystem(NetworkSystem& networkSystem, Physics::PhysicsAPI& physicsAPI, NotificationSystem& notificationSystem, Rendering::ModelRenderer& modelRenderer, UI::Icons& icons)
+    RegistrationSystem::RegistrationSystem(NetworkSystem& networkSystem, Physics::PhysicsAPI& physicsAPI, NotificationSystem& notificationSystem, Rendering::ModelRenderer& modelRenderer, UI::Icons& icons, Debug& debug)
       : m_notificationSystem(notificationSystem)
       , m_networkSystem(networkSystem)
       , m_modelRenderer(modelRenderer)
       , m_physicsAPI(physicsAPI)
       , m_icons(icons)
+      , m_debug(debug)
       , m_currentRegistrationMethod(nullptr)
     {
       m_modelRenderer.AddModelAsync(REGISTRATION_ANCHOR_MODEL_FILENAME).then([this](uint64 m_regAnchorModelId)
@@ -230,7 +232,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void RegistrationSystem::Update(DX::StepTimer& timer, SpatialCoordinateSystem^ coordinateSystem, SpatialPointerPose^ headPose, DX::CameraResources& cameraResources)
+    void RegistrationSystem::Update(DX::StepTimer& timer, SpatialCoordinateSystem^ coordinateSystem, SpatialPointerPose^ headPose, HolographicCameraPose^ cameraPose)
     {
       // Anchor placement logic
       if (m_regAnchorRequested)
@@ -272,7 +274,7 @@ namespace HoloIntervention
       std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
       if (m_currentRegistrationMethod != nullptr && m_currentRegistrationMethod->IsStarted() && transformContainer != nullptr)
       {
-        m_currentRegistrationMethod->Update(headPose, coordinateSystem, transformContainer, cameraResources);
+        m_currentRegistrationMethod->Update(headPose, coordinateSystem, transformContainer, cameraPose);
       }
     }
 

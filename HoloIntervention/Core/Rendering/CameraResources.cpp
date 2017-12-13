@@ -134,8 +134,8 @@ namespace DX
     {
       HolographicStereoTransform viewCoordinateSystemTransform = viewTransformContainer->Value;
 
-      XMStoreFloat4x4(&m_cpuViewProjectionConstantBuffer.view[0], XMLoadFloat4x4(&viewCoordinateSystemTransform.Left));
-      XMStoreFloat4x4(&m_cpuViewProjectionConstantBuffer.view[1], XMLoadFloat4x4(&viewCoordinateSystemTransform.Right));
+      XMStoreFloat4x4(&m_cpuViewProjectionConstantBuffer.hmdToView[0], XMLoadFloat4x4(&viewCoordinateSystemTransform.Left));
+      XMStoreFloat4x4(&m_cpuViewProjectionConstantBuffer.hmdToView[1], XMLoadFloat4x4(&viewCoordinateSystemTransform.Right));
 
       XMStoreFloat4x4(&m_cpuViewProjectionConstantBuffer.projection[0], XMLoadFloat4x4(&cameraProjectionTransform.Left));
       XMStoreFloat4x4(&m_cpuViewProjectionConstantBuffer.projection[1], XMLoadFloat4x4(&cameraProjectionTransform.Right));

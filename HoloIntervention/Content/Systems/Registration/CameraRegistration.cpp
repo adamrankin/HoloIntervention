@@ -64,6 +64,7 @@ using namespace Windows::Data::Xml::Dom;
 using namespace Windows::Foundation::Collections;
 using namespace Windows::Foundation::Numerics;
 using namespace Windows::Foundation;
+using namespace Windows::Graphics::Holographic;
 using namespace Windows::Graphics::Imaging;
 using namespace Windows::Media::Capture::Frames;
 using namespace Windows::Media::Devices::Core;
@@ -244,7 +245,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void CameraRegistration::Update(SpatialPointerPose^ headPose, SpatialCoordinateSystem^ hmdCoordinateSystem, Platform::IBox<Windows::Foundation::Numerics::float4x4>^ anchorToHMDBox, DX::CameraResources& cameraResources)
+    void CameraRegistration::Update(SpatialPointerPose^ headPose, SpatialCoordinateSystem^ hmdCoordinateSystem, Platform::IBox<Windows::Foundation::Numerics::float4x4>^ anchorToHMDBox, HolographicCameraPose^ cameraPose)
     {
       if (anchorToHMDBox == nullptr)
       {

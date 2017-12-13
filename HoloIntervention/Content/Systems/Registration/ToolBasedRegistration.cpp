@@ -38,9 +38,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 using namespace Concurrency;
 using namespace Platform;
-using namespace Windows::Perception::Spatial;
 using namespace Windows::Data::Xml::Dom;
 using namespace Windows::Foundation::Numerics;
+using namespace Windows::Graphics::Holographic;
+using namespace Windows::Perception::Spatial;
 using namespace Windows::UI::Input::Spatial;
 
 namespace HoloIntervention
@@ -190,7 +191,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ToolBasedRegistration::Update(SpatialPointerPose^ headPose, SpatialCoordinateSystem^ hmdCoordinateSystem, IBox<float4x4>^ anchorToHMDBox, DX::CameraResources& cameraResources)
+    void ToolBasedRegistration::Update(SpatialPointerPose^ headPose, SpatialCoordinateSystem^ hmdCoordinateSystem, IBox<float4x4>^ anchorToHMDBox, HolographicCameraPose^ cameraPose)
     {
       if (!m_started)
       {

@@ -56,8 +56,14 @@ namespace HoloIntervention
     void Update();
 
     void UpdateValue(const std::wstring& key, const std::wstring& value);
+    void UpdateValue(const std::wstring& key, const Windows::Foundation::Numerics::float2& value);
+    void UpdateValue(const std::wstring& key, const Windows::Foundation::Numerics::float3& value);
+    void UpdateValue(const std::wstring& key, const Windows::Foundation::Numerics::float4& value);
     void UpdateValue(const std::wstring& key, const Windows::Foundation::Numerics::float4x4& value);
     void UpdateValue(Platform::String^ key, Platform::String^ value);
+    void UpdateValue(Platform::String^ key, const Windows::Foundation::Numerics::float2& value);
+    void UpdateValue(Platform::String^ key, const Windows::Foundation::Numerics::float3& value);
+    void UpdateValue(Platform::String^ key, const Windows::Foundation::Numerics::float4& value);
     void UpdateValue(Platform::String^ key, const Windows::Foundation::Numerics::float4x4& value);
 
   protected:

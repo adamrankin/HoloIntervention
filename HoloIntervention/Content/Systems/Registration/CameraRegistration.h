@@ -113,7 +113,7 @@ namespace HoloIntervention
       virtual bool IsStarted() const;
       virtual void ResetRegistration();
       virtual void EnableVisualization(bool enabled);
-      virtual void Update(Windows::UI::Input::Spatial::SpatialPointerPose^ headPose, Windows::Perception::Spatial::SpatialCoordinateSystem^ hmdCoordinateSystem, Platform::IBox<Windows::Foundation::Numerics::float4x4>^ anchorToHMDBox, DX::CameraResources& cameraResources);
+      virtual void Update(Windows::UI::Input::Spatial::SpatialPointerPose^ headPose, Windows::Perception::Spatial::SpatialCoordinateSystem^ hmdCoordinateSystem, Platform::IBox<Windows::Foundation::Numerics::float4x4>^ anchorToHMDBox, Windows::Graphics::Holographic::HolographicCameraPose^ cameraPose);
 
     public:
       CameraRegistration(System::NotificationSystem& notificationSystem, System::NetworkSystem& networkSystem, Rendering::ModelRenderer& modelRenderer);

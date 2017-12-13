@@ -43,6 +43,8 @@ namespace DX
 
 namespace HoloIntervention
 {
+  class Debug;
+
   namespace Physics
   {
     class PhysicsAPI;
@@ -97,13 +99,15 @@ namespace HoloIntervention
                          Physics::PhysicsAPI& physicsAPI,
                          NotificationSystem& notificationSystem,
                          Rendering::ModelRenderer& modelRenderer,
-                         UI::Icons& icons);
+                         UI::Icons& icons,
+                         Debug& debug
+                        );
       ~RegistrationSystem();
 
       void Update(DX::StepTimer& timer,
                   Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem,
                   Windows::UI::Input::Spatial::SpatialPointerPose^ headPose,
-                  DX::CameraResources& cameraResources);
+                  Windows::Graphics::Holographic::HolographicCameraPose^ cameraPose);
 
       Concurrency::task<void> LoadAppStateAsync();
       bool IsCameraActive() const;
@@ -123,6 +127,7 @@ namespace HoloIntervention
       Rendering::ModelRenderer&                                       m_modelRenderer;
       Physics::PhysicsAPI&                                            m_physicsAPI;
       UI::Icons&                                                      m_icons;
+      Debug&                                                          m_debug;
       Windows::Data::Xml::Dom::XmlDocument^                           m_configDocument = nullptr;
 
       // State variables

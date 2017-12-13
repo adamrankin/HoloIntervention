@@ -24,6 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "pch.h"
 #include "Common.h"
+#include "Debug.h"
 #include "MathCommon.h"
 #include "ModelAlignmentRegistration.h"
 #include "PointToLineRegistration.h"
@@ -49,6 +50,7 @@ using namespace Concurrency;
 using namespace DirectX;
 using namespace Windows::Data::Xml::Dom;
 using namespace Windows::Foundation::Numerics;
+using namespace Windows::Graphics::Holographic;
 using namespace Windows::Media::SpeechRecognition;
 using namespace Windows::Perception::Spatial;
 using namespace Windows::UI::Input::Spatial;
@@ -64,11 +66,12 @@ namespace HoloIntervention
     const float ModelAlignmentRegistration::HOLOLENS_ICON_ROLL_RAD = 0.f;
 
     //----------------------------------------------------------------------------
-    ModelAlignmentRegistration::ModelAlignmentRegistration(System::NotificationSystem& notificationSystem, System::NetworkSystem& networkSystem, Rendering::ModelRenderer& modelRenderer, UI::Icons& icons)
+    ModelAlignmentRegistration::ModelAlignmentRegistration(System::NotificationSystem& notificationSystem, System::NetworkSystem& networkSystem, Rendering::ModelRenderer& modelRenderer, UI::Icons& icons, Debug& debug)
       : m_notificationSystem(notificationSystem)
       , m_networkSystem(networkSystem)
       , m_modelRenderer(modelRenderer)
       , m_icons(icons)
+      , m_debug(debug)
       , m_numberOfPointsToCollectPerEye(DEFAULT_NUMBER_OF_POINTS_TO_COLLECT)
       , m_pointToLineRegistration(std::make_shared<Algorithm::PointToLineRegistration>())
     {
@@ -341,10 +344,12 @@ namespace HoloIntervention
         m_sphereIconEntry = nullptr;
         m_holoLensIconEntry = nullptr;
 
+        m_currentEye = EYE_LEFT;
         m_modelEntry->SetVisible(false);
         m_started = false;
         m_notificationSystem.QueueMessage(L"Registration stopped.");
         m_latestSphereTimestamp = 0.0;
+        m_latestHoloLensTimestamp = 0.0;
 
         return true;
       });
@@ -405,7 +410,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ModelAlignmentRegistration::Update(SpatialPointerPose^ headPose, SpatialCoordinateSystem^ hmdCoordinateSystem, Platform::IBox<float4x4>^ anchorToHMDBox, DX::CameraResources& cameraResources)
+    void ModelAlignmentRegistration::Update(SpatialPointerPose^ headPose, SpatialCoordinateSystem^ hmdCoordinateSystem, Platform::IBox<float4x4>^ anchorToHMDBox, HolographicCameraPose^ cameraPose)
     {
       if (!m_started || !m_componentReady || !m_networkSystem.IsConnected(m_hashedConnectionName) || m_modelEntry == nullptr)
       {
@@ -419,11 +424,27 @@ namespace HoloIntervention
         return;
       }
 
-      float4x4 HMDToEye;
-
-      XMStoreFloat4x4(&HMDToEye, XMLoadFloat4x4(&cameraResources.GetLatestViewProjectionBuffer().view[m_currentEye == EYE_LEFT ? 0 : 1]));
+      float4x4 AnchorToEye;
+      auto stereoTransform = cameraPose->TryGetViewTransform(m_worldAnchor->CoordinateSystem);
+      if (stereoTransform == nullptr)
+      {
+        LOG_ERROR("Unable to request stereo view to anchor.");
+        return;
+      }
+      XMStoreFloat4x4(&AnchorToEye, XMLoadFloat4x4(m_currentEye == EYE_LEFT ? &stereoTransform->Value.Left : &stereoTransform->Value.Right));
+      float4x4 eyeToAnchor;
+      invert(AnchorToEye, &eyeToAnchor);
 
       // Separately, update the virtual model to be 1m in front of the current eye
+      float4x4 HMDToEye;
+      stereoTransform = cameraPose->TryGetViewTransform(hmdCoordinateSystem);
+      if (stereoTransform == nullptr)
+      {
+        LOG_ERROR("Unable to request stereo view to HMD.");
+        return;
+      }
+      XMStoreFloat4x4(&HMDToEye, XMLoadFloat4x4(m_currentEye == EYE_LEFT ? &stereoTransform->Value.Left : &stereoTransform->Value.Right));
+
       float4x4 eyeToHMD;
       invert(HMDToEye, &eyeToHMD);
       auto point = transform(float3(0, 0, -1), eyeToHMD);
@@ -458,12 +479,14 @@ namespace HoloIntervention
       {
         //----------------------------------------------------------------------------
         // Optical tracking collection
-        Position spherePosition_Ref(sphereToReferenceTransform->Matrix.m41, sphereToReferenceTransform->Matrix.m42, sphereToReferenceTransform->Matrix.m43);
+        Position spherePosition_Ref(sphereToReferenceTransform->Matrix.m14, sphereToReferenceTransform->Matrix.m24, sphereToReferenceTransform->Matrix.m34);
         if (m_previousSpherePosition_Ref != Position::zero())
         {
           // Analyze current point and previous point for reasons to reject
           if (distance(spherePosition_Ref, m_previousSpherePosition_Ref) <= MIN_DISTANCE_BETWEEN_POINTS_METER)
           {
+            m_notificationSystem.QueueMessage(L"Please move the sphere further away from the previous point.");
+            m_pointCaptureRequested = false;
             return;
           }
         }
@@ -478,6 +501,7 @@ namespace HoloIntervention
         // Only add them as pairs!
         m_pointToLineRegistration->AddLine(eyeOrigin_Anchor, eyeForwardRay_Anchor);
         m_pointToLineRegistration->AddPoint(spherePosition_Ref);
+
         m_previousSpherePosition_Ref = spherePosition_Ref;
 
         // Store entries for later calculation of HMDtoHoloLens
@@ -493,24 +517,28 @@ namespace HoloIntervention
         }
         else if (m_pointToLineRegistration->Count() == (m_numberOfPointsToCollectPerEye * 2))
         {
-          m_started = false;
+          this->StopAsync();
           m_notificationSystem.QueueMessage(L"Collection finished. Processing...");
-          m_currentEye = EYE_LEFT;
-          float error;
-          m_pointToLineRegistration->ComputeAsync(error).then([this, &error](float4x4 matrix)
+          m_pointToLineRegistration->ComputeAsync(m_registrationError).then([this](float4x4 referenceToAnchor)
           {
-            m_referenceToAnchor = matrix;
+            m_referenceToAnchor = referenceToAnchor;
             if (m_completeCallback != nullptr)
             {
-              m_completeCallback(matrix);
+              m_completeCallback(m_referenceToAnchor);
             }
-            m_notificationSystem.QueueMessage(L"Registration finished with an error of " + error.ToString() + L"mm.");
-            LOG_INFO(L"Registration finished with an error of " + error.ToString() + L"mm.");
+            m_notificationSystem.QueueMessage(L"Registration finished with an error of " + m_registrationError.ToString() + L"mm.");
           });
         }
         else
         {
-          m_notificationSystem.QueueMessage(L"Captured.");
+          if (m_pointToLineRegistration->Count() <= m_numberOfPointsToCollectPerEye)
+          {
+            m_notificationSystem.QueueMessage(L"Left eye captured: " + m_pointToLineRegistration->Count().ToString() + L"/" + m_numberOfPointsToCollectPerEye.ToString());
+          }
+          else
+          {
+            m_notificationSystem.QueueMessage(L"Right eye captured: " + (m_pointToLineRegistration->Count() - m_numberOfPointsToCollectPerEye).ToString() + L"/" + m_numberOfPointsToCollectPerEye.ToString());
+          }
         }
 
         m_pointCaptureRequested = false;

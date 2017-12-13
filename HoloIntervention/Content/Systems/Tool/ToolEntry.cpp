@@ -174,6 +174,10 @@ namespace HoloIntervention
         m_iconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
         return;
       }
+      else
+      {
+        m_modelEntry->SetVisible(true);
+      }
 
       // m_transformRepository has already been initialized with the network transforms for this update
       auto toolToRefTransform = m_networkSystem.GetTransform(m_hashedConnectionName, m_coordinateFrame, m_latestTimestamp);

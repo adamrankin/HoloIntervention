@@ -30,6 +30,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 namespace HoloIntervention
 {
+  class Debug;
+
   namespace Rendering
   {
     class ModelRenderer;
@@ -87,13 +89,14 @@ namespace HoloIntervention
       virtual void ResetRegistration();
       virtual void EnableVisualization(bool enabled);
 
-      virtual void Update(Windows::UI::Input::Spatial::SpatialPointerPose^ headPose, Windows::Perception::Spatial::SpatialCoordinateSystem^ hmdCoordinateSystem, Platform::IBox<Windows::Foundation::Numerics::float4x4>^ anchorToHMDBox, DX::CameraResources& cameraResources);
+      virtual void Update(Windows::UI::Input::Spatial::SpatialPointerPose^ headPose, Windows::Perception::Spatial::SpatialCoordinateSystem^ hmdCoordinateSystem, Platform::IBox<Windows::Foundation::Numerics::float4x4>^ anchorToHMDBox, Windows::Graphics::Holographic::HolographicCameraPose^ cameraPose);
 
     public:
       ModelAlignmentRegistration(System::NotificationSystem& notificationSystem,
                                  System::NetworkSystem& networkSystem,
                                  Rendering::ModelRenderer& modelRenderer,
-                                 UI::Icons& icons);
+                                 UI::Icons& icons,
+                                 Debug& debug);
       ~ModelAlignmentRegistration();
 
     protected:
@@ -102,6 +105,7 @@ namespace HoloIntervention
       System::NetworkSystem&                                m_networkSystem;
       Rendering::ModelRenderer&                             m_modelRenderer;
       UI::Icons&                                            m_icons;
+      Debug&                                                m_debug;
 
       // State variables
       std::wstring                                          m_connectionName;

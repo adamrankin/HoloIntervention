@@ -17,7 +17,7 @@ namespace DX
   {
     DirectX::XMFLOAT4   cameraPosition[2];
     DirectX::XMFLOAT4   lightPosition[2];
-    DirectX::XMFLOAT4X4 view[2];
+    DirectX::XMFLOAT4X4 hmdToView[2];
     DirectX::XMFLOAT4X4 projection[2];
     DirectX::XMFLOAT4X4 viewProjection[2];
   };

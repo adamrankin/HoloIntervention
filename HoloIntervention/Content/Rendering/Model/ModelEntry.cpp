@@ -447,8 +447,8 @@ namespace HoloIntervention
       {
         FXMMATRIX view[2] =
         {
-          XMLoadFloat4x4(&(m_cameraResources->GetLatestViewProjectionBuffer().view[0])),
-          XMLoadFloat4x4(&(m_cameraResources->GetLatestViewProjectionBuffer().view[1]))
+          XMLoadFloat4x4(&(m_cameraResources->GetLatestViewProjectionBuffer().hmdToView[0])),
+          XMLoadFloat4x4(&(m_cameraResources->GetLatestViewProjectionBuffer().hmdToView[1]))
         };
         FXMMATRIX projection[2] =
         {
@@ -907,8 +907,8 @@ namespace HoloIntervention
         {
           FXMMATRIX view[2] =
           {
-            XMLoadFloat4x4(&(m_cameraResources->GetLatestViewProjectionBuffer().view[0])),
-            XMLoadFloat4x4(&(m_cameraResources->GetLatestViewProjectionBuffer().view[1]))
+            XMLoadFloat4x4(&(m_cameraResources->GetLatestViewProjectionBuffer().hmdToView[0])),
+            XMLoadFloat4x4(&(m_cameraResources->GetLatestViewProjectionBuffer().hmdToView[1]))
           };
           FXMMATRIX projection[2] =
           {

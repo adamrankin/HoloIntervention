@@ -105,9 +105,27 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
-  void Debug::UpdateValue(Platform::String^ key, Platform::String^ value)
+  void Debug::UpdateValue(const std::wstring& key, const float2& value)
   {
-    UpdateValue(std::wstring(key->Data()), std::wstring(value->Data()));
+    std::wstringstream wss;
+    wss << value.x << L" " << value.y;
+    m_debugValues[key] = wss.str();
+  }
+
+  //----------------------------------------------------------------------------
+  void Debug::UpdateValue(const std::wstring& key, const float3& value)
+  {
+    std::wstringstream wss;
+    wss << value.x << L" " << value.y << L" " << value.z;
+    m_debugValues[key] = wss.str();
+  }
+
+  //----------------------------------------------------------------------------
+  void Debug::UpdateValue(const std::wstring& key, const float4& value)
+  {
+    std::wstringstream wss;
+    wss << value.x << L" " << value.y << L" " << value.z << L" " << value.w;
+    m_debugValues[key] = wss.str();
   }
 
   //----------------------------------------------------------------------------
@@ -119,6 +137,30 @@ namespace HoloIntervention
         << value.m31 << L" " << value.m32 << L" " << value.m33 << L" " << value.m34 << std::endl
         << value.m41 << L" " << value.m42 << L" " << value.m43 << L" " << value.m44;
     m_debugValues[key] = wss.str();
+  }
+
+  //----------------------------------------------------------------------------
+  void Debug::UpdateValue(Platform::String^ key, Platform::String^ value)
+  {
+    UpdateValue(std::wstring(key->Data()), std::wstring(value->Data()));
+  }
+
+  //----------------------------------------------------------------------------
+  void Debug::UpdateValue(Platform::String^ key, const float2& value)
+  {
+    UpdateValue(std::wstring(key->Data()), value);
+  }
+
+  //----------------------------------------------------------------------------
+  void Debug::UpdateValue(Platform::String^ key, const float3& value)
+  {
+    UpdateValue(std::wstring(key->Data()), value);
+  }
+
+  //----------------------------------------------------------------------------
+  void Debug::UpdateValue(Platform::String^ key, const float4& value)
+  {
+    UpdateValue(std::wstring(key->Data()), value);
   }
 
   //----------------------------------------------------------------------------
