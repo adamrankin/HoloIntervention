@@ -327,7 +327,7 @@ namespace HoloIntervention
             m_modelEntry->SetVisible(true);
             m_started = true;
             ResetRegistration();
-            m_notificationSystem.QueueMessage(L"Please use only your LEFT eye to align the real and virtual sphere centers.", 15);
+            m_notificationSystem.QueueMessage(L"Please use only your LEFT eye to align the real and virtual sphere centers.", 8);
             return true;
           });
         });
@@ -512,7 +512,7 @@ namespace HoloIntervention
 
         if (m_pointToLineRegistration->Count() == m_numberOfPointsToCollectPerEye)
         {
-          m_notificationSystem.QueueMessage(L"Please use only your RIGHT eye to align the real and virtual sphere centers.", 15);
+          m_notificationSystem.QueueMessage(L"Please use only your RIGHT eye to align the real and virtual sphere centers.", 8);
           m_currentEye = EYE_RIGHT;
         }
         else if (m_pointToLineRegistration->Count() == (m_numberOfPointsToCollectPerEye * 2))

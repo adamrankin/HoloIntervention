@@ -261,7 +261,13 @@ namespace HoloIntervention
       {
         if ((*it)->GetId() == entryId)
         {
+          uint64 entryId(INVALID_TOKEN);
+          if ((*it)->GetModelEntry() != nullptr)
+          {
+            entryId = (*it)->GetModelEntry()->GetId();
+          }
           m_iconEntries.erase(it);
+          m_modelRenderer.RemoveModel(entryId);
           return true;
         }
       }
