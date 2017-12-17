@@ -103,6 +103,7 @@
     <ClInclude Include="Content\Algorithms\KalmanFilter.h" />
     <ClInclude Include="Content\Algorithms\LandmarkRegistration.h" />
     <ClInclude Include="Content\Algorithms\PointToLineRegistration.h" />
+    <ClInclude Include="Content\Algorithms\PointToPlaneRegistration.h" />
     <ClInclude Include="Content\Capture\VideoFrameProcessor.h" />
     <ClInclude Include="Content\Debug\Debug.h" />
     <ClInclude Include="Content\Input\IVoiceInput.h" />
@@ -172,6 +173,7 @@
     <ClCompile Include="Content\Algorithms\KalmanFilter.cpp" />
     <ClCompile Include="Content\Algorithms\LandmarkRegistration.cpp" />
     <ClCompile Include="Content\Algorithms\PointToLineRegistration.cpp" />
+    <ClCompile Include="Content\Algorithms\PointToPlaneRegistration.cpp" />
     <ClCompile Include="Content\Capture\VideoFrameProcessor.cpp" />
     <ClCompile Include="Content\Debug\Debug.cpp" />
     <ClCompile Include="Content\Input\SpatialSourceHandler.cpp" />

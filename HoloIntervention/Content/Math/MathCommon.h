@@ -34,9 +34,12 @@ namespace HoloIntervention
   typedef Windows::Foundation::Numerics::float3 Point;
   typedef Windows::Foundation::Numerics::float3 Vector3;
   typedef std::pair<Point, Vector3> Line;
+  typedef std::pair<Point, Vector3> Plane;
 
+  bool OpenCVToFloat4x4(const cv::Mat& inRotationMatrix, const cv::Mat& inTranslationMatrix, Windows::Foundation::Numerics::float4x4& outMatrix);
   bool OpenCVToFloat4x4(const cv::InputArray& inMatrix, Windows::Foundation::Numerics::float4x4& outMatrix);
   bool Float4x4ToOpenCV(const Windows::Foundation::Numerics::float4x4& inMatrix, cv::Mat& outMatrix);
+  bool Float4x4ToOpenCV(const Windows::Foundation::Numerics::float4x4& inMatrix, cv::Mat& outRotation, cv::Mat& outTranslation);
 
   bool Float4x4ToArray(const Windows::Foundation::Numerics::float4x4& inMatrix, float outMatrix[16]);
   bool Float4x4ToArray(const Windows::Foundation::Numerics::float4x4& inMatrix, std::array<float, 16> outMatrix);

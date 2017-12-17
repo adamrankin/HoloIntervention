@@ -163,7 +163,6 @@
     <ClCompile Include="Content\Systems\Registration\ModelAlignmentRegistration.cpp">
       <Filter>Content\Systems\Registration\ModelAlignment</Filter>
     </ClCompile>
-    <ClCompile Include="Content\Algorithms\PointToLineRegistration.cpp" />
     <ClCompile Include="Content\UI\IconEntry.cpp">
       <Filter>Content\UI</Filter>
     </ClCompile>
@@ -172,6 +171,12 @@
     </ClCompile>
     <ClCompile Include="Content\UI\Icons.cpp">
       <Filter>Content\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Algorithms\PointToLineRegistration.cpp">
+      <Filter>Content\Algorithms\Registration\PointToLine</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Algorithms\PointToPlaneRegistration.cpp">
+      <Filter>Content\Algorithms\Registration\PointToPlane</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -364,7 +369,6 @@
     <ClInclude Include="Content\Systems\Registration\ModelAlignmentRegistration.h">
       <Filter>Content\Systems\Registration\ModelAlignment</Filter>
     </ClInclude>
-    <ClInclude Include="Content\Algorithms\PointToLineRegistration.h" />
     <ClInclude Include="Content\UI\IconEntry.h">
       <Filter>Content\UI</Filter>
     </ClInclude>
@@ -373,6 +377,12 @@
     </ClInclude>
     <ClInclude Include="Content\UI\Icons.h">
       <Filter>Content\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Algorithms\PointToLineRegistration.h">
+      <Filter>Content\Algorithms\Registration\PointToLine</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Algorithms\PointToPlaneRegistration.h">
+      <Filter>Content\Algorithms\Registration\PointToPlane</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -787,6 +797,9 @@
     </Filter>
     <Filter Include="Content\UI">
       <UniqueIdentifier>{144a93c4-b453-4b62-af5e-222e587c59fe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\Algorithms\Registration\PointToPlane">
+      <UniqueIdentifier>{7f1f1ad5-1264-4a3d-a461-7d6eccf54e11}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

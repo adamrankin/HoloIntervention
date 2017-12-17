@@ -176,21 +176,7 @@ namespace HoloIntervention
           float4x4 result = landmark.CalculateTransformationAsync().get();
           result = transpose(result);
 
-          R.at<float>(0, 0) = result.m11;
-          R.at<float>(0, 1) = result.m12;
-          R.at<float>(0, 2) = result.m13;
-
-          R.at<float>(1, 0) = result.m21;
-          R.at<float>(1, 1) = result.m22;
-          R.at<float>(1, 2) = result.m23;
-
-          R.at<float>(2, 0) = result.m31;
-          R.at<float>(2, 1) = result.m32;
-          R.at<float>(2, 2) = result.m33;
-
-          t.at<float>(0, 0) = result.m14;
-          t.at<float>(1, 0) = result.m24;
-          t.at<float>(2, 0) = result.m34;
+          Float4x4ToOpenCV(result, R, t);
 
           tempM = (R * X) + (t * e) - O;
           for (std::vector<Point>::size_type i = 0; i < m_points.size(); ++i)
@@ -220,23 +206,9 @@ namespace HoloIntervention
         outError = outError / E.cols;
 
         float4x4 result = float4x4::identity();
-        result.m11 = R.at<float>(0, 0);
-        result.m12 = R.at<float>(0, 1);
-        result.m13 = R.at<float>(0, 2);
+        OpenCVToFloat4x4(R, t, result);
 
-        result.m21 = R.at<float>(1, 0);
-        result.m22 = R.at<float>(1, 1);
-        result.m23 = R.at<float>(1, 2);
-
-        result.m31 = R.at<float>(2, 0);
-        result.m32 = R.at<float>(2, 1);
-        result.m33 = R.at<float>(2, 2);
-
-        result.m14 = t.at<float>(0, 0);
-        result.m24 = t.at<float>(1, 0);
-        result.m34 = t.at<float>(2, 0);
-
-        return transpose(result);
+        return result;
       });
     }
   }

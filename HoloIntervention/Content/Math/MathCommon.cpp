@@ -62,6 +62,30 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
+  bool OpenCVToFloat4x4(const cv::Mat& inRotationMatrix, const cv::Mat& inTranslationMatrix, Windows::Foundation::Numerics::float4x4& outMatrix)
+  {
+    outMatrix = float4x4::identity();
+    outMatrix.m11 = inRotationMatrix.at<float>(0, 0);
+    outMatrix.m12 = inRotationMatrix.at<float>(0, 1);
+    outMatrix.m13 = inRotationMatrix.at<float>(0, 2);
+
+    outMatrix.m21 = inRotationMatrix.at<float>(1, 0);
+    outMatrix.m22 = inRotationMatrix.at<float>(1, 1);
+    outMatrix.m23 = inRotationMatrix.at<float>(1, 2);
+
+    outMatrix.m31 = inRotationMatrix.at<float>(2, 0);
+    outMatrix.m32 = inRotationMatrix.at<float>(2, 1);
+    outMatrix.m33 = inRotationMatrix.at<float>(2, 2);
+
+    outMatrix.m14 = inTranslationMatrix.at<float>(0, 0);
+    outMatrix.m24 = inTranslationMatrix.at<float>(1, 0);
+    outMatrix.m34 = inTranslationMatrix.at<float>(2, 0);
+
+    outMatrix = transpose(outMatrix);
+    return true;
+  }
+
+  //----------------------------------------------------------------------------
   bool Float4x4ToOpenCV(const float4x4& inMatrix, cv::Mat& outMatrix)
   {
     float array[16];
@@ -71,6 +95,31 @@ namespace HoloIntervention
     }
 
     outMatrix = cv::Mat(4, 4, CV_32F, array);
+
+    return true;
+  }
+
+  //----------------------------------------------------------------------------
+  bool Float4x4ToOpenCV(const Windows::Foundation::Numerics::float4x4& inMatrix, cv::Mat& outRotation, cv::Mat& outTranslation)
+  {
+    outRotation = cv::Mat::eye(3, 3, CV_32F);
+    outTranslation = cv::Mat::zeros(3, 1, CV_32F);
+
+    outRotation.at<float>(0, 0) = inMatrix.m11;
+    outRotation.at<float>(0, 1) = inMatrix.m12;
+    outRotation.at<float>(0, 2) = inMatrix.m13;
+
+    outRotation.at<float>(1, 0) = inMatrix.m21;
+    outRotation.at<float>(1, 1) = inMatrix.m22;
+    outRotation.at<float>(1, 2) = inMatrix.m23;
+
+    outRotation.at<float>(2, 0) = inMatrix.m31;
+    outRotation.at<float>(2, 1) = inMatrix.m32;
+    outRotation.at<float>(2, 2) = inMatrix.m33;
+
+    outTranslation.at<float>(0, 0) = inMatrix.m14;
+    outTranslation.at<float>(1, 0) = inMatrix.m24;
+    outTranslation.at<float>(2, 0) = inMatrix.m34;
 
     return true;
   }
