@@ -26,6 +26,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "IEngineComponent.h"
 
+// STL includes
+#include <mutex>
+
 namespace HoloIntervention
 {
   namespace Input
@@ -35,10 +38,19 @@ namespace HoloIntervention
     class SpatialInput : public IEngineComponent
     {
     public:
+      typedef std::function<void(Windows::UI::Input::Spatial::SpatialInteractionManager^ sender, Windows::UI::Input::Spatial::SpatialInteractionSourceEventArgs^)> SourceCallbackFunc;
+
+    public:
       SpatialInput();
       ~SpatialInput();
 
       void Update(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem);
+
+      uint64 RegisterSourceObserver(SourceCallbackFunc detectedCallback, SourceCallbackFunc lostCallback);
+      bool UnregisterSourceObserver(uint64 observerId);
+
+      std::shared_ptr<SpatialSourceHandler> RequestSourceHandler(Windows::UI::Input::Spatial::SpatialInteractionSource^ source);
+      bool ReturnSourceHandler(std::shared_ptr<SpatialSourceHandler>& handler);
 
     protected:
       void OnSourceDetected(Windows::UI::Input::Spatial::SpatialInteractionManager^ sender, Windows::UI::Input::Spatial::SpatialInteractionSourceEventArgs^ args);
@@ -60,7 +72,12 @@ namespace HoloIntervention
       Windows::Foundation::EventRegistrationToken                 m_sourcePressedEventToken;
       Windows::Foundation::EventRegistrationToken                 m_sourceUpdatedEventToken;
 
+      std::mutex                                                  m_sourceMutex;
       std::map<uint32, std::shared_ptr<SpatialSourceHandler>>     m_sourceMap;
+
+      std::map<uint64, SourceCallbackFunc>                        m_sourceDetectedObservers;
+      std::map<uint64, SourceCallbackFunc>                        m_sourceLostObservers;
+      uint64                                                      m_nextSourceObserverId = INVALID_TOKEN + 1;
     };
   }
 }

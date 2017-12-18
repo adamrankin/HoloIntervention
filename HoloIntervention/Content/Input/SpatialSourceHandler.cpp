@@ -130,7 +130,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-  default::uint32 SpatialSourceHandler::Id() const
+    uint32 SpatialSourceHandler::Id() const
     {
       return m_sourceId;
     }

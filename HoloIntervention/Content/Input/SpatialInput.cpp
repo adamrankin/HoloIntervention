@@ -87,32 +87,80 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    uint64 SpatialInput::RegisterSourceObserver(SourceCallbackFunc detectedCallback, SourceCallbackFunc lostCallback)
+    {
+      m_sourceDetectedObservers[m_nextSourceObserverId] = detectedCallback;
+      m_sourceLostObservers[m_nextSourceObserverId] = lostCallback;
+
+      m_nextSourceObserverId++;
+      return m_nextSourceObserverId - 1;
+    }
+
+    //----------------------------------------------------------------------------
+    bool SpatialInput::UnregisterSourceObserver(uint64 observerId)
+    {
+      if (m_sourceLostObservers.find(observerId) == m_sourceLostObservers.end())
+      {
+        return false;
+      }
+      m_sourceDetectedObservers.erase(observerId);
+      m_sourceLostObservers.erase(observerId);
+
+      return true;
+    }
+
+    //----------------------------------------------------------------------------
+    std::shared_ptr<HoloIntervention::Input::SpatialSourceHandler> SpatialInput::RequestSourceHandler(SpatialInteractionSource^ source)
+    {
+      std::lock_guard<std::mutex> guard(m_sourceMutex);
+      auto it = m_sourceMap.find(source->Id);
+      if (it == m_sourceMap.end())
+      {
+        std::shared_ptr<SpatialSourceHandler> sourceHandler = std::make_shared<SpatialSourceHandler>(source);
+        m_sourceMap[source->Id] = sourceHandler;
+        return sourceHandler;
+      }
+      else
+      {
+        return it->second;
+      }
+    }
+
+    //----------------------------------------------------------------------------
+    bool SpatialInput::ReturnSourceHandler(std::shared_ptr<SpatialSourceHandler>& handler)
+    {
+      std::lock_guard<std::mutex> guard(m_sourceMutex);
+      handler = nullptr;
+      for (auto& pair : m_sourceMap)
+      {
+        if (pair.second->Id() == handler->Id())
+        {
+          if (pair.second.use_count() == 1)
+          {
+            m_sourceMap.erase(handler->Id());
+            return true;
+          }
+        }
+      }
+
+      return false;
+    }
+
+    //----------------------------------------------------------------------------
     void SpatialInput::OnSourceDetected(Windows::UI::Input::Spatial::SpatialInteractionManager^ sender, Windows::UI::Input::Spatial::SpatialInteractionSourceEventArgs^ args)
     {
-      SpatialInteractionSourceState^ state = args->State;
-      SpatialInteractionSource^ source = state->Source;
-
-      if (source->Kind == SpatialInteractionSourceKind::Hand)
+      for (auto& pair : m_sourceDetectedObservers)
       {
-        auto it = m_sourceMap.find(source->Id);
-        if (it == m_sourceMap.end())
-        {
-          return;
-        }
-
-        std::shared_ptr<SpatialSourceHandler> sourceHandler = std::make_shared<SpatialSourceHandler>(source);
-        sourceHandler->OnSourceUpdated(state, m_referenceFrame);
-        m_sourceMap[source->Id] = sourceHandler;
+        pair.second(sender, args);
       }
     }
 
     //----------------------------------------------------------------------------
     void SpatialInput::OnSourceLost(Windows::UI::Input::Spatial::SpatialInteractionManager^ sender, Windows::UI::Input::Spatial::SpatialInteractionSourceEventArgs^ args)
     {
-      auto it = m_sourceMap.find(args->State->Source->Id);
-      if (it != m_sourceMap.end())
+      for (auto& pair : m_sourceLostObservers)
       {
-        m_sourceMap.erase(it);
+        pair.second(sender, args);
       }
     }
 
@@ -144,7 +192,7 @@ namespace HoloIntervention
     std::shared_ptr<SpatialSourceHandler> SpatialInput::GetSourceHandlerById(uint32 sourceId)
     {
       auto it = m_sourceMap.find(sourceId);
-      return (it == m_sourceMap.end()) ? nullptr : it->second;
+      return it == m_sourceMap.end() ? nullptr : it->second;
     }
 
     //----------------------------------------------------------------------------
