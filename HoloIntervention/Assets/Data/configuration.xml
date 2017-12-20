@@ -65,7 +65,7 @@
     SphereTo="Reference"
     HoloLensFrom="HoloLens"
     HoloLensTo="Reference"
-    NumberOfPointsToCollectPerEye="5"
+    NumberOfPointsToCollectPerEye="8"
     Primitive="Sphere"
     Colour="0.0 0.0 0.8 1.0"
     Argument="0.04 0.0 0.0"/> <!-- 40mm diameter in meters -->

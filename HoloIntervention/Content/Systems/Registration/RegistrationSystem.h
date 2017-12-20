@@ -55,6 +55,11 @@ namespace HoloIntervention
     class Icons;
   }
 
+  namespace Input
+  {
+    class SpatialInput;
+  }
+
   namespace Rendering
   {
     class ModelEntry;
@@ -95,10 +100,14 @@ namespace HoloIntervention
       virtual concurrency::task<bool> ReadConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
 
     public:
+      virtual void RegisterVoiceCallbacks(HoloIntervention::Input::VoiceInputCallbackMap& callbacks);
+
+    public:
       RegistrationSystem(NetworkSystem& networkSystem,
                          Physics::PhysicsAPI& physicsAPI,
                          NotificationSystem& notificationSystem,
                          Rendering::ModelRenderer& modelRenderer,
+                         Input::SpatialInput& spatialInput,
                          UI::Icons& icons,
                          Debug& debug
                         );
@@ -111,7 +120,6 @@ namespace HoloIntervention
 
       Concurrency::task<void> LoadAppStateAsync();
       bool IsCameraActive() const;
-      virtual void RegisterVoiceCallbacks(HoloIntervention::Input::VoiceInputCallbackMap& callbacks);
 
       bool GetReferenceToCoordinateSystemTransformation(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem, Windows::Foundation::Numerics::float4x4& outTransform);
 
@@ -128,6 +136,7 @@ namespace HoloIntervention
       Physics::PhysicsAPI&                                            m_physicsAPI;
       UI::Icons&                                                      m_icons;
       Debug&                                                          m_debug;
+      Input::SpatialInput&                                            m_spatialInput;
       Windows::Data::Xml::Dom::XmlDocument^                           m_configDocument = nullptr;
 
       // State variables

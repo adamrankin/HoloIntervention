@@ -38,7 +38,7 @@ namespace HoloIntervention
     class SpatialInput : public IEngineComponent
     {
     public:
-      typedef std::function<void(Windows::UI::Input::Spatial::SpatialInteractionManager^ sender, Windows::UI::Input::Spatial::SpatialInteractionSourceEventArgs^)> SourceCallbackFunc;
+      typedef std::function<void(uint32)> SourceCallbackFunc;
 
     public:
       SpatialInput();
@@ -46,11 +46,10 @@ namespace HoloIntervention
 
       void Update(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem);
 
-      uint64 RegisterSourceObserver(SourceCallbackFunc detectedCallback, SourceCallbackFunc lostCallback);
+      uint64 RegisterSourceObserver(SourceCallbackFunc detectedCallback, SourceCallbackFunc lostCallback, SourceCallbackFunc genericPressCallback);
       bool UnregisterSourceObserver(uint64 observerId);
 
-      std::shared_ptr<SpatialSourceHandler> RequestSourceHandler(Windows::UI::Input::Spatial::SpatialInteractionSource^ source);
-      bool ReturnSourceHandler(std::shared_ptr<SpatialSourceHandler>& handler);
+      std::shared_ptr<SpatialSourceHandler> GetSourceHandlerById(uint32 sourceId);
 
     protected:
       void OnSourceDetected(Windows::UI::Input::Spatial::SpatialInteractionManager^ sender, Windows::UI::Input::Spatial::SpatialInteractionSourceEventArgs^ args);
@@ -59,7 +58,6 @@ namespace HoloIntervention
       void OnSourcePressed(Windows::UI::Input::Spatial::SpatialInteractionManager^ sender, Windows::UI::Input::Spatial::SpatialInteractionSourceEventArgs^ args);
       void OnSourceUpdated(Windows::UI::Input::Spatial::SpatialInteractionManager^ sender, Windows::UI::Input::Spatial::SpatialInteractionSourceEventArgs^ args);
 
-      std::shared_ptr<SpatialSourceHandler> GetSourceHandlerById(uint32 sourceId);
       std::shared_ptr<SpatialSourceHandler> GetFirstSourceHandlerByKind(Windows::UI::Input::Spatial::SpatialInteractionSourceKind kind);
 
     protected:
@@ -77,6 +75,7 @@ namespace HoloIntervention
 
       std::map<uint64, SourceCallbackFunc>                        m_sourceDetectedObservers;
       std::map<uint64, SourceCallbackFunc>                        m_sourceLostObservers;
+      std::map<uint64, SourceCallbackFunc>                        m_genericPressObservers;
       uint64                                                      m_nextSourceObserverId = INVALID_TOKEN + 1;
     };
   }

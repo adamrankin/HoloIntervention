@@ -38,6 +38,11 @@ namespace HoloIntervention
     class ModelEntry;
   }
 
+  namespace Input
+  {
+    class SpatialInput;
+  }
+
   namespace UI
   {
     class IconEntry;
@@ -95,6 +100,7 @@ namespace HoloIntervention
       ModelAlignmentRegistration(System::NotificationSystem& notificationSystem,
                                  System::NetworkSystem& networkSystem,
                                  Rendering::ModelRenderer& modelRenderer,
+                                 Input::SpatialInput& spatialInput,
                                  UI::Icons& icons,
                                  Debug& debug);
       ~ModelAlignmentRegistration();
@@ -105,6 +111,7 @@ namespace HoloIntervention
       System::NetworkSystem&                                m_networkSystem;
       Rendering::ModelRenderer&                             m_modelRenderer;
       UI::Icons&                                            m_icons;
+      Input::SpatialInput&                                  m_spatialInput;
       Debug&                                                m_debug;
 
       // State variables
@@ -118,6 +125,9 @@ namespace HoloIntervention
       std::atomic_bool                                      m_calculating = false;
       std::shared_ptr<UI::IconEntry>                        m_sphereIconEntry = nullptr;
       std::shared_ptr<UI::IconEntry>                        m_holoLensIconEntry = nullptr;
+
+      // Input variables
+      uint64                                                m_sourceObserverId = INVALID_TOKEN;
 
       // Behaviour variables
       std::atomic_bool                                      m_pointCaptureRequested = false;
