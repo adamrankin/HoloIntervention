@@ -505,6 +505,8 @@ namespace HoloIntervention
         m_states = std::make_unique<DirectX::CommonStates>(m_deviceResources->GetD3DDevice());
         m_effectFactory = std::make_unique<DirectX::InstancedEffectFactory>(m_deviceResources->GetD3DDevice());
         m_effectFactory->SetSharing(false);   // Disable re-use of effect shaders, as this prevents us from rendering different colours
+
+        m_effectFactory->SetDirectory((Windows::ApplicationModel::Package::Current->InstalledLocation->Path + L"\\Assets\\Textures")->Data());
         m_model = std::shared_ptr<DirectX::Model>(std::move(DirectX::Model::CreateFromCMO(m_deviceResources->GetD3DDevice(), m_assetLocation.c_str(), *m_effectFactory)));
 
         // Cache default effect colours

@@ -419,6 +419,9 @@
     <Image Include="Assets\StoreLogo.scale-100.png">
       <Filter>Assets\Images</Filter>
     </Image>
+    <Image Include="Assets\Textures\side.png">
+      <Filter>Assets\Textures</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <None Include="HoloIntervention_TemporaryKey.pfx">
@@ -625,6 +628,9 @@
     <None Include="Assets\Models\HoloLens.cmo">
       <Filter>Assets\Models</Filter>
     </None>
+    <None Include="Assets\Models\Test\cube.cmo">
+      <Filter>Assets\Models\Test</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Content">
@@ -800,6 +806,12 @@
     </Filter>
     <Filter Include="Content\Algorithms\Registration\PointToPlane">
       <UniqueIdentifier>{7f1f1ad5-1264-4a3d-a461-7d6eccf54e11}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Assets\Models\Test">
+      <UniqueIdentifier>{3f601c69-0118-4e16-91a4-1fb937fe908a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Assets\Textures">
+      <UniqueIdentifier>{80178a98-2bc6-4134-ac15-fbb92bd4ad73}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
