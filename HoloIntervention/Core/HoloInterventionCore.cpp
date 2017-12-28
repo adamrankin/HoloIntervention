@@ -174,11 +174,12 @@ namespace HoloIntervention
     });
 
 
-    m_soundAPI->InitializeAsync().then([this](task<void> initTask)
+    m_soundAPI->InitializeAsync().then([this](task<HRESULT> initTask)
     {
+      HRESULT hr(S_OK);
       try
       {
-        initTask.wait();
+        hr = initTask.get();
       }
       catch (Platform::Exception^ e)
       {
@@ -213,7 +214,7 @@ namespace HoloIntervention
       {
         result = initTask.get();
       }
-      catch (const std::exception& e)
+      catch (const std::exception&)
       {
         LOG_ERROR("Unable to initialize surface observers. Mesh data not available.");
         result = false;

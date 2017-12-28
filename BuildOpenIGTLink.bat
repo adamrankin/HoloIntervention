@@ -1,5 +1,7 @@
 @ECHO off
 
+git submodule update --init --recursive --force
+
 REM Build 32bit debug and release
 mkdir .\UWPOpenIGTLink\OpenIGTLink-bin-Win32
 pushd .\UWPOpenIGTLink\OpenIGTLink-bin-Win32
