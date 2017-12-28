@@ -97,16 +97,13 @@ namespace HoloIntervention
   HoloInterventionCore::HoloInterventionCore(const std::shared_ptr<DX::DeviceResources>& deviceResources)
     : m_deviceResources(deviceResources)
   {
-    // Register to be notified if the device is lost or recreated.
     m_deviceResources->RegisterDeviceNotify(this);
   }
 
   //----------------------------------------------------------------------------
   HoloInterventionCore::~HoloInterventionCore()
   {
-    // De-register device notification.
     m_deviceResources->RegisterDeviceNotify(nullptr);
-
     UnregisterHolographicEventHandlers();
   }
 
@@ -149,12 +146,13 @@ namespace HoloIntervention
     m_engineComponents.push_back(m_spatialInput.get());
     m_engineComponents.push_back(m_voiceInput.get());
     m_engineComponents.push_back(m_physicsAPI.get());
+    m_engineComponents.push_back(m_icons.get());
+
     m_engineComponents.push_back(m_networkSystem.get());
     m_engineComponents.push_back(m_gazeSystem.get());
     m_engineComponents.push_back(m_toolSystem.get());
     m_engineComponents.push_back(m_registrationSystem.get());
     m_engineComponents.push_back(m_imagingSystem.get());
-    m_engineComponents.push_back(m_icons.get());
     m_engineComponents.push_back(m_splashSystem.get());
     m_engineComponents.push_back(m_taskSystem.get());
 
@@ -162,7 +160,6 @@ namespace HoloIntervention
     m_configurableComponents.push_back(m_registrationSystem.get());
     m_configurableComponents.push_back(m_networkSystem.get());
     m_configurableComponents.push_back(m_imagingSystem.get());
-    m_configurableComponents.push_back(m_icons.get());
     m_configurableComponents.push_back(m_taskSystem.get());
 
     ReadConfigurationAsync().then([this](bool result)
@@ -176,15 +173,19 @@ namespace HoloIntervention
       RegisterVoiceCallbacks();
     });
 
-    try
+
+    m_soundAPI->InitializeAsync().then([this](task<void> initTask)
     {
-      m_soundAPI->InitializeAsync();
-    }
-    catch (Platform::Exception^ e)
-    {
-      m_notificationSystem->QueueMessage(L"Unable to initialize audio system. See log.");
-      OutputDebugStringW((L"Audio Error" + e->Message)->Data());
-    }
+      try
+      {
+        initTask.wait();
+      }
+      catch (Platform::Exception^ e)
+      {
+        m_notificationSystem->QueueMessage(L"Unable to initialize audio system. See log.");
+        OutputDebugStringW((L"Audio Error" + e->Message)->Data());
+      }
+    });
 
     // Use the default SpatialLocator to track the motion of the device.
     m_locator = SpatialLocator::GetDefault();
@@ -205,8 +206,19 @@ namespace HoloIntervention
     SpatialCoordinateSystem^ currentCoordinateSystem = m_attachedReferenceFrame->GetStationaryCoordinateSystemAtTimestamp(holographicFrame->CurrentPrediction->Timestamp);
     SpatialPointerPose^ pose = SpatialPointerPose::TryGetAtTimestamp(currentCoordinateSystem, holographicFrame->CurrentPrediction->Timestamp);
     m_notificationSystem->Initialize(pose);
-    m_physicsAPI->InitializeSurfaceObserverAsync(currentCoordinateSystem).then([this](bool result)
+    m_physicsAPI->InitializeSurfaceObserverAsync(currentCoordinateSystem).then([this](task<bool> initTask)
     {
+      bool result(false);
+      try
+      {
+        result = initTask.get();
+      }
+      catch (const std::exception& e)
+      {
+        LOG_ERROR("Unable to initialize surface observers. Mesh data not available.");
+        result = false;
+      }
+
       if (!result)
       {
         // TODO : add more robust error handling

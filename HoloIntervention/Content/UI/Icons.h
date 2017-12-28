@@ -47,16 +47,12 @@ namespace HoloIntervention
   {
     typedef std::vector<std::shared_ptr<IconEntry>> IconEntryList;
 
-    class Icons : public IConfigurable, public IStabilizedComponent
+    class Icons : public IStabilizedComponent
     {
     public:
       virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition(Windows::UI::Input::Spatial::SpatialPointerPose^ pose) const;
       virtual Windows::Foundation::Numerics::float3 GetStabilizedVelocity() const;
       virtual float GetStabilizePriority() const;
-
-    public:
-      virtual concurrency::task<bool> WriteConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
-      virtual concurrency::task<bool> ReadConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
 
     public:
       Icons(Rendering::ModelRenderer& modelRenderer);

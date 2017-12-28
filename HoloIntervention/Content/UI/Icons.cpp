@@ -97,19 +97,6 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<bool> Icons::WriteConfigurationAsync(XmlDocument^ document)
-    {
-      return task_from_result(true);
-    }
-
-    //----------------------------------------------------------------------------
-    task<bool> Icons::ReadConfigurationAsync(XmlDocument^ document)
-    {
-      m_componentReady = true;
-      return task_from_result(true);
-    }
-
-    //----------------------------------------------------------------------------
     Icons::Icons(Rendering::ModelRenderer& modelRenderer)
       : m_modelRenderer(modelRenderer)
     {
