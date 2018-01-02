@@ -23,7 +23,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "pch.h"
-#include "AppView.h"
+#include "Debug.h"
 #include "SliceRenderer.h"
 
 // Common includes
@@ -57,9 +57,10 @@ namespace HoloIntervention
   namespace Rendering
   {
     //----------------------------------------------------------------------------
-    SliceRenderer::SliceRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& timer)
+    SliceRenderer::SliceRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& timer, Debug& debug)
       : m_deviceResources(deviceResources)
       , m_timer(timer)
+      , m_debug(debug)
     {
       CreateDeviceDependentResources();
     }
@@ -519,7 +520,7 @@ namespace HoloIntervention
           std::this_thread::sleep_for(std::chrono::milliseconds(50));
         }
 
-        std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources, m_timer);
+        std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources, m_timer, m_debug);
         std::lock_guard<std::mutex> guard(m_sliceMapMutex);
         entry->SetId(m_nextUnusedSliceId);
         entry->ForceCurrentPose(desiredPose);

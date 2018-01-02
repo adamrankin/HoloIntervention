@@ -114,11 +114,14 @@ namespace HoloIntervention
 
     m_holographicSpace = holographicSpace;
 
-    // Core components (aka, engine behaviour)
-    m_notificationRenderer = std::make_unique<Rendering::NotificationRenderer> (m_deviceResources);
-    m_sliceRenderer = std::make_unique<Rendering::SliceRenderer> (m_deviceResources, m_timer);
+    // Engine components
     m_debug = std::make_unique<Debug>(*m_sliceRenderer.get(), m_deviceResources);
     m_modelRenderer = std::make_unique<Rendering::ModelRenderer>(m_deviceResources, m_timer, *m_debug.get());
+    m_sliceRenderer = std::make_unique<Rendering::SliceRenderer>(m_deviceResources, m_timer, *m_debug.get());
+    m_debug->SetModelRenderer(m_modelRenderer.get());
+    m_debug->SetSliceRenderer(m_sliceRenderer.get());
+
+    m_notificationRenderer = std::make_unique<Rendering::NotificationRenderer>(m_deviceResources);
     m_volumeRenderer = std::make_unique<Rendering::VolumeRenderer> (m_deviceResources, m_timer);
     m_meshRenderer = std::make_unique<Rendering::MeshRenderer> (m_deviceResources);
     m_icons = std::make_unique<UI::Icons>(*m_modelRenderer.get());
@@ -127,13 +130,13 @@ namespace HoloIntervention
     m_voiceInput = std::make_unique<Input::VoiceInput> (*m_soundAPI.get(), *m_icons.get());
     m_physicsAPI = std::make_unique<Physics::PhysicsAPI>(m_deviceResources, m_timer);
 
-    // Systems (aka, apps-specific behaviour)
+    // Systems (apps-specific behaviour), eventually move to separate project and have engine DLL
     m_notificationSystem = std::make_unique<System::NotificationSystem>(*m_notificationRenderer.get());
     m_networkSystem = std::make_unique<System::NetworkSystem> (*m_notificationSystem.get(), *m_voiceInput.get(), *m_icons.get());
     m_registrationSystem = std::make_unique<System::RegistrationSystem>(*m_networkSystem.get(), *m_physicsAPI.get(), *m_notificationSystem.get(), *m_modelRenderer.get(), *m_spatialInput.get(), *m_icons.get(), *m_debug.get());
     m_toolSystem = std::make_unique<System::ToolSystem>(*m_notificationSystem.get(), *m_registrationSystem.get(), *m_modelRenderer.get(), *m_networkSystem.get(), *m_icons.get());
     m_gazeSystem = std::make_unique<System::GazeSystem> (*m_notificationSystem.get(), *m_physicsAPI.get(), *m_modelRenderer.get());
-    m_imagingSystem = std::make_unique<System::ImagingSystem> (*m_registrationSystem.get(), *m_notificationSystem.get(), *m_sliceRenderer.get(), *m_volumeRenderer.get(), *m_networkSystem.get());
+    m_imagingSystem = std::make_unique<System::ImagingSystem> (*m_registrationSystem.get(), *m_notificationSystem.get(), *m_sliceRenderer.get(), *m_volumeRenderer.get(), *m_networkSystem.get(), *m_debug.get());
     m_splashSystem = std::make_unique<System::SplashSystem> (*m_sliceRenderer.get());
     m_taskSystem = std::make_unique<System::TaskSystem> (*m_notificationSystem.get(), *m_networkSystem.get(), *m_registrationSystem.get(), *m_modelRenderer.get());
 
@@ -364,12 +367,13 @@ namespace HoloIntervention
           m_soundAPI->Update(m_timer, hmdCoordinateSystem);
           m_sliceRenderer->Update(headPose, cameraResources);
           m_notificationSystem->Update(headPose, m_timer);
-          m_debug->Update();
         }
 
         m_meshRenderer->Update(m_timer, hmdCoordinateSystem);
         m_modelRenderer->Update(cameraResources);
       }
+
+      m_debug->Update(hmdCoordinateSystem);
     });
 
     SpatialPointerPose^ headPose = SpatialPointerPose::TryGetAtTimestamp(hmdCoordinateSystem, prediction->Timestamp);

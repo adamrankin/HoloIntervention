@@ -43,6 +43,8 @@ namespace DX
 
 namespace HoloIntervention
 {
+  class Debug;
+
   namespace System
   {
     class NotificationSystem;
@@ -69,7 +71,7 @@ namespace HoloIntervention
       };
 
     public:
-      SliceRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& timer);
+      SliceRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& timer, Debug& debug);
       ~SliceRenderer();
 
       concurrency::task<uint64> AddSliceAsync(Microsoft::WRL::ComPtr<ID3D11Texture2D> imageTexture, Windows::Foundation::Numerics::float4x4 desiredPose = Windows::Foundation::Numerics::float4x4::identity(), bool headLocked = false);
@@ -110,6 +112,7 @@ namespace HoloIntervention
       std::shared_ptr<DX::DeviceResources>                m_deviceResources;
       const DX::CameraResources*                          m_cameraResources = nullptr;
       DX::StepTimer&                                      m_timer;
+      Debug&                                              m_debug;
 
       // Direct3D resources
       Microsoft::WRL::ComPtr<ID3D11InputLayout>           m_inputLayout;

@@ -23,8 +23,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "pch.h"
-#include "AppView.h"
 #include "Common.h"
+#include "Debug.h"
 #include "ImagingSystem.h"
 #include "StepTimer.h"
 
@@ -224,12 +224,13 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    ImagingSystem::ImagingSystem(RegistrationSystem& registrationSystem, NotificationSystem& notificationSystem, Rendering::SliceRenderer& sliceRenderer, Rendering::VolumeRenderer& volumeRenderer, NetworkSystem& networkSystem)
+    ImagingSystem::ImagingSystem(RegistrationSystem& registrationSystem, NotificationSystem& notificationSystem, Rendering::SliceRenderer& sliceRenderer, Rendering::VolumeRenderer& volumeRenderer, NetworkSystem& networkSystem, Debug& debug)
       : m_notificationSystem(notificationSystem)
       , m_registrationSystem(registrationSystem)
       , m_sliceRenderer(sliceRenderer)
       , m_volumeRenderer(volumeRenderer)
       , m_networkSystem(networkSystem)
+      , m_debug(debug)
     {
       m_sliceRenderer.AddSliceAsync(nullptr).then([this](uint64 entryId)
       {
@@ -369,12 +370,7 @@ namespace HoloIntervention
         LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to retrieve " + m_sliceToHMDName->GetTransformName() + L" from repository.");
         return;
       }
-      float4x4 imageToHMD = transpose(result->Value);
-
-      // Model space is vertex space, [-0.5,0.5]
-      auto modelToModelOffset = make_float4x4_translation(-0.5, 1.5, 0);
-      auto modelOffsetToImage = make_float4x4_scale(frame->Dimensions[0] * 1.f, frame->Dimensions[1] * 1.f, 1.f);
-      auto modelToHMD = modelToModelOffset * modelOffsetToImage * imageToHMD;
+      float4x4 imageToHMDTransform = transpose(result->Value);
 
       // We must also transform from model space to image space
       // +0.5 x, +0.5 y to get square from 0-1, 0-1 (model space)
@@ -387,11 +383,28 @@ namespace HoloIntervention
       // 0            imageSize[1]  0 0
       // 0            0             1 0
       // 0            0             0 1
+      //
+      // Model space is vertex space, [-0.5,0.5]
+      auto vertexToOriginTransform = make_float4x4_translation(0.5f, 0.5f, 0.f);
+      auto originToImageTransform = make_float4x4_scale(frame->Dimensions[0] * 1.f, frame->Dimensions[1] * 1.f, 1.f);
+      auto vertexToHMD = vertexToOriginTransform * originToImageTransform * imageToHMDTransform;
+
+#if defined(_DEBUG)
+      m_debug.UpdateCoordinateSystem(L"vertexOrigin", vertexToHMD);
+#endif
+
+#if defined(_DEBUG)
+      m_debug.UpdateCoordinateSystem(L"unscaledOrigin", originToImageTransform * imageToHMDTransform);
+#endif
+
+#if defined(_DEBUG)
+      m_debug.UpdateCoordinateSystem(L"imageOrigin", imageToHMDTransform);
+#endif
 
       if (m_sliceEntry != nullptr)
       {
         m_sliceEntry->SetFrame(frame);
-        m_sliceEntry->SetDesiredPose(modelToHMD);
+        m_sliceEntry->SetDesiredPose(vertexToHMD);
       }
     }
 

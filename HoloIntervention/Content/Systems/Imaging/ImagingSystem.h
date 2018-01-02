@@ -35,6 +35,8 @@ namespace DX
 
 namespace HoloIntervention
 {
+  class Debug;
+
   namespace Rendering
   {
     class SliceEntry;
@@ -47,6 +49,7 @@ namespace HoloIntervention
   {
     class NetworkSystem;
     class NotificationSystem;
+    class RegistrationSystem;
 
     class ImagingSystem : public Input::IVoiceInput, public IStabilizedComponent, public IConfigurable
     {
@@ -64,7 +67,8 @@ namespace HoloIntervention
                     NotificationSystem& notificationSystem,
                     Rendering::SliceRenderer& sliceRenderer,
                     Rendering::VolumeRenderer& volumeRenderer,
-                    NetworkSystem& networkSystem);
+                    NetworkSystem& networkSystem,
+                    Debug& debug);
       ~ImagingSystem();
 
       void Update(const DX::StepTimer& timer, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);
@@ -89,6 +93,7 @@ namespace HoloIntervention
       NetworkSystem&                          m_networkSystem;
       Rendering::SliceRenderer&               m_sliceRenderer;
       Rendering::VolumeRenderer&              m_volumeRenderer;
+      Debug&                                  m_debug;
 
       // Common variables
       UWPOpenIGTLink::TransformRepository^    m_transformRepository = ref new UWPOpenIGTLink::TransformRepository();

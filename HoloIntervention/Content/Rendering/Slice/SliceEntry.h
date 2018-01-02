@@ -34,6 +34,8 @@ namespace DX
 
 namespace HoloIntervention
 {
+  class Debug;
+
   namespace Rendering
   {
     struct SliceConstantBuffer
@@ -53,7 +55,7 @@ namespace HoloIntervention
       virtual float GetStabilizePriority() const;
 
     public:
-      SliceEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& timer);
+      SliceEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& timer, Debug& debug);
       ~SliceEntry();
 
       bool IsInFrustum() const;
@@ -105,6 +107,7 @@ namespace HoloIntervention
       // Cached pointer
       std::shared_ptr<DX::DeviceResources>                m_deviceResources;
       DX::StepTimer&                                      m_timer;
+      Debug&                                              m_debug;
 
       // D3D resources
       std::atomic_bool                                    m_ownTexture = true;

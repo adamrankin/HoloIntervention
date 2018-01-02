@@ -631,6 +631,9 @@
     <None Include="Assets\Models\Test\cube.cmo">
       <Filter>Assets\Models\Test</Filter>
     </None>
+    <None Include="Assets\Models\Debug\CoordSystem.cmo">
+      <Filter>Assets\Models\Debug</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Content">
@@ -812,6 +815,9 @@
     </Filter>
     <Filter Include="Assets\Textures">
       <UniqueIdentifier>{80178a98-2bc6-4134-ac15-fbb92bd4ad73}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Assets\Models\Debug">
+      <UniqueIdentifier>{3d742488-8693-44cf-a78f-cd3d9044effa}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <HoloIntervention>
-  <Tools IGTConnection="NDITracker">
+  <Tools IGTConnection="PlusServer">
     <Tool 
       Model="Tools/hemisphere_stylus"
       From="Tip"
@@ -10,7 +10,7 @@
   </Tools>
 
   <TouchingSphereTask
-    IGTConnection="NDITracker"
+    IGTConnection="PlusServer"
     PhantomFrom="Phantom"
     PhantomTo="Reference"
     StylusFrom="StylusTip"
@@ -26,7 +26,7 @@
   </TouchingSphereTask>
 
   <RegisterModelTask
-    IGTConnection="NDITracker"
+    IGTConnection="PlusServer"
     ModelName="LegoPhantom.stl"
     ModelFrom="Phantom"
     ModelTo="Reference"
@@ -37,7 +37,7 @@
   </CoordinateDefinitions>
 
   <CameraRegistration
-    IGTConnection="NDITracker"
+    IGTConnection="PlusServer"
     Dp="2"
     MinDistanceDivisor="16"
     Param1="255"
@@ -47,20 +47,20 @@
     />
 
   <ManualRegistration
-    IGTConnection="NDITracker"
+    IGTConnection="PlusServer"
     From="Tool"
     To="Reference"
     />
 
   <OpticalRegistration
-    IGTConnection="NDITracker"
+    IGTConnection="PlusServer"
     RecalcThresholdCount="100"
     From="HoloLens"
     To="Reference"
     />
 
   <ModelAlignmentRegistration
-    IGTConnection="NDITracker"
+    IGTConnection="PlusServer"
     SphereFrom="Sphere"
     SphereTo="Reference"
     HoloLensFrom="HoloLens"
@@ -72,22 +72,10 @@
 
   <IGTConnections>
     <Connection
-      Name="NDITracker"
-      Host="192.168.0.28"
-      Port="18944" 
-      />
-
-    <xConnection
-      Name="2DImage"
+      Name="PlusServer"
       Host="192.168.0.28"
       Port="18944"
       EmbeddedImageTransformName="ImageToReference" 
-      />
-    <xConnection
-      Name="3DImage"
-      Host="192.168.0.28"
-      Port="18945"
-      EmbeddedImageTransformName="VolumeToReference" 
       />
   </IGTConnections>
 
@@ -96,13 +84,13 @@
     To="HMD"
     WhiteMapColour="1.0 0.0 0.0 1.0"
     BlackMapColour="0.0 0.0 1.0 1.0"
-    IGTConnection="2DImage" 
+    IGTConnection="PlusServer" 
     />
 
   <VolumeRendering 
     From="Volume" 
     To="HMD"
-    IGTConnection="3DImage" 
+    IGTConnection="PlusServer" 
     />
 
 </HoloIntervention>

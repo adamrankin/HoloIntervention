@@ -75,9 +75,10 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    SliceEntry::SliceEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& timer)
+    SliceEntry::SliceEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& timer, Debug& debug)
       : m_deviceResources(deviceResources)
       , m_timer(timer)
+      , m_debug(debug)
     {
       SetBlackMapColour(m_blackMapColour);
       SetWhiteMapColour(m_whiteMapColour);
