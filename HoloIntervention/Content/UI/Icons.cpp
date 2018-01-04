@@ -100,6 +100,7 @@ namespace HoloIntervention
     Icons::Icons(Rendering::ModelRenderer& modelRenderer)
       : m_modelRenderer(modelRenderer)
     {
+      m_componentReady = true;
     }
 
     //----------------------------------------------------------------------------
