@@ -74,11 +74,13 @@ namespace HoloIntervention
 
       uint32 GetToolCount() const;
       std::shared_ptr<Tools::ToolEntry> GetTool(uint64 token) const;
+      std::shared_ptr<Tools::ToolEntry> GetToolByUserId(const std::wstring& userId) const;
+      std::shared_ptr<Tools::ToolEntry> GetToolByUserId(Platform::String^ userId) const;
       std::vector<std::shared_ptr<Tools::ToolEntry>> GetTools();
       bool IsToolValid(uint64 token) const;
       bool WasToolValid(uint64 token) const;
 
-      Concurrency::task<uint64> RegisterToolAsync(const std::wstring& modelName, const bool isPrimitive, UWPOpenIGTLink::TransformName^ coordinateFrame, Windows::Foundation::Numerics::float4 colour = Windows::Foundation::Numerics::float4::one(), Windows::Foundation::Numerics::float3 argument = Windows::Foundation::Numerics::float3::one(), size_t tessellation = 16, bool rhcoords = true, bool invertn = false);
+      Concurrency::task<uint64> RegisterToolAsync(const std::wstring& modelName, Platform::String^ userId, const bool isPrimitive, UWPOpenIGTLink::TransformName^ coordinateFrame, Windows::Foundation::Numerics::float4 colour = Windows::Foundation::Numerics::float4::one(), Windows::Foundation::Numerics::float3 argument = Windows::Foundation::Numerics::float3::one(), size_t tessellation = 16, bool rhcoords = true, bool invertn = false);
       void UnregisterTool(uint64 toolToken);
       void ClearTools();
 

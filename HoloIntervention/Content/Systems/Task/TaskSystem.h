@@ -45,11 +45,17 @@ namespace HoloIntervention
     class VoiceInput;
   }
 
+  namespace UI
+  {
+    class Icons;
+  }
+
   namespace System
   {
     class NetworkSystem;
     class NotificationSystem;
     class RegistrationSystem;
+    class ToolSystem;
 
     namespace Tasks
     {
@@ -72,7 +78,7 @@ namespace HoloIntervention
       virtual void RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap);
 
     public:
-      TaskSystem(NotificationSystem&, NetworkSystem&, RegistrationSystem&, Rendering::ModelRenderer&);
+      TaskSystem(NotificationSystem&, NetworkSystem&, ToolSystem&, RegistrationSystem&, Rendering::ModelRenderer&, UI::Icons&);
       ~TaskSystem();
 
       void Update(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem, DX::StepTimer& stepTimer);
@@ -81,11 +87,13 @@ namespace HoloIntervention
       // Cached system variables
       NotificationSystem&                         m_notificationSystem;
       NetworkSystem&                              m_networkSystem;
+      ToolSystem&                                 m_toolSystem;
       RegistrationSystem&                         m_registrationSystem;
       Rendering::ModelRenderer&                   m_modelRenderer;
+      UI::Icons&                                  m_icons;
 
       std::shared_ptr<Tasks::TouchingSphereTask>  m_touchingSphereTask;
-      std::shared_ptr<Tasks::RegisterModelTask>      m_regModelTask;
+      std::shared_ptr<Tasks::RegisterModelTask>   m_regModelTask;
     };
   }
 }

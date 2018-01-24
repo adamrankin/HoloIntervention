@@ -76,13 +76,15 @@ namespace HoloIntervention
                 UI::Icons& icons,
                 uint64 hashedConnectionName,
                 UWPOpenIGTLink::TransformName^ coordinateFrame,
-                UWPOpenIGTLink::TransformRepository^ transformRepository);
+                UWPOpenIGTLink::TransformRepository^ transformRepository,
+                Platform::String^ userId);
       ToolEntry(Rendering::ModelRenderer& modelRenderer,
                 System::NetworkSystem& networkSystem,
                 UI::Icons& icons,
                 uint64 hashedConnectionName,
                 const std::wstring& coordinateFrame,
-                UWPOpenIGTLink::TransformRepository^ transformRepository);
+                UWPOpenIGTLink::TransformRepository^ transformRepository,
+                Platform::String^ userId);
       ~ToolEntry();
 
       void Update(const DX::StepTimer& timer);
@@ -94,6 +96,7 @@ namespace HoloIntervention
       bool WasValid() const;
 
       uint64 GetId() const;
+      std::wstring GetUserId() const;
 
     protected:
       // Cached links to system resources
@@ -108,6 +111,7 @@ namespace HoloIntervention
       UWPOpenIGTLink::TransformName^              m_coordinateFrame;
       std::shared_ptr<Rendering::ModelEntry>      m_modelEntry = nullptr;
       double                                      m_latestTimestamp = 0.0;
+      std::wstring                                m_userId;
 
       // Icon details
       std::shared_ptr<UI::IconEntry>              m_iconEntry = nullptr;

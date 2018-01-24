@@ -66,6 +66,11 @@ namespace HoloIntervention
     class IGTConnector;
   }
 
+  namespace UI
+  {
+    class Icons;
+  }
+
   namespace System
   {
     class NetworkSystem;
@@ -89,7 +94,7 @@ namespace HoloIntervention
         virtual void RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap);
         virtual void Update(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem, DX::StepTimer& stepTimer);
 
-        RegisterModelTask(NotificationSystem& notificationSystem, NetworkSystem& networkSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer);
+        RegisterModelTask(NotificationSystem& notificationSystem, NetworkSystem& networkSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer, UI::Icons& icons);
         ~RegisterModelTask();
 
       protected:
@@ -98,6 +103,7 @@ namespace HoloIntervention
         NetworkSystem&                                          m_networkSystem;
         RegistrationSystem&                                     m_registrationSystem;
         Rendering::ModelRenderer&                               m_modelRenderer;
+        UI::Icons&                                              m_icons;
 
         std::shared_ptr<Rendering::ModelEntry>                  m_modelEntry = nullptr;
         std::wstring                                            m_modelName = L"";

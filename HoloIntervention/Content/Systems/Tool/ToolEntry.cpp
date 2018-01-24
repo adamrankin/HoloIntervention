@@ -88,26 +88,39 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    ToolEntry::ToolEntry(Rendering::ModelRenderer& modelRenderer, System::NetworkSystem& networkSystem, UI::Icons& icons, uint64 hashedConnectionName, UWPOpenIGTLink::TransformName^ coordinateFrame, UWPOpenIGTLink::TransformRepository^ transformRepository)
+    ToolEntry::ToolEntry(Rendering::ModelRenderer& modelRenderer,
+                         System::NetworkSystem& networkSystem,
+                         UI::Icons& icons,
+                         uint64 hashedConnectionName,
+                         UWPOpenIGTLink::TransformName^ coordinateFrame,
+                         UWPOpenIGTLink::TransformRepository^ transformRepository,
+                         Platform::String^ userId)
       : m_modelRenderer(modelRenderer)
       , m_networkSystem(networkSystem)
       , m_icons(icons)
       , m_hashedConnectionName(hashedConnectionName)
       , m_transformRepository(transformRepository)
       , m_coordinateFrame(coordinateFrame)
+      , m_userId(std::wstring(userId->Data()))
       , m_kalmanFilter(std::make_shared<Algorithm::KalmanFilter>(18, 6, 0))
     {
       m_componentReady = true;
     }
 
     //----------------------------------------------------------------------------
-    ToolEntry::ToolEntry(Rendering::ModelRenderer& modelRenderer, System::NetworkSystem& networkSystem, UI::Icons& icons, uint64 hashedConnectionName, const std::wstring& coordinateFrame, UWPOpenIGTLink::TransformRepository^ transformRepository)
+    ToolEntry::ToolEntry(Rendering::ModelRenderer& modelRenderer,
+                         System::NetworkSystem& networkSystem,
+                         UI::Icons& icons,
+                         uint64 hashedConnectionName,
+                         const std::wstring& coordinateFrame,
+                         UWPOpenIGTLink::TransformRepository^ transformRepository,
+                         Platform::String^ userId)
       : m_modelRenderer(modelRenderer)
       , m_networkSystem(networkSystem)
       , m_icons(icons)
       , m_hashedConnectionName(hashedConnectionName)
       , m_transformRepository(transformRepository)
-
+      , m_userId(std::wstring(userId->Data()))
       , m_kalmanFilter(std::make_shared<Algorithm::KalmanFilter>(21, 7, 0)) // position as x, y, z -- rotation as quaternion x, y, z, w
     {
       m_coordinateFrame = ref new UWPOpenIGTLink::TransformName(ref new Platform::String(coordinateFrame.c_str()));
@@ -325,5 +338,12 @@ namespace HoloIntervention
       }
       return m_modelEntry->GetId();
     }
+
+    //----------------------------------------------------------------------------
+    std::wstring ToolEntry::GetUserId() const
+    {
+      return m_userId;
+    }
+
   }
 }

@@ -26,6 +26,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "StepTimer.h"
 #include "TaskSystem.h"
 
+// UI includes
+#include "Icons.h"
+
 // Task includes
 #include "RegisterModelTask.h"
 #include "TouchingSphereTask.h"
@@ -90,14 +93,16 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    TaskSystem::TaskSystem(NotificationSystem& notificationSystem, NetworkSystem& networkSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer)
+    TaskSystem::TaskSystem(NotificationSystem& notificationSystem, NetworkSystem& networkSystem, ToolSystem& toolSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer, UI::Icons& icons)
       : m_notificationSystem(notificationSystem)
       , m_networkSystem(networkSystem)
+      , m_toolSystem(toolSystem)
       , m_registrationSystem(registrationSystem)
       , m_modelRenderer(modelRenderer)
+      , m_icons(icons)
     {
-      m_touchingSphereTask = std::make_shared<Tasks::TouchingSphereTask>(notificationSystem, networkSystem, registrationSystem, modelRenderer);
-      m_regModelTask = std::make_shared<Tasks::RegisterModelTask>(notificationSystem, networkSystem, registrationSystem, modelRenderer);
+      m_touchingSphereTask = std::make_shared<Tasks::TouchingSphereTask>(notificationSystem, networkSystem, toolSystem, registrationSystem, modelRenderer, icons);
+      m_regModelTask = std::make_shared<Tasks::RegisterModelTask>(notificationSystem, networkSystem, registrationSystem, modelRenderer, icons);
     }
 
     //----------------------------------------------------------------------------

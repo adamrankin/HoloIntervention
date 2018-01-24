@@ -54,6 +54,11 @@ namespace HoloIntervention
     class VoiceInput;
   }
 
+  namespace UI
+  {
+    class Icons;
+  }
+
   namespace Network
   {
     class IGTConnector;
@@ -64,6 +69,7 @@ namespace HoloIntervention
     class NetworkSystem;
     class NotificationSystem;
     class RegistrationSystem;
+    class ToolSystem;
 
     namespace Tasks
     {
@@ -82,7 +88,7 @@ namespace HoloIntervention
         virtual void RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap);
         virtual void Update(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem, DX::StepTimer& stepTimer);
 
-        TouchingSphereTask(NotificationSystem& notificationSystem, NetworkSystem& networkSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer);
+        TouchingSphereTask(NotificationSystem& notificationSystem, NetworkSystem& networkSystem, ToolSystem& toolSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer, UI::Icons& icons);
         ~TouchingSphereTask();
 
       protected:
@@ -92,8 +98,10 @@ namespace HoloIntervention
         // Cached system variables
         NotificationSystem&                                     m_notificationSystem;
         NetworkSystem&                                          m_networkSystem;
+        ToolSystem&                                             m_toolSystem;
         RegistrationSystem&                                     m_registrationSystem;
         Rendering::ModelRenderer&                               m_modelRenderer;
+        UI::Icons&                                              m_icons;
 
         std::wstring                                            m_connectionName = L"";
         uint64                                                  m_hashedConnectionName = 0;

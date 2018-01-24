@@ -2,6 +2,7 @@
 <HoloIntervention>
   <Tools IGTConnection="PlusServer">
     <Tool 
+      Id="Stylus"
       Model="Tools/hemisphere_stylus"
       From="Tip"
       To="Reference"

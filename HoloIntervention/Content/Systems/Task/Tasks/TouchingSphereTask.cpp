@@ -27,10 +27,15 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "TouchingSphereTask.h"
 #include "StepTimer.h"
 
+// UI includes
+#include "Icons.h"
+
 // System includes
 #include "NetworkSystem.h"
 #include "NotificationSystem.h"
 #include "RegistrationSystem.h"
+#include "ToolEntry.h"
+#include "ToolSystem.h"
 
 // Rendering includes
 #include "ModelRenderer.h"
@@ -245,11 +250,13 @@ namespace HoloIntervention
       }
 
       //----------------------------------------------------------------------------
-      TouchingSphereTask::TouchingSphereTask(NotificationSystem& notificationSystem, NetworkSystem& networkSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer)
+      TouchingSphereTask::TouchingSphereTask(NotificationSystem& notificationSystem, NetworkSystem& networkSystem, ToolSystem& toolSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer, UI::Icons& icons)
         : m_notificationSystem(notificationSystem)
         , m_networkSystem(networkSystem)
         , m_registrationSystem(registrationSystem)
+        , m_toolSystem(toolSystem)
         , m_modelRenderer(modelRenderer)
+        , m_icons(icons)
       {
         // 3 mm diameter
         m_modelRenderer.AddPrimitiveAsync(Rendering::PrimitiveType_SPHERE, 0.03f).then([this](uint64 primId)
@@ -257,6 +264,13 @@ namespace HoloIntervention
           m_targetModel = m_modelRenderer.GetModel(primId);
           m_targetModel->SetColour(DEFAULT_TARGET_COLOUR);
         });
+
+        auto toolEntry = m_toolSystem.GetToolByUserId(L"Stylus");
+        if (toolEntry == nullptr)
+        {
+          LOG_ERROR("Unable to locate stylus tool. Cannot create UI icon.");
+          // Use a cylinder as a substitute
+        }
       }
 
       //----------------------------------------------------------------------------

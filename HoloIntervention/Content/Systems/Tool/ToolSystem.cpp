@@ -146,6 +146,7 @@ namespace HoloIntervention
           }
           toolElem->SetAttribute(L"From", tool->GetCoordinateFrame()->From());
           toolElem->SetAttribute(L"To", tool->GetCoordinateFrame()->To());
+          toolElem->SetAttribute(L"Id", tool->GetUserId());
           toolElem->SetAttribute(L"LerpEnabled", tool->GetModelEntry()->GetLerpEnabled() ? L"true" : L"false");
           if (tool->GetModelEntry()->GetLerpEnabled())
           {
@@ -204,8 +205,17 @@ namespace HoloIntervention
           Platform::String^ tessellationString = nullptr;
           Platform::String^ rhcoordsString = nullptr;
           Platform::String^ invertnString = nullptr;
+          Platform::String^ userId = nullptr;
 
           // model, transform
+          if (HasAttribute(L"Id", node))
+          {
+            userId = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Id")->NodeValue);
+          }
+          else
+          {
+            throw ref new Platform::Exception(E_FAIL, L"Tool entry does not contain Id attribute.");
+          }
           if (!HasAttribute(L"Model", node) && !HasAttribute(L"Primitive", node))
           {
             throw ref new Platform::Exception(E_FAIL, L"Tool entry does not contain model or primitive attribute.");
@@ -298,7 +308,7 @@ namespace HoloIntervention
             {
               invertn = IsEqualInsensitive(invertnString, L"true");
             }
-            registerTask = RegisterToolAsync(std::wstring(primString->Data()), true, trName, colour, argument, tessellation, rhcoords, invertn);
+            registerTask = RegisterToolAsync(std::wstring(primString->Data()), userId, true, trName, colour, argument, tessellation, rhcoords, invertn);
           }
           registerTask.then([this, node](uint64 token)
           {
@@ -361,6 +371,26 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    std::shared_ptr<HoloIntervention::Tools::ToolEntry> ToolSystem::GetToolByUserId(const std::wstring& userId) const
+    {
+      std::lock_guard<std::mutex> guard(m_entriesMutex);
+      for (auto iter = m_toolEntries.begin(); iter != m_toolEntries.end(); ++iter)
+      {
+        if (IsEqualInsensitive(userId, (*iter)->GetUserId()))
+        {
+          return *iter;
+        }
+      }
+      return nullptr;
+    }
+
+    //----------------------------------------------------------------------------
+    std::shared_ptr<HoloIntervention::Tools::ToolEntry> ToolSystem::GetToolByUserId(Platform::String^ userId) const
+    {
+      return GetToolByUserId(std::wstring(userId->Data()));
+    }
+
+    //----------------------------------------------------------------------------
     std::vector<std::shared_ptr<Tools::ToolEntry>> ToolSystem::GetTools()
     {
       return m_toolEntries;
@@ -391,7 +421,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<uint64> ToolSystem::RegisterToolAsync(const std::wstring& modelName, const bool isPrimitive, UWPOpenIGTLink::TransformName^ coordinateFrame, float4 colour, float3 argument, size_t tessellation, bool rhcoords, bool invertn)
+    task<uint64> ToolSystem::RegisterToolAsync(const std::wstring& modelName, Platform::String^ userId, const bool isPrimitive, UWPOpenIGTLink::TransformName^ coordinateFrame, float4 colour, float3 argument, size_t tessellation, bool rhcoords, bool invertn)
     {
       task<uint64> modelTask;
       if (!isPrimitive)
@@ -402,9 +432,9 @@ namespace HoloIntervention
       {
         modelTask = m_modelRenderer.AddPrimitiveAsync(modelName, argument, tessellation, rhcoords, invertn);
       }
-      return modelTask.then([this, coordinateFrame, colour](uint64 modelEntryId)
+      return modelTask.then([this, coordinateFrame, colour, userId](uint64 modelEntryId)
       {
-        std::shared_ptr<Tools::ToolEntry> entry = std::make_shared<Tools::ToolEntry>(m_modelRenderer, m_networkSystem, m_icons, m_hashedConnectionName, coordinateFrame, m_transformRepository);
+        std::shared_ptr<Tools::ToolEntry> entry = std::make_shared<Tools::ToolEntry>(m_modelRenderer, m_networkSystem, m_icons, m_hashedConnectionName, coordinateFrame, m_transformRepository, userId);
         auto modelEntry = m_modelRenderer.GetModel(modelEntryId);
         return entry->SetModelEntryAsync(modelEntry).then([this, entry, modelEntry, colour]()
         {

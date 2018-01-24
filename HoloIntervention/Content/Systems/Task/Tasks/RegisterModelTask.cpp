@@ -27,6 +27,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "RegisterModelTask.h"
 #include "StepTimer.h"
 
+// UI includes
+#include "Icons.h"
+
 // System includes
 #include "NetworkSystem.h"
 #include "NotificationSystem.h"
@@ -196,11 +199,12 @@ namespace HoloIntervention
       }
 
       //----------------------------------------------------------------------------
-      RegisterModelTask::RegisterModelTask(NotificationSystem& notificationSystem, NetworkSystem& networkSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer)
+      RegisterModelTask::RegisterModelTask(NotificationSystem& notificationSystem, NetworkSystem& networkSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer, UI::Icons& icons)
         : m_notificationSystem(notificationSystem)
         , m_networkSystem(networkSystem)
         , m_registrationSystem(registrationSystem)
         , m_modelRenderer(modelRenderer)
+        , m_icons(icons)
       {
       }
 
