@@ -79,7 +79,7 @@ namespace HoloIntervention
   //----------------------------------------------------------------------------
   void Debug::Update(SpatialCoordinateSystem^ hmdCoordinateSystem)
   {
-    if (!m_sliceEntry->GetVisible())
+    if (m_sliceEntry == nullptr || !m_sliceEntry->GetVisible())
     {
       return;
     }
@@ -238,6 +238,8 @@ namespace HoloIntervention
   void Debug::SetModelRenderer(Rendering::ModelRenderer* modelRenderer)
   {
     m_modelRenderer = modelRenderer;
+
+    m_componentReady = m_modelRenderer != nullptr && m_sliceRenderer != nullptr;
   }
 
   //----------------------------------------------------------------------------
@@ -245,11 +247,18 @@ namespace HoloIntervention
   {
     m_sliceRenderer = sliceRenderer;
 
+    if (m_sliceEntry != nullptr)
+    {
+      m_sliceRenderer->RemoveSlice(m_sliceEntry->GetId());
+      m_sliceEntry = nullptr;
+    }
     m_sliceRenderer->AddSliceAsync(m_textRenderer->GetTexture(), float4x4::identity(), true).then([this](uint64 entryId)
     {
       m_sliceEntry = m_sliceRenderer->GetSlice(entryId);
       m_sliceEntry->SetVisible(false); // off by default
       m_sliceEntry->SetScalingFactor(0.6f);
+
+      m_componentReady = m_modelRenderer != nullptr && m_sliceRenderer != nullptr;
     });
   }
 }
