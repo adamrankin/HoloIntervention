@@ -146,7 +146,7 @@ namespace HoloIntervention
           }
           toolElem->SetAttribute(L"From", tool->GetCoordinateFrame()->From());
           toolElem->SetAttribute(L"To", tool->GetCoordinateFrame()->To());
-          toolElem->SetAttribute(L"Id", tool->GetUserId());
+          toolElem->SetAttribute(L"Id", ref new Platform::String(tool->GetUserId().c_str()));
           toolElem->SetAttribute(L"LerpEnabled", tool->GetModelEntry()->GetLerpEnabled() ? L"true" : L"false");
           if (tool->GetModelEntry()->GetLerpEnabled())
           {
@@ -268,7 +268,7 @@ namespace HoloIntervention
           task<uint64> registerTask;
           if (modelString != nullptr)
           {
-            registerTask = RegisterToolAsync(std::wstring(modelString->Data()), false, trName);
+            registerTask = RegisterToolAsync(std::wstring(modelString->Data()), userId, false, trName);
           }
           else
           {
