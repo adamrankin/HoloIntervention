@@ -373,12 +373,12 @@ namespace HoloIntervention
       float4x4 imageToHMDTransform = transpose(result->Value);
 
       // We must also transform from model space to image space
-      // +0.5 x, -0.5 y to get square from 0-1, 0-1 (model space)
+      // +0.5 x, -0.5 y to get square from 0-1, 0-(-1)
       // 1   0   0   0
       // 0   1   0   0
       // 0   0   1   0
       // 0.5 -0.5 0   1
-      // * imageSize[0], * imageSize[1] to scale and get rect from 0-imageSize[0], 0-imageSize[1] (pixel space)
+      // * imageSize[0], * imageSize[1] to scale and get rect from 0-imageSize[0], 0-(-imageSize[1]) (pixel space)
       // imageSize[0] 0             0 0
       // 0            imageSize[1]  0 0
       // 0            0             1 0
