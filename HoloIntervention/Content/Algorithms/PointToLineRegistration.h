@@ -43,7 +43,7 @@ namespace HoloIntervention
       float GetTolerance() const;
       uint32 Count() const;
 
-      Concurrency::task<Windows::Foundation::Numerics::float4x4> ComputeAsync(float& outError);
+      Concurrency::task<Windows::Foundation::Numerics::float4x4> ComputeAsync(float& outErrorMm);
 
     public:
       PointToLineRegistration(const std::vector<Point>& points, const std::vector<Line>& lines);

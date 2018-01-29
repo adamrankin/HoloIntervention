@@ -121,9 +121,9 @@ namespace HoloIntervention
     *
     * OUTPUTS: 4x4 rotation + translation
     */
-    task<float4x4> PointToLineRegistration::ComputeAsync(float& outError)
+    task<float4x4> PointToLineRegistration::ComputeAsync(float& outErrorMm)
     {
-      return create_task([this, &outError]()
+      return create_task([this, &outErrorMm]()
       {
         if (m_points.size() != m_lines.size())
         {
@@ -133,7 +133,7 @@ namespace HoloIntervention
         // assume column vector
         int n = m_points.size();
         cv::Mat e = cv::Mat::ones(1, n, CV_32F);
-        outError = std::numeric_limits<float>::infinity();
+        outErrorMm = std::numeric_limits<float>::infinity();
         cv::Mat E_old = cv::Mat::ones(3, n, CV_32F);
         E_old = E_old * 1000.f;
         cv::Mat E(3, n, CV_32F);
@@ -169,7 +169,7 @@ namespace HoloIntervention
         LandmarkRegistration landmark;
         landmark.SetModeToRigid();
 
-        while (outError > m_tolerance)
+        while (outErrorMm > m_tolerance)
         {
           landmark.SetSourceLandmarks(X);
           landmark.SetTargetLandmarks(Y);
@@ -193,17 +193,17 @@ namespace HoloIntervention
           }
 
           E = Y - (R * X) - (t * e);
-          outError = static_cast<float>(cv::norm(E - E_old));
+          outErrorMm = static_cast<float>(cv::norm(E - E_old));
           E.copyTo(E_old);
         }
 
         // compute the Euclidean distance between points and lines
-        outError = 0.0;
+        outErrorMm = 0.0;
         for (int i = 0; i < E.cols; i++)
         {
-          outError += sqrtf(E.at<float>(0, i) * E.at<float>(0, i) + E.at<float>(1, i) * E.at<float>(1, i) + E.at<float>(2, i) * E.at<float>(2, i));
+          outErrorMm += sqrtf(E.at<float>(0, i) * E.at<float>(0, i) + E.at<float>(1, i) * E.at<float>(1, i) + E.at<float>(2, i) * E.at<float>(2, i));
         }
-        outError = outError / E.cols;
+        outErrorMm = outErrorMm * 1000.f / E.cols;
 
         float4x4 result = float4x4::identity();
         OpenCVToFloat4x4(R, t, result);
