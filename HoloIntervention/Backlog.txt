@@ -17,6 +17,4 @@ Add on/off voice commands to notification system
 Add hide/show commands to tool system
 Extend voice command registration to prevent collision of commands 
 Menu feature
-* ModelEntry from polydata
-* Landmark registration error
 * Model registration landmark via metadata

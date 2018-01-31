@@ -168,6 +168,7 @@ namespace HoloIntervention
       Windows::Foundation::Numerics::float4                 m_originalColour = { 1.f, 1.f, 1.f, 1.f };
 
       // Model state
+      UWPOpenIGTLink::Polydata^                             m_polydata = nullptr;
       std::array<float, 6>                                  m_modelBounds = { -1.f };
       std::wstring                                          m_assetLocation;
       std::map<DirectX::IEffect*, DirectX::XMFLOAT4>        m_defaultColours;
