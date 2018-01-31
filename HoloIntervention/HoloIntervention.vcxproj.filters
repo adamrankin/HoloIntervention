@@ -634,6 +634,9 @@
     <None Include="Assets\Models\Debug\CoordSystem.cmo">
       <Filter>Assets\Models\Debug</Filter>
     </None>
+    <None Include="Assets\Models\Tools\heart.cmo">
+      <Filter>Assets\Models\Tools</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Content">

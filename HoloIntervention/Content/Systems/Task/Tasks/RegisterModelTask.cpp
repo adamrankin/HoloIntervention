@@ -370,6 +370,8 @@ namespace HoloIntervention
               m_taskStarted = false;
             });
           }
+
+          return create_task([]() {});
         };
 
         callbackMap[L"stop model registration"] = [this](SpeechRecognitionResult ^ result)
