@@ -71,6 +71,8 @@ namespace HoloIntervention
       void SetModeToSimilarity();
       void SetModeToAffine();
 
+      float GetError() const;
+
       Concurrency::task<Windows::Foundation::Numerics::float4x4> CalculateTransformationAsync();
 
     public:
@@ -82,6 +84,7 @@ namespace HoloIntervention
       VecFloat3     m_targetLandmarks;
 
       Mode          m_mode = MODE_SIMILARITY;
+      float         m_error;
     };
   }
 }

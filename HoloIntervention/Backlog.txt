@@ -4,6 +4,7 @@ Voice feedback
 UI for IP setting - Dictation
 Internationalization (xml database of voice commands and feedback, strings based on resource file and identifer)
 Refactor isinfrustum to abstract base class
+  WorldObject or similar, to represent a virtual object that exists in the world
 Reconsider headlocked UI design
   body locked UI
 Slice views of anatomical imaging
@@ -15,3 +16,7 @@ Refactor model entry infrastructure so that app controlled rendering properties 
 Add on/off voice commands to notification system
 Add hide/show commands to tool system
 Extend voice command registration to prevent collision of commands 
+Menu feature
+* ModelEntry from polydata
+* Landmark registration error
+* Model registration landmark via metadata

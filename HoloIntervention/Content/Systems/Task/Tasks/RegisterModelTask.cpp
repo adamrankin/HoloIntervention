@@ -240,7 +240,7 @@ namespace HoloIntervention
             m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", L"HoloLens"), registration, true);
           }
 
-          auto result = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"HeartModel", L"HoloLens"));
+          auto result = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(MODEL_REGISTRATION_COORDINATE_FRAME, L"HoloLens"));
 
           if (result->Key)
           {
@@ -252,19 +252,30 @@ namespace HoloIntervention
       //----------------------------------------------------------------------------
       void RegisterModelTask::RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap)
       {
-        callbackMap[L"load model"] = [this](SpeechRecognitionResult ^ result)
+        callbackMap[L"start model registration"] = [this](SpeechRecognitionResult ^ result)
         {
+          if (m_taskStarted)
+          {
+            m_notificationSystem.QueueMessage(L"Registration already running. Please select landmarks.");
+            return;
+          }
+
           if (m_modelEntry != nullptr)
           {
-            m_notificationSystem.QueueMessage(L"Registering loaded model. Please register landmarks.");
+            m_notificationSystem.QueueMessage(L"Registering loaded model. Please select landmarks.");
             m_taskStarted = true;
+          }
+          else if (!m_networkSystem.IsConnected(m_hashedConnectionName))
+          {
+            m_notificationSystem.QueueMessage(L"Not connected. Please connect to a Plus server.");
+            return;
           }
           else if (m_commandId == 0)
           {
             // Async load model from IGTLink
             create_task([this]()
             {
-              m_notificationSystem.QueueMessage(L"Loading model.");
+              m_notificationSystem.QueueMessage(L"Downloading model.");
 
               std::map<std::wstring, std::wstring> commandParameters;
               commandParameters[L"FileName"] = m_modelName;
@@ -273,12 +284,12 @@ namespace HoloIntervention
               {
                 if (!cmdInfo.SentSuccessfully)
                 {
-                  return false;
+                  return task_from_result(false);
                 }
                 m_commandId = cmdInfo.CommandId;
-                create_task([this]()
+                return create_task([this]()
                 {
-                  while (true)
+                  while (!m_cancelled)
                   {
                     auto poly = m_networkSystem.GetPolydata(m_hashedConnectionName, ref new Platform::String(m_modelName.c_str()));
                     if (poly == nullptr)
@@ -288,25 +299,31 @@ namespace HoloIntervention
                     else
                     {
                       // Parse polydata into a model
-                      m_modelRenderer.AddModelAsync(m_polydata).then([this](uint64 modelId)
+                      return m_modelRenderer.AddModelAsync(m_polydata).then([this](uint64 modelId)
                       {
                         m_modelEntry = m_modelRenderer.GetModel(modelId);
+                        return !m_cancelled;
                       });
-                      break;
+                      m_commandId = INVALID_TOKEN;
                     }
                   }
+
+                  return task_from_result(!m_cancelled);
                 });
-                return true;
               });
             }).then([this](bool result)
             {
+              if (m_cancelled)
+              {
+                return;
+              }
               if (!result)
               {
                 m_notificationSystem.QueueMessage(L"Unable to start model registration task. Check connection.");
                 return;
               }
 
-              m_notificationSystem.QueueMessage(L"Registering loaded model. Please register landmarks.");
+              m_notificationSystem.QueueMessage(L"Model downloaded. Please select landmarks.");
               m_taskStarted = true;
             });
           }
@@ -321,7 +338,7 @@ namespace HoloIntervention
           if (!m_taskStarted || !m_componentReady)
           {
             m_notificationSystem.QueueMessage(L"Model registration not running.");
-            return;
+            return create_task([]() {});
           }
 
           auto pair = m_transformRepository->GetTransform(m_stylusTipTransformName);
@@ -346,19 +363,36 @@ namespace HoloIntervention
             }
             m_landmarkRegistration->SetSourceLandmarks(landmarks);
             m_landmarkRegistration->SetTargetLandmarks(m_points);
-            m_landmarkRegistration->CalculateTransformationAsync().then([this](float4x4 result)
+            return m_landmarkRegistration->CalculateTransformationAsync().then([this](float4x4 result)
             {
-              m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"HeartModel", m_modelToReferenceName->From()), result, true);
+              m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(MODEL_REGISTRATION_COORDINATE_FRAME, m_modelToReferenceName->From()), result, true);
+              m_notificationSystem.QueueMessage(L"Model registered. FRE: " + (m_landmarkRegistration->GetError() * 1000.f).ToString() + L"mm.");
+              m_taskStarted = false;
             });
-
-            m_notificationSystem.QueueMessage(L"Model registered.");
-            m_taskStarted = false;
           }
         };
 
-        callbackMap[L"reset points"] = [this](SpeechRecognitionResult ^ result)
+        callbackMap[L"stop model registration"] = [this](SpeechRecognitionResult ^ result)
         {
-          m_points.clear();
+          if (m_commandId != 0)
+          {
+            if (!m_cancelled)
+            {
+              // Download is currently happening, wait until finished then stop
+              m_notificationSystem.QueueMessage("Canceling download.");
+              m_cancelled = true;
+            }
+          }
+          else if (!m_taskStarted)
+          {
+            m_notificationSystem.QueueMessage(L"Registration not running.");
+          }
+          else
+          {
+            m_notificationSystem.QueueMessage(L"Registration stopped.");
+            m_taskStarted = false;
+            m_points.clear();
+          }
         };
       }
     }

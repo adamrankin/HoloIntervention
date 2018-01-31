@@ -258,11 +258,18 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    float LandmarkRegistration::GetError() const
+    {
+      return m_error;
+    }
+
+    //----------------------------------------------------------------------------
     task<float4x4> LandmarkRegistration::CalculateTransformationAsync()
     {
       return create_task([this]() -> float4x4
       {
         float4x4 calibrationMatrix(float4x4::identity());
+        m_error = std::numeric_limits<float>::infinity();
 
         if (m_sourceLandmarks.empty() || m_targetLandmarks.empty())
         {
@@ -515,7 +522,18 @@ namespace HoloIntervention
         calibrationMatrix.m43 = 0.0f;
         calibrationMatrix.m44 = 1.0f;
 
-        return transpose(calibrationMatrix);
+        calibrationMatrix = transpose(calibrationMatrix);
+
+        // Determine FRE (RMSE)
+        float dist_squared_sum(0.f);
+        for (VecFloat3::size_type i = 0; i < m_sourceLandmarks.size(); ++i)
+        {
+          // transform point and calculate distance to target
+          dist_squared_sum += distance_squared(transform(m_sourceLandmarks[i], calibrationMatrix), m_targetLandmarks[i]);
+        }
+        m_error = sqrtf(dist_squared_sum /= m_sourceLandmarks.size());
+
+        return calibrationMatrix;
       });
     }
   }

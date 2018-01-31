@@ -112,6 +112,7 @@ namespace HoloIntervention
         UWPOpenIGTLink::TransformName^                          m_modelToReferenceName = ref new UWPOpenIGTLink::TransformName();
         double                                                  m_latestTimestamp = 0.0;
         uint32                                                  m_commandId = 0;
+        std::atomic_bool                                        m_cancelled = false;
 
         // Registration variables
         std::vector<Windows::Foundation::Numerics::float3>      m_points;
@@ -124,6 +125,8 @@ namespace HoloIntervention
         UWPOpenIGTLink::Transform^                              m_transform = nullptr;
         UWPOpenIGTLink::TransformName^                          m_stylusTipTransformName = ref new UWPOpenIGTLink::TransformName();
         UWPOpenIGTLink::TransformRepository^                    m_transformRepository = ref new UWPOpenIGTLink::TransformRepository();
+
+        Platform::String^                                       MODEL_REGISTRATION_COORDINATE_FRAME = L"ModelSpace";
       };
     }
   }

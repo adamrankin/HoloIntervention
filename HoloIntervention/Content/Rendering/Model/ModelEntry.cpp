@@ -362,7 +362,7 @@ namespace HoloIntervention
       , m_timer(timer)
       , m_debug(debug)
     {
-
+      // TODO : create model from polydata
 
       try
       {
