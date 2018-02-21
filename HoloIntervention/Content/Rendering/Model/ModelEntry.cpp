@@ -57,8 +57,6 @@ using namespace Windows::UI::Input::Spatial;
 
 namespace DirectX
 {
-
-
   //----------------------------------------------------------------------------
   // Helper for creating a D3D input layout.
   static void CreateInputLayout(_In_ ID3D11Device* device, IEffect* effect, _Out_ ID3D11InputLayout** pInputLayout)
@@ -108,7 +106,7 @@ namespace DirectX
 
     DX::ThrowIfFailed(d3dDevice->CreateBuffer(&buffer_desc, &indexBufferInitData, &indexBuffer));
 #if defined(_DEBUG)
-    DirectX::SetDebugObjectName(indexBuffer.Get(), "ModelPolyData");
+    DirectX::SetDebugObjectName(indexBuffer.Get(), "ModelPolyDataIndex");
 #endif
 
     // Determine extents while constructing vertex entries
@@ -212,6 +210,7 @@ namespace DirectX
     part->vertexStride = static_cast<UINT>(stride);
     part->inputLayout = il;
     part->indexBuffer = indexBuffer;
+    part->indexFormat = DXGI_FORMAT_R16_UINT;
     part->vertexBuffer = vertexBuffer;
     part->effect = effect;
     auto vec = std::make_shared<std::vector<D3D11_INPUT_ELEMENT_DESC>>(VertexPositionNormalColorTexture::InputElements, VertexPositionNormalColorTexture::InputElements + VertexPositionNormalColorTexture::InputElementCount);
@@ -480,12 +479,12 @@ namespace HoloIntervention
 
           DrawMesh(*mesh, true);
         }
-
-        // Clean up after rendering
-        context->OMSetBlendState(nullptr, nullptr, 0xffffffff);
-        context->OMSetDepthStencilState(nullptr, 0);
-        context->RSSetState(nullptr);
       }
+
+      // Clean up after rendering
+      context->OMSetBlendState(nullptr, nullptr, 0xffffffff);
+      context->OMSetDepthStencilState(nullptr, 0);
+      context->RSSetState(nullptr);
     }
 
     //----------------------------------------------------------------------------
