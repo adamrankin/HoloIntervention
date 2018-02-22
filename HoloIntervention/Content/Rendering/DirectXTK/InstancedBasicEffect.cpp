@@ -492,29 +492,29 @@ namespace DirectX
   }
 
 
-  void XM_CALLCONV InstancedBasicEffect::SetView(FXMMATRIX view[2])
+  void XM_CALLCONV InstancedBasicEffect::SetView(FXMMATRIX leftView, CXMMATRIX rightView)
   {
-    pImpl->matrices.view[0] = view[0];
-    pImpl->matrices.view[1] = view[1];
+    pImpl->matrices.view[0] = leftView;
+    pImpl->matrices.view[1] = rightView;
   }
 
 
-  void XM_CALLCONV InstancedBasicEffect::SetProjection(FXMMATRIX projection[2])
+  void XM_CALLCONV InstancedBasicEffect::SetProjection(FXMMATRIX leftProjection, CXMMATRIX rightProjection)
   {
-    pImpl->matrices.projection[0] = projection[0];
-    pImpl->matrices.projection[1] = projection[1];
+    pImpl->matrices.projection[0] = leftProjection;
+    pImpl->matrices.projection[1] = rightProjection;
   }
 
 
-  void XM_CALLCONV InstancedBasicEffect::SetMatrices(FXMMATRIX world, FXMMATRIX view[2], FXMMATRIX projection[2])
+  void XM_CALLCONV InstancedBasicEffect::SetMatrices(FXMMATRIX world, CXMMATRIX leftView, CXMMATRIX rightView, CXMMATRIX leftProjection, CXMMATRIX rightProjection)
   {
     pImpl->matrices.world = world;
 
-    pImpl->matrices.view[0] = view[0];
-    pImpl->matrices.view[1] = view[1];
+    pImpl->matrices.view[0] = leftView;
+    pImpl->matrices.view[1] = rightView;
 
-    pImpl->matrices.projection[0] = projection[0];
-    pImpl->matrices.projection[1] = projection[1];
+    pImpl->matrices.projection[0] = leftProjection;
+    pImpl->matrices.projection[1] = rightProjection;
 
     pImpl->dirtyFlags |= EffectDirtyFlags::WorldViewProj | EffectDirtyFlags::WorldInverseTranspose | EffectDirtyFlags::EyePosition | EffectDirtyFlags::FogVector;
   }

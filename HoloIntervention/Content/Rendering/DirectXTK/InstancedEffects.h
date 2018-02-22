@@ -35,9 +35,9 @@ namespace DirectX
     virtual ~IStereoEffectMatrices() { }
 
     virtual void XM_CALLCONV SetWorld(FXMMATRIX value) = 0;
-    virtual void XM_CALLCONV SetView(FXMMATRIX value[2]) = 0;
-    virtual void XM_CALLCONV SetProjection(FXMMATRIX value[2]) = 0;
-    virtual void XM_CALLCONV SetMatrices(FXMMATRIX world, FXMMATRIX view[2], FXMMATRIX projection[2]);
+    virtual void XM_CALLCONV SetView(FXMMATRIX leftView, CXMMATRIX rightView) = 0;
+    virtual void XM_CALLCONV SetProjection(FXMMATRIX leftProjection, CXMMATRIX rightProjection) = 0;
+    virtual void XM_CALLCONV SetMatrices(FXMMATRIX world, CXMMATRIX leftView, CXMMATRIX rightView, CXMMATRIX leftProjection, CXMMATRIX rightProjection);
   };
 
   class InstancedBasicEffect : public IEffect, public IStereoEffectMatrices, public IEffectLights, public IEffectFog
@@ -59,9 +59,9 @@ namespace DirectX
 
     // Camera settings.
     void XM_CALLCONV SetWorld(FXMMATRIX value) override;
-    void XM_CALLCONV SetView(FXMMATRIX value[2]) override;
-    void XM_CALLCONV SetProjection(FXMMATRIX value[2]) override;
-    void XM_CALLCONV SetMatrices(FXMMATRIX world, FXMMATRIX view[2], FXMMATRIX projection[2]) override;
+    void XM_CALLCONV SetView(FXMMATRIX leftView, CXMMATRIX rightView) override;
+    void XM_CALLCONV SetProjection(FXMMATRIX leftProjection, CXMMATRIX rightProjection) override;
+    void XM_CALLCONV SetMatrices(FXMMATRIX world, CXMMATRIX leftView, CXMMATRIX rightView, CXMMATRIX leftProjection, CXMMATRIX rightProjection) override;
 
     // Material settings.
     void XM_CALLCONV SetDiffuseColor(FXMVECTOR value);

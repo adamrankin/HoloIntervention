@@ -84,7 +84,7 @@ public:
 
   const std::array<float, 6>& XM_CALLCONV GetBounds() const;
 
-  void XM_CALLCONV Draw(FXMMATRIX world, FXMMATRIX view[2], FXMMATRIX projection[2], FXMVECTOR color, _In_opt_ ID3D11ShaderResourceView* texture, bool wireframe, _In_opt_ std::function<void()> setCustomState);
+  void XM_CALLCONV Draw(FXMMATRIX world, CXMMATRIX leftView, CXMMATRIX rightView, CXMMATRIX leftProjection, CXMMATRIX rightProjection, CXMVECTOR color, _In_opt_ ID3D11ShaderResourceView* texture, bool wireframe, _In_opt_ std::function<void()> setCustomState);
 
   void Draw(_In_ IEffect* effect, _In_ ID3D11InputLayout* inputLayout, bool alpha, bool wireframe, _In_opt_ std::function<void()> setCustomState);
 
@@ -217,9 +217,11 @@ const std::array<float, 6>& XM_CALLCONV InstancedGeometricPrimitive::Impl::GetBo
 // Draws the primitive.
 _Use_decl_annotations_
 void XM_CALLCONV InstancedGeometricPrimitive::Impl::Draw(FXMMATRIX world,
-    FXMMATRIX view[2],
-    FXMMATRIX projection[2],
-    FXMVECTOR color,
+    CXMMATRIX leftView,
+    CXMMATRIX rightView,
+    CXMMATRIX leftProjection,
+    CXMMATRIX rightProjection,
+    CXMVECTOR color,
     ID3D11ShaderResourceView* texture,
     bool wireframe,
     std::function<void()> setCustomState)
@@ -244,7 +246,7 @@ void XM_CALLCONV InstancedGeometricPrimitive::Impl::Draw(FXMMATRIX world,
   }
 
   // Set effect parameters.
-  effect->SetMatrices(world, view, projection);
+  effect->SetMatrices(world, leftView, rightView, leftProjection, rightProjection);
 
   effect->SetColorAndAlpha(color);
 
@@ -357,9 +359,9 @@ const std::array<float, 6>& XM_CALLCONV DirectX::InstancedGeometricPrimitive::Ge
 }
 
 _Use_decl_annotations_
-void XM_CALLCONV InstancedGeometricPrimitive::Draw(FXMMATRIX world, FXMMATRIX view[2], FXMMATRIX projection[2], FXMVECTOR color, ID3D11ShaderResourceView* texture, bool wireframe, std::function<void()> setCustomState)
+void XM_CALLCONV InstancedGeometricPrimitive::Draw(FXMMATRIX world, CXMMATRIX leftView, CXMMATRIX rightView, CXMMATRIX leftProjection, CXMMATRIX rightProjection, CXMVECTOR color, ID3D11ShaderResourceView* texture, bool wireframe, std::function<void()> setCustomState)
 {
-  pImpl->Draw(world, view, projection, color, texture, wireframe, setCustomState);
+  pImpl->Draw(world, leftView, rightView, leftProjection, rightProjection, color, texture, wireframe, setCustomState);
 }
 
 _Use_decl_annotations_
