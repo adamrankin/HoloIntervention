@@ -444,17 +444,13 @@ namespace HoloIntervention
 
       if (m_primitive != nullptr)
       {
-        FXMMATRIX view[2] =
-        {
-          XMLoadFloat4x4(&(m_cameraResources->GetLatestViewProjectionBuffer().hmdToView[0])),
-          XMLoadFloat4x4(&(m_cameraResources->GetLatestViewProjectionBuffer().hmdToView[1]))
-        };
-        FXMMATRIX projection[2] =
-        {
-          XMLoadFloat4x4(&(m_cameraResources->GetLatestViewProjectionBuffer().projection[0])),
-          XMLoadFloat4x4(&(m_cameraResources->GetLatestViewProjectionBuffer().projection[1]))
-        };
-        m_primitive->Draw(XMLoadFloat4x4(&m_currentPose), view, projection, XMLoadFloat4(&m_currentColour));
+        m_primitive->Draw(XMLoadFloat4x4(&m_currentPose),
+                          XMLoadFloat4x4(&(m_cameraResources->GetLatestViewProjectionBuffer().hmdToView[0])),
+                          XMLoadFloat4x4(&(m_cameraResources->GetLatestViewProjectionBuffer().hmdToView[1])),
+                          XMLoadFloat4x4(&(m_cameraResources->GetLatestViewProjectionBuffer().projection[0])),
+                          XMLoadFloat4x4(&(m_cameraResources->GetLatestViewProjectionBuffer().projection[1])),
+                          XMLoadFloat4(&m_currentColour)
+                         );
       }
       else
       {
@@ -912,18 +908,12 @@ namespace HoloIntervention
         auto imatrices = dynamic_cast<DirectX::IStereoEffectMatrices*>(part->effect.get());
         if (imatrices)
         {
-          FXMMATRIX view[2] =
-          {
-            XMLoadFloat4x4(&(m_cameraResources->GetLatestViewProjectionBuffer().hmdToView[0])),
-            XMLoadFloat4x4(&(m_cameraResources->GetLatestViewProjectionBuffer().hmdToView[1]))
-          };
-          FXMMATRIX projection[2] =
-          {
-            XMLoadFloat4x4(&(m_cameraResources->GetLatestViewProjectionBuffer().projection[0])),
-            XMLoadFloat4x4(&(m_cameraResources->GetLatestViewProjectionBuffer().projection[1]))
-          };
-
-          imatrices->SetMatrices(DirectX::XMLoadFloat4x4(&m_currentPose), view, projection);
+          imatrices->SetMatrices(DirectX::XMLoadFloat4x4(&m_currentPose),
+                                 XMLoadFloat4x4(&(m_cameraResources->GetLatestViewProjectionBuffer().hmdToView[0])),
+                                 XMLoadFloat4x4(&(m_cameraResources->GetLatestViewProjectionBuffer().hmdToView[1])),
+                                 XMLoadFloat4x4(&(m_cameraResources->GetLatestViewProjectionBuffer().projection[0])),
+                                 XMLoadFloat4x4(&(m_cameraResources->GetLatestViewProjectionBuffer().projection[1]))
+                                );
         }
 
         DrawMeshPart(*part, setCustomState);

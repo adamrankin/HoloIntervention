@@ -29,11 +29,11 @@ using Microsoft::WRL::ComPtr;
 namespace DirectX
 {
   // IEffectMatrices default method
-  void XM_CALLCONV IStereoEffectMatrices::SetMatrices(FXMMATRIX world, FXMMATRIX view[2], FXMMATRIX projection[2])
+  void XM_CALLCONV IStereoEffectMatrices::SetMatrices(FXMMATRIX world, CXMMATRIX leftView, CXMMATRIX rightView, CXMMATRIX leftProjection, CXMMATRIX rightProjection)
   {
     SetWorld(world);
-    SetView(view);
-    SetProjection(projection);
+    SetView(leftView, rightView);
+    SetProjection(leftProjection, rightProjection);
   }
 
   // Constructor initializes default matrix values.

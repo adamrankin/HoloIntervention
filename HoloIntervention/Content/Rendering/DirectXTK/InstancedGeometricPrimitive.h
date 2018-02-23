@@ -65,7 +65,7 @@ namespace DirectX
     const std::array<float, 6>& XM_CALLCONV GetBounds() const;
 
     // Draw the primitive.
-    void XM_CALLCONV Draw(FXMMATRIX world, FXMMATRIX view[2], FXMMATRIX projection[2], FXMVECTOR color = Colors::White, _In_opt_ ID3D11ShaderResourceView* texture = nullptr, bool wireframe = false,
+    void XM_CALLCONV Draw(FXMMATRIX world, CXMMATRIX leftView, CXMMATRIX rightView, CXMMATRIX leftProjection, CXMMATRIX rightProjection, CXMVECTOR color = Colors::White, _In_opt_ ID3D11ShaderResourceView* texture = nullptr, bool wireframe = false,
                           _In_opt_ std::function<void __cdecl()> setCustomState = nullptr);
 
     // Draw the primitive using a custom effect.
