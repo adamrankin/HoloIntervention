@@ -291,11 +291,18 @@ namespace HoloIntervention
         {
           m_forcePose = true;
           m_regAnchor = m_physicsAPI.GetAnchor(REGISTRATION_ANCHOR_NAME);
-          m_regAnchorModel->SetVisible(true);
-          std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
-          if (m_currentRegistrationMethod != nullptr)
+          if (m_regAnchor != nullptr)
           {
-            m_currentRegistrationMethod->SetWorldAnchor(m_regAnchor);
+            m_regAnchorModel->SetVisible(true);
+            std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
+            if (m_currentRegistrationMethod != nullptr)
+            {
+              m_currentRegistrationMethod->SetWorldAnchor(m_regAnchor);
+            }
+          }
+          else
+          {
+            LOG_ERROR("Anchor exists by name but is nullptr.");
           }
         }
       });
