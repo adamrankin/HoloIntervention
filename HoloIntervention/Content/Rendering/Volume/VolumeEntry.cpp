@@ -1,5 +1,5 @@
 /*====================================================================
-Copyright(c) 2017 Adam Rankin
+Copyright(c) 2018 Adam Rankin
 
 
 Permission is hereby granted, free of charge, to any person obtaining a
@@ -278,7 +278,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void VolumeEntry::SetFrame(UWPOpenIGTLink::TrackedFrame^ frame)
+    void VolumeEntry::SetFrame(UWPOpenIGTLink::VideoFrame^ frame)
     {
       auto frameSize = frame->Dimensions;
       if (frameSize[2] < 1)
@@ -349,7 +349,7 @@ namespace HoloIntervention
 
       auto bytesPerPixel = BitsPerPixel((DXGI_FORMAT)m_frame->GetPixelFormat(true)) / 8;
 
-      std::shared_ptr<byte> image = *(std::shared_ptr<byte>*)(m_frame->GetImageData());
+      std::shared_ptr<byte> image = *(std::shared_ptr<byte>*)(m_frame->Image->GetImageData());
       if (image == nullptr)
       {
         LOG(LogLevelType::LOG_LEVEL_ERROR, "Unable to access image buffer.");
@@ -430,7 +430,7 @@ namespace HoloIntervention
 
       auto format = (DXGI_FORMAT)m_frame->GetPixelFormat(true);
       auto bytesPerPixel = BitsPerPixel(format) / 8;
-      byte* imageRaw = GetDataFromIBuffer<byte>(m_frame->Frame->ImageData);
+      byte* imageRaw = GetDataFromIBuffer<byte>(m_frame->Image->ImageData);
       if (imageRaw == nullptr)
       {
         LOG(LogLevelType::LOG_LEVEL_ERROR, "Unable to access image buffer.");
@@ -504,15 +504,15 @@ namespace HoloIntervention
         delete m_opacityTransferFunction;
         switch (functionType)
         {
-        case VolumeEntry::TransferFunction_Piecewise_Linear:
-        {
-          m_opacityTFType = VolumeEntry::TransferFunction_Piecewise_Linear;
-          m_opacityTransferFunction = new PiecewiseLinearTransferFunction();
-          break;
-        }
-        default:
-          throw std::invalid_argument("Function type not recognized.");
-          break;
+          case VolumeEntry::TransferFunction_Piecewise_Linear:
+          {
+            m_opacityTFType = VolumeEntry::TransferFunction_Piecewise_Linear;
+            m_opacityTransferFunction = new PiecewiseLinearTransferFunction();
+            break;
+          }
+          default:
+            throw std::invalid_argument("Function type not recognized.");
+            break;
         }
 
         for (auto& point : controlPoints)

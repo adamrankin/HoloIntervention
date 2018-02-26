@@ -1,5 +1,5 @@
 /*====================================================================
-Copyright(c) 2017 Adam Rankin
+Copyright(c) 2018 Adam Rankin
 
 
 Permission is hereby granted, free of charge, to any person obtaining a
@@ -140,6 +140,7 @@ namespace HoloIntervention
       UWPOpenIGTLink::TransformListABI^ GetTDataFrame(uint64 hashedConnectionName, double& latestTimestamp);
       UWPOpenIGTLink::Transform^ GetTransform(uint64 hashedConnectionName, UWPOpenIGTLink::TransformName^ transformName, double& latestTimestamp);
       UWPOpenIGTLink::Polydata^ GetPolydata(uint64 hashedConnectionName, Platform::String^ name);
+      UWPOpenIGTLink::VideoFrame^ GetImage(uint64 hashedConnectionName, double& latestTimestamp);
 
       void Update(DX::StepTimer& timer);
 

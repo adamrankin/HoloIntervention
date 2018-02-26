@@ -1,5 +1,5 @@
 /*====================================================================
-Copyright(c) 2017 Adam Rankin
+Copyright(c) 2018 Adam Rankin
 
 
 Permission is hereby granted, free of charge, to any person obtaining a
@@ -152,7 +152,7 @@ namespace HoloIntervention
           {
             return entry->GetId();
           }
-          entry->SetFrame(frame);
+          entry->SetFrame(frame->Frame);
 
           return entry->GetId();
         });
@@ -223,7 +223,7 @@ namespace HoloIntervention
       if (FindSlice(sliceToken, entry))
       {
         entry->SetDesiredPose(desiredPose);
-        entry->SetFrame(frame);
+        entry->SetFrame(frame->Frame);
       }
     }
 

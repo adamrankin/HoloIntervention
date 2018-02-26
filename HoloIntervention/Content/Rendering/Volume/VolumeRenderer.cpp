@@ -1,5 +1,5 @@
 /*====================================================================
-Copyright(c) 2017 Adam Rankin
+Copyright(c) 2018 Adam Rankin
 
 
 Permission is hereby granted, free of charge, to any person obtaining a
@@ -104,7 +104,7 @@ namespace HoloIntervention
 
         if (frame != nullptr)
         {
-          entry->SetFrame(frame);
+          entry->SetFrame(frame->Frame);
           entry->SetShowing(true);
         }
 
@@ -194,7 +194,7 @@ namespace HoloIntervention
       if (FindVolume(volumeToken, entry))
       {
         entry->SetDesiredPose(desiredPose);
-        entry->SetFrame(frame);
+        entry->SetFrame(frame->Frame);
       }
     }
 

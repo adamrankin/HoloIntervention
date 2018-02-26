@@ -1,5 +1,5 @@
 /*====================================================================
-Copyright(c) 2017 Adam Rankin
+Copyright(c) 2018 Adam Rankin
 
 
 Permission is hereby granted, free of charge, to any person obtaining a
@@ -83,8 +83,8 @@ namespace HoloIntervention
       virtual void RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap);
 
     protected:
-      void Process2DFrame(UWPOpenIGTLink::TrackedFrame^ frame, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);
-      void Process3DFrame(UWPOpenIGTLink::TrackedFrame^ frame, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);
+      void Process2DFrame(UWPOpenIGTLink::VideoFrame^ frame, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);
+      void Process3DFrame(UWPOpenIGTLink::VideoFrame^ frame, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);
 
     protected:
       // Cached variables

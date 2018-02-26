@@ -1,5 +1,5 @@
 /*====================================================================
-Copyright(c) 2017 Adam Rankin
+Copyright(c) 2018 Adam Rankin
 
 
 Permission is hereby granted, free of charge, to any person obtaining a
@@ -99,7 +99,7 @@ namespace HoloIntervention
       void Render(uint32 indexCount);
 
 
-      void SetFrame(UWPOpenIGTLink::TrackedFrame^ frame);
+      void SetFrame(UWPOpenIGTLink::VideoFrame^ frame);
       void SetShowing(bool showing);
       uint64 GetToken() const;
 
@@ -169,8 +169,8 @@ namespace HoloIntervention
 
       // CPU resources for volume rendering
       VolumeEntryConstantBuffer                         m_constantBuffer;
-      UWPOpenIGTLink::TrackedFrame^                     m_frame;
-      UWPOpenIGTLink::TrackedFrame^                     m_onGPUFrame;
+      UWPOpenIGTLink::VideoFrame^                       m_frame;
+      UWPOpenIGTLink::VideoFrame^                       m_onGPUFrame;
       mutable std::mutex                                m_imageAccessMutex;
       float                                             m_stepScale = 1.f;  // Increasing this reduces the number of steps taken per pixel
 

@@ -1,5 +1,5 @@
 /*====================================================================
-Copyright(c) 2017 Adam Rankin
+Copyright(c) 2018 Adam Rankin
 
 
 Permission is hereby granted, free of charge, to any person obtaining a
@@ -347,43 +347,43 @@ namespace HoloIntervention
 
         switch (connector->State)
         {
-        case System::NetworkSystem::CONNECTION_STATE_CONNECTING:
-        case System::NetworkSystem::CONNECTION_STATE_DISCONNECTING:
-          if (connector->Icon.m_networkPreviousState != connector->State)
-          {
-            connector->Icon.m_networkBlinkTimer = 0.f;
-          }
-          else
-          {
-            connector->Icon.m_networkBlinkTimer += static_cast<float>(timer.GetElapsedSeconds());
-            if (connector->Icon.m_networkBlinkTimer >= NETWORK_BLINK_TIME_SEC)
+          case System::NetworkSystem::CONNECTION_STATE_CONNECTING:
+          case System::NetworkSystem::CONNECTION_STATE_DISCONNECTING:
+            if (connector->Icon.m_networkPreviousState != connector->State)
             {
               connector->Icon.m_networkBlinkTimer = 0.f;
-              connector->Icon.m_iconEntry->GetModelEntry()->ToggleVisible();
             }
-          }
-          connector->Icon.m_networkIsBlinking = true;
-          break;
-        case System::NetworkSystem::CONNECTION_STATE_UNKNOWN:
-        case System::NetworkSystem::CONNECTION_STATE_DISCONNECTED:
-        case System::NetworkSystem::CONNECTION_STATE_CONNECTION_LOST:
-          connector->Icon.m_iconEntry->GetModelEntry()->SetVisible(true);
-          connector->Icon.m_networkIsBlinking = false;
-          if (connector->Icon.m_wasNetworkConnected)
-          {
-            connector->Icon.m_iconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
-            connector->Icon.m_wasNetworkConnected = false;
-          }
-          break;
-        case System::NetworkSystem::CONNECTION_STATE_CONNECTED:
-          connector->Icon.m_iconEntry->GetModelEntry()->SetVisible(true);
-          connector->Icon.m_networkIsBlinking = false;
-          if (!connector->Icon.m_wasNetworkConnected)
-          {
-            connector->Icon.m_wasNetworkConnected = true;
-            connector->Icon.m_iconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
-          }
-          break;
+            else
+            {
+              connector->Icon.m_networkBlinkTimer += static_cast<float>(timer.GetElapsedSeconds());
+              if (connector->Icon.m_networkBlinkTimer >= NETWORK_BLINK_TIME_SEC)
+              {
+                connector->Icon.m_networkBlinkTimer = 0.f;
+                connector->Icon.m_iconEntry->GetModelEntry()->ToggleVisible();
+              }
+            }
+            connector->Icon.m_networkIsBlinking = true;
+            break;
+          case System::NetworkSystem::CONNECTION_STATE_UNKNOWN:
+          case System::NetworkSystem::CONNECTION_STATE_DISCONNECTED:
+          case System::NetworkSystem::CONNECTION_STATE_CONNECTION_LOST:
+            connector->Icon.m_iconEntry->GetModelEntry()->SetVisible(true);
+            connector->Icon.m_networkIsBlinking = false;
+            if (connector->Icon.m_wasNetworkConnected)
+            {
+              connector->Icon.m_iconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
+              connector->Icon.m_wasNetworkConnected = false;
+            }
+            break;
+          case System::NetworkSystem::CONNECTION_STATE_CONNECTED:
+            connector->Icon.m_iconEntry->GetModelEntry()->SetVisible(true);
+            connector->Icon.m_networkIsBlinking = false;
+            if (!connector->Icon.m_wasNetworkConnected)
+            {
+              connector->Icon.m_wasNetworkConnected = true;
+              connector->Icon.m_iconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
+            }
+            break;
         }
 
         connector->Icon.m_networkPreviousState = connector->State;
@@ -657,6 +657,22 @@ namespace HoloIntervention
       {
         auto polydata = (*iter)->Connector->GetPolydata(name);
         return polydata;
+      }
+      return nullptr;
+    }
+
+    //----------------------------------------------------------------------------
+    UWPOpenIGTLink::VideoFrame^ NetworkSystem::GetImage(uint64 hashedConnectionName, double& latestTimestamp)
+    {
+      std::lock_guard<std::recursive_mutex> guard(m_connectorsMutex);
+      auto iter = std::find_if(begin(m_connectors), end(m_connectors), [hashedConnectionName](std::shared_ptr<ConnectorEntry> entry)
+      {
+        return hashedConnectionName == entry->HashedName;
+      });
+      if (iter != end(m_connectors))
+      {
+        auto image = (*iter)->Connector->GetImage(latestTimestamp);
+        return image;
       }
       return nullptr;
     }

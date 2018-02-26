@@ -1,5 +1,5 @@
 /*====================================================================
-Copyright(c) 2017 Adam Rankin
+Copyright(c) 2018 Adam Rankin
 
 
 Permission is hereby granted, free of charge, to any person obtaining a
@@ -210,9 +210,9 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SliceEntry::SetFrame(UWPOpenIGTLink::TrackedFrame^ frame)
+    void SliceEntry::SetFrame(UWPOpenIGTLink::VideoFrame^ frame)
     {
-      std::shared_ptr<byte> image = *(std::shared_ptr<byte>*)(frame->GetImageData());
+      std::shared_ptr<byte> image = *(std::shared_ptr<byte>*)(frame->GetImage()->GetImageData());
       if (image == nullptr)
       {
         LOG(LogLevelType::LOG_LEVEL_ERROR, "Unable to access image buffer.");

@@ -1,5 +1,5 @@
 /*====================================================================
-Copyright(c) 2017 Adam Rankin
+Copyright(c) 2018 Adam Rankin
 
 
 Permission is hereby granted, free of charge, to any person obtaining a
@@ -254,18 +254,41 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ImagingSystem::Update(const DX::StepTimer& timer, SpatialCoordinateSystem^ coordSystem)
     {
+      UWPOpenIGTLink::VideoFrame^ image(nullptr);
       UWPOpenIGTLink::TrackedFrame^ frame = m_networkSystem.GetTrackedFrame(m_hashedSliceConnectionName, m_latestSliceTimestamp);
-      if (frame != nullptr && frame->HasImage() && frame->Dimensions[2] == 1)
+      if (frame == nullptr)
       {
-        m_transformRepository->SetTransforms(frame);
-        Process2DFrame(frame, coordSystem);
+        image = m_networkSystem.GetImage(m_hashedSliceConnectionName, m_latestSliceTimestamp);
+      }
+      else
+      {
+        image = frame->Frame;
+      }
+      if (image != nullptr && image->Dimensions[2] == 1)
+      {
+        if (frame != nullptr)
+        {
+          m_transformRepository->SetTransforms(frame);
+        }
+        Process2DFrame(image, coordSystem);
       }
 
       frame = m_networkSystem.GetTrackedFrame(m_hashedVolumeConnectionName, m_latestVolumeTimestamp);
-      if (frame != nullptr && frame->HasImage() && frame->Dimensions[2] > 1)
+      if (frame == nullptr)
       {
-        m_transformRepository->SetTransforms(frame);
-        Process3DFrame(frame, coordSystem);
+        image = m_networkSystem.GetImage(m_hashedVolumeConnectionName, m_latestVolumeTimestamp);
+      }
+      else
+      {
+        image = frame->Frame;
+      }
+      if (image != nullptr && image->Dimensions[2] > 1)
+      {
+        if (frame != nullptr)
+        {
+          m_transformRepository->SetTransforms(frame);
+        }
+        Process3DFrame(image, coordSystem);
       }
     }
 
@@ -348,7 +371,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ImagingSystem::Process2DFrame(UWPOpenIGTLink::TrackedFrame^ frame, SpatialCoordinateSystem^ hmdCoordinateSystem)
+    void ImagingSystem::Process2DFrame(UWPOpenIGTLink::VideoFrame^ frame, SpatialCoordinateSystem^ hmdCoordinateSystem)
     {
       m_latestSliceTimestamp = frame->Timestamp;
 
@@ -409,7 +432,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ImagingSystem::Process3DFrame(UWPOpenIGTLink::TrackedFrame^ frame, SpatialCoordinateSystem^ hmdCoordinateSystem)
+    void ImagingSystem::Process3DFrame(UWPOpenIGTLink::VideoFrame^ frame, SpatialCoordinateSystem^ hmdCoordinateSystem)
     {
       m_latestVolumeTimestamp = frame->Timestamp;
 
