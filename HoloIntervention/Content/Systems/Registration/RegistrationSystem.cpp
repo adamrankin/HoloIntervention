@@ -324,6 +324,12 @@ namespace HoloIntervention
         method.second->RegisterVoiceCallbacks(callbackMap);
       }
 
+      callbackMap[L"debug registration"] = [this](SpeechRecognitionResult ^ result)
+      {
+        m_cachedReferenceToAnchor = float4x4::identity();
+        m_cachedReferenceToAnchor.m14 = 0.01f;
+      };
+
       callbackMap[L"drop anchor"] = [this](SpeechRecognitionResult ^ result)
       {
         m_regAnchorRequested = true;

@@ -24,6 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "pch.h"
 #include "Common.h"
+#include "Debug.h"
 #include "Icons.h"
 #include "Log.h"
 #include "NetworkSystem.h"
@@ -181,10 +182,11 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    NetworkSystem::NetworkSystem(System::NotificationSystem& notificationSystem, Input::VoiceInput& voiceInput, UI::Icons& icons)
+    NetworkSystem::NetworkSystem(System::NotificationSystem& notificationSystem, Input::VoiceInput& voiceInput, UI::Icons& icons, Debug& debug)
       : m_notificationSystem(notificationSystem)
       , m_voiceInput(voiceInput)
       , m_icons(icons)
+      , m_debug(debug)
     {
       /*
       disabled, currently crashes

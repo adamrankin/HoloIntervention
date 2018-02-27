@@ -184,7 +184,10 @@ namespace HoloIntervention
       if (!registrationTransformValid)
       {
         m_modelEntry->SetVisible(false);
-        m_iconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
+        if (m_iconEntry != nullptr)
+        {
+          m_iconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
+        }
         return;
       }
       else
@@ -285,23 +288,25 @@ namespace HoloIntervention
     {
       return create_task([this, entry]()
       {
-
         if (m_modelEntry == entry)
         {
-          return create_task([]() {});
+          return;
         }
 
         if (m_iconEntry != nullptr)
         {
           m_icons.RemoveEntry(m_iconEntry->GetId());
+          m_iconEntry == nullptr;
         }
 
-        return m_icons.AddEntryAsync(entry, 0).then([this, entry](std::shared_ptr<UI::IconEntry> iconEntry) -> void
-        {
-          m_modelEntry = entry;
-          m_iconEntry = iconEntry;
-          iconEntry->GetModelEntry()->SetVisible(true);
-        });
+        m_modelEntry = entry;
+
+        //return m_icons.AddEntryAsync(entry, 0).then([this, entry](std::shared_ptr<UI::IconEntry> iconEntry) -> void
+        //{
+        //  m_modelEntry = entry;
+        //  m_iconEntry = iconEntry;
+        //  iconEntry->GetModelEntry()->SetVisible(true);
+        //});
       });
     }
 

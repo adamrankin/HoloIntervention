@@ -270,6 +270,10 @@ namespace HoloIntervention
         {
           m_transformRepository->SetTransforms(frame);
         }
+        else if (image != nullptr)
+        {
+          m_transformRepository->SetImageTransform(image);
+        }
         Process2DFrame(image, coordSystem);
       }
 
@@ -287,6 +291,10 @@ namespace HoloIntervention
         if (frame != nullptr)
         {
           m_transformRepository->SetTransforms(frame);
+        }
+        else if (image != nullptr)
+        {
+          m_transformRepository->SetImageTransform(image);
         }
         Process3DFrame(image, coordSystem);
       }
@@ -375,60 +383,67 @@ namespace HoloIntervention
     {
       m_latestSliceTimestamp = frame->Timestamp;
 
+      if (m_sliceEntry == nullptr)
+      {
+        // TODO : what happened if this is hit?
+        return;
+      }
+
       // Update the transform repository with the latest registration
-      float4x4 referenceToHMD(float4x4::identity());
-      if (!m_registrationSystem.GetReferenceToCoordinateSystemTransformation(hmdCoordinateSystem, referenceToHMD))
+      if (!m_sliceEntry->GetHeadlocked())
       {
-        return;
-      }
+        float4x4 referenceToHMD(float4x4::identity());
+        if (!m_registrationSystem.GetReferenceToCoordinateSystemTransformation(hmdCoordinateSystem, referenceToHMD))
+        {
+          return;
+        }
 
-      if (!m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD"), transpose(referenceToHMD), true))
-      {
-        return;
-      }
+        if (!m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD"), transpose(referenceToHMD), true))
+        {
+          return;
+        }
 
-      IKeyValuePair<bool, float4x4>^ result = m_transformRepository->GetTransform(m_sliceToHMDName);
-      if (!result->Key)
-      {
-        LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to retrieve " + m_sliceToHMDName->GetTransformName() + L" from repository.");
-        return;
-      }
-      float4x4 imageToHMDTransform = transpose(result->Value);
+        IKeyValuePair<bool, float4x4>^ result = m_transformRepository->GetTransform(m_sliceToHMDName);
+        if (!result->Key)
+        {
+          LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to retrieve " + m_sliceToHMDName->GetTransformName() + L" from repository.");
+          return;
+        }
+        float4x4 imageToHMDTransform = transpose(result->Value);
 
-      // We must also transform from model space to image space
-      // +0.5 x, -0.5 y to get square from 0-1, 0-(-1)
-      // 1   0   0   0
-      // 0   1   0   0
-      // 0   0   1   0
-      // 0.5 -0.5 0   1
-      // * imageSize[0], * imageSize[1] to scale and get rect from 0-imageSize[0], 0-(-imageSize[1]) (pixel space)
-      // imageSize[0] 0             0 0
-      // 0            imageSize[1]  0 0
-      // 0            0             1 0
-      // 0            0             0 1
-      //
-      // Model space is vertex space, [-0.5,0.5]
-      auto vertexToOriginTransform = make_float4x4_translation(0.5f, -0.5f, 0.f);
-      auto originToImageTransform = make_float4x4_scale(frame->Dimensions[0] * 1.f, frame->Dimensions[1] * 1.f, 1.f);
-      auto vertexToHMD = vertexToOriginTransform * originToImageTransform * imageToHMDTransform;
+        // We must also transform from model space to image space
+        // +0.5 x, -0.5 y to get square from 0-1, 0-(-1)
+        // 1   0   0   0
+        // 0   1   0   0
+        // 0   0   1   0
+        // 0.5 -0.5 0   1
+        // * imageSize[0], * imageSize[1] to scale and get rect from 0-imageSize[0], 0-(-imageSize[1]) (pixel space)
+        // imageSize[0] 0             0 0
+        // 0            imageSize[1]  0 0
+        // 0            0             1 0
+        // 0            0             0 1
+        //
+        // Model space is vertex space, [-0.5,0.5]
+        auto vertexToOriginTransform = make_float4x4_translation(0.5f, -0.5f, 0.f);
+        auto originToImageTransform = make_float4x4_scale(frame->Dimensions[0] * 1.f, frame->Dimensions[1] * 1.f, 1.f);
+        auto vertexToHMD = vertexToOriginTransform * originToImageTransform * imageToHMDTransform;
 
 #if defined(_DEBUG)
-      m_debug.UpdateCoordinateSystem(L"vertexOrigin", vertexToHMD);
+        m_debug.UpdateCoordinateSystem(L"vertexOrigin", vertexToHMD);
 #endif
 
 #if defined(_DEBUG)
-      m_debug.UpdateCoordinateSystem(L"unscaledOrigin", originToImageTransform * imageToHMDTransform);
+        m_debug.UpdateCoordinateSystem(L"unscaledOrigin", originToImageTransform * imageToHMDTransform);
 #endif
 
 #if defined(_DEBUG)
-      m_debug.UpdateCoordinateSystem(L"imageOrigin", imageToHMDTransform);
+        m_debug.UpdateCoordinateSystem(L"imageOrigin", imageToHMDTransform);
 #endif
 
-      if (m_sliceEntry != nullptr)
-      {
-        m_sliceEntry->SetFrame(frame);
         m_sliceEntry->SetDesiredPose(vertexToHMD);
       }
+
+      m_sliceEntry->SetFrame(frame);
     }
 
     //----------------------------------------------------------------------------

@@ -46,6 +46,8 @@ namespace DX
 
 namespace HoloIntervention
 {
+  class Debug;
+
   namespace Input
   {
     class VoiceInput;
@@ -104,7 +106,7 @@ namespace HoloIntervention
       virtual concurrency::task<bool> ReadConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
 
     public:
-      NetworkSystem(System::NotificationSystem& notificationSystem, Input::VoiceInput& voiceInput, UI::Icons& icons);
+      NetworkSystem(System::NotificationSystem& notificationSystem, Input::VoiceInput& voiceInput, UI::Icons& icons, Debug& debug);
       virtual ~NetworkSystem();
 
       /// IVoiceInput functions
@@ -153,6 +155,7 @@ namespace HoloIntervention
       System::NotificationSystem&                   m_notificationSystem;
       Input::VoiceInput&                            m_voiceInput;
       UI::Icons&                                    m_icons;
+      Debug&                                        m_debug;
 
       std::wstring                                  m_accumulatedDictationResult;
       uint64                                        m_dictationMatcherToken;
