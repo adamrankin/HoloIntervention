@@ -357,7 +357,7 @@ namespace HoloIntervention
           return;
         }
         m_notificationSystem.QueueMessage(L"Slice is now head-locked.");
-        m_sliceEntry->SetHeadlocked(true);
+        m_sliceEntry->SetHeadlocked(true, true);
       };
 
       callbackMap[L"unlock slice"] = [this](SpeechRecognitionResult ^ result)
@@ -368,7 +368,7 @@ namespace HoloIntervention
           return;
         }
         m_notificationSystem.QueueMessage(L"Slice is now in world-space.");
-        m_sliceEntry->SetHeadlocked(false);
+        m_sliceEntry->SetHeadlocked(false, true);
       };
 
       callbackMap[L"piecewise linear transfer function"] = [this](SpeechRecognitionResult ^ result)
@@ -411,36 +411,38 @@ namespace HoloIntervention
         }
         float4x4 imageToHMDTransform = transpose(result->Value);
 
-        // We must also transform from model space to image space
+#if defined(_DEBUG)
+        auto name = ref new UWPOpenIGTLink::TransformName(L"Probe", L"Reference");
+        double latestTimestamp(0.0);
+        UWPOpenIGTLink::Transform^ transform = m_networkSystem.GetTransform(m_hashedSliceConnectionName, name, latestTimestamp);
+        m_transformRepository->SetTransform(name, transform->Matrix, transform->Valid);
+        result = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"Probe", L"HMD"));
+        if (result->Key)
+        {
+          m_debug.UpdateCoordinateSystem(L"probe", transpose(result->Value));
+        }
+#endif
+
+        // We transform from quad space to image space
         // +0.5 x, -0.5 y to get square from 0-1, 0-(-1)
         // 1   0   0   0
         // 0   1   0   0
         // 0   0   1   0
         // 0.5 -0.5 0   1
-        // * imageSize[0], * imageSize[1] to scale and get rect from 0-imageSize[0], 0-(-imageSize[1]) (pixel space)
-        // imageSize[0] 0             0 0
-        // 0            imageSize[1]  0 0
-        // 0            0             1 0
-        // 0            0             0 1
         //
-        // Model space is vertex space, [-0.5,0.5]
-        auto vertexToOriginTransform = make_float4x4_translation(0.5f, -0.5f, 0.f);
-        auto originToImageTransform = make_float4x4_scale(frame->Dimensions[0] * 1.f, frame->Dimensions[1] * 1.f, 1.f);
-        auto vertexToHMD = vertexToOriginTransform * originToImageTransform * imageToHMDTransform;
+        // Quad space is vertex space, [-0.5,0.5]
+        auto vertexToImageTransform = make_float4x4_translation(0.5f, -0.5f, 0.f);
+        auto vertexToHMD = vertexToImageTransform * imageToHMDTransform;
 
 #if defined(_DEBUG)
-        m_debug.UpdateCoordinateSystem(L"vertexOrigin", vertexToHMD);
-#endif
-
-#if defined(_DEBUG)
-        m_debug.UpdateCoordinateSystem(L"unscaledOrigin", originToImageTransform * imageToHMDTransform);
+        m_debug.UpdateCoordinateSystem(L"vertex", vertexToHMD);
 #endif
 
 #if defined(_DEBUG)
         m_debug.UpdateCoordinateSystem(L"imageOrigin", imageToHMDTransform);
 #endif
 
-        m_sliceEntry->SetDesiredPose(imageToHMDTransform);
+        m_sliceEntry->SetDesiredPose(vertexToHMD);
       }
 
       m_sliceEntry->SetFrame(frame);

@@ -79,7 +79,7 @@ namespace HoloIntervention
       bool GetVisible() const;
       void SetVisible(bool visible);
 
-      void SetHeadlocked(bool headLocked);
+      void SetHeadlocked(bool headLocked, bool smooth = false);
       bool GetHeadlocked() const;
 
       void SetUseHeadUpDirection(bool use);

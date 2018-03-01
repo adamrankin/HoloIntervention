@@ -159,29 +159,26 @@ namespace HoloIntervention
         // Get the gaze direction relative to the given coordinate system.
         const float3 offsetFromGaze = pose->Head->Position + (float3(LOCKED_SLICE_DISTANCE_OFFSET) * pose->Head->ForwardDirection);
 
-        // Use linear interpolation to smooth the position over time
-        float3 smoothedPosition;
+        float4x4 worldTransform;
+        if (m_useHeadUpDirection)
+        {
+          worldTransform = make_float4x4_world(offsetFromGaze, pose->Head->ForwardDirection, pose->Head->UpDirection);
+        }
+        else
+        {
+          worldTransform = make_float4x4_world(offsetFromGaze, pose->Head->ForwardDirection, float3(0.f, 1.f, 0.f));
+        }
+
         if (m_firstFrame)
         {
-          smoothedPosition = offsetFromGaze;
+          m_currentPose = make_float4x4_scale(m_scalingFactor.x, m_scalingFactor.y, 1.f) * worldTransform;
           m_firstFrame = false;
         }
         else
         {
-          smoothedPosition = lerp(currentTranslation, offsetFromGaze, deltaTime * LERP_RATE);
+          m_desiredPose = make_float4x4_scale(m_scalingFactor.x, m_scalingFactor.y, 1.f) * worldTransform;
+          m_currentPose = lerp(m_currentPose, m_desiredPose, deltaTime * LERP_RATE);
         }
-
-        float4x4 worldTransform;
-        if (m_useHeadUpDirection)
-        {
-          worldTransform = make_float4x4_world(smoothedPosition, pose->Head->ForwardDirection, pose->Head->UpDirection);
-        }
-        else
-        {
-          worldTransform = make_float4x4_world(smoothedPosition, pose->Head->ForwardDirection, float3(0.f, 1.f, 0.f));
-        }
-        m_desiredPose = make_float4x4_scale(m_scalingFactor.x, m_scalingFactor.y, 1.f) * worldTransform;
-        m_currentPose = lerp(m_currentPose, m_desiredPose, deltaTime * LERP_RATE);
       }
 
       XMStoreFloat4x4(&m_constantBuffer.worldMatrix, XMLoadFloat4x4(&m_currentPose));
@@ -382,9 +379,13 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SliceEntry::SetHeadlocked(bool headLocked)
+    void SliceEntry::SetHeadlocked(bool headLocked, bool smooth)
     {
       m_headLocked = headLocked;
+      if (!smooth)
+      {
+        m_firstFrame = true;
+      }
     }
 
     //----------------------------------------------------------------------------

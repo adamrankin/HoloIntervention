@@ -74,7 +74,7 @@
   <IGTConnections>
     <Connection
       Name="PlusServer"
-      Host="192.168.80.1"
+      Host="172.16.80.1"
       Port="18944"
       EmbeddedImageTransformName="ImageToReference" 
       />
