@@ -98,6 +98,8 @@ namespace HoloIntervention
       uint64 GetId() const;
       std::wstring GetUserId() const;
 
+      void SetHiddenOverride(bool arg);
+
     protected:
       // Cached links to system resources
       Rendering::ModelRenderer&                   m_modelRenderer;
@@ -112,6 +114,7 @@ namespace HoloIntervention
       std::shared_ptr<Rendering::ModelEntry>      m_modelEntry = nullptr;
       double                                      m_latestTimestamp = 0.0;
       std::wstring                                m_userId;
+      std::atomic_bool                            m_hiddenOverride = false;
 
       // Icon details
       std::shared_ptr<UI::IconEntry>              m_iconEntry = nullptr;

@@ -44,7 +44,7 @@ struct VertexShaderOutput
   min16float3 worldPos    : POSITION0;
   min16float3 worldNorm   : NORMAL0;
   min16float3 color       : COLOR0;
-  uint        viewId      : TEXCOORD5;  // SV_InstanceID % 2
+  uint        viewId      : TEXCOORD9;  // SV_InstanceID % 2
 };
 
 // Simple shader to do vertex processing on the GPU.

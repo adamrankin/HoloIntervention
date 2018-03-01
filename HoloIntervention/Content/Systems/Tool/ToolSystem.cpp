@@ -43,6 +43,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 using namespace Concurrency;
 using namespace Windows::Data::Xml::Dom;
 using namespace Windows::Foundation::Numerics;
+using namespace Windows::Media::SpeechRecognition;
 using namespace Windows::Perception::Spatial;
 using namespace Windows::Storage;
 using namespace Windows::UI::Input::Spatial;
@@ -487,7 +488,23 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ToolSystem::RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap)
     {
+      callbackMap[L"hide tools"] = [this](SpeechRecognitionResult ^ result)
+      {
+        std::lock_guard<std::mutex> guard(m_entriesMutex);
+        for (auto entry : m_toolEntries)
+        {
+          entry->SetHiddenOverride(true);
+        }
+      };
 
+      callbackMap[L"show tools"] = [this](SpeechRecognitionResult ^ result)
+      {
+        std::lock_guard<std::mutex> guard(m_entriesMutex);
+        for (auto entry : m_toolEntries)
+        {
+          entry->SetHiddenOverride(false);
+        }
+      };
     }
   }
 }

@@ -622,9 +622,6 @@
     <None Include="Assets\Models\Tools\stylus.cmo">
       <Filter>Assets\Models\Tools</Filter>
     </None>
-    <None Include="Assets\Models\heart.cmo">
-      <Filter>Assets\Models</Filter>
-    </None>
     <None Include="Assets\Models\HoloLens.cmo">
       <Filter>Assets\Models</Filter>
     </None>
@@ -636,6 +633,9 @@
     </None>
     <None Include="Assets\Models\Tools\heart.cmo">
       <Filter>Assets\Models\Tools</Filter>
+    </None>
+    <None Include="Assets\Models\heart.cmo">
+      <Filter>Assets\Models\Demo</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -821,6 +821,9 @@
     </Filter>
     <Filter Include="Assets\Models\Debug">
       <UniqueIdentifier>{3d742488-8693-44cf-a78f-cd3d9044effa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Assets\Models\Demo">
+      <UniqueIdentifier>{1ceeefc2-a7e4-4e68-a992-60a5043d81cd}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

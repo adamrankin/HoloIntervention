@@ -93,6 +93,7 @@ namespace HoloIntervention
     std::map<std::wstring, std::wstring>                            m_debugValues;
     std::atomic_bool                                                m_worldLocked = false;
     std::shared_ptr<Rendering::SliceEntry>                          m_sliceEntry = nullptr;
+    std::atomic_bool                                                m_debugShowing = false;
 
     // Coordinate system debugging
     std::mutex                                                      m_coordinateSystemModelLock;

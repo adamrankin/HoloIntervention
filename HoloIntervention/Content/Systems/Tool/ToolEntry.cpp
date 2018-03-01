@@ -192,7 +192,7 @@ namespace HoloIntervention
       }
       else
       {
-        m_modelEntry->SetVisible(true);
+        m_modelEntry->SetVisible(!m_hiddenOverride);
       }
 
       // m_transformRepository has already been initialized with the network transforms for this update
@@ -350,5 +350,10 @@ namespace HoloIntervention
       return m_userId;
     }
 
+    //----------------------------------------------------------------------------
+    void ToolEntry::SetHiddenOverride(bool arg)
+    {
+      m_hiddenOverride = arg;
+    }
   }
 }

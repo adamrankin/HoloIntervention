@@ -327,7 +327,7 @@ namespace HoloIntervention
       callbackMap[L"debug registration"] = [this](SpeechRecognitionResult ^ result)
       {
         m_cachedReferenceToAnchor = float4x4::identity();
-        m_cachedReferenceToAnchor.m14 = 0.01f;
+        m_cachedReferenceToAnchor.m41 = 0.01f;
       };
 
       callbackMap[L"drop anchor"] = [this](SpeechRecognitionResult ^ result)

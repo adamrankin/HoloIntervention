@@ -180,7 +180,8 @@ namespace HoloIntervention
         {
           worldTransform = make_float4x4_world(smoothedPosition, pose->Head->ForwardDirection, float3(0.f, 1.f, 0.f));
         }
-        m_currentPose = make_float4x4_scale(m_scalingFactor.x, m_scalingFactor.y, 1.f) * worldTransform;
+        m_desiredPose = make_float4x4_scale(m_scalingFactor.x, m_scalingFactor.y, 1.f) * worldTransform;
+        m_currentPose = lerp(m_currentPose, m_desiredPose, deltaTime * LERP_RATE);
       }
 
       XMStoreFloat4x4(&m_constantBuffer.worldMatrix, XMLoadFloat4x4(&m_currentPose));

@@ -55,7 +55,7 @@ struct VertexShaderOutput
 {
   min16float4 Position              : SV_POSITION;
   min16float3 ModelSpacePosition    : TEXCOORD0; // used in FaceAnalysisPS
-  uint        viewId                : TEXCOORD5; // SV_InstanceID % 2
+  uint        viewId                : TEXCOORD9; // SV_InstanceID % 2
 };
 
 VertexShaderOutput main(VertexShaderInput input)

@@ -440,7 +440,7 @@ namespace HoloIntervention
         m_debug.UpdateCoordinateSystem(L"imageOrigin", imageToHMDTransform);
 #endif
 
-        m_sliceEntry->SetDesiredPose(vertexToHMD);
+        m_sliceEntry->SetDesiredPose(imageToHMDTransform);
       }
 
       m_sliceEntry->SetFrame(frame);

@@ -56,12 +56,26 @@ namespace HoloIntervention
   {
     callbackMap[L"show debug"] = [this](SpeechRecognitionResult ^ result)
     {
-      m_sliceEntry->SetVisible(true);
+      m_debugShowing = true;
+      m_sliceEntry->SetVisible(m_debugShowing);
+
+      std::lock_guard<std::mutex> guard(m_coordinateSystemModelLock);
+      for (auto& entry : m_coordinateSystemModels)
+      {
+        entry.second.second->SetVisible(true);
+      }
     };
 
     callbackMap[L"hide debug"] = [this](SpeechRecognitionResult ^ result)
     {
-      m_sliceEntry->SetVisible(false);
+      m_debugShowing = false;
+      m_sliceEntry->SetVisible(m_debugShowing);
+
+      std::lock_guard<std::mutex> guard(m_coordinateSystemModelLock);
+      for (auto& entry : m_coordinateSystemModels)
+      {
+        entry.second.second->SetVisible(false);
+      }
     };
 
     callbackMap[L"lock debug"] = [this](SpeechRecognitionResult ^ result)
@@ -199,7 +213,7 @@ namespace HoloIntervention
 
         std::lock_guard<std::mutex> guard(m_coordinateSystemModelLock);
         entry->SetCurrentPose(value);
-        entry->SetVisible(true);
+        entry->SetVisible(m_debugShowing);
         m_coordinateSystemModels[key] = CoordinateSystemEntry(coordinateSystem, entry);
       });
     }
