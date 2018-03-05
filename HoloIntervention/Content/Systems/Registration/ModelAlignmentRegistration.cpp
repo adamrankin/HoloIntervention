@@ -328,10 +328,10 @@ namespace HoloIntervention
             m_holoLensIconEntry->GetModelEntry()->SetVisible(true);
             m_holoLensIconEntry->SetUserRotation(HOLOLENS_ICON_PITCH_RAD, HOLOLENS_ICON_YAW_RAD, HOLOLENS_ICON_ROLL_RAD);
 
-            m_sourceObserverId = m_spatialInput.RegisterSourceObserver([this](uint32 sourceId) {}, [this](uint32 sourceId) {}, [this](uint32 sourceId)
-            {
-              m_pointCaptureRequested = true;
-            });
+            //m_sourceObserverId = m_spatialInput.RegisterSourceObserver([this](uint32 sourceId) {}, [this](uint32 sourceId) {}, [this](uint32 sourceId)
+            //{
+            //              m_pointCaptureRequested = true;
+            //});
 
             m_modelEntry->SetVisible(true);
             m_started = true;
@@ -360,8 +360,8 @@ namespace HoloIntervention
         m_latestSphereTimestamp = 0.0;
         m_latestHoloLensTimestamp = 0.0;
 
-        m_spatialInput.UnregisterSourceObserver(m_sourceObserverId);
-        m_sourceObserverId = INVALID_TOKEN;
+        //m_spatialInput.UnregisterSourceObserver(m_sourceObserverId);
+        //m_sourceObserverId = INVALID_TOKEN;
 
         return true;
       });

@@ -368,7 +368,6 @@ namespace HoloIntervention
 
         if (headPose != nullptr)
         {
-          // TODO : is the webcam another camera pose? if so, find stereo camera pose?
           m_registrationSystem->Update(m_timer, hmdCoordinateSystem, headPose, prediction->CameraPoses->GetAt(0));
           m_gazeSystem->Update(m_timer, hmdCoordinateSystem, headPose);
           m_icons->Update(m_timer, headPose);
