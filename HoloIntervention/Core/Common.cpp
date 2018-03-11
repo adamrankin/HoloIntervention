@@ -163,7 +163,7 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
-  Concurrency::task<Windows::Data::Xml::Dom::XmlDocument^> LoadXmlDocumentAsync(Windows::Storage::StorageFile^ file)
+  task<XmlDocument^> LoadXmlDocumentAsync(Windows::Storage::StorageFile^ file)
   {
     XmlDocument^ doc = ref new XmlDocument();
     return create_task(doc->LoadFromFileAsync(file)).then([](task<XmlDocument^> previousTask) -> XmlDocument^
@@ -184,7 +184,7 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
-  std::string ToString(const Windows::Foundation::Numerics::float4x4& matrix)
+  std::string ToString(const float4x4& matrix)
   {
     std::stringstream ss;
     ss << matrix;
@@ -192,7 +192,7 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
-  std::string ToString(const Windows::Foundation::Numerics::float3& vector)
+  std::string ToString(const float3& vector)
   {
     std::stringstream ss;
     ss << vector;
@@ -200,7 +200,7 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
-  Windows::Foundation::Numerics::float3 ExtractNormal(const Windows::Foundation::Numerics::float4x4& matrix)
+  float3 ExtractNormal(const float4x4& matrix)
   {
     // Assumes column order matrix
     // TODO: verify
@@ -363,7 +363,7 @@ namespace HoloIntervention
 }
 
 //----------------------------------------------------------------------------
-std::ostream& operator<<(std::ostream& out, const Windows::Foundation::Numerics::float4x4& matrix)
+std::ostream& operator<< (std::ostream& out, const float4x4& matrix)
 {
   out << matrix.m11 << " " << matrix.m12 << " " << matrix.m13 << " " << matrix.m14 << std::endl
       << matrix.m21 << " " << matrix.m22 << " " << matrix.m23 << " " << matrix.m24 << std::endl
@@ -373,21 +373,21 @@ std::ostream& operator<<(std::ostream& out, const Windows::Foundation::Numerics:
 }
 
 //----------------------------------------------------------------------------
-std::ostream& operator<<(std::ostream& out, const Windows::Foundation::Numerics::float4& vec)
+std::ostream& operator<< (std::ostream& out, const float4& vec)
 {
   out << vec.x << " " << vec.y << " " << vec.z << " " << vec.w;
   return out;
 }
 
 //----------------------------------------------------------------------------
-std::ostream& operator<<(std::ostream& out, const Windows::Foundation::Numerics::float3& vec)
+std::ostream& operator<< (std::ostream& out, const float3& vec)
 {
   out << vec.x << " " << vec.y << " " << vec.z;
   return out;
 }
 
 //----------------------------------------------------------------------------
-std::ostream& operator<<(std::ostream& out, const Windows::Foundation::Numerics::float2& vec)
+std::ostream& operator<< (std::ostream& out, const float2& vec)
 {
   out << vec.x << " " << vec.y;
   return out;
