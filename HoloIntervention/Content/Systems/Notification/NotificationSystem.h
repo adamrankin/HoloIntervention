@@ -121,6 +121,8 @@ namespace HoloIntervention
       MessageQueue                                        m_messages;
       std::mutex                                          m_messageQueueMutex;
 
+      std::atomic_bool                                    m_hideNotifications;
+
       MessageEntry                                        m_currentMessage;
       double                                              m_messageTimeElapsedSec = 0.0f;
 

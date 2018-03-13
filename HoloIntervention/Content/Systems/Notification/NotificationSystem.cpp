@@ -37,6 +37,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 using namespace DirectX;
 using namespace Windows::Foundation::Numerics;
+using namespace Windows::Media::SpeechRecognition;
 using namespace Windows::UI::Input::Spatial;
 
 namespace HoloIntervention
@@ -199,6 +200,11 @@ namespace HoloIntervention
         CalculateVelocity(1.f / static_cast<float>(timer.GetElapsedSeconds()));
       }
 
+      if (m_hideNotifications)
+      {
+        m_hologramColorFadeMultiplier = HIDDEN_ALPHA_VALUE;
+      }
+
       m_notificationRenderer.Update(m_worldMatrix, m_hologramColorFadeMultiplier);
     }
 
@@ -302,7 +308,15 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void NotificationSystem::RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap)
     {
+      callbackMap[L"hide notifications"] = [this](SpeechRecognitionResult ^ result)
+      {
+        m_hideNotifications = true;
+      };
 
+      callbackMap[L"show notifications"] = [this](SpeechRecognitionResult ^ result)
+      {
+        m_hideNotifications = false;
+      };
     }
 
     //----------------------------------------------------------------------------
