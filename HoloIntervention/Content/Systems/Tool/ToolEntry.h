@@ -100,6 +100,8 @@ namespace HoloIntervention
 
       void SetHiddenOverride(bool arg);
 
+      void ShowIcon(bool show);
+
     protected:
       // Cached links to system resources
       Rendering::ModelRenderer&                   m_modelRenderer;

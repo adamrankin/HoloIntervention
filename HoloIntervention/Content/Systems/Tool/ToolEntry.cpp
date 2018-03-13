@@ -293,20 +293,9 @@ namespace HoloIntervention
           return;
         }
 
-        if (m_iconEntry != nullptr)
-        {
-          m_icons.RemoveEntry(m_iconEntry->GetId());
-          m_iconEntry == nullptr;
-        }
+        ShowIcon(false);
 
         m_modelEntry = entry;
-
-        //return m_icons.AddEntryAsync(entry, 0).then([this, entry](std::shared_ptr<UI::IconEntry> iconEntry) -> void
-        //{
-        //  m_modelEntry = entry;
-        //  m_iconEntry = iconEntry;
-        //  iconEntry->GetModelEntry()->SetVisible(true);
-        //});
       });
     }
 
@@ -355,5 +344,24 @@ namespace HoloIntervention
     {
       m_hiddenOverride = arg;
     }
+
+    //----------------------------------------------------------------------------
+    void ToolEntry::ShowIcon(bool show)
+    {
+      if (show && m_iconEntry == nullptr)
+      {
+        m_icons.AddEntryAsync(m_modelEntry, 0).then([this](std::shared_ptr<UI::IconEntry> iconEntry)
+        {
+          m_iconEntry = iconEntry;
+          iconEntry->GetModelEntry()->SetVisible(true);
+        });
+      }
+      else if (!show && m_iconEntry != nullptr)
+      {
+        m_icons.RemoveEntry(m_iconEntry->GetId());
+        m_iconEntry = nullptr;
+      }
+    }
+
   }
 }

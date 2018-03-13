@@ -126,6 +126,7 @@ namespace HoloIntervention
 
         auto toolsElem = document->CreateElement("Tools");
         toolsElem->SetAttribute(L"IGTConnection", ref new Platform::String(m_connectionName.c_str()));
+        toolsElem->SetAttribute(L"ShowIcons", m_showIcons ? L"true" : L"false");
         node->AppendChild(toolsElem);
 
         for (auto tool : m_toolEntries)
@@ -178,15 +179,19 @@ namespace HoloIntervention
           throw ref new Platform::Exception(E_INVALIDARG, L"Invalid \"Tools\" tag in configuration.");
         }
 
-        for (auto node : document->SelectNodes(xpath))
+        auto node = document->SelectNodes(xpath)->Item(0);
+        if (!HasAttribute(L"IGTConnection", node))
         {
-          if (!HasAttribute(L"IGTConnection", node))
-          {
-            throw ref new Platform::Exception(E_FAIL, L"Tool configuration does not contain \"IGTConnection\" attribute.");
-          }
-          Platform::String^ connectionName = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"IGTConnection")->NodeValue);
-          m_connectionName = std::wstring(connectionName->Data());
-          m_hashedConnectionName = HashString(connectionName);
+          throw ref new Platform::Exception(E_FAIL, L"Tool configuration does not contain \"IGTConnection\" attribute.");
+        }
+        Platform::String^ connectionName = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"IGTConnection")->NodeValue);
+        m_connectionName = std::wstring(connectionName->Data());
+        m_hashedConnectionName = HashString(connectionName);
+
+        if (HasAttribute(L"ShowIcons", node))
+        {
+          Platform::String^ showIcons = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"ShowIcons")->NodeValue);
+          m_showIcons = IsEqualInsensitive(showIcons, L"true");
         }
 
         xpath = ref new Platform::String(L"/HoloIntervention/Tools/Tool");
@@ -444,6 +449,8 @@ namespace HoloIntervention
           std::lock_guard<std::mutex> guard(m_entriesMutex);
           m_toolEntries.push_back(entry);
 
+          entry->ShowIcon(m_showIcons);
+
           return entry->GetId();
         });
       });
@@ -506,5 +513,15 @@ namespace HoloIntervention
         }
       };
     }
+
+    //----------------------------------------------------------------------------
+    void ToolSystem::ShowIcons(bool show)
+    {
+      for (auto& entry : m_toolEntries)
+      {
+        entry->ShowIcon(show);
+      }
+    }
+
   }
 }

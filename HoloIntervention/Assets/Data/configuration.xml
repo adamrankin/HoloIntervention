@@ -1,29 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <HoloIntervention>
-  <Tools IGTConnection="PlusServer">
+  <Tools IGTConnection="PlusServer" 
+         ShowIcons="false">
     <Tool 
       Id="Stylus"
       Model="Tools/hemisphere_stylus"
       From="Tip"
       To="Reference"
-      LerpEnabled="false" 
-      />
+      LerpEnabled="false" />
   </Tools>
 
   <TouchingSphereTask
     IGTConnection="PlusServer"
     PhantomFrom="Phantom"
     PhantomTo="Reference"
-    StylusFrom="StylusTip"
-    >
+    StylusFrom="StylusTip">
     <Region
       XMinMeters="0.2"
       XMaxMeters="0.8"
       YMinMeters="0.2"
       YMaxMeters="0.8"
       ZMinMeters="0.2"
-      ZMaxMeters="0.8"
-    />
+      ZMaxMeters="0.8"/>
   </TouchingSphereTask>
 
   <RegisterModelTask
@@ -31,8 +29,7 @@
     ModelName="LegoPhantom.stl"
     ModelFrom="Phantom"
     ModelTo="Reference"
-    StylusFrom="StylusTip"
-    />
+    StylusFrom="StylusTip"/>
 
   <CoordinateDefinitions>
   </CoordinateDefinitions>
@@ -44,21 +41,18 @@
     Param1="255"
     Param2="30"
     MinRadius="20"
-    MaxRadius="60"
-    />
+    MaxRadius="60"/>
 
   <ManualRegistration
     IGTConnection="PlusServer"
     From="Tool"
-    To="Reference"
-    />
+    To="Reference"/>
 
   <OpticalRegistration
     IGTConnection="PlusServer"
     RecalcThresholdCount="100"
     From="HoloLens"
-    To="Reference"
-    />
+    To="Reference"/>
 
   <ModelAlignmentRegistration
     IGTConnection="PlusServer"
@@ -76,8 +70,7 @@
       Name="PlusServer"
       Host="172.16.80.1"
       Port="18944"
-      EmbeddedImageTransformName="ImageToReference" 
-      />
+      EmbeddedImageTransformName="ImageToReference"/>
   </IGTConnections>
 
   <SliceRendering 
@@ -85,13 +78,10 @@
     To="HMD"
     WhiteMapColour="1.0 0.0 0.0 1.0"
     BlackMapColour="0.0 0.0 1.0 1.0"
-    IGTConnection="PlusServer" 
-    />
+    IGTConnection="PlusServer"/>
 
   <VolumeRendering 
     From="Volume" 
     To="HMD"
-    IGTConnection="PlusServer" 
-    />
-
+    IGTConnection="PlusServer"/>
 </HoloIntervention>

@@ -89,6 +89,8 @@ namespace HoloIntervention
       // IVoiceInput functions
       virtual void RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap);
 
+      void ShowIcons(bool show);
+
     protected:
       // Cached entries
       NotificationSystem&                               m_notificationSystem;
@@ -99,6 +101,7 @@ namespace HoloIntervention
 
       std::wstring                                      m_connectionName; // For config saving
       uint64                                            m_hashedConnectionName;
+      bool                                              m_showIcons = false;
       double                                            m_latestTimestamp;
       mutable std::mutex                                m_entriesMutex;
       std::vector<std::shared_ptr<Tools::ToolEntry>>    m_toolEntries;
