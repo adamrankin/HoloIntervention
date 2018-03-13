@@ -140,7 +140,8 @@ namespace HoloIntervention
           entry->HashedName = HashString(name->Data());
           entry->Connector = ref new UWPOpenIGTLink::IGTClient();
           entry->Connector->ServerHost = ref new HostName(host);
-          entry->ErrorMessageToken = entry->Connector->ErrorMessage += ref new UWPOpenIGTLink::ErrorMessageEventHandler(entry->Connector, &NetworkSystem::ErrorMessageHandler);
+          entry->ErrorMessageToken = entry->Connector->ErrorMessage += ref new UWPOpenIGTLink::ErrorMessageEventHandler(std::bind(&NetworkSystem::ErrorMessageHandler, this, std::placeholders::_1, std::placeholders::_2));
+          entry->ErrorMessageToken = entry->Connector->WarningMessage += ref new UWPOpenIGTLink::WarningMessageEventHandler(std::bind(&NetworkSystem::WarningMessageHandler, this, std::placeholders::_1, std::placeholders::_2));
 
           try
           {
@@ -350,43 +351,43 @@ namespace HoloIntervention
 
         switch (connector->State)
         {
-          case System::NetworkSystem::CONNECTION_STATE_CONNECTING:
-          case System::NetworkSystem::CONNECTION_STATE_DISCONNECTING:
-            if (connector->Icon.m_networkPreviousState != connector->State)
+        case System::NetworkSystem::CONNECTION_STATE_CONNECTING:
+        case System::NetworkSystem::CONNECTION_STATE_DISCONNECTING:
+          if (connector->Icon.m_networkPreviousState != connector->State)
+          {
+            connector->Icon.m_networkBlinkTimer = 0.f;
+          }
+          else
+          {
+            connector->Icon.m_networkBlinkTimer += static_cast<float>(timer.GetElapsedSeconds());
+            if (connector->Icon.m_networkBlinkTimer >= NETWORK_BLINK_TIME_SEC)
             {
               connector->Icon.m_networkBlinkTimer = 0.f;
+              connector->Icon.m_iconEntry->GetModelEntry()->ToggleVisible();
             }
-            else
-            {
-              connector->Icon.m_networkBlinkTimer += static_cast<float>(timer.GetElapsedSeconds());
-              if (connector->Icon.m_networkBlinkTimer >= NETWORK_BLINK_TIME_SEC)
-              {
-                connector->Icon.m_networkBlinkTimer = 0.f;
-                connector->Icon.m_iconEntry->GetModelEntry()->ToggleVisible();
-              }
-            }
-            connector->Icon.m_networkIsBlinking = true;
-            break;
-          case System::NetworkSystem::CONNECTION_STATE_UNKNOWN:
-          case System::NetworkSystem::CONNECTION_STATE_DISCONNECTED:
-          case System::NetworkSystem::CONNECTION_STATE_CONNECTION_LOST:
-            connector->Icon.m_iconEntry->GetModelEntry()->SetVisible(true);
-            connector->Icon.m_networkIsBlinking = false;
-            if (connector->Icon.m_wasNetworkConnected)
-            {
-              connector->Icon.m_iconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
-              connector->Icon.m_wasNetworkConnected = false;
-            }
-            break;
-          case System::NetworkSystem::CONNECTION_STATE_CONNECTED:
-            connector->Icon.m_iconEntry->GetModelEntry()->SetVisible(true);
-            connector->Icon.m_networkIsBlinking = false;
-            if (!connector->Icon.m_wasNetworkConnected)
-            {
-              connector->Icon.m_wasNetworkConnected = true;
-              connector->Icon.m_iconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
-            }
-            break;
+          }
+          connector->Icon.m_networkIsBlinking = true;
+          break;
+        case System::NetworkSystem::CONNECTION_STATE_UNKNOWN:
+        case System::NetworkSystem::CONNECTION_STATE_DISCONNECTED:
+        case System::NetworkSystem::CONNECTION_STATE_CONNECTION_LOST:
+          connector->Icon.m_iconEntry->GetModelEntry()->SetVisible(true);
+          connector->Icon.m_networkIsBlinking = false;
+          if (connector->Icon.m_wasNetworkConnected)
+          {
+            connector->Icon.m_iconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
+            connector->Icon.m_wasNetworkConnected = false;
+          }
+          break;
+        case System::NetworkSystem::CONNECTION_STATE_CONNECTED:
+          connector->Icon.m_iconEntry->GetModelEntry()->SetVisible(true);
+          connector->Icon.m_networkIsBlinking = false;
+          if (!connector->Icon.m_wasNetworkConnected)
+          {
+            connector->Icon.m_wasNetworkConnected = true;
+            connector->Icon.m_iconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
+          }
+          break;
         }
 
         connector->Icon.m_networkPreviousState = connector->State;
@@ -760,8 +761,29 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void NetworkSystem::ErrorMessageHandler(UWPOpenIGTLink::IGTClient^ mc, Platform::String^ msg)
     {
-      LOG_ERROR(L"Network client error: " + msg);
+      for (auto& connector : m_connectors)
+      {
+        if (connector->Connector == mc)
+        {
+          WLOG_ERROR(ref new Platform::String(connector->Name.c_str()) + L" error: " + msg);
+          return;
+        }
+      }
+      WLOG_ERROR(L"Unknown connector error: " + msg);
     }
 
+    //----------------------------------------------------------------------------
+    void NetworkSystem::WarningMessageHandler(UWPOpenIGTLink::IGTClient^ mc, Platform::String^ msg)
+    {
+      for (auto& connector : m_connectors)
+      {
+        if (connector->Connector == mc)
+        {
+          WLOG_WARNING(ref new Platform::String(connector->Name.c_str()) + L" warning: " + msg);
+          return;
+        }
+      }
+      WLOG_WARNING(L"Unknown connector warning: " + msg);
+    }
   }
 }

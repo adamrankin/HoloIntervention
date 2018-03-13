@@ -244,7 +244,7 @@ namespace HoloIntervention
         }
         catch (const std::exception&)
         {
-          HoloIntervention::LOG(LogLevelType::LOG_LEVEL_ERROR, "Unable to locate installed folder path.");
+          LOG(LogLevelType::LOG_LEVEL_ERROR, "Unable to locate installed folder path.");
           m_failedLoad = true;
           return;
         }
@@ -282,13 +282,13 @@ namespace HoloIntervention
           }
           catch (Platform::InvalidArgumentException^ e)
           {
-            HoloIntervention::LOG(LogLevelType::LOG_LEVEL_ERROR, L"InvalidArgumentException: " + e->Message);
+            LOG(LogLevelType::LOG_LEVEL_ERROR, L"InvalidArgumentException: " + e->Message);
             m_failedLoad = true;
             return;
           }
           catch (const std::exception& e)
           {
-            HoloIntervention::LOG(LogLevelType::LOG_LEVEL_ERROR, std::string("Unable to get subfolder: ") + e.what());
+            LOG(LogLevelType::LOG_LEVEL_ERROR, std::string("Unable to get subfolder: ") + e.what());
             m_failedLoad = true;
             return;
           }
@@ -317,7 +317,7 @@ namespace HoloIntervention
               }
               catch (const std::exception& e)
               {
-                HoloIntervention::LOG(LogLevelType::LOG_LEVEL_ERROR, std::string("Unable to load model. ") + e.what());
+                LOG(LogLevelType::LOG_LEVEL_ERROR, std::string("Unable to load model. ") + e.what());
                 m_failedLoad = true;
               }
             }
@@ -349,7 +349,7 @@ namespace HoloIntervention
       }
       catch (const std::exception& e)
       {
-        HoloIntervention::LOG(LogLevelType::LOG_LEVEL_ERROR, std::string("Unable to load primitive. ") + e.what());
+        LOG(LogLevelType::LOG_LEVEL_ERROR, std::string("Unable to load primitive. ") + e.what());
         m_failedLoad = true;
         return;
       }
@@ -369,7 +369,7 @@ namespace HoloIntervention
       }
       catch (const std::exception& e)
       {
-        HoloIntervention::LOG(LogLevelType::LOG_LEVEL_ERROR, std::string("Unable to load primitive. ") + e.what());
+        LOG(LogLevelType::LOG_LEVEL_ERROR, std::string("Unable to load primitive. ") + e.what());
         m_failedLoad = true;
         return;
       }

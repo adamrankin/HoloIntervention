@@ -101,7 +101,7 @@ namespace DX
     }
     catch (const std::exception& e)
     {
-      HoloIntervention::LOG(HoloIntervention::LogLevelType::LOG_LEVEL_ERROR, e.what());
+      LOG(HoloIntervention::LogLevelType::LOG_LEVEL_ERROR, e.what());
       return;
     }
 

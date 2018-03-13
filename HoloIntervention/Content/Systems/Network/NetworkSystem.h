@@ -154,6 +154,7 @@ namespace HoloIntervention
 
     protected:
       void ErrorMessageHandler(UWPOpenIGTLink::IGTClient^ mc, Platform::String^ msg);
+      void WarningMessageHandler(UWPOpenIGTLink::IGTClient^ mc, Platform::String^ msg);
 
     protected:
       // Cached entries
