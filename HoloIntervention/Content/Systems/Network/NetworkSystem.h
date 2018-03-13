@@ -93,11 +93,13 @@ namespace HoloIntervention
 
       struct ConnectorEntry
       {
-        std::wstring                            Name = L""; // For saving back to disk
-        uint64                                  HashedName = 0;
-        ConnectionState                         State = CONNECTION_STATE_UNKNOWN;
-        UWPOpenIGTLink::IGTClient^              Connector = nullptr;
-        UILogicEntry                            Icon;
+        std::wstring                                Name = L""; // For saving back to disk
+        uint64                                      HashedName = 0;
+        ConnectionState                             State = CONNECTION_STATE_UNKNOWN;
+        UWPOpenIGTLink::IGTClient^                  Connector = nullptr;
+        UILogicEntry                                Icon;
+        Windows::Foundation::EventRegistrationToken ErrorMessageToken;
+        Windows::Foundation::EventRegistrationToken WarningMessageToken;
       };
       typedef std::vector<std::shared_ptr<ConnectorEntry>> ConnectorList;
 
@@ -149,6 +151,9 @@ namespace HoloIntervention
     protected:
       void ProcessNetworkLogic(DX::StepTimer& timer);
       Concurrency::task<std::vector<std::wstring>> FindServersAsync();
+
+    protected:
+      void ErrorMessageHandler(UWPOpenIGTLink::IGTClient^ mc, Platform::String^ msg);
 
     protected:
       // Cached entries

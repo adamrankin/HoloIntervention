@@ -140,6 +140,7 @@ namespace HoloIntervention
           entry->HashedName = HashString(name->Data());
           entry->Connector = ref new UWPOpenIGTLink::IGTClient();
           entry->Connector->ServerHost = ref new HostName(host);
+          entry->ErrorMessageToken = entry->Connector->ErrorMessage += ref new UWPOpenIGTLink::ErrorMessageEventHandler(entry->Connector, &NetworkSystem::ErrorMessageHandler);
 
           try
           {
@@ -755,5 +756,12 @@ namespace HoloIntervention
         return results;
       });
     }
+
+    //----------------------------------------------------------------------------
+    void NetworkSystem::ErrorMessageHandler(UWPOpenIGTLink::IGTClient^ mc, Platform::String^ msg)
+    {
+      LOG_ERROR(L"Network client error: " + msg);
+    }
+
   }
 }
