@@ -23,26 +23,25 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 cbuffer SliceConstantBuffer : register(b0)
 {
-  float4x4 model;
-  float4 blackMapColour;
-  float4 whiteMinusBlackColour;
+  float4x4  model;
+  float4    blackMapColour;
+  float4    whiteMinusBlackColour;
 };
 
 // Per-pixel color data passed through to the pixel shader.
 struct PixelShaderInput
 {
-  min16float4 pos : SV_POSITION;
-  min16float2 texCoord : TEXCOORD1;
-  uint rtvId : SV_RenderTargetArrayIndex;
+  min16float4 pos       : SV_POSITION;
+  min16float2 texCoord  : TEXCOORD1;
+  uint        rtvId     : SV_RenderTargetArrayIndex;
 };
 
-Texture2D tex : register(t0);
-SamplerState textureSampler : s0;
+Texture2D     tex             : register(t0);
+SamplerState  textureSampler  : s0;
 
-// The pixel shader renders a color value sampled from a texture
+// The pixel shader renders a greyscale value sampled from a texture
 min16float4 main(PixelShaderInput input) : SV_TARGET
 {
-  // Read both distance function values.
   float4 textureValue = tex.Sample(textureSampler, input.texCoord);
   float4 result = blackMapColour + (whiteMinusBlackColour * textureValue.xxxw);
 

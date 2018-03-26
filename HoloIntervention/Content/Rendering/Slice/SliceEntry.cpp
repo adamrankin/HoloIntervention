@@ -205,6 +205,9 @@ namespace HoloIntervention
       context->PSSetShaderResources(0, 1, m_shaderResourceView.GetAddressOf());
 
       context->DrawIndexedInstanced(indexCount, 2, 0, 0, 0);
+
+      ID3D11ShaderResourceView* ppNullptr[1] = { nullptr };
+      context->PSSetShaderResources(0, 1, ppNullptr);
     }
 
     //----------------------------------------------------------------------------
@@ -440,6 +443,18 @@ namespace HoloIntervention
     bool SliceEntry::IsValid() const
     {
       return m_sliceValid;
+    }
+
+    //----------------------------------------------------------------------------
+    void SliceEntry::SetColorizeGreyscale(bool colorize)
+    {
+      m_colorizeGreyscale = colorize;
+    }
+
+    //----------------------------------------------------------------------------
+    bool SliceEntry::GetColorizeGreyscale()
+    {
+      return m_colorizeGreyscale;
     }
 
     //----------------------------------------------------------------------------

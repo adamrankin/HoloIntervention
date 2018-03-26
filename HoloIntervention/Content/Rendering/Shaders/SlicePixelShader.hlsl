@@ -42,8 +42,8 @@ SamplerState  textureSampler  : s0;
 // The pixel shader renders a color value sampled from a texture
 min16float4 main(PixelShaderInput input) : SV_TARGET
 {
-  float4 sample = tex.Sample(textureSampler, input.texCoord);
-  float4 result = blackMapColour + (whiteMinusBlackColour * sample);
+  float4 textureValue = tex.Sample(textureSampler, input.texCoord);
+  float4 result = blackMapColour + (whiteMinusBlackColour * textureValue);
 
   return min16float4(result.r, result.g, result.b, result.w);
 }

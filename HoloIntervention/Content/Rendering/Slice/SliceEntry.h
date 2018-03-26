@@ -94,6 +94,8 @@ namespace HoloIntervention
 
       bool IsValid()const;
 
+      void SetColorizeGreyscale(bool colorize);
+      bool GetColorizeGreyscale();
       void SetWhiteMapColour(Windows::Foundation::Numerics::float4 colour);
       void SetBlackMapColour(Windows::Foundation::Numerics::float4 colour);
 
@@ -133,6 +135,7 @@ namespace HoloIntervention
       Windows::Foundation::Numerics::float4               m_blackMapColour = { 0.f, 0.f, 0.f, 1.f };
       Windows::Foundation::Numerics::float2               m_scalingFactor = { 1.f, 1.f };
       DXGI_FORMAT                                         m_pixelFormat = DXGI_FORMAT_UNKNOWN;
+      std::atomic_bool                                    m_colorizeGreyscale = false;
       mutable std::atomic_bool                            m_isInFrustum = false;
       mutable uint64                                      m_frustumCheckFrameNumber = 0;
 

@@ -235,6 +235,7 @@ namespace HoloIntervention
       m_sliceRenderer.AddSliceAsync(nullptr).then([this](uint64 entryId)
       {
         m_sliceEntry = m_sliceRenderer.GetSlice(entryId);
+        m_sliceEntry->SetColorizeGreyscale(true);
         m_sliceEntry->SetWhiteMapColour(m_whiteMapColour);
         m_sliceEntry->SetBlackMapColour(m_blackMapColour);
       });

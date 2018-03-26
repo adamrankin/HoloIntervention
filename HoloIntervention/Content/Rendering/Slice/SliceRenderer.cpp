@@ -492,20 +492,18 @@ namespace HoloIntervention
         if (sliceEntry->IsInFrustum(frustum) && sliceEntry->GetVisible() && sliceEntry->IsValid())
         {
           auto format = sliceEntry->GetPixelFormat();
-          if (BitsPerPixel(format) / BitsPerColor(format) == 1)
+          if (BitsPerPixel(format) / BitsPerColor(format) > 1 || sliceEntry->GetColorizeGreyscale())
           {
-            context->PSSetShader(m_greyPixelShader.Get(), nullptr, 0);
+            context->PSSetShader(m_colourPixelShader.Get(), nullptr, 0);
           }
           else
           {
-            context->PSSetShader(m_colourPixelShader.Get(), nullptr, 0);
+            context->PSSetShader(m_greyPixelShader.Get(), nullptr, 0);
           }
           sliceEntry->Render(m_indexCount);
         }
       }
 
-      ID3D11ShaderResourceView* ppNullptr[1] = { nullptr };
-      context->PSSetShaderResources(0, 1, ppNullptr);
       ID3D11SamplerState* ppNullPtr2[1] = { nullptr };
       context->PSSetSamplers(0, 1, ppNullPtr2);
     }
