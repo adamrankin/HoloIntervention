@@ -60,7 +60,7 @@
     SphereTo="Reference"
     HoloLensFrom="HoloLens"
     HoloLensTo="Reference"
-    NumberOfPointsToCollectPerEye="8"
+    NumberOfPointsToCollectPerEye="6"
     Primitive="Sphere"
     Colour="0.0 0.0 0.8 1.0"
     Argument="0.04 0.0 0.0"/> <!-- 40mm diameter in meters -->
@@ -68,7 +68,7 @@
   <IGTConnections>
     <Connection
       Name="PlusServer"
-      Host="172.16.80.1"
+      Host="192.168.0.29"
       Port="18944"
       EmbeddedImageTransformName="ImageToReference"/>
   </IGTConnections>

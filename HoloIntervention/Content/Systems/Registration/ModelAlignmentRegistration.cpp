@@ -322,23 +322,29 @@ namespace HoloIntervention
           m_sphereIconEntry->GetModelEntry()->SetVisible(true);
           m_sphereIconEntry->GetModelEntry()->SetOriginalColour(0.f, 0.9f, 0.f, 1.f);
 
-          return m_icons.AddEntryAsync(L"HoloLens.cmo", 0).then([this](std::shared_ptr<UI::IconEntry> entry)
-          {
-            m_holoLensIconEntry = entry;
-            m_holoLensIconEntry->GetModelEntry()->SetVisible(true);
-            m_holoLensIconEntry->SetUserRotation(HOLOLENS_ICON_PITCH_RAD, HOLOLENS_ICON_YAW_RAD, HOLOLENS_ICON_ROLL_RAD);
+          m_started = true;
+          m_modelEntry->SetVisible(true);
+          ResetRegistration();
+          m_notificationSystem.QueueMessage(L"Please use only your LEFT eye to align the real and virtual sphere centers.", 4);
 
-            //m_sourceObserverId = m_spatialInput.RegisterSourceObserver([this](uint32 sourceId) {}, [this](uint32 sourceId) {}, [this](uint32 sourceId)
-            //{
-            //              m_pointCaptureRequested = true;
-            //});
+          return true;
+          //return m_icons.AddEntryAsync(L"HoloLens.cmo", 0).then([this](std::shared_ptr<UI::IconEntry> entry)
+          //{
+          //            m_holoLensIconEntry = entry;
+          //m_holoLensIconEntry->GetModelEntry()->SetVisible(true);
+          //m_holoLensIconEntry->SetUserRotation(HOLOLENS_ICON_PITCH_RAD, HOLOLENS_ICON_YAW_RAD, HOLOLENS_ICON_ROLL_RAD);
 
-            m_modelEntry->SetVisible(true);
-            m_started = true;
-            ResetRegistration();
-            m_notificationSystem.QueueMessage(L"Please use only your LEFT eye to align the real and virtual sphere centers.", 8);
-            return true;
-          });
+          //m_sourceObserverId = m_spatialInput.RegisterSourceObserver([this](uint32 sourceId) {}, [this](uint32 sourceId) {}, [this](uint32 sourceId)
+          //{
+          //              m_pointCaptureRequested = true;
+          //});
+
+          //  m_modelEntry->SetVisible(true);
+          //            m_started = true;
+          //ResetRegistration();
+          //m_notificationSystem.QueueMessage(L"Please use only your LEFT eye to align the real and virtual sphere centers.", 8);
+          //return true;
+          //});
         });
       });
     }
@@ -349,9 +355,9 @@ namespace HoloIntervention
       return create_task([this]()
       {
         m_icons.RemoveEntry(m_sphereIconEntry->GetId());
-        m_icons.RemoveEntry(m_holoLensIconEntry->GetId());
+        //m_icons.RemoveEntry(m_holoLensIconEntry->GetId());
         m_sphereIconEntry = nullptr;
-        m_holoLensIconEntry = nullptr;
+        //m_holoLensIconEntry = nullptr;
 
         m_currentEye = EYE_LEFT;
         m_modelEntry->SetVisible(false);
@@ -470,22 +476,23 @@ namespace HoloIntervention
         {
           m_sphereIconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
         }
+        m_pointCaptureRequested = false;
         return;
       }
       m_latestSphereTimestamp = sphereToReferenceTransform->Timestamp;
       m_sphereIconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
 
-      auto holoLensToReferenceTransform = m_networkSystem.GetTransform(m_hashedConnectionName, m_holoLensToReferenceTransformName, m_latestHoloLensTimestamp);
-      if (holoLensToReferenceTransform == nullptr || !holoLensToReferenceTransform->Valid)
+      //auto holoLensToReferenceTransform = m_networkSystem.GetTransform(m_hashedConnectionName, m_holoLensToReferenceTransformName, m_latestHoloLensTimestamp);
+      //if (holoLensToReferenceTransform == nullptr || !holoLensToReferenceTransform->Valid)
       {
-        if (holoLensToReferenceTransform != nullptr && !holoLensToReferenceTransform->Valid)
+        //if (holoLensToReferenceTransform != nullptr && !holoLensToReferenceTransform->Valid)
         {
-          m_holoLensIconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
+          //m_holoLensIconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
         }
-        return;
+        //return;
       }
-      m_latestHoloLensTimestamp = holoLensToReferenceTransform->Timestamp;
-      m_holoLensIconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
+      //m_latestHoloLensTimestamp = holoLensToReferenceTransform->Timestamp;
+      //m_holoLensIconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
 
       if (m_pointCaptureRequested)
       {
@@ -520,7 +527,7 @@ namespace HoloIntervention
         m_sphereToReferenceTransforms.push_back(sphereToReferenceTransform->Matrix);
         m_eyeToHMDTransforms.push_back(eyeToHMD);
         m_HMDToAnchorTransforms.push_back(hmdToAnchor);
-        m_holoLensToReferenceTransforms.push_back(holoLensToReferenceTransform->Matrix);
+        //m_holoLensToReferenceTransforms.push_back(holoLensToReferenceTransform->Matrix);
 
         if (m_pointToLineRegistration->Count() == m_numberOfPointsToCollectPerEye)
         {
