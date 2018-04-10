@@ -460,8 +460,9 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void SliceEntry::SetWhiteMapColour(float4 colour)
     {
+      m_whiteMapColour = colour;
       float4 blackMapColour(m_constantBuffer.blackMapColour.x, m_constantBuffer.blackMapColour.y, m_constantBuffer.blackMapColour.z, m_constantBuffer.blackMapColour.w);
-      XMStoreFloat4(&m_constantBuffer.whiteMinusBlackColour, XMLoadFloat4(&(colour - blackMapColour)));
+      XMStoreFloat4(&m_constantBuffer.whiteMinusBlackColour, XMLoadFloat4(&(m_whiteMapColour - blackMapColour)));
     }
 
     //----------------------------------------------------------------------------

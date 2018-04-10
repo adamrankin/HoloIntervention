@@ -208,12 +208,14 @@ namespace HoloIntervention
           {
             std::wstringstream ss;
             ss << whiteMapColourString->Data();
-            ss >> m_whiteMapColour.x >> m_whiteMapColour.y >> m_whiteMapColour.z >> m_whiteMapColour.w;
+            ss >> m_whiteMapColour.x >> m_whiteMapColour.y >> m_whiteMapColour.z;
+            m_whiteMapColour.w = 1.f;
           }
           {
             std::wstringstream ss;
-            ss << whiteMapColourString->Data();
-            ss >> m_blackMapColour.x >> m_blackMapColour.y >> m_blackMapColour.z >> m_blackMapColour.w;
+            ss << blackMapColourString->Data();
+            ss >> m_blackMapColour.x >> m_blackMapColour.y >> m_blackMapColour.z;
+            m_blackMapColour.w = 0.f;
           }
         }
 

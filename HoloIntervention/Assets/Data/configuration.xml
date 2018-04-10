@@ -77,8 +77,8 @@
   <SliceRendering 
     From="Image" 
     To="HMD"
-    WhiteMapColour="1.0 0.0 0.0 1.0"
-    BlackMapColour="0.0 0.0 1.0 1.0"
+    WhiteMapColour="1.0 0.0 0.0"
+    BlackMapColour="0.0 0.0 1.0"
     IGTConnection="PlusServer"/>
 
   <VolumeRendering 
