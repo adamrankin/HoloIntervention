@@ -131,6 +131,21 @@ namespace HoloIntervention
             return false;
           }
 
+          if (HasAttribute(L"NumberOfPoints", node))
+          {
+            auto numPointsStr = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"NumberOfPoints")->NodeValue);
+            if (!numPointsStr->IsEmpty())
+            {
+              std::wstringstream wss;
+              wss << numPointsStr->Data();
+              try
+              {
+                wss >> m_numberOfPoints;
+              }
+              catch (...) {}
+            }
+          }
+
           auto igtConnection = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"IGTConnection")->NodeValue);
           if (igtConnection->IsEmpty())
           {
@@ -279,6 +294,13 @@ namespace HoloIntervention
       }
 
 
+      //----------------------------------------------------------------------------
+      void TouchingSphereTask::StopTask()
+      {
+        m_targetModel->SetVisible(false);
+        m_taskStarted = false;
+      }
+
       //-----------------------------------------------------------------------------
       void TouchingSphereTask::GenerateNextRandomPoint()
       {
@@ -299,13 +321,15 @@ namespace HoloIntervention
           m_trackedFrame = m_networkSystem.GetTrackedFrame(m_hashedConnectionName, m_latestTimestamp);
           if (m_trackedFrame == nullptr || !m_transformRepository->SetTransforms(m_trackedFrame))
           {
+            m_phantomWasValid = false;
+            m_targetModel->SetColour(DISABLE_TARGET_COLOUR);
             return;
           }
 
           float4x4 registration;
           if (m_registrationSystem.GetReferenceToCoordinateSystemTransformation(coordinateSystem, registration))
           {
-            m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(m_phantomToReferenceName->To(), L"HoloLens"), registration, true);
+            m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", L"HoloLens"), registration, true);
             auto result = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"Sphere", L"HoloLens"));
 
             // Update phantom model rendering
@@ -340,13 +364,33 @@ namespace HoloIntervention
                   ss << "GroundTruth: " << m_targetPosition.x << " " << m_targetPosition.y << " " << m_targetPosition.z << std::endl;
                   LOG_INFO(ss.str());
                 }
+                {
+                  std::stringstream ss;
+                  ss << "Distance: " << distance(float3(stylusTipPose->Value.m41, stylusTipPose->Value.m42, stylusTipPose->Value.m43), m_targetPosition);
+                  LOG_INFO(ss.str());
+                }
 
                 m_recordPointOnUpdate = false;
 
-                // Generate new one within bounds
-                GenerateNextRandomPoint();
+                m_pointsCollected++;
+                if (m_pointsCollected >= m_numberOfPoints && m_numberOfPoints != 0)
+                {
+                  // Task is finished
+                  m_notificationSystem.QueueMessage(L"Task finished!");
+                  StopTask();
+                }
+                else
+                {
+                  // Generate new one within bounds
+                  GenerateNextRandomPoint();
+                }
               }
             }
+          }
+          else
+          {
+            m_phantomWasValid = false;
+            m_targetModel->SetColour(DISABLE_TARGET_COLOUR);
           }
         }
         else
@@ -376,8 +420,7 @@ namespace HoloIntervention
 
         callbackMap[L"stop touching task"] = [this](SpeechRecognitionResult ^ result)
         {
-          m_targetModel->SetVisible(false);
-          m_taskStarted = false;
+          StopTask();
         };
 
         callbackMap[L"record point"] = [this](SpeechRecognitionResult ^ result)

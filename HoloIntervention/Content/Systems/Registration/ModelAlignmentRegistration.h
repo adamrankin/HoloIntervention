@@ -118,13 +118,10 @@ namespace HoloIntervention
       std::wstring                                          m_connectionName;
       uint64                                                m_hashedConnectionName;
       double                                                m_latestSphereTimestamp = 0.0;
-      double                                                m_latestHoloLensTimestamp = 0.0;
       UWPOpenIGTLink::TransformName^                        m_sphereToReferenceTransformName = ref new UWPOpenIGTLink::TransformName(L"Sphere", L"Reference");
-      UWPOpenIGTLink::TransformName^                        m_holoLensToReferenceTransformName = ref new UWPOpenIGTLink::TransformName(L"HoloLens", L"Reference");
       std::atomic_bool                                      m_started = false;
       std::atomic_bool                                      m_calculating = false;
       std::shared_ptr<UI::IconEntry>                        m_sphereIconEntry = nullptr;
-      std::shared_ptr<UI::IconEntry>                        m_holoLensIconEntry = nullptr;
 
       // Input variables
       uint64                                                m_sourceObserverId = INVALID_TOKEN;
@@ -144,7 +141,6 @@ namespace HoloIntervention
       std::vector<Windows::Foundation::Numerics::float4x4>  m_sphereToReferenceTransforms;
       std::vector<Windows::Foundation::Numerics::float4x4>  m_eyeToHMDTransforms;
       std::vector<Windows::Foundation::Numerics::float4x4>  m_HMDToAnchorTransforms;
-      std::vector<Windows::Foundation::Numerics::float4x4>  m_holoLensToReferenceTransforms;
 
       // Model visualization
       Rendering::PrimitiveType                              m_primitiveType = Rendering::PrimitiveType_NONE;

@@ -123,8 +123,6 @@ namespace HoloIntervention
         elem->SetAttribute(L"IGTConnection", ref new Platform::String(m_connectionName.c_str()));
         elem->SetAttribute(L"SphereFrom", m_sphereToReferenceTransformName->From());
         elem->SetAttribute(L"SphereTo", m_sphereToReferenceTransformName->To());
-        elem->SetAttribute(L"HoloLensFrom", m_sphereToReferenceTransformName->From());
-        elem->SetAttribute(L"HoloLensTo", m_sphereToReferenceTransformName->To());
         elem->SetAttribute(L"NumberOfPointsToCollectPerEye", m_numberOfPointsToCollectPerEye.ToString());
         elem->SetAttribute(L"Primitive", ref new Platform::String(Rendering::ModelRenderer::PrimitiveToString(m_primitiveType).c_str()));
         elem->SetAttribute(L"Argument", m_argument.x.ToString() + L" " + m_argument.y.ToString() + L" " + m_argument.z.ToString());
@@ -176,19 +174,6 @@ namespace HoloIntervention
                                              ref new Platform::String(fromName.c_str()),
                                              ref new Platform::String(toName.c_str())
                                            );
-
-        if (!GetAttribute(L"HoloLensFrom", node, fromName))
-        {
-          LOG_WARNING(L"From coordinate system name attribute not defined for hololens. Defaulting to \"HoloLens\".");
-        }
-        if (!GetAttribute(L"HoloLensTo", node, toName))
-        {
-          LOG_WARNING(L"To cooordinate system name attribute not defined for hololens. Defaulting to \"Reference\".");
-        }
-        m_holoLensToReferenceTransformName = ref new UWPOpenIGTLink::TransformName(
-                                               ref new Platform::String(fromName.c_str()),
-                                               ref new Platform::String(toName.c_str())
-                                             );
 
         if (!GetScalarAttribute<uint32>(L"NumberOfPointsToCollectPerEye", node, m_numberOfPointsToCollectPerEye))
         {
@@ -328,23 +313,6 @@ namespace HoloIntervention
           m_notificationSystem.QueueMessage(L"Please use only your LEFT eye to align the real and virtual sphere centers.", 4);
 
           return true;
-          //return m_icons.AddEntryAsync(L"HoloLens.cmo", 0).then([this](std::shared_ptr<UI::IconEntry> entry)
-          //{
-          //            m_holoLensIconEntry = entry;
-          //m_holoLensIconEntry->GetModelEntry()->SetVisible(true);
-          //m_holoLensIconEntry->SetUserRotation(HOLOLENS_ICON_PITCH_RAD, HOLOLENS_ICON_YAW_RAD, HOLOLENS_ICON_ROLL_RAD);
-
-          //m_sourceObserverId = m_spatialInput.RegisterSourceObserver([this](uint32 sourceId) {}, [this](uint32 sourceId) {}, [this](uint32 sourceId)
-          //{
-          //              m_pointCaptureRequested = true;
-          //});
-
-          //  m_modelEntry->SetVisible(true);
-          //            m_started = true;
-          //ResetRegistration();
-          //m_notificationSystem.QueueMessage(L"Please use only your LEFT eye to align the real and virtual sphere centers.", 8);
-          //return true;
-          //});
         });
       });
     }
@@ -355,19 +323,13 @@ namespace HoloIntervention
       return create_task([this]()
       {
         m_icons.RemoveEntry(m_sphereIconEntry->GetId());
-        //m_icons.RemoveEntry(m_holoLensIconEntry->GetId());
         m_sphereIconEntry = nullptr;
-        //m_holoLensIconEntry = nullptr;
 
         m_currentEye = EYE_LEFT;
         m_modelEntry->SetVisible(false);
         m_started = false;
         m_notificationSystem.QueueMessage(L"Registration stopped.");
         m_latestSphereTimestamp = 0.0;
-        m_latestHoloLensTimestamp = 0.0;
-
-        //m_spatialInput.UnregisterSourceObserver(m_sourceObserverId);
-        //m_sourceObserverId = INVALID_TOKEN;
 
         return true;
       });
@@ -416,11 +378,6 @@ namespace HoloIntervention
         }
         LOG_INFO("HMDToAnchorTransforms");
         for (auto& xForm : m_HMDToAnchorTransforms)
-        {
-          WLOG_INFO(PrintMatrix(xForm));
-        }
-        LOG_INFO("HoloLensToReferenceTransforms");
-        for (auto& xForm : m_holoLensToReferenceTransforms)
         {
           WLOG_INFO(PrintMatrix(xForm));
         }
@@ -481,18 +438,6 @@ namespace HoloIntervention
       }
       m_latestSphereTimestamp = sphereToReferenceTransform->Timestamp;
       m_sphereIconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
-
-      //auto holoLensToReferenceTransform = m_networkSystem.GetTransform(m_hashedConnectionName, m_holoLensToReferenceTransformName, m_latestHoloLensTimestamp);
-      //if (holoLensToReferenceTransform == nullptr || !holoLensToReferenceTransform->Valid)
-      {
-        //if (holoLensToReferenceTransform != nullptr && !holoLensToReferenceTransform->Valid)
-        {
-          //m_holoLensIconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
-        }
-        //return;
-      }
-      //m_latestHoloLensTimestamp = holoLensToReferenceTransform->Timestamp;
-      //m_holoLensIconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
 
       if (m_pointCaptureRequested)
       {

@@ -14,7 +14,8 @@
     IGTConnection="PlusServer"
     PhantomFrom="Phantom"
     PhantomTo="Reference"
-    StylusFrom="StylusTip">
+    StylusFrom="StylusTip"
+    NumberOfPoints="10" >
     <Region
       XMinMeters="0.2"
       XMaxMeters="0.8"

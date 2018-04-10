@@ -92,6 +92,7 @@ namespace HoloIntervention
         ~TouchingSphereTask();
 
       protected:
+        void StopTask();
         void GenerateNextRandomPoint();
 
       protected:
@@ -120,6 +121,8 @@ namespace HoloIntervention
         // Phantom task behaviour
         std::atomic_bool                                        m_taskStarted = false;
         std::atomic_bool                                        m_recordPointOnUpdate = false;
+        uint32                                                  m_numberOfPoints = 10;
+        uint32                                                  m_pointsCollected = 0;
         UWPOpenIGTLink::TrackedFrame^                           m_trackedFrame = ref new UWPOpenIGTLink::TrackedFrame();
         UWPOpenIGTLink::TransformName^                          m_stylusTipToPhantomName = ref new UWPOpenIGTLink::TransformName();
         UWPOpenIGTLink::TransformRepository^                    m_transformRepository = ref new UWPOpenIGTLink::TransformRepository();
