@@ -81,6 +81,8 @@ namespace HoloIntervention
           preopElement->SetAttribute(L"ModelName", ref new Platform::String(m_modelName.c_str()));
           preopElement->SetAttribute(L"IGTConnection", ref new Platform::String(m_connectionName.c_str()));
 
+          rootNode->AppendChild(preopElement);
+
           return true;
         });
       }

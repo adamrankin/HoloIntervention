@@ -457,11 +457,18 @@ namespace HoloIntervention
   //----------------------------------------------------------------------------
   task<void> HoloInterventionCore::SaveAppStateAsync()
   {
-    if (m_physicsAPI == nullptr || !m_physicsAPI->IsReady())
+    if (m_physicsAPI == nullptr)
     {
       return create_task([]() {});
-    }
-    return m_physicsAPI->SaveAppStateAsync();
+    } 
+    return create_task([this]()
+    {
+      while (!m_physicsAPI->IsReady())
+      {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      }
+      return m_physicsAPI->SaveAppStateAsync();
+    });
   }
 
   //----------------------------------------------------------------------------
@@ -760,8 +767,12 @@ namespace HoloIntervention
         return create_task(ApplicationData::Current->LocalFolder->CreateFileAsync(L"configuration.xml", CreationCollisionOption::ReplaceExisting)).then([this, doc](StorageFile ^ file)
         {
           auto xmlAsString = std::wstring(doc->GetXml()->Data());
-          // After every > add a \n
-          xmlAsString = std::regex_replace(xmlAsString, std::wregex(L">"), L">\n");
+
+          // Custom formatting
+          // After every > add two \r\n
+          xmlAsString = std::regex_replace(xmlAsString, std::wregex(L">"), L">\r\n\r\n");
+          xmlAsString = std::regex_replace(xmlAsString, std::wregex(L"\" "), L"\"\r\n  ");
+          xmlAsString.insert(0, L"<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n");
 
           return create_task(Windows::Storage::FileIO::WriteTextAsync(file, ref new Platform::String(xmlAsString.c_str()))).then([this](task<void> writeTask)
           {

@@ -143,17 +143,33 @@ namespace HoloIntervention
 
         auto rootNode = document->SelectNodes(L"/HoloIntervention")->Item(0);
 
-        auto repo = ref new UWPOpenIGTLink::TransformRepository();
-        auto trName = ref new UWPOpenIGTLink::TransformName(L"Reference", L"Anchor");
-        if (!repo->SetTransform(trName, m_cachedReferenceToAnchor, true))
+        if (m_cachedReferenceToAnchor != float4x4::identity())
         {
-          return false;
+          auto repo = ref new UWPOpenIGTLink::TransformRepository();
+          auto trName = ref new UWPOpenIGTLink::TransformName(L"Reference", L"Anchor");
+          if (!repo->SetTransform(trName, m_cachedReferenceToAnchor, true))
+          {
+            return false;
+          }
+          if (!repo->SetTransformPersistent(trName, true))
+          {
+            return false;
+          }
+
+          bool result = repo->WriteConfiguration(document);
+          if (!result)
+          {
+            LOG_ERROR("Unable to write repository configuration in RegistrationSystem::WriteConfigurationAsync");
+            return false;
+          }
         }
-        if (!repo->SetTransformPersistent(trName, true))
+
+        bool result = true;
+        for (auto & pair : m_knownRegistrationMethods)
         {
-          return false;
+          result &= pair.second->WriteConfigurationAsync(document).get();
         }
-        return repo->WriteConfiguration(document);
+        return result;
       });
     }
 
