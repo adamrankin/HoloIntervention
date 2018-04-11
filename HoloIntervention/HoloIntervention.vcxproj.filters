@@ -930,7 +930,4 @@
       <Filter>Assets\Data</Filter>
     </Xml>
   </ItemGroup>
-  <ItemGroup>
-    <Text Include="Backlog.txt" />
-  </ItemGroup>
 </Project>

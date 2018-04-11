@@ -570,9 +570,6 @@
       <SubType>Designer</SubType>
     </Xml>
   </ItemGroup>
-  <ItemGroup>
-    <Text Include="Backlog.txt" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(VSINSTALLDIR)\Common7\IDE\Extensions\Microsoft\VsGraphics\ImageContentTask.targets" />
