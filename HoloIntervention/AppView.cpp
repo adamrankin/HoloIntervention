@@ -156,11 +156,17 @@ namespace HoloIntervention
       {
         try
         {
-          m_main->SaveAppStateAsync();
+          m_main->SaveAppStateAsync().then([this](bool result)
+          {
+            if (!result)
+            {
+              LOG_ERROR("Unable to save app state.");
+            }
+          });
         }
         catch (const std::exception& e)
         {
-          LOG(LogLevelType::LOG_LEVEL_WARNING, std::string("Unable to save app state: ") + e.what());
+          LOG_ERROR(std::string("Unable to save app state: ") + e.what());
         }
       }
 
@@ -175,9 +181,18 @@ namespace HoloIntervention
     {
       try
       {
-        m_main->LoadAppStateAsync();
+        m_main->LoadAppStateAsync().then([this](bool result)
+        {
+          if (!result)
+          {
+            LOG_ERROR("Unable to load app state.");
+          }
+        });
       }
-      catch (const std::exception& e) { OutputDebugStringA(e.what()); }
+      catch (const std::exception& e)
+      {
+        LOG_ERROR(std::string("Unable to load app state: ") + e.what());
+      }
     }
   }
 

@@ -21,23 +21,23 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 ====================================================================*/
 
-#pragma once
-
-// STL includes
-#include <atomic>
+// Local includes
+#include "pch.h"
+#include "ILocatable.h"
+#include "HoloInterventionCore.h"
 
 namespace HoloIntervention
 {
-  class IEngineComponent
+  //----------------------------------------------------------------------------
+  ILocatable::ILocatable(HoloInterventionCore& core)
+    : m_core(core)
   {
-  public:
-    virtual bool IsReady();
+    m_core.RegisterLocatable(this);
+  }
 
-  protected:
-    IEngineComponent() {};
-    virtual ~IEngineComponent() {};
-
-  protected:
-    std::atomic_bool      m_componentReady = false;
-  };
+  //----------------------------------------------------------------------------
+  ILocatable::~ILocatable()
+  {
+    m_core.UnregisterLocatable(this);
+  }
 }

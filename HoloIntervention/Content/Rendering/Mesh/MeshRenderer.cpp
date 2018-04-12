@@ -43,6 +43,33 @@ namespace HoloIntervention
 {
   namespace Rendering
   {
+
+    //----------------------------------------------------------------------------
+    void MeshRenderer::RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap)
+    {
+      callbackMap[L"mesh on"] = [this](SpeechRecognitionResult ^ result)
+      {
+        this->SetEnabled(true);
+      };
+
+      callbackMap[L"mesh off"] = [this](SpeechRecognitionResult ^ result)
+      {
+        this->SetEnabled(false);
+      };
+
+      callbackMap[L"mesh solid"] = [this](SpeechRecognitionResult ^ result)
+      {
+        this->SetWireFrame(false);
+        this->SetEnabled(true);
+      };
+
+      callbackMap[L"mesh wireframe"] = [this](SpeechRecognitionResult ^ result)
+      {
+        this->SetWireFrame(true);
+        this->SetEnabled(true);
+      };
+    }
+
     //----------------------------------------------------------------------------
     MeshRenderer::MeshRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources)
       : m_deviceResources(deviceResources)

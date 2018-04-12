@@ -178,6 +178,9 @@
     <ClCompile Include="Content\Algorithms\PointToPlaneRegistration.cpp">
       <Filter>Content\Algorithms\Registration\PointToPlane</Filter>
     </ClCompile>
+    <ClCompile Include="Core\ILocatable.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Content\Sound\OmnidirectionalSound.h">
@@ -383,6 +386,9 @@
     </ClInclude>
     <ClInclude Include="Content\Algorithms\PointToPlaneRegistration.h">
       <Filter>Content\Algorithms\Registration\PointToPlane</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\ILocatable.h">
+      <Filter>Core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -636,6 +642,9 @@
     </None>
     <None Include="Assets\Models\heart.cmo">
       <Filter>Assets\Models\Demo</Filter>
+    </None>
+    <None Include="Assets\Models\satellite.cmo">
+      <Filter>Assets\Models</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

@@ -302,14 +302,15 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<void> PhysicsAPI::SaveAppStateAsync()
+    task<bool> PhysicsAPI::SaveAppStateAsync()
     {
       return create_task(SpatialAnchorManager::RequestStoreAsync()).then([this](SpatialAnchorStore ^ store)
       {
         std::lock_guard<std::mutex> guard(m_anchorMutex);
         if (store == nullptr)
         {
-          return;
+          LOG_ERROR("Unable to access anchor store when saving.");
+          return false;
         }
 
         for (auto pair : m_spatialAnchors)
@@ -322,13 +323,16 @@ namespace HoloIntervention
           catch (Platform::Exception^ e)
           {
             WLOG_ERROR(L"Unable to save anchor: " + e->Message);
+            return false;
           }
         }
+
+        return true;
       });
     }
 
     //----------------------------------------------------------------------------
-    task<void> PhysicsAPI::LoadAppStateAsync()
+    task<bool> PhysicsAPI::LoadAppStateAsync()
     {
       m_spatialAnchors.clear();
 
@@ -337,7 +341,8 @@ namespace HoloIntervention
         std::lock_guard<std::mutex> guard(m_anchorMutex);
         if (store == nullptr)
         {
-          return;
+          LOG_ERROR("Unable to access anchor store when loading.");
+          return false;
         }
 
         int i(0);
@@ -349,6 +354,8 @@ namespace HoloIntervention
             m_spatialAnchors[pair->Key] = pair->Value;
           }
         }
+
+        return true;
       });
     }
 

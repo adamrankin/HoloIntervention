@@ -37,6 +37,7 @@ namespace HoloIntervention
 {
   class IConfigurable;
   class IEngineComponent;
+  class ILocatable;
   class Debug;
 
   namespace Physics
@@ -47,6 +48,7 @@ namespace HoloIntervention
   namespace UI
   {
     class Icons;
+    class IconEntry;
   }
 
   namespace System
@@ -104,8 +106,8 @@ namespace HoloIntervention
     bool Render(Windows::Graphics::Holographic::HolographicFrame^ holographicFrame);
 
     // Handle saving and loading of app state owned by AppMain.
-    Concurrency::task<void> SaveAppStateAsync();
-    Concurrency::task<void> LoadAppStateAsync();
+    Concurrency::task<bool> SaveAppStateAsync();
+    Concurrency::task<bool> LoadAppStateAsync();
 
     // Global access to the current frame number
     uint64 GetCurrentFrameNumber() const;
@@ -113,6 +115,10 @@ namespace HoloIntervention
     // IDeviceNotify
     virtual void OnDeviceLost();
     virtual void OnDeviceRestored();
+
+    // Locatable components
+    void RegisterLocatable(ILocatable*);
+    void UnregisterLocatable(ILocatable*);
 
   protected:
     // Asynchronously creates resources for new holographic cameras.
@@ -136,15 +142,18 @@ namespace HoloIntervention
                                   Windows::Perception::Spatial::SpatialCoordinateSystem^ currentCoordinateSystem,
                                   Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
 
-    // Write the configuration to file
-    concurrency::task<bool> WriteConfigurationAsync();
-
-    concurrency::task<bool> ReadConfigurationAsync();
+    // Read/write the configuration to file
+    Concurrency::task<bool> WriteConfigurationAsync();
+    Concurrency::task<bool> ReadConfigurationAsync();
 
   protected:
-    // IEngineComponent list, used to query overall system status
+    // Lists of components
     std::vector<IEngineComponent*>                        m_engineComponents;
-    std::vector<IConfigurable*>                           m_configurableComponents;
+    std::vector<IConfigurable*>                           m_configurables;
+    std::vector<ILocatable*>                              m_locatables;
+
+    // Locatability icon
+    std::shared_ptr<UI::IconEntry>                        m_locatabilityIcon = nullptr;
 
     // Engine components
     std::unique_ptr<Rendering::ModelRenderer>             m_modelRenderer;

@@ -85,6 +85,12 @@ namespace HoloIntervention
     };
 
     //----------------------------------------------------------------------------
+    void RegistrationSystem::OnLocatabilityChanged(Windows::Perception::Spatial::SpatialLocatability locatability)
+    {
+      // TODO what?
+    }
+
+    //----------------------------------------------------------------------------
     float3 RegistrationSystem::GetStabilizedPosition(SpatialPointerPose^ pose) const
     {
       std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
@@ -165,7 +171,7 @@ namespace HoloIntervention
         }
 
         bool result = true;
-        for (auto & pair : m_knownRegistrationMethods)
+        for (auto& pair : m_knownRegistrationMethods)
         {
           result &= pair.second->WriteConfigurationAsync(document).get();
         }
@@ -217,8 +223,9 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    RegistrationSystem::RegistrationSystem(NetworkSystem& networkSystem, Physics::PhysicsAPI& physicsAPI, NotificationSystem& notificationSystem, Rendering::ModelRenderer& modelRenderer, Input::SpatialInput& spatialInput, UI::Icons& icons, Debug& debug)
-      : m_notificationSystem(notificationSystem)
+    RegistrationSystem::RegistrationSystem(HoloInterventionCore& core, NetworkSystem& networkSystem, Physics::PhysicsAPI& physicsAPI, NotificationSystem& notificationSystem, Rendering::ModelRenderer& modelRenderer, Input::SpatialInput& spatialInput, UI::Icons& icons, Debug& debug)
+      : ILocatable(core)
+      , m_notificationSystem(notificationSystem)
       , m_networkSystem(networkSystem)
       , m_modelRenderer(modelRenderer)
       , m_physicsAPI(physicsAPI)
@@ -299,9 +306,9 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<void> RegistrationSystem::LoadAppStateAsync()
+    task<bool> RegistrationSystem::LoadAppStateAsync()
     {
-      return create_task([ = ]()
+      return create_task([this]()
       {
         if (m_physicsAPI.HasAnchor(REGISTRATION_ANCHOR_NAME))
         {
@@ -325,8 +332,11 @@ namespace HoloIntervention
           else
           {
             LOG_ERROR("Anchor exists by name but is nullptr.");
+            return false;
           }
         }
+
+        return true;
       });
     }
 

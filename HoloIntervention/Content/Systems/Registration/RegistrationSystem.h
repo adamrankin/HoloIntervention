@@ -28,6 +28,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "IConfigurable.h"
+#include "ILocatable.h"
 #include "IRegistrationMethod.h"
 #include "IStabilizedComponent.h"
 #include "IVoiceInput.h"
@@ -88,8 +89,11 @@ namespace HoloIntervention
       REGISTRATIONTYPE_COUNT
     };
 
-    class RegistrationSystem : public Input::IVoiceInput, public IStabilizedComponent, public IConfigurable
+    class RegistrationSystem : public Input::IVoiceInput, public IStabilizedComponent, public IConfigurable, public ILocatable
     {
+    public:
+      virtual void OnLocatabilityChanged(Windows::Perception::Spatial::SpatialLocatability locatability);
+
     public:
       virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition(Windows::UI::Input::Spatial::SpatialPointerPose^ pose) const;
       virtual Windows::Foundation::Numerics::float3 GetStabilizedVelocity() const;
@@ -103,7 +107,8 @@ namespace HoloIntervention
       virtual void RegisterVoiceCallbacks(HoloIntervention::Input::VoiceInputCallbackMap& callbacks);
 
     public:
-      RegistrationSystem(NetworkSystem& networkSystem,
+      RegistrationSystem(HoloInterventionCore& core,
+                         NetworkSystem& networkSystem,
                          Physics::PhysicsAPI& physicsAPI,
                          NotificationSystem& notificationSystem,
                          Rendering::ModelRenderer& modelRenderer,
@@ -118,7 +123,7 @@ namespace HoloIntervention
                   Windows::UI::Input::Spatial::SpatialPointerPose^ headPose,
                   Windows::Graphics::Holographic::HolographicCameraPose^ cameraPose);
 
-      Concurrency::task<void> LoadAppStateAsync();
+      Concurrency::task<bool> LoadAppStateAsync();
       bool IsCameraActive() const;
 
       bool GetReferenceToCoordinateSystemTransformation(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem, Windows::Foundation::Numerics::float4x4& outTransform);

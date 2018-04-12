@@ -30,6 +30,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "HoloInterventionCore.h"
 #include "IConfigurable.h"
 #include "IEngineComponent.h"
+#include "ILocatable.h"
 #include "IStabilizedComponent.h"
 
 // System includes
@@ -105,6 +106,11 @@ namespace HoloIntervention
   {
     m_deviceResources->RegisterDeviceNotify(nullptr);
     UnregisterHolographicEventHandlers();
+
+    if (m_locatabilityIcon != nullptr)
+    {
+      m_icons->RemoveEntry(m_locatabilityIcon->GetId());
+    }
   }
 
   //----------------------------------------------------------------------------
@@ -130,10 +136,15 @@ namespace HoloIntervention
     m_voiceInput = std::make_unique<Input::VoiceInput> (*m_soundAPI.get(), *m_icons.get());
     m_physicsAPI = std::make_unique<Physics::PhysicsAPI>(m_deviceResources, m_timer);
 
+    m_icons->AddEntryAsync(L"satellite.cmo", L"satellite").then([this](std::shared_ptr<UI::IconEntry> entry)
+    {
+      m_locatabilityIcon = entry;
+    });
+
     // Systems (apps-specific behaviour), eventually move to separate project and have engine DLL
     m_notificationSystem = std::make_unique<System::NotificationSystem>(*m_notificationRenderer.get());
     m_networkSystem = std::make_unique<System::NetworkSystem> (*m_notificationSystem.get(), *m_voiceInput.get(), *m_icons.get(), *m_debug.get());
-    m_registrationSystem = std::make_unique<System::RegistrationSystem>(*m_networkSystem.get(), *m_physicsAPI.get(), *m_notificationSystem.get(), *m_modelRenderer.get(), *m_spatialInput.get(), *m_icons.get(), *m_debug.get());
+    m_registrationSystem = std::make_unique<System::RegistrationSystem>(*this, *m_networkSystem.get(), *m_physicsAPI.get(), *m_notificationSystem.get(), *m_modelRenderer.get(), *m_spatialInput.get(), *m_icons.get(), *m_debug.get());
     m_toolSystem = std::make_unique<System::ToolSystem>(*m_notificationSystem.get(), *m_registrationSystem.get(), *m_modelRenderer.get(), *m_networkSystem.get(), *m_icons.get());
     m_gazeSystem = std::make_unique<System::GazeSystem> (*m_notificationSystem.get(), *m_physicsAPI.get(), *m_modelRenderer.get());
     m_imagingSystem = std::make_unique<System::ImagingSystem> (*m_registrationSystem.get(), *m_notificationSystem.get(), *m_sliceRenderer.get(), *m_volumeRenderer.get(), *m_networkSystem.get(), *m_debug.get());
@@ -159,11 +170,11 @@ namespace HoloIntervention
     m_engineComponents.push_back(m_splashSystem.get());
     m_engineComponents.push_back(m_taskSystem.get());
 
-    m_configurableComponents.push_back(m_toolSystem.get());
-    m_configurableComponents.push_back(m_registrationSystem.get());
-    m_configurableComponents.push_back(m_networkSystem.get());
-    m_configurableComponents.push_back(m_imagingSystem.get());
-    m_configurableComponents.push_back(m_taskSystem.get());
+    m_configurables.push_back(m_toolSystem.get());
+    m_configurables.push_back(m_registrationSystem.get());
+    m_configurables.push_back(m_networkSystem.get());
+    m_configurables.push_back(m_imagingSystem.get());
+    m_configurables.push_back(m_taskSystem.get());
 
     ReadConfigurationAsync().then([this](bool result)
     {
@@ -229,8 +240,13 @@ namespace HoloIntervention
         m_notificationSystem->QueueMessage("Unable to initialize surface observer.");
       }
 
-      LoadAppStateAsync().then([this]()
+      LoadAppStateAsync().then([this](bool result)
       {
+        if (!result)
+        {
+          LOG_ERROR("Unable to load app state. Starting new session.");
+        }
+
         LOG(LogLevelType::LOG_LEVEL_INFO, "Engine loading...");
         uint32 componentsReady(0);
         bool engineReady(true);
@@ -455,24 +471,30 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
-  task<void> HoloInterventionCore::SaveAppStateAsync()
+  task<bool> HoloInterventionCore::SaveAppStateAsync()
   {
     if (m_physicsAPI == nullptr)
     {
-      return create_task([]() {});
-    } 
+      return task_from_result(false);
+    }
     return create_task([this]()
     {
-      while (!m_physicsAPI->IsReady())
+      uint32 timer(0);
+      while (!m_physicsAPI->IsReady() && timer < 5000) //(wait for 5s)
       {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        timer += 100;
+      }
+      if (timer >= 5000)
+      {
+        return task_from_result(false);
       }
       return m_physicsAPI->SaveAppStateAsync();
     });
   }
 
   //----------------------------------------------------------------------------
-  task<void> HoloInterventionCore::LoadAppStateAsync()
+  task<bool> HoloInterventionCore::LoadAppStateAsync()
   {
     return create_task([this]()
     {
@@ -481,10 +503,14 @@ namespace HoloIntervention
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
       }
 
-      return m_physicsAPI->LoadAppStateAsync().then([this]()
+      return m_physicsAPI->LoadAppStateAsync().then([this](bool result)
       {
+        if (!result)
+        {
+          return task_from_result(result);
+        }
         // Registration must follow spatial due to anchor store
-        m_registrationSystem->LoadAppStateAsync();
+        return m_registrationSystem->LoadAppStateAsync();
       });
     });
   }
@@ -503,6 +529,7 @@ namespace HoloIntervention
     m_modelRenderer->ReleaseDeviceDependentResources();
     m_sliceRenderer->ReleaseDeviceDependentResources();
     m_notificationRenderer->ReleaseDeviceDependentResources();
+    m_volumeRenderer->ReleaseDeviceDependentResources();
   }
 
   //----------------------------------------------------------------------------
@@ -512,7 +539,27 @@ namespace HoloIntervention
     m_meshRenderer->CreateDeviceDependentResources();
     m_modelRenderer->CreateDeviceDependentResources();
     m_sliceRenderer->CreateDeviceDependentResources();
+    m_volumeRenderer->CreateDeviceDependentResourcesAsync();
     m_physicsAPI->CreateDeviceDependentResourcesAsync();
+  }
+
+  //----------------------------------------------------------------------------
+  void HoloInterventionCore::RegisterLocatable(ILocatable* locatable)
+  {
+    if (std::find(begin(m_locatables), end(m_locatables), locatable) == end(m_locatables))
+    {
+      m_locatables.push_back(locatable);
+    }
+  }
+
+  //----------------------------------------------------------------------------
+  void HoloInterventionCore::UnregisterLocatable(ILocatable* locatable)
+  {
+    std::vector<ILocatable*>::iterator it = std::find(begin(m_locatables), end(m_locatables), locatable);
+    if (it != end(m_locatables))
+    {
+      m_locatables.erase(it);
+    }
   }
 
   //----------------------------------------------------------------------------
@@ -520,23 +567,34 @@ namespace HoloIntervention
   {
     m_locatability = sender->Locatability;
 
+    // TODO : infrastructure to flag systems as disabled until locatability stable
+    //  https://github.com/adamrankin/HoloIntervention/issues/17
+
+    for (auto& locatable : m_locatables)
+    {
+      locatable->OnLocatabilityChanged(sender->Locatability);
+    }
+
     switch (sender->Locatability)
     {
-      case SpatialLocatability::Unavailable:
-      {
-        m_notificationSystem->QueueMessage(L"Warning! Positional tracking is unavailable.");
-      }
+    case SpatialLocatability::Unavailable:
+    {
+      m_locatabilityIcon->GetModelEntry()->SetColour(1.0, 0.0, 0.0);
+      m_notificationSystem->QueueMessage(L"Warning! Positional tracking is unavailable.");
+    }
+    break;
+
+    case SpatialLocatability::PositionalTrackingActivating:
+    case SpatialLocatability::OrientationOnly:
+    case SpatialLocatability::PositionalTrackingInhibited:
+      // Gaze-locked content still valid
+      m_locatabilityIcon->GetModelEntry()->SetColour(0.0, 1.0, 1.0);
       break;
 
-      case SpatialLocatability::PositionalTrackingActivating:
-      case SpatialLocatability::OrientationOnly:
-      case SpatialLocatability::PositionalTrackingInhibited:
-        // Gaze-locked content still valid
-        break;
-
-      case SpatialLocatability::PositionalTrackingActive:
-        m_notificationSystem->QueueMessage(L"Positional tracking is active.");
-        break;
+    case SpatialLocatability::PositionalTrackingActive:
+      m_locatabilityIcon->GetModelEntry()->SetColour(m_locatabilityIcon->GetModelEntry()->GetOriginalColour());
+      m_notificationSystem->QueueMessage(L"Positional tracking is active.");
+      break;
     }
   }
 
@@ -594,8 +652,14 @@ namespace HoloIntervention
 
     callbacks[L"save config"] = [this](SpeechRecognitionResult ^ result)
     {
-      m_physicsAPI->SaveAppStateAsync().then([this]()
+      m_physicsAPI->SaveAppStateAsync().then([this](bool result)
       {
+        if (!result)
+        {
+          // Physics API didn't save
+          m_notificationSystem->QueueMessage("Unable to save anchors. Continuing.");
+        }
+
         WriteConfigurationAsync().then([this](bool result)
         {
           if (result)
@@ -618,32 +682,6 @@ namespace HoloIntervention
     callbacks[L"show all"] = [this](SpeechRecognitionResult ^ result)
     {
       m_engineUserEnabled = true;
-    };
-
-    callbacks[L"mesh on"] = [this](SpeechRecognitionResult ^ result)
-    {
-      m_notificationSystem->QueueMessage(L"Mesh showing.");
-      m_meshRenderer->SetEnabled(true);
-    };
-
-    callbacks[L"mesh off"] = [this](SpeechRecognitionResult ^ result)
-    {
-      m_notificationSystem->QueueMessage(L"Mesh disabled.");
-      m_meshRenderer->SetEnabled(false);
-    };
-
-    callbacks[L"mesh solid"] = [this](SpeechRecognitionResult ^ result)
-    {
-      m_notificationSystem->QueueMessage(L"Solid mesh on.");
-      m_meshRenderer->SetWireFrame(false);
-      m_meshRenderer->SetEnabled(true);
-    };
-
-    callbacks[L"mesh wireframe"] = [this](SpeechRecognitionResult ^ result)
-    {
-      m_notificationSystem->QueueMessage(L"Wireframe mesh on.");
-      m_meshRenderer->SetWireFrame(true);
-      m_meshRenderer->SetEnabled(true);
     };
 
     m_voiceInput->CompileCallbacksAsync(callbacks).then([this](task<bool> compileTask)
@@ -756,7 +794,7 @@ namespace HoloIntervention
 
       // Populate document
       std::vector<task<bool>> tasks;
-      for (auto comp : m_configurableComponents)
+      for (auto comp : m_configurables)
       {
         tasks.push_back(comp->WriteConfigurationAsync(doc));
       }
@@ -796,7 +834,7 @@ namespace HoloIntervention
   //----------------------------------------------------------------------------
   task<bool> HoloInterventionCore::ReadConfigurationAsync()
   {
-    if (m_configurableComponents.size() == 0)
+    if (m_configurables.size() == 0)
     {
       return task_from_result(true);
     }
@@ -871,13 +909,13 @@ namespace HoloIntervention
         // Run in order, as some configurations may rely on others
         auto readConfigTask = create_task([this, hasError, doc]()
         {
-          *hasError = *hasError || !m_configurableComponents[0]->ReadConfigurationAsync(doc).get();
+          *hasError = *hasError || !m_configurables[0]->ReadConfigurationAsync(doc).get();
         });
-        for (uint32 i = 1; i < m_configurableComponents.size(); ++i)
+        for (uint32 i = 1; i < m_configurables.size(); ++i)
         {
           readConfigTask = readConfigTask.then([this, hasError, doc, i]()
           {
-            *hasError = *hasError || !m_configurableComponents[i]->ReadConfigurationAsync(doc).get();
+            *hasError = *hasError || !m_configurables[i]->ReadConfigurationAsync(doc).get();
           });
         }
 
@@ -888,5 +926,4 @@ namespace HoloIntervention
       });
     });
   }
-
 }

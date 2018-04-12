@@ -13,6 +13,7 @@
 
 // Local includes
 #include "IEngineComponent.h"
+#include "IVoiceInput.h"
 #include "Mesh.h"
 
 // STL includes
@@ -29,9 +30,12 @@ namespace HoloIntervention
 {
   namespace Rendering
   {
-    class MeshRenderer : public IEngineComponent
+    class MeshRenderer : public IEngineComponent, public Input::IVoiceInput
     {
       typedef std::map<Platform::Guid, Mesh> GuidMeshMap;
+
+    public:
+      virtual void RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap);
 
     public:
       MeshRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources);

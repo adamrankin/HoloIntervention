@@ -28,16 +28,17 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 namespace HoloIntervention
 {
-  class IEngineComponent
+  class HoloInterventionCore;
+
+  class ILocatable
   {
   public:
-    virtual bool IsReady();
+    ILocatable(HoloInterventionCore& core);
+    virtual ~ILocatable();
+
+    virtual void OnLocatabilityChanged(Windows::Perception::Spatial::SpatialLocatability locatability) = 0;
 
   protected:
-    IEngineComponent() {};
-    virtual ~IEngineComponent() {};
-
-  protected:
-    std::atomic_bool      m_componentReady = false;
+    HoloInterventionCore& m_core;
   };
 }

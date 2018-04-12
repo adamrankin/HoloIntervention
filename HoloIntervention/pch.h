@@ -3,6 +3,7 @@
 //// Local includes
 #include "Log.h"
 #include "Common.h"
+#include "ILocatable.h"
 
 // Windows includes
 #include <xapo.h>

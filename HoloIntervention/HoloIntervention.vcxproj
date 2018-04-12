@@ -161,6 +161,7 @@
     <ClInclude Include="Core\HoloInterventionCore.h" />
     <ClInclude Include="Core\IConfigurable.h" />
     <ClInclude Include="Core\IEngineComponent.h" />
+    <ClInclude Include="Core\ILocatable.h" />
     <ClInclude Include="Core\IStabilizedComponent.h" />
     <ClInclude Include="Core\Log.h" />
     <ClInclude Include="Core\Rendering\CameraResources.h" />
@@ -225,6 +226,7 @@
     <ClCompile Include="Core\Common.cpp" />
     <ClCompile Include="Core\HoloInterventionCore.cpp" />
     <ClCompile Include="Core\IEngineComponent.cpp" />
+    <ClCompile Include="Core\ILocatable.cpp" />
     <ClCompile Include="Core\Log.cpp" />
     <ClCompile Include="Core\Rendering\CameraResources.cpp" />
     <ClCompile Include="Core\Rendering\DeviceResources.cpp" />
@@ -265,6 +267,10 @@
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
     </None>
     <None Include="Assets\Models\network_icon.cmo">
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
+    </None>
+    <None Include="Assets\Models\satellite.cmo">
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
     </None>

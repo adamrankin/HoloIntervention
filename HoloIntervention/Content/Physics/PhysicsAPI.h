@@ -79,8 +79,8 @@ namespace HoloIntervention
 
       Concurrency::task<bool> InitializeSurfaceObserverAsync(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem);
 
-      Concurrency::task<void> SaveAppStateAsync();
-      Concurrency::task<void> LoadAppStateAsync();
+      Concurrency::task<bool> SaveAppStateAsync();
+      Concurrency::task<bool> LoadAppStateAsync();
 
       bool DropAnchorAtIntersectionHit(Platform::String^ anchorName, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem, Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
       size_t RemoveAnchor(Platform::String^ anchorName);
