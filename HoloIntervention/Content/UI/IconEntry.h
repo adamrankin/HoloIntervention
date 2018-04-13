@@ -51,6 +51,7 @@ namespace HoloIntervention
       void SetUserRotation(Windows::Foundation::Numerics::quaternion rotation);
       void SetUserRotation(Windows::Foundation::Numerics::float4x4 rotation);
       Windows::Foundation::Numerics::float4x4 GetUserRotation() const;
+      std::array<float, 6> GetRotatedBounds() const;
 
       bool GetFirstFrame() const;
       void SetFirstFrame(bool firstFrame);
@@ -67,6 +68,9 @@ namespace HoloIntervention
 
       // Allow a custom rotation for optical icon viewing angles
       Windows::Foundation::Numerics::float4x4         m_userRotation = Windows::Foundation::Numerics::float4x4::identity();
+
+      // Cache model bounds to reduce recomputation
+      std::array<float, 6>                            m_rotatedBounds;
 
       uint64                                          m_userValueNumber = 0;
       std::wstring                                    m_userValueString = L"";

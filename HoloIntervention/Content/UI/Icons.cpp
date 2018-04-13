@@ -127,7 +127,7 @@ namespace HoloIntervention
         float4x4 transformed = translation * rotate; // rotation first, then translation
         float4x4 world = make_float4x4_world(float3(transformed.m41, transformed.m42, transformed.m43), headPose->Head->ForwardDirection, headPose->Head->UpDirection);
 
-        auto bounds = entry->GetModelEntry()->GetBounds();
+        auto bounds = entry->GetRotatedBounds();
         auto scaleFactor = ICON_SIZE_METER / (bounds[1] - bounds[0]);
         float4x4 scale = make_float4x4_scale(scaleFactor);
         if (entry->GetFirstFrame())

@@ -703,9 +703,68 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    std::array<float, 6> ModelEntry::GetBounds() const
+    std::array<float, 6> ModelEntry::GetBounds(float4x4 userMatrix /* = float4x4::identity() */) const
     {
-      return m_modelBounds;
+      if (userMatrix == float4x4::identity())
+      {
+        return m_modelBounds;
+      }
+
+      // Transform bounds into corners, transform corners, re-do bounds along origin axes
+      std::array<std::array<float, 3>, 8> corners =
+      {
+        std::array<float, 3>{m_modelBounds[0], m_modelBounds[2], m_modelBounds[4]},
+        std::array<float, 3>{m_modelBounds[0], m_modelBounds[3], m_modelBounds[4]},
+        std::array<float, 3>{m_modelBounds[1], m_modelBounds[3], m_modelBounds[4]},
+        std::array<float, 3>{m_modelBounds[1], m_modelBounds[2], m_modelBounds[4]},
+
+        std::array<float, 3>{m_modelBounds[0], m_modelBounds[2], m_modelBounds[5]},
+        std::array<float, 3>{m_modelBounds[0], m_modelBounds[3], m_modelBounds[5]},
+        std::array<float, 3>{m_modelBounds[1], m_modelBounds[3], m_modelBounds[5]},
+        std::array<float, 3>{m_modelBounds[1], m_modelBounds[2], m_modelBounds[5]}
+      };
+
+      for (std::array<std::array<float, 3>, 8>::size_type i = 0; i < corners.size(); ++i)
+      {
+        float3 corner(corners[i][0], corners[i][1], corners[i][2]);
+        corner = transform(corner, userMatrix);
+        corners[i][0] = corner.x;
+        corners[i][1] = corner.y;
+        corners[i][2] = corner.z;
+      }
+
+      std::array<float, 6> bounds =
+      {
+        corners[0][0], // Xmin
+        corners[0][0], // Xmax
+        corners[0][1], // Ymin
+        corners[0][1], // Ymax
+        corners[0][2], // Zmin
+        corners[0][2]  // Zmax
+      };
+
+      for (std::array<float, 6>::size_type axis = 0; axis < bounds.size() / 2; ++axis)
+      {
+        // Find dimension min
+        for (std::array<std::array<float, 3>, 8>::size_type i = 0; i < corners.size(); ++i)
+        {
+          if (corners[i][axis] <= bounds[axis * 2])
+          {
+            bounds[axis * 2] = corners[i][axis];
+          }
+        }
+
+        // Find dimension max
+        for (std::array<std::array<float, 3>, 8>::size_type i = 0; i < corners.size(); ++i)
+        {
+          if (corners[i][axis] >= bounds[(axis * 2) + 1])
+          {
+            bounds[(axis * 2) + 1] = corners[i][axis];
+          }
+        }
+      }
+
+      return bounds;
     }
 
     //----------------------------------------------------------------------------

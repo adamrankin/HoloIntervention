@@ -78,29 +78,37 @@ namespace HoloIntervention
       void Update(const DX::CameraResources* cameraResources);
       void Render();
 
+      // DirectX Resources
       void CreateDeviceDependentResources();
       void ReleaseDeviceDependentResources();
 
+      // Visibility functionality
       void SetVisible(bool enable);
       void ToggleVisible();
       bool IsVisible() const;
       bool IsInFrustum() const;
       bool IsInFrustum(const Windows::Perception::Spatial::SpatialBoundingFrustum& frustum) const;
 
+      // Pose interpolation controls
       void EnablePoseLerp(bool enable);
       void SetPoseLerpRate(float lerpRate);
 
+      // Pose controls
       void SetDesiredPose(const Windows::Foundation::Numerics::float4x4& world);
       void SetCurrentPose(const Windows::Foundation::Numerics::float4x4& world);
       Windows::Foundation::Numerics::float4x4 GetCurrentPose() const;
 
       Windows::Foundation::Numerics::float3 GetVelocity() const;
 
+      // Unique ID
       uint64 GetId() const;
       void SetId(uint64 id);
-      std::array<float, 6> GetBounds() const;
 
-      std::wstring GetAssetLocation() const;
+      // Bounds
+      std::array<float, 6> GetBounds(Windows::Foundation::Numerics::float4x4 userMatrix = Windows::Foundation::Numerics::float4x4::identity()) const;
+      void CalculateBounds();
+
+      // Primitive controls
       bool IsPrimitive() const;
       PrimitiveType GetPrimitiveType() const;
       Windows::Foundation::Numerics::float3 GetArgument() const;
@@ -118,25 +126,27 @@ namespace HoloIntervention
       void EnableLighting(bool enable);
       void SetCullMode(D3D11_CULL_MODE mode);
 
+      // Asset controls
+      std::wstring GetAssetLocation() const;
       bool FailedLoad() const;
       bool IsLoaded() const;
 
-      // Colour control (primitives)
+      // Colour control
       void SetColour(Windows::Foundation::Numerics::float4 newColour);
       void SetColour(Windows::Foundation::Numerics::float3 newColour);
       void SetColour(float r, float g, float b, float a);
       void SetColour(float r, float g, float b);
+      Windows::Foundation::Numerics::float4 GetCurrentColour() const;
+      // Original colour control (primitives only)
       void SetOriginalColour(Windows::Foundation::Numerics::float4 newColour);
       void SetOriginalColour(Windows::Foundation::Numerics::float3 newColour);
       void SetOriginalColour(float r, float g, float b, float a);
       void SetOriginalColour(float r, float g, float b);
-      Windows::Foundation::Numerics::float4 GetCurrentColour() const;
       Windows::Foundation::Numerics::float4 GetOriginalColour() const;
 
     protected:
       void DrawMesh(_In_ const DirectX::ModelMesh& mesh, _In_ bool alpha, _In_opt_ std::function<void __cdecl(std::shared_ptr<DirectX::IEffect>)> setCustomState = nullptr);
       void DrawMeshPart(_In_ const DirectX::ModelMeshPart& part, _In_opt_ std::function<void __cdecl(std::shared_ptr<DirectX::IEffect>)> setCustomState = nullptr);
-      void CalculateBounds();
 
       // Update all effects used by the model
       void __cdecl UpdateEffects(_In_ std::function<void __cdecl(DirectX::IEffect*)> setEffect);

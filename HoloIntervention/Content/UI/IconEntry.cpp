@@ -67,18 +67,22 @@ namespace HoloIntervention
     void IconEntry::SetModelEntry(std::shared_ptr<Rendering::ModelEntry> entry)
     {
       m_modelEntry = entry;
+      m_rotatedBounds = m_modelEntry->GetBounds(m_userRotation);
     }
 
     //----------------------------------------------------------------------------
     void IconEntry::SetUserRotation(float pitch, float yaw, float roll)
     {
-      m_userRotation = make_float4x4_from_quaternion(make_quaternion_from_yaw_pitch_roll(yaw, pitch, roll));
+      SetUserRotation(make_quaternion_from_yaw_pitch_roll(yaw, pitch, roll));
     }
 
     //----------------------------------------------------------------------------
     void IconEntry::SetUserRotation(quaternion rotation)
     {
       m_userRotation = make_float4x4_from_quaternion(rotation);
+      m_rotatedBounds = m_modelEntry->GetBounds(m_userRotation);
+
+      // Recalculate scaling based on rotated model
     }
 
     //----------------------------------------------------------------------------
@@ -92,13 +96,19 @@ namespace HoloIntervention
         return;
       }
 
-      m_userRotation = make_float4x4_from_quaternion(rotationQuat);
+      SetUserRotation(rotationQuat);
     }
 
     //----------------------------------------------------------------------------
     Windows::Foundation::Numerics::float4x4 IconEntry::GetUserRotation() const
     {
       return m_userRotation;
+    }
+
+    //----------------------------------------------------------------------------
+    std::array<float, 6> IconEntry::GetRotatedBounds() const
+    {
+      return m_rotatedBounds;
     }
 
     //----------------------------------------------------------------------------
@@ -136,6 +146,5 @@ namespace HoloIntervention
     {
       return m_userValueString;
     }
-
   }
 }

@@ -60,6 +60,18 @@ namespace HoloIntervention
   static const uint64 INVALID_TOKEN = 0;
   static const float FLOAT_EPSILON = 0.001f;
 
+  namespace Math
+  {
+    template<typename T>
+    T const PI = std::acos(-T(1));
+
+    template<typename T>
+    T const PI_2 = std::acos(-T(1)) / T(2);
+
+    template<typename T>
+    T const PI_4 = std::acos(-T(1)) / T(4);
+  }
+
 #define IsFloatEqual(x, y) (fabs(x - y) < HoloIntervention::FLOAT_EPSILON)
 
   //------------------------------------------------------------------------
