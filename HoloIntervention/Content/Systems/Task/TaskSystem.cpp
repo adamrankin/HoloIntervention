@@ -31,7 +31,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Task includes
 #include "RegisterModelTask.h"
-#include "TouchingSphereTask.h"
+#include "TargetSphereTask.h"
 
 using namespace Windows::Data::Xml::Dom;
 using namespace Windows::Foundation::Numerics;
@@ -101,7 +101,7 @@ namespace HoloIntervention
       , m_modelRenderer(modelRenderer)
       , m_icons(icons)
     {
-      m_touchingSphereTask = std::make_shared<Tasks::TouchingSphereTask>(notificationSystem, networkSystem, toolSystem, registrationSystem, modelRenderer, icons);
+      m_touchingSphereTask = std::make_shared<Tasks::TargetSphereTask>(notificationSystem, networkSystem, toolSystem, registrationSystem, modelRenderer, icons);
       m_regModelTask = std::make_shared<Tasks::RegisterModelTask>(notificationSystem, networkSystem, registrationSystem, modelRenderer, icons);
     }
 

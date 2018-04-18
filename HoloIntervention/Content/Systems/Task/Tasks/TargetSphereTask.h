@@ -73,7 +73,7 @@ namespace HoloIntervention
 
     namespace Tasks
     {
-      class TouchingSphereTask : public IStabilizedComponent, public Input::IVoiceInput, public IConfigurable
+      class TargetSphereTask : public IStabilizedComponent, public Input::IVoiceInput, public IConfigurable
       {
       public:
         virtual concurrency::task<bool> WriteConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
@@ -88,8 +88,8 @@ namespace HoloIntervention
         virtual void RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap);
         virtual void Update(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem, DX::StepTimer& stepTimer);
 
-        TouchingSphereTask(NotificationSystem& notificationSystem, NetworkSystem& networkSystem, ToolSystem& toolSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer, UI::Icons& icons);
-        ~TouchingSphereTask();
+        TargetSphereTask(NotificationSystem& notificationSystem, NetworkSystem& networkSystem, ToolSystem& toolSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer, UI::Icons& icons);
+        ~TargetSphereTask();
 
       protected:
         void StopTask();

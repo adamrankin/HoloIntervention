@@ -24,7 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "pch.h"
 #include "Common.h"
-#include "TouchingSphereTask.h"
+#include "TargetSphereTask.h"
 #include "StepTimer.h"
 
 // UI includes
@@ -58,7 +58,7 @@ namespace HoloIntervention
     namespace Tasks
     {
       //----------------------------------------------------------------------------
-      task<bool> TouchingSphereTask::WriteConfigurationAsync(XmlDocument^ document)
+      task<bool> TargetSphereTask::WriteConfigurationAsync(XmlDocument^ document)
       {
         return create_task([this, document]()
         {
@@ -70,7 +70,7 @@ namespace HoloIntervention
 
           auto rootNode = document->SelectNodes(xpath)->Item(0);
 
-          auto phantomElement = document->CreateElement("TouchingSphereTask");
+          auto phantomElement = document->CreateElement("TargetSphereTask");
           phantomElement->SetAttribute(L"PhantomFrom", m_phantomToReferenceName->From());
           phantomElement->SetAttribute(L"PhantomTo", m_phantomToReferenceName->To());
           phantomElement->SetAttribute(L"StylusFrom", m_stylusTipToPhantomName->From());
@@ -92,11 +92,11 @@ namespace HoloIntervention
       }
 
       //----------------------------------------------------------------------------
-      task<bool> TouchingSphereTask::ReadConfigurationAsync(XmlDocument^ document)
+      task<bool> TargetSphereTask::ReadConfigurationAsync(XmlDocument^ document)
       {
         return create_task([this, document]()
         {
-          auto xpath = ref new Platform::String(L"/HoloIntervention/TouchingSphereTask");
+          auto xpath = ref new Platform::String(L"/HoloIntervention/TargetSphereTask");
           if (document->SelectNodes(xpath)->Length == 0)
           {
             return false;
@@ -112,22 +112,22 @@ namespace HoloIntervention
 
           if (!HasAttribute(L"IGTConnection", node))
           {
-            LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to locate \"IGTConnection\" attributes. Cannot configure TouchingSphereTask.");
+            LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to locate \"IGTConnection\" attributes. Cannot configure TargetSphereTask.");
             return false;
           }
           if (!HasAttribute(L"PhantomFrom", node))
           {
-            LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to locate \"PhantomFrom\" attribute. Cannot configure TouchingSphereTask.");
+            LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to locate \"PhantomFrom\" attribute. Cannot configure TargetSphereTask.");
             return false;
           }
           if (!HasAttribute(L"PhantomTo", node))
           {
-            LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to locate \"PhantomTo\" attribute. Cannot configure TouchingSphereTask.");
+            LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to locate \"PhantomTo\" attribute. Cannot configure TargetSphereTask.");
             return false;
           }
           if (!HasAttribute(L"StylusFrom", node))
           {
-            LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to locate \"StylusFrom\" attribute. Cannot configure TouchingSphereTask.");
+            LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to locate \"StylusFrom\" attribute. Cannot configure TargetSphereTask.");
             return false;
           }
 
@@ -164,7 +164,7 @@ namespace HoloIntervention
             }
             catch (Platform::Exception^)
             {
-              LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to construct PhantomTransformName from " + fromName + L" and " + toName + L" attributes. Cannot configure TouchingSphereTask.");
+              LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to construct PhantomTransformName from " + fromName + L" and " + toName + L" attributes. Cannot configure TargetSphereTask.");
               return false;
             }
           }
@@ -178,13 +178,13 @@ namespace HoloIntervention
             }
             catch (Platform::Exception^)
             {
-              LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to construct StylusTipTransformName from " + fromName + L" and " + m_phantomToReferenceName->From() + L" attributes. Cannot configure TouchingSphereTask.");
+              LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to construct StylusTipTransformName from " + fromName + L" and " + m_phantomToReferenceName->From() + L" attributes. Cannot configure TargetSphereTask.");
               return false;
             }
           }
 
           // Position of targets
-          xpath = ref new Platform::String(L"/HoloIntervention/TouchingSphereTask/Region");
+          xpath = ref new Platform::String(L"/HoloIntervention/TargetSphereTask/Region");
           if (document->SelectNodes(xpath)->Length == 0)
           {
             return false;
@@ -239,7 +239,7 @@ namespace HoloIntervention
       }
 
       //----------------------------------------------------------------------------
-      float3 TouchingSphereTask::GetStabilizedPosition(SpatialPointerPose^ pose) const
+      float3 TargetSphereTask::GetStabilizedPosition(SpatialPointerPose^ pose) const
       {
         if (m_targetModel != nullptr)
         {
@@ -249,7 +249,7 @@ namespace HoloIntervention
       }
 
       //----------------------------------------------------------------------------
-      float3 TouchingSphereTask::GetStabilizedVelocity() const
+      float3 TargetSphereTask::GetStabilizedVelocity() const
       {
         if (m_targetModel != nullptr)
         {
@@ -259,13 +259,13 @@ namespace HoloIntervention
       }
 
       //----------------------------------------------------------------------------
-      float TouchingSphereTask::GetStabilizePriority() const
+      float TargetSphereTask::GetStabilizePriority() const
       {
         return m_taskStarted && m_targetModel != nullptr && m_targetModel->IsInFrustum() ? PRIORITY_MODEL_TASK : PRIORITY_NOT_ACTIVE;
       }
 
       //----------------------------------------------------------------------------
-      TouchingSphereTask::TouchingSphereTask(NotificationSystem& notificationSystem, NetworkSystem& networkSystem, ToolSystem& toolSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer, UI::Icons& icons)
+      TargetSphereTask::TargetSphereTask(NotificationSystem& notificationSystem, NetworkSystem& networkSystem, ToolSystem& toolSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer, UI::Icons& icons)
         : m_notificationSystem(notificationSystem)
         , m_networkSystem(networkSystem)
         , m_registrationSystem(registrationSystem)
@@ -289,27 +289,27 @@ namespace HoloIntervention
       }
 
       //----------------------------------------------------------------------------
-      TouchingSphereTask::~TouchingSphereTask()
+      TargetSphereTask::~TargetSphereTask()
       {
       }
 
 
       //----------------------------------------------------------------------------
-      void TouchingSphereTask::StopTask()
+      void TargetSphereTask::StopTask()
       {
         m_targetModel->SetVisible(false);
         m_taskStarted = false;
       }
 
       //-----------------------------------------------------------------------------
-      void TouchingSphereTask::GenerateNextRandomPoint()
+      void TargetSphereTask::GenerateNextRandomPoint()
       {
         m_targetPosition = float3(m_xDistribution(m_randomGenerator), m_yDistribution(m_randomGenerator), m_zDistribution(m_randomGenerator));
         m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Sphere", m_phantomToReferenceName->From()), make_float4x4_translation(m_targetPosition), true);
       }
 
       //----------------------------------------------------------------------------
-      void TouchingSphereTask::Update(SpatialCoordinateSystem^ coordinateSystem, DX::StepTimer& timer)
+      void TargetSphereTask::Update(SpatialCoordinateSystem^ coordinateSystem, DX::StepTimer& timer)
       {
         if (!m_componentReady)
         {
@@ -401,9 +401,9 @@ namespace HoloIntervention
       }
 
       //----------------------------------------------------------------------------
-      void TouchingSphereTask::RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap)
+      void TargetSphereTask::RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap)
       {
-        callbackMap[L"start touching task"] = [this](SpeechRecognitionResult ^ result)
+        callbackMap[L"start target task"] = [this](SpeechRecognitionResult ^ result)
         {
           if (m_taskStarted)
           {
@@ -418,7 +418,7 @@ namespace HoloIntervention
           m_taskStarted = true;
         };
 
-        callbackMap[L"stop touching task"] = [this](SpeechRecognitionResult ^ result)
+        callbackMap[L"stop target task"] = [this](SpeechRecognitionResult ^ result)
         {
           StopTask();
         };

@@ -139,9 +139,6 @@
     <ClCompile Include="Content\Systems\Task\TaskSystem.cpp">
       <Filter>Content\Systems\Task</Filter>
     </ClCompile>
-    <ClCompile Include="Content\Systems\Task\Tasks\TouchingSphereTask.cpp">
-      <Filter>Content\Systems\Task\Tasks</Filter>
-    </ClCompile>
     <ClCompile Include="Content\Debug\Debug.cpp">
       <Filter>Content\Debug</Filter>
     </ClCompile>
@@ -180,6 +177,9 @@
     </ClCompile>
     <ClCompile Include="Core\ILocatable.cpp">
       <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Systems\Task\Tasks\TargetSphereTask.cpp">
+      <Filter>Content\Systems\Task\Tasks</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -345,9 +345,6 @@
     <ClInclude Include="Content\Systems\Task\TaskSystem.h">
       <Filter>Content\Systems\Task</Filter>
     </ClInclude>
-    <ClInclude Include="Content\Systems\Task\Tasks\TouchingSphereTask.h">
-      <Filter>Content\Systems\Task\Tasks</Filter>
-    </ClInclude>
     <ClInclude Include="Content\Debug\Debug.h">
       <Filter>Content\Debug</Filter>
     </ClInclude>
@@ -389,6 +386,9 @@
     </ClInclude>
     <ClInclude Include="Core\ILocatable.h">
       <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Systems\Task\Tasks\TargetSphereTask.h">
+      <Filter>Content\Systems\Task\Tasks</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

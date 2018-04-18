@@ -10,9 +10,9 @@
       LerpEnabled="false" />
   </Tools>
 
-  <TouchingSphereTask
+  <TargetSphereTask
     IGTConnection="PlusServer"
-    PhantomFrom="Phantom"
+    PhantomFrom="Tool"
     PhantomTo="Reference"
     StylusFrom="StylusTip"
     NumberOfPoints="10" >
@@ -23,7 +23,7 @@
       YMaxMeters="0.8"
       ZMinMeters="0.2"
       ZMaxMeters="0.8"/>
-  </TouchingSphereTask>
+  </TargetSphereTask>
 
   <RegisterModelTask
     IGTConnection="PlusServer"

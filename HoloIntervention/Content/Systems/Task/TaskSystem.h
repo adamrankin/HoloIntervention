@@ -59,7 +59,7 @@ namespace HoloIntervention
 
     namespace Tasks
     {
-      class TouchingSphereTask;
+      class TargetSphereTask;
       class RegisterModelTask;
     }
 
@@ -92,7 +92,7 @@ namespace HoloIntervention
       Rendering::ModelRenderer&                   m_modelRenderer;
       UI::Icons&                                  m_icons;
 
-      std::shared_ptr<Tasks::TouchingSphereTask>  m_touchingSphereTask;
+      std::shared_ptr<Tasks::TargetSphereTask>  m_touchingSphereTask;
       std::shared_ptr<Tasks::RegisterModelTask>   m_regModelTask;
     };
   }
