@@ -305,7 +305,7 @@ namespace HoloIntervention
       void TargetSphereTask::GenerateNextRandomPoint()
       {
         m_targetPosition = float3(m_xDistribution(m_randomGenerator), m_yDistribution(m_randomGenerator), m_zDistribution(m_randomGenerator));
-        m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Sphere", m_phantomToReferenceName->From()), make_float4x4_translation(m_targetPosition), true);
+        m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Sphere", m_phantomToReferenceName->From()), transpose(make_float4x4_translation(m_targetPosition)), true);
       }
 
       //----------------------------------------------------------------------------
@@ -319,17 +319,30 @@ namespace HoloIntervention
         if (m_networkSystem.IsConnected(m_hashedConnectionName))
         {
           m_trackedFrame = m_networkSystem.GetTrackedFrame(m_hashedConnectionName, m_latestTimestamp);
-          if (m_trackedFrame == nullptr || !m_transformRepository->SetTransforms(m_trackedFrame))
+          if (m_trackedFrame == nullptr)
           {
-            m_phantomWasValid = false;
-            m_targetModel->SetColour(DISABLE_TARGET_COLOUR);
-            return;
+            auto transform = m_networkSystem.GetTransform(m_hashedConnectionName, m_phantomToReferenceName, m_latestTimestamp);
+            if (transform == nullptr || !m_transformRepository->SetTransform(transform->Name, transform->Matrix, transform->Valid))
+            {
+              m_phantomWasValid = false;
+              m_targetModel->SetColour(DISABLE_TARGET_COLOUR);
+              return;
+            }
+          }
+          else
+          {
+            if (!m_transformRepository->SetTransforms(m_trackedFrame))
+            {
+              m_phantomWasValid = false;
+              m_targetModel->SetColour(DISABLE_TARGET_COLOUR);
+              return;
+            }
           }
 
           float4x4 registration;
           if (m_registrationSystem.GetReferenceToCoordinateSystemTransformation(coordinateSystem, registration))
           {
-            m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", L"HoloLens"), registration, true);
+            m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", L"HoloLens"), transpose(registration), true);
             auto result = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"Sphere", L"HoloLens"));
 
             // Update phantom model rendering
@@ -345,7 +358,7 @@ namespace HoloIntervention
             }
 
             // Update target pose
-            m_targetModel->SetDesiredPose(result->Value);
+            m_targetModel->SetDesiredPose(transpose(result->Value));
 
             if (m_recordPointOnUpdate)
             {
@@ -413,7 +426,7 @@ namespace HoloIntervention
 
           GenerateNextRandomPoint();
 
-          m_notificationSystem.QueueMessage(L"Touching task running.");
+          m_notificationSystem.QueueMessage(L"Sphere target task running.");
           m_targetModel->SetVisible(true);
           m_taskStarted = true;
         };

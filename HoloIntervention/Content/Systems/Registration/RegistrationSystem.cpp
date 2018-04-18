@@ -127,7 +127,7 @@ namespace HoloIntervention
       {
         return m_currentRegistrationMethod->GetStabilizePriority();
       }
-      else if (m_currentRegistrationMethod != nullptr && !m_currentRegistrationMethod->IsStabilizationActive() && m_regAnchorModel != nullptr)
+      else if (m_currentRegistrationMethod != nullptr && !m_currentRegistrationMethod->IsStabilizationActive() && m_regAnchorModel != nullptr && m_regAnchorModel->IsInFrustum())
       {
         return PRIORITY_REGISTRATION;
       }
