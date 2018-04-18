@@ -87,7 +87,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void RegistrationSystem::OnLocatabilityChanged(Windows::Perception::Spatial::SpatialLocatability locatability)
     {
-      // TODO what?
+      m_locatability = locatability;
     }
 
     //----------------------------------------------------------------------------
@@ -264,6 +264,12 @@ namespace HoloIntervention
       // Anchor placement logic
       if (m_regAnchorRequested)
       {
+        if (m_locatability != SpatialLocatability::PositionalTrackingActive)
+        {
+          m_notificationSystem.QueueMessage(L"Positional tracking required for dropping an anchor.");
+          return;
+        }
+
         if (m_physicsAPI.DropAnchorAtIntersectionHit(REGISTRATION_ANCHOR_NAME, coordinateSystem, headPose))
         {
           if (m_regAnchorModel != nullptr)
@@ -276,6 +282,10 @@ namespace HoloIntervention
 
           m_physicsAPI.SaveAppStateAsync();
         }
+        else
+        {
+          m_notificationSystem.QueueMessage(L"Unable to drop anchor.");
+        }
         m_regAnchorRequested = false;
       }
 
@@ -286,6 +296,7 @@ namespace HoloIntervention
         transformContainer = m_regAnchor->CoordinateSystem->TryGetTransformTo(coordinateSystem);
         if (transformContainer != nullptr)
         {
+          m_regAnchorModel->SetVisible(true);
           if (m_forcePose)
           {
             m_regAnchorModel->SetCurrentPose(transformContainer->Value);
@@ -295,6 +306,11 @@ namespace HoloIntervention
           {
             m_regAnchorModel->SetDesiredPose(transformContainer->Value);
           }
+        }
+        else if (m_locatability != SpatialLocatability::PositionalTrackingActive)
+        {
+          // World locked content not available, head-locked only
+          m_regAnchorModel->SetVisible(false);
         }
       }
 
