@@ -399,29 +399,29 @@ namespace HoloIntervention
         return;
       }
 
-      float4x4 AnchorToEye;
-      auto stereoTransform = cameraPose->TryGetViewTransform(m_worldAnchor->CoordinateSystem);
-      if (stereoTransform == nullptr)
-      {
-        LOG_ERROR("Unable to request stereo view to anchor.");
-        return;
-      }
-      XMStoreFloat4x4(&AnchorToEye, XMLoadFloat4x4(m_currentEye == EYE_LEFT ? &stereoTransform->Value.Left : &stereoTransform->Value.Right));
-      float4x4 eyeToAnchor;
-      invert(AnchorToEye, &eyeToAnchor);
+      //       float4x4 anchorToEye;
+      //       auto stereoTransform = cameraPose->TryGetViewTransform(m_worldAnchor->CoordinateSystem);
+      //       if (stereoTransform == nullptr)
+      //       {
+      //         LOG_ERROR("Unable to request stereo view to anchor.");
+      //         return;
+      //       }
+      //       XMStoreFloat4x4(&anchorToEye, XMLoadFloat4x4(m_currentEye == EYE_LEFT ? &stereoTransform->Value.Left : &stereoTransform->Value.Right));
+      //       float4x4 eyeToAnchor;
+      //       invert(anchorToEye, &eyeToAnchor);
 
       // Separately, update the virtual model to be 1m in front of the current eye
-      float4x4 HMDToEye;
-      stereoTransform = cameraPose->TryGetViewTransform(hmdCoordinateSystem);
+      float4x4 hmdToEye;
+      auto stereoTransform = cameraPose->TryGetViewTransform(hmdCoordinateSystem);
       if (stereoTransform == nullptr)
       {
         LOG_ERROR("Unable to request stereo view to HMD.");
         return;
       }
-      XMStoreFloat4x4(&HMDToEye, XMLoadFloat4x4(m_currentEye == EYE_LEFT ? &stereoTransform->Value.Left : &stereoTransform->Value.Right));
+      XMStoreFloat4x4(&hmdToEye, XMLoadFloat4x4(m_currentEye == EYE_LEFT ? &stereoTransform->Value.Left : &stereoTransform->Value.Right));
 
       float4x4 eyeToHMD;
-      invert(HMDToEye, &eyeToHMD);
+      invert(hmdToEye, &eyeToHMD);
       auto point = transform(float3(0, 0, -1), eyeToHMD);
       m_modelEntry->SetDesiredPose(make_float4x4_translation(point));
 
@@ -433,6 +433,7 @@ namespace HoloIntervention
         {
           m_sphereIconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
         }
+        m_notificationSystem.QueueMessage(L"Can't see sphere!", 1.f);
         m_pointCaptureRequested = false;
         return;
       }

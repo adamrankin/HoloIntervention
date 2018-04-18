@@ -21,8 +21,8 @@
       XMaxMeters="0.8"
       YMinMeters="0.2"
       YMaxMeters="0.8"
-      ZMinMeters="0.2"
-      ZMaxMeters="0.8"/>
+      ZMinMeters="-0.8"
+      ZMaxMeters="-0.2"/>
   </TargetSphereTask>
 
   <RegisterModelTask
