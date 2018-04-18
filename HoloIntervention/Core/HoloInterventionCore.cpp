@@ -573,6 +573,11 @@ namespace HoloIntervention
       locatable->OnLocatabilityChanged(sender->Locatability);
     }
 
+    if (m_locatabilityIcon == nullptr)
+    {
+      return;
+    }
+
     switch (sender->Locatability)
     {
     case SpatialLocatability::Unavailable:
@@ -641,6 +646,7 @@ namespace HoloIntervention
     m_imagingSystem->RegisterVoiceCallbacks(callbacks);
     m_registrationSystem->RegisterVoiceCallbacks(callbacks);
     m_taskSystem->RegisterVoiceCallbacks(callbacks);
+    m_meshRenderer->RegisterVoiceCallbacks(callbacks);
 
     callbacks[L"end session"] = [this](SpeechRecognitionResult ^ result)
     {
