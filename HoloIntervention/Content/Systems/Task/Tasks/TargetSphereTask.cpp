@@ -280,12 +280,33 @@ namespace HoloIntervention
           m_targetModel->SetColour(DEFAULT_TARGET_COLOUR);
         });
 
-        auto toolEntry = m_toolSystem.GetToolByUserId(L"Stylus");
-        if (toolEntry == nullptr)
+        create_task([this]()
         {
-          LOG_ERROR("Unable to locate stylus tool. Cannot create UI icon.");
-          // Use a cylinder as a substitute
-        }
+          bool result = wait_until_condition([this]()
+          {
+            return m_toolSystem.GetToolByUserId(L"Stylus") != nullptr;
+          }, 5000);
+
+          if (result)
+          {
+            return m_toolSystem.GetToolByUserId(L"Stylus");
+          }
+          else
+          {
+            return std::shared_ptr<Tools::ToolEntry>();
+          }
+        }).then([this](std::shared_ptr<Tools::ToolEntry> entry)
+        {
+          if (entry == nullptr)
+          {
+            LOG_ERROR("Unable to locate stylus tool. Cannot create UI icon.");
+            // Use a cylinder as a substitute
+          }
+          else
+          {
+
+          }
+        });
       }
 
       //----------------------------------------------------------------------------
@@ -436,7 +457,7 @@ namespace HoloIntervention
           StopTask();
         };
 
-        callbackMap[L"record point"] = [this](SpeechRecognitionResult ^ result)
+        callbackMap[L"target point"] = [this](SpeechRecognitionResult ^ result)
         {
           if (!m_taskStarted)
           {

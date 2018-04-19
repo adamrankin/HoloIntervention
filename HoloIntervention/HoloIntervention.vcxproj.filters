@@ -118,9 +118,6 @@
     <ClCompile Include="Content\Rendering\Model\ModelRenderer.cpp">
       <Filter>Content\Rendering\ModelRenderer</Filter>
     </ClCompile>
-    <ClCompile Include="Content\Rendering\Mesh\Mesh.cpp">
-      <Filter>Content\Rendering\MeshRenderer</Filter>
-    </ClCompile>
     <ClCompile Include="Content\Rendering\Mesh\MeshRenderer.cpp">
       <Filter>Content\Rendering\MeshRenderer</Filter>
     </ClCompile>
@@ -322,9 +319,6 @@
       <Filter>Content\Rendering\ModelRenderer</Filter>
     </ClInclude>
     <ClInclude Include="Content\Rendering\Mesh\MeshRenderer.h">
-      <Filter>Content\Rendering\MeshRenderer</Filter>
-    </ClInclude>
-    <ClInclude Include="Content\Rendering\Mesh\Mesh.h">
       <Filter>Content\Rendering\MeshRenderer</Filter>
     </ClInclude>
     <ClInclude Include="Core\IConfigurable.h">

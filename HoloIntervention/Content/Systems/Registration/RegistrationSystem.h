@@ -147,6 +147,7 @@ namespace HoloIntervention
       // State variables
       std::atomic_bool                                                m_forcePose = false;
       Windows::Perception::Spatial::SpatialLocatability               m_locatability = Windows::Perception::Spatial::SpatialLocatability::Unavailable;
+      std::atomic_bool                                                m_messageSent = false;
 
       // Anchor variables
       std::atomic_bool                                                m_regAnchorRequested = false;

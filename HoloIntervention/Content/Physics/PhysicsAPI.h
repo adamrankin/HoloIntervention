@@ -56,14 +56,10 @@ namespace HoloIntervention
 
       void Update(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem);
 
+      Concurrency::task<bool> InitializeSurfaceObserverAsync(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem);
+
       Concurrency::task<bool> CreateDeviceDependentResourcesAsync();
       void ReleaseDeviceDependentResources();
-
-      /// Handle surface change events.
-      void OnSurfacesChanged(Windows::Perception::Spatial::Surfaces::SpatialSurfaceObserver^ sender, Platform::Object^ args);
-
-      /// Positions the Spatial Mapping surface observer at the origin of the given coordinate system.
-      void UpdateSurfaceObserverPosition(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem);
 
       /// Perform a ray cast to determine if the ray hits any stored mesh
       bool TestRayIntersection(Windows::Perception::Spatial::SpatialCoordinateSystem^ desiredCoordinateSystem,
@@ -76,8 +72,8 @@ namespace HoloIntervention
       bool GetLastHitNormal(_Out_ Windows::Foundation::Numerics::float3& normal, _In_ bool considerOldHits = false);
       std::shared_ptr<Spatial::SurfaceMesh> GetLastHitMesh();
       Platform::Guid GetLastHitMeshGuid();
-
-      Concurrency::task<bool> InitializeSurfaceObserverAsync(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem);
+      Spatial::SpatialSurfaceCollection::GuidMeshMap GetMeshes() const;
+      Windows::Perception::Spatial::Surfaces::SpatialSurfaceMeshOptions^ GetMeshOptions();
 
       Concurrency::task<bool> SaveAppStateAsync();
       Concurrency::task<bool> LoadAppStateAsync();
@@ -89,6 +85,13 @@ namespace HoloIntervention
 
       // IVoiceInput functions
       virtual void RegisterVoiceCallbacks(HoloIntervention::Input::VoiceInputCallbackMap& callbackMap);
+
+    protected:
+      /// Positions the Spatial Mapping surface observer at the origin of the given coordinate system.
+      void UpdateSurfaceObserverPosition(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem);
+
+      /// Handle surface change events.
+      void OnSurfacesChanged(Windows::Perception::Spatial::Surfaces::SpatialSurfaceObserver^ sender, Platform::Object^ args);
 
     protected:
       // Event registration tokens.

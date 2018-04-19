@@ -49,7 +49,8 @@ namespace HoloIntervention
 
     class SpatialSurfaceCollection
     {
-      typedef std::map<Platform::Guid, std::shared_ptr<SurfaceMesh> > GuidMeshMap;
+    public:
+      typedef std::map<Platform::Guid, std::shared_ptr<SurfaceMesh>> GuidMeshMap;
 
     public:
       SpatialSurfaceCollection(const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer);
@@ -61,9 +62,11 @@ namespace HoloIntervention
       void ReleaseDeviceDependentResources();
 
       bool HasSurface(Platform::Guid id);
+      void AddSurface(Platform::Guid id, Windows::Perception::Spatial::Surfaces::SpatialSurfaceInfo^ newSurface, Windows::Perception::Spatial::Surfaces::SpatialSurfaceMeshOptions^ meshOptions);
       Concurrency::task<void> AddOrUpdateSurfaceAsync(Platform::Guid id, Windows::Perception::Spatial::Surfaces::SpatialSurfaceInfo^ newSurface, Windows::Perception::Spatial::Surfaces::SpatialSurfaceMeshOptions^ meshOptions);
       void RemoveSurface(Platform::Guid id);
       void ClearSurfaces();
+      GuidMeshMap GetSurfaces() const;
 
       bool TestRayIntersection(Windows::Perception::Spatial::SpatialCoordinateSystem^ desiredCoordinateSystem,
                                const Windows::Foundation::Numerics::float3 rayOrigin,
@@ -111,6 +114,7 @@ namespace HoloIntervention
       // The duration of time, in seconds, a mesh is allowed to remain inactive before deletion.
       static const float                              MAX_INACTIVE_MESH_TIME_SEC;
       static const uint64_t                           FRAMES_BEFORE_EXPIRED;
+      static const float                              SURFACE_MESH_FADE_IN_TIME;
     };
   }
 }

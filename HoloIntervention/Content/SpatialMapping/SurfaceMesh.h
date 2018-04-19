@@ -39,6 +39,13 @@ namespace HoloIntervention
 {
   namespace Spatial
   {
+    struct ModelNormalConstantBuffer
+    {
+      DirectX::XMFLOAT4X4 modelToWorld;
+      DirectX::XMFLOAT4X4 normalToWorld;
+      DirectX::XMFLOAT4   colorFadeFactor;
+    };
+
     struct VertexBufferType
     {
       DirectX::XMFLOAT4 vertex;
@@ -66,6 +73,7 @@ namespace HoloIntervention
     struct SurfaceMeshProperties
     {
       unsigned int vertexStride = 0;
+      unsigned int normalStride = 0;
       unsigned int indexCount = 0;
       DXGI_FORMAT  indexFormat = DXGI_FORMAT_UNKNOWN;
     };
@@ -100,6 +108,8 @@ namespace HoloIntervention
       float GetLastActiveTime() const;
       Windows::Foundation::DateTime GetLastUpdateTime() const;
 
+      void Render(bool usingVprtShaders);
+
       Windows::Foundation::Numerics::float3 GetLastHitPosition() const;
       Windows::Foundation::Numerics::float3 GetLastHitNormal() const;
       Windows::Foundation::Numerics::float3 GetLastHitEdge() const; // this and normal define a coordinate system
@@ -109,6 +119,8 @@ namespace HoloIntervention
 
       Windows::Foundation::Numerics::float4x4 GetMeshToWorldTransform();
 
+      void SetColorFadeTimer(float duration);
+
     protected:
       void SwapVertexBuffers();
       void ComputeOBBInverseWorld(Windows::Perception::Spatial::SpatialCoordinateSystem^ baseCoordinateSystem);
@@ -117,6 +129,7 @@ namespace HoloIntervention
       HRESULT CreateStructuredBuffer(uint32 uElementSize, uint32 uCount, ID3D11Buffer** target);
       HRESULT CreateReadbackBuffer(uint32 uElementSize, uint32 uCount);
       HRESULT CreateConstantBuffer();
+      HRESULT CreateDirectXBuffer(ID3D11Device& device, D3D11_BIND_FLAG binding, Windows::Storage::Streams::IBuffer^ buffer, ID3D11Buffer** target);
 
       HRESULT CreateBufferSRV(Microsoft::WRL::ComPtr<ID3D11Buffer> computeShaderBuffer, ID3D11ShaderResourceView** ppSRVOut);
       HRESULT CreateBufferUAV(Microsoft::WRL::ComPtr<ID3D11Buffer> computeShaderBuffer, ID3D11UnorderedAccessView** ppUAVOut);
@@ -128,7 +141,7 @@ namespace HoloIntervention
 
       Windows::Perception::Spatial::Surfaces::SpatialSurfaceMesh^   m_surfaceMesh = nullptr;
 
-      // D3D resources for this mesh
+      // D3D compute shader resources
       Microsoft::WRL::ComPtr<ID3D11Buffer>                          m_vertexPositions = nullptr;
       Microsoft::WRL::ComPtr<ID3D11Buffer>                          m_triangleIndices = nullptr;
       Microsoft::WRL::ComPtr<ID3D11Buffer>                          m_updatedVertexPositions = nullptr;
@@ -145,8 +158,19 @@ namespace HoloIntervention
 
       Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>             m_outputUAV = nullptr;
 
+      // D3D rendering resources
+      Microsoft::WRL::ComPtr<ID3D11Buffer>                          m_renderingVertexPositions;
+      Microsoft::WRL::ComPtr<ID3D11Buffer>                          m_renderingVertexNormals;
+      Microsoft::WRL::ComPtr<ID3D11Buffer>                          m_renderingTriangleIndices;
+      Microsoft::WRL::ComPtr<ID3D11Buffer>                          m_renderingUpdatedVertexPositions;
+      Microsoft::WRL::ComPtr<ID3D11Buffer>                          m_renderingUpdatedVertexNormals;
+      Microsoft::WRL::ComPtr<ID3D11Buffer>                          m_renderingUpdatedTriangleIndices;
+      Microsoft::WRL::ComPtr<ID3D11Buffer>                          m_modelTransformBuffer;
+
       SurfaceMeshProperties                                         m_meshProperties;
       SurfaceMeshProperties                                         m_updatedMeshProperties;
+
+      ModelNormalConstantBuffer                                     m_constantBufferData;
 
       // DateTime to allow returning cached ray hits
       Windows::Foundation::DateTime                                 m_lastUpdateTime;
@@ -158,6 +182,8 @@ namespace HoloIntervention
       std::atomic_bool                                              m_updateNeeded = false;
       std::atomic_bool                                              m_updateReady = false;
       float                                                         m_lastActiveTime = -1.f;
+      float                                                         m_colorFadeTimer = -1.f;
+      float                                                         m_colorFadeTimeout = -1.f;
 
       // Bounding box inverse world matrix
       Windows::Foundation::Numerics::float4x4                       m_worldToBoxCenterTransform = Windows::Foundation::Numerics::float4x4::identity();

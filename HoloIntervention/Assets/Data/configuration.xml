@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<HoloIntervention>
+<HoloIntervention LogLevel="LOG_LEVEL_DEBUG">
   <Tools IGTConnection="PlusServer" 
          ShowIcons="false">
     <Tool 

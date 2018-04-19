@@ -45,9 +45,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 using namespace Concurrency;
 using namespace DirectX;
 using namespace Microsoft::WRL;
-using namespace Windows::Perception::Spatial;
-using namespace Windows::Perception::Spatial::Surfaces;
 using namespace Windows::Foundation::Numerics;
+using namespace Windows::Perception::Spatial::Surfaces;
+using namespace Windows::Perception::Spatial;
+using namespace Windows::Storage::Streams;
 
 namespace HoloIntervention
 {
@@ -57,7 +58,7 @@ namespace HoloIntervention
     SurfaceMesh::SurfaceMesh(const std::shared_ptr<DX::DeviceResources>& deviceResources)
       : m_deviceResources(deviceResources)
     {
-      ReleaseDeviceDependentResources();
+      CreateDeviceDependentResources();
       m_lastUpdateTime.UniversalTime = 0;
     }
 
@@ -113,17 +114,35 @@ namespace HoloIntervention
       }
 
       XMMATRIX transform;
-      if (m_isActive && m_surfaceMesh->CoordinateSystem != nullptr)
+      if (m_isActive)
       {
-        auto tryTransform = m_surfaceMesh->CoordinateSystem->TryGetTransformTo(baseCoordinateSystem);
-        if (tryTransform != nullptr)
+        if (m_colorFadeTimeout > 0.f)
         {
-          transform = XMLoadFloat4x4(&tryTransform->Value);
-          m_lastActiveTime = static_cast<float>(timer.GetTotalSeconds());
+          m_colorFadeTimer += static_cast<float>(timer.GetElapsedSeconds());
+          if (m_colorFadeTimer < m_colorFadeTimeout)
+          {
+            float colorFadeFactor = std::fmin(1.f, m_colorFadeTimeout - m_colorFadeTimer);
+            m_constantBufferData.colorFadeFactor = XMFLOAT4(colorFadeFactor, colorFadeFactor, colorFadeFactor, 1.f);
+          }
+          else
+          {
+            m_constantBufferData.colorFadeFactor = XMFLOAT4(0.f, 0.f, 0.f, 0.f);
+            m_colorFadeTimer = m_colorFadeTimeout = -1.f;
+          }
         }
-        else
+
+        if (m_surfaceMesh->CoordinateSystem != nullptr)
         {
-          m_isActive = false;
+          auto tryTransform = m_surfaceMesh->CoordinateSystem->TryGetTransformTo(baseCoordinateSystem);
+          if (tryTransform != nullptr)
+          {
+            transform = XMLoadFloat4x4(&tryTransform->Value);
+            m_lastActiveTime = static_cast<float>(timer.GetTotalSeconds());
+          }
+          else
+          {
+            m_isActive = false;
+          }
         }
       }
 
@@ -135,18 +154,22 @@ namespace HoloIntervention
       // Set up a transform from surface mesh space, to world space.
       XMMATRIX scaleTransform = XMMatrixScalingFromVector(XMLoadFloat3(&m_surfaceMesh->VertexPositionScale));
       XMStoreFloat4x4(&m_meshToWorldTransform, scaleTransform * transform);
+      XMStoreFloat4x4(&m_constantBufferData.modelToWorld, scaleTransform * transform);
 
       // Surface meshes come with normals, which are also transformed from surface mesh space, to world space.
       XMMATRIX normalTransform = transform;
       // Normals are not translated, so we remove the translation component here.
       normalTransform.r[3] = XMVectorSet(0.f, 0.f, 0.f, XMVectorGetW(normalTransform.r[3]));
       XMStoreFloat4x4(&m_normalToWorldTransform, normalTransform);
+      XMStoreFloat4x4(&m_constantBufferData.normalToWorld, normalTransform);
 
       if (!m_loadingComplete)
       {
         CreateDeviceDependentResources();
         return;
       }
+
+      m_deviceResources->GetD3DDeviceContext()->UpdateSubresource(m_modelTransformBuffer.Get(), 0, NULL, &m_constantBufferData, 0, 0);
     }
 
     //----------------------------------------------------------------------------
@@ -166,54 +189,82 @@ namespace HoloIntervention
         return;
       }
 
-      SpatialSurfaceMeshBuffer^ positions = m_surfaceMesh->VertexPositions;
-      SpatialSurfaceMeshBuffer^ indices = m_surfaceMesh->TriangleIndices;
-
-      Microsoft::WRL::ComPtr<ID3D11Buffer> updatedVertexPositions;
-      Microsoft::WRL::ComPtr<ID3D11Buffer> updatedTriangleIndices;
-      DX::ThrowIfFailed(CreateStructuredBuffer(sizeof(VertexBufferType), positions, updatedVertexPositions.GetAddressOf()));
-#if _DEBUG
-      updatedVertexPositions->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("updatedVertexPositions") - 1, "updatedVertexPositions");
-#endif
-      DX::ThrowIfFailed(CreateStructuredBuffer(sizeof(IndexBufferType), indices, updatedTriangleIndices.GetAddressOf()));
-#if _DEBUG
-      updatedTriangleIndices->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("updatedTriangleIndices") - 1, "updatedTriangleIndices");
-#endif
-
-      Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> updatedVertexPositionsSRV;
-      Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> updatedTriangleIndicesSRV;
-      DX::ThrowIfFailed(CreateBufferSRV(updatedVertexPositions, updatedVertexPositionsSRV.GetAddressOf()));
-#if _DEBUG
-      updatedVertexPositionsSRV->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("updatedVertexPositionsSRV") - 1, "updatedVertexPositionsSRV");
-#endif
-      DX::ThrowIfFailed(CreateBufferSRV(updatedTriangleIndices, updatedTriangleIndicesSRV.GetAddressOf()));
-#if _DEBUG
-      updatedTriangleIndicesSRV->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("updatedTriangleIndicesSRV") - 1, "updatedTriangleIndicesSRV");
-#endif
-
-      // Before updating the meshes, check to ensure that there wasn't a more recent update.
-      std::lock_guard<std::mutex> lock(m_meshResourcesMutex);
-
-      auto meshUpdateTime = m_surfaceMesh->SurfaceInfo->UpdateTime;
-      if (meshUpdateTime.UniversalTime > m_lastUpdateTime.UniversalTime)
+      create_task([this]()
       {
-        // Here, we use ComPtr.Swap() to avoid unnecessary overhead from ref counting.
-        m_updatedVertexPositions.Swap(updatedVertexPositions);
-        m_updatedTriangleIndices.Swap(updatedTriangleIndices);
+        if (m_surfaceMesh->VertexPositions == nullptr || m_surfaceMesh->VertexNormals == nullptr || m_surfaceMesh->TriangleIndices == nullptr)
+        {
+          call_after(std::bind(&SurfaceMesh::CreateVertexResources, this), 250);
+          return;
+        }
 
-        m_updatedVertexSRV.Swap(updatedVertexPositionsSRV);
-        m_updatedIndicesSRV.Swap(updatedTriangleIndicesSRV);
+        std::lock_guard<std::mutex> lock(m_meshResourcesMutex);
 
-        // Cache properties for the buffers we will now use.
-        m_updatedMeshProperties.vertexStride = m_surfaceMesh->VertexPositions->Stride;
-        m_updatedMeshProperties.indexCount = m_surfaceMesh->TriangleIndices->ElementCount;
-        m_updatedMeshProperties.indexFormat = static_cast<DXGI_FORMAT>(m_surfaceMesh->TriangleIndices->Format);
+        // Compute shader D3D resource init
+        SpatialSurfaceMeshBuffer^ positions = m_surfaceMesh->VertexPositions;
+        SpatialSurfaceMeshBuffer^ normals = m_surfaceMesh->VertexNormals;
+        SpatialSurfaceMeshBuffer^ indices = m_surfaceMesh->TriangleIndices;
 
-        // Send a signal to the render loop indicating that new resources are available to use.
-        m_updateReady = true;
-        m_lastUpdateTime = meshUpdateTime;
-        m_vertexLoadingComplete = true;
-      }
+        ComPtr<ID3D11Buffer> updatedVertexPositions;
+        ComPtr<ID3D11Buffer> updatedTriangleIndices;
+
+        DX::ThrowIfFailed(CreateStructuredBuffer(sizeof(VertexBufferType), positions, updatedVertexPositions.GetAddressOf()));
+#if _DEBUG
+        updatedVertexPositions->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("updatedVertexPositions") - 1, "updatedVertexPositions");
+#endif
+
+        DX::ThrowIfFailed(CreateStructuredBuffer(sizeof(IndexBufferType), indices, updatedTriangleIndices.GetAddressOf()));
+#if _DEBUG
+        updatedTriangleIndices->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("updatedTriangleIndices") - 1, "updatedTriangleIndices");
+#endif
+
+        Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> updatedVertexPositionsSRV;
+
+        Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> updatedTriangleIndicesSRV;
+
+        DX::ThrowIfFailed(CreateBufferSRV(updatedVertexPositions, updatedVertexPositionsSRV.GetAddressOf()));
+#if _DEBUG
+        updatedVertexPositionsSRV->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("updatedVertexPositionsSRV") - 1, "updatedVertexPositionsSRV");
+#endif
+
+        DX::ThrowIfFailed(CreateBufferSRV(updatedTriangleIndices, updatedTriangleIndicesSRV.GetAddressOf()));
+#if _DEBUG
+        updatedTriangleIndicesSRV->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("updatedTriangleIndicesSRV") - 1, "updatedTriangleIndicesSRV");
+#endif
+
+        // Rendering D3D resource init
+        ComPtr<ID3D11Buffer> renderingUpdatedVertexPositions;
+        ComPtr<ID3D11Buffer> renderingUpdatedVertexNormals;
+        ComPtr<ID3D11Buffer> renderingUpdatedTriangleIndices;
+        auto device = m_deviceResources->GetD3DDevice();
+        CreateDirectXBuffer(*device, D3D11_BIND_VERTEX_BUFFER, positions->Data, renderingUpdatedVertexPositions.GetAddressOf());
+        CreateDirectXBuffer(*device, D3D11_BIND_VERTEX_BUFFER, normals->Data, renderingUpdatedVertexNormals.GetAddressOf());
+        CreateDirectXBuffer(*device, D3D11_BIND_INDEX_BUFFER, indices->Data, renderingUpdatedTriangleIndices.GetAddressOf());
+
+        auto meshUpdateTime = m_surfaceMesh->SurfaceInfo->UpdateTime;
+        if (meshUpdateTime.UniversalTime > m_lastUpdateTime.UniversalTime)
+        {
+          m_renderingUpdatedVertexPositions.Swap(renderingUpdatedVertexPositions);
+          m_renderingUpdatedVertexNormals.Swap(renderingUpdatedVertexNormals);
+          m_renderingUpdatedTriangleIndices.Swap(renderingUpdatedTriangleIndices);
+
+          m_updatedVertexPositions.Swap(updatedVertexPositions);
+          m_updatedTriangleIndices.Swap(updatedTriangleIndices);
+
+          m_updatedVertexSRV.Swap(updatedVertexPositionsSRV);
+          m_updatedIndicesSRV.Swap(updatedTriangleIndicesSRV);
+
+          // Cache properties for the buffers we will now use.
+          m_updatedMeshProperties.vertexStride = m_surfaceMesh->VertexPositions->Stride;
+          m_updatedMeshProperties.normalStride = m_surfaceMesh->VertexNormals->Stride;
+          m_updatedMeshProperties.indexCount = m_surfaceMesh->TriangleIndices->ElementCount;
+          m_updatedMeshProperties.indexFormat = static_cast<DXGI_FORMAT>(m_surfaceMesh->TriangleIndices->Format);
+
+          // Send a signal to the render loop indicating that new resources are available to use.
+          m_updateReady = true;
+          m_lastUpdateTime = meshUpdateTime;
+          m_vertexLoadingComplete = true;
+        }
+      });
     }
 
     //----------------------------------------------------------------------------
@@ -238,6 +289,16 @@ namespace HoloIntervention
       m_outputUAV->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("m_outputUAV") - 1, "m_outputUAV");
 #endif
 
+      // Create a constant buffer to control mesh position.
+      CD3D11_BUFFER_DESC constantBufferDesc(sizeof(ModelNormalConstantBuffer), D3D11_BIND_CONSTANT_BUFFER);
+      DX::ThrowIfFailed(
+        m_deviceResources->GetD3DDevice()->CreateBuffer(
+          &constantBufferDesc,
+          nullptr,
+          &m_modelTransformBuffer
+        )
+      );
+
       m_loadingComplete = true;
     }
 
@@ -248,6 +309,10 @@ namespace HoloIntervention
       m_triangleIndices.Reset();
       m_vertexSRV.Reset();
       m_indexSRV.Reset();
+
+      m_renderingVertexPositions.Reset();
+      m_renderingVertexNormals.Reset();
+      m_renderingTriangleIndices.Reset();
 
       m_vertexLoadingComplete = false;
     }
@@ -267,6 +332,8 @@ namespace HoloIntervention
       m_readBackBuffer.Reset();
       m_meshConstantBuffer.Reset();
 
+      m_modelTransformBuffer.Reset();
+
       m_loadingComplete = false;
     }
 
@@ -280,6 +347,10 @@ namespace HoloIntervention
       m_vertexSRV = m_updatedVertexSRV;
       m_indexSRV = m_updatedIndicesSRV;
 
+      m_renderingVertexPositions = m_renderingUpdatedVertexPositions;
+      m_renderingVertexNormals = m_renderingUpdatedVertexNormals;
+      m_renderingTriangleIndices = m_renderingUpdatedTriangleIndices;
+
       // Swap out the metadata: index count, index format, .
       m_meshProperties = m_updatedMeshProperties;
 
@@ -288,6 +359,9 @@ namespace HoloIntervention
       m_updatedTriangleIndices.Reset();
       m_updatedVertexSRV.Reset();
       m_updatedIndicesSRV.Reset();
+      m_renderingUpdatedVertexPositions.Reset();
+      m_renderingUpdatedVertexNormals.Reset();
+      m_renderingUpdatedTriangleIndices.Reset();
     }
 
     //----------------------------------------------------------------------------
@@ -370,6 +444,37 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    void SurfaceMesh::Render(bool usingVprtShaders)
+    {
+      if (!m_loadingComplete || !m_vertexLoadingComplete)
+      {
+        return;
+      }
+
+      if (!m_isActive)
+      {
+        return;
+      }
+
+      auto context = m_deviceResources->GetD3DDeviceContext();
+
+      // The vertices are provided in {vertex, normal} format
+      UINT strides[] = { m_meshProperties.vertexStride, m_meshProperties.normalStride };
+      UINT offsets[] = { 0, 0 };
+      ID3D11Buffer* buffers[] = { m_renderingVertexPositions.Get(), m_renderingVertexNormals.Get() };
+
+      context->IASetVertexBuffers(0, ARRAYSIZE(buffers), buffers, strides, offsets);
+      context->IASetIndexBuffer(m_renderingTriangleIndices.Get(), m_meshProperties.indexFormat, 0);
+      context->VSSetConstantBuffers(0, 1, m_modelTransformBuffer.GetAddressOf());
+      if (!usingVprtShaders)
+      {
+        context->GSSetConstantBuffers(0, 1, m_modelTransformBuffer.GetAddressOf());
+      }
+      context->PSSetConstantBuffers(0, 1, m_modelTransformBuffer.GetAddressOf());
+      context->DrawIndexedInstanced(m_meshProperties.indexCount, 2, 0, 0, 0);
+    }
+
+    //----------------------------------------------------------------------------
     Windows::Foundation::Numerics::float3 SurfaceMesh::GetLastHitPosition() const
     {
       if (m_hasLastComputedHit)
@@ -408,6 +513,13 @@ namespace HoloIntervention
     float4x4 SurfaceMesh::GetMeshToWorldTransform()
     {
       return m_meshToWorldTransform;
+    }
+
+    //----------------------------------------------------------------------------
+    void SurfaceMesh::SetColorFadeTimer(float duration)
+    {
+      m_colorFadeTimeout = duration;
+      m_colorFadeTimer = 0.f;
     }
 
     //----------------------------------------------------------------------------
@@ -534,6 +646,16 @@ namespace HoloIntervention
       return hr;
     }
 
+    //----------------------------------------------------------------------------
+    HRESULT SurfaceMesh::CreateDirectXBuffer(ID3D11Device& device, D3D11_BIND_FLAG binding, Windows::Storage::Streams::IBuffer^ buffer, ID3D11Buffer** target)
+    {
+      auto length = buffer->Length;
+
+      CD3D11_BUFFER_DESC bufferDescription(buffer->Length, binding);
+      D3D11_SUBRESOURCE_DATA bufferBytes = { GetDataFromIBuffer(buffer), 0, 0 };
+      return device.CreateBuffer(&bufferDescription, &bufferBytes, target);
+    }
+
     //--------------------------------------------------------------------------------------
     void SurfaceMesh::RunComputeShader(ID3D11DeviceContext& context, uint32 nNumViews, ID3D11ShaderResourceView** pShaderResourceViews, ID3D11UnorderedAccessView* pUnorderedAccessView, uint32 xThreadGroups, uint32 yThreadGroups, uint32 zThreadGroups)
     {
@@ -608,7 +730,7 @@ namespace HoloIntervention
       tmin = std::fmax(tmin, std::fmin(tz1, tz2));
       tmax = std::fmin(tmax, std::fmax(tz1, tz2));
 
-      return tmax >= std::fmax(0.0, tmin);
+      return tmax >= std::fmax(0.f, tmin);
     }
   }
 }

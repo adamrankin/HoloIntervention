@@ -64,6 +64,7 @@ namespace HoloIntervention
   {
     const float SpatialSurfaceCollection::MAX_INACTIVE_MESH_TIME_SEC = 120.f;
     const uint64_t SpatialSurfaceCollection::FRAMES_BEFORE_EXPIRED = 2;
+    const float SpatialSurfaceCollection::SURFACE_MESH_FADE_IN_TIME = 3.0f;
 
     //----------------------------------------------------------------------------
     SpatialSurfaceCollection::SpatialSurfaceCollection(const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& stepTimer)
@@ -171,6 +172,24 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    void SpatialSurfaceCollection::AddSurface(Guid id, SpatialSurfaceInfo^ newSurface, SpatialSurfaceMeshOptions^ meshOptions)
+    {
+      auto fadeInMeshTask = AddOrUpdateSurfaceAsync(id, newSurface, meshOptions).then([this, id]()
+      {
+        if (HasSurface(id))
+        {
+          std::lock_guard<std::mutex> guard(m_meshCollectionLock);
+
+          // In this example, new surfaces are treated differently by highlighting them in a different
+          // color. This allows you to observe changes in the spatial map that are due to new meshes,
+          // as opposed to mesh updates.
+          auto& surfaceMesh = m_meshCollection[id];
+          surfaceMesh->SetColorFadeTimer(SURFACE_MESH_FADE_IN_TIME);
+        }
+      });
+    }
+
+    //----------------------------------------------------------------------------
     task<void> SpatialSurfaceCollection::AddOrUpdateSurfaceAsync(Guid id, SpatialSurfaceInfo^ newSurface, SpatialSurfaceMeshOptions^ meshOptions)
     {
       // The level of detail setting is used to limit mesh complexity, by limiting the number
@@ -182,6 +201,8 @@ namespace HoloIntervention
       {
         if (mesh != nullptr)
         {
+          auto normals = mesh->VertexNormals;
+
           std::lock_guard<std::mutex> guard(m_meshCollectionLock);
 
           auto entry = m_meshCollection.find(id);
@@ -214,6 +235,12 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    HoloIntervention::Spatial::SpatialSurfaceCollection::GuidMeshMap SpatialSurfaceCollection::GetSurfaces() const
+    {
+      return m_meshCollection;
+    }
+
+    //----------------------------------------------------------------------------
     bool SpatialSurfaceCollection::TestRayIntersection(SpatialCoordinateSystem^ desiredCoordinateSystem, const float3 rayOrigin, const float3 rayDirection, float3& outHitPosition, float3& outHitNormal, float3& outHitEdge)
     {
       struct hitResult
@@ -239,8 +266,7 @@ namespace HoloIntervention
       // Perform CPU based pre-check using OBB
       std::mutex potentialHitsMutex;
       GuidMeshMap potentialHits;
-      int size = m_meshCollection.size();
-      parallel_for_each(m_meshCollection.begin(), m_meshCollection.end(), [ =, &potentialHits, &potentialHitsMutex ](auto pair)
+      parallel_for_each(m_meshCollection.begin(), m_meshCollection.end(), [this, currentFrame, desiredCoordinateSystem, rayOrigin, rayDirection, &potentialHits, &potentialHitsMutex](auto pair)
       {
         auto mesh = pair.second;
         if (mesh->TestRayOBBIntersection(desiredCoordinateSystem, currentFrame, rayOrigin, rayDirection))
@@ -250,9 +276,11 @@ namespace HoloIntervention
         }
       });
 
-      bool result(false);
+      bool collisionFound(false);
       if (potentialHits.size() > 0)
       {
+        LOG_DEBUG(L"potentialHits size: " + potentialHits.size().ToString());
+
         m_deviceResources->GetD3DDeviceContext()->CSSetShader(m_d3d11ComputeShader.Get(), nullptr, 0);
 
         RayConstantBuffer buffer;
@@ -261,59 +289,43 @@ namespace HoloIntervention
         m_deviceResources->GetD3DDeviceContext()->UpdateSubresource(m_constantBuffer.Get(), 0, nullptr, &buffer, 0, 0);
         m_deviceResources->GetD3DDeviceContext()->CSSetConstantBuffers(1, 1, m_constantBuffer.GetAddressOf());
 
-        // Before checking the list of candidates, check the last hit mesh, as we most likely have temporal locality
-        if (m_lastHitMesh != nullptr && potentialHits.find(m_lastHitMeshGuid) != potentialHits.end())
+        // Check all potential hits
+        std::vector<hitResult> results;
+        for (auto& pair : m_meshCollection)
         {
-          hitResult hitRes(m_lastHitMesh, m_lastHitMeshGuid);
-          if (m_lastHitMesh->TestRayIntersection(*m_deviceResources->GetD3DDeviceContext(), currentFrame, hitRes.hitPosition, hitRes.hitNormal, hitRes.hitEdge))
+          hitResult hitRes(pair.second, pair.first);
+          if (pair.second->TestRayIntersection(*m_deviceResources->GetD3DDeviceContext(), currentFrame, hitRes.hitPosition, hitRes.hitNormal, hitRes.hitEdge))
           {
-            outHitPosition = hitRes.hitPosition;
-            outHitNormal = hitRes.hitNormal;
-            outHitEdge = hitRes.hitEdge;
-            result = true;
-          }
-          else
-          {
-            potentialHits.erase(m_lastHitMeshGuid);
-            m_lastHitMesh = nullptr;
+            results.push_back(hitRes);
           }
         }
 
-        // Our optimization failed, check all potential hits
-        if (!result)
+        // find the closest hit, and submit that as our accepted hit
+        LOG_DEBUG(L"results size: " + results.size().ToString());
+        if (results.size() > 0)
         {
-          std::vector<hitResult> results;
-          for (auto& pair : potentialHits)
+          int i = 0;
+          int closestIndex = 0;
+          float3 closestPosition = results[0].hitPosition;
+          for (auto& result : results)
           {
-            hitResult hitRes(pair.second, pair.first);
-            if (pair.second->TestRayIntersection(*m_deviceResources->GetD3DDeviceContext(), currentFrame, hitRes.hitPosition, hitRes.hitNormal, hitRes.hitEdge))
+            LOG_DEBUG(L"hitposition: " + result.hitPosition.x.ToString() + L", " + result.hitPosition.y.ToString() + L", " + result.hitPosition.z.ToString());
+            LOG_DEBUG(L"hitmagnitude: " + magnitude(result.hitPosition).ToString());
+            LOG_DEBUG(L"hitmesh: " + result.hitGuid.ToString());
+            if (magnitude(result.hitPosition) < magnitude(closestPosition))
             {
-              results.push_back(hitRes);
-            }
-          }
 
-          // find the closest hit, and submit that as our accepted hit
-          if (results.size() > 0)
-          {
-            int i = 0;
-            int closestIndex = 0;
-            float3 closestPosition = results[0].hitPosition;
-            for (auto& hitResult : results)
-            {
-              if (magnitude(hitResult.hitPosition) < magnitude(closestPosition))
-              {
-                closestIndex = i;
-                closestPosition = hitResult.hitPosition;
-              }
-              ++i;
+              closestIndex = i;
+              closestPosition = result.hitPosition;
             }
-            outHitPosition = results[closestIndex].hitPosition;
-            outHitNormal = results[closestIndex].hitNormal;
-            outHitEdge = results[closestIndex].hitEdge;
-            m_lastHitMesh = results[closestIndex].hitMesh;
-            m_lastHitMeshGuid = results[closestIndex].hitGuid;
-            result = true;
+            ++i;
           }
+          outHitPosition = results[closestIndex].hitPosition;
+          outHitNormal = results[closestIndex].hitNormal;
+          outHitEdge = results[closestIndex].hitEdge;
+          m_lastHitMesh = results[closestIndex].hitMesh;
+          m_lastHitMeshGuid = results[closestIndex].hitGuid;
+          collisionFound = true;
         }
 
         ID3D11Buffer* ppCBnullptr[1] = { nullptr };
@@ -321,7 +333,7 @@ namespace HoloIntervention
         m_deviceResources->GetD3DDeviceContext()->CSSetShader(nullptr, nullptr, 0);
       }
 
-      return result;
+      return collisionFound;
     }
 
     //----------------------------------------------------------------------------

@@ -40,11 +40,12 @@ namespace HoloIntervention
 
   public enum class LogLevelType : int32
   {
-    LOG_LEVEL_ERROR,
-    LOG_LEVEL_WARNING,
-    LOG_LEVEL_INFO,
-    LOG_LEVEL_DEBUG,
+    LOG_LEVEL_UNKNOWN,
     LOG_LEVEL_TRACE,
+    LOG_LEVEL_DEBUG,
+    LOG_LEVEL_INFO,
+    LOG_LEVEL_WARNING,
+    LOG_LEVEL_ERROR
   };
 
   class Log : public IEngineComponent
@@ -66,6 +67,14 @@ namespace HoloIntervention
 
     Concurrency::task<void> EndSessionAsync();
 
+    void SetLogLevel(LogLevelType level);
+
+    static std::wstring LogLevelToWString(LogLevelType level);
+    static std::string LogLevelToString(LogLevelType level);
+
+    static LogLevelType StringToLogLevel(const std::string& level);
+    static LogLevelType WStringToLogLevel(const std::wstring& level);
+
   protected:
     Concurrency::task<void> DataWriterAsync();
     Concurrency::task<void> PeriodicFlushAsync();
@@ -82,6 +91,8 @@ namespace HoloIntervention
     Windows::Storage::StorageFile^                  m_logFile;
     Windows::Storage::Streams::IRandomAccessStream^ m_logStream;
     Windows::Storage::Streams::DataWriter^          m_logWriter;
+
+    LogLevelType                                    m_logLevel = LogLevelType::LOG_LEVEL_TRACE;
 
     std::mutex                                      m_messagesMutex;
     std::deque<MessageEntry>                        m_messages;

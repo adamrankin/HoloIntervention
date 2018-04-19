@@ -214,33 +214,41 @@ namespace HoloIntervention
         {
         case SpatialPerceptionAccessStatus::Allowed:
         {
-          m_surfaceMeshOptions = ref new SpatialSurfaceMeshOptions();
+          auto surfaceMeshOptions = ref new SpatialSurfaceMeshOptions();
 
-          IVectorView<DirectXPixelFormat>^ supportedVertexPositionFormats = m_surfaceMeshOptions->SupportedVertexPositionFormats;
+          IVectorView<DirectXPixelFormat>^ supportedVertexPositionFormats = surfaceMeshOptions->SupportedVertexPositionFormats;
           unsigned int formatIndex = 0;
           if (supportedVertexPositionFormats->IndexOf(DirectXPixelFormat::R32G32B32Float, &formatIndex))
           {
-            m_surfaceMeshOptions->VertexPositionFormat = DirectXPixelFormat::R32G32B32Float;
+            surfaceMeshOptions->VertexPositionFormat = DirectXPixelFormat::R32G32B32Float;
           }
           else if (supportedVertexPositionFormats->IndexOf(DirectXPixelFormat::R32G32B32A32Float, &formatIndex))
           {
-            m_surfaceMeshOptions->VertexPositionFormat = DirectXPixelFormat::R32G32B32A32Float;
+            surfaceMeshOptions->VertexPositionFormat = DirectXPixelFormat::R32G32B32A32Float;
           }
           else
           {
-            LOG(LogLevelType::LOG_LEVEL_WARNING, "Cannot load desired vertex position format.");
+            LOG_WARNING("Cannot load desired vertex position format.");
+          }
+
+          IVectorView<DirectXPixelFormat>^ supportedVertexNormalFormats = surfaceMeshOptions->SupportedVertexNormalFormats;
+          if (supportedVertexNormalFormats->IndexOf(DirectXPixelFormat::R8G8B8A8IntNormalized, &formatIndex))
+          {
+            surfaceMeshOptions->VertexNormalFormat = DirectXPixelFormat::R8G8B8A8IntNormalized;
+            surfaceMeshOptions->IncludeVertexNormals = true;
           }
 
           // Our shader pipeline can handle a variety of triangle index formats
-          IVectorView<DirectXPixelFormat>^ supportedTriangleIndexFormats = m_surfaceMeshOptions->SupportedTriangleIndexFormats;
+          IVectorView<DirectXPixelFormat>^ supportedTriangleIndexFormats = surfaceMeshOptions->SupportedTriangleIndexFormats;
           if (supportedTriangleIndexFormats->IndexOf(DirectXPixelFormat::R32UInt, &formatIndex))
           {
-            m_surfaceMeshOptions->TriangleIndexFormat = DirectXPixelFormat::R32UInt;
+            surfaceMeshOptions->TriangleIndexFormat = DirectXPixelFormat::R32UInt;
           }
           else
           {
-            LOG(LogLevelType::LOG_LEVEL_WARNING, "Cannot load desired index format.");
+            LOG_WARNING("Cannot load desired index format.");
           }
+          m_surfaceMeshOptions = surfaceMeshOptions;
 
           if (m_surfaceObserver == nullptr)
           {
@@ -279,16 +287,19 @@ namespace HoloIntervention
               return task_from_result(false);
             }
 
+            m_surfaceCollection->ClearSurfaces();
+
             for (auto const& pair : m_surfaceObserver->GetObservedSurfaces())
             {
               auto const& id = pair->Key;
               auto const& surfaceInfo = pair->Value;
-              m_surfaceCollection->AddOrUpdateSurfaceAsync(id, surfaceInfo, m_surfaceMeshOptions);
+              m_surfaceCollection->AddSurface(id, surfaceInfo, m_surfaceMeshOptions);
             }
 
             m_surfaceObserverEventToken = m_surfaceObserver->ObservedSurfacesChanged +=
                                             ref new Windows::Foundation::TypedEventHandler<SpatialSurfaceObserver^, Platform::Object^>(std::bind(&PhysicsAPI::OnSurfacesChanged, this, std::placeholders::_1, std::placeholders::_2));
 
+            ReleaseDeviceDependentResources();
             return CreateDeviceDependentResourcesAsync().then([this](bool result)
             {
               m_componentReady = true;
@@ -299,6 +310,18 @@ namespace HoloIntervention
 
         return task_from_result<bool>(false);
       });
+    }
+
+    //----------------------------------------------------------------------------
+    HoloIntervention::Spatial::SpatialSurfaceCollection::GuidMeshMap PhysicsAPI::GetMeshes() const
+    {
+      return m_surfaceCollection->GetSurfaces();
+    }
+
+    //----------------------------------------------------------------------------
+    Windows::Perception::Spatial::Surfaces::SpatialSurfaceMeshOptions^ PhysicsAPI::GetMeshOptions()
+    {
+      return m_surfaceMeshOptions;
     }
 
     //----------------------------------------------------------------------------

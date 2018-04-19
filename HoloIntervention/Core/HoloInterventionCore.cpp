@@ -129,12 +129,12 @@ namespace HoloIntervention
 
     m_notificationRenderer = std::make_unique<Rendering::NotificationRenderer>(m_deviceResources);
     m_volumeRenderer = std::make_unique<Rendering::VolumeRenderer> (m_deviceResources, m_timer);
-    m_meshRenderer = std::make_unique<Rendering::MeshRenderer> (m_deviceResources);
+    m_physicsAPI = std::make_unique<Physics::PhysicsAPI>(m_deviceResources, m_timer);
+    m_meshRenderer = std::make_unique<Rendering::MeshRenderer> (m_deviceResources, *m_physicsAPI);
     m_icons = std::make_unique<UI::Icons>(*m_modelRenderer.get());
     m_soundAPI = std::make_unique<Sound::SoundAPI>();
     m_spatialInput = std::make_unique<Input::SpatialInput>();
     m_voiceInput = std::make_unique<Input::VoiceInput> (*m_soundAPI.get(), *m_icons.get());
-    m_physicsAPI = std::make_unique<Physics::PhysicsAPI>(m_deviceResources, m_timer);
 
     m_icons->AddEntryAsync(L"satellite.cmo", L"satellite").then([this](std::shared_ptr<UI::IconEntry> entry)
     {
@@ -206,6 +206,11 @@ namespace HoloIntervention
     // Use the default SpatialLocator to track the motion of the device.
     m_locator = SpatialLocator::GetDefault();
 
+    for (auto& system : m_locatables)
+    {
+      system->OnLocatabilityChanged(m_locator->Locatability);
+    }
+
     m_locatabilityChangedToken = m_locator->LocatabilityChanged +=
                                    ref new Windows::Foundation::TypedEventHandler<SpatialLocator^, Object^> (std::bind(&HoloInterventionCore::OnLocatabilityChanged, this, std::placeholders::_1, std::placeholders::_2));
 
@@ -253,7 +258,7 @@ namespace HoloIntervention
         bool engineReady(true);
 
         auto messageId = m_notificationSystem->QueueMessage(L"Loading ... 0%");
-
+        double lastValue = 0.0;
         do
         {
           componentsReady = 0;
@@ -278,9 +283,15 @@ namespace HoloIntervention
             }
           }
 
+          if ((double)componentsReady / m_engineComponents.size() * 100 == lastValue)
+          {
+            continue;
+          }
+          lastValue = (double)componentsReady / m_engineComponents.size() * 100;
+
           m_notificationSystem->RemoveMessage(messageId);
           std::wstringstream wss;
-          wss << L"Loading ... " << std::fixed << std::setprecision(1) << ((double)componentsReady / m_engineComponents.size() * 100) << L"%";
+          wss << L"Loading ... " << std::fixed << std::setprecision(1) << lastValue << L"%";
           messageId = m_notificationSystem->QueueMessage(wss.str());
         }
         while (!engineReady);
@@ -393,7 +404,6 @@ namespace HoloIntervention
           m_notificationSystem->Update(headPose, m_timer);
         }
 
-        m_meshRenderer->Update(m_timer, hmdCoordinateSystem);
         m_modelRenderer->Update(cameraResources);
       }
 
@@ -909,6 +919,28 @@ namespace HoloIntervention
           return task_from_result(false);
         }
 
+        // Read application level configuration
+        Platform::String^ xpath = L"/HoloIntervention";
+        if (doc->SelectNodes(xpath)->Length != 1)
+        {
+          // No configuration found, use defaults
+          LOG_ERROR(L"Config file does not contain \"HoloIntervention\" tag. Invalid configuration file.");
+          return task_from_result(false);
+        }
+
+        auto node = doc->SelectNodes(xpath)->Item(0);
+
+        std::wstring outValue;
+        if (!GetAttribute(L"LogLevel", node, outValue) || Log::WStringToLogLevel(outValue) == LogLevelType::LOG_LEVEL_UNKNOWN)
+        {
+          LOG_WARNING("Log level not found in configuration file. Defaulting to LOG_LEVEL_INFO.");
+          Log::instance().SetLogLevel(LogLevelType::LOG_LEVEL_INFO);
+        }
+        else
+        {
+          Log::instance().SetLogLevel(Log::WStringToLogLevel(outValue));
+        }
+
         std::shared_ptr<bool> hasError = std::make_shared<bool> (false);
         // Run in order, as some configurations may rely on others
         auto readConfigTask = create_task([this, hasError, doc]()
@@ -925,7 +957,7 @@ namespace HoloIntervention
 
         return readConfigTask.then([hasError]()
         {
-          return *hasError;
+          return !(*hasError);
         });
       });
     });

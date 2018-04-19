@@ -87,6 +87,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void RegistrationSystem::OnLocatabilityChanged(Windows::Perception::Spatial::SpatialLocatability locatability)
     {
+      m_messageSent = false;
       m_locatability = locatability;
     }
 
@@ -264,9 +265,10 @@ namespace HoloIntervention
       // Anchor placement logic
       if (m_regAnchorRequested)
       {
-        if (m_locatability != SpatialLocatability::PositionalTrackingActive)
+        if (m_locatability != SpatialLocatability::PositionalTrackingActive && !m_messageSent)
         {
           m_notificationSystem.QueueMessage(L"Positional tracking required for dropping an anchor.");
+          m_messageSent = true;
           return;
         }
 

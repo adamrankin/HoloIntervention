@@ -103,6 +103,110 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
+  void Log::SetLogLevel(LogLevelType level)
+  {
+    m_logLevel = level;
+  }
+
+  //----------------------------------------------------------------------------
+  std::wstring Log::LogLevelToWString(LogLevelType level)
+  {
+    switch (level)
+    {
+    case HoloIntervention::LogLevelType::LOG_LEVEL_ERROR:
+      return L"LOG_LEVEL_ERROR";
+    case HoloIntervention::LogLevelType::LOG_LEVEL_WARNING:
+      return L"LOG_LEVEL_WARNING";
+    case HoloIntervention::LogLevelType::LOG_LEVEL_INFO:
+      return L"LOG_LEVEL_INFO";
+    case HoloIntervention::LogLevelType::LOG_LEVEL_DEBUG:
+      return L"LOG_LEVEL_DEBUG";
+    case HoloIntervention::LogLevelType::LOG_LEVEL_TRACE:
+      return L"LOG_LEVEL_TRACE";
+    }
+
+    return L"LOG_LEVEL_UNKNOWN";
+  }
+
+  //----------------------------------------------------------------------------
+  std::string Log::LogLevelToString(LogLevelType level)
+  {
+    switch (level)
+    {
+    case HoloIntervention::LogLevelType::LOG_LEVEL_ERROR:
+      return "LOG_LEVEL_ERROR";
+    case HoloIntervention::LogLevelType::LOG_LEVEL_WARNING:
+      return "LOG_LEVEL_WARNING";
+    case HoloIntervention::LogLevelType::LOG_LEVEL_INFO:
+      return "LOG_LEVEL_INFO";
+    case HoloIntervention::LogLevelType::LOG_LEVEL_DEBUG:
+      return "LOG_LEVEL_DEBUG";
+    case HoloIntervention::LogLevelType::LOG_LEVEL_TRACE:
+      return "LOG_LEVEL_TRACE";
+    }
+
+    return "LOG_LEVEL_UNKNOWN";
+  }
+
+  //----------------------------------------------------------------------------
+  HoloIntervention::LogLevelType Log::StringToLogLevel(const std::string& level)
+  {
+    if (IsEqualInsensitive("LOG_LEVEL_INFO", level))
+    {
+      return LogLevelType::LOG_LEVEL_INFO;
+    }
+    else if (IsEqualInsensitive("LOG_LEVEL_ERROR", level))
+    {
+      return LogLevelType::LOG_LEVEL_ERROR;
+    }
+    else if (IsEqualInsensitive("LOG_LEVEL_WARNING", level))
+    {
+      return LogLevelType::LOG_LEVEL_WARNING;
+    }
+    else if (IsEqualInsensitive("LOG_LEVEL_DEBUG", level))
+    {
+      return LogLevelType::LOG_LEVEL_DEBUG;
+    }
+    else if (IsEqualInsensitive("LOG_LEVEL_TRACE", level))
+    {
+      return LogLevelType::LOG_LEVEL_TRACE;
+    }
+    else
+    {
+      return LogLevelType::LOG_LEVEL_UNKNOWN;
+    }
+  }
+
+  //----------------------------------------------------------------------------
+  HoloIntervention::LogLevelType Log::WStringToLogLevel(const std::wstring& level)
+  {
+    if (IsEqualInsensitive(L"LOG_LEVEL_INFO", level))
+    {
+      return LogLevelType::LOG_LEVEL_INFO;
+    }
+    else if (IsEqualInsensitive(L"LOG_LEVEL_ERROR", level))
+    {
+      return LogLevelType::LOG_LEVEL_ERROR;
+    }
+    else if (IsEqualInsensitive(L"LOG_LEVEL_WARNING", level))
+    {
+      return LogLevelType::LOG_LEVEL_WARNING;
+    }
+    else if (IsEqualInsensitive(L"LOG_LEVEL_DEBUG", level))
+    {
+      return LogLevelType::LOG_LEVEL_DEBUG;
+    }
+    else if (IsEqualInsensitive(L"LOG_LEVEL_TRACE", level))
+    {
+      return LogLevelType::LOG_LEVEL_TRACE;
+    }
+    else
+    {
+      return LogLevelType::LOG_LEVEL_UNKNOWN;
+    }
+  }
+
+  //----------------------------------------------------------------------------
   task<void> Log::DataWriterAsync()
   {
     return create_task([this, token = m_tokenSource.get_token()]() -> void
@@ -135,7 +239,7 @@ namespace HoloIntervention
 
       while (!token.is_canceled())
       {
-        bool wroteMessage(false);
+        std::atomic_bool wroteMessage(false);
         std::unique_lock<std::mutex> guard(m_messagesMutex);
         while (m_messages.size() > 0)
         {
@@ -145,14 +249,18 @@ namespace HoloIntervention
             m_messages.pop_front();
           }
 
-          try
+          // Only write message if item's level is above/equal current logging level
+          if (item.Level >= m_logLevel)
           {
-            std::lock_guard<std::mutex> guard(m_writerMutex);
-            auto output = item.Level.ToString() + L"|" + ref new Platform::String(item.Message.c_str()) + L"|" + ref new Platform::String(item.File.c_str()) + L":" + item.Line.ToString() + L"\n";
-            m_logWriter->WriteString(output);
-            wroteMessage = true;
+            try
+            {
+              std::lock_guard<std::mutex> guard(m_writerMutex);
+              auto output = item.Level.ToString() + L"|" + ref new Platform::String(item.Message.c_str()) + L"|" + ref new Platform::String(item.File.c_str()) + L":" + item.Line.ToString() + L"\n";
+              m_logWriter->WriteString(output);
+              wroteMessage = true;
+            }
+            catch (Platform::Exception^) { try { m_logWriter->FlushAsync(); } catch (Platform::Exception^) { return; } return; }
           }
-          catch (Platform::Exception^) { try { m_logWriter->FlushAsync(); } catch (Platform::Exception^) { return; } return; }
         }
 
         if (wroteMessage)
