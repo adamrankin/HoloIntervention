@@ -39,7 +39,7 @@ namespace HoloIntervention
 
   namespace Tools
   {
-    class ToolEntry;
+    class Tool;
   }
 
   namespace UI
@@ -73,10 +73,10 @@ namespace HoloIntervention
       ~ToolSystem();
 
       uint32 GetToolCount() const;
-      std::shared_ptr<Tools::ToolEntry> GetTool(uint64 token) const;
-      std::shared_ptr<Tools::ToolEntry> GetToolByUserId(const std::wstring& userId) const;
-      std::shared_ptr<Tools::ToolEntry> GetToolByUserId(Platform::String^ userId) const;
-      std::vector<std::shared_ptr<Tools::ToolEntry>> GetTools();
+      std::shared_ptr<Tools::Tool> GetTool(uint64 token) const;
+      std::shared_ptr<Tools::Tool> GetToolByUserId(const std::wstring& userId) const;
+      std::shared_ptr<Tools::Tool> GetToolByUserId(Platform::String^ userId) const;
+      std::vector<std::shared_ptr<Tools::Tool>> GetTools();
       bool IsToolValid(uint64 token) const;
       bool WasToolValid(uint64 token) const;
 
@@ -104,7 +104,7 @@ namespace HoloIntervention
       bool                                              m_showIcons = false;
       double                                            m_latestTimestamp;
       mutable std::mutex                                m_entriesMutex;
-      std::vector<std::shared_ptr<Tools::ToolEntry>>    m_toolEntries;
+      std::vector<std::shared_ptr<Tools::Tool>>    m_toolEntries;
       UWPOpenIGTLink::TransformRepository^              m_transformRepository;
     };
   }

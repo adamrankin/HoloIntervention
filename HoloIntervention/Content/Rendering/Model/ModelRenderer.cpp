@@ -110,7 +110,7 @@ namespace HoloIntervention
       return create_task([this, assetLocation]()
       {
         uint64 myId(0);
-        std::shared_ptr<ModelEntry> entry = std::make_shared<ModelEntry>(m_deviceResources, assetLocation, m_timer, m_debug);
+        std::shared_ptr<Model> entry = std::make_shared<Model>(m_deviceResources, assetLocation, m_timer, m_debug);
         {
           std::lock_guard<std::mutex> guard(m_idMutex);
           entry->SetId(m_nextUnusedId++);
@@ -137,7 +137,7 @@ namespace HoloIntervention
       return create_task([this, polydata]()
       {
         uint64 myId(0);
-        std::shared_ptr<ModelEntry> entry = std::make_shared<ModelEntry>(m_deviceResources, polydata, m_timer, m_debug);
+        std::shared_ptr<Model> entry = std::make_shared<Model>(m_deviceResources, polydata, m_timer, m_debug);
         {
           std::lock_guard<std::mutex> guard(m_idMutex);
           entry->SetId(m_nextUnusedId++);
@@ -162,7 +162,7 @@ namespace HoloIntervention
     void ModelRenderer::RemoveModel(uint64 modelId)
     {
       std::lock_guard<std::mutex> guard(m_modelListMutex);
-      std::shared_ptr<ModelEntry> model;
+      std::shared_ptr<Model> model;
 
       for (auto modelIter = m_models.begin(); modelIter != m_models.end(); ++modelIter)
       {
@@ -175,9 +175,9 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    std::shared_ptr<ModelEntry> ModelRenderer::GetModel(uint64 modelId) const
+    std::shared_ptr<Model> ModelRenderer::GetModel(uint64 modelId) const
     {
-      std::shared_ptr<ModelEntry> entry;
+      std::shared_ptr<Model> entry;
       if (FindModel(modelId, entry))
       {
         return entry;
@@ -190,7 +190,7 @@ namespace HoloIntervention
     {
       return create_task([this, type, argument, tessellation, rhcoords, invertn]()
       {
-        std::shared_ptr<ModelEntry> entry = std::make_shared<ModelEntry>(m_deviceResources, type, m_timer, m_debug, argument, tessellation, rhcoords, invertn);
+        std::shared_ptr<Model> entry = std::make_shared<Model>(m_deviceResources, type, m_timer, m_debug, argument, tessellation, rhcoords, invertn);
         entry->SetId(m_nextUnusedId);
         entry->SetVisible(true);
 
@@ -209,7 +209,7 @@ namespace HoloIntervention
       {
         PrimitiveType type = ModelRenderer::StringToPrimitive(primitiveName);
 
-        std::shared_ptr<ModelEntry> entry = std::make_shared<ModelEntry>(m_deviceResources, type, m_timer, m_debug, argument, tessellation, rhcoords, invertn);
+        std::shared_ptr<Model> entry = std::make_shared<Model>(m_deviceResources, type, m_timer, m_debug, argument, tessellation, rhcoords, invertn);
         entry->SetId(m_nextUnusedId);
         entry->SetVisible(true);
 
@@ -224,7 +224,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     task<uint64> ModelRenderer::CloneAsync(uint64 modelId)
     {
-      std::shared_ptr<ModelEntry> entry;
+      std::shared_ptr<Model> entry;
       if (!FindModel(modelId, entry))
       {
         return task_from_result(INVALID_TOKEN);
@@ -247,7 +247,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool ModelRenderer::FindModel(uint64 modelId, std::shared_ptr<ModelEntry>& modelEntry) const
+    bool ModelRenderer::FindModel(uint64 modelId, std::shared_ptr<Model>& modelEntry) const
     {
       for (auto model : m_models)
       {

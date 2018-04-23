@@ -55,7 +55,7 @@ namespace HoloIntervention
 
   namespace UI
   {
-    class IconEntry;
+    class Icon;
     class Icons;
   }
 
@@ -88,7 +88,7 @@ namespace HoloIntervention
         bool                                        m_networkIsBlinking = true;
         ConnectionState                             m_networkPreviousState = CONNECTION_STATE_UNKNOWN;
         float                                       m_networkBlinkTimer = 0.f;
-        std::shared_ptr<UI::IconEntry>              m_iconEntry = nullptr;
+        std::shared_ptr<UI::Icon>              m_iconEntry = nullptr;
       };
 
       struct ConnectorEntry

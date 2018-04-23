@@ -26,10 +26,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "IConfigurable.h"
 #include "IStabilizedComponent.h"
-#include "IconEntry.h"
+#include "Icon.h"
 
 // Rendering includes
-#include "ModelEntry.h"
+#include "Content/Rendering/Model/Model.h"
 
 namespace DX
 {
@@ -45,7 +45,7 @@ namespace HoloIntervention
 
   namespace UI
   {
-    typedef std::vector<std::shared_ptr<IconEntry>> IconEntryList;
+    typedef std::vector<std::shared_ptr<Icon>> IconEntryList;
 
     class Icons : public IStabilizedComponent
     {
@@ -60,12 +60,12 @@ namespace HoloIntervention
 
       void Update(DX::StepTimer& timer, Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
 
-      Concurrency::task<std::shared_ptr<IconEntry>> AddEntryAsync(const std::wstring& modelName, std::wstring userValue = L"");
-      Concurrency::task<std::shared_ptr<IconEntry>> AddEntryAsync(const std::wstring& modelName, uint64 userValue = 0);
-      Concurrency::task<std::shared_ptr<IconEntry>> AddEntryAsync(std::shared_ptr<Rendering::ModelEntry> modelEntry, std::wstring userValue = L"");
-      Concurrency::task<std::shared_ptr<IconEntry>> AddEntryAsync(std::shared_ptr<Rendering::ModelEntry> modelEntry, uint64 userValue = 0);
+      Concurrency::task<std::shared_ptr<Icon>> AddEntryAsync(const std::wstring& modelName, std::wstring userValue = L"");
+      Concurrency::task<std::shared_ptr<Icon>> AddEntryAsync(const std::wstring& modelName, uint64 userValue = 0);
+      Concurrency::task<std::shared_ptr<Icon>> AddEntryAsync(std::shared_ptr<Rendering::Model> modelEntry, std::wstring userValue = L"");
+      Concurrency::task<std::shared_ptr<Icon>> AddEntryAsync(std::shared_ptr<Rendering::Model> modelEntry, uint64 userValue = 0);
       bool RemoveEntry(uint64 entryId);
-      std::shared_ptr<IconEntry> GetEntry(uint64 entryId);
+      std::shared_ptr<Icon> GetEntry(uint64 entryId);
 
     protected:
       std::mutex                                m_entryMutex;

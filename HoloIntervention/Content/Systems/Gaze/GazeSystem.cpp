@@ -31,7 +31,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "PhysicsAPI.h"
 
 // Rendering includes
-#include "ModelEntry.h"
+#include "Model.h"
 #include "ModelRenderer.h"
 
 // System includes

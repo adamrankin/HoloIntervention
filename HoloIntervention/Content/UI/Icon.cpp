@@ -23,10 +23,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "pch.h"
-#include "IconEntry.h"
+#include "Icon.h"
 
 // Rendering includes
-#include "ModelEntry.h"
+#include "Content/Rendering/Model/Model.h"
 
 using namespace Windows::Foundation::Numerics;
 
@@ -35,58 +35,58 @@ namespace HoloIntervention
   namespace UI
   {
     //----------------------------------------------------------------------------
-    IconEntry::IconEntry()
+    Icon::Icon()
     {
     }
 
     //----------------------------------------------------------------------------
-    IconEntry::~IconEntry()
+    Icon::~Icon()
     {
 
     }
 
     //----------------------------------------------------------------------------
-    void IconEntry::SetId(uint64 id)
+    void Icon::SetId(uint64 id)
     {
       m_id = id;
     }
 
     //----------------------------------------------------------------------------
-    uint64 IconEntry::GetId() const
+    uint64 Icon::GetId() const
     {
       return m_id;
     }
 
     //----------------------------------------------------------------------------
-    std::shared_ptr<HoloIntervention::Rendering::ModelEntry> IconEntry::GetModelEntry() const
+    std::shared_ptr<HoloIntervention::Rendering::Model> Icon::GetModel() const
     {
-      return m_modelEntry;
+      return m_model;
     }
 
     //----------------------------------------------------------------------------
-    void IconEntry::SetModelEntry(std::shared_ptr<Rendering::ModelEntry> entry)
+    void Icon::SetModel(std::shared_ptr<Rendering::Model> entry)
     {
-      m_modelEntry = entry;
-      m_rotatedBounds = m_modelEntry->GetBounds(m_userRotation);
+      m_model = entry;
+      m_rotatedBounds = m_model->GetBounds(m_userRotation);
     }
 
     //----------------------------------------------------------------------------
-    void IconEntry::SetUserRotation(float pitch, float yaw, float roll)
+    void Icon::SetUserRotation(float pitch, float yaw, float roll)
     {
       SetUserRotation(make_quaternion_from_yaw_pitch_roll(yaw, pitch, roll));
     }
 
     //----------------------------------------------------------------------------
-    void IconEntry::SetUserRotation(quaternion rotation)
+    void Icon::SetUserRotation(quaternion rotation)
     {
       m_userRotation = make_float4x4_from_quaternion(rotation);
-      m_rotatedBounds = m_modelEntry->GetBounds(m_userRotation);
+      m_rotatedBounds = m_model->GetBounds(m_userRotation);
 
       // Recalculate scaling based on rotated model
     }
 
     //----------------------------------------------------------------------------
-    void IconEntry::SetUserRotation(float4x4 rotation)
+    void Icon::SetUserRotation(float4x4 rotation)
     {
       float3 scale;
       quaternion rotationQuat;
@@ -100,49 +100,49 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    Windows::Foundation::Numerics::float4x4 IconEntry::GetUserRotation() const
+    Windows::Foundation::Numerics::float4x4 Icon::GetUserRotation() const
     {
       return m_userRotation;
     }
 
     //----------------------------------------------------------------------------
-    std::array<float, 6> IconEntry::GetRotatedBounds() const
+    std::array<float, 6> Icon::GetRotatedBounds() const
     {
       return m_rotatedBounds;
     }
 
     //----------------------------------------------------------------------------
-    bool IconEntry::GetFirstFrame() const
+    bool Icon::GetFirstFrame() const
     {
       return m_firstFrame;
     }
 
     //----------------------------------------------------------------------------
-    void IconEntry::SetFirstFrame(bool firstFrame)
+    void Icon::SetFirstFrame(bool firstFrame)
     {
       m_firstFrame = firstFrame;
     }
 
     //----------------------------------------------------------------------------
-    uint64 IconEntry::GetUserValueNumber() const
+    uint64 Icon::GetUserValueNumber() const
     {
       return m_userValueNumber;
     }
 
     //----------------------------------------------------------------------------
-    void IconEntry::SetUserValue(uint64 userValue)
+    void Icon::SetUserValue(uint64 userValue)
     {
       m_userValueNumber = userValue;
     }
 
     //----------------------------------------------------------------------------
-    void IconEntry::SetUserValue(const std::wstring& userValue)
+    void Icon::SetUserValue(const std::wstring& userValue)
     {
       m_userValueString = userValue;
     }
 
     //----------------------------------------------------------------------------
-    std::wstring IconEntry::GetUserValueString() const
+    std::wstring Icon::GetUserValueString() const
     {
       return m_userValueString;
     }

@@ -110,7 +110,7 @@ namespace HoloIntervention
           return task_from_result(false);
         }
 
-        std::vector<task<std::shared_ptr<UI::IconEntry>>> modelLoadingTasks;
+        std::vector<task<std::shared_ptr<UI::Icon>>> modelLoadingTasks;
 
         for (auto node : document->SelectNodes(xpath))
         {
@@ -165,7 +165,7 @@ namespace HoloIntervention
           }
 
           // Create icon
-          modelLoadingTasks.push_back(m_icons.AddEntryAsync(L"Assets/Models/network_icon.cmo", entry->HashedName).then([this, entry](std::shared_ptr<UI::IconEntry> iconEntry)
+          modelLoadingTasks.push_back(m_icons.AddEntryAsync(L"Assets/Models/network_icon.cmo", entry->HashedName).then([this, entry](std::shared_ptr<UI::Icon> iconEntry)
           {
             entry->Icon.m_iconEntry = iconEntry;
             return iconEntry;
@@ -175,7 +175,7 @@ namespace HoloIntervention
           m_connectors.push_back(entry);
         }
 
-        return when_all(begin(modelLoadingTasks), end(modelLoadingTasks)).then([this](std::vector<std::shared_ptr<UI::IconEntry>> entries)
+        return when_all(begin(modelLoadingTasks), end(modelLoadingTasks)).then([this](std::vector<std::shared_ptr<UI::Icon>> entries)
         {
           m_componentReady = true;
           return true;
@@ -344,7 +344,7 @@ namespace HoloIntervention
     {
       for (auto& connector : m_connectors)
       {
-        if (!connector->Icon.m_iconEntry->GetModelEntry()->IsLoaded())
+        if (!connector->Icon.m_iconEntry->GetModel()->IsLoaded())
         {
           continue;
         }
@@ -363,7 +363,7 @@ namespace HoloIntervention
             if (connector->Icon.m_networkBlinkTimer >= NETWORK_BLINK_TIME_SEC)
             {
               connector->Icon.m_networkBlinkTimer = 0.f;
-              connector->Icon.m_iconEntry->GetModelEntry()->ToggleVisible();
+              connector->Icon.m_iconEntry->GetModel()->ToggleVisible();
             }
           }
           connector->Icon.m_networkIsBlinking = true;
@@ -371,21 +371,21 @@ namespace HoloIntervention
         case System::NetworkSystem::CONNECTION_STATE_UNKNOWN:
         case System::NetworkSystem::CONNECTION_STATE_DISCONNECTED:
         case System::NetworkSystem::CONNECTION_STATE_CONNECTION_LOST:
-          connector->Icon.m_iconEntry->GetModelEntry()->SetVisible(true);
+          connector->Icon.m_iconEntry->GetModel()->SetVisible(true);
           connector->Icon.m_networkIsBlinking = false;
           if (connector->Icon.m_wasNetworkConnected)
           {
-            connector->Icon.m_iconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
+            connector->Icon.m_iconEntry->GetModel()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
             connector->Icon.m_wasNetworkConnected = false;
           }
           break;
         case System::NetworkSystem::CONNECTION_STATE_CONNECTED:
-          connector->Icon.m_iconEntry->GetModelEntry()->SetVisible(true);
+          connector->Icon.m_iconEntry->GetModel()->SetVisible(true);
           connector->Icon.m_networkIsBlinking = false;
           if (!connector->Icon.m_wasNetworkConnected)
           {
             connector->Icon.m_wasNetworkConnected = true;
-            connector->Icon.m_iconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
+            connector->Icon.m_iconEntry->GetModel()->SetRenderingState(Rendering::RENDERING_DEFAULT);
           }
           break;
         }

@@ -60,9 +60,9 @@ namespace HoloIntervention
       auto dictationConstraint = ref new SpeechRecognitionTopicConstraint(SpeechRecognitionScenario::Dictation, "dictation");
       m_dictationRecognizer->Constraints->Append(dictationConstraint);
 
-      m_icons.AddEntryAsync(L"Assets/Models/microphone_icon.cmo", 0).then([this](std::shared_ptr<UI::IconEntry> entry)
+      m_icons.AddEntryAsync(L"Assets/Models/microphone_icon.cmo", 0).then([this](std::shared_ptr<UI::Icon> entry)
       {
-        m_iconEntry = entry;
+        m_microphoneIcon = entry;
       });
 
       create_task(m_dictationRecognizer->CompileConstraintsAsync()).then([this](task<SpeechRecognitionCompilationResult^> compilationTask)
@@ -403,15 +403,15 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void VoiceInput::ProcessMicrophoneLogic(DX::StepTimer& timer)
     {
-      if (m_iconEntry == nullptr || !m_iconEntry->GetModelEntry()->IsLoaded())
+      if (m_microphoneIcon == nullptr || !m_microphoneIcon->GetModel()->IsLoaded())
       {
         return;
       }
 
       if (m_loadFailed)
       {
-        m_iconEntry->GetModelEntry()->SetVisible(true);
-        m_iconEntry->GetModelEntry()->SetColour(1.f, 0.f, 0.f, 1.f);
+        m_microphoneIcon->GetModel()->SetVisible(true);
+        m_microphoneIcon->GetModel()->SetColour(1.f, 0.f, 0.f, 1.f);
         return;
       }
 
@@ -419,15 +419,15 @@ namespace HoloIntervention
       {
         // Colour!
         m_wasHearingSound = true;
-        m_iconEntry->GetModelEntry()->SetVisible(true);
-        m_iconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
+        m_microphoneIcon->GetModel()->SetVisible(true);
+        m_microphoneIcon->GetModel()->SetRenderingState(Rendering::RENDERING_DEFAULT);
       }
       else if (m_wasHearingSound && !IsHearingSound())
       {
         // Greyscale
         m_wasHearingSound = false;
-        m_iconEntry->GetModelEntry()->SetVisible(true);
-        m_iconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
+        m_microphoneIcon->GetModel()->SetVisible(true);
+        m_microphoneIcon->GetModel()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
       }
       else if (m_wasHearingSound && IsHearingSound())
       {
@@ -436,7 +436,7 @@ namespace HoloIntervention
         if (m_microphoneBlinkTimer >= MICROPHONE_BLINK_TIME_SEC)
         {
           m_microphoneBlinkTimer = 0.f;
-          m_iconEntry->GetModelEntry()->ToggleVisible();
+          m_microphoneIcon->GetModel()->ToggleVisible();
         }
       }
     }

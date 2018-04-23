@@ -39,9 +39,9 @@ namespace HoloIntervention
 
   namespace Rendering
   {
-    class SliceEntry;
+    class Slice;
     class SliceRenderer;
-    class VolumeEntry;
+    class Volume;
     class VolumeRenderer;
   }
 
@@ -102,9 +102,9 @@ namespace HoloIntervention
       std::wstring                            m_sliceConnectionName; // For saving back to disk
       uint64                                  m_hashedSliceConnectionName;
       std::wstring                            m_sliceFromCoordFrame = L"Image";
-      std::wstring                            m_sliceToCoordFrame = L"HMD";
+      std::wstring                            m_sliceToCoordFrame = HOLOLENS_COORDINATE_SYSTEM_WNAME;
       UWPOpenIGTLink::TransformName^          m_sliceToHMDName = ref new UWPOpenIGTLink::TransformName(ref new Platform::String(m_sliceFromCoordFrame.c_str()), ref new Platform::String(m_sliceToCoordFrame.c_str()));
-      std::shared_ptr<Rendering::SliceEntry>  m_sliceEntry = nullptr;
+      std::shared_ptr<Rendering::Slice>  m_sliceEntry = nullptr;
 
       double                                  m_latestSliceTimestamp = 0.0;
       Windows::Foundation::Numerics::float4   m_whiteMapColour = { 1.f, 1.f, 1.f, 1.f };
@@ -114,9 +114,9 @@ namespace HoloIntervention
       std::wstring                            m_volumeConnectionName; // For saving back to disk
       uint64                                  m_hashedVolumeConnectionName;
       std::wstring                            m_volumeFromCoordFrame = L"Volume";
-      std::wstring                            m_volumeToCoordFrame = L"HMD";
+      std::wstring                            m_volumeToCoordFrame = HOLOLENS_COORDINATE_SYSTEM_WNAME;
       UWPOpenIGTLink::TransformName^          m_volumeToHMDName = ref new UWPOpenIGTLink::TransformName(ref new Platform::String(m_volumeFromCoordFrame.c_str()), ref new Platform::String(m_volumeToCoordFrame.c_str()));
-      std::shared_ptr<Rendering::VolumeEntry> m_volumeEntry = nullptr;
+      std::shared_ptr<Rendering::Volume> m_volumeEntry = nullptr;
       double                                  m_latestVolumeTimestamp = 0.0;
     };
   }

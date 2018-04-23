@@ -57,7 +57,7 @@ namespace HoloIntervention
 {
   namespace Rendering
   {
-    class ModelEntry;
+    class Model;
     class ModelRenderer;
   }
 
@@ -153,7 +153,7 @@ namespace HoloIntervention
       // Visualization resources
       std::atomic_bool                                                      m_visualizationEnabled = false;
       std::array<uint64, 5>                                                 m_spherePrimitiveIds = { 0 };
-      std::array<std::shared_ptr<Rendering::ModelEntry>, 5>                 m_spherePrimitives = { nullptr };
+      std::array<std::shared_ptr<Rendering::Model>, 5>                 m_spherePrimitives = { nullptr };
       std::array<Windows::Foundation::Numerics::float4x4, 5>                m_sphereToAnchorPoses;
 
       // Camera

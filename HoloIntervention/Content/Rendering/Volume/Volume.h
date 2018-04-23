@@ -59,7 +59,7 @@ namespace HoloIntervention
       Windows::Foundation::Numerics::float3 pos;
     };
 
-    class VolumeEntry
+    class Volume
     {
     public:
       typedef std::pair<float, Windows::Foundation::Numerics::float4> ControlPoint;
@@ -71,24 +71,24 @@ namespace HoloIntervention
       };
 
     public:
-      VolumeEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources,
-                  uint64 token,
-                  ID3D11Buffer* cwIndexBuffer,
-                  ID3D11Buffer* ccwIndexBuffer,
-                  ID3D11InputLayout* inputLayout,
-                  ID3D11Buffer* vertexBuffer,
-                  ID3D11VertexShader* volRenderVertexShader,
-                  ID3D11GeometryShader* volRenderGeometryShader,
-                  ID3D11PixelShader* volRenderPixelShader,
-                  ID3D11PixelShader* faceCalcPixelShader,
-                  ID3D11Texture2D* frontPositionTextureArray,
-                  ID3D11Texture2D* backPositionTextureArray,
-                  ID3D11RenderTargetView* frontPositionRTV,
-                  ID3D11RenderTargetView* backPositionRTV,
-                  ID3D11ShaderResourceView* frontPositionSRV,
-                  ID3D11ShaderResourceView* backPositionSRV,
-                  DX::StepTimer& timer);
-      ~VolumeEntry();
+      Volume(const std::shared_ptr<DX::DeviceResources>& deviceResources,
+             uint64 token,
+             ID3D11Buffer* cwIndexBuffer,
+             ID3D11Buffer* ccwIndexBuffer,
+             ID3D11InputLayout* inputLayout,
+             ID3D11Buffer* vertexBuffer,
+             ID3D11VertexShader* volRenderVertexShader,
+             ID3D11GeometryShader* volRenderGeometryShader,
+             ID3D11PixelShader* volRenderPixelShader,
+             ID3D11PixelShader* faceCalcPixelShader,
+             ID3D11Texture2D* frontPositionTextureArray,
+             ID3D11Texture2D* backPositionTextureArray,
+             ID3D11RenderTargetView* frontPositionRTV,
+             ID3D11RenderTargetView* backPositionRTV,
+             ID3D11ShaderResourceView* frontPositionSRV,
+             ID3D11ShaderResourceView* backPositionSRV,
+             DX::StepTimer& timer);
+      ~Volume();
 
       bool IsInFrustum() const;
       bool IsInFrustum(const Windows::Perception::Spatial::SpatialBoundingFrustum& frustum) const;
@@ -108,7 +108,7 @@ namespace HoloIntervention
       Windows::Foundation::Numerics::float4x4 GetCurrentPose() const;
       Windows::Foundation::Numerics::float3 GetVelocity() const;
 
-      Concurrency::task<void> SetOpacityTransferFunctionTypeAsync(VolumeEntry::TransferFunctionType type, uint32 tableSize, const VolumeEntry::ControlPointList& controlPoints);
+      Concurrency::task<void> SetOpacityTransferFunctionTypeAsync(Volume::TransferFunctionType type, uint32 tableSize, const Volume::ControlPointList& controlPoints);
 
       // D3D device related controls
       void CreateDeviceDependentResources();

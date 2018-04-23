@@ -27,7 +27,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "DeviceResources.h"
 #include "DirectXHelper.h"
 #include "RenderingCommon.h"
-#include "SliceEntry.h"
+#include "Slice.h"
 #include "SliceRenderer.h"
 #include "StepTimer.h"
 
@@ -52,30 +52,30 @@ namespace HoloIntervention
 {
   namespace Rendering
   {
-    const float SliceEntry::LOCKED_SLICE_DISTANCE_OFFSET = 2.1f;
-    const float SliceEntry::LERP_RATE = 2.5f;
+    const float Slice::LOCKED_SLICE_DISTANCE_OFFSET = 2.1f;
+    const float Slice::LERP_RATE = 2.5f;
 
     //----------------------------------------------------------------------------
-    float3 SliceEntry::GetStabilizedPosition(SpatialPointerPose^ pose) const
+    float3 Slice::GetStabilizedPosition(SpatialPointerPose^ pose) const
     {
       return float3(m_currentPose.m41, m_currentPose.m42, m_currentPose.m43);
     }
 
     //----------------------------------------------------------------------------
-    float3 SliceEntry::GetStabilizedVelocity() const
+    float3 Slice::GetStabilizedVelocity() const
     {
       return m_velocity;
     }
 
     //----------------------------------------------------------------------------
-    float SliceEntry::GetStabilizePriority() const
+    float Slice::GetStabilizePriority() const
     {
       // Priority is determined by systems that use this slice entry
       return PRIORITY_NOT_ACTIVE;
     }
 
     //----------------------------------------------------------------------------
-    SliceEntry::SliceEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& timer, Debug& debug)
+    Slice::Slice(const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& timer, Debug& debug)
       : m_deviceResources(deviceResources)
       , m_timer(timer)
       , m_debug(debug)
@@ -85,7 +85,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    SliceEntry::~SliceEntry()
+    Slice::~Slice()
     {
       ReleaseDeviceDependentResources();
 
@@ -93,13 +93,13 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool SliceEntry::IsInFrustum() const
+    bool Slice::IsInFrustum() const
     {
       return m_isInFrustum;
     }
 
     //----------------------------------------------------------------------------
-    bool SliceEntry::IsInFrustum(const SpatialBoundingFrustum& frustum) const
+    bool Slice::IsInFrustum(const SpatialBoundingFrustum& frustum) const
     {
       if (m_timer.GetFrameCount() == m_frustumCheckFrameNumber)
       {
@@ -125,7 +125,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SliceEntry::Update(SpatialPointerPose^ pose)
+    void Slice::Update(SpatialPointerPose^ pose)
     {
       if (!m_sliceValid)
       {
@@ -187,7 +187,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SliceEntry::Render(uint32 indexCount)
+    void Slice::Render(uint32 indexCount)
     {
       if (!m_visible || !m_sliceValid)
       {
@@ -211,7 +211,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SliceEntry::SetFrame(UWPOpenIGTLink::VideoFrame^ frame)
+    void Slice::SetFrame(UWPOpenIGTLink::VideoFrame^ frame)
     {
       std::shared_ptr<byte> image = *(std::shared_ptr<byte>*)(frame->GetImage()->GetImageData());
       if (image == nullptr)
@@ -254,7 +254,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SliceEntry::SetImageData(std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat)
+    void Slice::SetImageData(std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat)
     {
       if (width != m_width || height != m_height || pixelFormat != m_pixelFormat)
       {
@@ -288,7 +288,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SliceEntry::SetImageData(const std::wstring& fileName)
+    void Slice::SetImageData(const std::wstring& fileName)
     {
       TexMetadata metadata;
       GetMetadataFromWICFile(fileName.c_str(), WIC_FLAGS_NONE, metadata);
@@ -314,7 +314,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SliceEntry::SetImageData(Microsoft::WRL::ComPtr<ID3D11Texture2D> imageTexture)
+    void Slice::SetImageData(Microsoft::WRL::ComPtr<ID3D11Texture2D> imageTexture)
     {
       if (imageTexture == nullptr)
       {
@@ -339,50 +339,50 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    std::shared_ptr<byte> SliceEntry::GetImageData() const
+    std::shared_ptr<byte> Slice::GetImageData() const
     {
       return m_imageData;
     }
 
     //-----------------------------------------------------------------------------
-    void SliceEntry::SetVertexBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer)
+    void Slice::SetVertexBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer)
     {
       m_vertexBuffer = vertexBuffer;
     }
 
     //----------------------------------------------------------------------------
-    void SliceEntry::SetDesiredPose(const Windows::Foundation::Numerics::float4x4& matrix)
+    void Slice::SetDesiredPose(const Windows::Foundation::Numerics::float4x4& matrix)
     {
       m_desiredPose = matrix;
     }
 
     //----------------------------------------------------------------------------
-    void SliceEntry::ForceCurrentPose(const Windows::Foundation::Numerics::float4x4& matrix)
+    void Slice::ForceCurrentPose(const Windows::Foundation::Numerics::float4x4& matrix)
     {
       m_firstFrame = true;
       m_currentPose = m_desiredPose = m_lastPose = matrix;
     }
 
     //----------------------------------------------------------------------------
-    float4x4 SliceEntry::GetCurrentPose() const
+    float4x4 Slice::GetCurrentPose() const
     {
       return m_currentPose;
     }
 
     //----------------------------------------------------------------------------
-    bool SliceEntry::GetVisible() const
+    bool Slice::GetVisible() const
     {
       return m_visible;
     }
 
     //----------------------------------------------------------------------------
-    void SliceEntry::SetVisible(bool visible)
+    void Slice::SetVisible(bool visible)
     {
       m_visible = visible;
     }
 
     //----------------------------------------------------------------------------
-    void SliceEntry::SetHeadlocked(bool headLocked, bool smooth)
+    void Slice::SetHeadlocked(bool headLocked, bool smooth)
     {
       m_headLocked = headLocked;
       if (!smooth)
@@ -392,73 +392,73 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool SliceEntry::GetHeadlocked() const
+    bool Slice::GetHeadlocked() const
     {
       return m_headLocked;
     }
 
     //-----------------------------------------------------------------------------
-    void SliceEntry::SetUseHeadUpDirection(bool use)
+    void Slice::SetUseHeadUpDirection(bool use)
     {
       m_useHeadUpDirection = use;
     }
 
     //-----------------------------------------------------------------------------
-    bool SliceEntry::GetUseHeadUpDirection() const
+    bool Slice::GetUseHeadUpDirection() const
     {
       return m_useHeadUpDirection;
     }
 
     //-----------------------------------------------------------------------------
-    void SliceEntry::SetScalingFactor(float x, float y)
+    void Slice::SetScalingFactor(float x, float y)
     {
       m_scalingFactor = float2(x, y);
     }
 
     //-----------------------------------------------------------------------------
-    void SliceEntry::SetScalingFactor(const float2& scale)
+    void Slice::SetScalingFactor(const float2& scale)
     {
       m_scalingFactor = scale;
     }
 
     //-----------------------------------------------------------------------------
-    void SliceEntry::SetScalingFactor(float uniformScale)
+    void Slice::SetScalingFactor(float uniformScale)
     {
       m_scalingFactor = float2(uniformScale, uniformScale);
     }
 
     //----------------------------------------------------------------------------
-    void SliceEntry::SetId(uint64 id)
+    void Slice::SetId(uint64 id)
     {
       m_id = id;
     }
 
     //----------------------------------------------------------------------------
-    uint64 SliceEntry::GetId() const
+    uint64 Slice::GetId() const
     {
       return m_id;
     }
 
     //----------------------------------------------------------------------------
-    bool SliceEntry::IsValid() const
+    bool Slice::IsValid() const
     {
       return m_sliceValid;
     }
 
     //----------------------------------------------------------------------------
-    void SliceEntry::SetColorizeGreyscale(bool colorize)
+    void Slice::SetColorizeGreyscale(bool colorize)
     {
       m_colorizeGreyscale = colorize;
     }
 
     //----------------------------------------------------------------------------
-    bool SliceEntry::GetColorizeGreyscale()
+    bool Slice::GetColorizeGreyscale()
     {
       return m_colorizeGreyscale;
     }
 
     //----------------------------------------------------------------------------
-    void SliceEntry::SetWhiteMapColour(float4 colour)
+    void Slice::SetWhiteMapColour(float4 colour)
     {
       m_whiteMapColour = colour;
       float4 blackMapColour(m_constantBuffer.blackMapColour.x, m_constantBuffer.blackMapColour.y, m_constantBuffer.blackMapColour.z, m_constantBuffer.blackMapColour.w);
@@ -466,14 +466,14 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SliceEntry::SetBlackMapColour(float4 colour)
+    void Slice::SetBlackMapColour(float4 colour)
     {
       XMStoreFloat4(&m_constantBuffer.blackMapColour, XMLoadFloat4(&colour));
       SetWhiteMapColour(m_whiteMapColour);
     }
 
     //----------------------------------------------------------------------------
-    void SliceEntry::CreateDeviceDependentResources()
+    void Slice::CreateDeviceDependentResources()
     {
       auto device = m_deviceResources->GetD3DDevice();
 
@@ -500,7 +500,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void SliceEntry::ReleaseDeviceDependentResources()
+    void Slice::ReleaseDeviceDependentResources()
     {
       m_sliceValid = false;
       m_sliceConstantBuffer.Reset();
@@ -510,13 +510,13 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    DXGI_FORMAT SliceEntry::GetPixelFormat() const
+    DXGI_FORMAT Slice::GetPixelFormat() const
     {
       return m_pixelFormat;
     }
 
     //----------------------------------------------------------------------------
-    void SliceEntry::SetPixelFormat(DXGI_FORMAT val)
+    void Slice::SetPixelFormat(DXGI_FORMAT val)
     {
       m_pixelFormat = val;
     }

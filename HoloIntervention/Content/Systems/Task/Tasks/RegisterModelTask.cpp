@@ -239,10 +239,10 @@ namespace HoloIntervention
           float4x4 registration;
           if (m_registrationSystem.GetReferenceToCoordinateSystemTransformation(coordinateSystem, registration))
           {
-            m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", L"HoloLens"), registration, true);
+            m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", HOLOLENS_COORDINATE_SYSTEM_PNAME), registration, true);
           }
 
-          auto result = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(MODEL_REGISTRATION_COORDINATE_FRAME, L"HoloLens"));
+          auto result = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(MODEL_REGISTRATION_COORDINATE_FRAME, HOLOLENS_COORDINATE_SYSTEM_PNAME));
 
           if (result->Key)
           {

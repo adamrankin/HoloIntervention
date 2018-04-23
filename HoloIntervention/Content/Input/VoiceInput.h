@@ -42,7 +42,7 @@ namespace HoloIntervention
 {
   namespace UI
   {
-    class IconEntry;
+    class Icon;
     class Icons;
   }
 
@@ -98,7 +98,7 @@ namespace HoloIntervention
       std::atomic_bool                                                  m_loadFailed = false;
 
       // UI variables
-      std::shared_ptr<UI::IconEntry>                                    m_iconEntry = nullptr;
+      std::shared_ptr<UI::Icon>                                         m_microphoneIcon = nullptr;
       float                                                             m_microphoneBlinkTimer = 0.f;
       bool                                                              m_wasHearingSound = true;
       static const float                                                MICROPHONE_BLINK_TIME_SEC;

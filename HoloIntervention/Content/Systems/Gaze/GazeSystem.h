@@ -36,7 +36,7 @@ namespace HoloIntervention
 {
   namespace Rendering
   {
-    class ModelEntry;
+    class Model;
     class ModelRenderer;
   }
 
@@ -78,7 +78,7 @@ namespace HoloIntervention
       NotificationSystem&                       m_notificationSystem;
       Physics::PhysicsAPI&                      m_physicsAPI;
 
-      std::shared_ptr<Rendering::ModelEntry>    m_modelEntry;
+      std::shared_ptr<Rendering::Model>    m_modelEntry;
       uint64                                    m_modelToken;
 
       std::atomic_bool                          m_hadHit = false;

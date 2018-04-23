@@ -83,23 +83,23 @@ namespace HoloIntervention
           std::this_thread::sleep_for(std::chrono::milliseconds(50));
         }
 
-        std::shared_ptr<VolumeEntry> entry = std::make_shared<VolumeEntry>(m_deviceResources,
-                                             m_nextUnusedVolumeToken,
-                                             m_cwIndexBuffer.Get(),
-                                             m_ccwIndexBuffer.Get(),
-                                             m_inputLayout.Get(),
-                                             m_vertexBuffer.Get(),
-                                             m_volRenderVertexShader.Get(),
-                                             m_volRenderGeometryShader.Get(),
-                                             m_volRenderPixelShader.Get(),
-                                             m_faceCalcPixelShader.Get(),
-                                             m_frontPositionTextureArray.Get(),
-                                             m_backPositionTextureArray.Get(),
-                                             m_frontPositionRTV.Get(),
-                                             m_backPositionRTV.Get(),
-                                             m_frontPositionSRV.Get(),
-                                             m_backPositionSRV.Get(),
-                                             m_timer);
+        std::shared_ptr<Volume> entry = std::make_shared<Volume>(m_deviceResources,
+                                        m_nextUnusedVolumeToken,
+                                        m_cwIndexBuffer.Get(),
+                                        m_ccwIndexBuffer.Get(),
+                                        m_inputLayout.Get(),
+                                        m_vertexBuffer.Get(),
+                                        m_volRenderVertexShader.Get(),
+                                        m_volRenderGeometryShader.Get(),
+                                        m_volRenderPixelShader.Get(),
+                                        m_faceCalcPixelShader.Get(),
+                                        m_frontPositionTextureArray.Get(),
+                                        m_backPositionTextureArray.Get(),
+                                        m_frontPositionRTV.Get(),
+                                        m_backPositionRTV.Get(),
+                                        m_frontPositionSRV.Get(),
+                                        m_backPositionSRV.Get(),
+                                        m_timer);
         entry->SetDesiredPose(desiredPose);
 
         if (frame != nullptr)
@@ -126,23 +126,23 @@ namespace HoloIntervention
           std::this_thread::sleep_for(std::chrono::milliseconds(50));
         }
 
-        std::shared_ptr<VolumeEntry> entry = std::make_shared<VolumeEntry>(m_deviceResources,
-                                             m_nextUnusedVolumeToken,
-                                             m_cwIndexBuffer.Get(),
-                                             m_ccwIndexBuffer.Get(),
-                                             m_inputLayout.Get(),
-                                             m_vertexBuffer.Get(),
-                                             m_volRenderVertexShader.Get(),
-                                             m_volRenderGeometryShader.Get(),
-                                             m_volRenderPixelShader.Get(),
-                                             m_faceCalcPixelShader.Get(),
-                                             m_frontPositionTextureArray.Get(),
-                                             m_backPositionTextureArray.Get(),
-                                             m_frontPositionRTV.Get(),
-                                             m_backPositionRTV.Get(),
-                                             m_frontPositionSRV.Get(),
-                                             m_backPositionSRV.Get(),
-                                             m_timer);
+        std::shared_ptr<Volume> entry = std::make_shared<Volume>(m_deviceResources,
+                                        m_nextUnusedVolumeToken,
+                                        m_cwIndexBuffer.Get(),
+                                        m_ccwIndexBuffer.Get(),
+                                        m_inputLayout.Get(),
+                                        m_vertexBuffer.Get(),
+                                        m_volRenderVertexShader.Get(),
+                                        m_volRenderGeometryShader.Get(),
+                                        m_volRenderPixelShader.Get(),
+                                        m_faceCalcPixelShader.Get(),
+                                        m_frontPositionTextureArray.Get(),
+                                        m_backPositionTextureArray.Get(),
+                                        m_frontPositionRTV.Get(),
+                                        m_backPositionRTV.Get(),
+                                        m_frontPositionSRV.Get(),
+                                        m_backPositionSRV.Get(),
+                                        m_timer);
         entry->SetDesiredPose(desiredPose);
 
         if (imageData != nullptr)
@@ -164,7 +164,7 @@ namespace HoloIntervention
     void VolumeRenderer::RemoveVolume(uint64 volumeToken)
     {
       std::lock_guard<std::mutex> guard(m_volumeMapMutex);
-      std::shared_ptr<VolumeEntry> entry;
+      std::shared_ptr<Volume> entry;
       if (FindVolume(volumeToken, entry))
       {
         for (auto iter = m_volumes.begin(); iter != m_volumes.end(); ++iter)
@@ -179,9 +179,9 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    std::shared_ptr<VolumeEntry> VolumeRenderer::GetVolume(uint64 volumeToken)
+    std::shared_ptr<Volume> VolumeRenderer::GetVolume(uint64 volumeToken)
     {
-      std::shared_ptr<VolumeEntry> entry(nullptr);
+      std::shared_ptr<Volume> entry(nullptr);
       FindVolume(volumeToken, entry);
       return entry;
     }
@@ -190,7 +190,7 @@ namespace HoloIntervention
     void VolumeRenderer::UpdateVolume(uint64 volumeToken, UWPOpenIGTLink::TrackedFrame^ frame, float4x4 desiredPose)
     {
       std::lock_guard<std::mutex> guard(m_volumeMapMutex);
-      std::shared_ptr<VolumeEntry> entry;
+      std::shared_ptr<Volume> entry;
       if (FindVolume(volumeToken, entry))
       {
         entry->SetDesiredPose(desiredPose);
@@ -202,7 +202,7 @@ namespace HoloIntervention
     void VolumeRenderer::ShowVolume(uint64 volumeToken)
     {
       std::lock_guard<std::mutex> guard(m_volumeMapMutex);
-      std::shared_ptr<VolumeEntry> entry;
+      std::shared_ptr<Volume> entry;
       if (FindVolume(volumeToken, entry))
       {
         entry->SetShowing(true);
@@ -213,7 +213,7 @@ namespace HoloIntervention
     void VolumeRenderer::HideVolume(uint64 volumeToken)
     {
       std::lock_guard<std::mutex> guard(m_volumeMapMutex);
-      std::shared_ptr<VolumeEntry> entry;
+      std::shared_ptr<Volume> entry;
       if (FindVolume(volumeToken, entry))
       {
         entry->SetShowing(false);
@@ -224,7 +224,7 @@ namespace HoloIntervention
     void VolumeRenderer::SetVolumeVisible(uint64 volumeToken, bool show)
     {
       std::lock_guard<std::mutex> guard(m_volumeMapMutex);
-      std::shared_ptr<VolumeEntry> entry;
+      std::shared_ptr<Volume> entry;
       if (FindVolume(volumeToken, entry))
       {
         entry->SetShowing(show);
@@ -235,7 +235,7 @@ namespace HoloIntervention
     void VolumeRenderer::SetVolumePose(uint64 volumeToken, const float4x4& pose)
     {
       std::lock_guard<std::mutex> guard(m_volumeMapMutex);
-      std::shared_ptr<VolumeEntry> entry;
+      std::shared_ptr<Volume> entry;
       if (FindVolume(volumeToken, entry))
       {
         entry->m_currentPose = entry->m_desiredPose = entry->m_lastPose = pose;
@@ -246,7 +246,7 @@ namespace HoloIntervention
     float4x4 VolumeRenderer::GetVolumePose(uint64 volumeToken) const
     {
       std::lock_guard<std::mutex> guard(m_volumeMapMutex);
-      std::shared_ptr<VolumeEntry> entry;
+      std::shared_ptr<Volume> entry;
       if (FindVolume(volumeToken, entry))
       {
         return entry->m_currentPose;
@@ -261,7 +261,7 @@ namespace HoloIntervention
     void VolumeRenderer::SetDesiredVolumePose(uint64 volumeToken, const float4x4& pose)
     {
       std::lock_guard<std::mutex> guard(m_volumeMapMutex);
-      std::shared_ptr<VolumeEntry> entry;
+      std::shared_ptr<Volume> entry;
       if (FindVolume(volumeToken, entry))
       {
         entry->SetDesiredPose(pose);
@@ -272,7 +272,7 @@ namespace HoloIntervention
     float3 VolumeRenderer::GetVolumeVelocity(uint64 volumeToken) const
     {
       std::lock_guard<std::mutex> guard(m_volumeMapMutex);
-      std::shared_ptr<VolumeEntry> entry;
+      std::shared_ptr<Volume> entry;
       if (FindVolume(volumeToken, entry))
       {
         return entry->GetVelocity();
@@ -495,7 +495,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool VolumeRenderer::FindVolume(uint64 volumeToken, std::shared_ptr<VolumeEntry>& volumeEntry) const
+    bool VolumeRenderer::FindVolume(uint64 volumeToken, std::shared_ptr<Volume>& volumeEntry) const
     {
       for (auto volume : m_volumes)
       {

@@ -33,7 +33,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "CameraResources.h"
 
 // Rendering includes
-#include "ModelEntry.h"
+#include "Model.h"
 #include "ModelRenderer.h"
 
 // Input includes
@@ -301,11 +301,11 @@ namespace HoloIntervention
           return task_from_result(true);
         }
 
-        return m_icons.AddEntryAsync(m_modelEntry, 0).then([this](std::shared_ptr<UI::IconEntry> entry)
+        return m_icons.AddEntryAsync(m_modelEntry, 0).then([this](std::shared_ptr<UI::Icon> entry)
         {
           m_sphereIconEntry = entry;
-          m_sphereIconEntry->GetModelEntry()->SetVisible(true);
-          m_sphereIconEntry->GetModelEntry()->SetOriginalColour(0.f, 0.9f, 0.f, 1.f);
+          m_sphereIconEntry->GetModel()->SetVisible(true);
+          m_sphereIconEntry->GetModel()->SetOriginalColour(0.f, 0.9f, 0.f, 1.f);
 
           m_started = true;
           m_modelEntry->SetVisible(true);
@@ -431,14 +431,14 @@ namespace HoloIntervention
       {
         if (sphereToReferenceTransform != nullptr && !sphereToReferenceTransform->Valid)
         {
-          m_sphereIconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
+          m_sphereIconEntry->GetModel()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
         }
         m_notificationSystem.QueueMessage(L"Can't see sphere!", 1.f);
         m_pointCaptureRequested = false;
         return;
       }
       m_latestSphereTimestamp = sphereToReferenceTransform->Timestamp;
-      m_sphereIconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
+      m_sphereIconEntry->GetModel()->SetRenderingState(Rendering::RENDERING_DEFAULT);
 
       if (m_pointCaptureRequested)
       {

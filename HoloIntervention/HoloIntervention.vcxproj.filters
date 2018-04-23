@@ -46,9 +46,6 @@
     <ClCompile Include="Content\Systems\Notification\NotificationSystem.cpp">
       <Filter>Content\Systems\Notification</Filter>
     </ClCompile>
-    <ClCompile Include="Content\Systems\Tool\ToolEntry.cpp">
-      <Filter>Content\Systems\Tools</Filter>
-    </ClCompile>
     <ClCompile Include="Content\Systems\Tool\ToolSystem.cpp">
       <Filter>Content\Systems\Tools</Filter>
     </ClCompile>
@@ -94,14 +91,8 @@
     <ClCompile Include="Content\Systems\Network\NetworkSystem.cpp">
       <Filter>Content\Systems\Network</Filter>
     </ClCompile>
-    <ClCompile Include="Content\Rendering\Slice\SliceEntry.cpp">
-      <Filter>Content\Rendering\SliceRenderer</Filter>
-    </ClCompile>
     <ClCompile Include="Content\Rendering\Slice\SliceRenderer.cpp">
       <Filter>Content\Rendering\SliceRenderer</Filter>
-    </ClCompile>
-    <ClCompile Include="Content\Rendering\Volume\VolumeEntry.cpp">
-      <Filter>Content\Rendering\VolumeRenderer</Filter>
     </ClCompile>
     <ClCompile Include="Content\Rendering\Notification\DistanceFieldRenderer.cpp">
       <Filter>Content\Rendering\NotificationRenderer</Filter>
@@ -111,9 +102,6 @@
     </ClCompile>
     <ClCompile Include="Content\Rendering\Notification\TextRenderer.cpp">
       <Filter>Content\Rendering\NotificationRenderer</Filter>
-    </ClCompile>
-    <ClCompile Include="Content\Rendering\Model\ModelEntry.cpp">
-      <Filter>Content\Rendering\ModelRenderer</Filter>
     </ClCompile>
     <ClCompile Include="Content\Rendering\Model\ModelRenderer.cpp">
       <Filter>Content\Rendering\ModelRenderer</Filter>
@@ -157,9 +145,6 @@
     <ClCompile Include="Content\Systems\Registration\ModelAlignmentRegistration.cpp">
       <Filter>Content\Systems\Registration\ModelAlignment</Filter>
     </ClCompile>
-    <ClCompile Include="Content\UI\IconEntry.cpp">
-      <Filter>Content\UI</Filter>
-    </ClCompile>
     <ClCompile Include="Content\Math\MathCommon.cpp">
       <Filter>Content\Math</Filter>
     </ClCompile>
@@ -177,6 +162,21 @@
     </ClCompile>
     <ClCompile Include="Content\Systems\Task\Tasks\TargetSphereTask.cpp">
       <Filter>Content\Systems\Task\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Systems\Tool\Tool.cpp">
+      <Filter>Content\Systems\Tools</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\UI\Icon.cpp">
+      <Filter>Content\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Rendering\Slice\Slice.cpp">
+      <Filter>Content\Rendering\SliceRenderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Rendering\Volume\Volume.cpp">
+      <Filter>Content\Rendering\VolumeRenderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Rendering\Model\Model.cpp">
+      <Filter>Content\Rendering\ModelRenderer</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -221,9 +221,6 @@
     </ClInclude>
     <ClInclude Include="Content\Systems\Notification\NotificationSystem.h">
       <Filter>Content\Systems\Notification</Filter>
-    </ClInclude>
-    <ClInclude Include="Content\Systems\Tool\ToolEntry.h">
-      <Filter>Content\Systems\Tools</Filter>
     </ClInclude>
     <ClInclude Include="Content\Systems\Tool\ToolSystem.h">
       <Filter>Content\Systems\Tools</Filter>
@@ -297,12 +294,6 @@
     <ClInclude Include="Content\Rendering\Slice\SliceRenderer.h">
       <Filter>Content\Rendering\SliceRenderer</Filter>
     </ClInclude>
-    <ClInclude Include="Content\Rendering\Slice\SliceEntry.h">
-      <Filter>Content\Rendering\SliceRenderer</Filter>
-    </ClInclude>
-    <ClInclude Include="Content\Rendering\Volume\VolumeEntry.h">
-      <Filter>Content\Rendering\VolumeRenderer</Filter>
-    </ClInclude>
     <ClInclude Include="Content\Rendering\Notification\TextRenderer.h">
       <Filter>Content\Rendering\NotificationRenderer</Filter>
     </ClInclude>
@@ -311,9 +302,6 @@
     </ClInclude>
     <ClInclude Include="Content\Rendering\Notification\NotificationRenderer.h">
       <Filter>Content\Rendering\NotificationRenderer</Filter>
-    </ClInclude>
-    <ClInclude Include="Content\Rendering\Model\ModelEntry.h">
-      <Filter>Content\Rendering\ModelRenderer</Filter>
     </ClInclude>
     <ClInclude Include="Content\Rendering\Model\ModelRenderer.h">
       <Filter>Content\Rendering\ModelRenderer</Filter>
@@ -363,9 +351,6 @@
     <ClInclude Include="Content\Systems\Registration\ModelAlignmentRegistration.h">
       <Filter>Content\Systems\Registration\ModelAlignment</Filter>
     </ClInclude>
-    <ClInclude Include="Content\UI\IconEntry.h">
-      <Filter>Content\UI</Filter>
-    </ClInclude>
     <ClInclude Include="Content\Math\MathCommon.h">
       <Filter>Content\Math</Filter>
     </ClInclude>
@@ -383,6 +368,21 @@
     </ClInclude>
     <ClInclude Include="Content\Systems\Task\Tasks\TargetSphereTask.h">
       <Filter>Content\Systems\Task\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Systems\Tool\Tool.h">
+      <Filter>Content\Systems\Tools</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\UI\Icon.h">
+      <Filter>Content\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Rendering\Slice\Slice.h">
+      <Filter>Content\Rendering\SliceRenderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Rendering\Volume\Volume.h">
+      <Filter>Content\Rendering\VolumeRenderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Rendering\Model\Model.h">
+      <Filter>Content\Rendering\ModelRenderer</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

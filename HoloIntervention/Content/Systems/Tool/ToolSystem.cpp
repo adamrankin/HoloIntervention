@@ -25,7 +25,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "pch.h"
-#include "ToolEntry.h"
+#include "Tool.h"
 #include "ToolSystem.h"
 #include "Common.h"
 
@@ -55,7 +55,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float3 ToolSystem::GetStabilizedPosition(SpatialPointerPose^ pose) const
     {
-      std::shared_ptr<Tools::ToolEntry> maxEntry(nullptr);
+      std::shared_ptr<Tools::Tool> maxEntry(nullptr);
       float maxPriority(PRIORITY_NOT_ACTIVE);
       for (auto& entry : m_toolEntries)
       {
@@ -77,7 +77,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float3 ToolSystem::GetStabilizedVelocity() const
     {
-      std::shared_ptr<Tools::ToolEntry> maxEntry(nullptr);
+      std::shared_ptr<Tools::Tool> maxEntry(nullptr);
       float maxPriority(PRIORITY_NOT_ACTIVE);
       for (auto& entry : m_toolEntries)
       {
@@ -132,27 +132,27 @@ namespace HoloIntervention
         for (auto tool : m_toolEntries)
         {
           auto toolElem = document->CreateElement("Tool");
-          if (tool->GetModelEntry()->IsPrimitive())
+          if (tool->GetModel()->IsPrimitive())
           {
-            toolElem->SetAttribute(L"Primitive", ref new Platform::String(Rendering::ModelRenderer::PrimitiveToString(tool->GetModelEntry()->GetPrimitiveType()).c_str()));
+            toolElem->SetAttribute(L"Primitive", ref new Platform::String(Rendering::ModelRenderer::PrimitiveToString(tool->GetModel()->GetPrimitiveType()).c_str()));
 
-            toolElem->SetAttribute(L"Argument", tool->GetModelEntry()->GetArgument().x.ToString() + L" " + tool->GetModelEntry()->GetArgument().y.ToString() + L" " + tool->GetModelEntry()->GetArgument().z.ToString());
-            toolElem->SetAttribute(L"Colour", tool->GetModelEntry()->GetCurrentColour().x.ToString() + L" " + tool->GetModelEntry()->GetCurrentColour().y.ToString() + L" " + tool->GetModelEntry()->GetCurrentColour().z.ToString() + L" " + tool->GetModelEntry()->GetCurrentColour().w.ToString());
-            toolElem->SetAttribute(L"Tessellation", tool->GetModelEntry()->GetTessellation().ToString());
-            toolElem->SetAttribute(L"RightHandedCoords", tool->GetModelEntry()->GetRHCoords().ToString());
-            toolElem->SetAttribute(L"InvertN", tool->GetModelEntry()->GetInvertN().ToString());
+            toolElem->SetAttribute(L"Argument", tool->GetModel()->GetArgument().x.ToString() + L" " + tool->GetModel()->GetArgument().y.ToString() + L" " + tool->GetModel()->GetArgument().z.ToString());
+            toolElem->SetAttribute(L"Colour", tool->GetModel()->GetCurrentColour().x.ToString() + L" " + tool->GetModel()->GetCurrentColour().y.ToString() + L" " + tool->GetModel()->GetCurrentColour().z.ToString() + L" " + tool->GetModel()->GetCurrentColour().w.ToString());
+            toolElem->SetAttribute(L"Tessellation", tool->GetModel()->GetTessellation().ToString());
+            toolElem->SetAttribute(L"RightHandedCoords", tool->GetModel()->GetRHCoords().ToString());
+            toolElem->SetAttribute(L"InvertN", tool->GetModel()->GetInvertN().ToString());
           }
           else
           {
-            toolElem->SetAttribute(L"Model", ref new Platform::String(tool->GetModelEntry()->GetAssetLocation().c_str()));
+            toolElem->SetAttribute(L"Model", ref new Platform::String(tool->GetModel()->GetAssetLocation().c_str()));
           }
           toolElem->SetAttribute(L"From", tool->GetCoordinateFrame()->From());
           toolElem->SetAttribute(L"To", tool->GetCoordinateFrame()->To());
           toolElem->SetAttribute(L"Id", ref new Platform::String(tool->GetUserId().c_str()));
-          toolElem->SetAttribute(L"LerpEnabled", tool->GetModelEntry()->GetLerpEnabled() ? L"true" : L"false");
-          if (tool->GetModelEntry()->GetLerpEnabled())
+          toolElem->SetAttribute(L"LerpEnabled", tool->GetModel()->GetLerpEnabled() ? L"true" : L"false");
+          if (tool->GetModel()->GetLerpEnabled())
           {
-            toolElem->SetAttribute(L"LerpRate", tool->GetModelEntry()->GetLerpRate().ToString());
+            toolElem->SetAttribute(L"LerpRate", tool->GetModel()->GetLerpRate().ToString());
           }
           toolsElem->AppendChild(toolElem);
         }
@@ -323,13 +323,13 @@ namespace HoloIntervention
             bool lerpEnabled;
             if (GetBooleanAttribute(L"LerpEnabled", node, lerpEnabled))
             {
-              tool->GetModelEntry()->EnablePoseLerp(lerpEnabled);
+              tool->GetModel()->EnablePoseLerp(lerpEnabled);
             }
 
             float lerpRate;
             if (GetScalarAttribute<float>(L"LerpRate", node, lerpRate))
             {
-              tool->GetModelEntry()->SetPoseLerpRate(lerpRate);
+              tool->GetModel()->SetPoseLerpRate(lerpRate);
             }
           });
         }
@@ -363,7 +363,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    std::shared_ptr<Tools::ToolEntry> ToolSystem::GetTool(uint64 token) const
+    std::shared_ptr<Tools::Tool> ToolSystem::GetTool(uint64 token) const
     {
       std::lock_guard<std::mutex> guard(m_entriesMutex);
       for (auto iter = m_toolEntries.begin(); iter != m_toolEntries.end(); ++iter)
@@ -377,7 +377,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    std::shared_ptr<HoloIntervention::Tools::ToolEntry> ToolSystem::GetToolByUserId(const std::wstring& userId) const
+    std::shared_ptr<HoloIntervention::Tools::Tool> ToolSystem::GetToolByUserId(const std::wstring& userId) const
     {
       std::lock_guard<std::mutex> guard(m_entriesMutex);
       for (auto iter = m_toolEntries.begin(); iter != m_toolEntries.end(); ++iter)
@@ -391,13 +391,13 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    std::shared_ptr<HoloIntervention::Tools::ToolEntry> ToolSystem::GetToolByUserId(Platform::String^ userId) const
+    std::shared_ptr<HoloIntervention::Tools::Tool> ToolSystem::GetToolByUserId(Platform::String^ userId) const
     {
       return GetToolByUserId(std::wstring(userId->Data()));
     }
 
     //----------------------------------------------------------------------------
-    std::vector<std::shared_ptr<Tools::ToolEntry>> ToolSystem::GetTools()
+    std::vector<std::shared_ptr<Tools::Tool>> ToolSystem::GetTools()
     {
       return m_toolEntries;
     }
@@ -440,9 +440,9 @@ namespace HoloIntervention
       }
       return modelTask.then([this, coordinateFrame, colour, userId](uint64 modelEntryId)
       {
-        std::shared_ptr<Tools::ToolEntry> entry = std::make_shared<Tools::ToolEntry>(m_modelRenderer, m_networkSystem, m_icons, m_hashedConnectionName, coordinateFrame, m_transformRepository, userId);
+        std::shared_ptr<Tools::Tool> entry = std::make_shared<Tools::Tool>(m_modelRenderer, m_networkSystem, m_icons, m_hashedConnectionName, coordinateFrame, m_transformRepository, userId);
         auto modelEntry = m_modelRenderer.GetModel(modelEntryId);
-        return entry->SetModelEntryAsync(modelEntry).then([this, entry, modelEntry, colour]()
+        return entry->SetModelAsync(modelEntry).then([this, entry, modelEntry, colour]()
         {
           modelEntry->SetVisible(false);
           modelEntry->SetColour(colour);
@@ -483,7 +483,7 @@ namespace HoloIntervention
       // Update the transform repository with the latest registration
       float4x4 referenceToHMD(float4x4::identity());
       bool registrationAvailable = m_registrationSystem.GetReferenceToCoordinateSystemTransformation(hmdCoordinateSystem, referenceToHMD);
-      m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD"), transpose(referenceToHMD), registrationAvailable);
+      m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", HOLOLENS_COORDINATE_SYSTEM_PNAME), transpose(referenceToHMD), registrationAvailable);
 
       std::lock_guard<std::mutex> guard(m_entriesMutex);
       for (auto entry : m_toolEntries)

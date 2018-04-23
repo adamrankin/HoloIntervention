@@ -25,7 +25,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "IEngineComponent.h"
-#include "ModelEntry.h"
+#include "Model.h"
 
 namespace DX
 {
@@ -47,7 +47,7 @@ namespace HoloIntervention
   {
     class ModelRenderer : public IEngineComponent
     {
-      typedef std::list<std::shared_ptr<ModelEntry>> ModelList;
+      typedef std::list<std::shared_ptr<Model>> ModelList;
 
     public:
       ModelRenderer(const std::shared_ptr<DX::DeviceResources> deviceResources, DX::StepTimer& timer, Debug& debug);
@@ -66,7 +66,7 @@ namespace HoloIntervention
       concurrency::task<uint64> AddPrimitiveAsync(const std::wstring& primitiveName, Windows::Foundation::Numerics::float3 argument, size_t tessellation = 16, bool rhcoords = true, bool invertn = false);
       concurrency::task<uint64> CloneAsync(uint64 modelId);
       void RemoveModel(uint64 modelId);
-      std::shared_ptr<ModelEntry> GetModel(uint64 modelId) const;
+      std::shared_ptr<Model> GetModel(uint64 modelId) const;
 
       static std::unique_ptr<DirectX::InstancedGeometricPrimitive> CreatePrimitive(const DX::DeviceResources& deviceResources, PrimitiveType type, Windows::Foundation::Numerics::float3 argument, size_t tessellation, bool rhcoords, bool invertn);
 
@@ -74,7 +74,7 @@ namespace HoloIntervention
       static PrimitiveType StringToPrimitive(Platform::String^ primitiveName);
       static std::wstring PrimitiveToString(PrimitiveType type);
     protected:
-      bool FindModel(uint64 modelId, std::shared_ptr<ModelEntry>& modelEntry) const;
+      bool FindModel(uint64 modelId, std::shared_ptr<Model>& modelEntry) const;
 
     protected:
       // Cached pointer to device resources.

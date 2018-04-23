@@ -25,7 +25,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "pch.h"
 #include "Debug.h"
 #include "ModelRenderer.h"
-#include "SliceEntry.h"
+#include "Slice.h"
 #include "SliceRenderer.h"
 #include "TextRenderer.h"
 

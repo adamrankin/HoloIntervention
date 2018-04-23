@@ -46,7 +46,7 @@ namespace HoloIntervention
   namespace Rendering
   {
     class ModelRenderer;
-    class ModelEntry;
+    class Model;
   }
 
   namespace Input
@@ -57,6 +57,7 @@ namespace HoloIntervention
   namespace UI
   {
     class Icons;
+    class Icon;
   }
 
   namespace Network
@@ -109,16 +110,17 @@ namespace HoloIntervention
         UWPOpenIGTLink::TransformName^                          m_phantomToReferenceName = ref new UWPOpenIGTLink::TransformName();
         double                                                  m_latestTimestamp = 0.0;
 
-        // Phantom rendering variables
-        std::shared_ptr<Rendering::ModelEntry>                  m_targetModel = nullptr;
-        Windows::Foundation::Numerics::float3                   m_targetPosition;
-        std::atomic_bool                                        m_phantomWasValid = false;
+        // Target rendering variables
+        std::shared_ptr<Rendering::Model>                       m_targetModel = nullptr;
+        std::shared_ptr<Rendering::Model>                       m_cylinderModel = nullptr; // only used in case 'Stylus' tool can't be found
+        std::shared_ptr<UI::Icon>                               m_stylusIcon = nullptr;
+        Windows::Foundation::Numerics::float3                   m_targetPosition = Windows::Foundation::Numerics::float3::zero();
         std::array<float, 6>                                    m_boundsMeters = { 0.f, 0.f, 0.f, 0.f, 0.f, 0.f };
         const Windows::Foundation::Numerics::float3             DISABLE_TARGET_COLOUR = { 0.7f, 0.7f, 0.7f };
         const Windows::Foundation::Numerics::float3             DEFAULT_TARGET_COLOUR = { 0.f, 1.f, 0.f };
         const Windows::Foundation::Numerics::float3             HIGHLIGHT_TARGET_COLOUR = { 1.f, 0.f, 0.f };
 
-        // Phantom task behaviour
+        // Target task behaviour
         std::atomic_bool                                        m_taskStarted = false;
         std::atomic_bool                                        m_recordPointOnUpdate = false;
         uint32                                                  m_numberOfPoints = 10;
@@ -133,6 +135,10 @@ namespace HoloIntervention
         std::uniform_real_distribution<float>                   m_xDistribution;
         std::uniform_real_distribution<float>                   m_yDistribution;
         std::uniform_real_distribution<float>                   m_zDistribution;
+
+        static const float                                      TARGET_SPHERE_DIAMETER_MM;
+        static const float                                      STYLUS_CYLINDER_ICON_HEIGHT_MM;
+        static const float                                      STYLUS_CYLINDER_ICON_RADIUS_MM;
       };
     }
   }

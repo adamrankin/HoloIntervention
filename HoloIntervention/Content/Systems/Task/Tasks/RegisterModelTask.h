@@ -53,7 +53,7 @@ namespace HoloIntervention
   namespace Rendering
   {
     class ModelRenderer;
-    class ModelEntry;
+    class Model;
   }
 
   namespace Input
@@ -105,7 +105,7 @@ namespace HoloIntervention
         Rendering::ModelRenderer&                               m_modelRenderer;
         UI::Icons&                                              m_icons;
 
-        std::shared_ptr<Rendering::ModelEntry>                  m_modelEntry = nullptr;
+        std::shared_ptr<Rendering::Model>                  m_modelEntry = nullptr;
         std::wstring                                            m_modelName = L"";
         std::wstring                                            m_connectionName = L"";
         uint64                                                  m_hashedConnectionName = 0;

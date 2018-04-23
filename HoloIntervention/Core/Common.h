@@ -57,6 +57,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 namespace HoloIntervention
 {
+  static std::string HOLOLENS_COORDINATE_SYSTEM_NAME = "HMD";
+  static std::wstring HOLOLENS_COORDINATE_SYSTEM_WNAME = L"HMD";
+  static Platform::String^ HOLOLENS_COORDINATE_SYSTEM_PNAME = L"HMD";
+
   static const uint64 INVALID_TOKEN = 0;
   static const float FLOAT_EPSILON = 0.001f;
 

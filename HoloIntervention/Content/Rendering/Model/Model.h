@@ -66,14 +66,14 @@ namespace HoloIntervention
       RENDERING_GREYSCALE,
     };
 
-    class ModelEntry
+    class Model
     {
     public:
-      ModelEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, UWPOpenIGTLink::Polydata^ polydata, DX::StepTimer& timer, Debug& debug);
-      ModelEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, const std::wstring& assetLocation, DX::StepTimer& timer, Debug& debug);
-      ModelEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, PrimitiveType type, DX::StepTimer& timer, Debug& debug, Windows::Foundation::Numerics::float3 argument, size_t tessellation, bool rhcoords, bool invertn, Windows::Foundation::Numerics::float4 colour = Windows::Foundation::Numerics::float4(1.f, 1.f, 1.f, 1.f));
-      ~ModelEntry();
-      std::shared_ptr<ModelEntry> Clone();
+      Model(const std::shared_ptr<DX::DeviceResources>& deviceResources, UWPOpenIGTLink::Polydata^ polydata, DX::StepTimer& timer, Debug& debug);
+      Model(const std::shared_ptr<DX::DeviceResources>& deviceResources, const std::wstring& assetLocation, DX::StepTimer& timer, Debug& debug);
+      Model(const std::shared_ptr<DX::DeviceResources>& deviceResources, PrimitiveType type, DX::StepTimer& timer, Debug& debug, Windows::Foundation::Numerics::float3 argument, size_t tessellation, bool rhcoords, bool invertn, Windows::Foundation::Numerics::float4 colour = Windows::Foundation::Numerics::float4(1.f, 1.f, 1.f, 1.f));
+      ~Model();
+      std::shared_ptr<Model> Clone();
 
       void Update(const DX::CameraResources* cameraResources);
       void Render();
@@ -182,6 +182,7 @@ namespace HoloIntervention
       std::array<float, 6>                                  m_modelBounds = { -1.f };
       std::wstring                                          m_assetLocation;
       std::map<DirectX::IEffect*, DirectX::XMFLOAT4>        m_defaultColours;
+      std::atomic_bool                                      m_isGreyscale = false;
       std::atomic_bool                                      m_wireframe = false;
       Windows::Foundation::Numerics::float3                 m_velocity = { 0.f, 0.f, 0.f };
       Windows::Foundation::Numerics::float4x4               m_lastPose = Windows::Foundation::Numerics::float4x4::identity();

@@ -47,7 +47,7 @@ namespace HoloIntervention
 
     static_assert((sizeof(SliceConstantBuffer) % (sizeof(float) * 4)) == 0, "Slice constant buffer size must be 16-byte aligned (16 bytes is the length of four floats).");
 
-    class SliceEntry : public IStabilizedComponent
+    class Slice : public IStabilizedComponent
     {
     public:
       virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition(Windows::UI::Input::Spatial::SpatialPointerPose^ pose) const;
@@ -55,8 +55,8 @@ namespace HoloIntervention
       virtual float GetStabilizePriority() const;
 
     public:
-      SliceEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& timer, Debug& debug);
-      ~SliceEntry();
+      Slice(const std::shared_ptr<DX::DeviceResources>& deviceResources, DX::StepTimer& timer, Debug& debug);
+      ~Slice();
 
       bool IsInFrustum() const;
       bool IsInFrustum(const Windows::Perception::Spatial::SpatialBoundingFrustum& frustum) const;

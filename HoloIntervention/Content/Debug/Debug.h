@@ -37,17 +37,17 @@ namespace HoloIntervention
 {
   namespace Rendering
   {
-    class SliceEntry;
+    class Slice;
     class SliceRenderer;
     class TextRenderer;
     class ModelRenderer;
-    class ModelEntry;
+    class Model;
   }
 
   // Class requires SetModelRenderer and SetSliceRenderer to be called post-construction (circular dependency)
   class Debug : public Input::IVoiceInput, public IEngineComponent
   {
-    typedef std::pair<Windows::Perception::Spatial::SpatialCoordinateSystem^, std::shared_ptr<Rendering::ModelEntry>> CoordinateSystemEntry;
+    typedef std::pair<Windows::Perception::Spatial::SpatialCoordinateSystem^, std::shared_ptr<Rendering::Model>> CoordinateSystemEntry;
     typedef std::map<std::wstring, CoordinateSystemEntry> CoordinateSystemMap;
 
   public:
@@ -92,7 +92,7 @@ namespace HoloIntervention
     std::mutex                                                      m_debugLock;
     std::map<std::wstring, std::wstring>                            m_debugValues;
     std::atomic_bool                                                m_worldLocked = false;
-    std::shared_ptr<Rendering::SliceEntry>                          m_sliceEntry = nullptr;
+    std::shared_ptr<Rendering::Slice>                          m_sliceEntry = nullptr;
     std::atomic_bool                                                m_debugShowing = false;
 
     // Coordinate system debugging

@@ -24,7 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "pch.h"
 #include "AppView.h"
-#include "VolumeEntry.h"
+#include "Volume.h"
 
 // Common includes
 #include "Common.h"
@@ -82,10 +82,10 @@ namespace HoloIntervention
 {
   namespace Rendering
   {
-    const float VolumeEntry::LERP_RATE = 2.5f;
+    const float Volume::LERP_RATE = 2.5f;
 
     //----------------------------------------------------------------------------
-    VolumeEntry::VolumeEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, uint64 token, ID3D11Buffer* cwIndexBuffer, ID3D11Buffer* ccwIndexBuffer, ID3D11InputLayout* inputLayout, ID3D11Buffer* vertexBuffer, ID3D11VertexShader* volRenderVertexShader, ID3D11GeometryShader* volRenderGeometryShader, ID3D11PixelShader* volRenderPixelShader, ID3D11PixelShader* faceCalcPixelShader, ID3D11Texture2D* frontPositionTextureArray, ID3D11Texture2D* backPositionTextureArray, ID3D11RenderTargetView* frontPositionRTV, ID3D11RenderTargetView* backPositionRTV, ID3D11ShaderResourceView* frontPositionSRV, ID3D11ShaderResourceView* backPositionSRV, DX::StepTimer& timer)
+    Volume::Volume(const std::shared_ptr<DX::DeviceResources>& deviceResources, uint64 token, ID3D11Buffer* cwIndexBuffer, ID3D11Buffer* ccwIndexBuffer, ID3D11InputLayout* inputLayout, ID3D11Buffer* vertexBuffer, ID3D11VertexShader* volRenderVertexShader, ID3D11GeometryShader* volRenderGeometryShader, ID3D11PixelShader* volRenderPixelShader, ID3D11PixelShader* faceCalcPixelShader, ID3D11Texture2D* frontPositionTextureArray, ID3D11Texture2D* backPositionTextureArray, ID3D11RenderTargetView* frontPositionRTV, ID3D11RenderTargetView* backPositionRTV, ID3D11ShaderResourceView* frontPositionSRV, ID3D11ShaderResourceView* backPositionSRV, DX::StepTimer& timer)
       : m_deviceResources(deviceResources)
       , m_token(token)
       , m_cwIndexBuffer(cwIndexBuffer)
@@ -113,20 +113,20 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    VolumeEntry::~VolumeEntry()
+    Volume::~Volume()
     {
       ReleaseDeviceDependentResources();
       delete m_opacityTransferFunction;
     }
 
     //----------------------------------------------------------------------------
-    bool VolumeEntry::IsInFrustum() const
+    bool Volume::IsInFrustum() const
     {
       return m_isInFrustum;
     }
 
     //----------------------------------------------------------------------------
-    bool VolumeEntry::IsInFrustum(const Windows::Perception::Spatial::SpatialBoundingFrustum& frustum) const
+    bool Volume::IsInFrustum(const Windows::Perception::Spatial::SpatialBoundingFrustum& frustum) const
     {
       if (m_timer.GetFrameCount() == m_frustumCheckFrameNumber)
       {
@@ -151,13 +151,13 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool VolumeEntry::IsValid() const
+    bool Volume::IsValid() const
     {
       return m_volumeReady;
     }
 
     //----------------------------------------------------------------------------
-    void VolumeEntry::Update()
+    void Volume::Update()
     {
       if (!m_tfResourcesReady)
       {
@@ -213,7 +213,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void VolumeEntry::Render(uint32 indexCount)
+    void Volume::Render(uint32 indexCount)
     {
       if (!m_volumeReady || !m_tfResourcesReady)
       {
@@ -278,7 +278,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void VolumeEntry::SetFrame(UWPOpenIGTLink::VideoFrame^ frame)
+    void Volume::SetFrame(UWPOpenIGTLink::VideoFrame^ frame)
     {
       auto frameSize = frame->Dimensions;
       if (frameSize[2] < 1)
@@ -307,43 +307,43 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void VolumeEntry::SetShowing(bool showing)
+    void Volume::SetShowing(bool showing)
     {
       m_showing = showing;
     }
 
     //----------------------------------------------------------------------------
-    uint64 VolumeEntry::GetToken() const
+    uint64 Volume::GetToken() const
     {
       return m_token;
     }
 
     //----------------------------------------------------------------------------
-    void VolumeEntry::ForceCurrentPose(const Windows::Foundation::Numerics::float4x4& matrix)
+    void Volume::ForceCurrentPose(const Windows::Foundation::Numerics::float4x4& matrix)
     {
       m_desiredPose = m_currentPose = matrix;
     }
 
     //----------------------------------------------------------------------------
-    void VolumeEntry::SetDesiredPose(const Windows::Foundation::Numerics::float4x4& matrix)
+    void Volume::SetDesiredPose(const Windows::Foundation::Numerics::float4x4& matrix)
     {
       m_desiredPose = matrix;
     }
 
     //----------------------------------------------------------------------------
-    float4x4 VolumeEntry::GetCurrentPose() const
+    float4x4 Volume::GetCurrentPose() const
     {
       return m_currentPose;
     }
 
     //----------------------------------------------------------------------------
-    float3 VolumeEntry::GetVelocity() const
+    float3 Volume::GetVelocity() const
     {
       return m_velocity;
     }
 
     //----------------------------------------------------------------------------
-    void VolumeEntry::UpdateGPUImageData()
+    void Volume::UpdateGPUImageData()
     {
       const auto context = m_deviceResources->GetD3DDeviceContext();
 
@@ -384,7 +384,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void VolumeEntry::CreateDeviceDependentResources()
+    void Volume::CreateDeviceDependentResources()
     {
       const auto device = m_deviceResources->GetD3DDevice();
 
@@ -410,7 +410,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void VolumeEntry::ReleaseDeviceDependentResources()
+    void Volume::ReleaseDeviceDependentResources()
     {
       ReleaseVolumeResources();
       ReleaseTFResources();
@@ -419,7 +419,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void VolumeEntry::CreateVolumeResources()
+    void Volume::CreateVolumeResources()
     {
       const auto device = m_deviceResources->GetD3DDevice();
 
@@ -485,7 +485,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void VolumeEntry::ReleaseVolumeResources()
+    void Volume::ReleaseVolumeResources()
     {
       m_volumeReady = false;
       m_volumeStagingTexture.Reset();
@@ -495,7 +495,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<void> VolumeEntry::SetOpacityTransferFunctionTypeAsync(TransferFunctionType functionType, uint32 tableSize, const ControlPointList& controlPoints)
+    task<void> Volume::SetOpacityTransferFunctionTypeAsync(TransferFunctionType functionType, uint32 tableSize, const ControlPointList& controlPoints)
     {
       return create_task([this, functionType, tableSize, controlPoints]()
       {
@@ -504,15 +504,15 @@ namespace HoloIntervention
         delete m_opacityTransferFunction;
         switch (functionType)
         {
-          case VolumeEntry::TransferFunction_Piecewise_Linear:
-          {
-            m_opacityTFType = VolumeEntry::TransferFunction_Piecewise_Linear;
-            m_opacityTransferFunction = new PiecewiseLinearTransferFunction();
-            break;
-          }
-          default:
-            throw std::invalid_argument("Function type not recognized.");
-            break;
+        case Volume::TransferFunction_Piecewise_Linear:
+        {
+          m_opacityTFType = Volume::TransferFunction_Piecewise_Linear;
+          m_opacityTransferFunction = new PiecewiseLinearTransferFunction();
+          break;
+        }
+        default:
+          throw std::invalid_argument("Function type not recognized.");
+          break;
         }
 
         for (auto& point : controlPoints)
@@ -530,7 +530,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void VolumeEntry::CreateTFResources()
+    void Volume::CreateTFResources()
     {
       if (m_opacityTransferFunction == nullptr)
       {
@@ -576,7 +576,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void VolumeEntry::ReleaseTFResources()
+    void Volume::ReleaseTFResources()
     {
       m_tfResourcesReady = false;
       m_opacityLookupTableSRV.Reset();

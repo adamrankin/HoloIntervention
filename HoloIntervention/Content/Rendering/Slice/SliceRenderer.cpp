@@ -76,7 +76,7 @@ namespace HoloIntervention
     {
       return create_task([this, imageData, width, height, pixelFormat, desiredPose, headLocked]()
       {
-        return AddSliceCommonAsync(desiredPose, headLocked).then([this, imageData, width, height, pixelFormat, headLocked](task<std::shared_ptr<Rendering::SliceEntry>> entryTask)
+        return AddSliceCommonAsync(desiredPose, headLocked).then([this, imageData, width, height, pixelFormat, headLocked](task<std::shared_ptr<Rendering::Slice>> entryTask)
         {
           try
           {
@@ -108,7 +108,7 @@ namespace HoloIntervention
     {
       return create_task([this, imageData, width, height, pixelFormat, desiredPose, headLocked]()
       {
-        return AddSliceCommonAsync(desiredPose, headLocked).then([this, imageData, width, height, pixelFormat](std::shared_ptr<Rendering::SliceEntry> entry)
+        return AddSliceCommonAsync(desiredPose, headLocked).then([this, imageData, width, height, pixelFormat](std::shared_ptr<Rendering::Slice> entry)
         {
           if (imageData == nullptr)
           {
@@ -128,7 +128,7 @@ namespace HoloIntervention
     {
       return create_task([this, fileName, desiredPose, headLocked]()
       {
-        return AddSliceCommonAsync(desiredPose, headLocked).then([this, fileName](std::shared_ptr<Rendering::SliceEntry> entry)
+        return AddSliceCommonAsync(desiredPose, headLocked).then([this, fileName](std::shared_ptr<Rendering::Slice> entry)
         {
           if (fileName.empty())
           {
@@ -146,7 +146,7 @@ namespace HoloIntervention
     {
       return create_task([this, frame, desiredPose, headLocked]()
       {
-        return AddSliceCommonAsync(desiredPose, headLocked).then([this, frame](std::shared_ptr<Rendering::SliceEntry> entry)
+        return AddSliceCommonAsync(desiredPose, headLocked).then([this, frame](std::shared_ptr<Rendering::Slice> entry)
         {
           if (frame == nullptr)
           {
@@ -164,7 +164,7 @@ namespace HoloIntervention
     {
       return create_task([this, imageTexture, desiredPose, headLocked]()
       {
-        return AddSliceCommonAsync(desiredPose, headLocked).then([this, imageTexture](std::shared_ptr<Rendering::SliceEntry> entry)
+        return AddSliceCommonAsync(desiredPose, headLocked).then([this, imageTexture](std::shared_ptr<Rendering::Slice> entry)
         {
           if (imageTexture == nullptr)
           {
@@ -181,7 +181,7 @@ namespace HoloIntervention
     void SliceRenderer::RemoveSlice(uint64 sliceToken)
     {
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
-      std::shared_ptr<SliceEntry> slice;
+      std::shared_ptr<Slice> slice;
       if (FindSlice(sliceToken, slice))
       {
         for (auto sliceIter = m_slices.begin(); sliceIter != m_slices.end(); ++sliceIter)
@@ -196,9 +196,9 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    std::shared_ptr<SliceEntry> SliceRenderer::GetSlice(uint64 sliceToken)
+    std::shared_ptr<Slice> SliceRenderer::GetSlice(uint64 sliceToken)
     {
-      std::shared_ptr<SliceEntry> entry(nullptr);
+      std::shared_ptr<Slice> entry(nullptr);
       FindSlice(sliceToken, entry);
       return entry;
     }
@@ -207,7 +207,7 @@ namespace HoloIntervention
     void SliceRenderer::UpdateSlice(uint64 sliceToken, std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, float4x4 desiredPose)
     {
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
-      std::shared_ptr<SliceEntry> entry;
+      std::shared_ptr<Slice> entry;
       if (FindSlice(sliceToken, entry))
       {
         entry->SetDesiredPose(desiredPose);
@@ -219,7 +219,7 @@ namespace HoloIntervention
     void SliceRenderer::UpdateSlice(uint64 sliceToken, UWPOpenIGTLink::TrackedFrame^ frame, float4x4 desiredPose)
     {
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
-      std::shared_ptr<SliceEntry> entry;
+      std::shared_ptr<Slice> entry;
       if (FindSlice(sliceToken, entry))
       {
         entry->SetDesiredPose(desiredPose);
@@ -231,7 +231,7 @@ namespace HoloIntervention
     void SliceRenderer::ShowSlice(uint64 sliceToken)
     {
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
-      std::shared_ptr<SliceEntry> entry;
+      std::shared_ptr<Slice> entry;
       if (FindSlice(sliceToken, entry))
       {
         entry->SetVisible(true);
@@ -242,7 +242,7 @@ namespace HoloIntervention
     void SliceRenderer::HideSlice(uint64 sliceToken)
     {
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
-      std::shared_ptr<SliceEntry> entry;
+      std::shared_ptr<Slice> entry;
       if (FindSlice(sliceToken, entry))
       {
         entry->SetVisible(false);
@@ -253,7 +253,7 @@ namespace HoloIntervention
     void SliceRenderer::SetSliceVisible(uint64 sliceToken, bool show)
     {
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
-      std::shared_ptr<SliceEntry> entry;
+      std::shared_ptr<Slice> entry;
       if (FindSlice(sliceToken, entry))
       {
         entry->SetVisible(show);
@@ -264,7 +264,7 @@ namespace HoloIntervention
     void SliceRenderer::SetSliceHeadlocked(uint64 sliceToken, bool headlocked)
     {
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
-      std::shared_ptr<SliceEntry> entry;
+      std::shared_ptr<Slice> entry;
       if (FindSlice(sliceToken, entry))
       {
         entry->SetHeadlocked(headlocked);
@@ -275,7 +275,7 @@ namespace HoloIntervention
     void SliceRenderer::SetSliceRenderOrigin(uint64 sliceToken, SliceOrigin origin)
     {
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
-      std::shared_ptr<SliceEntry> entry;
+      std::shared_ptr<Slice> entry;
       if (FindSlice(sliceToken, entry))
       {
         if (origin == ORIGIN_CENTER)
@@ -293,7 +293,7 @@ namespace HoloIntervention
     void SliceRenderer::ForceSlicePose(uint64 sliceToken, const float4x4& pose)
     {
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
-      std::shared_ptr<SliceEntry> entry;
+      std::shared_ptr<Slice> entry;
       if (FindSlice(sliceToken, entry))
       {
         entry->ForceCurrentPose(pose);
@@ -304,7 +304,7 @@ namespace HoloIntervention
     float4x4 SliceRenderer::GetSlicePose(uint64 sliceToken) const
     {
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
-      std::shared_ptr<SliceEntry> entry;
+      std::shared_ptr<Slice> entry;
       if (FindSlice(sliceToken, entry))
       {
         return entry->GetCurrentPose();
@@ -319,7 +319,7 @@ namespace HoloIntervention
     void SliceRenderer::SetDesiredSlicePose(uint64 sliceToken, const float4x4& pose)
     {
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
-      std::shared_ptr<SliceEntry> entry;
+      std::shared_ptr<Slice> entry;
       if (FindSlice(sliceToken, entry))
       {
         entry->SetDesiredPose(pose);
@@ -330,7 +330,7 @@ namespace HoloIntervention
     float3 SliceRenderer::GetSliceVelocity(uint64 sliceToken) const
     {
       std::lock_guard<std::mutex> guard(m_sliceMapMutex);
-      std::shared_ptr<SliceEntry> entry;
+      std::shared_ptr<Slice> entry;
       if (FindSlice(sliceToken, entry))
       {
         return entry->GetStabilizedVelocity();
@@ -509,7 +509,7 @@ namespace HoloIntervention
     }
 
     //-----------------------------------------------------------------------------
-    task<std::shared_ptr<SliceEntry>> SliceRenderer::AddSliceCommonAsync(const float4x4& desiredPose, bool headLocked)
+    task<std::shared_ptr<Slice>> SliceRenderer::AddSliceCommonAsync(const float4x4& desiredPose, bool headLocked)
     {
       return create_task([this, desiredPose, headLocked]()
       {
@@ -518,7 +518,7 @@ namespace HoloIntervention
           std::this_thread::sleep_for(std::chrono::milliseconds(50));
         }
 
-        std::shared_ptr<SliceEntry> entry = std::make_shared<SliceEntry>(m_deviceResources, m_timer, m_debug);
+        std::shared_ptr<Slice> entry = std::make_shared<Slice>(m_deviceResources, m_timer, m_debug);
         std::lock_guard<std::mutex> guard(m_sliceMapMutex);
         entry->SetId(m_nextUnusedSliceId);
         entry->ForceCurrentPose(desiredPose);
@@ -531,7 +531,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool SliceRenderer::FindSlice(uint64 sliceToken, std::shared_ptr<SliceEntry>& sliceEntry) const
+    bool SliceRenderer::FindSlice(uint64 sliceToken, std::shared_ptr<Slice>& sliceEntry) const
     {
       for (auto slice : m_slices)
       {

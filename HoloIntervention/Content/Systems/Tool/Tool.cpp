@@ -24,7 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "pch.h"
 #include "Common.h"
-#include "ToolEntry.h"
+#include "Tool.h"
 
 // UI includes
 #include "Icons.h"
@@ -33,7 +33,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "NetworkSystem.h"
 
 // Rendering includes
-#include "ModelEntry.h"
+#include "Model.h"
 #include "ModelRenderer.h"
 
 // Algorithm includes
@@ -57,7 +57,7 @@ namespace HoloIntervention
   namespace Tools
   {
     //----------------------------------------------------------------------------
-    float3 ToolEntry::GetStabilizedPosition(SpatialPointerPose^ pose) const
+    float3 Tool::GetStabilizedPosition(SpatialPointerPose^ pose) const
     {
       if (m_modelEntry != nullptr && m_modelEntry->IsLoaded())
       {
@@ -67,7 +67,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    float3 ToolEntry::GetStabilizedVelocity() const
+    float3 Tool::GetStabilizedVelocity() const
     {
       if (m_modelEntry != nullptr && m_modelEntry->IsLoaded())
       {
@@ -77,7 +77,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    float ToolEntry::GetStabilizePriority() const
+    float Tool::GetStabilizePriority() const
     {
       if (!m_modelEntry->IsLoaded() || !m_modelEntry->IsInFrustum())
       {
@@ -88,13 +88,13 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    ToolEntry::ToolEntry(Rendering::ModelRenderer& modelRenderer,
-                         System::NetworkSystem& networkSystem,
-                         UI::Icons& icons,
-                         uint64 hashedConnectionName,
-                         UWPOpenIGTLink::TransformName^ coordinateFrame,
-                         UWPOpenIGTLink::TransformRepository^ transformRepository,
-                         Platform::String^ userId)
+    Tool::Tool(Rendering::ModelRenderer& modelRenderer,
+               System::NetworkSystem& networkSystem,
+               UI::Icons& icons,
+               uint64 hashedConnectionName,
+               UWPOpenIGTLink::TransformName^ coordinateFrame,
+               UWPOpenIGTLink::TransformRepository^ transformRepository,
+               Platform::String^ userId)
       : m_modelRenderer(modelRenderer)
       , m_networkSystem(networkSystem)
       , m_icons(icons)
@@ -108,13 +108,13 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    ToolEntry::ToolEntry(Rendering::ModelRenderer& modelRenderer,
-                         System::NetworkSystem& networkSystem,
-                         UI::Icons& icons,
-                         uint64 hashedConnectionName,
-                         const std::wstring& coordinateFrame,
-                         UWPOpenIGTLink::TransformRepository^ transformRepository,
-                         Platform::String^ userId)
+    Tool::Tool(Rendering::ModelRenderer& modelRenderer,
+               System::NetworkSystem& networkSystem,
+               UI::Icons& icons,
+               uint64 hashedConnectionName,
+               const std::wstring& coordinateFrame,
+               UWPOpenIGTLink::TransformRepository^ transformRepository,
+               Platform::String^ userId)
       : m_modelRenderer(modelRenderer)
       , m_networkSystem(networkSystem)
       , m_icons(icons)
@@ -173,20 +173,20 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    ToolEntry::~ToolEntry()
+    Tool::~Tool()
     {
     }
 
     //----------------------------------------------------------------------------
-    void ToolEntry::Update(const DX::StepTimer& timer)
+    void Tool::Update(const DX::StepTimer& timer)
     {
-      bool registrationTransformValid = m_transformRepository->GetTransformValid(ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD"));
+      bool registrationTransformValid = m_transformRepository->GetTransformValid(ref new UWPOpenIGTLink::TransformName(L"Reference", HOLOLENS_COORDINATE_SYSTEM_PNAME));
       if (!registrationTransformValid)
       {
         m_modelEntry->SetVisible(false);
         if (m_iconEntry != nullptr)
         {
-          m_iconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
+          m_iconEntry->GetModel()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
         }
         return;
       }
@@ -207,7 +207,7 @@ namespace HoloIntervention
       m_latestTimestamp = toolToRefTransform->Timestamp;
       m_transformRepository->SetTransform(m_coordinateFrame, toolToRefTransform->Matrix, toolToRefTransform->Valid);
 
-      IKeyValuePair<bool, float4x4>^ result = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(m_coordinateFrame->From(), L"HMD"));
+      IKeyValuePair<bool, float4x4>^ result = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(m_coordinateFrame->From(), HOLOLENS_COORDINATE_SYSTEM_PNAME));
       m_isValid = result->Key;
       if (!m_isValid && m_wasValid)
       {
@@ -218,7 +218,7 @@ namespace HoloIntervention
         }
         if (m_iconEntry != nullptr)
         {
-          m_iconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
+          m_iconEntry->GetModel()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
         }
         return;
       }
@@ -229,7 +229,7 @@ namespace HoloIntervention
         {
           if (m_iconEntry != nullptr)
           {
-            m_iconEntry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_DEFAULT);
+            m_iconEntry->GetModel()->SetRenderingState(Rendering::RENDERING_DEFAULT);
           }
           if (m_modelEntry != nullptr)
           {
@@ -284,7 +284,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<void> ToolEntry::SetModelEntryAsync(std::shared_ptr<Rendering::ModelEntry> entry)
+    task<void> Tool::SetModelAsync(std::shared_ptr<Rendering::Model> entry)
     {
       return create_task([this, entry]()
       {
@@ -300,31 +300,31 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    std::shared_ptr<Rendering::ModelEntry> ToolEntry::GetModelEntry()
+    std::shared_ptr<Rendering::Model> Tool::GetModel()
     {
       return m_modelEntry;
     }
 
     //----------------------------------------------------------------------------
-    UWPOpenIGTLink::TransformName^ ToolEntry::GetCoordinateFrame() const
+    UWPOpenIGTLink::TransformName^ Tool::GetCoordinateFrame() const
     {
       return m_coordinateFrame;
     }
 
     //----------------------------------------------------------------------------
-    bool ToolEntry::IsValid() const
+    bool Tool::IsValid() const
     {
       return m_isValid;
     }
 
     //----------------------------------------------------------------------------
-    bool ToolEntry::WasValid() const
+    bool Tool::WasValid() const
     {
       return m_wasValid;
     }
 
     //----------------------------------------------------------------------------
-    uint64 ToolEntry::GetId() const
+    uint64 Tool::GetId() const
     {
       if (m_modelEntry == nullptr)
       {
@@ -334,26 +334,26 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    std::wstring ToolEntry::GetUserId() const
+    std::wstring Tool::GetUserId() const
     {
       return m_userId;
     }
 
     //----------------------------------------------------------------------------
-    void ToolEntry::SetHiddenOverride(bool arg)
+    void Tool::SetHiddenOverride(bool arg)
     {
       m_hiddenOverride = arg;
     }
 
     //----------------------------------------------------------------------------
-    void ToolEntry::ShowIcon(bool show)
+    void Tool::ShowIcon(bool show)
     {
       if (show && m_iconEntry == nullptr)
       {
-        m_icons.AddEntryAsync(m_modelEntry, 0).then([this](std::shared_ptr<UI::IconEntry> iconEntry)
+        m_icons.AddEntryAsync(m_modelEntry, 0).then([this](std::shared_ptr<UI::Icon> iconEntry)
         {
           m_iconEntry = iconEntry;
-          iconEntry->GetModelEntry()->SetVisible(true);
+          iconEntry->GetModel()->SetVisible(true);
         });
       }
       else if (!show && m_iconEntry != nullptr)

@@ -26,7 +26,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "Common.h"
 #include "CameraResources.h"
 #include "DeviceResources.h"
-#include "ModelEntry.h"
+#include "Model.h"
 #include "ModelRenderer.h"
 #include "RenderingCommon.h"
 #include "StepTimer.h"
@@ -227,7 +227,7 @@ namespace HoloIntervention
   namespace Rendering
   {
     //----------------------------------------------------------------------------
-    ModelEntry::ModelEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, const std::wstring& assetLocation, DX::StepTimer& timer, Debug& debug)
+    Model::Model(const std::shared_ptr<DX::DeviceResources>& deviceResources, const std::wstring& assetLocation, DX::StepTimer& timer, Debug& debug)
       : m_deviceResources(deviceResources)
       , m_timer(timer)
       , m_debug(debug)
@@ -331,7 +331,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    ModelEntry::ModelEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, PrimitiveType type, DX::StepTimer& timer, Debug& debug, float3 argument, size_t tessellation, bool rhcoords, bool invertn, float4 colour)
+    Model::Model(const std::shared_ptr<DX::DeviceResources>& deviceResources, PrimitiveType type, DX::StepTimer& timer, Debug& debug, float3 argument, size_t tessellation, bool rhcoords, bool invertn, float4 colour)
       : m_deviceResources(deviceResources)
       , m_timer(timer)
       , m_debug(debug)
@@ -356,7 +356,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    ModelEntry::ModelEntry(const std::shared_ptr<DX::DeviceResources>& deviceResources, UWPOpenIGTLink::Polydata^ polydata, DX::StepTimer& timer, Debug& debug)
+    Model::Model(const std::shared_ptr<DX::DeviceResources>& deviceResources, UWPOpenIGTLink::Polydata^ polydata, DX::StepTimer& timer, Debug& debug)
       : m_deviceResources(deviceResources)
       , m_timer(timer)
       , m_debug(debug)
@@ -376,22 +376,22 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    ModelEntry::~ModelEntry()
+    Model::~Model()
     {
       ReleaseDeviceDependentResources();
     }
 
     //----------------------------------------------------------------------------
-    std::shared_ptr<ModelEntry> ModelEntry::Clone()
+    std::shared_ptr<Model> Model::Clone()
     {
-      std::shared_ptr<ModelEntry> newEntry;
+      std::shared_ptr<Model> newEntry;
       if (m_primitive != nullptr)
       {
-        newEntry = std::make_shared<ModelEntry>(m_deviceResources, m_primitiveType, m_timer, m_debug, m_argument, m_tessellation, m_rhcoords, m_invertn);
+        newEntry = std::make_shared<Model>(m_deviceResources, m_primitiveType, m_timer, m_debug, m_argument, m_tessellation, m_rhcoords, m_invertn);
       }
       else
       {
-        newEntry = std::make_shared<ModelEntry>(m_deviceResources, m_assetLocation, m_timer, m_debug);
+        newEntry = std::make_shared<Model>(m_deviceResources, m_assetLocation, m_timer, m_debug);
       }
       newEntry->m_originalColour = m_originalColour;
       newEntry->m_originalColour = m_currentColour;
@@ -413,7 +413,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ModelEntry::Update(const DX::CameraResources* cameraResources)
+    void Model::Update(const DX::CameraResources* cameraResources)
     {
       m_cameraResources = cameraResources;
 
@@ -433,7 +433,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ModelEntry::Render()
+    void Model::Render()
     {
       if (!m_loadingComplete || !m_visible)
       {
@@ -484,7 +484,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ModelEntry::CreateDeviceDependentResources()
+    void Model::CreateDeviceDependentResources()
     {
       if (m_primitiveType != PrimitiveType_NONE)
       {
@@ -529,7 +529,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ModelEntry::ReleaseDeviceDependentResources()
+    void Model::ReleaseDeviceDependentResources()
     {
       m_loadingComplete = false;
 
@@ -541,61 +541,61 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ModelEntry::SetVisible(bool enable)
+    void Model::SetVisible(bool enable)
     {
       m_visible = enable;
     }
 
     //----------------------------------------------------------------------------
-    void ModelEntry::ToggleVisible()
+    void Model::ToggleVisible()
     {
       m_visible = !m_visible;
     }
 
     //----------------------------------------------------------------------------
-    bool ModelEntry::IsVisible() const
+    bool Model::IsVisible() const
     {
       return m_visible;
     }
 
     //----------------------------------------------------------------------------
-    bool ModelEntry::IsPrimitive() const
+    bool Model::IsPrimitive() const
     {
       return m_primitive != nullptr;
     }
 
     //----------------------------------------------------------------------------
-    HoloIntervention::Rendering::PrimitiveType ModelEntry::GetPrimitiveType() const
+    HoloIntervention::Rendering::PrimitiveType Model::GetPrimitiveType() const
     {
       return m_primitiveType;
     }
 
     //----------------------------------------------------------------------------
-    Windows::Foundation::Numerics::float3 ModelEntry::GetArgument() const
+    Windows::Foundation::Numerics::float3 Model::GetArgument() const
     {
       return m_argument;
     }
 
     //----------------------------------------------------------------------------
-    size_t ModelEntry::GetTessellation() const
+    size_t Model::GetTessellation() const
     {
       return m_tessellation;
     }
 
     //----------------------------------------------------------------------------
-    bool ModelEntry::GetRHCoords() const
+    bool Model::GetRHCoords() const
     {
       return m_rhcoords;
     }
 
     //----------------------------------------------------------------------------
-    bool ModelEntry::GetInvertN() const
+    bool Model::GetInvertN() const
     {
       return m_invertn;
     }
 
     //----------------------------------------------------------------------------
-    void ModelEntry::SetRenderingState(ModelRenderingState state)
+    void Model::SetRenderingState(ModelRenderingState state)
     {
       if (!m_loadingComplete)
       {
@@ -618,31 +618,31 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ModelEntry::SetDesiredPose(const float4x4& world)
+    void Model::SetDesiredPose(const float4x4& world)
     {
       m_desiredPose = world;
     }
 
     //----------------------------------------------------------------------------
-    void ModelEntry::SetCurrentPose(const Windows::Foundation::Numerics::float4x4& world)
+    void Model::SetCurrentPose(const Windows::Foundation::Numerics::float4x4& world)
     {
       m_currentPose = m_desiredPose = world;
     }
 
     //----------------------------------------------------------------------------
-    Windows::Foundation::Numerics::float4x4 ModelEntry::GetCurrentPose() const
+    Windows::Foundation::Numerics::float4x4 Model::GetCurrentPose() const
     {
       return m_currentPose;
     }
 
     //----------------------------------------------------------------------------
-    float3 ModelEntry::GetVelocity() const
+    float3 Model::GetVelocity() const
     {
       return m_velocity;
     }
 
     //----------------------------------------------------------------------------
-    void ModelEntry::EnableLighting(bool enable)
+    void Model::EnableLighting(bool enable)
     {
       if (m_model == nullptr)
       {
@@ -660,7 +660,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ModelEntry::SetCullMode(D3D11_CULL_MODE mode)
+    void Model::SetCullMode(D3D11_CULL_MODE mode)
     {
       if (mode == D3D11_CULL_FRONT)
       {
@@ -679,31 +679,31 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    bool ModelEntry::FailedLoad() const
+    bool Model::FailedLoad() const
     {
       return m_failedLoad;
     }
 
     //----------------------------------------------------------------------------
-    void ModelEntry::SetPoseLerpRate(float lerpRate)
+    void Model::SetPoseLerpRate(float lerpRate)
     {
       m_poseLerpRate = lerpRate;
     }
 
     //----------------------------------------------------------------------------
-    uint64 ModelEntry::GetId() const
+    uint64 Model::GetId() const
     {
       return m_id;
     }
 
     //----------------------------------------------------------------------------
-    void ModelEntry::SetId(uint64 id)
+    void Model::SetId(uint64 id)
     {
       m_id = id;
     }
 
     //----------------------------------------------------------------------------
-    std::array<float, 6> ModelEntry::GetBounds(float4x4 userMatrix /* = float4x4::identity() */) const
+    std::array<float, 6> Model::GetBounds(float4x4 userMatrix /* = float4x4::identity() */) const
     {
       if (userMatrix == float4x4::identity())
       {
@@ -768,26 +768,31 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    std::wstring ModelEntry::GetAssetLocation() const
+    std::wstring Model::GetAssetLocation() const
     {
       return m_assetLocation;
     }
 
     //----------------------------------------------------------------------------
-    bool ModelEntry::GetLerpEnabled() const
+    bool Model::GetLerpEnabled() const
     {
       return m_enableLerp;
     }
 
     //----------------------------------------------------------------------------
-    float ModelEntry::GetLerpRate() const
+    float Model::GetLerpRate() const
     {
       return m_poseLerpRate;
     }
 
     //----------------------------------------------------------------------------
-    void ModelEntry::RenderGreyscale()
+    void Model::RenderGreyscale()
     {
+      if (m_isGreyscale)
+      {
+        return;
+      }
+
       if (m_model != nullptr)
       {
         m_model->UpdateEffects([this](IEffect * effect)
@@ -796,6 +801,7 @@ namespace HoloIntervention
           if (basicEffect != nullptr)
           {
             basicEffect->SetColorAndAlpha(XMLoadFloat4(&float4(0.8f, 0.8f, 0.8f, 1.0f)));
+            m_isGreyscale = true;
           }
         });
       }
@@ -806,8 +812,13 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ModelEntry::RenderDefault()
+    void Model::RenderDefault()
     {
+      if (!m_isGreyscale)
+      {
+        return;
+      }
+
       if (m_model != nullptr)
       {
         m_model->UpdateEffects([this](IEffect * effect)
@@ -816,6 +827,7 @@ namespace HoloIntervention
           if (basicEffect != nullptr)
           {
             basicEffect->SetColorAndAlpha(XMLoadFloat4(&m_defaultColours[effect]));
+            m_isGreyscale = false;
           }
         });
       }
@@ -826,32 +838,37 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ModelEntry::SetWireframe(bool wireframe)
+    void Model::SetWireframe(bool wireframe)
     {
       m_wireframe = wireframe;
     }
 
     //----------------------------------------------------------------------------
-    bool ModelEntry::IsLoaded() const
+    bool Model::IsLoaded() const
     {
       return m_loadingComplete;
     }
 
     //----------------------------------------------------------------------------
-    void ModelEntry::SetColour(float3 newColour)
+    void Model::SetColour(float3 newColour)
     {
       SetColour(float4(newColour.x, newColour.y, newColour.z, m_currentColour.w));
     }
 
     //----------------------------------------------------------------------------
-    void ModelEntry::SetColour(float r, float g, float b, float a)
+    void Model::SetColour(float r, float g, float b, float a)
     {
       SetColour(float4(r, g, b, a));
     }
 
     //----------------------------------------------------------------------------
-    void ModelEntry::SetColour(Windows::Foundation::Numerics::float4 newColour)
+    void Model::SetColour(Windows::Foundation::Numerics::float4 newColour)
     {
+      if (m_currentColour == newColour)
+      {
+        return;
+      }
+
       m_currentColour = newColour;
 
       if (m_model != nullptr)
@@ -868,56 +885,56 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ModelEntry::SetColour(float r, float g, float b)
+    void Model::SetColour(float r, float g, float b)
     {
       SetColour(float4{ r, g, b, m_currentColour.w });
     }
 
     //----------------------------------------------------------------------------
-    void ModelEntry::SetOriginalColour(Windows::Foundation::Numerics::float4 newColour)
+    void Model::SetOriginalColour(Windows::Foundation::Numerics::float4 newColour)
     {
       m_originalColour = newColour;
     }
 
     //----------------------------------------------------------------------------
-    void ModelEntry::SetOriginalColour(Windows::Foundation::Numerics::float3 newColour)
+    void Model::SetOriginalColour(Windows::Foundation::Numerics::float3 newColour)
     {
       m_originalColour = float4(newColour.x, newColour.y, newColour.z, m_originalColour.w);
     }
 
     //----------------------------------------------------------------------------
-    void ModelEntry::SetOriginalColour(float r, float g, float b, float a)
+    void Model::SetOriginalColour(float r, float g, float b, float a)
     {
       m_originalColour = float4(r, g, b, a);
     }
 
     //----------------------------------------------------------------------------
-    void ModelEntry::SetOriginalColour(float r, float g, float b)
+    void Model::SetOriginalColour(float r, float g, float b)
     {
       m_originalColour = float4(r, g, b, m_originalColour.w);
     }
 
     //----------------------------------------------------------------------------
-    float4 ModelEntry::GetCurrentColour() const
+    float4 Model::GetCurrentColour() const
     {
       return m_currentColour;
     }
 
     //----------------------------------------------------------------------------
-    float4 ModelEntry::GetOriginalColour() const
+    float4 Model::GetOriginalColour() const
     {
       return m_originalColour;
     }
 
     //----------------------------------------------------------------------------
-    bool ModelEntry::IsInFrustum() const
+    bool Model::IsInFrustum() const
     {
       // TODO : this is a cached value, so in theory this could produce artifacts, bad enough to fix?
       return m_isInFrustum;
     }
 
     //----------------------------------------------------------------------------
-    bool ModelEntry::IsInFrustum(const SpatialBoundingFrustum& frustum) const
+    bool Model::IsInFrustum(const SpatialBoundingFrustum& frustum) const
     {
       if (m_timer.GetFrameCount() == m_frustumCheckFrameNumber)
       {
@@ -943,13 +960,13 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ModelEntry::EnablePoseLerp(bool enable)
+    void Model::EnablePoseLerp(bool enable)
     {
       m_enableLerp = enable;
     }
 
     //----------------------------------------------------------------------------
-    void ModelEntry::DrawMesh(const DirectX::ModelMesh& mesh, bool alpha, std::function<void __cdecl(std::shared_ptr<DirectX::IEffect>)> setCustomState)
+    void Model::DrawMesh(const DirectX::ModelMesh& mesh, bool alpha, std::function<void __cdecl(std::shared_ptr<DirectX::IEffect>)> setCustomState)
     {
       assert(m_deviceResources->GetD3DDeviceContext() != 0);
 
@@ -980,7 +997,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ModelEntry::DrawMeshPart(const DirectX::ModelMeshPart& part, std::function<void __cdecl(std::shared_ptr<DirectX::IEffect>)> setCustomState)
+    void Model::DrawMeshPart(const DirectX::ModelMeshPart& part, std::function<void __cdecl(std::shared_ptr<DirectX::IEffect>)> setCustomState)
     {
       m_deviceResources->GetD3DDeviceContext()->IASetInputLayout(part.inputLayout.Get());
 
@@ -1003,13 +1020,13 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void ModelEntry::UpdateEffects(_In_ std::function<void __cdecl(DirectX::IEffect*)> setEffect)
+    void Model::UpdateEffects(_In_ std::function<void __cdecl(DirectX::IEffect*)> setEffect)
     {
       m_model->UpdateEffects(setEffect);
     }
 
     //----------------------------------------------------------------------------
-    void ModelEntry::CalculateBounds()
+    void Model::CalculateBounds()
     {
       if (m_model == nullptr)
       {

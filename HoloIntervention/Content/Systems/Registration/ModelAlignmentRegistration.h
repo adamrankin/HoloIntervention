@@ -35,7 +35,7 @@ namespace HoloIntervention
   namespace Rendering
   {
     class ModelRenderer;
-    class ModelEntry;
+    class Model;
   }
 
   namespace Input
@@ -45,7 +45,7 @@ namespace HoloIntervention
 
   namespace UI
   {
-    class IconEntry;
+    class Icon;
     class Icons;
   }
 
@@ -121,7 +121,7 @@ namespace HoloIntervention
       UWPOpenIGTLink::TransformName^                        m_sphereToReferenceTransformName = ref new UWPOpenIGTLink::TransformName(L"Sphere", L"Reference");
       std::atomic_bool                                      m_started = false;
       std::atomic_bool                                      m_calculating = false;
-      std::shared_ptr<UI::IconEntry>                        m_sphereIconEntry = nullptr;
+      std::shared_ptr<UI::Icon>                        m_sphereIconEntry = nullptr;
 
       // Input variables
       uint64                                                m_sourceObserverId = INVALID_TOKEN;
@@ -149,7 +149,7 @@ namespace HoloIntervention
       size_t                                                m_tessellation = 16;
       std::atomic_bool                                      m_invertN = false;
       std::atomic_bool                                      m_rhCoords = true;
-      std::shared_ptr<Rendering::ModelEntry>                m_modelEntry = nullptr;
+      std::shared_ptr<Rendering::Model>                m_modelEntry = nullptr;
 
       // Constants
       static const float                                    MIN_DISTANCE_BETWEEN_POINTS_METER; // (currently 10mm)

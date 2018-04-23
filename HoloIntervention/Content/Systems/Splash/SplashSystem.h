@@ -35,7 +35,7 @@ namespace HoloIntervention
 {
   namespace Rendering
   {
-    class SliceEntry;
+    class Slice;
     class SliceRenderer;
   }
 
@@ -62,7 +62,7 @@ namespace HoloIntervention
       Rendering::SliceRenderer&                           m_sliceRenderer;
 
       uint64                                              m_sliceToken = INVALID_TOKEN;
-      std::shared_ptr<Rendering::SliceEntry>              m_sliceEntry = nullptr;
+      std::shared_ptr<Rendering::Slice>              m_sliceEntry = nullptr;
       float                                               m_welcomeTimerSec = 0.f;
       std::wstring                                        m_splashImageFilename = L"Assets\\Images\\HoloIntervention.png";
 

@@ -37,7 +37,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Rendering includes
 #include "ModelRenderer.h"
-#include "ModelEntry.h"
+#include "Model.h"
 
 // Spatial includes
 #include "SurfaceMesh.h"

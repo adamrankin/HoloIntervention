@@ -34,7 +34,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "NetworkSystem.h"
 #include "NotificationSystem.h"
 #include "RegistrationSystem.h"
-#include "ToolEntry.h"
+#include "Tool.h"
 #include "ToolSystem.h"
 
 // Rendering includes
@@ -57,6 +57,11 @@ namespace HoloIntervention
   {
     namespace Tasks
     {
+      //----------------------------------------------------------------------------
+      const float TargetSphereTask::TARGET_SPHERE_DIAMETER_MM = 5.f;
+      const float TargetSphereTask::STYLUS_CYLINDER_ICON_HEIGHT_MM = 100.f;
+      const float TargetSphereTask::STYLUS_CYLINDER_ICON_RADIUS_MM = 5.f;
+
       //----------------------------------------------------------------------------
       task<bool> TargetSphereTask::WriteConfigurationAsync(XmlDocument^ document)
       {
@@ -273,8 +278,7 @@ namespace HoloIntervention
         , m_modelRenderer(modelRenderer)
         , m_icons(icons)
       {
-        // 3 mm diameter
-        m_modelRenderer.AddPrimitiveAsync(Rendering::PrimitiveType_SPHERE, 0.03f).then([this](uint64 primId)
+        m_modelRenderer.AddPrimitiveAsync(Rendering::PrimitiveType_SPHERE, TARGET_SPHERE_DIAMETER_MM / 1000.f).then([this](uint64 primId)
         {
           m_targetModel = m_modelRenderer.GetModel(primId);
           m_targetModel->SetColour(DEFAULT_TARGET_COLOUR);
@@ -293,18 +297,30 @@ namespace HoloIntervention
           }
           else
           {
-            return std::shared_ptr<Tools::ToolEntry>();
+            return std::shared_ptr<Tools::Tool>();
           }
-        }).then([this](std::shared_ptr<Tools::ToolEntry> entry)
+        }).then([this](std::shared_ptr<Tools::Tool> entry)
         {
           if (entry == nullptr)
           {
-            LOG_ERROR("Unable to locate stylus tool. Cannot create UI icon.");
+            LOG_WARNING("Unable to locate stylus tool. Cannot create UI icon. Using cylinder as substitute");
             // Use a cylinder as a substitute
+
+            m_modelRenderer.AddPrimitiveAsync(Rendering::PrimitiveType_CYLINDER, float3(STYLUS_CYLINDER_ICON_HEIGHT_MM / 1000.f, STYLUS_CYLINDER_ICON_RADIUS_MM / 1000.f, 1.f)).then([this](uint64 primId)
+            {
+              m_cylinderModel = m_modelRenderer.GetModel(primId);
+              m_icons.AddEntryAsync(m_cylinderModel, L"targetStylus").then([this](std::shared_ptr<UI::Icon> entry)
+              {
+                m_stylusIcon = entry;
+              });
+            });
           }
           else
           {
-
+            m_icons.AddEntryAsync(entry->GetModel(), L"targetStylus").then([this](std::shared_ptr<UI::Icon> entry)
+            {
+              m_stylusIcon = entry;
+            });
           }
         });
       }
@@ -345,8 +361,7 @@ namespace HoloIntervention
             auto transform = m_networkSystem.GetTransform(m_hashedConnectionName, m_phantomToReferenceName, m_latestTimestamp);
             if (transform == nullptr || !m_transformRepository->SetTransform(transform->Name, transform->Matrix, transform->Valid))
             {
-              m_phantomWasValid = false;
-              m_targetModel->SetColour(DISABLE_TARGET_COLOUR);
+              m_targetModel->RenderGreyscale();
               return;
             }
           }
@@ -354,8 +369,7 @@ namespace HoloIntervention
           {
             if (!m_transformRepository->SetTransforms(m_trackedFrame))
             {
-              m_phantomWasValid = false;
-              m_targetModel->SetColour(DISABLE_TARGET_COLOUR);
+              m_targetModel->RenderGreyscale();
               return;
             }
           }
@@ -363,39 +377,40 @@ namespace HoloIntervention
           float4x4 registration;
           if (m_registrationSystem.GetReferenceToCoordinateSystemTransformation(coordinateSystem, registration))
           {
-            m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", L"HoloLens"), transpose(registration), true);
-            auto result = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"Sphere", L"HoloLens"));
+            m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", HOLOLENS_COORDINATE_SYSTEM_PNAME), transpose(registration), true);
+            auto result = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"Sphere", HOLOLENS_COORDINATE_SYSTEM_PNAME));
 
             // Update phantom model rendering
-            if (!result->Key && m_phantomWasValid)
+            if (!result->Key)
             {
-              m_phantomWasValid = false;
-              m_targetModel->SetColour(DISABLE_TARGET_COLOUR);
+              m_targetModel->RenderGreyscale();
             }
-            else if (result->Key && !m_phantomWasValid)
+            else if (result->Key)
             {
-              m_phantomWasValid = true;
-              m_targetModel->SetColour(DEFAULT_TARGET_COLOUR);
+              m_targetModel->RenderDefault();
             }
 
             // Update target pose
             m_targetModel->SetDesiredPose(transpose(result->Value));
 
-            if (m_recordPointOnUpdate)
+
+            // Record a data point
+            auto stylusTipPose = m_transformRepository->GetTransform(m_stylusTipToPhantomName);
+
+            if (stylusTipPose->Key)
             {
-              // Record a data point
-              auto stylusTipPose = m_transformRepository->GetTransform(m_stylusTipToPhantomName);
-              if (stylusTipPose->Key)
+              m_stylusIcon->GetModel()->RenderDefault();
+              if (m_recordPointOnUpdate)
               {
                 m_notificationSystem.QueueMessage(L"Point recorded. Next one created...");
                 {
                   std::stringstream ss;
-                  ss << "Point: " << stylusTipPose->Value.m41 << " " << stylusTipPose->Value.m42 << " " << stylusTipPose->Value.m43 << std::endl;
+                  ss << "Point: " << stylusTipPose->Value.m41 << ", " << stylusTipPose->Value.m42 << ", " << stylusTipPose->Value.m43 << std::endl;
                   LOG_INFO(ss.str());
                 }
                 {
                   std::stringstream ss;
-                  ss << "GroundTruth: " << m_targetPosition.x << " " << m_targetPosition.y << " " << m_targetPosition.z << std::endl;
+                  ss << "GroundTruth: " << m_targetPosition.x << ", " << m_targetPosition.y << ", " << m_targetPosition.z << std::endl;
                   LOG_INFO(ss.str());
                 }
                 {
@@ -420,17 +435,20 @@ namespace HoloIntervention
                 }
               }
             }
+            else
+            {
+              m_stylusIcon->GetModel()->RenderGreyscale();
+            }
           }
           else
           {
-            m_phantomWasValid = false;
-            m_targetModel->SetColour(DISABLE_TARGET_COLOUR);
+            m_targetModel->RenderGreyscale();
           }
         }
         else
         {
-          m_phantomWasValid = false;
-          m_targetModel->SetColour(DISABLE_TARGET_COLOUR);
+          m_targetModel->RenderGreyscale();
+          m_stylusIcon->GetModel()->RenderGreyscale();
         }
       }
 
@@ -447,7 +465,7 @@ namespace HoloIntervention
 
           GenerateNextRandomPoint();
 
-          m_notificationSystem.QueueMessage(L"Sphere target task running.");
+          m_notificationSystem.QueueMessage(L"Target task started.");
           m_targetModel->SetVisible(true);
           m_taskStarted = true;
         };

@@ -48,7 +48,7 @@ namespace HoloIntervention
   namespace UI
   {
     class Icons;
-    class IconEntry;
+    class Icon;
   }
 
   namespace System
@@ -153,7 +153,7 @@ namespace HoloIntervention
     std::vector<ILocatable*>                              m_locatables;
 
     // Locatability icon
-    std::shared_ptr<UI::IconEntry>                        m_locatabilityIcon = nullptr;
+    std::shared_ptr<UI::Icon>                        m_locatabilityIcon = nullptr;
 
     // Engine components
     std::unique_ptr<Rendering::ModelRenderer>             m_modelRenderer;

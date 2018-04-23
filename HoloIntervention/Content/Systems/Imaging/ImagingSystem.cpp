@@ -240,6 +240,7 @@ namespace HoloIntervention
         m_sliceEntry->SetColorizeGreyscale(true);
         m_sliceEntry->SetWhiteMapColour(m_whiteMapColour);
         m_sliceEntry->SetBlackMapColour(m_blackMapColour);
+        m_sliceRenderer.SetSliceRenderOrigin(entryId, Rendering::SliceRenderer::ORIGIN_TOPLEFT);
       });
 
       m_volumeRenderer.AddVolumeAsync(nullptr).then([this](uint64 entryId)
@@ -401,7 +402,7 @@ namespace HoloIntervention
           return;
         }
 
-        if (!m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD"), transpose(referenceToHMD), true))
+        if (!m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", HOLOLENS_COORDINATE_SYSTEM_PNAME), transpose(referenceToHMD), true))
         {
           return;
         }
@@ -419,22 +420,39 @@ namespace HoloIntervention
         double latestTimestamp(0.0);
         UWPOpenIGTLink::Transform^ transform = m_networkSystem.GetTransform(m_hashedSliceConnectionName, name, latestTimestamp);
         m_transformRepository->SetTransform(name, transform->Matrix, transform->Valid);
-        result = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"Probe", L"HMD"));
+        result = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"Probe", HOLOLENS_COORDINATE_SYSTEM_PNAME));
+        // remove scaling before display
+        float3 scale, translation;
+        quaternion rotation;
+        decompose(result->Value, &scale, &rotation, &translation);
         if (result->Key)
         {
-          m_debug.UpdateCoordinateSystem(L"probe", transpose(result->Value));
+          m_debug.UpdateCoordinateSystem(L"probe", transpose(make_float4x4_from_quaternion(rotation)*make_float4x4_translation(translation)));
         }
 #endif
 
-        // We transform from quad space to image space
-        // +0.5 x, -0.5 y to get square from 0-1, 0-(-1)
-        // 1   0   0   0
-        // 0   1   0   0
-        // 0   0   1   0
-        // 0.5 -0.5 0   1
+        // Unit diagram
+        // Vertex -> Image
+        //   M         px
         //
-        // Quad space is vertex space, [-0.5,0.5]
-        auto vertexToImageTransform = make_float4x4_translation(0.5f, -0.5f, 0.f);
+        // Image  -> Probe
+        //   px        mm
+        //
+        // Probe  -> Reference
+        //   mm        mm
+        //
+        // Reference -> HMD
+        //   mm        M
+
+        // We transform from quad space to image space
+        // by scaling to pixel space by x=width_in_px, y=height_in_px, and z=depth_in_px (which in this case had better be 1)
+        // x   0   0   0
+        // 0   y   0   0
+        // 0   0   z   0
+        // 0   0   0   1
+        assert(frame->Dimensions[2] == 1.f);
+
+        auto vertexToImageTransform = make_float4x4_scale(frame->Dimensions[0], frame->Dimensions[1], frame->Dimensions[2]);
         auto vertexToHMD = vertexToImageTransform * imageToHMDTransform;
 
 #if defined(_DEBUG)
@@ -463,7 +481,7 @@ namespace HoloIntervention
         return;
       }
 
-      if (!m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", L"HMD"), transpose(referenceToHMD), true))
+      if (!m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", HOLOLENS_COORDINATE_SYSTEM_PNAME), transpose(referenceToHMD), true))
       {
         return;
       }

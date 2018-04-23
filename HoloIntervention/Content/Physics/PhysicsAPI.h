@@ -43,7 +43,7 @@ namespace HoloIntervention
 
   namespace Rendering
   {
-    class ModelEntry;
+    class Model;
   }
 
   namespace Physics

@@ -25,7 +25,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "IEngineComponent.h"
-#include "SliceEntry.h"
+#include "Slice.h"
 
 // STL includes
 #include <list>
@@ -61,7 +61,7 @@ namespace HoloIntervention
     class SliceRenderer : public IEngineComponent
     {
       // list instead of vector so that erase does not require copy constructor
-      typedef std::list<std::shared_ptr<SliceEntry>> SliceList;
+      typedef std::list<std::shared_ptr<Slice>> SliceList;
 
     public:
       enum SliceOrigin
@@ -80,7 +80,7 @@ namespace HoloIntervention
       concurrency::task<uint64> AddSliceAsync(std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 desiredPose = Windows::Foundation::Numerics::float4x4::identity(), bool headLocked = false);
       concurrency::task<uint64> AddSliceAsync(Windows::Storage::Streams::IBuffer^ imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 desiredPose = Windows::Foundation::Numerics::float4x4::identity(), bool headLocked = false);
       void RemoveSlice(uint64 sliceToken);
-      std::shared_ptr<SliceEntry> GetSlice(uint64 sliceToken);
+      std::shared_ptr<Slice> GetSlice(uint64 sliceToken);
 
       void UpdateSlice(uint64 sliceToken, std::shared_ptr<byte> imageData, uint16 width, uint16 height, DXGI_FORMAT pixelFormat, Windows::Foundation::Numerics::float4x4 desiredPose = Windows::Foundation::Numerics::float4x4::identity());
       void UpdateSlice(uint64 sliceToken, UWPOpenIGTLink::TrackedFrame^ frame, Windows::Foundation::Numerics::float4x4 desiredPose = Windows::Foundation::Numerics::float4x4::identity());
@@ -103,8 +103,8 @@ namespace HoloIntervention
       void Render();
 
     protected:
-      concurrency::task<std::shared_ptr<SliceEntry>> AddSliceCommonAsync(const Windows::Foundation::Numerics::float4x4& desiredPose, bool headLocked);
-      bool FindSlice(uint64 sliceToken, std::shared_ptr<SliceEntry>& sliceEntry) const;
+      concurrency::task<std::shared_ptr<Slice>> AddSliceCommonAsync(const Windows::Foundation::Numerics::float4x4& desiredPose, bool headLocked);
+      bool FindSlice(uint64 sliceToken, std::shared_ptr<Slice>& sliceEntry) const;
       HRESULT CreateVertexBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer>& comPtr, float bottom, float left, float right, float top);
 
     protected:

@@ -30,22 +30,22 @@ namespace HoloIntervention
 {
   namespace Rendering
   {
-    class ModelEntry;
+    class Model;
   }
 
   namespace UI
   {
-    class IconEntry
+    class Icon
     {
     public:
-      IconEntry();
-      ~IconEntry();
+      Icon();
+      ~Icon();
 
       void SetId(uint64 id);
       uint64 GetId() const;
 
-      std::shared_ptr<Rendering::ModelEntry> GetModelEntry() const;
-      void SetModelEntry(std::shared_ptr<Rendering::ModelEntry> entry);
+      std::shared_ptr<Rendering::Model> GetModel() const;
+      void SetModel(std::shared_ptr<Rendering::Model> entry);
 
       void SetUserRotation(float pitch, float yaw, float roll);
       void SetUserRotation(Windows::Foundation::Numerics::quaternion rotation);
@@ -64,7 +64,7 @@ namespace HoloIntervention
     protected:
       uint64                                          m_id;
       std::atomic_bool                                m_firstFrame = true;
-      std::shared_ptr<Rendering::ModelEntry>          m_modelEntry;
+      std::shared_ptr<Rendering::Model>          m_model;
 
       // Allow a custom rotation for optical icon viewing angles
       Windows::Foundation::Numerics::float4x4         m_userRotation = Windows::Foundation::Numerics::float4x4::identity();

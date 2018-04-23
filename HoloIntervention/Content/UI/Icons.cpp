@@ -24,7 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "pch.h"
 #include "Common.h"
-#include "IconEntry.h"
+#include "Icon.h"
 #include "Icons.h"
 #include "StepTimer.h"
 
@@ -32,7 +32,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "NetworkSystem.h"
 #include "NotificationSystem.h"
 #include "ToolSystem.h"
-#include "ToolEntry.h"
+#include "Tool.h"
 
 // Input includes
 #include "VoiceInput.h"
@@ -66,7 +66,7 @@ namespace HoloIntervention
       float3 pos = { 0.f, 0.f, 0.f };
       for (auto& icon : m_iconEntries)
       {
-        auto pose = icon->GetModelEntry()->GetCurrentPose();
+        auto pose = icon->GetModel()->GetCurrentPose();
         pos.x += pose.m41;
         pos.y += pose.m42;
         pos.z += pose.m43;
@@ -81,7 +81,7 @@ namespace HoloIntervention
       float3 accumulator = { 0.f, 0.f, 0.f };
       for (auto& icon : m_iconEntries)
       {
-        auto vel = icon->GetModelEntry()->GetVelocity();
+        auto vel = icon->GetModel()->GetVelocity();
         accumulator.x += vel.x;
         accumulator.y += vel.y;
         accumulator.z += vel.z;
@@ -132,12 +132,12 @@ namespace HoloIntervention
         float4x4 scale = make_float4x4_scale(scaleFactor);
         if (entry->GetFirstFrame())
         {
-          entry->GetModelEntry()->SetCurrentPose(entry->GetUserRotation() * scale * world); // world first, then scale
+          entry->GetModel()->SetCurrentPose(entry->GetUserRotation() * scale * world); // world first, then scale
           entry->SetFirstFrame(false);
         }
         else
         {
-          entry->GetModelEntry()->SetDesiredPose(entry->GetUserRotation() * scale * world);
+          entry->GetModel()->SetDesiredPose(entry->GetUserRotation() * scale * world);
         }
 
         ++i;
@@ -145,19 +145,19 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<std::shared_ptr<IconEntry>> Icons::AddEntryAsync(const std::wstring& modelName, std::wstring userValue)
+    task<std::shared_ptr<Icon>> Icons::AddEntryAsync(const std::wstring& modelName, std::wstring userValue)
     {
       return m_modelRenderer.AddModelAsync(modelName).then([this, userValue](uint64 modelId)
       {
         std::lock_guard<std::mutex> guard(m_entryMutex);
         auto modelEntry = m_modelRenderer.GetModel(modelId);
-        auto entry = std::make_shared<IconEntry>();
-        entry->SetModelEntry(modelEntry);
+        auto entry = std::make_shared<Icon>();
+        entry->SetModel(modelEntry);
 
         // Determine scale factor for new entry
-        entry->GetModelEntry()->EnablePoseLerp(true);
-        entry->GetModelEntry()->SetPoseLerpRate(8.f);
-        entry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
+        entry->GetModel()->EnablePoseLerp(true);
+        entry->GetModel()->SetPoseLerpRate(8.f);
+        entry->GetModel()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
         entry->SetUserValue(userValue);
         entry->SetId(m_nextValidEntry++);
         m_iconEntries.push_back(entry);
@@ -167,21 +167,21 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<std::shared_ptr<IconEntry>> Icons::AddEntryAsync(std::shared_ptr<Rendering::ModelEntry> modelEntry, std::wstring userValue)
+    task<std::shared_ptr<Icon>> Icons::AddEntryAsync(std::shared_ptr<Rendering::Model> modelEntry, std::wstring userValue)
     {
       // Duplicate incoming model entry, so that they have their own independent rendering properties
       return m_modelRenderer.CloneAsync(modelEntry->GetId()).then([this, userValue](uint64 modelEntryId)
       {
         std::lock_guard<std::mutex> guard(m_entryMutex);
-        auto entry = std::make_shared<IconEntry>();
+        auto entry = std::make_shared<Icon>();
         auto duplicateEntry = m_modelRenderer.GetModel(modelEntryId);
-        entry->SetModelEntry(duplicateEntry);
+        entry->SetModel(duplicateEntry);
 
         // Determine scale factor for new entry
-        auto& bounds = entry->GetModelEntry()->GetBounds();
-        entry->GetModelEntry()->EnablePoseLerp(true);
-        entry->GetModelEntry()->SetPoseLerpRate(8.f);
-        entry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
+        auto& bounds = entry->GetModel()->GetBounds();
+        entry->GetModel()->EnablePoseLerp(true);
+        entry->GetModel()->SetPoseLerpRate(8.f);
+        entry->GetModel()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
         entry->SetUserValue(userValue);
         entry->SetId(m_nextValidEntry++);
         m_iconEntries.push_back(entry);
@@ -191,20 +191,20 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<std::shared_ptr<IconEntry>> Icons::AddEntryAsync(const std::wstring& modelName, uint64 userValue /*= 0*/)
+    task<std::shared_ptr<Icon>> Icons::AddEntryAsync(const std::wstring& modelName, uint64 userValue /*= 0*/)
     {
       return m_modelRenderer.AddModelAsync(modelName).then([this, userValue](uint64 modelId)
       {
         std::lock_guard<std::mutex> guard(m_entryMutex);
         auto modelEntry = m_modelRenderer.GetModel(modelId);
-        auto entry = std::make_shared<IconEntry>();
-        entry->SetModelEntry(modelEntry);
+        auto entry = std::make_shared<Icon>();
+        entry->SetModel(modelEntry);
 
         // Determine scale factor for new entry
-        auto& bounds = entry->GetModelEntry()->GetBounds();
-        entry->GetModelEntry()->EnablePoseLerp(true);
-        entry->GetModelEntry()->SetPoseLerpRate(8.f);
-        entry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
+        auto& bounds = entry->GetModel()->GetBounds();
+        entry->GetModel()->EnablePoseLerp(true);
+        entry->GetModel()->SetPoseLerpRate(8.f);
+        entry->GetModel()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
         entry->SetUserValue(userValue);
         entry->SetId(m_nextValidEntry++);
         m_iconEntries.push_back(entry);
@@ -214,10 +214,10 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<std::shared_ptr<IconEntry>> Icons::AddEntryAsync(std::shared_ptr<Rendering::ModelEntry> modelEntry, uint64 userValue /*= 0*/)
+    task<std::shared_ptr<Icon>> Icons::AddEntryAsync(std::shared_ptr<Rendering::Model> modelEntry, uint64 userValue /*= 0*/)
     {
       // Duplicate incoming model entry, so that they have their own independent rendering properties
-      return m_modelRenderer.CloneAsync(modelEntry->GetId()).then([this, userValue](uint64 modelEntryId) -> std::shared_ptr<IconEntry>
+      return m_modelRenderer.CloneAsync(modelEntry->GetId()).then([this, userValue](uint64 modelEntryId) -> std::shared_ptr<Icon>
       {
         if (modelEntryId == INVALID_TOKEN)
         {
@@ -225,15 +225,15 @@ namespace HoloIntervention
         }
 
         std::lock_guard<std::mutex> guard(m_entryMutex);
-        auto entry = std::make_shared<IconEntry>();
+        auto entry = std::make_shared<Icon>();
         auto duplicateEntry = m_modelRenderer.GetModel(modelEntryId);
-        entry->SetModelEntry(duplicateEntry);
+        entry->SetModel(duplicateEntry);
 
         // Determine scale factor for new entry
-        auto& bounds = entry->GetModelEntry()->GetBounds();
-        entry->GetModelEntry()->EnablePoseLerp(true);
-        entry->GetModelEntry()->SetPoseLerpRate(8.f);
-        entry->GetModelEntry()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
+        auto& bounds = entry->GetModel()->GetBounds();
+        entry->GetModel()->EnablePoseLerp(true);
+        entry->GetModel()->SetPoseLerpRate(8.f);
+        entry->GetModel()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
         entry->SetUserValue(userValue);
         entry->SetId(m_nextValidEntry++);
         m_iconEntries.push_back(entry);
@@ -250,9 +250,9 @@ namespace HoloIntervention
         if ((*it)->GetId() == entryId)
         {
           uint64 entryId(INVALID_TOKEN);
-          if ((*it)->GetModelEntry() != nullptr)
+          if ((*it)->GetModel() != nullptr)
           {
-            entryId = (*it)->GetModelEntry()->GetId();
+            entryId = (*it)->GetModel()->GetId();
           }
           m_iconEntries.erase(it);
           m_modelRenderer.RemoveModel(entryId);
@@ -264,7 +264,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    std::shared_ptr<IconEntry> Icons::GetEntry(uint64 entryId)
+    std::shared_ptr<Icon> Icons::GetEntry(uint64 entryId)
     {
       for (auto& entry : m_iconEntries)
       {

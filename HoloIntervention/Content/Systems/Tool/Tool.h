@@ -41,7 +41,7 @@ namespace HoloIntervention
 {
   namespace UI
   {
-    class IconEntry;
+    class Icon;
     class Icons;
   }
 
@@ -52,7 +52,7 @@ namespace HoloIntervention
 
   namespace Rendering
   {
-    class ModelEntry;
+    class Model;
     class ModelRenderer;
   }
 
@@ -63,7 +63,7 @@ namespace HoloIntervention
 
   namespace Tools
   {
-    class ToolEntry : public IStabilizedComponent
+    class Tool : public IStabilizedComponent
     {
     public:
       virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition(Windows::UI::Input::Spatial::SpatialPointerPose^ pose) const;
@@ -71,26 +71,26 @@ namespace HoloIntervention
       virtual float GetStabilizePriority() const;
 
     public:
-      ToolEntry(Rendering::ModelRenderer& modelRenderer,
-                System::NetworkSystem& networkSystem,
-                UI::Icons& icons,
-                uint64 hashedConnectionName,
-                UWPOpenIGTLink::TransformName^ coordinateFrame,
-                UWPOpenIGTLink::TransformRepository^ transformRepository,
-                Platform::String^ userId);
-      ToolEntry(Rendering::ModelRenderer& modelRenderer,
-                System::NetworkSystem& networkSystem,
-                UI::Icons& icons,
-                uint64 hashedConnectionName,
-                const std::wstring& coordinateFrame,
-                UWPOpenIGTLink::TransformRepository^ transformRepository,
-                Platform::String^ userId);
-      ~ToolEntry();
+      Tool(Rendering::ModelRenderer& modelRenderer,
+           System::NetworkSystem& networkSystem,
+           UI::Icons& icons,
+           uint64 hashedConnectionName,
+           UWPOpenIGTLink::TransformName^ coordinateFrame,
+           UWPOpenIGTLink::TransformRepository^ transformRepository,
+           Platform::String^ userId);
+      Tool(Rendering::ModelRenderer& modelRenderer,
+           System::NetworkSystem& networkSystem,
+           UI::Icons& icons,
+           uint64 hashedConnectionName,
+           const std::wstring& coordinateFrame,
+           UWPOpenIGTLink::TransformRepository^ transformRepository,
+           Platform::String^ userId);
+      ~Tool();
 
       void Update(const DX::StepTimer& timer);
 
-      Concurrency::task<void> SetModelEntryAsync(std::shared_ptr<Rendering::ModelEntry> entry);
-      std::shared_ptr<Rendering::ModelEntry> GetModelEntry();
+      Concurrency::task<void> SetModelAsync(std::shared_ptr<Rendering::Model> entry);
+      std::shared_ptr<Rendering::Model> GetModel();
       UWPOpenIGTLink::TransformName^ GetCoordinateFrame() const;
       bool IsValid() const;
       bool WasValid() const;
@@ -113,13 +113,13 @@ namespace HoloIntervention
       std::atomic_bool                            m_isValid = false;
       std::atomic_bool                            m_wasValid = false;
       UWPOpenIGTLink::TransformName^              m_coordinateFrame;
-      std::shared_ptr<Rendering::ModelEntry>      m_modelEntry = nullptr;
+      std::shared_ptr<Rendering::Model>      m_modelEntry = nullptr;
       double                                      m_latestTimestamp = 0.0;
       std::wstring                                m_userId;
       std::atomic_bool                            m_hiddenOverride = false;
 
       // Icon details
-      std::shared_ptr<UI::IconEntry>              m_iconEntry = nullptr;
+      std::shared_ptr<UI::Icon>              m_iconEntry = nullptr;
 
       // Kalman filter for smoothing and prediction
       std::shared_ptr<Algorithm::KalmanFilter>    m_kalmanFilter = nullptr;

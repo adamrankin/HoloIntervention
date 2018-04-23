@@ -136,11 +136,11 @@ namespace HoloIntervention
     m_spatialInput = std::make_unique<Input::SpatialInput>();
     m_voiceInput = std::make_unique<Input::VoiceInput> (*m_soundAPI.get(), *m_icons.get());
 
-    m_icons->AddEntryAsync(L"satellite.cmo", L"satellite").then([this](std::shared_ptr<UI::IconEntry> entry)
+    m_icons->AddEntryAsync(L"satellite.cmo", L"satellite").then([this](std::shared_ptr<UI::Icon> entry)
     {
       m_locatabilityIcon = entry;
       entry->SetUserRotation(Math::PI_2<float>, Math::PI<float>, 0.0);
-      entry->GetModelEntry()->RenderDefault();
+      entry->GetModel()->RenderDefault();
     });
 
     // Systems (apps-specific behaviour), eventually move to separate project and have engine DLL
@@ -592,7 +592,7 @@ namespace HoloIntervention
     {
     case SpatialLocatability::Unavailable:
     {
-      m_locatabilityIcon->GetModelEntry()->SetColour(1.0, 0.0, 0.0);
+      m_locatabilityIcon->GetModel()->SetColour(1.0, 0.0, 0.0);
       m_notificationSystem->QueueMessage(L"Warning! Positional tracking is unavailable.");
     }
     break;
@@ -601,11 +601,11 @@ namespace HoloIntervention
     case SpatialLocatability::OrientationOnly:
     case SpatialLocatability::PositionalTrackingInhibited:
       // Gaze-locked content still valid
-      m_locatabilityIcon->GetModelEntry()->SetColour(1.0, 1.0, 0.0);
+      m_locatabilityIcon->GetModel()->SetColour(1.0, 1.0, 0.0);
       break;
 
     case SpatialLocatability::PositionalTrackingActive:
-      m_locatabilityIcon->GetModelEntry()->RenderDefault();
+      m_locatabilityIcon->GetModel()->RenderDefault();
       m_notificationSystem->QueueMessage(L"Positional tracking is active.");
       break;
     }

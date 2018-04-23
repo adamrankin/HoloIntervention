@@ -63,7 +63,7 @@ namespace HoloIntervention
 
   namespace Rendering
   {
-    class ModelEntry;
+    class Model;
     class ModelRenderer;
   }
 
@@ -152,7 +152,7 @@ namespace HoloIntervention
       // Anchor variables
       std::atomic_bool                                                m_regAnchorRequested = false;
       uint64_t                                                        m_regAnchorModelId = 0;
-      std::shared_ptr<Rendering::ModelEntry>                          m_regAnchorModel = nullptr;
+      std::shared_ptr<Rendering::Model>                          m_regAnchorModel = nullptr;
       Windows::Perception::Spatial::SpatialAnchor^                    m_regAnchor = nullptr;
 
       // Registration methods
