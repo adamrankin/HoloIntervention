@@ -41,7 +41,7 @@ namespace HoloIntervention
     class ToolBasedRegistration : public IRegistrationMethod
     {
     public:
-      virtual void RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap) {};
+      virtual void RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap);
 
     public:
       virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition(Windows::UI::Input::Spatial::SpatialPointerPose^ pose) const;
@@ -87,6 +87,8 @@ namespace HoloIntervention
       std::atomic_bool                          m_started = false;
       UWPOpenIGTLink::TrackedFrame^             m_frame = ref new UWPOpenIGTLink::TrackedFrame();
       double                                    m_latestTimestamp = 0.0;
+
+      std::atomic_bool                          m_rotationEnabled = true;
 
       // Output
       Windows::Foundation::Numerics::float4x4   m_accumulatorMatrix = Windows::Foundation::Numerics::float4x4::identity();

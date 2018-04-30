@@ -41,6 +41,7 @@ using namespace Platform;
 using namespace Windows::Data::Xml::Dom;
 using namespace Windows::Foundation::Numerics;
 using namespace Windows::Graphics::Holographic;
+using namespace Windows::Media::SpeechRecognition;
 using namespace Windows::Perception::Spatial;
 using namespace Windows::UI::Input::Spatial;
 
@@ -48,6 +49,21 @@ namespace HoloIntervention
 {
   namespace System
   {
+
+    //----------------------------------------------------------------------------
+    void ToolBasedRegistration::RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap)
+    {
+      callbackMap[L"disable tool rotation"] = [this](SpeechRecognitionResult ^ result)
+      {
+        m_rotationEnabled = false;
+      };
+
+      callbackMap[L"enable tool rotation"] = [this](SpeechRecognitionResult ^ result)
+      {
+        m_rotationEnabled = true;
+      };
+    }
+
     //----------------------------------------------------------------------------
     float3 ToolBasedRegistration::GetStabilizedPosition(SpatialPointerPose^ pose) const
     {
@@ -207,6 +223,11 @@ namespace HoloIntervention
       m_latestTimestamp = transform->Timestamp;
 
       auto opticalPose = transpose(transform->Matrix);
+
+      if (!m_rotationEnabled)
+      {
+        opticalPose = make_float4x4_translation(opticalPose.m41, opticalPose.m42, opticalPose.m43);
+      }
 
       if (m_baselineNeeded)
       {
