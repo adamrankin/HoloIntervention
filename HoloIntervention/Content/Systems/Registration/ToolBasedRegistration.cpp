@@ -78,7 +78,7 @@ namespace HoloIntervention
 
         auto rootNode = document->SelectNodes(L"/HoloIntervention")->Item(0);
 
-        auto camRegElem = document->CreateElement(L"ManualRegistration");
+        auto camRegElem = document->CreateElement(L"ToolBasedRegistration");
         camRegElem->SetAttribute(L"IGTConnection", ref new Platform::String(m_connectionName.c_str()));
         camRegElem->SetAttribute(L"From", m_toolCoordinateFrameName->From());
         camRegElem->SetAttribute(L"To", m_toolCoordinateFrameName->To());
@@ -98,7 +98,7 @@ namespace HoloIntervention
           return false;
         }
 
-        auto xpath = ref new Platform::String(L"/HoloIntervention/ManualRegistration");
+        auto xpath = ref new Platform::String(L"/HoloIntervention/ToolBasedRegistration");
         if (document->SelectNodes(xpath)->Length == 0)
         {
           throw ref new Platform::Exception(E_INVALIDARG, L"No manual registration defined in the configuration file.");

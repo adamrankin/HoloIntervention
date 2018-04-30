@@ -44,9 +44,9 @@
     MinRadius="20"
     MaxRadius="60"/>
 
-  <ManualRegistration
+  <ToolBasedRegistration
     IGTConnection="PlusServer"
-    From="Tool"
+    From="Reference"
     To="Reference"/>
 
   <OpticalRegistration

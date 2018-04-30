@@ -500,6 +500,39 @@ namespace HoloIntervention
         });
       };
 
+      callbackMap[L"start tool registration"] = [this](SpeechRecognitionResult ^ result)
+      {
+        std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
+        if (dynamic_cast<ToolBasedRegistration*>(m_currentRegistrationMethod.get()) != nullptr && m_currentRegistrationMethod->IsStarted())
+        {
+          m_notificationSystem.QueueMessage(L"Registration already running.");
+          return;
+        }
+
+        if (m_regAnchor == nullptr)
+        {
+          m_notificationSystem.QueueMessage(L"Anchor required. Please place an anchor with 'drop anchor'.");
+          return;
+        }
+
+        if (m_knownRegistrationMethods.find(REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_TOOLBASED]) == m_knownRegistrationMethods.end())
+        {
+          m_notificationSystem.QueueMessage(L"No alignment configuration defined. Please add the necessary information to the configuration file and try again.");
+          return;
+        }
+        m_currentRegistrationMethod = m_knownRegistrationMethods[REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_TOOLBASED]];
+        m_currentRegistrationMethod->SetWorldAnchor(m_regAnchor);
+        m_currentRegistrationMethod->StartAsync().then([this](bool result)
+        {
+          if (!result)
+          {
+            std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
+            m_currentRegistrationMethod = nullptr;
+            m_notificationSystem.QueueMessage(L"Unable to start tool based registration.");
+          }
+        });
+      };
+
       callbackMap[L"stop registration"] = [this](SpeechRecognitionResult ^ result)
       {
         std::lock_guard<std::mutex> guard(m_registrationMethodMutex);

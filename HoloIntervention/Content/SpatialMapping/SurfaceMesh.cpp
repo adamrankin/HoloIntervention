@@ -546,7 +546,6 @@ namespace HoloIntervention
         throw std::exception("Cannot compute bounds.");
       }
 
-      //float4x4 boxToWorld = make_float4x4_scale(bounds->Value.Extents) * make_float4x4_from_quaternion(bounds->Value.Orientation) * make_float4x4_translation(bounds->Value.Center);
       float4x4 m_worldToBoxCenterTransform = make_float4x4_scale(float3(1.f, 1.f, 1.f) / bounds->Value.Extents) * make_float4x4_from_quaternion(inverse(bounds->Value.Orientation)) * make_float4x4_translation(-bounds->Value.Center);
 
       m_lastWorldToBoxComputedCoordSystem = baseCoordinateSystem;
