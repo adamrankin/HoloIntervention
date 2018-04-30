@@ -46,7 +46,7 @@
 
   <ToolBasedRegistration
     IGTConnection="PlusServer"
-    From="Reference"
+    From="Tool"
     To="Reference"/>
 
   <OpticalRegistration
