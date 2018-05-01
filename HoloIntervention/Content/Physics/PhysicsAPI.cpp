@@ -431,6 +431,13 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
+    void PhysicsAPI::AddOrUpdateAnchor(Windows::Perception::Spatial::SpatialAnchor^ anchor, Platform::String^ anchorName)
+    {
+      std::lock_guard<std::mutex> lock(m_anchorMutex);
+      m_spatialAnchors[anchorName] = anchor;
+    }
+
+    //----------------------------------------------------------------------------
     SpatialAnchor^ PhysicsAPI::GetAnchor(Platform::String^ anchorName)
     {
       if (HasAnchor(anchorName))

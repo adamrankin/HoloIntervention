@@ -576,6 +576,42 @@ namespace HoloIntervention
           m_notificationSystem.QueueMessage(L"Visualization disabled.");
         }
       };
+
+      callbackMap[L"anchor up"] = [this](SpeechRecognitionResult ^ result)
+      {
+        std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
+        if (m_regAnchor == nullptr)
+        {
+          return;
+        }
+
+        auto anchor = m_regAnchor->TryCreateRelativeTo(m_regAnchor->CoordinateSystem, float3(0.f, 0.f, 0.005f)); // 5 mm in Z
+        if (anchor != nullptr)
+        {
+          m_regAnchor = nullptr;
+          m_physicsAPI.RemoveAnchor(REGISTRATION_ANCHOR_NAME);
+          m_physicsAPI.AddOrUpdateAnchor(anchor, REGISTRATION_ANCHOR_NAME);
+          m_regAnchor = anchor;
+        }
+      };
+
+      callbackMap[L"anchor down"] = [this](SpeechRecognitionResult ^ result)
+      {
+        std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
+        if (m_regAnchor == nullptr)
+        {
+          return;
+        }
+
+        auto anchor = m_regAnchor->TryCreateRelativeTo(m_regAnchor->CoordinateSystem, float3(0.f, 0.f, -0.005f)); // 5 mm in -Z
+        if (anchor != nullptr)
+        {
+          m_regAnchor = nullptr;
+          m_physicsAPI.RemoveAnchor(REGISTRATION_ANCHOR_NAME);
+          m_physicsAPI.AddOrUpdateAnchor(anchor, REGISTRATION_ANCHOR_NAME);
+          m_regAnchor = anchor;
+        }
+      };
     }
 
     //----------------------------------------------------------------------------

@@ -80,6 +80,7 @@ namespace HoloIntervention
 
       bool DropAnchorAtIntersectionHit(Platform::String^ anchorName, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem, Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
       size_t RemoveAnchor(Platform::String^ anchorName);
+      void AddOrUpdateAnchor(Windows::Perception::Spatial::SpatialAnchor^ anchor, Platform::String^ anchorName);
       Windows::Perception::Spatial::SpatialAnchor^ GetAnchor(Platform::String^ anchorName);
       bool HasAnchor(Platform::String^ anchorName);
 
