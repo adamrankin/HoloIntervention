@@ -128,7 +128,7 @@ namespace HoloIntervention
       {
         return m_currentRegistrationMethod->GetStabilizePriority();
       }
-      else if (m_currentRegistrationMethod != nullptr && !m_currentRegistrationMethod->IsStabilizationActive() && m_regAnchorModel != nullptr && m_regAnchorModel->IsInFrustum())
+      else if (m_regAnchorModel != nullptr && m_regAnchorModel->IsInFrustum())
       {
         return PRIORITY_REGISTRATION;
       }
@@ -585,13 +585,33 @@ namespace HoloIntervention
           return;
         }
 
-        auto anchor = m_regAnchor->TryCreateRelativeTo(m_regAnchor->CoordinateSystem, float3(0.f, 0.f, 0.005f)); // 5 mm in Z
+        auto anchor = m_regAnchor->TryCreateRelativeTo(m_regAnchor->CoordinateSystem, float3(0.f, 0.005f, 0.f)); // 5 mm in Y
         if (anchor != nullptr)
         {
           m_regAnchor = nullptr;
           m_physicsAPI.RemoveAnchor(REGISTRATION_ANCHOR_NAME);
           m_physicsAPI.AddOrUpdateAnchor(anchor, REGISTRATION_ANCHOR_NAME);
           m_regAnchor = anchor;
+          m_physicsAPI.SaveAppStateAsync();
+        }
+      };
+
+      callbackMap[L"anchor big up"] = [this](SpeechRecognitionResult ^ result)
+      {
+        std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
+        if (m_regAnchor == nullptr)
+        {
+          return;
+        }
+
+        auto anchor = m_regAnchor->TryCreateRelativeTo(m_regAnchor->CoordinateSystem, float3(0.f, 0.01f, 0.f)); // 1 cm in Y
+        if (anchor != nullptr)
+        {
+          m_regAnchor = nullptr;
+          m_physicsAPI.RemoveAnchor(REGISTRATION_ANCHOR_NAME);
+          m_physicsAPI.AddOrUpdateAnchor(anchor, REGISTRATION_ANCHOR_NAME);
+          m_regAnchor = anchor;
+          m_physicsAPI.SaveAppStateAsync();
         }
       };
 
@@ -603,13 +623,33 @@ namespace HoloIntervention
           return;
         }
 
-        auto anchor = m_regAnchor->TryCreateRelativeTo(m_regAnchor->CoordinateSystem, float3(0.f, 0.f, -0.005f)); // 5 mm in -Z
+        auto anchor = m_regAnchor->TryCreateRelativeTo(m_regAnchor->CoordinateSystem, float3(0.f, -0.005f, 0.f)); // 5 mm in -Y
         if (anchor != nullptr)
         {
           m_regAnchor = nullptr;
           m_physicsAPI.RemoveAnchor(REGISTRATION_ANCHOR_NAME);
           m_physicsAPI.AddOrUpdateAnchor(anchor, REGISTRATION_ANCHOR_NAME);
           m_regAnchor = anchor;
+          m_physicsAPI.SaveAppStateAsync();
+        }
+      };
+
+      callbackMap[L"anchor big down"] = [this](SpeechRecognitionResult ^ result)
+      {
+        std::lock_guard<std::mutex> guard(m_registrationMethodMutex);
+        if (m_regAnchor == nullptr)
+        {
+          return;
+        }
+
+        auto anchor = m_regAnchor->TryCreateRelativeTo(m_regAnchor->CoordinateSystem, float3(0.f, -0.01f, 0.f)); // 1 cm in -Y
+        if (anchor != nullptr)
+        {
+          m_regAnchor = nullptr;
+          m_physicsAPI.RemoveAnchor(REGISTRATION_ANCHOR_NAME);
+          m_physicsAPI.AddOrUpdateAnchor(anchor, REGISTRATION_ANCHOR_NAME);
+          m_regAnchor = anchor;
+          m_physicsAPI.SaveAppStateAsync();
         }
       };
     }

@@ -53,12 +53,12 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ToolBasedRegistration::RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap)
     {
-      callbackMap[L"disable tool rotation"] = [this](SpeechRecognitionResult ^ result)
+      callbackMap[L"disable tool registration rotation"] = [this](SpeechRecognitionResult ^ result)
       {
         m_rotationEnabled = false;
       };
 
-      callbackMap[L"enable tool rotation"] = [this](SpeechRecognitionResult ^ result)
+      callbackMap[L"enable tool registration rotation"] = [this](SpeechRecognitionResult ^ result)
       {
         m_rotationEnabled = true;
       };
