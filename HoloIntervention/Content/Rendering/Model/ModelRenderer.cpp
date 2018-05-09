@@ -110,24 +110,32 @@ namespace HoloIntervention
       return create_task([this, assetLocation]()
       {
         uint64 myId(0);
-        std::shared_ptr<Model> entry = std::make_shared<Model>(m_deviceResources, assetLocation, m_timer, m_debug);
+        try
         {
-          std::lock_guard<std::mutex> guard(m_idMutex);
-          entry->SetId(m_nextUnusedId++);
-          myId = m_nextUnusedId - 1;
-        }
-        entry->SetVisible(true);
+          std::shared_ptr<Model> entry = std::make_shared<Model>(m_deviceResources, assetLocation, m_timer, m_debug);
+          {
+            std::lock_guard<std::mutex> guard(m_idMutex);
+            entry->SetId(m_nextUnusedId++);
+            myId = m_nextUnusedId - 1;
+          }
+          entry->SetVisible(true);
 
-        {
-          std::lock_guard<std::mutex> guard(m_modelListMutex);
-          m_models.push_back(entry);
-        }
+          {
+            std::lock_guard<std::mutex> guard(m_modelListMutex);
+            m_models.push_back(entry);
+          }
 
-        while (!entry->IsLoaded() && !entry->FailedLoad())
-        {
-          std::this_thread::sleep_for(std::chrono::milliseconds(100));
+          while (!entry->IsLoaded() && !entry->FailedLoad())
+          {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+          }
+          return myId;
         }
-        return myId;
+        catch (...)
+        {
+          LOG_ERROR("Model loading failed.");
+          return INVALID_TOKEN;
+        }
       });
     }
 
@@ -136,25 +144,33 @@ namespace HoloIntervention
     {
       return create_task([this, polydata]()
       {
-        uint64 myId(0);
-        std::shared_ptr<Model> entry = std::make_shared<Model>(m_deviceResources, polydata, m_timer, m_debug);
+        try
         {
-          std::lock_guard<std::mutex> guard(m_idMutex);
-          entry->SetId(m_nextUnusedId++);
-          myId = m_nextUnusedId - 1;
-        }
-        entry->SetVisible(true);
+          uint64 myId(0);
+          std::shared_ptr<Model> entry = std::make_shared<Model>(m_deviceResources, polydata, m_timer, m_debug);
+          {
+            std::lock_guard<std::mutex> guard(m_idMutex);
+            entry->SetId(m_nextUnusedId++);
+            myId = m_nextUnusedId - 1;
+          }
+          entry->SetVisible(true);
 
-        {
-          std::lock_guard<std::mutex> guard(m_modelListMutex);
-          m_models.push_back(entry);
-        }
+          {
+            std::lock_guard<std::mutex> guard(m_modelListMutex);
+            m_models.push_back(entry);
+          }
 
-        while (!entry->IsLoaded() && !entry->FailedLoad())
-        {
-          std::this_thread::sleep_for(std::chrono::milliseconds(100));
+          while (!entry->IsLoaded() && !entry->FailedLoad())
+          {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+          }
+          return myId;
         }
-        return myId;
+        catch (...)
+        {
+          LOG_ERROR("Model loading failed.");
+          return INVALID_TOKEN;
+        }
       });
     }
 

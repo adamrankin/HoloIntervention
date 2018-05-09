@@ -144,7 +144,7 @@ namespace HoloIntervention
   }
 
   //-----------------------------------------------------------------------
-  bool wait_until_condition(std::function<bool()> func, unsigned int timeoutMs);
+  bool wait_until_condition(std::function<bool()> func, uint32 timeoutMs, uint32 stepMs);
 
   //------------------------------------------------------------------------
   Concurrency::task<void> complete_after(unsigned int timeoutMs);

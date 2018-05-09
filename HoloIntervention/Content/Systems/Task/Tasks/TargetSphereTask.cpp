@@ -286,10 +286,7 @@ namespace HoloIntervention
 
         create_task([this]()
         {
-          bool result = wait_until_condition([this]()
-          {
-            return m_toolSystem.GetToolByUserId(L"Stylus") != nullptr;
-          }, 5000);
+          bool result = wait_until_condition([this](){return m_toolSystem.GetToolByUserId(L"Stylus") != nullptr;}, 5000, 100);
 
           if (result)
           {

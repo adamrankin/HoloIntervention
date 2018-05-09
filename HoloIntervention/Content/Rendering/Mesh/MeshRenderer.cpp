@@ -177,11 +177,18 @@ namespace HoloIntervention
           m_deviceResources->GetD3DDevice()->CreateVertexShader(&fileData[0], fileData.size(), nullptr, &m_vertexShader)
         );
 
-        while (m_physicsAPI.GetMeshOptions() == nullptr)
+        bool result = wait_until_condition([this]() {return m_physicsAPI.GetMeshOptions() != nullptr; }, 5000, 100);
+        
+        DXGI_FORMAT positionFormat;
+        if (result)
         {
-          std::this_thread::sleep_for(std::chrono::milliseconds(100));
+          positionFormat = (m_physicsAPI.GetMeshOptions()->VertexPositionFormat == DirectXPixelFormat::R32G32B32A32Float) ? DXGI_FORMAT_R32G32B32A32_FLOAT : DXGI_FORMAT_R32G32B32_FLOAT;
         }
-        auto positionFormat = (m_physicsAPI.GetMeshOptions()->VertexPositionFormat == DirectXPixelFormat::R32G32B32A32Float) ? DXGI_FORMAT_R32G32B32A32_FLOAT : DXGI_FORMAT_R32G32B32_FLOAT;
+        else
+        {
+          positionFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
+        }
+        
         static const D3D11_INPUT_ELEMENT_DESC vertexDesc[] =
         {
           { "POSITION", 0, positionFormat,                 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },

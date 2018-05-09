@@ -282,7 +282,7 @@ namespace HoloIntervention
         {
           return create_task([this]()
           {
-            if (!wait_until_condition([this]() {return m_surfaceObserver->GetObservedSurfaces()->Size > 0; }, 5000))
+            if (!wait_until_condition([this]() {return m_surfaceObserver->GetObservedSurfaces()->Size > 0; }, 5000, 100))
             {
               return task_from_result(false);
             }

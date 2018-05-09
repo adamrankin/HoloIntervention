@@ -229,7 +229,7 @@ namespace HoloIntervention
         });
       });
 
-      if (!wait_until_condition([&fileReady]() {bool x = fileReady; return x; }, 5000))
+      if (!wait_until_condition([&fileReady]() {bool x = fileReady; return x; }, 5000, 100))
       {
         OutputDebugStringA("Cannot create log file. No logging possible.");
         return;

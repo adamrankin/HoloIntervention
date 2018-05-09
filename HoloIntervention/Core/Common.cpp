@@ -42,13 +42,13 @@ using namespace Windows::Security::Cryptography::Core;
 namespace HoloIntervention
 {
   //----------------------------------------------------------------------------
-  bool wait_until_condition(std::function<bool()> func, unsigned int timeoutMs)
+  bool wait_until_condition(std::function<bool()> func, uint32 timeoutMs, uint32 stepMs)
   {
     uint32 msCount(0);
     while (!func() && msCount < timeoutMs)
     {
-      std::this_thread::sleep_for(std::chrono::milliseconds(10));
-      msCount += 10;
+      std::this_thread::sleep_for(std::chrono::milliseconds(stepMs));
+      msCount += stepMs;
     }
 
     return msCount < timeoutMs;

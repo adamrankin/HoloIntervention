@@ -634,11 +634,11 @@
     <None Include="Assets\Models\Tools\heart.cmo">
       <Filter>Assets\Models\Tools</Filter>
     </None>
-    <None Include="Assets\Models\heart.cmo">
-      <Filter>Assets\Models\Demo</Filter>
-    </None>
     <None Include="Assets\Models\satellite.cmo">
       <Filter>Assets\Models</Filter>
+    </None>
+    <None Include="Assets\Models\Demo\heart.cmo">
+      <Filter>Assets\Models\Demo</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

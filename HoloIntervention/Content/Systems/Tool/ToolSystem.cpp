@@ -338,6 +338,10 @@ namespace HoloIntervention
           }
           registerTask.then([this, node](uint64 token)
           {
+            if (token == INVALID_TOKEN)
+            {
+              return;
+            }
             auto tool = GetTool(token);
 
             bool lerpEnabled;
@@ -460,6 +464,11 @@ namespace HoloIntervention
       }
       return modelTask.then([this, coordinateFrame, colour, modelToObjectTransform, userId](uint64 modelEntryId)
       {
+        if (modelEntryId == INVALID_TOKEN)
+        {
+          LOG_ERROR("Cannot create tool. Model failed to load.");
+          return task_from_result(INVALID_TOKEN);
+        }
         std::shared_ptr<Tools::Tool> entry = std::make_shared<Tools::Tool>(m_modelRenderer, m_networkSystem, m_icons, m_hashedConnectionName, coordinateFrame, m_transformRepository, userId);
         entry->SetModelToObjectTransform(modelToObjectTransform);
         auto modelEntry = m_modelRenderer.GetModel(modelEntryId);
