@@ -7,7 +7,21 @@
       Model="Tools/hemisphere_stylus"
       From="Tip"
       To="Reference"
-      LerpEnabled="false" />
+      LerpEnabled="false"
+      ModelToObjectTransform="1 0 0 0
+                              0 1 0 0
+                              0 0 1 0
+                              0 0 0 1" />
+    <Tool
+      Id="Heart"
+      Model="Demo/heart"
+      From="Heart"
+      To="Reference"
+      LerpEnabled="false"
+      ModelToObjectTransform="1 0 0 0
+                              0 1 0 0
+                              0 0 1 0
+                              0 0 0 1" />
   </Tools>
 
   <TargetSphereTask

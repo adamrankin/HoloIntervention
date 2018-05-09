@@ -91,9 +91,15 @@ namespace HoloIntervention
 
       Concurrency::task<void> SetModelAsync(std::shared_ptr<Rendering::Model> entry);
       std::shared_ptr<Rendering::Model> GetModel();
+
+      void SetCoordinateFrame(UWPOpenIGTLink::TransformName^ coordFrame);
       UWPOpenIGTLink::TransformName^ GetCoordinateFrame() const;
+
       bool IsValid() const;
       bool WasValid() const;
+
+      void SetModelToObjectTransform(Windows::Foundation::Numerics::float4x4 transform);
+      Windows::Foundation::Numerics::float4x4 GetModelToObjectTransform() const;
 
       uint64 GetId() const;
       std::wstring GetUserId() const;
@@ -107,24 +113,26 @@ namespace HoloIntervention
       Rendering::ModelRenderer&                   m_modelRenderer;
       System::NetworkSystem&                      m_networkSystem;
       UI::Icons&                                  m_icons;
-      UWPOpenIGTLink::TransformRepository^        m_transformRepository;
-      uint64                                      m_hashedConnectionName;
 
+      // Tool state
+      std::wstring                                m_userId;
+      uint64                                      m_hashedConnectionName;
+      double                                      m_latestTimestamp = 0.0;
+      UWPOpenIGTLink::TransformRepository^        m_transformRepository;
+      UWPOpenIGTLink::TransformName^              m_coordinateFrame;
+
+      // Model details
       std::atomic_bool                            m_isValid = false;
       std::atomic_bool                            m_wasValid = false;
-      UWPOpenIGTLink::TransformName^              m_coordinateFrame;
-      std::shared_ptr<Rendering::Model>      m_modelEntry = nullptr;
-      double                                      m_latestTimestamp = 0.0;
-      std::wstring                                m_userId;
+      std::shared_ptr<Rendering::Model>           m_modelEntry = nullptr;
       std::atomic_bool                            m_hiddenOverride = false;
+      Windows::Foundation::Numerics::float4x4     m_modelToObjectTransform = Windows::Foundation::Numerics::float4x4::identity(); // Column major
 
       // Icon details
-      std::shared_ptr<UI::Icon>              m_iconEntry = nullptr;
+      std::shared_ptr<UI::Icon>                   m_iconEntry = nullptr;
 
-      // Kalman filter for smoothing and prediction
-      std::shared_ptr<Algorithm::KalmanFilter>    m_kalmanFilter = nullptr;
-      std::atomic_bool                            m_firstDataPoint = true;
-      cv::Mat                                     m_correctionMatrix = cv::Mat(7, 1, CV_32F);
+      // Coordinate frame details
+      static Platform::String^                    MODEL_COORDINATE_FRAME_NAME;
     };
   }
 }
