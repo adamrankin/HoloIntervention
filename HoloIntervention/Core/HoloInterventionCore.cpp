@@ -146,7 +146,7 @@ namespace HoloIntervention
     // Systems (apps-specific behaviour), eventually move to separate project and have engine DLL
     m_notificationSystem = std::make_unique<System::NotificationSystem>(*m_notificationRenderer.get());
     m_networkSystem = std::make_unique<System::NetworkSystem> (*m_notificationSystem.get(), *m_voiceInput.get(), *m_icons.get(), *m_debug.get());
-    m_registrationSystem = std::make_unique<System::RegistrationSystem>(*this, *m_networkSystem.get(), *m_physicsAPI.get(), *m_notificationSystem.get(), *m_modelRenderer.get(), *m_spatialInput.get(), *m_icons.get(), *m_debug.get());
+    m_registrationSystem = std::make_unique<System::RegistrationSystem>(*this, *m_networkSystem.get(), *m_physicsAPI.get(), *m_notificationSystem.get(), *m_modelRenderer.get(), *m_spatialInput.get(), *m_icons.get(), *m_debug.get(), m_timer);
     m_toolSystem = std::make_unique<System::ToolSystem>(*m_notificationSystem.get(), *m_registrationSystem.get(), *m_modelRenderer.get(), *m_networkSystem.get(), *m_icons.get());
     m_gazeSystem = std::make_unique<System::GazeSystem> (*m_notificationSystem.get(), *m_physicsAPI.get(), *m_modelRenderer.get());
     m_imagingSystem = std::make_unique<System::ImagingSystem> (*m_registrationSystem.get(), *m_notificationSystem.get(), *m_sliceRenderer.get(), *m_volumeRenderer.get(), *m_networkSystem.get(), *m_debug.get());
@@ -396,7 +396,7 @@ namespace HoloIntervention
 
         if (headPose != nullptr)
         {
-          m_registrationSystem->Update(m_timer, hmdCoordinateSystem, headPose, prediction->CameraPoses->GetAt(0));
+          m_registrationSystem->Update(hmdCoordinateSystem, headPose, prediction->CameraPoses->GetAt(0));
           m_gazeSystem->Update(m_timer, hmdCoordinateSystem, headPose);
           m_icons->Update(m_timer, headPose);
           m_soundAPI->Update(m_timer, hmdCoordinateSystem);

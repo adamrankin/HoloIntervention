@@ -52,6 +52,9 @@ namespace HoloIntervention
   bool ArrayToFloat4x4(const std::array<float, 9>& inMatrix, Windows::Foundation::Numerics::float4x4& outMatrix);
 
   std::wstring PrintMatrix(const Windows::Foundation::Numerics::float4x4& matrix);
+  Windows::Foundation::Numerics::float4x4 ReadMatrix(const std::wstring& string);
+  Windows::Foundation::Numerics::float4x4 ReadMatrix(const std::string& string);
+  Windows::Foundation::Numerics::float4x4 ReadMatrix(Platform::String^ string);
 
   /*
   Copyright (c) Elvis C. S. Chen, elvis.chen@gmail.com

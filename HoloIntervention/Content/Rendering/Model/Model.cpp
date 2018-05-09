@@ -788,11 +788,6 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void Model::RenderGreyscale()
     {
-      if (m_isGreyscale)
-      {
-        return;
-      }
-
       if (m_model != nullptr)
       {
         m_model->UpdateEffects([this](IEffect * effect)
@@ -801,7 +796,6 @@ namespace HoloIntervention
           if (basicEffect != nullptr)
           {
             basicEffect->SetColorAndAlpha(XMLoadFloat4(&float4(0.8f, 0.8f, 0.8f, 1.0f)));
-            m_isGreyscale = true;
           }
         });
       }
@@ -814,11 +808,6 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void Model::RenderDefault()
     {
-      if (!m_isGreyscale)
-      {
-        return;
-      }
-
       if (m_model != nullptr)
       {
         m_model->UpdateEffects([this](IEffect * effect)
@@ -827,7 +816,6 @@ namespace HoloIntervention
           if (basicEffect != nullptr)
           {
             basicEffect->SetColorAndAlpha(XMLoadFloat4(&m_defaultColours[effect]));
-            m_isGreyscale = false;
           }
         });
       }

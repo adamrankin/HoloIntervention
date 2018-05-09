@@ -182,7 +182,6 @@ namespace HoloIntervention
       std::array<float, 6>                                  m_modelBounds = { -1.f };
       std::wstring                                          m_assetLocation;
       std::map<DirectX::IEffect*, DirectX::XMFLOAT4>        m_defaultColours;
-      std::atomic_bool                                      m_isGreyscale = false;
       std::atomic_bool                                      m_wireframe = false;
       Windows::Foundation::Numerics::float3                 m_velocity = { 0.f, 0.f, 0.f };
       Windows::Foundation::Numerics::float4x4               m_lastPose = Windows::Foundation::Numerics::float4x4::identity();

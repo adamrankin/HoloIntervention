@@ -28,6 +28,11 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "IRegistrationMethod.h"
 #include "IVoiceInput.h"
 
+namespace DX
+{
+  class StepTimer;
+}
+
 namespace HoloIntervention
 {
   class Debug;
@@ -102,7 +107,8 @@ namespace HoloIntervention
                                  Rendering::ModelRenderer& modelRenderer,
                                  Input::SpatialInput& spatialInput,
                                  UI::Icons& icons,
-                                 Debug& debug);
+                                 Debug& debug,
+                                 DX::StepTimer& timer);
       ~ModelAlignmentRegistration();
 
     protected:
@@ -113,6 +119,7 @@ namespace HoloIntervention
       UI::Icons&                                            m_icons;
       Input::SpatialInput&                                  m_spatialInput;
       Debug&                                                m_debug;
+      DX::StepTimer&                                        m_timer;
 
       // State variables
       std::wstring                                          m_connectionName;
@@ -121,7 +128,7 @@ namespace HoloIntervention
       UWPOpenIGTLink::TransformName^                        m_sphereToReferenceTransformName = ref new UWPOpenIGTLink::TransformName(L"Sphere", L"Reference");
       std::atomic_bool                                      m_started = false;
       std::atomic_bool                                      m_calculating = false;
-      std::shared_ptr<UI::Icon>                        m_sphereIconEntry = nullptr;
+      std::shared_ptr<UI::Icon>                             m_sphereIconEntry = nullptr;
 
       // Input variables
       uint64                                                m_sourceObserverId = INVALID_TOKEN;
@@ -149,11 +156,14 @@ namespace HoloIntervention
       size_t                                                m_tessellation = 16;
       std::atomic_bool                                      m_invertN = false;
       std::atomic_bool                                      m_rhCoords = true;
-      std::shared_ptr<Rendering::Model>                m_modelEntry = nullptr;
+      std::shared_ptr<Rendering::Model>                     m_modelEntry = nullptr;
+      uint64                                                m_trackingVisibleMessageId = INVALID_TOKEN;
+      float                                                 m_invalidTrackingTimer = 0.f;
 
       // Constants
       static const float                                    MIN_DISTANCE_BETWEEN_POINTS_METER; // (currently 10mm)
       static const uint32                                   DEFAULT_NUMBER_OF_POINTS_TO_COLLECT = 12;
+      static const float                                    INVALID_TRACKING_TIMEOUT_SEC;
       static const float                                    HOLOLENS_ICON_PITCH_RAD;
       static const float                                    HOLOLENS_ICON_YAW_RAD;
       static const float                                    HOLOLENS_ICON_ROLL_RAD;

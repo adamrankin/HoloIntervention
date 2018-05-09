@@ -332,6 +332,51 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
+  float4x4 ReadMatrix(const std::wstring& string)
+  {
+    float4x4 result;
+    std::wstringstream wss;
+    wss << string;
+    try
+    {
+      wss >> result.m11;
+      wss >> result.m12;
+      wss >> result.m13;
+      wss >> result.m14;
+      wss >> result.m21;
+      wss >> result.m22;
+      wss >> result.m23;
+      wss >> result.m24;
+      wss >> result.m31;
+      wss >> result.m32;
+      wss >> result.m33;
+      wss >> result.m34;
+      wss >> result.m41;
+      wss >> result.m42;
+      wss >> result.m43;
+      wss >> result.m44;
+    }
+    catch (...)
+    {
+      WLOG_ERROR(std::wstring(L"Unable to parse matrix: ") + string);
+      return float4x4::identity();
+    }
+    return result;
+  }
+
+  //----------------------------------------------------------------------------
+  Windows::Foundation::Numerics::float4x4 ReadMatrix(const std::string& string)
+  {
+    return ReadMatrix(std::wstring(begin(string), end(string)));
+  }
+
+  //----------------------------------------------------------------------------
+  Windows::Foundation::Numerics::float4x4 ReadMatrix(Platform::String^ string)
+  {
+    return ReadMatrix(std::wstring(string->Data()));
+  }
+
+  //----------------------------------------------------------------------------
   void LinesIntersection(const std::vector<Line>& lines, Point& outPoint, float& outFRE)
   {
     /*

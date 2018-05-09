@@ -114,12 +114,11 @@ namespace HoloIntervention
                          Rendering::ModelRenderer& modelRenderer,
                          Input::SpatialInput& spatialInput,
                          UI::Icons& icons,
-                         Debug& debug
-                        );
+                         Debug& debug,
+                         DX::StepTimer& timer);
       ~RegistrationSystem();
 
-      void Update(DX::StepTimer& timer,
-                  Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem,
+      void Update(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem,
                   Windows::UI::Input::Spatial::SpatialPointerPose^ headPose,
                   Windows::Graphics::Holographic::HolographicCameraPose^ cameraPose);
 
@@ -143,6 +142,7 @@ namespace HoloIntervention
       Debug&                                                          m_debug;
       Input::SpatialInput&                                            m_spatialInput;
       Windows::Data::Xml::Dom::XmlDocument^                           m_configDocument = nullptr;
+      DX::StepTimer&                                                  m_timer;
 
       // State variables
       std::atomic_bool                                                m_forcePose = false;

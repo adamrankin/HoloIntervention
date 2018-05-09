@@ -203,7 +203,7 @@ namespace HoloIntervention
         for (auto pair :
              {
                std::pair<std::wstring, std::shared_ptr<IRegistrationMethod>>(REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_OPTICAL], std::make_shared<OpticalRegistration>(m_notificationSystem, m_networkSystem)),
-               std::pair<std::wstring, std::shared_ptr<IRegistrationMethod>>(REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_MODELALIGNMENT], std::make_shared<ModelAlignmentRegistration>(m_notificationSystem, m_networkSystem, m_modelRenderer, m_spatialInput, m_icons, m_debug)),
+               std::pair<std::wstring, std::shared_ptr<IRegistrationMethod>>(REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_MODELALIGNMENT], std::make_shared<ModelAlignmentRegistration>(m_notificationSystem, m_networkSystem, m_modelRenderer, m_spatialInput, m_icons, m_debug, m_timer)),
                std::pair<std::wstring, std::shared_ptr<IRegistrationMethod>>(REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_CAMERA], std::make_shared<CameraRegistration>(m_notificationSystem, m_networkSystem, m_modelRenderer)),
                std::pair<std::wstring, std::shared_ptr<IRegistrationMethod>>(REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_TOOLBASED], std::make_shared<ToolBasedRegistration>(m_networkSystem))
              })
@@ -224,7 +224,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    RegistrationSystem::RegistrationSystem(HoloInterventionCore& core, NetworkSystem& networkSystem, Physics::PhysicsAPI& physicsAPI, NotificationSystem& notificationSystem, Rendering::ModelRenderer& modelRenderer, Input::SpatialInput& spatialInput, UI::Icons& icons, Debug& debug)
+    RegistrationSystem::RegistrationSystem(HoloInterventionCore& core, NetworkSystem& networkSystem, Physics::PhysicsAPI& physicsAPI, NotificationSystem& notificationSystem, Rendering::ModelRenderer& modelRenderer, Input::SpatialInput& spatialInput, UI::Icons& icons, Debug& debug, DX::StepTimer& timer)
       : ILocatable(core)
       , m_notificationSystem(notificationSystem)
       , m_networkSystem(networkSystem)
@@ -234,6 +234,7 @@ namespace HoloIntervention
       , m_debug(debug)
       , m_spatialInput(spatialInput)
       , m_currentRegistrationMethod(nullptr)
+      , m_timer(timer)
     {
       m_modelRenderer.AddModelAsync(REGISTRATION_ANCHOR_MODEL_FILENAME).then([this](uint64 m_regAnchorModelId)
       {
@@ -260,7 +261,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    void RegistrationSystem::Update(DX::StepTimer& timer, SpatialCoordinateSystem^ coordinateSystem, SpatialPointerPose^ headPose, HolographicCameraPose^ cameraPose)
+    void RegistrationSystem::Update(SpatialCoordinateSystem^ coordinateSystem, SpatialPointerPose^ headPose, HolographicCameraPose^ cameraPose)
     {
       // Anchor placement logic
       if (m_regAnchorRequested)

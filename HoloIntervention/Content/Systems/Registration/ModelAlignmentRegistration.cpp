@@ -31,6 +31,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Core includes
 #include "CameraResources.h"
+#include "StepTimer.h"
 
 // Rendering includes
 #include "Model.h"
@@ -64,12 +65,13 @@ namespace HoloIntervention
   {
     // If this distance not achieved between points, ask the user to move the marker further
     const float ModelAlignmentRegistration::MIN_DISTANCE_BETWEEN_POINTS_METER = 0.1f;
+    const float ModelAlignmentRegistration::INVALID_TRACKING_TIMEOUT_SEC = 0.75;
     const float ModelAlignmentRegistration::HOLOLENS_ICON_PITCH_RAD = static_cast<float>(-M_PI_4 * 3 / 2);
     const float ModelAlignmentRegistration::HOLOLENS_ICON_YAW_RAD = static_cast<float>(-M_PI_4 * 2 / 3);
     const float ModelAlignmentRegistration::HOLOLENS_ICON_ROLL_RAD = 0.f;
 
     //----------------------------------------------------------------------------
-    ModelAlignmentRegistration::ModelAlignmentRegistration(System::NotificationSystem& notificationSystem, System::NetworkSystem& networkSystem, Rendering::ModelRenderer& modelRenderer, Input::SpatialInput& spatialInput, UI::Icons& icons, Debug& debug)
+    ModelAlignmentRegistration::ModelAlignmentRegistration(System::NotificationSystem& notificationSystem, System::NetworkSystem& networkSystem, Rendering::ModelRenderer& modelRenderer, Input::SpatialInput& spatialInput, UI::Icons& icons, Debug& debug, DX::StepTimer& timer)
       : m_notificationSystem(notificationSystem)
       , m_networkSystem(networkSystem)
       , m_modelRenderer(modelRenderer)
@@ -78,6 +80,7 @@ namespace HoloIntervention
       , m_debug(debug)
       , m_numberOfPointsToCollectPerEye(DEFAULT_NUMBER_OF_POINTS_TO_COLLECT)
       , m_pointToLineRegistration(std::make_shared<Algorithm::PointToLineRegistration>())
+      , m_timer(timer)
     {
 
     }
@@ -426,17 +429,24 @@ namespace HoloIntervention
       m_modelEntry->SetDesiredPose(make_float4x4_translation(point));
 
       // Update icon logic
+      m_notificationSystem.RemoveMessage(m_trackingVisibleMessageId);
       auto sphereToReferenceTransform = m_networkSystem.GetTransform(m_hashedConnectionName, m_sphereToReferenceTransformName, m_latestSphereTimestamp);
       if (sphereToReferenceTransform == nullptr || !sphereToReferenceTransform->Valid)
       {
-        if (sphereToReferenceTransform != nullptr && !sphereToReferenceTransform->Valid)
+        m_invalidTrackingTimer += static_cast<float>(m_timer.GetElapsedSeconds());
+
+        if (m_invalidTrackingTimer > INVALID_TRACKING_TIMEOUT_SEC)
         {
           m_sphereIconEntry->GetModel()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
+
+          m_notificationSystem.RemoveMessage(m_trackingVisibleMessageId);
+          m_trackingVisibleMessageId = m_notificationSystem.QueueMessage(L"Can't see sphere!", 1.f);
+          m_pointCaptureRequested = false;
         }
-        m_notificationSystem.QueueMessage(L"Can't see sphere!", 1.f);
-        m_pointCaptureRequested = false;
+
         return;
       }
+      m_invalidTrackingTimer = 0.f;
       m_latestSphereTimestamp = sphereToReferenceTransform->Timestamp;
       m_sphereIconEntry->GetModel()->SetRenderingState(Rendering::RENDERING_DEFAULT);
 

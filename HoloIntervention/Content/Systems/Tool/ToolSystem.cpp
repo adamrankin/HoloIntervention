@@ -25,9 +25,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "pch.h"
+#include "Common.h"
+#include "MathCommon.h"
 #include "Tool.h"
 #include "ToolSystem.h"
-#include "Common.h"
 
 // Rendering includes
 #include "ModelRenderer.h"
@@ -146,6 +147,8 @@ namespace HoloIntervention
           {
             toolElem->SetAttribute(L"Model", ref new Platform::String(tool->GetModel()->GetAssetLocation().c_str()));
           }
+          
+          toolElem->SetAttribute("ModelToObjectTransform", ref new Platform::String(PrintMatrix(tool->GetModelToObjectTransform()).c_str()));
           toolElem->SetAttribute(L"From", tool->GetCoordinateFrame()->From());
           toolElem->SetAttribute(L"To", tool->GetCoordinateFrame()->To());
           toolElem->SetAttribute(L"Id", ref new Platform::String(tool->GetUserId().c_str()));
@@ -281,10 +284,17 @@ namespace HoloIntervention
             }
           }
 
+          float4x4 mat = float4x4::identity();
+          if (HasAttribute(L"ModelToObjectTransform", node))
+          {
+            auto transformStr = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"ModelToObjectTransform")->NodeValue);
+            mat = ReadMatrix(transformStr);
+          }
+
           task<uint64> registerTask;
           if (modelString != nullptr)
           {
-            registerTask = RegisterToolAsync(std::wstring(modelString->Data()), userId, false, trName);
+            registerTask = RegisterToolAsync(std::wstring(modelString->Data()), userId, mat, false, trName);
           }
           else
           {
@@ -324,7 +334,7 @@ namespace HoloIntervention
             {
               invertn = IsEqualInsensitive(invertnString, L"true");
             }
-            registerTask = RegisterToolAsync(std::wstring(primString->Data()), userId, true, trName, colour, argument, tessellation, rhcoords, invertn);
+            registerTask = RegisterToolAsync(std::wstring(primString->Data()), userId, mat, true, trName, colour, argument, tessellation, rhcoords, invertn);
           }
           registerTask.then([this, node](uint64 token)
           {
@@ -437,7 +447,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<uint64> ToolSystem::RegisterToolAsync(const std::wstring& modelName, Platform::String^ userId, const bool isPrimitive, UWPOpenIGTLink::TransformName^ coordinateFrame, float4 colour, float3 argument, size_t tessellation, bool rhcoords, bool invertn)
+    task<uint64> ToolSystem::RegisterToolAsync(const std::wstring& modelName, Platform::String^ userId, float4x4 modelToObjectTransform, const bool isPrimitive, UWPOpenIGTLink::TransformName^ coordinateFrame, float4 colour, float3 argument, size_t tessellation, bool rhcoords, bool invertn)
     {
       task<uint64> modelTask;
       if (!isPrimitive)
@@ -448,9 +458,10 @@ namespace HoloIntervention
       {
         modelTask = m_modelRenderer.AddPrimitiveAsync(modelName, argument, tessellation, rhcoords, invertn);
       }
-      return modelTask.then([this, coordinateFrame, colour, userId](uint64 modelEntryId)
+      return modelTask.then([this, coordinateFrame, colour, modelToObjectTransform, userId](uint64 modelEntryId)
       {
         std::shared_ptr<Tools::Tool> entry = std::make_shared<Tools::Tool>(m_modelRenderer, m_networkSystem, m_icons, m_hashedConnectionName, coordinateFrame, m_transformRepository, userId);
+        entry->SetModelToObjectTransform(modelToObjectTransform);
         auto modelEntry = m_modelRenderer.GetModel(modelEntryId);
         return entry->SetModelAsync(modelEntry).then([this, entry, modelEntry, colour]()
         {
