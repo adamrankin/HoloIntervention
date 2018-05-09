@@ -57,7 +57,7 @@ namespace HoloIntervention
     {
       std::shared_ptr<Tools::Tool> maxEntry(nullptr);
       float maxPriority(PRIORITY_NOT_ACTIVE);
-      for (auto& entry : m_toolEntries)
+      for (auto& entry : m_tools)
       {
         if (entry->GetStabilizePriority() > maxPriority)
         {
@@ -79,7 +79,7 @@ namespace HoloIntervention
     {
       std::shared_ptr<Tools::Tool> maxEntry(nullptr);
       float maxPriority(PRIORITY_NOT_ACTIVE);
-      for (auto& entry : m_toolEntries)
+      for (auto& entry : m_tools)
       {
         if (entry->GetStabilizePriority() > maxPriority)
         {
@@ -100,7 +100,7 @@ namespace HoloIntervention
     float ToolSystem::GetStabilizePriority() const
     {
       float maxPriority(PRIORITY_NOT_ACTIVE);
-      for (auto& entry : m_toolEntries)
+      for (auto& entry : m_tools)
       {
         if (entry->GetStabilizePriority() > maxPriority)
         {
@@ -129,7 +129,7 @@ namespace HoloIntervention
         toolsElem->SetAttribute(L"ShowIcons", m_showIcons ? L"true" : L"false");
         node->AppendChild(toolsElem);
 
-        for (auto tool : m_toolEntries)
+        for (auto tool : m_tools)
         {
           auto toolElem = document->CreateElement("Tool");
           if (tool->GetModel()->IsPrimitive())
@@ -271,6 +271,16 @@ namespace HoloIntervention
             throw ref new Platform::Exception(E_FAIL, L"Tool entry contains invalid transform name.");
           }
 
+          // Ensure unique tool id
+          for (auto& tool : m_tools)
+          {
+            if (IsEqualInsensitive(userId, tool->GetUserId()))
+            {
+              LOG_ERROR("Duplicate tool ID used. Skipping tool configuration.");
+              continue;
+            }
+          }
+
           task<uint64> registerTask;
           if (modelString != nullptr)
           {
@@ -359,14 +369,14 @@ namespace HoloIntervention
     uint32 ToolSystem::GetToolCount() const
     {
       std::lock_guard<std::mutex> guard(m_entriesMutex);
-      return m_toolEntries.size();
+      return m_tools.size();
     }
 
     //----------------------------------------------------------------------------
     std::shared_ptr<Tools::Tool> ToolSystem::GetTool(uint64 token) const
     {
       std::lock_guard<std::mutex> guard(m_entriesMutex);
-      for (auto iter = m_toolEntries.begin(); iter != m_toolEntries.end(); ++iter)
+      for (auto iter = m_tools.begin(); iter != m_tools.end(); ++iter)
       {
         if (token == (*iter)->GetId())
         {
@@ -380,7 +390,7 @@ namespace HoloIntervention
     std::shared_ptr<HoloIntervention::Tools::Tool> ToolSystem::GetToolByUserId(const std::wstring& userId) const
     {
       std::lock_guard<std::mutex> guard(m_entriesMutex);
-      for (auto iter = m_toolEntries.begin(); iter != m_toolEntries.end(); ++iter)
+      for (auto iter = m_tools.begin(); iter != m_tools.end(); ++iter)
       {
         if (IsEqualInsensitive(userId, (*iter)->GetUserId()))
         {
@@ -399,7 +409,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     std::vector<std::shared_ptr<Tools::Tool>> ToolSystem::GetTools()
     {
-      return m_toolEntries;
+      return m_tools;
     }
 
     //----------------------------------------------------------------------------
@@ -447,7 +457,7 @@ namespace HoloIntervention
           modelEntry->SetVisible(false);
           modelEntry->SetColour(colour);
           std::lock_guard<std::mutex> guard(m_entriesMutex);
-          m_toolEntries.push_back(entry);
+          m_tools.push_back(entry);
 
           entry->ShowIcon(m_showIcons);
 
@@ -460,11 +470,11 @@ namespace HoloIntervention
     void ToolSystem::UnregisterTool(uint64 toolToken)
     {
       std::lock_guard<std::mutex> guard(m_entriesMutex);
-      for (auto iter = m_toolEntries.begin(); iter != m_toolEntries.end(); ++iter)
+      for (auto iter = m_tools.begin(); iter != m_tools.end(); ++iter)
       {
         if (toolToken == (*iter)->GetId())
         {
-          m_toolEntries.erase(iter);
+          m_tools.erase(iter);
           return;
         }
       }
@@ -474,7 +484,7 @@ namespace HoloIntervention
     void ToolSystem::ClearTools()
     {
       std::lock_guard<std::mutex> guard(m_entriesMutex);
-      m_toolEntries.clear();
+      m_tools.clear();
     }
 
     //----------------------------------------------------------------------------
@@ -486,7 +496,7 @@ namespace HoloIntervention
       m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", HOLOLENS_COORDINATE_SYSTEM_PNAME), transpose(referenceToHMD), registrationAvailable);
 
       std::lock_guard<std::mutex> guard(m_entriesMutex);
-      for (auto entry : m_toolEntries)
+      for (auto entry : m_tools)
       {
         entry->Update(timer);
       }
@@ -498,7 +508,7 @@ namespace HoloIntervention
       callbackMap[L"hide tools"] = [this](SpeechRecognitionResult ^ result)
       {
         std::lock_guard<std::mutex> guard(m_entriesMutex);
-        for (auto entry : m_toolEntries)
+        for (auto entry : m_tools)
         {
           entry->SetHiddenOverride(true);
         }
@@ -507,7 +517,7 @@ namespace HoloIntervention
       callbackMap[L"show tools"] = [this](SpeechRecognitionResult ^ result)
       {
         std::lock_guard<std::mutex> guard(m_entriesMutex);
-        for (auto entry : m_toolEntries)
+        for (auto entry : m_tools)
         {
           entry->SetHiddenOverride(false);
         }
@@ -517,7 +527,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ToolSystem::ShowIcons(bool show)
     {
-      for (auto& entry : m_toolEntries)
+      for (auto& entry : m_tools)
       {
         entry->ShowIcon(show);
       }

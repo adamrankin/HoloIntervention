@@ -104,7 +104,7 @@ namespace HoloIntervention
       bool                                              m_showIcons = false;
       double                                            m_latestTimestamp;
       mutable std::mutex                                m_entriesMutex;
-      std::vector<std::shared_ptr<Tools::Tool>>    m_toolEntries;
+      std::vector<std::shared_ptr<Tools::Tool>>         m_tools;
       UWPOpenIGTLink::TransformRepository^              m_transformRepository;
     };
   }

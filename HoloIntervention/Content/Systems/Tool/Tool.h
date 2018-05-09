@@ -109,6 +109,9 @@ namespace HoloIntervention
       void ShowIcon(bool show);
 
     protected:
+      Platform::String^ GetModelCoordinateFrameName();
+
+    protected:
       // Cached links to system resources
       Rendering::ModelRenderer&                   m_modelRenderer;
       System::NetworkSystem&                      m_networkSystem;
@@ -132,6 +135,7 @@ namespace HoloIntervention
       std::shared_ptr<UI::Icon>                   m_iconEntry = nullptr;
 
       // Coordinate frame details
+      Platform::String^                           m_modelCoordinateFrameName = nullptr;
       static Platform::String^                    MODEL_COORDINATE_FRAME_NAME;
     };
   }

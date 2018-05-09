@@ -105,6 +105,7 @@ namespace HoloIntervention
       , m_coordinateFrame(coordinateFrame)
       , m_userId(std::wstring(userId->Data()))
     {
+      m_modelCoordinateFrameName = MODEL_COORDINATE_FRAME_NAME + userId;
       m_componentReady = true;
     }
 
@@ -123,6 +124,7 @@ namespace HoloIntervention
       , m_transformRepository(transformRepository)
       , m_userId(std::wstring(userId->Data()))
     {
+      m_modelCoordinateFrameName = MODEL_COORDINATE_FRAME_NAME + userId;
       m_coordinateFrame = ref new UWPOpenIGTLink::TransformName(ref new Platform::String(coordinateFrame.c_str()));
     }
 
@@ -161,7 +163,7 @@ namespace HoloIntervention
       m_latestTimestamp = objectToRefTransform->Timestamp;
       m_transformRepository->SetTransform(m_coordinateFrame, objectToRefTransform->Matrix, objectToRefTransform->Valid);
 
-      IKeyValuePair<bool, float4x4>^ result = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(MODEL_COORDINATE_FRAME_NAME, HOLOLENS_COORDINATE_SYSTEM_PNAME));
+      IKeyValuePair<bool, float4x4>^ result = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(GetModelCoordinateFrameName(), HOLOLENS_COORDINATE_SYSTEM_PNAME));
       m_isValid = result->Key;
       if (!m_isValid && m_wasValid)
       {
@@ -225,8 +227,8 @@ namespace HoloIntervention
     void Tool::SetCoordinateFrame(UWPOpenIGTLink::TransformName^ coordFrame)
     {
       m_coordinateFrame = coordFrame;
-      m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(MODEL_COORDINATE_FRAME_NAME, m_coordinateFrame->From()), transpose(m_modelToObjectTransform), true);
-      m_transformRepository->SetTransformPersistent(ref new UWPOpenIGTLink::TransformName(MODEL_COORDINATE_FRAME_NAME, m_coordinateFrame->From()), true);
+      m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(GetModelCoordinateFrameName(), m_coordinateFrame->From()), transpose(m_modelToObjectTransform), true);
+      m_transformRepository->SetTransformPersistent(ref new UWPOpenIGTLink::TransformName(GetModelCoordinateFrameName(), m_coordinateFrame->From()), true);
     }
 
     //----------------------------------------------------------------------------
@@ -258,8 +260,8 @@ namespace HoloIntervention
       m_modelToObjectTransform = transform;
 
       // Store as row-major (UWPOpenIGTLink convention)
-      m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(MODEL_COORDINATE_FRAME_NAME, m_coordinateFrame->From()), transpose(m_modelToObjectTransform), true);
-      m_transformRepository->SetTransformPersistent(ref new UWPOpenIGTLink::TransformName(MODEL_COORDINATE_FRAME_NAME, m_coordinateFrame->From()), true);
+      m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(GetModelCoordinateFrameName(), m_coordinateFrame->From()), transpose(m_modelToObjectTransform), true);
+      m_transformRepository->SetTransformPersistent(ref new UWPOpenIGTLink::TransformName(GetModelCoordinateFrameName(), m_coordinateFrame->From()), true);
     }
 
     //----------------------------------------------------------------------------
@@ -306,6 +308,12 @@ namespace HoloIntervention
         m_icons.RemoveEntry(m_iconEntry->GetId());
         m_iconEntry = nullptr;
       }
+    }
+
+    //----------------------------------------------------------------------------
+    Platform::String^ Tool::GetModelCoordinateFrameName()
+    {
+      return m_modelCoordinateFrameName;
     }
   }
 }
