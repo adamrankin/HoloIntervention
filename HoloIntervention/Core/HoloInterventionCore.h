@@ -153,6 +153,7 @@ namespace HoloIntervention
     std::vector<ILocatable*>                              m_locatables;
 
     // Locatability icon
+    uint64                                                m_locatabilityMessage = INVALID_TOKEN;
     std::shared_ptr<UI::Icon>                             m_locatabilityIcon = nullptr;
 
     // Engine components

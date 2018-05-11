@@ -283,43 +283,6 @@ namespace HoloIntervention
           m_targetModel = m_modelRenderer.GetModel(primId);
           m_targetModel->SetColour(DEFAULT_TARGET_COLOUR);
         });
-
-        create_task([this]()
-        {
-          bool result = wait_until_condition([this](){return m_toolSystem.GetToolByUserId(L"Stylus") != nullptr;}, 5000, 100);
-
-          if (result)
-          {
-            return m_toolSystem.GetToolByUserId(L"Stylus");
-          }
-          else
-          {
-            return std::shared_ptr<Tools::Tool>();
-          }
-        }).then([this](std::shared_ptr<Tools::Tool> entry)
-        {
-          if (entry == nullptr)
-          {
-            LOG_WARNING("Unable to locate stylus tool. Cannot create UI icon. Using cylinder as substitute");
-            // Use a cylinder as a substitute
-
-            m_modelRenderer.AddPrimitiveAsync(Rendering::PrimitiveType_CYLINDER, float3(STYLUS_CYLINDER_ICON_HEIGHT_MM / 1000.f, STYLUS_CYLINDER_ICON_RADIUS_MM / 1000.f, 1.f)).then([this](uint64 primId)
-            {
-              m_cylinderModel = m_modelRenderer.GetModel(primId);
-              m_icons.AddEntryAsync(m_cylinderModel, L"targetStylus").then([this](std::shared_ptr<UI::Icon> entry)
-              {
-                m_stylusIcon = entry;
-              });
-            });
-          }
-          else
-          {
-            m_icons.AddEntryAsync(entry->GetModel(), L"targetStylus").then([this](std::shared_ptr<UI::Icon> entry)
-            {
-              m_stylusIcon = entry;
-            });
-          }
-        });
       }
 
       //----------------------------------------------------------------------------
@@ -332,6 +295,10 @@ namespace HoloIntervention
       void TargetSphereTask::StopTask()
       {
         m_targetModel->SetVisible(false);
+
+        m_icons.RemoveEntry(m_stylusIcon->GetId());
+        m_stylusIcon = nullptr;
+
         m_taskStarted = false;
       }
 
@@ -396,7 +363,10 @@ namespace HoloIntervention
 
             if (stylusTipPose->Key)
             {
-              m_stylusIcon->GetModel()->RenderDefault();
+              if (m_stylusIcon != nullptr)
+              {
+                m_stylusIcon->GetModel()->RenderDefault();
+              }
               if (m_recordPointOnUpdate)
               {
                 m_notificationSystem.QueueMessage(L"Point recorded. Next one created...");
@@ -445,7 +415,10 @@ namespace HoloIntervention
         else
         {
           m_targetModel->RenderGreyscale();
-          m_stylusIcon->GetModel()->RenderGreyscale();
+          if (m_stylusIcon != nullptr)
+          {
+            m_stylusIcon->GetModel()->RenderGreyscale();
+          }
         }
       }
 
@@ -459,6 +432,43 @@ namespace HoloIntervention
             m_notificationSystem.QueueMessage(L"Task already running.");
             return;
           }
+
+          create_task([this]()
+          {
+            bool result = wait_until_condition([this]() {return m_toolSystem.GetToolByUserId(L"Stylus") != nullptr; }, 5000, 100);
+
+            if (result)
+            {
+              return m_toolSystem.GetToolByUserId(L"Stylus");
+            }
+            else
+            {
+              return std::shared_ptr<Tools::Tool>();
+            }
+          }).then([this](std::shared_ptr<Tools::Tool> entry)
+          {
+            if (entry == nullptr)
+            {
+              LOG_WARNING("Unable to locate stylus tool. Cannot create UI icon. Using cylinder as substitute");
+              // Use a cylinder as a substitute
+
+              m_modelRenderer.AddPrimitiveAsync(Rendering::PrimitiveType_CYLINDER, float3(STYLUS_CYLINDER_ICON_HEIGHT_MM / 1000.f, STYLUS_CYLINDER_ICON_RADIUS_MM / 1000.f, 1.f)).then([this](uint64 primId)
+              {
+                m_cylinderModel = m_modelRenderer.GetModel(primId);
+                m_icons.AddEntryAsync(m_cylinderModel, L"targetStylus").then([this](std::shared_ptr<UI::Icon> entry)
+                {
+                  m_stylusIcon = entry;
+                });
+              });
+            }
+            else
+            {
+              m_icons.AddEntryAsync(entry->GetModel(), L"targetStylus").then([this](std::shared_ptr<UI::Icon> entry)
+              {
+                m_stylusIcon = entry;
+              });
+            }
+          });
 
           GenerateNextRandomPoint();
 
