@@ -121,6 +121,7 @@ namespace HoloIntervention
     void UnregisterLocatable(ILocatable*);
 
     void RegisterConfigurable(IConfigurable*);
+    void UnregisterConfigurable(IConfigurable*);
 
   protected:
     // Asynchronously creates resources for new holographic cameras.

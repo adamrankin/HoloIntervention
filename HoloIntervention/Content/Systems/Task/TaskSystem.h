@@ -85,7 +85,6 @@ namespace HoloIntervention
 
     protected:
       // Cached system variables
-      HoloInterventionCore&                       m_core;
       NotificationSystem&                         m_notificationSystem;
       NetworkSystem&                              m_networkSystem;
       ToolSystem&                                 m_toolSystem;

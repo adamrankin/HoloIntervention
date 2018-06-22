@@ -134,7 +134,6 @@ namespace HoloIntervention
 
     protected:
       // Cached references
-      HoloInterventionCore&                                           m_core;
       NotificationSystem&                                             m_notificationSystem;
       NetworkSystem&                                                  m_networkSystem;
       Rendering::ModelRenderer&                                       m_modelRenderer;

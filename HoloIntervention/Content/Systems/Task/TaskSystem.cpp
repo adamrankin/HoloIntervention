@@ -95,7 +95,6 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     TaskSystem::TaskSystem(HoloInterventionCore& core, NotificationSystem& notificationSystem, NetworkSystem& networkSystem, ToolSystem& toolSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer, UI::Icons& icons)
       : IConfigurable(core)
-      , m_core(core)
       , m_notificationSystem(notificationSystem)
       , m_networkSystem(networkSystem)
       , m_toolSystem(toolSystem)

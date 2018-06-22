@@ -570,10 +570,19 @@ namespace HoloIntervention
   //----------------------------------------------------------------------------
   void HoloInterventionCore::RegisterConfigurable(IConfigurable* component)
   {
-    std::vector<IConfigurable*>::iterator it = std::find(begin(m_configurables), end(m_configurables), component);
-    if (it == end(m_configurables))
+    if (std::find(begin(m_configurables), end(m_configurables), component) == end(m_configurables))
     {
       m_configurables.push_back(component);
+    }
+  }
+
+  //----------------------------------------------------------------------------
+  void HoloInterventionCore::UnregisterConfigurable(IConfigurable* component)
+  {
+    std::vector<IConfigurable*>::iterator it = std::find(begin(m_configurables), end(m_configurables), component);
+    if (it != end(m_configurables))
+    {
+      m_configurables.erase(it);
     }
   }
 

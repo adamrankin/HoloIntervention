@@ -35,7 +35,10 @@ namespace HoloIntervention
     virtual concurrency::task<bool> ReadConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document) = 0;
 
   protected:
-    IConfigurable(HoloInterventionCore& core) { core.RegisterConfigurable(this); };
-    virtual ~IConfigurable() {};
+    IConfigurable(HoloInterventionCore& core): m_core(core) { m_core.RegisterConfigurable(this); };
+    virtual ~IConfigurable() { m_core.UnregisterConfigurable(this); };
+
+  protected:
+    HoloInterventionCore&     m_core;
   };
 }
