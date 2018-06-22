@@ -606,7 +606,8 @@ namespace HoloIntervention
     case SpatialLocatability::Unavailable:
     {
       m_locatabilityIcon->GetModel()->SetColour(1.0, 0.0, 0.0);
-      m_notificationSystem->QueueMessage(L"Warning! Positional tracking is unavailable.");
+      m_notificationSystem->RemoveMessage(m_locatabilityMessage);
+      m_locatabilityMessage = m_notificationSystem->QueueMessage(L"Warning! Positional tracking is unavailable.");
     }
     break;
 
@@ -615,11 +616,14 @@ namespace HoloIntervention
     case SpatialLocatability::PositionalTrackingInhibited:
       // Gaze-locked content still valid
       m_locatabilityIcon->GetModel()->SetColour(1.0, 1.0, 0.0);
+      m_notificationSystem->RemoveMessage(m_locatabilityMessage);
+      m_locatabilityMessage = m_notificationSystem->QueueMessage(L"Re-acquiring positional tracking...");
       break;
 
     case SpatialLocatability::PositionalTrackingActive:
       m_locatabilityIcon->GetModel()->RenderDefault();
-      m_notificationSystem->QueueMessage(L"Positional tracking is active.");
+      m_notificationSystem->RemoveMessage(m_locatabilityMessage);
+      m_locatabilityMessage = m_notificationSystem->QueueMessage(L"Positional tracking is active.", 1.0);
       break;
     }
   }
