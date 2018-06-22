@@ -63,6 +63,9 @@ namespace HoloIntervention
       virtual void Update(Windows::UI::Input::Spatial::SpatialPointerPose^ headPose, Windows::Perception::Spatial::SpatialCoordinateSystem^ hmdCoordinateSystem, Platform::IBox<Windows::Foundation::Numerics::float4x4>^ anchorToHMDBox, Windows::Graphics::Holographic::HolographicCameraPose^ cameraPose) = 0;
 
     protected:
+      IRegistrationMethod(HoloInterventionCore& core) : IConfigurable(core) {}
+
+    protected:
       // Anchor resources
       std::mutex                                                   m_anchorLock;
       Windows::Perception::Spatial::SpatialAnchor^                 m_worldAnchor = nullptr;

@@ -71,8 +71,9 @@ namespace HoloIntervention
     const float ModelAlignmentRegistration::HOLOLENS_ICON_ROLL_RAD = 0.f;
 
     //----------------------------------------------------------------------------
-    ModelAlignmentRegistration::ModelAlignmentRegistration(System::NotificationSystem& notificationSystem, System::NetworkSystem& networkSystem, Rendering::ModelRenderer& modelRenderer, Input::SpatialInput& spatialInput, UI::Icons& icons, Debug& debug, DX::StepTimer& timer)
-      : m_notificationSystem(notificationSystem)
+    ModelAlignmentRegistration::ModelAlignmentRegistration(HoloInterventionCore& core, System::NotificationSystem& notificationSystem, System::NetworkSystem& networkSystem, Rendering::ModelRenderer& modelRenderer, Input::SpatialInput& spatialInput, UI::Icons& icons, Debug& debug, DX::StepTimer& timer)
+      : IRegistrationMethod(core)
+      , m_notificationSystem(notificationSystem)
       , m_networkSystem(networkSystem)
       , m_modelRenderer(modelRenderer)
       , m_icons(icons)

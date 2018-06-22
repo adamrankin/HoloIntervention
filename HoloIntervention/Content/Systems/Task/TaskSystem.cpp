@@ -93,16 +93,17 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    TaskSystem::TaskSystem(NotificationSystem& notificationSystem, NetworkSystem& networkSystem, ToolSystem& toolSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer, UI::Icons& icons)
-      : m_notificationSystem(notificationSystem)
+    TaskSystem::TaskSystem(HoloInterventionCore& core, NotificationSystem& notificationSystem, NetworkSystem& networkSystem, ToolSystem& toolSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer, UI::Icons& icons)
+      : IConfigurable(core)
+      , m_notificationSystem(notificationSystem)
       , m_networkSystem(networkSystem)
       , m_toolSystem(toolSystem)
       , m_registrationSystem(registrationSystem)
       , m_modelRenderer(modelRenderer)
       , m_icons(icons)
     {
-      m_touchingSphereTask = std::make_shared<Tasks::TargetSphereTask>(notificationSystem, networkSystem, toolSystem, registrationSystem, modelRenderer, icons);
-      m_regModelTask = std::make_shared<Tasks::RegisterModelTask>(notificationSystem, networkSystem, registrationSystem, modelRenderer, icons);
+      m_touchingSphereTask = std::make_shared<Tasks::TargetSphereTask>(core, notificationSystem, networkSystem, toolSystem, registrationSystem, modelRenderer, icons);
+      m_regModelTask = std::make_shared<Tasks::RegisterModelTask>(core, notificationSystem, networkSystem, registrationSystem, modelRenderer, icons);
     }
 
     //----------------------------------------------------------------------------

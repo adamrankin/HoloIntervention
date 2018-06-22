@@ -145,13 +145,13 @@ namespace HoloIntervention
 
     // Systems (apps-specific behaviour), eventually move to separate project and have engine DLL
     m_notificationSystem = std::make_unique<System::NotificationSystem>(*m_notificationRenderer.get());
-    m_networkSystem = std::make_unique<System::NetworkSystem> (*m_notificationSystem.get(), *m_voiceInput.get(), *m_icons.get(), *m_debug.get());
+    m_networkSystem = std::make_unique<System::NetworkSystem> (*this, *m_notificationSystem.get(), *m_voiceInput.get(), *m_icons.get(), *m_debug.get());
     m_registrationSystem = std::make_unique<System::RegistrationSystem>(*this, *m_networkSystem.get(), *m_physicsAPI.get(), *m_notificationSystem.get(), *m_modelRenderer.get(), *m_spatialInput.get(), *m_icons.get(), *m_debug.get(), m_timer);
-    m_toolSystem = std::make_unique<System::ToolSystem>(*m_notificationSystem.get(), *m_registrationSystem.get(), *m_modelRenderer.get(), *m_networkSystem.get(), *m_icons.get());
+    m_toolSystem = std::make_unique<System::ToolSystem>(*this, *m_notificationSystem.get(), *m_registrationSystem.get(), *m_modelRenderer.get(), *m_networkSystem.get(), *m_icons.get());
     m_gazeSystem = std::make_unique<System::GazeSystem> (*m_notificationSystem.get(), *m_physicsAPI.get(), *m_modelRenderer.get());
-    m_imagingSystem = std::make_unique<System::ImagingSystem> (*m_registrationSystem.get(), *m_notificationSystem.get(), *m_sliceRenderer.get(), *m_volumeRenderer.get(), *m_networkSystem.get(), *m_debug.get());
+    m_imagingSystem = std::make_unique<System::ImagingSystem> (*this, *m_registrationSystem.get(), *m_notificationSystem.get(), *m_sliceRenderer.get(), *m_volumeRenderer.get(), *m_networkSystem.get(), *m_debug.get());
     m_splashSystem = std::make_unique<System::SplashSystem> (*m_sliceRenderer.get());
-    m_taskSystem = std::make_unique<System::TaskSystem> (*m_notificationSystem.get(), *m_networkSystem.get(), *m_toolSystem.get(), *m_registrationSystem.get(), *m_modelRenderer.get(), *m_icons.get());
+    m_taskSystem = std::make_unique<System::TaskSystem> (*this, *m_notificationSystem.get(), *m_networkSystem.get(), *m_toolSystem.get(), *m_registrationSystem.get(), *m_modelRenderer.get(), *m_icons.get());
 
     m_engineComponents.push_back(m_modelRenderer.get());
     m_engineComponents.push_back(m_sliceRenderer.get());
@@ -171,12 +171,6 @@ namespace HoloIntervention
     m_engineComponents.push_back(m_imagingSystem.get());
     m_engineComponents.push_back(m_splashSystem.get());
     m_engineComponents.push_back(m_taskSystem.get());
-
-    m_configurables.push_back(m_toolSystem.get());
-    m_configurables.push_back(m_registrationSystem.get());
-    m_configurables.push_back(m_networkSystem.get());
-    m_configurables.push_back(m_imagingSystem.get());
-    m_configurables.push_back(m_taskSystem.get());
 
     ReadConfigurationAsync().then([this](bool result)
     {
@@ -570,6 +564,25 @@ namespace HoloIntervention
     if (it != end(m_locatables))
     {
       m_locatables.erase(it);
+    }
+  }
+
+  //----------------------------------------------------------------------------
+  void HoloInterventionCore::RegisterConfigurable(IConfigurable* component)
+  {
+    if (std::find(begin(m_configurables), end(m_configurables), component) == end(m_configurables))
+    {
+      m_configurables.push_back(component);
+    }
+  }
+
+  //----------------------------------------------------------------------------
+  void HoloInterventionCore::UnregisterConfigurable(IConfigurable* component)
+  {
+    std::vector<IConfigurable*>::iterator it = std::find(begin(m_configurables), end(m_configurables), component);
+    if (it != end(m_configurables))
+    {
+      m_configurables.erase(it);
     }
   }
 

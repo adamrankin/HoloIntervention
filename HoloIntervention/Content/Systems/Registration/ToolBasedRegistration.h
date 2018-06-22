@@ -69,7 +69,7 @@ namespace HoloIntervention
       virtual Windows::Foundation::Numerics::float4x4 GetRegistrationTransformation() const;
 
     public:
-      ToolBasedRegistration(System::NetworkSystem& networkSystem);
+      ToolBasedRegistration(HoloInterventionCore& core, System::NetworkSystem& networkSystem);
       ~ToolBasedRegistration();
 
     protected:

@@ -63,7 +63,8 @@ namespace HoloIntervention
       virtual concurrency::task<bool> ReadConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
 
     public:
-      ImagingSystem(RegistrationSystem& registrationSystem,
+      ImagingSystem(HoloInterventionCore& core,
+                    RegistrationSystem& registrationSystem,
                     NotificationSystem& notificationSystem,
                     Rendering::SliceRenderer& sliceRenderer,
                     Rendering::VolumeRenderer& volumeRenderer,

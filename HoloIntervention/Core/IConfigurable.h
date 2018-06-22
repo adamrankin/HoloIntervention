@@ -23,6 +23,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
+#include "HoloInterventionCore.h"
 #include <ppltasks.h>
 
 namespace HoloIntervention
@@ -34,7 +35,10 @@ namespace HoloIntervention
     virtual concurrency::task<bool> ReadConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document) = 0;
 
   protected:
-    IConfigurable() {};
-    virtual ~IConfigurable() {};
+    IConfigurable(HoloInterventionCore& core): m_core(core) { m_core.RegisterConfigurable(this); };
+    virtual ~IConfigurable() { m_core.UnregisterConfigurable(this); };
+
+  protected:
+    HoloInterventionCore&     m_core;
   };
 }

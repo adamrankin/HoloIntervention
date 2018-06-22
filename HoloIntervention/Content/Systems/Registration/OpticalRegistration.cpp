@@ -49,8 +49,9 @@ namespace HoloIntervention
     const float OpticalRegistration::MIN_DISTANCE_BETWEEN_POINTS_METER = 0.001f;
 
     //----------------------------------------------------------------------------
-    OpticalRegistration::OpticalRegistration(System::NotificationSystem& notificationSystem, System::NetworkSystem& networkSystem)
-      : m_notificationSystem(notificationSystem)
+    OpticalRegistration::OpticalRegistration(HoloInterventionCore& core, System::NotificationSystem& notificationSystem, System::NetworkSystem& networkSystem)
+      : IRegistrationMethod(core)
+      , m_notificationSystem(notificationSystem)
       , m_networkSystem(networkSystem)
       , m_landmarkRegistration(std::make_shared<Algorithm::LandmarkRegistration>())
     {

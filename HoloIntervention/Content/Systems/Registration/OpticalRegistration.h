@@ -74,7 +74,7 @@ namespace HoloIntervention
                           Windows::Graphics::Holographic::HolographicCameraPose^ cameraPose);
 
     public:
-      OpticalRegistration(System::NotificationSystem& notificationSystem, System::NetworkSystem& networkSystem);
+      OpticalRegistration(HoloInterventionCore& core, System::NotificationSystem& notificationSystem, System::NetworkSystem& networkSystem);
       ~OpticalRegistration();
 
     protected:

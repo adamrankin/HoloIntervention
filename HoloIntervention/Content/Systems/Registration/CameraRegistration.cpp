@@ -230,8 +230,9 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    CameraRegistration::CameraRegistration(System::NotificationSystem& notificationSystem, System::NetworkSystem& networkSystem, Rendering::ModelRenderer& modelRenderer)
-      : m_modelRenderer(modelRenderer)
+    CameraRegistration::CameraRegistration(HoloInterventionCore& core, System::NotificationSystem& notificationSystem, System::NetworkSystem& networkSystem, Rendering::ModelRenderer& modelRenderer)
+      : IRegistrationMethod(core)
+      , m_modelRenderer(modelRenderer)
       , m_notificationSystem(notificationSystem)
       , m_networkSystem(networkSystem)
     {
