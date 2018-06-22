@@ -65,7 +65,8 @@ namespace HoloIntervention
       virtual concurrency::task<bool> ReadConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
 
     public:
-      ToolSystem(NotificationSystem& notificationSystem,
+      ToolSystem(HoloInterventionCore& core,
+                 NotificationSystem& notificationSystem,
                  RegistrationSystem& registrationSystem,
                  Rendering::ModelRenderer& modelRenderer,
                  NetworkSystem& networkSystem,

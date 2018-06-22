@@ -147,7 +147,7 @@ namespace HoloIntervention
           {
             toolElem->SetAttribute(L"Model", ref new Platform::String(tool->GetModel()->GetAssetLocation().c_str()));
           }
-          
+
           toolElem->SetAttribute("ModelToObjectTransform", ref new Platform::String(PrintMatrix(tool->GetModelToObjectTransform()).c_str()));
           toolElem->SetAttribute(L"From", tool->GetCoordinateFrame()->From());
           toolElem->SetAttribute(L"To", tool->GetCoordinateFrame()->To());
@@ -364,8 +364,9 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    ToolSystem::ToolSystem(NotificationSystem& notificationSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer, NetworkSystem& networkSystem, UI::Icons& icons)
-      : m_notificationSystem(notificationSystem)
+    ToolSystem::ToolSystem(HoloInterventionCore& core, NotificationSystem& notificationSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer, NetworkSystem& networkSystem, UI::Icons& icons)
+      : IConfigurable(core)
+      , m_notificationSystem(notificationSystem)
       , m_registrationSystem(registrationSystem)
       , m_icons(icons)
       , m_modelRenderer(modelRenderer)
