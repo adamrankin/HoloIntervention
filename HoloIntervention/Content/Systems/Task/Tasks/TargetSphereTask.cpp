@@ -270,8 +270,9 @@ namespace HoloIntervention
       }
 
       //----------------------------------------------------------------------------
-      TargetSphereTask::TargetSphereTask(NotificationSystem& notificationSystem, NetworkSystem& networkSystem, ToolSystem& toolSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer, UI::Icons& icons)
-        : m_notificationSystem(notificationSystem)
+      TargetSphereTask::TargetSphereTask(HoloInterventionCore& core, NotificationSystem& notificationSystem, NetworkSystem& networkSystem, ToolSystem& toolSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer, UI::Icons& icons)
+        : IConfigurable(core)
+        , m_notificationSystem(notificationSystem)
         , m_networkSystem(networkSystem)
         , m_registrationSystem(registrationSystem)
         , m_toolSystem(toolSystem)
@@ -286,7 +287,7 @@ namespace HoloIntervention
 
         create_task([this]()
         {
-          bool result = wait_until_condition([this](){return m_toolSystem.GetToolByUserId(L"Stylus") != nullptr;}, 5000, 100);
+          bool result = wait_until_condition([this]() {return m_toolSystem.GetToolByUserId(L"Stylus") != nullptr;}, 5000, 100);
 
           if (result)
           {

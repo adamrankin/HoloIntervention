@@ -201,8 +201,9 @@ namespace HoloIntervention
       }
 
       //----------------------------------------------------------------------------
-      RegisterModelTask::RegisterModelTask(NotificationSystem& notificationSystem, NetworkSystem& networkSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer, UI::Icons& icons)
-        : m_notificationSystem(notificationSystem)
+      RegisterModelTask::RegisterModelTask(HoloInterventionCore& core, NotificationSystem& notificationSystem, NetworkSystem& networkSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer, UI::Icons& icons)
+        : IConfigurable(core)
+        , m_notificationSystem(notificationSystem)
         , m_networkSystem(networkSystem)
         , m_registrationSystem(registrationSystem)
         , m_modelRenderer(modelRenderer)

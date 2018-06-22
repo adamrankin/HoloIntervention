@@ -184,8 +184,9 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    NetworkSystem::NetworkSystem(System::NotificationSystem& notificationSystem, Input::VoiceInput& voiceInput, UI::Icons& icons, Debug& debug)
-      : m_notificationSystem(notificationSystem)
+    NetworkSystem::NetworkSystem(HoloInterventionCore& core, System::NotificationSystem& notificationSystem, Input::VoiceInput& voiceInput, UI::Icons& icons, Debug& debug)
+      : IConfigurable(core)
+      , m_notificationSystem(notificationSystem)
       , m_voiceInput(voiceInput)
       , m_icons(icons)
       , m_debug(debug)

@@ -78,13 +78,14 @@ namespace HoloIntervention
       virtual void RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap);
 
     public:
-      TaskSystem(NotificationSystem&, NetworkSystem&, ToolSystem&, RegistrationSystem&, Rendering::ModelRenderer&, UI::Icons&);
+      TaskSystem(HoloInterventionCore& core, NotificationSystem&, NetworkSystem&, ToolSystem&, RegistrationSystem&, Rendering::ModelRenderer&, UI::Icons&);
       ~TaskSystem();
 
       void Update(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem, DX::StepTimer& stepTimer);
 
     protected:
       // Cached system variables
+      HoloInterventionCore&                       m_core;
       NotificationSystem&                         m_notificationSystem;
       NetworkSystem&                              m_networkSystem;
       ToolSystem&                                 m_toolSystem;

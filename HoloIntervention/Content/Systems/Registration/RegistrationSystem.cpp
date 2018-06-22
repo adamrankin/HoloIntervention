@@ -202,10 +202,10 @@ namespace HoloIntervention
         // Test each known registration method ReadConfigurationAsync and store if known
         for (auto pair :
              {
-               std::pair<std::wstring, std::shared_ptr<IRegistrationMethod>>(REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_OPTICAL], std::make_shared<OpticalRegistration>(m_notificationSystem, m_networkSystem)),
-               std::pair<std::wstring, std::shared_ptr<IRegistrationMethod>>(REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_MODELALIGNMENT], std::make_shared<ModelAlignmentRegistration>(m_notificationSystem, m_networkSystem, m_modelRenderer, m_spatialInput, m_icons, m_debug, m_timer)),
-               std::pair<std::wstring, std::shared_ptr<IRegistrationMethod>>(REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_CAMERA], std::make_shared<CameraRegistration>(m_notificationSystem, m_networkSystem, m_modelRenderer)),
-               std::pair<std::wstring, std::shared_ptr<IRegistrationMethod>>(REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_TOOLBASED], std::make_shared<ToolBasedRegistration>(m_networkSystem))
+               std::pair<std::wstring, std::shared_ptr<IRegistrationMethod>>(REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_OPTICAL], std::make_shared<OpticalRegistration>(m_core, m_notificationSystem, m_networkSystem)),
+               std::pair<std::wstring, std::shared_ptr<IRegistrationMethod>>(REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_MODELALIGNMENT], std::make_shared<ModelAlignmentRegistration>(m_core, m_notificationSystem, m_networkSystem, m_modelRenderer, m_spatialInput, m_icons, m_debug, m_timer)),
+               std::pair<std::wstring, std::shared_ptr<IRegistrationMethod>>(REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_CAMERA], std::make_shared<CameraRegistration>(m_core, m_notificationSystem, m_networkSystem, m_modelRenderer)),
+               std::pair<std::wstring, std::shared_ptr<IRegistrationMethod>>(REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_TOOLBASED], std::make_shared<ToolBasedRegistration>(m_core, m_networkSystem))
              })
         {
           bool result = pair.second->ReadConfigurationAsync(document).get();
@@ -226,6 +226,8 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     RegistrationSystem::RegistrationSystem(HoloInterventionCore& core, NetworkSystem& networkSystem, Physics::PhysicsAPI& physicsAPI, NotificationSystem& notificationSystem, Rendering::ModelRenderer& modelRenderer, Input::SpatialInput& spatialInput, UI::Icons& icons, Debug& debug, DX::StepTimer& timer)
       : ILocatable(core)
+      , IConfigurable(core)
+      , m_core(core)
       , m_notificationSystem(notificationSystem)
       , m_networkSystem(networkSystem)
       , m_modelRenderer(modelRenderer)

@@ -159,8 +159,9 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    ToolBasedRegistration::ToolBasedRegistration(System::NetworkSystem& networkSystem)
-      : m_networkSystem(networkSystem)
+    ToolBasedRegistration::ToolBasedRegistration(HoloInterventionCore& core, System::NetworkSystem& networkSystem)
+      : IRegistrationMethod(core)
+      , m_networkSystem(networkSystem)
     {
     }
 
