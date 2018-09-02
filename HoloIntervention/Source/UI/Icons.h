@@ -29,7 +29,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "Icon.h"
 
 // Rendering includes
-#include "Content/Rendering/Model/Model.h"
+#include "Source/Rendering/Model/Model.h"
 
 namespace DX
 {

@@ -50,7 +50,7 @@
     <ClCompile>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)MediaCapture;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink-bin-$(Platform);$(SolutionDir)UWPOpenIGTLink\OpenIGTLink\Source\igtlutil;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink\Source;$(IntermediateOutputPath);$(SolutionDir)DirectXTK\Src;$(SolutionDir)DirectXTK\Inc;$(SolutionDir)$(Configuration)\$(ProjectName);$(ProjectDir)Content\Systems\Tool;$(ProjectDir)Content\Systems\Notification;$(ProjectDir)Content\Systems\Imaging;$(ProjectDir)Content\Systems\Splash;$(ProjectDir)Content\Systems\Task;$(ProjectDir)Content\Systems\Task\Tasks;$(ProjectDir)Content\Systems\Network;$(ProjectDir)Content\Systems\Gaze;$(ProjectDir)Content\Systems\Registration;$(ProjectDir)Content\Systems;$(ProjectDir)Content\Math;$(ProjectDir)Content\Algorithms;$(ProjectDir)Content\UI;$(ProjectDir)Content\SpatialMapping;$(ProjectDir)Content\Debug;$(ProjectDir)Content\Capture;$(ProjectDir)Content\Physics;$(ProjectDir)Content\Network;$(ProjectDir)Content\Rendering\Volume;$(ProjectDir)Content\Rendering\Shaders;$(ProjectDir)Content\Rendering\Shaders\Compiled;$(ProjectDir)Content\Rendering\Model;$(ProjectDir)Content\Rendering\Slice;$(ProjectDir)Content\Rendering\Notification;$(ProjectDir)Content\Rendering\Mesh;$(ProjectDir)Content\Rendering\DirectXTK;$(ProjectDir)Content\Rendering;$(ProjectDir)Content\Input;$(ProjectDir)Content\Sound;$(ProjectDir)Core\Rendering;$(ProjectDir)Core;$(ProjectDir)Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content\Data;$(SolutionDir)DirectXTex\DirectXTex;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)MediaCapture;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink-bin-$(Platform);$(SolutionDir)UWPOpenIGTLink\OpenIGTLink\Source\igtlutil;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink\Source;$(ProjectDir)Source\App;$(IntermediateOutputPath);$(SolutionDir)DirectXTK\Src;$(SolutionDir)DirectXTK\Inc;$(SolutionDir)$(Configuration)\$(ProjectName);$(ProjectDir)Source\Systems\Tool;$(ProjectDir)Source\Systems\Notification;$(ProjectDir)Source\Systems\Imaging;$(ProjectDir)Source\Systems\Splash;$(ProjectDir)Source\Systems\Task;$(ProjectDir)Source\Systems\Task\Tasks;$(ProjectDir)Source\Systems\Network;$(ProjectDir)Source\Systems\Gaze;$(ProjectDir)Source\Systems\Registration;$(ProjectDir)Source\Systems;$(ProjectDir)Source\Math;$(ProjectDir)Source\Log;$(ProjectDir)Source\Common;$(ProjectDir)Source\Algorithms;$(ProjectDir)Source\UI;$(ProjectDir)Source\Spatial;$(ProjectDir)Source\Debug;$(ProjectDir)Source\Capture;$(ProjectDir)Source\Physics;$(ProjectDir)Source\Network;$(ProjectDir)Source\Rendering\Volume;$(ProjectDir)Source\Rendering\Model;$(ProjectDir)Source\Rendering\Model\DirectXTK;$(ProjectDir)Source\Rendering\Model\DirectXTK\Shaders\Compiled;$(ProjectDir)Source\Rendering\Slice;$(ProjectDir)Source\Rendering\Notification;$(ProjectDir)Source\Rendering\Mesh;$(ProjectDir)Source\Rendering;$(ProjectDir)Source\Input;$(ProjectDir)Source\Sound;$(ProjectDir)Core\Rendering;$(ProjectDir)Source;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content\Data;$(SolutionDir)DirectXTex\DirectXTex;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
@@ -67,7 +67,7 @@
     <ClCompile>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)MediaCapture;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink-bin-$(Platform);$(SolutionDir)UWPOpenIGTLink\OpenIGTLink\Source\igtlutil;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink\Source;$(IntermediateOutputPath);$(SolutionDir)DirectXTK\Src;$(SolutionDir)DirectXTK\Inc;$(SolutionDir)$(Configuration)\$(ProjectName);$(ProjectDir)Content\Systems\Tool;$(ProjectDir)Content\Systems\Notification;$(ProjectDir)Content\Systems\Imaging;$(ProjectDir)Content\Systems\Splash;$(ProjectDir)Content\Systems\Task;$(ProjectDir)Content\Systems\Task\Tasks;$(ProjectDir)Content\Systems\Network;$(ProjectDir)Content\Systems\Gaze;$(ProjectDir)Content\Systems\Registration;$(ProjectDir)Content\Systems;$(ProjectDir)Content\Math;$(ProjectDir)Content\Algorithms;$(ProjectDir)Content\UI;$(ProjectDir)Content\SpatialMapping;$(ProjectDir)Content\Debug;$(ProjectDir)Content\Capture;$(ProjectDir)Content\Physics;$(ProjectDir)Content\Network;$(ProjectDir)Content\Rendering\Volume;$(ProjectDir)Content\Rendering\Shaders;$(ProjectDir)Content\Rendering\Shaders\Compiled;$(ProjectDir)Content\Rendering\Model;$(ProjectDir)Content\Rendering\Slice;$(ProjectDir)Content\Rendering\Notification;$(ProjectDir)Content\Rendering\Mesh;$(ProjectDir)Content\Rendering\DirectXTK;$(ProjectDir)Content\Rendering;$(ProjectDir)Content\Input;$(ProjectDir)Content\Sound;$(ProjectDir)Core\Rendering;$(ProjectDir)Core;$(ProjectDir)Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content\Data;$(SolutionDir)DirectXTex\DirectXTex;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)MediaCapture;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink-bin-$(Platform);$(SolutionDir)UWPOpenIGTLink\OpenIGTLink\Source\igtlutil;$(SolutionDir)UWPOpenIGTLink\OpenIGTLink\Source;$(ProjectDir)Source\App;$(IntermediateOutputPath);$(SolutionDir)DirectXTK\Src;$(SolutionDir)DirectXTK\Inc;$(SolutionDir)$(Configuration)\$(ProjectName);$(ProjectDir)Source\Systems\Tool;$(ProjectDir)Source\Systems\Notification;$(ProjectDir)Source\Systems\Imaging;$(ProjectDir)Source\Systems\Splash;$(ProjectDir)Source\Systems\Task;$(ProjectDir)Source\Systems\Task\Tasks;$(ProjectDir)Source\Systems\Network;$(ProjectDir)Source\Systems\Gaze;$(ProjectDir)Source\Systems\Registration;$(ProjectDir)Source\Systems;$(ProjectDir)Source\Math;$(ProjectDir)Source\Log;$(ProjectDir)Source\Common;$(ProjectDir)Source\Algorithms;$(ProjectDir)Source\UI;$(ProjectDir)Source\Spatial;$(ProjectDir)Source\Debug;$(ProjectDir)Source\Capture;$(ProjectDir)Source\Physics;$(ProjectDir)Source\Network;$(ProjectDir)Source\Rendering\Volume;$(ProjectDir)Source\Rendering\Model;$(ProjectDir)Source\Rendering\Model\DirectXTK;$(ProjectDir)Source\Rendering\Model\DirectXTK\Shaders\Compiled;$(ProjectDir)Source\Rendering\Slice;$(ProjectDir)Source\Rendering\Notification;$(ProjectDir)Source\Rendering\Mesh;$(ProjectDir)Source\Rendering;$(ProjectDir)Source\Input;$(ProjectDir)Source\Sound;$(ProjectDir)Core\Rendering;$(ProjectDir)Source;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content;$(SolutionDir)UWPOpenIGTLink\UWPOpenIGTLink\Content\Data;$(SolutionDir)DirectXTex\DirectXTex;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
@@ -100,142 +100,140 @@
     <Image Include="Assets\Wide310x150Logo.scale-200.png" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AppView.h" />
-    <ClInclude Include="Content\Algorithms\KalmanFilter.h" />
-    <ClInclude Include="Content\Algorithms\LandmarkRegistration.h" />
-    <ClInclude Include="Content\Algorithms\PointToLineRegistration.h" />
-    <ClInclude Include="Content\Algorithms\PointToPlaneRegistration.h" />
-    <ClInclude Include="Content\Capture\VideoFrameProcessor.h" />
-    <ClInclude Include="Content\Debug\Debug.h" />
-    <ClInclude Include="Content\Input\IVoiceInput.h" />
-    <ClInclude Include="Content\Input\SpatialSourceHandler.h" />
-    <ClInclude Include="Content\Input\SpatialInput.h" />
-    <ClInclude Include="Content\Input\VoiceCallback.h" />
-    <ClInclude Include="Content\Input\VoiceInput.h" />
-    <ClInclude Include="Content\Math\MathCommon.h" />
-    <ClInclude Include="Content\Physics\PhysicsAPI.h" />
-    <ClInclude Include="Content\Rendering\DirectXTK\InstancedEffects.h" />
-    <ClInclude Include="Content\Rendering\DirectXTK\InstancedEffectCommon.h" />
-    <ClInclude Include="Content\Rendering\DirectXTK\InstancedGeometricPrimitive.h" />
-    <ClInclude Include="Content\Rendering\Mesh\MeshRenderer.h" />
-    <ClInclude Include="Content\Rendering\Model\Model.h" />
-    <ClInclude Include="Content\Rendering\Model\ModelRenderer.h" />
-    <ClInclude Include="Content\Rendering\Notification\DistanceFieldRenderer.h" />
-    <ClInclude Include="Content\Rendering\Notification\NotificationRenderer.h" />
-    <ClInclude Include="Content\Rendering\Notification\TextRenderer.h" />
-    <ClInclude Include="Content\Rendering\RenderingCommon.h" />
-    <ClInclude Include="Content\Rendering\Slice\Slice.h" />
-    <ClInclude Include="Content\Rendering\Slice\SliceRenderer.h" />
-    <ClInclude Include="Content\Rendering\Volume\BaseTransferFunction.h" />
-    <ClInclude Include="Content\Rendering\Volume\PiecewiseLinearTransferFunction.h" />
-    <ClInclude Include="Content\Rendering\Volume\TransferFunctionLookupTable.h" />
-    <ClInclude Include="Content\Rendering\Volume\Volume.h" />
-    <ClInclude Include="Content\Rendering\Volume\VolumeRenderer.h" />
-    <ClInclude Include="Content\Sound\AudioFileReader.h" />
-    <ClInclude Include="Content\Sound\CardioidSound.h" />
-    <ClInclude Include="Content\Sound\OmnidirectionalSound.h" />
-    <ClInclude Include="Content\Sound\SoundAPI.h" />
-    <ClInclude Include="Content\SpatialMapping\SpatialSurfaceCollection.h" />
-    <ClInclude Include="Content\SpatialMapping\SurfaceMesh.h" />
-    <ClInclude Include="Content\Systems\Gaze\GazeSystem.h" />
-    <ClInclude Include="Content\Systems\Imaging\ImagingSystem.h" />
-    <ClInclude Include="Content\Systems\Network\NetworkSystem.h" />
-    <ClInclude Include="Content\Systems\Notification\NotificationSystem.h" />
-    <ClInclude Include="Content\Systems\Registration\CameraRegistration.h" />
-    <ClInclude Include="Content\Systems\Registration\IRegistrationMethod.h" />
-    <ClInclude Include="Content\Systems\Registration\ModelAlignmentRegistration.h" />
-    <ClInclude Include="Content\Systems\Registration\ToolBasedRegistration.h" />
-    <ClInclude Include="Content\Systems\Registration\OpticalRegistration.h" />
-    <ClInclude Include="Content\Systems\Registration\RegistrationSystem.h" />
-    <ClInclude Include="Content\Systems\Splash\SplashSystem.h" />
-    <ClInclude Include="Content\Systems\Task\TaskSystem.h" />
-    <ClInclude Include="Content\Systems\Task\Tasks\RegisterModelTask.h" />
-    <ClInclude Include="Content\Systems\Task\Tasks\TargetSphereTask.h" />
-    <ClInclude Include="Content\Systems\Tool\Tool.h" />
-    <ClInclude Include="Content\Systems\Tool\ToolSystem.h" />
-    <ClInclude Include="Content\UI\Icon.h" />
-    <ClInclude Include="Content\UI\Icons.h" />
-    <ClInclude Include="Core\Common.h" />
-    <ClInclude Include="Core\Configuration.h" />
-    <ClInclude Include="Core\HoloInterventionCore.h" />
-    <ClInclude Include="Core\IConfigurable.h" />
-    <ClInclude Include="Core\IEngineComponent.h" />
-    <ClInclude Include="Core\ILocatable.h" />
-    <ClInclude Include="Core\IStabilizedComponent.h" />
-    <ClInclude Include="Core\Log.h" />
-    <ClInclude Include="Core\Rendering\CameraResources.h" />
-    <ClInclude Include="Core\Rendering\DeviceResources.h" />
-    <ClInclude Include="Core\Rendering\DirectXHelper.h" />
-    <ClInclude Include="Core\StepTimer.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="Source\Algorithms\KalmanFilter.h" />
+    <ClInclude Include="Source\Algorithms\LandmarkRegistration.h" />
+    <ClInclude Include="Source\Algorithms\PointToLineRegistration.h" />
+    <ClInclude Include="Source\Algorithms\PointToPlaneRegistration.h" />
+    <ClInclude Include="Source\App\AppView.h" />
+    <ClInclude Include="Source\App\HoloInterventionCore.h" />
+    <ClInclude Include="Source\Capture\VideoFrameProcessor.h" />
+    <ClInclude Include="Source\Common\Common.h" />
+    <ClInclude Include="Source\Common\Configuration.h" />
+    <ClInclude Include="Source\Common\StepTimer.h" />
+    <ClInclude Include="Source\Debug\Debug.h" />
+    <ClInclude Include="Source\IConfigurable.h" />
+    <ClInclude Include="Source\IEngineComponent.h" />
+    <ClInclude Include="Source\ILocatable.h" />
+    <ClInclude Include="Source\Input\IVoiceInput.h" />
+    <ClInclude Include="Source\Input\SpatialInput.h" />
+    <ClInclude Include="Source\Input\SpatialSourceHandler.h" />
+    <ClInclude Include="Source\Input\VoiceCallback.h" />
+    <ClInclude Include="Source\Input\VoiceInput.h" />
+    <ClInclude Include="Source\IStabilizedComponent.h" />
+    <ClInclude Include="Source\Log\Log.h" />
+    <ClInclude Include="Source\Math\MathCommon.h" />
+    <ClInclude Include="Source\Physics\PhysicsAPI.h" />
+    <ClInclude Include="Source\Rendering\CameraResources.h" />
+    <ClInclude Include="Source\Rendering\DeviceResources.h" />
+    <ClInclude Include="Source\Rendering\DirectXHelper.h" />
+    <ClInclude Include="Source\Rendering\Mesh\MeshRenderer.h" />
+    <ClInclude Include="Source\Rendering\Model\DirectXTK\InstancedEffectBase.h" />
+    <ClInclude Include="Source\Rendering\Model\DirectXTK\InstancedEffectCommon.h" />
+    <ClInclude Include="Source\Rendering\Model\DirectXTK\InstancedEffects.h" />
+    <ClInclude Include="Source\Rendering\Model\DirectXTK\InstancedGeometricPrimitive.h" />
+    <ClInclude Include="Source\Rendering\Model\Model.h" />
+    <ClInclude Include="Source\Rendering\Model\ModelRenderer.h" />
+    <ClInclude Include="Source\Rendering\Notification\DistanceFieldRenderer.h" />
+    <ClInclude Include="Source\Rendering\Notification\NotificationRenderer.h" />
+    <ClInclude Include="Source\Rendering\Notification\TextRenderer.h" />
+    <ClInclude Include="Source\Rendering\RenderingCommon.h" />
+    <ClInclude Include="Source\Rendering\Slice\Slice.h" />
+    <ClInclude Include="Source\Rendering\Slice\SliceRenderer.h" />
+    <ClInclude Include="Source\Rendering\Volume\BaseTransferFunction.h" />
+    <ClInclude Include="Source\Rendering\Volume\PiecewiseLinearTransferFunction.h" />
+    <ClInclude Include="Source\Rendering\Volume\TransferFunctionLookupTable.h" />
+    <ClInclude Include="Source\Rendering\Volume\Volume.h" />
+    <ClInclude Include="Source\Rendering\Volume\VolumeRenderer.h" />
+    <ClInclude Include="Source\Sound\AudioFileReader.h" />
+    <ClInclude Include="Source\Sound\CardioidSound.h" />
+    <ClInclude Include="Source\Sound\OmnidirectionalSound.h" />
+    <ClInclude Include="Source\Sound\SoundAPI.h" />
+    <ClInclude Include="Source\Spatial\SpatialSurfaceCollection.h" />
+    <ClInclude Include="Source\Spatial\SurfaceMesh.h" />
+    <ClInclude Include="Source\Systems\Gaze\GazeSystem.h" />
+    <ClInclude Include="Source\Systems\Imaging\ImagingSystem.h" />
+    <ClInclude Include="Source\Systems\Network\NetworkSystem.h" />
+    <ClInclude Include="Source\Systems\Notification\NotificationSystem.h" />
+    <ClInclude Include="Source\Systems\Registration\CameraRegistration.h" />
+    <ClInclude Include="Source\Systems\Registration\IRegistrationMethod.h" />
+    <ClInclude Include="Source\Systems\Registration\ModelAlignmentRegistration.h" />
+    <ClInclude Include="Source\Systems\Registration\OpticalRegistration.h" />
+    <ClInclude Include="Source\Systems\Registration\RegistrationSystem.h" />
+    <ClInclude Include="Source\Systems\Registration\ToolBasedRegistration.h" />
+    <ClInclude Include="Source\Systems\Splash\SplashSystem.h" />
+    <ClInclude Include="Source\Systems\Task\TaskSystem.h" />
+    <ClInclude Include="Source\Systems\Task\Tasks\RegisterModelTask.h" />
+    <ClInclude Include="Source\Systems\Task\Tasks\TargetSphereTask.h" />
+    <ClInclude Include="Source\Systems\Tool\Tool.h" />
+    <ClInclude Include="Source\Systems\Tool\ToolSystem.h" />
+    <ClInclude Include="Source\UI\Icon.h" />
+    <ClInclude Include="Source\UI\Icons.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="AppView.cpp" />
-    <ClCompile Include="Content\Algorithms\KalmanFilter.cpp" />
-    <ClCompile Include="Content\Algorithms\LandmarkRegistration.cpp" />
-    <ClCompile Include="Content\Algorithms\PointToLineRegistration.cpp" />
-    <ClCompile Include="Content\Algorithms\PointToPlaneRegistration.cpp" />
-    <ClCompile Include="Content\Capture\VideoFrameProcessor.cpp" />
-    <ClCompile Include="Content\Debug\Debug.cpp" />
-    <ClCompile Include="Content\Input\SpatialSourceHandler.cpp" />
-    <ClCompile Include="Content\Input\SpatialInput.cpp" />
-    <ClCompile Include="Content\Input\VoiceInput.cpp" />
-    <ClCompile Include="Content\Math\MathCommon.cpp" />
-    <ClCompile Include="Content\Physics\PhysicsAPI.cpp" />
-    <ClCompile Include="Content\Rendering\DirectXTK\InstancedBasicEffect.cpp" />
-    <ClCompile Include="Content\Rendering\DirectXTK\InstancedEffectCommon.cpp" />
-    <ClCompile Include="Content\Rendering\DirectXTK\InstancedEffectFactory.cpp" />
-    <ClCompile Include="Content\Rendering\DirectXTK\InstancedGeometricPrimitive.cpp" />
-    <ClCompile Include="Content\Rendering\Mesh\MeshRenderer.cpp" />
-    <ClCompile Include="Content\Rendering\Model\Model.cpp" />
-    <ClCompile Include="Content\Rendering\Model\ModelRenderer.cpp" />
-    <ClCompile Include="Content\Rendering\Notification\DistanceFieldRenderer.cpp" />
-    <ClCompile Include="Content\Rendering\Notification\NotificationRenderer.cpp" />
-    <ClCompile Include="Content\Rendering\Notification\TextRenderer.cpp" />
-    <ClCompile Include="Content\Rendering\RenderingCommon.cxx" />
-    <ClCompile Include="Content\Rendering\Slice\Slice.cpp" />
-    <ClCompile Include="Content\Rendering\Slice\SliceRenderer.cpp" />
-    <ClCompile Include="Content\Rendering\Volume\BaseTransferFunction.cpp" />
-    <ClCompile Include="Content\Rendering\Volume\Volume.cpp" />
-    <ClCompile Include="Content\Rendering\Volume\VolumeRenderer.cpp" />
-    <ClCompile Include="Content\Sound\AudioFileReader.cpp" />
-    <ClCompile Include="Content\Sound\CardioidSound.cpp" />
-    <ClCompile Include="Content\Sound\OmnidirectionalSound.cpp" />
-    <ClCompile Include="Content\Sound\SoundAPI.cpp" />
-    <ClCompile Include="Content\SpatialMapping\SpatialSurfaceCollection.cpp" />
-    <ClCompile Include="Content\SpatialMapping\SurfaceMesh.cpp" />
-    <ClCompile Include="Content\Systems\Gaze\GazeSystem.cpp" />
-    <ClCompile Include="Content\Systems\Imaging\ImagingSystem.cpp" />
-    <ClCompile Include="Content\Systems\Network\NetworkSystem.cpp" />
-    <ClCompile Include="Content\Systems\Notification\NotificationSystem.cpp" />
-    <ClCompile Include="Content\Systems\Registration\CameraRegistration.cpp" />
-    <ClCompile Include="Content\Systems\Registration\ModelAlignmentRegistration.cpp" />
-    <ClCompile Include="Content\Systems\Registration\ToolBasedRegistration.cpp" />
-    <ClCompile Include="Content\Systems\Registration\OpticalRegistration.cpp" />
-    <ClCompile Include="Content\Systems\Registration\RegistrationSystem.cpp" />
-    <ClCompile Include="Content\Systems\Splash\SplashSystem.cpp" />
-    <ClCompile Include="Content\Systems\Task\TaskSystem.cpp" />
-    <ClCompile Include="Content\Systems\Task\Tasks\RegisterModelTask.cpp" />
-    <ClCompile Include="Content\Systems\Task\Tasks\TargetSphereTask.cpp" />
-    <ClCompile Include="Content\Systems\Tool\Tool.cpp" />
-    <ClCompile Include="Content\Systems\Tool\ToolSystem.cpp" />
-    <ClCompile Include="Content\UI\Icon.cpp" />
-    <ClCompile Include="Content\UI\Icons.cpp" />
-    <ClCompile Include="Core\Common.cpp" />
-    <ClCompile Include="Core\HoloInterventionCore.cpp" />
-    <ClCompile Include="Core\IEngineComponent.cpp" />
-    <ClCompile Include="Core\ILocatable.cpp" />
-    <ClCompile Include="Core\Log.cpp" />
-    <ClCompile Include="Core\Rendering\CameraResources.cpp" />
-    <ClCompile Include="Core\Rendering\DeviceResources.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="Source\Algorithms\KalmanFilter.cpp" />
+    <ClCompile Include="Source\Algorithms\LandmarkRegistration.cpp" />
+    <ClCompile Include="Source\Algorithms\PointToLineRegistration.cpp" />
+    <ClCompile Include="Source\Algorithms\PointToPlaneRegistration.cpp" />
+    <ClCompile Include="Source\App\AppView.cpp" />
+    <ClCompile Include="Source\App\HoloInterventionCore.cpp" />
+    <ClCompile Include="Source\Capture\VideoFrameProcessor.cpp" />
+    <ClCompile Include="Source\Common\Common.cpp" />
+    <ClCompile Include="Source\Debug\Debug.cpp" />
+    <ClCompile Include="Source\IEngineComponent.cpp" />
+    <ClCompile Include="Source\ILocatable.cpp" />
+    <ClCompile Include="Source\Input\SpatialInput.cpp" />
+    <ClCompile Include="Source\Input\SpatialSourceHandler.cpp" />
+    <ClCompile Include="Source\Input\VoiceInput.cpp" />
+    <ClCompile Include="Source\Log\Log.cpp" />
+    <ClCompile Include="Source\Math\MathCommon.cpp" />
+    <ClCompile Include="Source\Physics\PhysicsAPI.cpp" />
+    <ClCompile Include="Source\Rendering\CameraResources.cpp" />
+    <ClCompile Include="Source\Rendering\DeviceResources.cpp" />
+    <ClCompile Include="Source\Rendering\Mesh\MeshRenderer.cpp" />
+    <ClCompile Include="Source\Rendering\Model\DirectXTK\InstancedBasicEffect.cpp" />
+    <ClCompile Include="Source\Rendering\Model\DirectXTK\InstancedEffectCommon.cpp" />
+    <ClCompile Include="Source\Rendering\Model\DirectXTK\InstancedEffectFactory.cpp" />
+    <ClCompile Include="Source\Rendering\Model\DirectXTK\InstancedGeometricPrimitive.cpp" />
+    <ClCompile Include="Source\Rendering\Model\Model.cpp" />
+    <ClCompile Include="Source\Rendering\Model\ModelRenderer.cpp" />
+    <ClCompile Include="Source\Rendering\Notification\DistanceFieldRenderer.cpp" />
+    <ClCompile Include="Source\Rendering\Notification\NotificationRenderer.cpp" />
+    <ClCompile Include="Source\Rendering\Notification\TextRenderer.cpp" />
+    <ClCompile Include="Source\Rendering\RenderingCommon.cxx" />
+    <ClCompile Include="Source\Rendering\Slice\Slice.cpp" />
+    <ClCompile Include="Source\Rendering\Slice\SliceRenderer.cpp" />
+    <ClCompile Include="Source\Rendering\Volume\BaseTransferFunction.cpp" />
+    <ClCompile Include="Source\Rendering\Volume\Volume.cpp" />
+    <ClCompile Include="Source\Rendering\Volume\VolumeRenderer.cpp" />
+    <ClCompile Include="Source\Sound\AudioFileReader.cpp" />
+    <ClCompile Include="Source\Sound\CardioidSound.cpp" />
+    <ClCompile Include="Source\Sound\OmnidirectionalSound.cpp" />
+    <ClCompile Include="Source\Sound\SoundAPI.cpp" />
+    <ClCompile Include="Source\Spatial\SpatialSurfaceCollection.cpp" />
+    <ClCompile Include="Source\Spatial\SurfaceMesh.cpp" />
+    <ClCompile Include="Source\Systems\Gaze\GazeSystem.cpp" />
+    <ClCompile Include="Source\Systems\Imaging\ImagingSystem.cpp" />
+    <ClCompile Include="Source\Systems\Network\NetworkSystem.cpp" />
+    <ClCompile Include="Source\Systems\Notification\NotificationSystem.cpp" />
+    <ClCompile Include="Source\Systems\Registration\CameraRegistration.cpp" />
+    <ClCompile Include="Source\Systems\Registration\ModelAlignmentRegistration.cpp" />
+    <ClCompile Include="Source\Systems\Registration\OpticalRegistration.cpp" />
+    <ClCompile Include="Source\Systems\Registration\RegistrationSystem.cpp" />
+    <ClCompile Include="Source\Systems\Registration\ToolBasedRegistration.cpp" />
+    <ClCompile Include="Source\Systems\Splash\SplashSystem.cpp" />
+    <ClCompile Include="Source\Systems\Task\TaskSystem.cpp" />
+    <ClCompile Include="Source\Systems\Task\Tasks\RegisterModelTask.cpp" />
+    <ClCompile Include="Source\Systems\Task\Tasks\TargetSphereTask.cpp" />
+    <ClCompile Include="Source\Systems\Tool\Tool.cpp" />
+    <ClCompile Include="Source\Systems\Tool\ToolSystem.cpp" />
+    <ClCompile Include="Source\UI\Icon.cpp" />
+    <ClCompile Include="Source\UI\Icons.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <AppxManifest Include="Package.appxmanifest">
-      <SubType>Designer</SubType>
-    </AppxManifest>
     <None Include="Assets\Models\anchor.cmo">
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
@@ -296,257 +294,232 @@
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
     </None>
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_PSBasic.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_PSBasicNoFog.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_PSBasicPixelLighting.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_PSBasicPixelLightingTx.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_PSBasicTx.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_PSBasicTxNoFog.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_PSBasicVertexLighting.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_PSBasicVertexLightingNoFog.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_PSBasicVertexLightingTx.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_PSBasicVertexLightingTxNoFog.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasic.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicNoFog.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicNoFog_VPRT.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicOneLight.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicOneLightTx.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicOneLightTxVc.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicOneLightTxVc_VPRT.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicOneLightTx_VPRT.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicOneLightVc.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicOneLightVc_VPRT.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicOneLight_VPRT.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicPixelLighting.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicPixelLightingTx.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicPixelLightingTxVc.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicPixelLightingTxVc_VPRT.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicPixelLightingTx_VPRT.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicPixelLightingVc.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicPixelLightingVc_VPRT.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicPixelLighting_VPRT.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicTx.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicTxNoFog.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicTxNoFog_VPRT.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicTxVc.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicTxVcNoFog.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicTxVcNoFog_VPRT.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicTxVc_VPRT.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicTx_VPRT.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicVc.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicVcNoFog.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicVcNoFog_VPRT.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicVc_VPRT.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicVertexLighting.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicVertexLightingTx.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicVertexLightingTxVc.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicVertexLightingTxVc_VPRT.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicVertexLightingTx_VPRT.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicVertexLightingVc.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicVertexLightingVc_VPRT.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasicVertexLighting_VPRT.inc" />
-    <None Include="Content\Rendering\Shaders\Compiled\InstancedBasicEffect_VSBasic_VPRT.inc" />
-    <None Include="Content\Rendering\Shaders\InstancedCommon.fxh" />
-    <None Include="Content\Rendering\Shaders\InstancedLighting.fxh" />
-    <None Include="Content\Rendering\Shaders\InstancedStructures.fxh" />
-    <None Include="Core\Common.txx" />
-    <None Include="HoloIntervention_TemporaryKey.pfx" />
-    <None Include="packages.config" />
+    <None Include="Source\App\HoloIntervention_TemporaryKey.pfx" />
+    <None Include="Source\App\packages.config" />
+    <None Include="Source\Common\Common.txx" />
+    <None Include="Source\Rendering\Model\DirectXTK\InstancedCommon.fxh" />
+    <None Include="Source\Rendering\Model\DirectXTK\InstancedLighting.fxh" />
+    <None Include="Source\Rendering\Model\DirectXTK\InstancedStructures.fxh" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_PSBasic.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_PSBasicNoFog.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_PSBasicPixelLighting.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_PSBasicPixelLightingTx.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_PSBasicTx.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_PSBasicTxNoFog.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_PSBasicVertexLighting.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_PSBasicVertexLightingNoFog.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_PSBasicVertexLightingTx.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_PSBasicVertexLightingTxNoFog.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasic.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicNoFog.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicNoFog_VPRT.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicOneLight.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicOneLightTx.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicOneLightTxVc.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicOneLightTxVc_VPRT.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicOneLightTx_VPRT.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicOneLightVc.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicOneLightVc_VPRT.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicOneLight_VPRT.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicPixelLighting.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicPixelLightingTx.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicPixelLightingTxVc.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicPixelLightingTxVc_VPRT.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicPixelLightingTx_VPRT.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicPixelLightingVc.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicPixelLightingVc_VPRT.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicPixelLighting_VPRT.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicTx.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicTxNoFog.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicTxNoFog_VPRT.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicTxVc.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicTxVcNoFog.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicTxVcNoFog_VPRT.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicTxVc_VPRT.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicTx_VPRT.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicVc.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicVcNoFog.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicVcNoFog_VPRT.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicVc_VPRT.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicVertexLighting.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicVertexLightingTx.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicVertexLightingTxVc.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicVertexLightingTxVc_VPRT.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicVertexLightingTx_VPRT.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicVertexLightingVc.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicVertexLightingVc_VPRT.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicVertexLighting_VPRT.inc" />
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasic_VPRT.inc" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Content\Rendering\Shaders\InstancedBasicEffect.fx">
+    <FxCompile Include="Source\Rendering\Geometry Shaders\PCCIGeometryShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Geometry</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Geometry</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Source\Rendering\Geometry Shaders\PCCTIGeometryShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Geometry</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Geometry</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Source\Rendering\Geometry Shaders\PCIGeometryShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Geometry</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Geometry</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Source\Rendering\Geometry Shaders\PCT0T1T2IGeometryShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Geometry</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Geometry</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Source\Rendering\Geometry Shaders\PCT0T4IGeometryShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Geometry</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Geometry</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Source\Rendering\Geometry Shaders\PCTIGeometryShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Geometry</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Geometry</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Source\Rendering\Geometry Shaders\PPNCIGeometryShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Geometry</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Geometry</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Source\Rendering\Geometry Shaders\PT0T1IGeometryShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Geometry</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Geometry</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Source\Rendering\Geometry Shaders\PTIGeometryShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Geometry</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Geometry</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Source\Rendering\Mesh\MeshRendererLightingPixelShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Source\Rendering\Mesh\MeshRendererSolidColorPixelShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Source\Rendering\Mesh\MeshRendererSurfaceVertexShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Source\Rendering\Mesh\MeshRendererSurfaceVPRTVertexShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
+    </FxCompile>
+    <None Include="Source\Rendering\Model\DirectXTK\InstancedBasicEffect.fx">
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Effect</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Effect</ShaderType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </ExcludedFromBuild>
       <FileType>Document</FileType>
     </None>
-    <FxCompile Include="Content\Rendering\Shaders\DFRCreateDistanceFieldPixelShader.hlsl">
+    <FxCompile Include="Source\Rendering\Notification\DFRCreateDistanceFieldPixelShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
     </FxCompile>
-    <FxCompile Include="Content\Rendering\Shaders\DFRFullscreenQuadVertexShader.hlsl">
+    <FxCompile Include="Source\Rendering\Notification\DFRFullscreenQuadVertexShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
     </FxCompile>
-    <FxCompile Include="Content\Rendering\Shaders\NotificationPixelShader.hlsl">
+    <FxCompile Include="Source\Rendering\Notification\NotificationPixelShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
     </FxCompile>
-    <FxCompile Include="Content\Rendering\Shaders\NotificationVertexShader.hlsl">
+    <FxCompile Include="Source\Rendering\Notification\NotificationVertexShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
     </FxCompile>
-    <FxCompile Include="Content\Rendering\Shaders\NotificationVPRTVertexShader.hlsl">
+    <FxCompile Include="Source\Rendering\Notification\NotificationVPRTVertexShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
     </FxCompile>
-    <FxCompile Include="Content\Rendering\Shaders\PCCIGeometryShader.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Geometry</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Geometry</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
-      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">PCCIGeometryShader</VariableName>
-      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">PCCIGeometryShader</VariableName>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)%(Filename).inc</HeaderFileOutput>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)%(Filename).inc</HeaderFileOutput>
-    </FxCompile>
-    <FxCompile Include="Content\Rendering\Shaders\PCCTIGeometryShader.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Geometry</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Geometry</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
-      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">PCCTIGeometryShader</VariableName>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)%(Filename).inc</HeaderFileOutput>
-      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">PCCTIGeometryShader</VariableName>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)%(Filename).inc</HeaderFileOutput>
-    </FxCompile>
-    <FxCompile Include="Content\Rendering\Shaders\PCT0T1T2IGeometryShader.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Geometry</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Geometry</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
-      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">PCT0T1T2IGeometryShader</VariableName>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)%(Filename).inc</HeaderFileOutput>
-      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">PCT0T1T2IGeometryShader</VariableName>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)%(Filename).inc</HeaderFileOutput>
-    </FxCompile>
-    <FxCompile Include="Content\Rendering\Shaders\PCT0T4IGeometryShader.hlsl">
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Geometry</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Geometry</ShaderType>
-      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">PCT0T4IGeometryShader</VariableName>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)%(Filename).inc</HeaderFileOutput>
-      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">PCT0T4IGeometryShader</VariableName>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)%(Filename).inc</HeaderFileOutput>
-    </FxCompile>
-    <FxCompile Include="Content\Rendering\Shaders\PCTIGeometryShader.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Geometry</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Geometry</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)%(Filename).inc</HeaderFileOutput>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)%(Filename).inc</HeaderFileOutput>
-      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">PCTIGeometryShader</VariableName>
-      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">PCTIGeometryShader</VariableName>
-    </FxCompile>
-    <FxCompile Include="Content\Rendering\Shaders\PT0T1IGeometryShader.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Geometry</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Geometry</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="Content\Rendering\Shaders\PTIGeometryShader.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Geometry</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Geometry</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)%(Filename).inc</HeaderFileOutput>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)%(Filename).inc</HeaderFileOutput>
-      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">PTIGeometryShader</VariableName>
-      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">PTIGeometryShader</VariableName>
-    </FxCompile>
-    <FxCompile Include="Content\Rendering\Shaders\SlicePixelShaderGreyscale.hlsl">
+    <FxCompile Include="Source\Rendering\Slice\SlicePixelShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
     </FxCompile>
-    <FxCompile Include="Content\Rendering\Shaders\SMRLightingPixelShader.hlsl">
+    <FxCompile Include="Source\Rendering\Slice\SlicePixelShaderGreyscale.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
     </FxCompile>
-    <FxCompile Include="Content\Rendering\Shaders\SlicePixelShader.hlsl">
+    <FxCompile Include="Source\Rendering\Slice\SliceVertexShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Source\Rendering\Slice\SliceVPRTVertexShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Source\Rendering\Volume\FaceAnalysisPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
     </FxCompile>
-    <FxCompile Include="Content\Rendering\Shaders\SliceVertexShader.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="Content\Rendering\Shaders\SliceVPRTVertexShader.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="Content\Rendering\Shaders\PCIGeometryShader.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Geometry</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Geometry</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
-      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">PCIGeometryShader</VariableName>
-      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">PCIGeometryShader</VariableName>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)%(Filename).inc</HeaderFileOutput>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)%(Filename).inc</HeaderFileOutput>
-    </FxCompile>
-    <FxCompile Include="Content\Rendering\Shaders\SMRSolidColorPixelShader.hlsl">
+    <FxCompile Include="Source\Rendering\Volume\VolumeRendererPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
     </FxCompile>
-    <FxCompile Include="Content\Rendering\Shaders\PPNCIGeometryShader.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Geometry</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Geometry</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)%(Filename).inc</HeaderFileOutput>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)%(Filename).inc</HeaderFileOutput>
-      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">PPNCIGeometryShader</VariableName>
-      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">PPNCIGeometryShader</VariableName>
-    </FxCompile>
-    <FxCompile Include="Content\Rendering\Shaders\SMRSurfaceVertexShader.hlsl">
+    <FxCompile Include="Source\Rendering\Volume\VolumeRendererVprtVS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
     </FxCompile>
-    <FxCompile Include="Content\Rendering\Shaders\SMRSurfaceVPRTVertexShader.hlsl">
+    <FxCompile Include="Source\Rendering\Volume\VolumeRendererVS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
     </FxCompile>
-    <FxCompile Include="Content\Rendering\Volume\FaceAnalysisPS.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="Content\Rendering\Volume\VolumeRendererPS.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="Content\Rendering\Volume\VolumeRendererVprtVS.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="Content\Rendering\Volume\VolumeRendererVS.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="Content\SpatialMapping\Shaders\CSRayTriangleIntersection.hlsl">
+    <FxCompile Include="Source\Spatial\Shaders\CSRayTriangleIntersection.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Compute</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Compute</ShaderType>
@@ -573,6 +546,9 @@
     <Xml Include="Assets\Data\configuration.xml">
       <SubType>Designer</SubType>
     </Xml>
+  </ItemGroup>
+  <ItemGroup>
+    <AppxManifest Include="Source\App\Package.appxmanifest" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

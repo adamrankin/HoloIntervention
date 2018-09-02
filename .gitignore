@@ -11,7 +11,7 @@
 /*.db
 /HoloIntervention.VC.VC.opendb
 *.ipch
-/HoloIntervention/Content/Rendering/Shaders/Compiled
+/HoloIntervention/Source/Rendering/Model/DirectXTK/Shaders/Compiled
 /packages
 /debug.log
 /LocatableMediaCapture/Debug
