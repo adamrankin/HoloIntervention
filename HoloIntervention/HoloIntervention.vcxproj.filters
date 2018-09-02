@@ -163,9 +163,6 @@
     <ClCompile Include="Source\App\AppView.cpp">
       <Filter>Source\App</Filter>
     </ClCompile>
-    <ClCompile Include="Source\App\HoloInterventionCore.cpp">
-      <Filter>Source\App</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Log\Log.cpp">
       <Filter>Source\Log</Filter>
     </ClCompile>
@@ -178,6 +175,10 @@
     <ClCompile Include="pch.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Core\HoloInterventionCore.cpp">
+      <Filter>Source\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\WorldObject.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\UI\Icons.h">
@@ -366,9 +367,6 @@
     <ClInclude Include="Source\App\AppView.h">
       <Filter>Source\App</Filter>
     </ClInclude>
-    <ClInclude Include="Source\App\HoloInterventionCore.h">
-      <Filter>Source\App</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Log\Log.h">
       <Filter>Source\Log</Filter>
     </ClInclude>
@@ -387,6 +385,10 @@
     <ClInclude Include="pch.h">
       <Filter>Source</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Core\HoloInterventionCore.h">
+      <Filter>Source\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\WorldObject.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\LockScreenLogo.scale-200.png">
@@ -773,6 +775,9 @@
     </Filter>
     <Filter Include="Source\Common">
       <UniqueIdentifier>{afecb075-4cb2-42c4-a413-39c54eb339cf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Core">
+      <UniqueIdentifier>{fd8109c7-0f3d-4c5a-8964-5c704cd28787}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
