@@ -178,7 +178,9 @@
     <ClCompile Include="Source\Core\HoloInterventionCore.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\WorldObject.cpp" />
+    <ClCompile Include="Source\Core\WorldObject.cpp">
+      <Filter>Source\Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\UI\Icons.h">
@@ -388,7 +390,9 @@
     <ClInclude Include="Source\Core\HoloInterventionCore.h">
       <Filter>Source\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\WorldObject.h" />
+    <ClInclude Include="Source\Core\WorldObject.h">
+      <Filter>Source\Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\LockScreenLogo.scale-200.png">

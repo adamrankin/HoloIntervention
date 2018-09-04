@@ -36,4 +36,35 @@ namespace HoloIntervention
   WorldObject::~WorldObject()
   {
   }
+
+  //----------------------------------------------------------------------------
+  void WorldObject::Update()
+  {
+
+  }
+
+  //----------------------------------------------------------------------------
+  void WorldObject::SetCoordinateSystem(Windows::Perception::Spatial::SpatialCoordinateSystem^ system)
+  {
+    m_coordinateSystem = system;
+  }
+
+  //----------------------------------------------------------------------------
+  Windows::Perception::Spatial::SpatialCoordinateSystem^ WorldObject::GetCoordinateSystem() const
+  {
+    return m_coordinateSystem;
+  }
+
+  //----------------------------------------------------------------------------
+  void WorldObject::SetBounds(std::array<float, 6> bounds)
+  {
+    m_bounds = bounds;
+  }
+
+  //----------------------------------------------------------------------------
+  std::array<float, 6> WorldObject::GetBounds() const
+  {
+    return m_bounds;
+  }
+
 }

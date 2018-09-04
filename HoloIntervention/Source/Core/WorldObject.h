@@ -30,5 +30,21 @@ namespace HoloIntervention
   public:
     WorldObject();
     ~WorldObject();
+
+    virtual void Update();
+
+    virtual void SetCoordinateSystem(Windows::Perception::Spatial::SpatialCoordinateSystem^ system);
+    virtual Windows::Perception::Spatial::SpatialCoordinateSystem^ GetCoordinateSystem() const;
+
+    virtual void SetBounds(std::array<float, 6> bounds);
+    virtual std::array<float, 6> GetBounds() const;
+
+  protected:
+
+
+  protected:
+    Windows::Perception::Spatial::SpatialCoordinateSystem^  m_coordinateSystem = nullptr;
+    Windows::Foundation::Numerics::float4x4                 m_pose = Windows::Foundation::Numerics::float4x4::identity();
+    std::array<float, 6>                                    m_bounds;
   };
 }
