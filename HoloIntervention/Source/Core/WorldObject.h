@@ -36,8 +36,8 @@ namespace HoloIntervention
     virtual void SetCoordinateSystem(Windows::Perception::Spatial::SpatialCoordinateSystem^ system);
     virtual Windows::Perception::Spatial::SpatialCoordinateSystem^ GetCoordinateSystem() const;
 
-    virtual void SetBounds(std::array<float, 6> bounds);
-    virtual std::array<float, 6> GetBounds() const;
+    virtual void SetOOBB(const std::array<float, 6>& objectOrientedBoundingBox);
+    virtual std::array<float, 6> GetOOBB() const;
 
   protected:
 
@@ -45,6 +45,6 @@ namespace HoloIntervention
   protected:
     Windows::Perception::Spatial::SpatialCoordinateSystem^  m_coordinateSystem = nullptr;
     Windows::Foundation::Numerics::float4x4                 m_pose = Windows::Foundation::Numerics::float4x4::identity();
-    std::array<float, 6>                                    m_bounds;
+    std::array<float, 6>                                    m_objectOrientedBoundingBox;
   };
 }

@@ -56,15 +56,14 @@ namespace HoloIntervention
   }
 
   //----------------------------------------------------------------------------
-  void WorldObject::SetBounds(std::array<float, 6> bounds)
+  void WorldObject::SetOOBB(const std::array<float, 6>& oobb)
   {
-    m_bounds = bounds;
+    m_objectOrientedBoundingBox = oobb;
   }
 
   //----------------------------------------------------------------------------
-  std::array<float, 6> WorldObject::GetBounds() const
+  std::array<float, 6> WorldObject::GetOOBB() const
   {
-    return m_bounds;
+    return m_objectOrientedBoundingBox;
   }
-
 }
