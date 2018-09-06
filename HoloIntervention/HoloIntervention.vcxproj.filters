@@ -649,6 +649,7 @@
     <None Include="Source\Rendering\Model\DirectXTK\InstancedBasicEffect.fx">
       <Filter>Source\Rendering\ModelRenderer\DirectXTK</Filter>
     </None>
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Assets">
