@@ -139,7 +139,7 @@ exit /b
 
 :CompileShader
 rem /Qstrip_debug temporarily removed during development
-set fxc=fxc /nologo %1.fx /T%2_5_0 /Zi /Zpc /Qstrip_reflect /E%3 /FhCompiled\%1_%3.inc /FdCompiled\%1_%3.pdb /Vn%1_%3
+set fxc=fxc /nologo ../%1.fx /T%2_5_0 /Zi /Zpc /Qstrip_reflect /E%3 /FhCompiled\%1_%3.inc /FdCompiled\%1_%3.pdb /Vn%1_%3
 echo.
 echo %fxc%
 %fxc% || set error=1
@@ -147,7 +147,7 @@ exit /b
 
 :CompileShaderHLSL
 rem /Qstrip_debug temporarily removed during development
-set fxc=fxc /nologo %1.hlsl /T%2_5_0 /Zi /Zpc /Qstrip_reflect /E%3 /FhCompiled\%1_%3.inc /FdCompiled\%1_%3.pdb /Vn%1_%3
+set fxc=fxc /nologo ../%1.hlsl /T%2_5_0 /Zi /Zpc /Qstrip_reflect /E%3 /FhCompiled\%1_%3.inc /FdCompiled\%1_%3.pdb /Vn%1_%3
 echo.
 echo %fxc%
 %fxc% || set error=1
@@ -155,7 +155,7 @@ exit /b
 
 :CompileShadervprt
 rem /Qstrip_debug temporarily removed during development
-set fxc=fxc /nologo %1.fx /T%2_5_0 /Zi /Zpc /Qstrip_reflect /E%3 /FhCompiled\%1_%3_VPRT.inc /FdCompiled\%1_%3_VPRT.pdb /Vn%1_%3VPRT /DUSE_VPRT
+set fxc=fxc /nologo ../%1.fx /T%2_5_0 /Zi /Zpc /Qstrip_reflect /E%3 /FhCompiled\%1_%3_VPRT.inc /FdCompiled\%1_%3_VPRT.pdb /Vn%1_%3VPRT /DUSE_VPRT
 echo.
 echo %fxc%
 %fxc% || set error=1
@@ -163,7 +163,7 @@ exit /b
 
 :CompileShaderHLSLvprt
 rem /Qstrip_debug temporarily removed during development
-set fxc=fxc /nologo %1.hlsl /T%2_5_0 /Zi /Zpc /Qstrip_reflect /E%3 /FhCompiled\%1_%3_VPRT.inc /FdCompiled\%1_%3_VPRT.pdb /Vn%1_%3VPRT /DUSE_VPRT
+set fxc=fxc /nologo ../%1.hlsl /T%2_5_0 /Zi /Zpc /Qstrip_reflect /E%3 /FhCompiled\%1_%3_VPRT.inc /FdCompiled\%1_%3_VPRT.pdb /Vn%1_%3VPRT /DUSE_VPRT
 echo.
 echo %fxc%
 %fxc% || set error=1
