@@ -24,10 +24,11 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "pch.h"
 #include "AppView.h"
-#include "HoloInterventionCore.h"
 
-// Common includes
-#include "DeviceResources.h"
+// Valhalla engine includes
+#include <Common.h>
+#include <ValhallaCore.h>
+#include <DeviceResources.h>
 
 // Windows includes
 #include <ppltasks.h>
@@ -84,7 +85,7 @@ namespace HoloIntervention
 
     m_deviceResources = std::make_shared<DX::DeviceResources>();
 
-    m_main = std::make_unique<HoloInterventionCore>(m_deviceResources);
+    m_main = std::make_unique<ValhallaCore>();
   }
 
   //----------------------------------------------------------------------------
@@ -111,15 +112,15 @@ namespace HoloIntervention
   //----------------------------------------------------------------------------
   void AppView::Run()
   {
-    while (!m_windowClosed)
+    while(!m_windowClosed)
     {
-      if (m_windowVisible && (m_holographicSpace != nullptr))
+      if(m_windowVisible && (m_holographicSpace != nullptr))
       {
         CoreWindow::GetForCurrentThread()->Dispatcher->ProcessEvents(CoreProcessEventsOption::ProcessAllIfPresent);
 
         HolographicFrame^ holographicFrame = m_main->Update();
 
-        if (m_main->Render(holographicFrame))
+        if(m_main->Render(holographicFrame))
         {
           m_deviceResources->Present(holographicFrame);
         }
@@ -152,19 +153,19 @@ namespace HoloIntervention
     {
       m_deviceResources->Trim();
 
-      if (m_main != nullptr)
+      if(m_main != nullptr)
       {
         try
         {
           m_main->SaveAppStateAsync().then([this](bool result)
           {
-            if (!result)
+            if(!result)
             {
               LOG_ERROR("Unable to save app state.");
             }
           });
         }
-        catch (const std::exception& e)
+        catch(const std::exception& e)
         {
           LOG_ERROR(std::string("Unable to save app state: ") + e.what());
         }
@@ -177,19 +178,19 @@ namespace HoloIntervention
   //----------------------------------------------------------------------------
   void AppView::OnResuming(Platform::Object^ sender, Platform::Object^ args)
   {
-    if (m_main != nullptr)
+    if(m_main != nullptr)
     {
       try
       {
         m_main->LoadAppStateAsync().then([this](bool result)
         {
-          if (!result)
+          if(!result)
           {
             LOG_ERROR("Unable to load app state.");
           }
         });
       }
-      catch (const std::exception& e)
+      catch(const std::exception& e)
       {
         LOG_ERROR(std::string("Unable to load app state: ") + e.what());
       }
@@ -217,26 +218,32 @@ namespace HoloIntervention
   //----------------------------------------------------------------------------
   void AppView::OnLeavingBackground(Platform::Object^ sender, Windows::ApplicationModel::LeavingBackgroundEventArgs^ args)
   {
-    if (m_main != nullptr)
+    if(m_main != nullptr)
     {
       try
       {
         m_main->LoadAppStateAsync();
       }
-      catch (const std::exception& e) { OutputDebugStringA(e.what()); }
+      catch(const std::exception& e)
+      {
+        OutputDebugStringA(e.what());
+      }
     }
   }
 
   //----------------------------------------------------------------------------
   void AppView::OnEnteredBackground(Platform::Object^ sender, Windows::ApplicationModel::EnteredBackgroundEventArgs^ args)
   {
-    if (m_main != nullptr)
+    if(m_main != nullptr)
     {
       try
       {
         m_main->SaveAppStateAsync();
       }
-      catch (const std::exception& e) { OutputDebugStringA(e.what()); }
+      catch(const std::exception& e)
+      {
+        OutputDebugStringA(e.what());
+      }
     }
   }
 }

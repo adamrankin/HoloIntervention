@@ -24,7 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
-#include "HoloInterventionCore.h"
+#include "ValhallaCore.h"
 
 namespace DX
 {
@@ -61,7 +61,7 @@ namespace HoloIntervention
     void OnKeyPressed(Windows::UI::Core::CoreWindow^ sender, Windows::UI::Core::KeyEventArgs^ args);
 
   protected private:
-    std::unique_ptr<HoloInterventionCore>                   m_main;
+    std::unique_ptr<ValhallaCore>                           m_main;
 
     std::shared_ptr<DX::DeviceResources>                    m_deviceResources;
     std::atomic_bool                                        m_windowClosed  = false;

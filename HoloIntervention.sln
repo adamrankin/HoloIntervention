@@ -7,11 +7,13 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "UWPOpenIGTLink", "UWPOpenIG
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "UWPOpenIGTLinkUI", "UWPOpenIGTLink\UWPOpenIGTLinkUI\UWPOpenIGTLinkUI.vcxproj", "{2A288B83-D03C-4E41-8179-C26070140D10}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HoloIntervention", "HoloIntervention\HoloIntervention.vcxproj", "{76CA5DBD-F0BF-4AC6-857A-1D4613D90D73}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DirectXTK", "DirectXTK\DirectXTK_Windows10.vcxproj", "{F4776924-619C-42C7-88B2-82C947CCC9E7}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DirectXTex", "DirectXTex\DirectXTex\DirectXTex_Windows10.vcxproj", "{FB3F52B5-BFE8-43FD-836F-363735DAB738}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Valhalla", "Valhalla\Valhalla.vcxproj", "{A43F1336-CA91-4E56-9F78-05DE56A91D1D}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HoloIntervention", "HoloIntervention\HoloIntervention.vcxproj", "{76CA5DBD-F0BF-4AC6-857A-1D4613D90D73}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -37,14 +39,6 @@ Global
 		{2A288B83-D03C-4E41-8179-C26070140D10}.Release|Win32.Deploy.0 = Release|Win32
 		{2A288B83-D03C-4E41-8179-C26070140D10}.Release|x64.ActiveCfg = Release|x64
 		{2A288B83-D03C-4E41-8179-C26070140D10}.Release|x64.Build.0 = Release|x64
-		{76CA5DBD-F0BF-4AC6-857A-1D4613D90D73}.Debug|Win32.ActiveCfg = Debug|Win32
-		{76CA5DBD-F0BF-4AC6-857A-1D4613D90D73}.Debug|Win32.Build.0 = Debug|Win32
-		{76CA5DBD-F0BF-4AC6-857A-1D4613D90D73}.Debug|Win32.Deploy.0 = Debug|Win32
-		{76CA5DBD-F0BF-4AC6-857A-1D4613D90D73}.Debug|x64.ActiveCfg = Debug|Win32
-		{76CA5DBD-F0BF-4AC6-857A-1D4613D90D73}.Release|Win32.ActiveCfg = Release|Win32
-		{76CA5DBD-F0BF-4AC6-857A-1D4613D90D73}.Release|Win32.Build.0 = Release|Win32
-		{76CA5DBD-F0BF-4AC6-857A-1D4613D90D73}.Release|Win32.Deploy.0 = Release|Win32
-		{76CA5DBD-F0BF-4AC6-857A-1D4613D90D73}.Release|x64.ActiveCfg = Release|Win32
 		{F4776924-619C-42C7-88B2-82C947CCC9E7}.Debug|Win32.ActiveCfg = Debug|Win32
 		{F4776924-619C-42C7-88B2-82C947CCC9E7}.Debug|Win32.Build.0 = Debug|Win32
 		{F4776924-619C-42C7-88B2-82C947CCC9E7}.Debug|x64.ActiveCfg = Debug|x64
@@ -61,6 +55,22 @@ Global
 		{FB3F52B5-BFE8-43FD-836F-363735DAB738}.Release|Win32.Build.0 = Release|Win32
 		{FB3F52B5-BFE8-43FD-836F-363735DAB738}.Release|x64.ActiveCfg = Release|x64
 		{FB3F52B5-BFE8-43FD-836F-363735DAB738}.Release|x64.Build.0 = Release|x64
+		{A43F1336-CA91-4E56-9F78-05DE56A91D1D}.Debug|Win32.ActiveCfg = Debug|Win32
+		{A43F1336-CA91-4E56-9F78-05DE56A91D1D}.Debug|Win32.Build.0 = Debug|Win32
+		{A43F1336-CA91-4E56-9F78-05DE56A91D1D}.Debug|Win32.Deploy.0 = Debug|Win32
+		{A43F1336-CA91-4E56-9F78-05DE56A91D1D}.Debug|x64.ActiveCfg = Debug|Win32
+		{A43F1336-CA91-4E56-9F78-05DE56A91D1D}.Release|Win32.ActiveCfg = Release|Win32
+		{A43F1336-CA91-4E56-9F78-05DE56A91D1D}.Release|Win32.Build.0 = Release|Win32
+		{A43F1336-CA91-4E56-9F78-05DE56A91D1D}.Release|Win32.Deploy.0 = Release|Win32
+		{A43F1336-CA91-4E56-9F78-05DE56A91D1D}.Release|x64.ActiveCfg = Release|Win32
+		{76CA5DBD-F0BF-4AC6-857A-1D4613D90D73}.Debug|Win32.ActiveCfg = Debug|Win32
+		{76CA5DBD-F0BF-4AC6-857A-1D4613D90D73}.Debug|Win32.Build.0 = Debug|Win32
+		{76CA5DBD-F0BF-4AC6-857A-1D4613D90D73}.Debug|Win32.Deploy.0 = Debug|Win32
+		{76CA5DBD-F0BF-4AC6-857A-1D4613D90D73}.Debug|x64.ActiveCfg = Debug|Win32
+		{76CA5DBD-F0BF-4AC6-857A-1D4613D90D73}.Release|Win32.ActiveCfg = Release|Win32
+		{76CA5DBD-F0BF-4AC6-857A-1D4613D90D73}.Release|Win32.Build.0 = Release|Win32
+		{76CA5DBD-F0BF-4AC6-857A-1D4613D90D73}.Release|Win32.Deploy.0 = Release|Win32
+		{76CA5DBD-F0BF-4AC6-857A-1D4613D90D73}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

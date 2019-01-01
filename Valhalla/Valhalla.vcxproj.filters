@@ -1,0 +1,630 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="Source\UI\Icon.cpp">
+      <Filter>Source\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\UI\Icons.cpp">
+      <Filter>Source\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Spatial\SpatialSurfaceCollection.cpp">
+      <Filter>Source\Spatial</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Spatial\SurfaceMesh.cpp">
+      <Filter>Source\Spatial</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Sound\AudioFileReader.cpp">
+      <Filter>Source\Sound</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Sound\CardioidSound.cpp">
+      <Filter>Source\Sound</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Sound\OmnidirectionalSound.cpp">
+      <Filter>Source\Sound</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Sound\SoundAPI.cpp">
+      <Filter>Source\Sound</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Physics\PhysicsAPI.cpp">
+      <Filter>Source\Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Input\SpatialInput.cpp">
+      <Filter>Source\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Input\SpatialSourceHandler.cpp">
+      <Filter>Source\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Input\VoiceInput.cpp">
+      <Filter>Source\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Debug\Debug.cpp">
+      <Filter>Source\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Capture\VideoFrameProcessor.cpp">
+      <Filter>Source\Capture</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Algorithms\LandmarkRegistration.cpp">
+      <Filter>Source\Algorithms</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Algorithms\PointToLineRegistration.cpp">
+      <Filter>Source\Algorithms</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Algorithms\PointToPlaneRegistration.cpp">
+      <Filter>Source\Algorithms</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Rendering\CameraResources.cpp">
+      <Filter>Source\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Rendering\DeviceResources.cpp">
+      <Filter>Source\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Rendering\RenderingCommon.cxx">
+      <Filter>Source\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Rendering\Volume\BaseTransferFunction.cpp">
+      <Filter>Source\Rendering\VolumeRenderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Rendering\Volume\Volume.cpp">
+      <Filter>Source\Rendering\VolumeRenderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Rendering\Volume\VolumeRenderer.cpp">
+      <Filter>Source\Rendering\VolumeRenderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Rendering\Slice\Slice.cpp">
+      <Filter>Source\Rendering\SliceRenderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Rendering\Slice\SliceRenderer.cpp">
+      <Filter>Source\Rendering\SliceRenderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Rendering\Notification\DistanceFieldRenderer.cpp">
+      <Filter>Source\Rendering\NotificationRenderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Rendering\Notification\NotificationRenderer.cpp">
+      <Filter>Source\Rendering\NotificationRenderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Rendering\Notification\TextRenderer.cpp">
+      <Filter>Source\Rendering\NotificationRenderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Rendering\Model\Model.cpp">
+      <Filter>Source\Rendering\ModelRenderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Rendering\Model\ModelRenderer.cpp">
+      <Filter>Source\Rendering\ModelRenderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Rendering\Model\DirectXTK\InstancedBasicEffect.cpp">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Rendering\Model\DirectXTK\InstancedEffectCommon.cpp">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Rendering\Model\DirectXTK\InstancedEffectFactory.cpp">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Rendering\Model\DirectXTK\InstancedGeometricPrimitive.cpp">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Log\Log.cpp">
+      <Filter>Source\Log</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Common\Common.cpp">
+      <Filter>Source\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Rendering\Mesh\MeshRenderer.cpp">
+      <Filter>Source\Rendering\MeshRenderer</Filter>
+    </ClCompile>
+    <ClCompile Include="pch.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\WorldObject.cpp">
+      <Filter>Source\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\ValhallaCore.cpp">
+      <Filter>Source\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\External\ISystem.cpp">
+      <Filter>Source\External</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Interfaces\IEngineComponent.cpp">
+      <Filter>Source\Interfaces</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Interfaces\ILocatable.cpp">
+      <Filter>Source\Interfaces</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Math\MathUtil.cpp">
+      <Filter>Source\Math</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Source\UI\Icons.h">
+      <Filter>Source\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\UI\Icon.h">
+      <Filter>Source\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Spatial\SpatialSurfaceCollection.h">
+      <Filter>Source\Spatial</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Spatial\SurfaceMesh.h">
+      <Filter>Source\Spatial</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Sound\SoundAPI.h">
+      <Filter>Source\Sound</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Sound\AudioFileReader.h">
+      <Filter>Source\Sound</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Sound\CardioidSound.h">
+      <Filter>Source\Sound</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Sound\OmnidirectionalSound.h">
+      <Filter>Source\Sound</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Physics\PhysicsAPI.h">
+      <Filter>Source\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Input\IVoiceInput.h">
+      <Filter>Source\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Input\SpatialInput.h">
+      <Filter>Source\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Input\SpatialSourceHandler.h">
+      <Filter>Source\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Input\VoiceCallback.h">
+      <Filter>Source\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Input\VoiceInput.h">
+      <Filter>Source\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Debug\Debug.h">
+      <Filter>Source\Debug</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Capture\VideoFrameProcessor.h">
+      <Filter>Source\Capture</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Algorithms\LandmarkRegistration.h">
+      <Filter>Source\Algorithms</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Algorithms\PointToLineRegistration.h">
+      <Filter>Source\Algorithms</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Algorithms\PointToPlaneRegistration.h">
+      <Filter>Source\Algorithms</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Rendering\RenderingCommon.h">
+      <Filter>Source\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Rendering\CameraResources.h">
+      <Filter>Source\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Rendering\DeviceResources.h">
+      <Filter>Source\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Rendering\DirectXHelper.h">
+      <Filter>Source\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Rendering\Volume\BaseTransferFunction.h">
+      <Filter>Source\Rendering\VolumeRenderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Rendering\Volume\PiecewiseLinearTransferFunction.h">
+      <Filter>Source\Rendering\VolumeRenderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Rendering\Volume\TransferFunctionLookupTable.h">
+      <Filter>Source\Rendering\VolumeRenderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Rendering\Volume\Volume.h">
+      <Filter>Source\Rendering\VolumeRenderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Rendering\Volume\VolumeRenderer.h">
+      <Filter>Source\Rendering\VolumeRenderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Rendering\Slice\SliceRenderer.h">
+      <Filter>Source\Rendering\SliceRenderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Rendering\Slice\Slice.h">
+      <Filter>Source\Rendering\SliceRenderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Rendering\Notification\TextRenderer.h">
+      <Filter>Source\Rendering\NotificationRenderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Rendering\Notification\DistanceFieldRenderer.h">
+      <Filter>Source\Rendering\NotificationRenderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Rendering\Notification\NotificationRenderer.h">
+      <Filter>Source\Rendering\NotificationRenderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Rendering\Model\ModelRenderer.h">
+      <Filter>Source\Rendering\ModelRenderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Rendering\Model\Model.h">
+      <Filter>Source\Rendering\ModelRenderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Rendering\Model\DirectXTK\InstancedGeometricPrimitive.h">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Rendering\Model\DirectXTK\InstancedEffectBase.h">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Rendering\Model\DirectXTK\InstancedEffectCommon.h">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Rendering\Model\DirectXTK\InstancedEffects.h">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Log\Log.h">
+      <Filter>Source\Log</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Common\StepTimer.h">
+      <Filter>Source\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Common\Common.h">
+      <Filter>Source\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Common\Configuration.h">
+      <Filter>Source\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Rendering\Mesh\MeshRenderer.h">
+      <Filter>Source\Rendering\MeshRenderer</Filter>
+    </ClInclude>
+    <ClInclude Include="pch.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\WorldObject.h">
+      <Filter>Source\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\ValhallaCore.h">
+      <Filter>Source\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\External\ISystem.h">
+      <Filter>Source\External</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Interfaces\IEngineComponent.h">
+      <Filter>Source\Interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Interfaces\ILocatable.h">
+      <Filter>Source\Interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Interfaces\IStabilizedComponent.h">
+      <Filter>Source\Interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="Source\Interfaces\ISerializable.h">
+      <Filter>Source\Interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Math\MathUtil.h">
+      <Filter>Source\Math</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Source\Rendering\Model\DirectXTK\InstancedLighting.fxh">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\InstancedStructures.fxh">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\InstancedCommon.fxh">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicVertexLightingVc_VPRT.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_PSBasic.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_PSBasicNoFog.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_PSBasicPixelLighting.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_PSBasicPixelLightingTx.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_PSBasicTx.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_PSBasicTxNoFog.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_PSBasicVertexLighting.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_PSBasicVertexLightingNoFog.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_PSBasicVertexLightingTx.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_PSBasicVertexLightingTxNoFog.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasic.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasic_VPRT.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicNoFog.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicNoFog_VPRT.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicOneLight.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicOneLight_VPRT.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicOneLightTx.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicOneLightTx_VPRT.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicOneLightTxVc.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicOneLightTxVc_VPRT.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicOneLightVc.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicOneLightVc_VPRT.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicPixelLighting.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicPixelLighting_VPRT.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicPixelLightingTx.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicPixelLightingTx_VPRT.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicPixelLightingTxVc.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicPixelLightingTxVc_VPRT.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicPixelLightingVc.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicPixelLightingVc_VPRT.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicTx.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicTx_VPRT.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicTxNoFog.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicTxNoFog_VPRT.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicTxVc.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicTxVc_VPRT.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicTxVcNoFog.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicTxVcNoFog_VPRT.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicVc.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicVc_VPRT.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicVcNoFog.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicVcNoFog_VPRT.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicVertexLighting.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicVertexLighting_VPRT.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicVertexLightingTx.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicVertexLightingTx_VPRT.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicVertexLightingTxVc.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicVertexLightingTxVc_VPRT.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\Shaders\Compiled\InstancedBasicEffect_VSBasicVertexLightingVc.inc">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK\Compiled</Filter>
+    </None>
+    <None Include="Source\Common\Common.txx">
+      <Filter>Source\Common</Filter>
+    </None>
+    <None Include="Source\Rendering\Model\DirectXTK\InstancedBasicEffect.fx">
+      <Filter>Source\Rendering\ModelRenderer\DirectXTK</Filter>
+    </None>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source">
+      <UniqueIdentifier>{507ac04a-d4d2-4268-8c32-6a5cc166065b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Rendering">
+      <UniqueIdentifier>{f3c8fff4-d384-41c3-88f8-5e2d69cb3d4a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Rendering\SliceRenderer">
+      <UniqueIdentifier>{f53e7e45-1f03-4161-8e8e-99913c61a68b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Rendering\NotificationRenderer">
+      <UniqueIdentifier>{962c0785-e23d-44f3-ab22-6a930f120da0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Rendering\ModelRenderer">
+      <UniqueIdentifier>{210b5bfc-d11d-4b28-a27c-1805392f5899}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Rendering\ModelRenderer\DirectXTK">
+      <UniqueIdentifier>{ac74860e-d1dd-4505-a825-922102bf91af}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Rendering\ModelRenderer\DirectXTK\Compiled">
+      <UniqueIdentifier>{3607c499-493e-4a25-ac6b-75856701d5da}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Rendering\Geometry Shaders">
+      <UniqueIdentifier>{e3f2040d-dfd3-418f-8209-0f02e7887cc0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Rendering\VolumeRenderer">
+      <UniqueIdentifier>{d22f4c2b-7162-4cf5-848c-5bcc5d97f8ad}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Rendering\MeshRenderer">
+      <UniqueIdentifier>{2384fb19-462f-4317-b3e0-b20ab0a79b47}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Input">
+      <UniqueIdentifier>{9132ee02-53bc-432a-ac22-75dcf34aa9b5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Sound">
+      <UniqueIdentifier>{031e77a3-6751-4cb2-ad0e-b25982ce2362}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Spatial">
+      <UniqueIdentifier>{8bb4f3fd-9ef8-4ef9-8452-9539e6344ece}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Spatial\Shaders">
+      <UniqueIdentifier>{cf251a3f-b817-4279-80f7-9f2bc80047d7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Capture">
+      <UniqueIdentifier>{1037916d-19bc-4828-8cac-31114b66c211}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Physics">
+      <UniqueIdentifier>{7d845063-76f8-4271-82e4-85d9f6fdfb5d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Algorithms">
+      <UniqueIdentifier>{2325d3d6-534b-4373-a158-8566da345b58}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Debug">
+      <UniqueIdentifier>{7c556e33-521e-4cf8-b4ce-ff3be89d2ba7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Math">
+      <UniqueIdentifier>{e88588ef-79fa-4f1d-aa25-7cc42ccb6b21}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\UI">
+      <UniqueIdentifier>{144a93c4-b453-4b62-af5e-222e587c59fe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Log">
+      <UniqueIdentifier>{508d24ae-cc5b-4d20-88c3-2d8c4e19cc4a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Common">
+      <UniqueIdentifier>{afecb075-4cb2-42c4-a413-39c54eb339cf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Core">
+      <UniqueIdentifier>{fd8109c7-0f3d-4c5a-8964-5c704cd28787}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\External">
+      <UniqueIdentifier>{44c5e201-cb94-4b53-a752-2ad311e77a98}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Interfaces">
+      <UniqueIdentifier>{6d76bb2a-224e-4414-970c-1d8db4e06343}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Source\Spatial\Shaders\CSRayTriangleIntersection.hlsl">
+      <Filter>Source\Spatial\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Source\Rendering\Volume\VolumeRendererVS.hlsl">
+      <Filter>Source\Rendering\VolumeRenderer</Filter>
+    </FxCompile>
+    <FxCompile Include="Source\Rendering\Volume\FaceAnalysisPS.hlsl">
+      <Filter>Source\Rendering\VolumeRenderer</Filter>
+    </FxCompile>
+    <FxCompile Include="Source\Rendering\Volume\VolumeRendererPS.hlsl">
+      <Filter>Source\Rendering\VolumeRenderer</Filter>
+    </FxCompile>
+    <FxCompile Include="Source\Rendering\Volume\VolumeRendererVprtVS.hlsl">
+      <Filter>Source\Rendering\VolumeRenderer</Filter>
+    </FxCompile>
+    <FxCompile Include="Source\Rendering\Notification\NotificationPixelShader.hlsl">
+      <Filter>Source\Rendering\NotificationRenderer</Filter>
+    </FxCompile>
+    <FxCompile Include="Source\Rendering\Notification\NotificationVertexShader.hlsl">
+      <Filter>Source\Rendering\NotificationRenderer</Filter>
+    </FxCompile>
+    <FxCompile Include="Source\Rendering\Notification\NotificationVPRTVertexShader.hlsl">
+      <Filter>Source\Rendering\NotificationRenderer</Filter>
+    </FxCompile>
+    <FxCompile Include="Source\Rendering\Notification\DFRCreateDistanceFieldPixelShader.hlsl">
+      <Filter>Source\Rendering\NotificationRenderer</Filter>
+    </FxCompile>
+    <FxCompile Include="Source\Rendering\Notification\DFRFullscreenQuadVertexShader.hlsl">
+      <Filter>Source\Rendering\NotificationRenderer</Filter>
+    </FxCompile>
+    <FxCompile Include="Source\Rendering\Slice\SlicePixelShader.hlsl">
+      <Filter>Source\Rendering\SliceRenderer</Filter>
+    </FxCompile>
+    <FxCompile Include="Source\Rendering\Slice\SlicePixelShaderGreyscale.hlsl">
+      <Filter>Source\Rendering\SliceRenderer</Filter>
+    </FxCompile>
+    <FxCompile Include="Source\Rendering\Slice\SliceVertexShader.hlsl">
+      <Filter>Source\Rendering\SliceRenderer</Filter>
+    </FxCompile>
+    <FxCompile Include="Source\Rendering\Slice\SliceVPRTVertexShader.hlsl">
+      <Filter>Source\Rendering\SliceRenderer</Filter>
+    </FxCompile>
+    <FxCompile Include="Source\Rendering\Geometry Shaders\PCCIGeometryShader.hlsl">
+      <Filter>Source\Rendering\Geometry Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Source\Rendering\Geometry Shaders\PCCTIGeometryShader.hlsl">
+      <Filter>Source\Rendering\Geometry Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Source\Rendering\Geometry Shaders\PCIGeometryShader.hlsl">
+      <Filter>Source\Rendering\Geometry Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Source\Rendering\Geometry Shaders\PCT0T1T2IGeometryShader.hlsl">
+      <Filter>Source\Rendering\Geometry Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Source\Rendering\Geometry Shaders\PCT0T4IGeometryShader.hlsl">
+      <Filter>Source\Rendering\Geometry Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Source\Rendering\Geometry Shaders\PCTIGeometryShader.hlsl">
+      <Filter>Source\Rendering\Geometry Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Source\Rendering\Geometry Shaders\PPNCIGeometryShader.hlsl">
+      <Filter>Source\Rendering\Geometry Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Source\Rendering\Geometry Shaders\PT0T1IGeometryShader.hlsl">
+      <Filter>Source\Rendering\Geometry Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Source\Rendering\Geometry Shaders\PTIGeometryShader.hlsl">
+      <Filter>Source\Rendering\Geometry Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Source\Rendering\Mesh\MeshRendererLightingPixelShader.hlsl">
+      <Filter>Source\Rendering\MeshRenderer</Filter>
+    </FxCompile>
+    <FxCompile Include="Source\Rendering\Mesh\MeshRendererSolidColorPixelShader.hlsl">
+      <Filter>Source\Rendering\MeshRenderer</Filter>
+    </FxCompile>
+    <FxCompile Include="Source\Rendering\Mesh\MeshRendererSurfaceVertexShader.hlsl">
+      <Filter>Source\Rendering\MeshRenderer</Filter>
+    </FxCompile>
+    <FxCompile Include="Source\Rendering\Mesh\MeshRendererSurfaceVPRTVertexShader.hlsl">
+      <Filter>Source\Rendering\MeshRenderer</Filter>
+    </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Valhalla.rc" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Valhalla LogLevel="LOG_LEVEL_DEBUG">
+  <Tools IGTConnection="PlusServer" 
+         ShowIcons="false">
+    <Tool 
+      Id="Stylus"
+      Model="Tools/hemisphere_stylus"
+      From="Tip"
+      To="Reference"
+      LerpEnabled="false"
+      ModelToObjectTransform="1 0 0 0
+                              0 1 0 0
+                              0 0 1 0
+                              0 0 0 1" />
+    <Tool
+      Id="Heart"
+      Model="Demo/heart"
+      From="Heart"
+      To="Reference"
+      LerpEnabled="false"
+      ModelToObjectTransform="1 0 0 0
+                              0 1 0 0
+                              0 0 1 0
+                              0 0 0 1" />
+  </Tools>
+
+  <TargetSphereTask
+    IGTConnection="PlusServer"
+    PhantomFrom="Tool"
+    PhantomTo="Reference"
+    StylusFrom="StylusTip"
+    NumberOfPoints="10" >
+    <Region
+      XMinMeters="0.2"
+      XMaxMeters="0.8"
+      YMinMeters="0.2"
+      YMaxMeters="0.8"
+      ZMinMeters="-0.8"
+      ZMaxMeters="-0.2"/>
+  </TargetSphereTask>
+
+  <RegisterModelTask
+    IGTConnection="PlusServer"
+    ModelName="LegoPhantom.stl"
+    ModelFrom="Phantom"
+    ModelTo="Reference"
+    StylusFrom="StylusTip"/>
+
+  <CoordinateDefinitions>
+  </CoordinateDefinitions>
+
+  <CameraRegistration
+    IGTConnection="PlusServer"
+    Dp="2"
+    MinDistanceDivisor="16"
+    Param1="255"
+    Param2="30"
+    MinRadius="20"
+    MaxRadius="60"/>
+
+  <ToolBasedRegistration
+    IGTConnection="PlusServer"
+    From="Tool"
+    To="Reference"/>
+
+  <OpticalRegistration
+    IGTConnection="PlusServer"
+    RecalcThresholdCount="100"
+    From="HoloLens"
+    To="Reference"/>
+
+  <ModelAlignmentRegistration
+    IGTConnection="PlusServer"
+    SphereFrom="Sphere"
+    SphereTo="Reference"
+    HoloLensFrom="HoloLens"
+    HoloLensTo="Reference"
+    NumberOfPointsToCollectPerEye="6"
+    Primitive="Sphere"
+    Colour="0.0 0.0 0.8 1.0"
+    Argument="0.04 0.0 0.0"/> <!-- 40mm diameter in meters -->
+
+  <IGTConnections>
+    <Connection
+      Name="PlusServer"
+      Host="192.168.0.29"
+      Port="18944"
+      EmbeddedImageTransformName="ImageToReference"/>
+  </IGTConnections>
+
+  <SliceRendering 
+    From="Image" 
+    To="HMD"
+    WhiteMapColour="1.0 0.0 0.0"
+    BlackMapColour="0.0 0.0 1.0"
+    IGTConnection="PlusServer"/>
+
+  <VolumeRendering 
+    From="Volume" 
+    To="HMD"
+    IGTConnection="PlusServer"/>
+</Valhalla>

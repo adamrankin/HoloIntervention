@@ -1,9 +1,7 @@
 #pragma once
 
-//// Local includes
-#include "Log.h"
-#include "Common.h"
-#include "ILocatable.h"
+// Valhalla engine includes
+#include <Common\Common.h>
 
 // Windows includes
 #include <xapo.h>
@@ -36,7 +34,4 @@
 #include <wincodec.h>
 #include <wrl.h>
 
-//// STL includes
-#include <map>
-#include <memory>
-#include <mutex>
+// STL includes
