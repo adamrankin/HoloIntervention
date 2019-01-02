@@ -23,12 +23,13 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "pch.h"
-#include "Common.h"
 #include "SplashSystem.h"
-#include "StepTimer.h"
 
-// Rendering includes
-#include "SliceRenderer.h"
+// Valhalla includes
+#include <Common\Common.h>
+#include <Common\StepTimer.h>
+#include <Rendering\Slice\Slice.h>
+#include <Rendering\Slice\SliceRenderer.h>
 
 // STL includes
 #include <functional>
@@ -43,10 +44,11 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <WindowsNumerics.h>
 
 using namespace Concurrency;
-using namespace Windows::Storage;
+using namespace Valhalla;
 using namespace Windows::Foundation::Numerics;
-using namespace Windows::UI::Input::Spatial;
 using namespace Windows::Perception::Spatial;
+using namespace Windows::Storage;
+using namespace Windows::UI::Input::Spatial;
 
 namespace
 {
@@ -76,7 +78,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float SplashSystem::GetStabilizePriority() const
     {
-      if (m_sliceEntry == nullptr)
+      if(m_sliceEntry == nullptr)
       {
         return PRIORITY_NOT_ACTIVE;
       }
@@ -107,7 +109,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void SplashSystem::StartSplash()
     {
-      if (m_sliceEntry != nullptr)
+      if(m_sliceEntry != nullptr)
       {
         m_sliceEntry->SetVisible(true);
       }
@@ -116,7 +118,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void SplashSystem::EndSplash()
     {
-      if (m_sliceEntry != nullptr)
+      if(m_sliceEntry != nullptr)
       {
         m_sliceEntry->SetVisible(false);
       }
@@ -128,7 +130,7 @@ namespace HoloIntervention
       // Calculate world pose, ahead of face, centered
       const float& deltaTime = static_cast<float>(timer.GetElapsedSeconds());
 
-      if (m_sliceEntry == nullptr)
+      if(m_sliceEntry == nullptr)
       {
         // Slice hasn't been loaded yet
         return;
@@ -136,7 +138,7 @@ namespace HoloIntervention
 
       m_welcomeTimerSec += deltaTime;
 
-      if (!m_componentReady && m_welcomeTimerSec >= MINIMUM_WELCOME_DISPLAY_TIME_SEC)
+      if(!m_componentReady && m_welcomeTimerSec >= MINIMUM_WELCOME_DISPLAY_TIME_SEC)
       {
         m_componentReady = true;
         return;

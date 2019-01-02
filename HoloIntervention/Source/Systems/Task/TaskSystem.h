@@ -23,17 +23,17 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-// Local includes
-#include "IConfigurable.h"
-#include "IStabilizedComponent.h"
-#include "IVoiceInput.h"
+// Valhalla includes
+#include <Input\IVoiceInput.h>
+#include <Interfaces\ISerializable.h>
+#include <Interfaces\IStabilizedComponent.h>
 
 namespace DX
 {
   class StepTimer;
 }
 
-namespace HoloIntervention
+namespace Valhalla
 {
   namespace Rendering
   {
@@ -49,7 +49,10 @@ namespace HoloIntervention
   {
     class Icons;
   }
+}
 
+namespace HoloIntervention
+{
   namespace System
   {
     class NetworkSystem;
@@ -63,7 +66,7 @@ namespace HoloIntervention
       class RegisterModelTask;
     }
 
-    class TaskSystem : public IStabilizedComponent, public Input::IVoiceInput, public IConfigurable
+    class TaskSystem : public Valhalla::IStabilizedComponent, public Valhalla::Input::IVoiceInput, public Valhalla::ISerializable
     {
     public:
       virtual concurrency::task<bool> WriteConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
@@ -75,10 +78,10 @@ namespace HoloIntervention
       virtual float GetStabilizePriority() const;
 
     public:
-      virtual void RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap);
+      virtual void RegisterVoiceCallbacks(Valhalla::Input::VoiceInputCallbackMap& callbackMap);
 
     public:
-      TaskSystem(HoloInterventionCore& core, NotificationSystem&, NetworkSystem&, ToolSystem&, RegistrationSystem&, Rendering::ModelRenderer&, UI::Icons&);
+      TaskSystem(Valhalla::ValhallaCore& core, NotificationSystem&, NetworkSystem&, ToolSystem&, RegistrationSystem&, Valhalla::Rendering::ModelRenderer&, Valhalla::UI::Icons&);
       ~TaskSystem();
 
       void Update(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem, DX::StepTimer& stepTimer);
@@ -89,8 +92,8 @@ namespace HoloIntervention
       NetworkSystem&                              m_networkSystem;
       ToolSystem&                                 m_toolSystem;
       RegistrationSystem&                         m_registrationSystem;
-      Rendering::ModelRenderer&                   m_modelRenderer;
-      UI::Icons&                                  m_icons;
+      Valhalla::Rendering::ModelRenderer&         m_modelRenderer;
+      Valhalla::UI::Icons&                        m_icons;
 
       std::shared_ptr<Tasks::TargetSphereTask>  m_touchingSphereTask;
       std::shared_ptr<Tasks::RegisterModelTask>   m_regModelTask;

@@ -24,19 +24,19 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "pch.h"
 #include "AppView.h"
+#include "NotificationSystem.h"
 
 // Valhalla engine includes
-#include <Common.h>
-#include <ValhallaCore.h>
-#include <DeviceResources.h>
+#include <Common\Common.h>
+#include <Rendering\DeviceResources.h>
 
 // Windows includes
 #include <ppltasks.h>
 
 // System includes
-#include "NotificationSystem.h"
 
 using namespace Concurrency;
+using namespace Valhalla;
 using namespace Windows::ApplicationModel::Activation;
 using namespace Windows::ApplicationModel::Core;
 using namespace Windows::ApplicationModel;

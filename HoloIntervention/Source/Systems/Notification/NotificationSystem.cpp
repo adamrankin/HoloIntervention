@@ -24,18 +24,19 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "pch.h"
 #include "AppView.h"
-#include "Common.h"
 #include "NotificationSystem.h"
-#include "DeviceResources.h"
-#include "StepTimer.h"
 
-// Rendering includes
-#include "NotificationRenderer.h"
+// Valhalla includes
+#include <Common\Common.h>
+#include <Common\StepTimer.h>
+#include <Rendering\DeviceResources.h>
+#include <Rendering\Notification\NotificationRenderer.h>
 
 // Unnecessary, but reduces intellisense errors
 #include <WindowsNumerics.h>
 
 using namespace DirectX;
+using namespace Valhalla;
 using namespace Windows::Foundation::Numerics;
 using namespace Windows::Media::SpeechRecognition;
 using namespace Windows::UI::Input::Spatial;
@@ -95,15 +96,15 @@ namespace HoloIntervention
     void NotificationSystem::RemoveMessage(uint64 messageId)
     {
       std::lock_guard<std::mutex> guard(m_messageQueueMutex);
-      if (m_currentMessage.messageId == messageId)
+      if(m_currentMessage.messageId == messageId)
       {
         m_messageTimeElapsedSec = m_currentMessage.messageDuration + 0.5;
         return;
       }
 
-      for (auto it = m_messages.begin(); it != m_messages.end(); ++it)
+      for(auto it = m_messages.begin(); it != m_messages.end(); ++it)
       {
-        if (it->messageId == messageId)
+        if(it->messageId == messageId)
         {
           m_messages.erase(it);
           return;
@@ -120,7 +121,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void NotificationSystem::Update(SpatialPointerPose^ pointerPose, const DX::StepTimer& timer)
     {
-      if (!m_componentReady)
+      if(!m_componentReady)
       {
         return;
       }
@@ -128,14 +129,14 @@ namespace HoloIntervention
       // The following code updates any relevant timers depending on state
       auto elapsedTimeSec = timer.GetElapsedSeconds();
 
-      if (m_animationState == SHOWING)
+      if(m_animationState == SHOWING)
       {
         // Accumulate the total time shown
         m_messageTimeElapsedSec += elapsedTimeSec;
       }
 
       // The following code manages state transition
-      if (m_animationState == HIDDEN && m_messages.size() > 0)
+      if(m_animationState == HIDDEN && m_messages.size() > 0)
       {
         // We had nothing showing, and a new message has come in
 
@@ -147,10 +148,10 @@ namespace HoloIntervention
 
         GrabNextMessage();
       }
-      else if (m_animationState == SHOWING && m_messageTimeElapsedSec > m_currentMessage.messageDuration)
+      else if(m_animationState == SHOWING && m_messageTimeElapsedSec > m_currentMessage.messageDuration)
       {
         // The time for the current message has ended
-        if (m_messages.size() > 0)
+        if(m_messages.size() > 0)
         {
           // There is a new message to show, switch to it, do not do any fade
           GrabNextMessage();
@@ -164,18 +165,18 @@ namespace HoloIntervention
           m_fadeTime = MAX_FADE_TIME;
         }
       }
-      else if (m_animationState == FADING_IN)
+      else if(m_animationState == FADING_IN)
       {
-        if (!IsFading())
+        if(!IsFading())
         {
           // Animation has finished, switch to SHOWING
           m_animationState = SHOWING;
           m_messageTimeElapsedSec = 0.f;
         }
       }
-      else if (m_animationState == FADING_OUT)
+      else if(m_animationState == FADING_OUT)
       {
-        if (m_messages.size() > 0)
+        if(m_messages.size() > 0)
         {
           // A message has come in while we were fading out, reverse and fade back in
           GrabNextMessage();
@@ -184,14 +185,14 @@ namespace HoloIntervention
           m_fadeTime = MAX_FADE_TIME - m_fadeTime; // reverse the fade
         }
 
-        if (!IsFading())
+        if(!IsFading())
         {
           // Animation has finished, switch to HIDDEN
           m_animationState = HIDDEN;
         }
       }
 
-      if (IsShowingNotification())
+      if(IsShowingNotification())
       {
         UpdateHologramPosition(pointerPose, timer);
 
@@ -200,7 +201,7 @@ namespace HoloIntervention
         CalculateVelocity(1.f / static_cast<float>(timer.GetElapsedSeconds()));
       }
 
-      if (m_hideNotifications)
+      if(m_hideNotifications)
       {
         m_hologramColorFadeMultiplier = HIDDEN_ALPHA_VALUE;
       }
@@ -213,10 +214,10 @@ namespace HoloIntervention
     {
       const float deltaTime = static_cast<float>(timer.GetElapsedSeconds());
 
-      if (IsFading())
+      if(IsFading())
       {
         // Fade the quad in, or out.
-        if (m_animationState == FADING_IN)
+        if(m_animationState == FADING_IN)
         {
           const float fadeLerp = 1.f - (m_fadeTime / MAX_FADE_TIME);
           m_hologramColorFadeMultiplier = float4(fadeLerp, fadeLerp, fadeLerp, 1.f);
@@ -251,7 +252,7 @@ namespace HoloIntervention
     void NotificationSystem::GrabNextMessage()
     {
       std::lock_guard<std::mutex> guard(m_messageQueueMutex);
-      if (m_messages.size() == 0)
+      if(m_messages.size() == 0)
       {
         return;
       }
@@ -278,7 +279,7 @@ namespace HoloIntervention
     {
       const float& deltaTime = static_cast<float>(timer.GetElapsedSeconds());
 
-      if (pointerPose != nullptr)
+      if(pointerPose != nullptr)
       {
         // Get the gaze direction relative to the given coordinate system.
         const float3 headPosition = pointerPose->Head->Position;

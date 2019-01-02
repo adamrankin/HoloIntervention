@@ -25,13 +25,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "IRegistrationMethod.h"
-#include "LandmarkRegistration.h"
 
-// Capture includes
-#include "VideoFrameProcessor.h"
-
-// Sound includes
-#include "IVoiceInput.h"
+// Valhalla includes
+#include <Algorithms\LandmarkRegistration.h>
+#include <Input\IVoiceInput.h>
 
 // OpenCV includes
 #include <opencv2/core.hpp>
@@ -53,7 +50,7 @@ namespace DirectX
   class InstancedGeometricPrimitive;
 }
 
-namespace HoloIntervention
+namespace Valhalla
 {
   namespace Rendering
   {
@@ -66,6 +63,14 @@ namespace HoloIntervention
     class IGTConnector;
   }
 
+  namespace Capture
+  {
+    class VideoFrameProcessor;
+  }
+}
+
+namespace HoloIntervention
+{
   namespace System
   {
     class NetworkSystem;
@@ -94,7 +99,7 @@ namespace HoloIntervention
       };
 
     public:
-      virtual void RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap) {};
+      virtual void RegisterVoiceCallbacks(Valhalla::Input::VoiceInputCallbackMap& callbackMap) {};
 
     public:
       virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition(Windows::UI::Input::Spatial::SpatialPointerPose^ pose) const;
@@ -116,7 +121,7 @@ namespace HoloIntervention
       virtual void Update(Windows::UI::Input::Spatial::SpatialPointerPose^ headPose, Windows::Perception::Spatial::SpatialCoordinateSystem^ hmdCoordinateSystem, Platform::IBox<Windows::Foundation::Numerics::float4x4>^ anchorToHMDBox, Windows::Graphics::Holographic::HolographicCameraPose^ cameraPose);
 
     public:
-      CameraRegistration(HoloInterventionCore& core, System::NotificationSystem& notificationSystem, System::NetworkSystem& networkSystem, Rendering::ModelRenderer& modelRenderer);
+      CameraRegistration(Valhalla::ValhallaCore& core, System::NotificationSystem& notificationSystem, System::NetworkSystem& networkSystem, Valhalla::Rendering::ModelRenderer& modelRenderer);
       ~CameraRegistration();
 
       bool IsCameraActive() const;
@@ -127,7 +132,7 @@ namespace HoloIntervention
       bool IsPhantomToCameraSane(const Windows::Foundation::Numerics::float4x4& phantomToCameraTransform);
       void ProcessAvailableFrames(Concurrency::cancellation_token token);
       void PerformLandmarkRegistration(Concurrency::cancellation_token token);
-      bool RetrieveTrackerFrameLocations(Algorithm::LandmarkRegistration::VecFloat3& outSphereInReferencePositions);
+      bool RetrieveTrackerFrameLocations(Valhalla::Algorithm::LandmarkRegistration::VecFloat3& outSphereInReferencePositions);
       bool ComputePhantomToCameraTransform(Windows::Media::Capture::Frames::VideoMediaFrame^ videoFrame, bool& initialized, int32_t& height, int32_t& width,
                                            cv::Mat& hsv, cv::Mat& redMat, cv::Mat& redMatWrap, cv::Mat& imageRGB, cv::Mat& mask, cv::Mat& rvec,
                                            cv::Mat& tvec, cv::Mat& cannyOutput, Windows::Foundation::Numerics::float4x4& modelToCameraTransform);
@@ -146,14 +151,14 @@ namespace HoloIntervention
 
     protected:
       // Cached entries
-      Rendering::ModelRenderer&                                             m_modelRenderer;
+      Valhalla::Rendering::ModelRenderer&                                   m_modelRenderer;
       System::NotificationSystem&                                           m_notificationSystem;
       System::NetworkSystem&                                                m_networkSystem;
 
       // Visualization resources
       std::atomic_bool                                                      m_visualizationEnabled = false;
       std::array<uint64, 5>                                                 m_spherePrimitiveIds = { 0 };
-      std::array<std::shared_ptr<Rendering::Model>, 5>                 m_spherePrimitives = { nullptr };
+      std::array<std::shared_ptr<Valhalla::Rendering::Model>, 5>            m_spherePrimitives = { nullptr };
       std::array<Windows::Foundation::Numerics::float4x4, 5>                m_sphereToAnchorPoses;
 
       // Camera
@@ -162,7 +167,7 @@ namespace HoloIntervention
       Windows::Media::Capture::Frames::MediaFrameReference^                 m_currentFrame = nullptr;
       Windows::Media::Capture::Frames::MediaFrameReference^                 m_nextFrame = nullptr;
       mutable std::mutex                                                    m_processorLock;
-      std::shared_ptr<Capture::VideoFrameProcessor>                         m_videoFrameProcessor = nullptr;
+      std::shared_ptr<Valhalla::Capture::VideoFrameProcessor>               m_videoFrameProcessor = nullptr;
       double                                                                m_dp = 2;
       double                                                                m_minDistanceDivisor = 16;
       double                                                                m_param1 = 255;
@@ -182,14 +187,14 @@ namespace HoloIntervention
 
       // Output
       std::mutex                                                            m_outputFramesLock;
-      Algorithm::LandmarkRegistration::DetectionFrames                      m_sphereInAnchorResultFrames;
-      Algorithm::LandmarkRegistration::DetectionFrames                      m_sphereInReferenceResultFrames;
+      Valhalla::Algorithm::LandmarkRegistration::DetectionFrames            m_sphereInAnchorResultFrames;
+      Valhalla::Algorithm::LandmarkRegistration::DetectionFrames            m_sphereInReferenceResultFrames;
 
       // State
       Concurrency::cancellation_token_source                                m_tokenSource;
       std::atomic_bool                                                      m_pnpNeedsInit = true;
       uint32                                                                m_lastRegistrationResultCount = NUMBER_OF_FRAMES_BETWEEN_REGISTRATION;
-      std::shared_ptr<Algorithm::LandmarkRegistration>                      m_landmarkRegistration = std::make_shared<Algorithm::LandmarkRegistration>();
+      std::shared_ptr<Valhalla::Algorithm::LandmarkRegistration>            m_landmarkRegistration = std::make_shared<Valhalla::Algorithm::LandmarkRegistration>();
 
       static const uint32                                                   NUMBER_OF_FRAMES_BETWEEN_REGISTRATION = 3;
       static const uint32                                                   PHANTOM_SPHERE_COUNT = 5;

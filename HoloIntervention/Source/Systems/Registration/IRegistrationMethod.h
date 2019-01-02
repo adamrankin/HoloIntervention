@@ -23,10 +23,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-// Local includes
-#include "IConfigurable.h"
-#include "IStabilizedComponent.h"
-#include "IVoiceInput.h"
+// Valhalla includes
+#include <Interfaces\ISerializable.h>
+#include <Interfaces\IStabilizedComponent.h>
+#include <Input\IVoiceInput.h>
 
 // STL includes
 #include <functional>
@@ -40,12 +40,21 @@ namespace HoloIntervention
 {
   namespace System
   {
-    class IRegistrationMethod : public IStabilizedComponent, public IConfigurable, public Input::IVoiceInput
+    class IRegistrationMethod : public Valhalla::IStabilizedComponent, public Valhalla::ISerializable, public Valhalla::Input::IVoiceInput
     {
     public:
-      virtual void RegisterTransformUpdatedCallback(std::function<void(Windows::Foundation::Numerics::float4x4)> function) { m_completeCallback = function; }
-      virtual bool HasRegistration() const { return m_hasRegistration; }
-      virtual Windows::Foundation::Numerics::float4x4 GetRegistrationTransformation() const { return m_referenceToAnchor; }
+      virtual void RegisterTransformUpdatedCallback(std::function<void(Windows::Foundation::Numerics::float4x4)> function)
+      {
+        m_completeCallback = function;
+      }
+      virtual bool HasRegistration() const
+      {
+        return m_hasRegistration;
+      }
+      virtual Windows::Foundation::Numerics::float4x4 GetRegistrationTransformation() const
+      {
+        return m_referenceToAnchor;
+      }
 
       virtual Windows::Perception::Spatial::SpatialAnchor^ GetWorldAnchor()
       {
@@ -63,7 +72,7 @@ namespace HoloIntervention
       virtual void Update(Windows::UI::Input::Spatial::SpatialPointerPose^ headPose, Windows::Perception::Spatial::SpatialCoordinateSystem^ hmdCoordinateSystem, Platform::IBox<Windows::Foundation::Numerics::float4x4>^ anchorToHMDBox, Windows::Graphics::Holographic::HolographicCameraPose^ cameraPose) = 0;
 
     protected:
-      IRegistrationMethod(HoloInterventionCore& core) : IConfigurable(core) {}
+      IRegistrationMethod(Valhalla::ValhallaCore& core) : Valhalla::ISerializable(core) {}
 
     protected:
       // Anchor resources

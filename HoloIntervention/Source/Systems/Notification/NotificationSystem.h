@@ -23,9 +23,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-// Local includes
-#include "IEngineComponent.h"
-#include "IVoiceInput.h"
+// Valhalla includes
+#include <Input\IVoiceInput.h>
+#include <Interfaces\IEngineComponent.h>
 
 // STL includes
 #include <deque>
@@ -36,16 +36,19 @@ namespace DX
   class StepTimer;
 }
 
-namespace HoloIntervention
+namespace Valhalla
 {
   namespace Rendering
   {
     class NotificationRenderer;
   }
+}
 
+namespace HoloIntervention
+{
   namespace System
   {
-    class NotificationSystem : public Input::IVoiceInput, public IEngineComponent
+    class NotificationSystem : public Valhalla::Input::IVoiceInput, public Valhalla::IEngineComponent
     {
       enum AnimationState
       {
@@ -71,7 +74,7 @@ namespace HoloIntervention
       typedef std::deque<MessageEntry> MessageQueue;
 
     public:
-      NotificationSystem(Rendering::NotificationRenderer& notificationRenderer);
+      NotificationSystem(Valhalla::Rendering::NotificationRenderer& notificationRenderer);
       ~NotificationSystem();
 
       // Add a message to the queue to render
@@ -93,7 +96,7 @@ namespace HoloIntervention
       void SetPose(Windows::UI::Input::Spatial::SpatialPointerPose^ pointerPose);
 
       // IVoiceInput functions
-      virtual void RegisterVoiceCallbacks(HoloIntervention::Input::VoiceInputCallbackMap& callbackMap);
+      virtual void RegisterVoiceCallbacks(Valhalla::Input::VoiceInputCallbackMap& callbackMap);
 
     protected:
       void UpdateHologramPosition(Windows::UI::Input::Spatial::SpatialPointerPose^ pointerPose, const DX::StepTimer& timer);
@@ -106,7 +109,7 @@ namespace HoloIntervention
 
     protected:
       // Cached pointer to device resources.
-      Rendering::NotificationRenderer&                    m_notificationRenderer;
+      Valhalla::Rendering::NotificationRenderer&          m_notificationRenderer;
 
       float                                               m_fadeTime = 0.f;
       AnimationState                                      m_animationState = HIDDEN;

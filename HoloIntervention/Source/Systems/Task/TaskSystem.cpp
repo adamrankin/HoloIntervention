@@ -23,20 +23,20 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "pch.h"
-#include "StepTimer.h"
 #include "TaskSystem.h"
-
-// UI includes
-#include "Icons.h"
-
-// Task includes
 #include "RegisterModelTask.h"
 #include "TargetSphereTask.h"
 
+// Valhalla includes
+#include <Common\StepTimer.h>
+#include <Input\IVoiceInput.h>
+#include <UI\Icons.h>
+
+using namespace Concurrency;
+using namespace Valhalla;
 using namespace Windows::Data::Xml::Dom;
 using namespace Windows::Foundation::Numerics;
 using namespace Windows::UI::Input::Spatial;
-using namespace concurrency;
 
 namespace HoloIntervention
 {
@@ -93,8 +93,8 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    TaskSystem::TaskSystem(HoloInterventionCore& core, NotificationSystem& notificationSystem, NetworkSystem& networkSystem, ToolSystem& toolSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer, UI::Icons& icons)
-      : IConfigurable(core)
+    TaskSystem::TaskSystem(ValhallaCore& core, NotificationSystem& notificationSystem, NetworkSystem& networkSystem, ToolSystem& toolSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer, UI::Icons& icons)
+      : ISerializable(core)
       , m_notificationSystem(notificationSystem)
       , m_networkSystem(networkSystem)
       , m_toolSystem(toolSystem)

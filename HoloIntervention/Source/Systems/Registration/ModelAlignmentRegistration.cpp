@@ -23,29 +23,21 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "pch.h"
-#include "Common.h"
-#include "Debug.h"
-#include "MathCommon.h"
 #include "ModelAlignmentRegistration.h"
-#include "PointToLineRegistration.h"
-
-// Core includes
-#include "CameraResources.h"
-#include "StepTimer.h"
-
-// Rendering includes
-#include "Model.h"
-#include "ModelRenderer.h"
-
-// Input includes
-#include "SpatialInput.h"
-
-// UI includes
-#include "Icons.h"
-
-// System includes
-#include "NetworkSystem.h"
 #include "NotificationSystem.h"
+
+// Valhalla includes
+#include <Common\Common.h>
+#include <Debug\Debug.h>
+#include <Math\MathUtil.h>
+#include <Algorithms\PointToLineRegistration.h>
+#include <Rendering\CameraResources.h>
+#include <Common\StepTimer.h>
+#include <Rendering\Model\Model.h>
+#include <Rendering\Model\ModelRenderer.h>
+#include <Input\SpatialInput.h>
+#include <UI\Icons.h>
+#include <Network\NetworkSystem.h>
 
 // Intellisense include
 #include <WindowsNumerics.h>
@@ -59,6 +51,8 @@ using namespace Windows::Media::SpeechRecognition;
 using namespace Windows::Perception::Spatial;
 using namespace Windows::UI::Input::Spatial;
 
+using namespace Valhalla;
+
 namespace HoloIntervention
 {
   namespace System
@@ -71,7 +65,7 @@ namespace HoloIntervention
     const float ModelAlignmentRegistration::HOLOLENS_ICON_ROLL_RAD = 0.f;
 
     //----------------------------------------------------------------------------
-    ModelAlignmentRegistration::ModelAlignmentRegistration(HoloInterventionCore& core, System::NotificationSystem& notificationSystem, System::NetworkSystem& networkSystem, Rendering::ModelRenderer& modelRenderer, Input::SpatialInput& spatialInput, UI::Icons& icons, Debug& debug, DX::StepTimer& timer)
+    ModelAlignmentRegistration::ModelAlignmentRegistration(ValhallaCore& core, System::NotificationSystem& notificationSystem, System::NetworkSystem& networkSystem, Rendering::ModelRenderer& modelRenderer, Input::SpatialInput& spatialInput, UI::Icons& icons, Debug& debug, DX::StepTimer& timer)
       : IRegistrationMethod(core)
       , m_notificationSystem(notificationSystem)
       , m_networkSystem(networkSystem)
@@ -116,7 +110,7 @@ namespace HoloIntervention
       return create_task([this, document]()
       {
         auto xpath = ref new Platform::String(L"/HoloIntervention");
-        if (document->SelectNodes(xpath)->Length != 1)
+        if(document->SelectNodes(xpath)->Length != 1)
         {
           return false;
         }
@@ -147,7 +141,7 @@ namespace HoloIntervention
       return create_task([this, document]()
       {
         Platform::String^ xpath = L"/HoloIntervention/ModelAlignmentRegistration";
-        if (document->SelectNodes(xpath)->Length != 1)
+        if(document->SelectNodes(xpath)->Length != 1)
         {
           // No configuration found, use defaults
           LOG(LogLevelType::LOG_LEVEL_ERROR, L"No model alignment registration configuration found. Cannot use without key information.");
@@ -156,7 +150,7 @@ namespace HoloIntervention
 
         auto node = document->SelectNodes(xpath)->Item(0);
 
-        if (!GetAttribute(L"IGTConnection", node, m_connectionName))
+        if(!GetAttribute(L"IGTConnection", node, m_connectionName))
         {
           LOG(LogLevelType::LOG_LEVEL_ERROR, L"Network attribute not defined for model alignment registration. Aborting.");
           return task_from_result(false);
@@ -166,11 +160,11 @@ namespace HoloIntervention
 
         std::wstring fromName;
         std::wstring toName;
-        if (!GetAttribute(L"SphereFrom", node, fromName))
+        if(!GetAttribute(L"SphereFrom", node, fromName))
         {
           LOG_WARNING(L"From coordinate system name attribute not defined for pivot calibrated phantom. Defaulting to \"Sphere\".");
         }
-        if (!GetAttribute(L"SphereTo", node, toName))
+        if(!GetAttribute(L"SphereTo", node, toName))
         {
           LOG_WARNING(L"To cooordinate system name attribute not defined for pivot calibrated phantom. Defaulting to \"Reference\".");
         }
@@ -179,13 +173,13 @@ namespace HoloIntervention
                                              ref new Platform::String(toName.c_str())
                                            );
 
-        if (!GetScalarAttribute<uint32>(L"NumberOfPointsToCollectPerEye", node, m_numberOfPointsToCollectPerEye))
+        if(!GetScalarAttribute<uint32>(L"NumberOfPointsToCollectPerEye", node, m_numberOfPointsToCollectPerEye))
         {
           LOG_WARNING(L"Buffer size not defined for optical registration. Defaulting to " + DEFAULT_NUMBER_OF_POINTS_TO_COLLECT.ToString());
         }
 
         m_primitiveType = Rendering::PrimitiveType_SPHERE;
-        if (!HasAttribute(L"Primitive", node))
+        if(!HasAttribute(L"Primitive", node))
         {
           LOG_WARNING("Primitive type not defined. Defaulting to sphere.");
         }
@@ -201,28 +195,28 @@ namespace HoloIntervention
         Platform::String^ rhcoordsString = nullptr;
         Platform::String^ invertnString = nullptr;
 
-        if (HasAttribute(L"Argument", node))
+        if(HasAttribute(L"Argument", node))
         {
           argumentString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Argument")->NodeValue);
         }
-        if (HasAttribute(L"Colour", node))
+        if(HasAttribute(L"Colour", node))
         {
           colourString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Colour")->NodeValue);
         }
-        if (HasAttribute(L"Tessellation", node))
+        if(HasAttribute(L"Tessellation", node))
         {
           tessellationString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Tessellation")->NodeValue);
         }
-        if (HasAttribute(L"RightHandedCoords", node))
+        if(HasAttribute(L"RightHandedCoords", node))
         {
           rhcoordsString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"RightHandedCoords")->NodeValue);
         }
-        if (HasAttribute(L"InvertN", node))
+        if(HasAttribute(L"InvertN", node))
         {
           invertnString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"InvertN")->NodeValue);
         }
 
-        if (argumentString != nullptr && !argumentString->IsEmpty())
+        if(argumentString != nullptr && !argumentString->IsEmpty())
         {
           std::wstringstream wss;
           wss << argumentString->Data();
@@ -230,7 +224,7 @@ namespace HoloIntervention
           wss >> m_argument.y;
           wss >> m_argument.z;
         }
-        if (colourString != nullptr && !colourString->IsEmpty())
+        if(colourString != nullptr && !colourString->IsEmpty())
         {
           std::wstringstream wss;
           wss << colourString->Data();
@@ -239,17 +233,17 @@ namespace HoloIntervention
           wss >> m_colour.z;
           wss >> m_colour.w;
         }
-        if (tessellationString != nullptr && !tessellationString->IsEmpty())
+        if(tessellationString != nullptr && !tessellationString->IsEmpty())
         {
           std::wstringstream wss;
           wss << tessellationString->Data();
           wss >> m_tessellation;
         }
-        if (rhcoordsString != nullptr && !rhcoordsString->IsEmpty())
+        if(rhcoordsString != nullptr && !rhcoordsString->IsEmpty())
         {
           m_rhCoords = IsEqualInsensitive(rhcoordsString, L"true");
         }
-        if (invertnString != nullptr && !invertnString->IsEmpty())
+        if(invertnString != nullptr && !invertnString->IsEmpty())
         {
           m_invertN = IsEqualInsensitive(invertnString, L"true");
         }
@@ -261,14 +255,14 @@ namespace HoloIntervention
           {
             modelId = loadTask.get();
           }
-          catch (...)
+          catch(...)
           {
             LOG_ERROR("Unable to load primitive for model alignment registration.");
             return false;
           }
 
           m_modelEntry = m_modelRenderer.GetModel(modelId);
-          if (m_modelEntry == nullptr)
+          if(m_modelEntry == nullptr)
           {
             LOG_ERROR("Unable to load primitive for model alignment registration.");
             return false;
@@ -294,11 +288,11 @@ namespace HoloIntervention
     {
       return create_task([this]()
       {
-        if (!m_componentReady || m_worldAnchor == nullptr)
+        if(!m_componentReady || m_worldAnchor == nullptr)
         {
           return task_from_result(false);
         }
-        if (m_started)
+        if(m_started)
         {
           auto remainingPoints = m_numberOfPointsToCollectPerEye - m_pointToLineRegistration->Count();
           m_notificationSystem.QueueMessage(L"Already running. Please capture " + remainingPoints.ToString() + L" more point" + (remainingPoints > 1 ? L"s" : L"") + L".");
@@ -371,17 +365,17 @@ namespace HoloIntervention
       callbacks[L"dump records"] = [this](SpeechRecognitionResult ^ result)
       {
         LOG_INFO("SphereToReferenceTransforms");
-        for (auto& xForm : m_sphereToReferenceTransforms)
+        for(auto& xForm : m_sphereToReferenceTransforms)
         {
           WLOG_INFO(PrintMatrix(xForm));
         }
         LOG_INFO("EyeToHMDTransforms");
-        for (auto& xForm : m_eyeToHMDTransforms)
+        for(auto& xForm : m_eyeToHMDTransforms)
         {
           WLOG_INFO(PrintMatrix(xForm));
         }
         LOG_INFO("HMDToAnchorTransforms");
-        for (auto& xForm : m_HMDToAnchorTransforms)
+        for(auto& xForm : m_HMDToAnchorTransforms)
         {
           WLOG_INFO(PrintMatrix(xForm));
         }
@@ -391,13 +385,13 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ModelAlignmentRegistration::Update(SpatialPointerPose^ headPose, SpatialCoordinateSystem^ hmdCoordinateSystem, Platform::IBox<float4x4>^ anchorToHMDBox, HolographicCameraPose^ cameraPose)
     {
-      if (!m_started || !m_componentReady || !m_networkSystem.IsConnected(m_hashedConnectionName) || m_modelEntry == nullptr)
+      if(!m_started || !m_componentReady || !m_networkSystem.IsConnected(m_hashedConnectionName) || m_modelEntry == nullptr)
       {
         return;
       }
 
       float4x4 hmdToAnchor;
-      if (!invert(anchorToHMDBox->Value, &hmdToAnchor))
+      if(!invert(anchorToHMDBox->Value, &hmdToAnchor))
       {
         assert(false);
         return;
@@ -417,7 +411,7 @@ namespace HoloIntervention
       // Separately, update the virtual model to be 1m in front of the current eye
       float4x4 hmdToEye;
       auto stereoTransform = cameraPose->TryGetViewTransform(hmdCoordinateSystem);
-      if (stereoTransform == nullptr)
+      if(stereoTransform == nullptr)
       {
         LOG_ERROR("Unable to request stereo view to HMD.");
         return;
@@ -432,11 +426,11 @@ namespace HoloIntervention
       // Update icon logic
       m_notificationSystem.RemoveMessage(m_trackingVisibleMessageId);
       auto sphereToReferenceTransform = m_networkSystem.GetTransform(m_hashedConnectionName, m_sphereToReferenceTransformName, m_latestSphereTimestamp);
-      if (sphereToReferenceTransform == nullptr || !sphereToReferenceTransform->Valid)
+      if(sphereToReferenceTransform == nullptr || !sphereToReferenceTransform->Valid)
       {
         m_invalidTrackingTimer += static_cast<float>(m_timer.GetElapsedSeconds());
 
-        if (m_invalidTrackingTimer > INVALID_TRACKING_TIMEOUT_SEC)
+        if(m_invalidTrackingTimer > INVALID_TRACKING_TIMEOUT_SEC)
         {
           m_sphereIconEntry->GetModel()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
 
@@ -451,15 +445,15 @@ namespace HoloIntervention
       m_latestSphereTimestamp = sphereToReferenceTransform->Timestamp;
       m_sphereIconEntry->GetModel()->SetRenderingState(Rendering::RENDERING_DEFAULT);
 
-      if (m_pointCaptureRequested)
+      if(m_pointCaptureRequested)
       {
         //----------------------------------------------------------------------------
         // Optical tracking collection
         Position spherePosition_Ref(sphereToReferenceTransform->Matrix.m14, sphereToReferenceTransform->Matrix.m24, sphereToReferenceTransform->Matrix.m34);
-        if (m_previousSpherePosition_Ref != Position::zero())
+        if(m_previousSpherePosition_Ref != Position::zero())
         {
           // Analyze current point and previous point for reasons to reject
-          if (distance(spherePosition_Ref, m_previousSpherePosition_Ref) <= MIN_DISTANCE_BETWEEN_POINTS_METER)
+          if(distance(spherePosition_Ref, m_previousSpherePosition_Ref) <= MIN_DISTANCE_BETWEEN_POINTS_METER)
           {
             m_notificationSystem.QueueMessage(L"Please move the sphere further away from the previous point.");
             m_pointCaptureRequested = false;
@@ -486,19 +480,19 @@ namespace HoloIntervention
         m_HMDToAnchorTransforms.push_back(hmdToAnchor);
         //m_holoLensToReferenceTransforms.push_back(holoLensToReferenceTransform->Matrix);
 
-        if (m_pointToLineRegistration->Count() == m_numberOfPointsToCollectPerEye)
+        if(m_pointToLineRegistration->Count() == m_numberOfPointsToCollectPerEye)
         {
           m_notificationSystem.QueueMessage(L"Please use only your RIGHT eye to align the real and virtual sphere centers.", 8);
           m_currentEye = EYE_RIGHT;
         }
-        else if (m_pointToLineRegistration->Count() == (m_numberOfPointsToCollectPerEye * 2))
+        else if(m_pointToLineRegistration->Count() == (m_numberOfPointsToCollectPerEye * 2))
         {
           this->StopAsync();
           m_notificationSystem.QueueMessage(L"Collection finished. Processing...");
           m_pointToLineRegistration->ComputeAsync(m_registrationError).then([this](float4x4 referenceToAnchor)
           {
             m_referenceToAnchor = referenceToAnchor;
-            if (m_completeCallback != nullptr)
+            if(m_completeCallback != nullptr)
             {
               m_completeCallback(m_referenceToAnchor);
             }
@@ -507,7 +501,7 @@ namespace HoloIntervention
         }
         else
         {
-          if (m_pointToLineRegistration->Count() <= m_numberOfPointsToCollectPerEye)
+          if(m_pointToLineRegistration->Count() <= m_numberOfPointsToCollectPerEye)
           {
             m_notificationSystem.QueueMessage(L"Left eye captured: " + m_pointToLineRegistration->Count().ToString() + L"/" + m_numberOfPointsToCollectPerEye.ToString());
           }

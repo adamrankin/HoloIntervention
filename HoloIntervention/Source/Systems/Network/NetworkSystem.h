@@ -24,9 +24,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
-#include "IConfigurable.h"
-#include "IEngineComponent.h"
-#include "IVoiceInput.h"
+#include <Input\IVoiceInput.h>
+#include <Interfaces\IEngineComponent.h>
+#include <Interfaces\ISerializable.h>
 
 // IGT includes
 #include <IGTCommon.h>
@@ -44,7 +44,7 @@ namespace DX
   class StepTimer;
 }
 
-namespace HoloIntervention
+namespace Valhalla
 {
   class Debug;
 
@@ -63,12 +63,15 @@ namespace HoloIntervention
   {
     class IGTConnector;
   }
+}
 
+namespace HoloIntervention
+{
   namespace System
   {
     class NotificationSystem;
 
-    class NetworkSystem : public IEngineComponent, public Input::IVoiceInput, public IConfigurable
+    class NetworkSystem : public Valhalla::IEngineComponent, public Valhalla::Input::IVoiceInput, public Valhalla::ISerializable
     {
     public:
       enum ConnectionState
@@ -88,7 +91,7 @@ namespace HoloIntervention
         bool                                        m_networkIsBlinking = true;
         ConnectionState                             m_networkPreviousState = CONNECTION_STATE_UNKNOWN;
         float                                       m_networkBlinkTimer = 0.f;
-        std::shared_ptr<UI::Icon>              m_iconEntry = nullptr;
+        std::shared_ptr<Valhalla::UI::Icon>         m_iconEntry = nullptr;
       };
 
       struct ConnectorEntry
@@ -108,11 +111,11 @@ namespace HoloIntervention
       virtual concurrency::task<bool> ReadConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
 
     public:
-      NetworkSystem(HoloInterventionCore& core, System::NotificationSystem& notificationSystem, Input::VoiceInput& voiceInput, UI::Icons& icons, Debug& debug);
+      NetworkSystem(Valhalla::ValhallaCore& core, System::NotificationSystem& notificationSystem, Valhalla::Input::VoiceInput& voiceInput, Valhalla::UI::Icons& icons, Valhalla::Debug& debug);
       virtual ~NetworkSystem();
 
       /// IVoiceInput functions
-      void RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap);
+      void RegisterVoiceCallbacks(Valhalla::Input::VoiceInputCallbackMap& callbackMap);
 
       /// Connect all known connectors
       Concurrency::task<std::vector<bool>> ConnectAsync(double timeoutSec = CONNECT_TIMEOUT_SEC, Concurrency::task_options& options = Concurrency::task_options());
@@ -159,9 +162,9 @@ namespace HoloIntervention
     protected:
       // Cached entries
       System::NotificationSystem&                   m_notificationSystem;
-      Input::VoiceInput&                            m_voiceInput;
-      UI::Icons&                                    m_icons;
-      Debug&                                        m_debug;
+      Valhalla::Input::VoiceInput&                  m_voiceInput;
+      Valhalla::UI::Icons&                          m_icons;
+      Valhalla::Debug&                              m_debug;
 
       std::wstring                                  m_accumulatedDictationResult;
       uint64                                        m_dictationMatcherToken;

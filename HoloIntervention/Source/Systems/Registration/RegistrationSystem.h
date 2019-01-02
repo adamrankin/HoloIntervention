@@ -27,11 +27,13 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <vector>
 
 // Local includes
-#include "IConfigurable.h"
-#include "ILocatable.h"
 #include "IRegistrationMethod.h"
-#include "IStabilizedComponent.h"
-#include "IVoiceInput.h"
+
+// Valhalla includes
+#include <Input\IVoiceInput.h>
+#include <Interfaces\ILocatable.h>
+#include <Interfaces\ISerializable.h>
+#include <Interfaces\IStabilizedComponent.h>
 
 // WinRT includes
 #include <ppltasks.h>
@@ -42,7 +44,7 @@ namespace DX
   class CameraResources;
 }
 
-namespace HoloIntervention
+namespace Valhalla
 {
   class Debug;
 
@@ -71,7 +73,10 @@ namespace HoloIntervention
   {
     class LandmarkRegistration;
   }
+}
 
+namespace HoloIntervention
+{
   namespace System
   {
     class NetworkSystem;
@@ -89,7 +94,7 @@ namespace HoloIntervention
       REGISTRATIONTYPE_COUNT
     };
 
-    class RegistrationSystem : public Input::IVoiceInput, public IStabilizedComponent, public IConfigurable, public ILocatable
+    class RegistrationSystem : public Valhalla::Input::IVoiceInput, public Valhalla::IStabilizedComponent, public Valhalla::ISerializable, public Valhalla::ILocatable
     {
     public:
       virtual void OnLocatabilityChanged(Windows::Perception::Spatial::SpatialLocatability locatability);
@@ -104,17 +109,17 @@ namespace HoloIntervention
       virtual concurrency::task<bool> ReadConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
 
     public:
-      virtual void RegisterVoiceCallbacks(HoloIntervention::Input::VoiceInputCallbackMap& callbacks);
+      virtual void RegisterVoiceCallbacks(Valhalla::Input::VoiceInputCallbackMap& callbacks);
 
     public:
-      RegistrationSystem(HoloInterventionCore& core,
+      RegistrationSystem(Valhalla::ValhallaCore& core,
                          NetworkSystem& networkSystem,
-                         Physics::PhysicsAPI& physicsAPI,
+                         Valhalla::Physics::PhysicsAPI& physicsAPI,
                          NotificationSystem& notificationSystem,
-                         Rendering::ModelRenderer& modelRenderer,
-                         Input::SpatialInput& spatialInput,
-                         UI::Icons& icons,
-                         Debug& debug,
+                         Valhalla::Rendering::ModelRenderer& modelRenderer,
+                         Valhalla::Input::SpatialInput& spatialInput,
+                         Valhalla::UI::Icons& icons,
+                         Valhalla::Debug& debug,
                          DX::StepTimer& timer);
       ~RegistrationSystem();
 
@@ -136,11 +141,11 @@ namespace HoloIntervention
       // Cached references
       NotificationSystem&                                             m_notificationSystem;
       NetworkSystem&                                                  m_networkSystem;
-      Rendering::ModelRenderer&                                       m_modelRenderer;
-      Physics::PhysicsAPI&                                            m_physicsAPI;
-      UI::Icons&                                                      m_icons;
-      Debug&                                                          m_debug;
-      Input::SpatialInput&                                            m_spatialInput;
+      Valhalla::Rendering::ModelRenderer&                             m_modelRenderer;
+      Valhalla::Physics::PhysicsAPI&                                  m_physicsAPI;
+      Valhalla::UI::Icons&                                            m_icons;
+      Valhalla::Debug&                                                m_debug;
+      Valhalla::Input::SpatialInput&                                  m_spatialInput;
       Windows::Data::Xml::Dom::XmlDocument^                           m_configDocument = nullptr;
       DX::StepTimer&                                                  m_timer;
 
@@ -152,7 +157,7 @@ namespace HoloIntervention
       // Anchor variables
       std::atomic_bool                                                m_regAnchorRequested = false;
       uint64_t                                                        m_regAnchorModelId = 0;
-      std::shared_ptr<Rendering::Model>                               m_regAnchorModel = nullptr;
+      std::shared_ptr<Valhalla::Rendering::Model>                     m_regAnchorModel = nullptr;
       Windows::Perception::Spatial::SpatialAnchor^                    m_regAnchor = nullptr;
 
       // Registration methods

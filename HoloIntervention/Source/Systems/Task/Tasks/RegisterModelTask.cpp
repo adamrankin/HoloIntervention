@@ -23,23 +23,17 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "pch.h"
-#include "Common.h"
 #include "RegisterModelTask.h"
-#include "StepTimer.h"
-
-// UI includes
-#include "Icons.h"
-
-// System includes
 #include "NetworkSystem.h"
 #include "NotificationSystem.h"
 #include "RegistrationSystem.h"
 
-// Rendering includes
-#include "ModelRenderer.h"
-
-// Algorithms includes
-#include "LandmarkRegistration.h"
+// Valhalla includes
+#include <Algorithms\LandmarkRegistration.h>
+#include <Common\Common.h>
+#include <Common\StepTimer.h>
+#include <Rendering\Model\ModelRenderer.h>
+#include <UI\Icons.h>
 
 // STL includes
 #include <random>
@@ -48,6 +42,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <WindowsNumerics.h>
 
 using namespace Concurrency;
+using namespace Valhalla;
 using namespace Windows::Data::Xml::Dom;
 using namespace Windows::Foundation::Collections;
 using namespace Windows::Foundation::Numerics;
@@ -67,7 +62,7 @@ namespace HoloIntervention
         return create_task([this, document]()
         {
           auto xpath = ref new Platform::String(L"/HoloIntervention");
-          if (document->SelectNodes(xpath)->Length != 1)
+          if(document->SelectNodes(xpath)->Length != 1)
           {
             return false;
           }
@@ -93,12 +88,12 @@ namespace HoloIntervention
         return create_task([this, document]()
         {
           auto xpath = ref new Platform::String(L"/HoloIntervention/RegisterModelTask");
-          if (document->SelectNodes(xpath)->Length == 0)
+          if(document->SelectNodes(xpath)->Length == 0)
           {
             return false;
           }
 
-          if (!m_transformRepository->ReadConfiguration(document))
+          if(!m_transformRepository->ReadConfiguration(document))
           {
             return false;
           }
@@ -106,34 +101,34 @@ namespace HoloIntervention
           // Connection and model name details
           auto node = document->SelectNodes(xpath)->Item(0);
 
-          if (!HasAttribute(L"IGTConnection", node))
+          if(!HasAttribute(L"IGTConnection", node))
           {
             LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to locate \"IGTConnection\" attributes. Cannot configure PreOpImageTask.");
             return false;
           }
-          if (!HasAttribute(L"ModelFrom", node))
+          if(!HasAttribute(L"ModelFrom", node))
           {
             LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to locate \"ModelFrom\" attribute. Cannot configure TouchingSphereTask.");
             return false;
           }
-          if (!HasAttribute(L"ModelTo", node))
+          if(!HasAttribute(L"ModelTo", node))
           {
             LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to locate \"ModelTo\" attribute. Cannot configure TouchingSphereTask.");
             return false;
           }
-          if (!HasAttribute(L"StylusFrom", node))
+          if(!HasAttribute(L"StylusFrom", node))
           {
             LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to locate \"StylusFrom\" attribute. Cannot configure TouchingSphereTask.");
             return false;
           }
-          if (!HasAttribute(L"ModelName", node))
+          if(!HasAttribute(L"ModelName", node))
           {
             LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to locate \"ModelName\" attributes. Cannot configure PreOpImageTask.");
             return false;
           }
 
           auto igtConnection = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"IGTConnection")->NodeValue);
-          if (igtConnection->IsEmpty())
+          if(igtConnection->IsEmpty())
           {
             return false;
           }
@@ -142,13 +137,13 @@ namespace HoloIntervention
 
           auto fromName = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"ModelFrom")->NodeValue);
           auto toName = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"ModelTo")->NodeValue);
-          if (!fromName->IsEmpty() && !toName->IsEmpty())
+          if(!fromName->IsEmpty() && !toName->IsEmpty())
           {
             try
             {
               m_modelToReferenceName = ref new UWPOpenIGTLink::TransformName(fromName, toName);
             }
-            catch (Platform::Exception^)
+            catch(Platform::Exception^)
             {
               LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to construct ModelTransformName from " + fromName + L" and " + toName + L" attributes. Cannot configure TouchingSphereTask.");
               return false;
@@ -156,13 +151,13 @@ namespace HoloIntervention
           }
 
           fromName = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"StylusFrom")->NodeValue);
-          if (!fromName->IsEmpty() && !toName->IsEmpty())
+          if(!fromName->IsEmpty() && !toName->IsEmpty())
           {
             try
             {
               m_stylusTipTransformName = ref new UWPOpenIGTLink::TransformName(fromName, m_modelToReferenceName->To());
             }
-            catch (Platform::Exception^)
+            catch(Platform::Exception^)
             {
               LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to construct StylusTipTransformName from " + fromName + L" and " + m_modelToReferenceName->To() + L" attributes. Cannot configure TouchingSphereTask.");
               return false;
@@ -177,7 +172,7 @@ namespace HoloIntervention
       //----------------------------------------------------------------------------
       float3 RegisterModelTask::GetStabilizedPosition(SpatialPointerPose^ pose) const
       {
-        if (m_componentReady && m_modelEntry != nullptr)
+        if(m_componentReady && m_modelEntry != nullptr)
         {
           return float3(m_modelEntry->GetCurrentPose().m41, m_modelEntry->GetCurrentPose().m42, m_modelEntry->GetCurrentPose().m43);
         }
@@ -187,7 +182,7 @@ namespace HoloIntervention
       //----------------------------------------------------------------------------
       float3 RegisterModelTask::GetStabilizedVelocity() const
       {
-        if (m_componentReady && m_modelEntry != nullptr)
+        if(m_componentReady && m_modelEntry != nullptr)
         {
           return m_modelEntry->GetVelocity();
         }
@@ -201,7 +196,7 @@ namespace HoloIntervention
       }
 
       //----------------------------------------------------------------------------
-      RegisterModelTask::RegisterModelTask(HoloInterventionCore& core, NotificationSystem& notificationSystem, NetworkSystem& networkSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer, UI::Icons& icons)
+      RegisterModelTask::RegisterModelTask(ValhallaCore& core, NotificationSystem& notificationSystem, NetworkSystem& networkSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer, UI::Icons& icons)
         : IConfigurable(core)
         , m_notificationSystem(notificationSystem)
         , m_networkSystem(networkSystem)
@@ -220,32 +215,32 @@ namespace HoloIntervention
       //----------------------------------------------------------------------------
       void RegisterModelTask::Update(SpatialCoordinateSystem^ coordinateSystem, DX::StepTimer& timer)
       {
-        if (!m_componentReady || !m_taskStarted)
+        if(!m_componentReady || !m_taskStarted)
         {
           return;
         }
 
-        if (m_networkSystem.IsConnected(m_hashedConnectionName))
+        if(m_networkSystem.IsConnected(m_hashedConnectionName))
         {
           m_trackedFrame = m_networkSystem.GetTrackedFrame(m_hashedConnectionName, m_latestTimestamp);
-          if (m_trackedFrame == nullptr || !m_transformRepository->SetTransforms(m_trackedFrame))
+          if(m_trackedFrame == nullptr || !m_transformRepository->SetTransforms(m_trackedFrame))
           {
             m_transform = m_networkSystem.GetTransform(m_hashedConnectionName, m_modelToReferenceName, m_latestTimestamp);
-            if (m_transform == nullptr || !m_transformRepository->SetTransform(m_modelToReferenceName, m_transform->Matrix, m_transform->Valid))
+            if(m_transform == nullptr || !m_transformRepository->SetTransform(m_modelToReferenceName, m_transform->Matrix, m_transform->Valid))
             {
               return;
             }
           }
 
           float4x4 registration;
-          if (m_registrationSystem.GetReferenceToCoordinateSystemTransformation(coordinateSystem, registration))
+          if(m_registrationSystem.GetReferenceToCoordinateSystemTransformation(coordinateSystem, registration))
           {
             m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", HOLOLENS_COORDINATE_SYSTEM_PNAME), registration, true);
           }
 
           auto result = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(MODEL_REGISTRATION_COORDINATE_FRAME, HOLOLENS_COORDINATE_SYSTEM_PNAME));
 
-          if (result->Key)
+          if(result->Key)
           {
             m_modelEntry->SetDesiredPose(result->Value);
           }
@@ -257,23 +252,23 @@ namespace HoloIntervention
       {
         callbackMap[L"start model registration"] = [this](SpeechRecognitionResult ^ result)
         {
-          if (m_taskStarted)
+          if(m_taskStarted)
           {
             m_notificationSystem.QueueMessage(L"Registration already running. Please select landmarks.");
             return;
           }
 
-          if (m_modelEntry != nullptr)
+          if(m_modelEntry != nullptr)
           {
             m_notificationSystem.QueueMessage(L"Registering loaded model. Please select landmarks.");
             m_taskStarted = true;
           }
-          else if (!m_networkSystem.IsConnected(m_hashedConnectionName))
+          else if(!m_networkSystem.IsConnected(m_hashedConnectionName))
           {
             m_notificationSystem.QueueMessage(L"Not connected. Please connect to a Plus server.");
             return;
           }
-          else if (m_commandId == 0)
+          else if(m_commandId == 0)
           {
             // Async load model from IGTLink
             create_task([this]()
@@ -285,17 +280,17 @@ namespace HoloIntervention
 
               return m_networkSystem.SendCommandAsync(m_hashedConnectionName, L"GetPolydata", commandParameters).then([this](UWPOpenIGTLink::CommandData cmdInfo)
               {
-                if (!cmdInfo.SentSuccessfully)
+                if(!cmdInfo.SentSuccessfully)
                 {
                   return task_from_result(false);
                 }
                 m_commandId = cmdInfo.CommandId;
                 return create_task([this]()
                 {
-                  while (!m_cancelled)
+                  while(!m_cancelled)
                   {
                     auto poly = m_networkSystem.GetPolydata(m_hashedConnectionName, ref new Platform::String(m_modelName.c_str()));
-                    if (poly == nullptr)
+                    if(poly == nullptr)
                     {
                       std::this_thread::sleep_for(std::chrono::milliseconds(100));
                     }
@@ -316,11 +311,11 @@ namespace HoloIntervention
               });
             }).then([this](bool result)
             {
-              if (m_cancelled)
+              if(m_cancelled)
               {
                 return;
               }
-              if (!result)
+              if(!result)
               {
                 m_notificationSystem.QueueMessage(L"Unable to start model registration task. Check connection.");
                 return;
@@ -338,20 +333,20 @@ namespace HoloIntervention
 
         callbackMap[L"record point"] = [this](SpeechRecognitionResult ^ result)
         {
-          if (!m_taskStarted || !m_componentReady)
+          if(!m_taskStarted || !m_componentReady)
           {
             m_notificationSystem.QueueMessage(L"Model registration not running.");
             return create_task([]() {});
           }
 
           auto pair = m_transformRepository->GetTransform(m_stylusTipTransformName);
-          if (pair->Key)
+          if(pair->Key)
           {
             m_points.push_back(float3(pair->Value.m41, pair->Value.m42, pair->Value.m43));
           }
 
           // TODO : for now, hardcoded, in the future, dynamic from command result sent back
-          if (m_points.size() == 6)
+          if(m_points.size() == 6)
           {
             std::vector<float3> landmarks = { {57.5909f, 161.627f, -98.7764f},
               {7.68349f, 169.246f, -24.3985f},
@@ -360,7 +355,7 @@ namespace HoloIntervention
               {-25.1729f, 167.911f, -43.6009f},
               {18.3745f, 163.052f, -103.733f}
             };
-            for (auto& landmark : landmarks)
+            for(auto& landmark : landmarks)
             {
               landmark = landmark / 1000.0f; // from millimeters to meters
             }
@@ -379,16 +374,16 @@ namespace HoloIntervention
 
         callbackMap[L"stop model registration"] = [this](SpeechRecognitionResult ^ result)
         {
-          if (m_commandId != 0)
+          if(m_commandId != 0)
           {
-            if (!m_cancelled)
+            if(!m_cancelled)
             {
               // Download is currently happening, wait until finished then stop
               m_notificationSystem.QueueMessage("Canceling download.");
               m_cancelled = true;
             }
           }
-          else if (!m_taskStarted)
+          else if(!m_taskStarted)
           {
             m_notificationSystem.QueueMessage(L"Registration not running.");
           }

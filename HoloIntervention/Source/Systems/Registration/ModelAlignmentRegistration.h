@@ -33,7 +33,7 @@ namespace DX
   class StepTimer;
 }
 
-namespace HoloIntervention
+namespace Valhalla
 {
   class Debug;
 
@@ -58,7 +58,10 @@ namespace HoloIntervention
   {
     class PointToLineRegistration;
   }
+}
 
+namespace HoloIntervention
+{
   namespace System
   {
     class NotificationSystem;
@@ -79,7 +82,7 @@ namespace HoloIntervention
       };
 
     public:
-      virtual void RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap);
+      virtual void RegisterVoiceCallbacks(Valhalla::Input::VoiceInputCallbackMap& callbackMap);
 
     public:
       virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition(Windows::UI::Input::Spatial::SpatialPointerPose^ pose) const;
@@ -102,13 +105,13 @@ namespace HoloIntervention
       virtual void Update(Windows::UI::Input::Spatial::SpatialPointerPose^ headPose, Windows::Perception::Spatial::SpatialCoordinateSystem^ hmdCoordinateSystem, Platform::IBox<Windows::Foundation::Numerics::float4x4>^ anchorToHMDBox, Windows::Graphics::Holographic::HolographicCameraPose^ cameraPose);
 
     public:
-      ModelAlignmentRegistration(HoloInterventionCore& core,
+      ModelAlignmentRegistration(Valhalla::ValhallaCore& core,
                                  System::NotificationSystem& notificationSystem,
                                  System::NetworkSystem& networkSystem,
-                                 Rendering::ModelRenderer& modelRenderer,
-                                 Input::SpatialInput& spatialInput,
-                                 UI::Icons& icons,
-                                 Debug& debug,
+                                 Valhalla::Rendering::ModelRenderer& modelRenderer,
+                                 Valhalla::Input::SpatialInput& spatialInput,
+                                 Valhalla::UI::Icons& icons,
+                                 Valhalla::Debug& debug,
                                  DX::StepTimer& timer);
       ~ModelAlignmentRegistration();
 
@@ -116,10 +119,10 @@ namespace HoloIntervention
       // Cached references
       System::NotificationSystem&                           m_notificationSystem;
       System::NetworkSystem&                                m_networkSystem;
-      Rendering::ModelRenderer&                             m_modelRenderer;
-      UI::Icons&                                            m_icons;
-      Input::SpatialInput&                                  m_spatialInput;
-      Debug&                                                m_debug;
+      Valhalla::Rendering::ModelRenderer&                   m_modelRenderer;
+      Valhalla::UI::Icons&                                  m_icons;
+      Valhalla::Input::SpatialInput&                        m_spatialInput;
+      Valhalla::Debug&                                      m_debug;
       DX::StepTimer&                                        m_timer;
 
       // State variables
@@ -139,11 +142,11 @@ namespace HoloIntervention
       Eye                                                   m_currentEye = EYE_LEFT;
 
       // Registration data
-      std::mutex                                            m_registrationAccessMutex;
-      uint32                                                m_numberOfPointsToCollectPerEye;
-      Position                                              m_previousSpherePosition_Ref = Position::zero();
-      std::shared_ptr<Algorithm::PointToLineRegistration>   m_pointToLineRegistration;
-      float                                                 m_registrationError = 0.f;
+      std::mutex                                                      m_registrationAccessMutex;
+      uint32                                                          m_numberOfPointsToCollectPerEye;
+      Position                                                        m_previousSpherePosition_Ref = Position::zero();
+      std::shared_ptr<Valhalla::Algorithm::PointToLineRegistration>   m_pointToLineRegistration;
+      float                                                           m_registrationError = 0.f;
 
       // Stored data for back calculation of HMDtoHoloLens
       std::vector<Windows::Foundation::Numerics::float4x4>  m_sphereToReferenceTransforms;
@@ -151,13 +154,13 @@ namespace HoloIntervention
       std::vector<Windows::Foundation::Numerics::float4x4>  m_HMDToAnchorTransforms;
 
       // Model visualization
-      Rendering::PrimitiveType                              m_primitiveType = Rendering::PrimitiveType_NONE;
+      Valhalla::Rendering::PrimitiveType                    m_primitiveType = Valhalla::Rendering::PrimitiveType_NONE;
       Windows::Foundation::Numerics::float4                 m_colour = Windows::Foundation::Numerics::float4::one();
       Windows::Foundation::Numerics::float3                 m_argument = Windows::Foundation::Numerics::float3::zero();
       size_t                                                m_tessellation = 16;
       std::atomic_bool                                      m_invertN = false;
       std::atomic_bool                                      m_rhCoords = true;
-      std::shared_ptr<Rendering::Model>                     m_modelEntry = nullptr;
+      std::shared_ptr<Valhalla::Rendering::Model>           m_modelEntry = nullptr;
       uint64                                                m_trackingVisibleMessageId = INVALID_TOKEN;
       float                                                 m_invalidTrackingTimer = 0.f;
 

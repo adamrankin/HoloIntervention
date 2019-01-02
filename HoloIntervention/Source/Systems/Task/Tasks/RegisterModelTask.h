@@ -24,10 +24,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
-#include "Configuration.h"
-#include "IConfigurable.h"
-#include "IStabilizedComponent.h"
-#include "IVoiceInput.h"
+#include <Input\IVoiceInput.h>
+#include <Interfaces\ISerializable.h>
+#include <Interfaces\IStabilizedComponent.h>
 
 // IGT includes
 #include <IGTCommon.h>
@@ -43,7 +42,7 @@ namespace DX
   class StepTimer;
 }
 
-namespace HoloIntervention
+namespace Valhalla
 {
   namespace Algorithm
   {
@@ -70,7 +69,10 @@ namespace HoloIntervention
   {
     class Icons;
   }
+}
 
+namespace HoloIntervention
+{
   namespace System
   {
     class NetworkSystem;
@@ -79,7 +81,7 @@ namespace HoloIntervention
 
     namespace Tasks
     {
-      class RegisterModelTask : public IStabilizedComponent, public Input::IVoiceInput, public IConfigurable
+      class RegisterModelTask : public Valhalla::IStabilizedComponent, public Valhalla::Input::IVoiceInput, public Valhalla::ISerializable
       {
       public:
         virtual concurrency::task<bool> WriteConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
@@ -91,10 +93,10 @@ namespace HoloIntervention
         virtual float GetStabilizePriority() const;
 
       public:
-        virtual void RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap);
+        virtual void RegisterVoiceCallbacks(Valhalla::Input::VoiceInputCallbackMap& callbackMap);
         virtual void Update(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem, DX::StepTimer& stepTimer);
 
-        RegisterModelTask(HoloInterventionCore& core, NotificationSystem& notificationSystem, NetworkSystem& networkSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer, UI::Icons& icons);
+        RegisterModelTask(Valhalla::ValhallaCore& core, NotificationSystem& notificationSystem, NetworkSystem& networkSystem, RegistrationSystem& registrationSystem, Valhalla::Rendering::ModelRenderer& modelRenderer, Valhalla::UI::Icons& icons);
         ~RegisterModelTask();
 
       protected:
@@ -102,10 +104,10 @@ namespace HoloIntervention
         NotificationSystem&                                     m_notificationSystem;
         NetworkSystem&                                          m_networkSystem;
         RegistrationSystem&                                     m_registrationSystem;
-        Rendering::ModelRenderer&                               m_modelRenderer;
-        UI::Icons&                                              m_icons;
+        Valhalla::Rendering::ModelRenderer&                     m_modelRenderer;
+        Valhalla::UI::Icons&                                    m_icons;
 
-        std::shared_ptr<Rendering::Model>                  m_modelEntry = nullptr;
+        std::shared_ptr<Valhalla::Rendering::Model>             m_modelEntry = nullptr;
         std::wstring                                            m_modelName = L"";
         std::wstring                                            m_connectionName = L"";
         uint64                                                  m_hashedConnectionName = 0;
@@ -115,8 +117,8 @@ namespace HoloIntervention
         std::atomic_bool                                        m_cancelled = false;
 
         // Registration variables
-        std::vector<Windows::Foundation::Numerics::float3>      m_points;
-        std::shared_ptr<Algorithm::LandmarkRegistration>        m_landmarkRegistration;
+        std::vector<Windows::Foundation::Numerics::float3>          m_points;
+        std::shared_ptr<Valhalla::Algorithm::LandmarkRegistration>  m_landmarkRegistration;
 
         // Phantom task behaviour
         std::atomic_bool                                        m_taskStarted = false;

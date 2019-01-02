@@ -24,8 +24,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Common includes
-#include "Rendering\DeviceResources.h"
+#include "Common\Common.h"
 #include "Common\StepTimer.h"
+#include "Rendering\DeviceResources.h"
 
 // STL includes
 #include <vector>

@@ -23,25 +23,30 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-// Local includes
-#include "IStabilizedComponent.h"
+// Valhalla includes
+#include <Common\Common.h>
+#include <Interfaces\IStabilizedComponent.h>
 
 namespace DX
 {
   class StepTimer;
 }
 
-namespace HoloIntervention
+namespace Valhalla
 {
   namespace Rendering
   {
     class Slice;
     class SliceRenderer;
   }
+}
+
+namespace HoloIntervention
+{
 
   namespace System
   {
-    class SplashSystem : public IStabilizedComponent
+    class SplashSystem : public Valhalla::IStabilizedComponent
     {
     public:
       virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition(Windows::UI::Input::Spatial::SpatialPointerPose^ pose) const;
@@ -49,7 +54,7 @@ namespace HoloIntervention
       virtual float GetStabilizePriority() const;
 
     public:
-      SplashSystem(Rendering::SliceRenderer& sliceRenderer);
+      SplashSystem(Valhalla::Rendering::SliceRenderer& sliceRenderer);
       ~SplashSystem();
 
       void StartSplash();
@@ -59,10 +64,10 @@ namespace HoloIntervention
 
     protected:
       // Cached entries
-      Rendering::SliceRenderer&                           m_sliceRenderer;
+      Valhalla::Rendering::SliceRenderer&                 m_sliceRenderer;
 
-      uint64                                              m_sliceToken = INVALID_TOKEN;
-      std::shared_ptr<Rendering::Slice>              m_sliceEntry = nullptr;
+      uint64                                              m_sliceToken = Valhalla::INVALID_TOKEN;
+      std::shared_ptr<Valhalla::Rendering::Slice>         m_sliceEntry = nullptr;
       float                                               m_welcomeTimerSec = 0.f;
       std::wstring                                        m_splashImageFilename = L"Assets\\Images\\HoloIntervention.png";
 
