@@ -24,12 +24,12 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
+#include "Icon.h"
 #include "Interfaces\ISerializable.h"
 #include "Interfaces\IStabilizedComponent.h"
-#include "Icon.h"
 
 // Rendering includes
-#include "Source/Rendering/Model/Model.h"
+#include "Rendering\Model\Model.h"
 
 namespace DX
 {

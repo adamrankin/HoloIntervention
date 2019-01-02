@@ -26,6 +26,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "IRegistrationMethod.h"
 
+// Valhalla includes
+#include <Input\IVoiceInput.h>
+
 // STL includes
 #include <atomic>
 
@@ -41,7 +44,7 @@ namespace HoloIntervention
     class ToolBasedRegistration : public IRegistrationMethod
     {
     public:
-      virtual void RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap);
+      virtual void RegisterVoiceCallbacks(Valhalla::Input::VoiceInputCallbackMap& callbackMap);
 
     public:
       virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition(Windows::UI::Input::Spatial::SpatialPointerPose^ pose) const;
@@ -49,8 +52,8 @@ namespace HoloIntervention
       virtual float GetStabilizePriority() const;
 
     public:
-      virtual concurrency::task<bool> WriteConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
-      virtual concurrency::task<bool> ReadConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
+      virtual concurrency::task<bool> SaveAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
+      virtual concurrency::task<bool> LoadAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
 
     public:
       virtual void SetWorldAnchor(Windows::Perception::Spatial::SpatialAnchor^ worldAnchor);
@@ -69,7 +72,7 @@ namespace HoloIntervention
       virtual Windows::Foundation::Numerics::float4x4 GetRegistrationTransformation() const;
 
     public:
-      ToolBasedRegistration(HoloInterventionCore& core, System::NetworkSystem& networkSystem);
+      ToolBasedRegistration(Valhalla::ValhallaCore& core, System::NetworkSystem& networkSystem);
       ~ToolBasedRegistration();
 
     protected:

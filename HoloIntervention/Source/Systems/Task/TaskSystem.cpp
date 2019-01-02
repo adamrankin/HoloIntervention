@@ -43,10 +43,10 @@ namespace HoloIntervention
   namespace System
   {
     //-----------------------------------------------------------------------------
-    task<bool> TaskSystem::WriteConfigurationAsync(XmlDocument^ document)
+    task<bool> TaskSystem::SaveAsync(XmlDocument^ document)
     {
-      auto preopTask = m_regModelTask->WriteConfigurationAsync(document);
-      auto touchingTask = m_touchingSphereTask->WriteConfigurationAsync(document);
+      auto preopTask = m_regModelTask->SaveAsync(document);
+      auto touchingTask = m_touchingSphereTask->SaveAsync(document);
       auto tasks = { preopTask, touchingTask };
       return when_all(begin(tasks), end(tasks)).then([this](const std::vector<bool>& results)
       {
@@ -55,10 +55,10 @@ namespace HoloIntervention
     }
 
     //-----------------------------------------------------------------------------
-    task<bool> TaskSystem::ReadConfigurationAsync(XmlDocument^ document)
+    task<bool> TaskSystem::LoadAsync(XmlDocument^ document)
     {
-      auto preopTask = m_regModelTask->ReadConfigurationAsync(document);
-      auto touchingTask = m_touchingSphereTask->ReadConfigurationAsync(document);
+      auto preopTask = m_regModelTask->LoadAsync(document);
+      auto touchingTask = m_touchingSphereTask->LoadAsync(document);
       auto tasks = { preopTask, touchingTask};
       return when_all(begin(tasks), end(tasks)).then([this](const std::vector<bool>& results)
       {

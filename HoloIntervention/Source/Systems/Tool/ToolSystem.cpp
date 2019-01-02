@@ -25,23 +25,20 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "pch.h"
-#include "Common.h"
-#include "MathCommon.h"
-#include "Tool.h"
-#include "ToolSystem.h"
-
-// Rendering includes
-#include "ModelRenderer.h"
-
-// UI includes
-#include "Icons.h"
-
-// System includes
 #include "NetworkSystem.h"
 #include "NotificationSystem.h"
 #include "RegistrationSystem.h"
+#include "Tool.h"
+#include "ToolSystem.h"
+
+// Valhalla includes
+#include <Common\Common.h>
+#include <Math\MathUtil.h>
+#include <Rendering\Model\ModelRenderer.h>
+#include <UI\Icons.h>
 
 using namespace Concurrency;
+using namespace Valhalla;
 using namespace Windows::Data::Xml::Dom;
 using namespace Windows::Foundation::Numerics;
 using namespace Windows::Media::SpeechRecognition;
@@ -58,16 +55,16 @@ namespace HoloIntervention
     {
       std::shared_ptr<Tools::Tool> maxEntry(nullptr);
       float maxPriority(PRIORITY_NOT_ACTIVE);
-      for (auto& entry : m_tools)
+      for(auto& entry : m_tools)
       {
-        if (entry->GetStabilizePriority() > maxPriority)
+        if(entry->GetStabilizePriority() > maxPriority)
         {
           maxPriority = entry->GetStabilizePriority();
           maxEntry = entry;
         }
       }
 
-      if (maxEntry != nullptr)
+      if(maxEntry != nullptr)
       {
         return maxEntry->GetStabilizedPosition(pose);
       }
@@ -80,16 +77,16 @@ namespace HoloIntervention
     {
       std::shared_ptr<Tools::Tool> maxEntry(nullptr);
       float maxPriority(PRIORITY_NOT_ACTIVE);
-      for (auto& entry : m_tools)
+      for(auto& entry : m_tools)
       {
-        if (entry->GetStabilizePriority() > maxPriority)
+        if(entry->GetStabilizePriority() > maxPriority)
         {
           maxPriority = entry->GetStabilizePriority();
           maxEntry = entry;
         }
       }
 
-      if (maxEntry != nullptr)
+      if(maxEntry != nullptr)
       {
         return maxEntry->GetStabilizedVelocity();
       }
@@ -101,9 +98,9 @@ namespace HoloIntervention
     float ToolSystem::GetStabilizePriority() const
     {
       float maxPriority(PRIORITY_NOT_ACTIVE);
-      for (auto& entry : m_tools)
+      for(auto& entry : m_tools)
       {
-        if (entry->GetStabilizePriority() > maxPriority)
+        if(entry->GetStabilizePriority() > maxPriority)
         {
           maxPriority = entry->GetStabilizePriority();
         }
@@ -113,12 +110,12 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<bool> ToolSystem::WriteConfigurationAsync(XmlDocument^ document)
+    task<bool> ToolSystem::SaveAsync(XmlDocument^ document)
     {
       return create_task([this, document]()
       {
         auto xpath = ref new Platform::String(L"/HoloIntervention");
-        if (document->SelectNodes(xpath)->Length != 1)
+        if(document->SelectNodes(xpath)->Length != 1)
         {
           return false;
         }
@@ -130,10 +127,10 @@ namespace HoloIntervention
         toolsElem->SetAttribute(L"ShowIcons", m_showIcons ? L"true" : L"false");
         node->AppendChild(toolsElem);
 
-        for (auto tool : m_tools)
+        for(auto tool : m_tools)
         {
           auto toolElem = document->CreateElement("Tool");
-          if (tool->GetModel()->IsPrimitive())
+          if(tool->GetModel()->IsPrimitive())
           {
             toolElem->SetAttribute(L"Primitive", ref new Platform::String(Rendering::ModelRenderer::PrimitiveToString(tool->GetModel()->GetPrimitiveType()).c_str()));
 
@@ -153,7 +150,7 @@ namespace HoloIntervention
           toolElem->SetAttribute(L"To", tool->GetCoordinateFrame()->To());
           toolElem->SetAttribute(L"Id", ref new Platform::String(tool->GetUserId().c_str()));
           toolElem->SetAttribute(L"LerpEnabled", tool->GetModel()->GetLerpEnabled() ? L"true" : L"false");
-          if (tool->GetModel()->GetLerpEnabled())
+          if(tool->GetModel()->GetLerpEnabled())
           {
             toolElem->SetAttribute(L"LerpRate", tool->GetModel()->GetLerpRate().ToString());
           }
@@ -167,9 +164,9 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<bool> ToolSystem::ReadConfigurationAsync(XmlDocument^ document)
+    task<bool> ToolSystem::LoadAsync(XmlDocument^ document)
     {
-      if (!m_transformRepository->ReadConfiguration(document))
+      if(!m_transformRepository->ReadConfiguration(document))
       {
         return task_from_result(false);
       }
@@ -177,13 +174,13 @@ namespace HoloIntervention
       return create_task([this, document]()
       {
         auto xpath = ref new Platform::String(L"/HoloIntervention/Tools");
-        if (document->SelectNodes(xpath)->Length != 1)
+        if(document->SelectNodes(xpath)->Length != 1)
         {
           throw ref new Platform::Exception(E_INVALIDARG, L"Invalid \"Tools\" tag in configuration.");
         }
 
         auto node = document->SelectNodes(xpath)->Item(0);
-        if (!HasAttribute(L"IGTConnection", node))
+        if(!HasAttribute(L"IGTConnection", node))
         {
           throw ref new Platform::Exception(E_FAIL, L"Tool configuration does not contain \"IGTConnection\" attribute.");
         }
@@ -191,19 +188,19 @@ namespace HoloIntervention
         m_connectionName = std::wstring(connectionName->Data());
         m_hashedConnectionName = HashString(connectionName);
 
-        if (HasAttribute(L"ShowIcons", node))
+        if(HasAttribute(L"ShowIcons", node))
         {
           Platform::String^ showIcons = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"ShowIcons")->NodeValue);
           m_showIcons = IsEqualInsensitive(showIcons, L"true");
         }
 
         xpath = ref new Platform::String(L"/HoloIntervention/Tools/Tool");
-        if (document->SelectNodes(xpath)->Length == 0)
+        if(document->SelectNodes(xpath)->Length == 0)
         {
           throw ref new Platform::Exception(E_INVALIDARG, L"No tools defined in the configuration file. Check for the existence of Tools/Tool");
         }
 
-        for (auto node : document->SelectNodes(xpath))
+        for(auto node : document->SelectNodes(xpath))
         {
           Platform::String^ modelString = nullptr;
           Platform::String^ primString = nullptr;
@@ -217,7 +214,7 @@ namespace HoloIntervention
           Platform::String^ userId = nullptr;
 
           // model, transform
-          if (HasAttribute(L"Id", node))
+          if(HasAttribute(L"Id", node))
           {
             userId = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Id")->NodeValue);
           }
@@ -225,59 +222,59 @@ namespace HoloIntervention
           {
             throw ref new Platform::Exception(E_FAIL, L"Tool entry does not contain Id attribute.");
           }
-          if (!HasAttribute(L"Model", node) && !HasAttribute(L"Primitive", node))
+          if(!HasAttribute(L"Model", node) && !HasAttribute(L"Primitive", node))
           {
             throw ref new Platform::Exception(E_FAIL, L"Tool entry does not contain model or primitive attribute.");
           }
-          if (!HasAttribute(L"From", node) || !HasAttribute(L"To", node))
+          if(!HasAttribute(L"From", node) || !HasAttribute(L"To", node))
           {
             throw ref new Platform::Exception(E_FAIL, L"Tool entry does not contain transform attribute.");
           }
-          if (HasAttribute(L"Model", node))
+          if(HasAttribute(L"Model", node))
           {
             modelString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Model")->NodeValue);
           }
-          if (HasAttribute(L"Primitive", node))
+          if(HasAttribute(L"Primitive", node))
           {
             primString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Primitive")->NodeValue);
           }
           fromString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"From")->NodeValue);
           toString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"To")->NodeValue);
-          if ((modelString != nullptr && modelString->IsEmpty()) || (primString != nullptr && primString->IsEmpty()) || fromString->IsEmpty() || toString->IsEmpty())
+          if((modelString != nullptr && modelString->IsEmpty()) || (primString != nullptr && primString->IsEmpty()) || fromString->IsEmpty() || toString->IsEmpty())
           {
             throw ref new Platform::Exception(E_FAIL, L"Tool entry contains an empty attribute.");
           }
-          if (HasAttribute(L"Argument", node))
+          if(HasAttribute(L"Argument", node))
           {
             argumentString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Argument")->NodeValue);
           }
-          if (HasAttribute(L"Colour", node))
+          if(HasAttribute(L"Colour", node))
           {
             colourString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Colour")->NodeValue);
           }
-          if (HasAttribute(L"Tessellation", node))
+          if(HasAttribute(L"Tessellation", node))
           {
             tessellationString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"Tessellation")->NodeValue);
           }
-          if (HasAttribute(L"RightHandedCoords", node))
+          if(HasAttribute(L"RightHandedCoords", node))
           {
             rhcoordsString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"RightHandedCoords")->NodeValue);
           }
-          if (HasAttribute(L"InvertN", node))
+          if(HasAttribute(L"InvertN", node))
           {
             invertnString = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"InvertN")->NodeValue);
           }
 
           UWPOpenIGTLink::TransformName^ trName = ref new UWPOpenIGTLink::TransformName(fromString, toString);
-          if (!trName->IsValid())
+          if(!trName->IsValid())
           {
             throw ref new Platform::Exception(E_FAIL, L"Tool entry contains invalid transform name.");
           }
 
           // Ensure unique tool id
-          for (auto& tool : m_tools)
+          for(auto& tool : m_tools)
           {
-            if (IsEqualInsensitive(userId, tool->GetUserId()))
+            if(IsEqualInsensitive(userId, tool->GetUserId()))
             {
               LOG_ERROR("Duplicate tool ID used. Skipping tool configuration.");
               continue;
@@ -285,14 +282,14 @@ namespace HoloIntervention
           }
 
           float4x4 mat = float4x4::identity();
-          if (HasAttribute(L"ModelToObjectTransform", node))
+          if(HasAttribute(L"ModelToObjectTransform", node))
           {
             auto transformStr = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"ModelToObjectTransform")->NodeValue);
             mat = ReadMatrix(transformStr);
           }
 
           task<uint64> registerTask;
-          if (modelString != nullptr)
+          if(modelString != nullptr)
           {
             registerTask = RegisterToolAsync(std::wstring(modelString->Data()), userId, mat, false, trName);
           }
@@ -303,7 +300,7 @@ namespace HoloIntervention
             bool rhcoords = true;
             bool invertn = false;
             float3 argument = { 0.f, 0.f, 0.f };
-            if (argumentString != nullptr && !argumentString->IsEmpty())
+            if(argumentString != nullptr && !argumentString->IsEmpty())
             {
               std::wstringstream wss;
               wss << argumentString->Data();
@@ -311,7 +308,7 @@ namespace HoloIntervention
               wss >> argument.y;
               wss >> argument.z;
             }
-            if (colourString != nullptr && !colourString->IsEmpty())
+            if(colourString != nullptr && !colourString->IsEmpty())
             {
               std::wstringstream wss;
               wss << colourString->Data();
@@ -320,17 +317,17 @@ namespace HoloIntervention
               wss >> colour.z;
               wss >> colour.w;
             }
-            if (tessellationString != nullptr && !tessellationString->IsEmpty())
+            if(tessellationString != nullptr && !tessellationString->IsEmpty())
             {
               std::wstringstream wss;
               wss << tessellationString->Data();
               wss >> tessellation;
             }
-            if (rhcoordsString != nullptr && !rhcoordsString->IsEmpty())
+            if(rhcoordsString != nullptr && !rhcoordsString->IsEmpty())
             {
               rhcoords = IsEqualInsensitive(rhcoordsString, L"true");
             }
-            if (invertnString != nullptr && !invertnString->IsEmpty())
+            if(invertnString != nullptr && !invertnString->IsEmpty())
             {
               invertn = IsEqualInsensitive(invertnString, L"true");
             }
@@ -338,20 +335,20 @@ namespace HoloIntervention
           }
           registerTask.then([this, node](uint64 token)
           {
-            if (token == INVALID_TOKEN)
+            if(token == INVALID_TOKEN)
             {
               return;
             }
             auto tool = GetTool(token);
 
             bool lerpEnabled;
-            if (GetBooleanAttribute(L"LerpEnabled", node, lerpEnabled))
+            if(GetBooleanAttribute(L"LerpEnabled", node, lerpEnabled))
             {
               tool->GetModel()->EnablePoseLerp(lerpEnabled);
             }
 
             float lerpRate;
-            if (GetScalarAttribute<float>(L"LerpRate", node, lerpRate))
+            if(GetScalarAttribute<float>(L"LerpRate", node, lerpRate))
             {
               tool->GetModel()->SetPoseLerpRate(lerpRate);
             }
@@ -364,8 +361,8 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    ToolSystem::ToolSystem(HoloInterventionCore& core, NotificationSystem& notificationSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer, NetworkSystem& networkSystem, UI::Icons& icons)
-      : IConfigurable(core)
+    ToolSystem::ToolSystem(ValhallaCore& core, NotificationSystem& notificationSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer, NetworkSystem& networkSystem, UI::Icons& icons)
+      : ISerializable(core)
       , m_notificationSystem(notificationSystem)
       , m_registrationSystem(registrationSystem)
       , m_icons(icons)
@@ -391,9 +388,9 @@ namespace HoloIntervention
     std::shared_ptr<Tools::Tool> ToolSystem::GetTool(uint64 token) const
     {
       std::lock_guard<std::mutex> guard(m_entriesMutex);
-      for (auto iter = m_tools.begin(); iter != m_tools.end(); ++iter)
+      for(auto iter = m_tools.begin(); iter != m_tools.end(); ++iter)
       {
-        if (token == (*iter)->GetId())
+        if(token == (*iter)->GetId())
         {
           return *iter;
         }
@@ -405,9 +402,9 @@ namespace HoloIntervention
     std::shared_ptr<HoloIntervention::Tools::Tool> ToolSystem::GetToolByUserId(const std::wstring& userId) const
     {
       std::lock_guard<std::mutex> guard(m_entriesMutex);
-      for (auto iter = m_tools.begin(); iter != m_tools.end(); ++iter)
+      for(auto iter = m_tools.begin(); iter != m_tools.end(); ++iter)
       {
-        if (IsEqualInsensitive(userId, (*iter)->GetUserId()))
+        if(IsEqualInsensitive(userId, (*iter)->GetUserId()))
         {
           return *iter;
         }
@@ -431,7 +428,7 @@ namespace HoloIntervention
     bool ToolSystem::IsToolValid(uint64 token) const
     {
       auto tool = GetTool(token);
-      if (tool == nullptr)
+      if(tool == nullptr)
       {
         return false;
       }
@@ -443,7 +440,7 @@ namespace HoloIntervention
     bool ToolSystem::WasToolValid(uint64 token) const
     {
       auto tool = GetTool(token);
-      if (tool == nullptr)
+      if(tool == nullptr)
       {
         return false;
       }
@@ -455,7 +452,7 @@ namespace HoloIntervention
     task<uint64> ToolSystem::RegisterToolAsync(const std::wstring& modelName, Platform::String^ userId, float4x4 modelToObjectTransform, const bool isPrimitive, UWPOpenIGTLink::TransformName^ coordinateFrame, float4 colour, float3 argument, size_t tessellation, bool rhcoords, bool invertn)
     {
       task<uint64> modelTask;
-      if (!isPrimitive)
+      if(!isPrimitive)
       {
         modelTask = m_modelRenderer.AddModelAsync(modelName);
       }
@@ -465,7 +462,7 @@ namespace HoloIntervention
       }
       return modelTask.then([this, coordinateFrame, colour, modelToObjectTransform, userId](uint64 modelEntryId)
       {
-        if (modelEntryId == INVALID_TOKEN)
+        if(modelEntryId == INVALID_TOKEN)
         {
           LOG_ERROR("Cannot create tool. Model failed to load.");
           return task_from_result(INVALID_TOKEN);
@@ -491,9 +488,9 @@ namespace HoloIntervention
     void ToolSystem::UnregisterTool(uint64 toolToken)
     {
       std::lock_guard<std::mutex> guard(m_entriesMutex);
-      for (auto iter = m_tools.begin(); iter != m_tools.end(); ++iter)
+      for(auto iter = m_tools.begin(); iter != m_tools.end(); ++iter)
       {
-        if (toolToken == (*iter)->GetId())
+        if(toolToken == (*iter)->GetId())
         {
           m_tools.erase(iter);
           return;
@@ -517,7 +514,7 @@ namespace HoloIntervention
       m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", HOLOLENS_COORDINATE_SYSTEM_PNAME), transpose(referenceToHMD), registrationAvailable);
 
       std::lock_guard<std::mutex> guard(m_entriesMutex);
-      for (auto entry : m_tools)
+      for(auto entry : m_tools)
       {
         entry->Update(timer);
       }
@@ -529,7 +526,7 @@ namespace HoloIntervention
       callbackMap[L"hide tools"] = [this](SpeechRecognitionResult ^ result)
       {
         std::lock_guard<std::mutex> guard(m_entriesMutex);
-        for (auto entry : m_tools)
+        for(auto entry : m_tools)
         {
           entry->SetHiddenOverride(true);
         }
@@ -538,7 +535,7 @@ namespace HoloIntervention
       callbackMap[L"show tools"] = [this](SpeechRecognitionResult ^ result)
       {
         std::lock_guard<std::mutex> guard(m_entriesMutex);
-        for (auto entry : m_tools)
+        for(auto entry : m_tools)
         {
           entry->SetHiddenOverride(false);
         }
@@ -548,7 +545,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ToolSystem::ShowIcons(bool show)
     {
-      for (auto& entry : m_tools)
+      for(auto& entry : m_tools)
       {
         entry->ShowIcon(show);
       }

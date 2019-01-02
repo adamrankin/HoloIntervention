@@ -224,7 +224,7 @@ namespace Valhalla
           LOG_ERROR("Unable to load app state. Starting new session.");
         }
 
-        LOG(LogLevelType::LOG_LEVEL_INFO, "Engine loading...");
+        LOG(LOG_LEVEL_INFO, "Engine loading...");
         uint32 componentsReady(0);
         bool engineReady(true);
 
@@ -277,7 +277,7 @@ namespace Valhalla
         m_engineReady = true;
       }).then([this]()
       {
-        LOG(LogLevelType::LOG_LEVEL_INFO, "Engine loaded.");
+        LOG(LOG_LEVEL_INFO, "Engine loaded.");
         m_voiceInput->EnableVoiceAnalysis(true);
       });
     });
@@ -694,7 +694,7 @@ namespace Valhalla
       }
       catch(const std::exception& e)
       {
-        LOG(LogLevelType::LOG_LEVEL_ERROR, std::string("Failed to compile voice callbacks: ") + e.what());
+        LOG(LOG_LEVEL_ERROR, std::string("Failed to compile voice callbacks: ") + e.what());
         // TODO : log callback
         //m_notificationSystem->QueueMessage(L"Unable to initialize voice input system. Critical failure.");
       }
@@ -723,7 +723,7 @@ namespace Valhalla
 
     if(winningComponent == nullptr)
     {
-      LOG(LogLevelType::LOG_LEVEL_WARNING, "No component returned a stabilization request.");
+      LOG(LOG_LEVEL_WARNING, "No component returned a stabilization request.");
       return;
     }
 
@@ -751,7 +751,7 @@ namespace Valhalla
       }
       catch(Platform::Exception^ e)
       {
-        LOG(LogLevelType::LOG_LEVEL_ERROR, e->Message);
+        LOG(LOG_LEVEL_ERROR, e->Message);
       }
     }
   }
@@ -926,10 +926,10 @@ namespace Valhalla
 
         std::wstring outValue;
 
-        if(!GetAttribute(L"LogLevel", node, outValue) || Log::WStringToLogLevel(outValue) == LogLevelType::LOG_LEVEL_UNKNOWN)
+        if(!GetAttribute(L"LogLevel", node, outValue) || Log::WStringToLogLevel(outValue) == LOG_LEVEL_UNKNOWN)
         {
           LOG_WARNING("Log level not found in configuration file. Defaulting to LOG_LEVEL_INFO.");
-          Log::instance().SetLogLevel(LogLevelType::LOG_LEVEL_INFO);
+          Log::instance().SetLogLevel(LOG_LEVEL_INFO);
         }
         else
         {

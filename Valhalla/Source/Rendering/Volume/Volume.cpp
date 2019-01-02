@@ -354,7 +354,7 @@ namespace Valhalla
 
       if(image == nullptr)
       {
-        LOG(LogLevelType::LOG_LEVEL_ERROR, "Unable to access image buffer.");
+        LOG(LOG_LEVEL_ERROR, "Unable to access image buffer.");
         return;
       }
 
@@ -439,7 +439,7 @@ namespace Valhalla
 
       if(imageRaw == nullptr)
       {
-        LOG(LogLevelType::LOG_LEVEL_ERROR, "Unable to access image buffer.");
+        LOG(LOG_LEVEL_ERROR, "Unable to access image buffer.");
         return;
       }
 

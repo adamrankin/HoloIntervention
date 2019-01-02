@@ -89,7 +89,7 @@ namespace Valhalla
 
         if(FAILED(hr))
         {
-          LOG(LogLevelType::LOG_LEVEL_ERROR, "Cannot initialize audio system.");
+          LOG(LOG_LEVEL_ERROR, "Cannot initialize audio system.");
           return hr;
         }
 
@@ -170,13 +170,13 @@ namespace Valhalla
       }
       catch(Platform::Exception^ e)
       {
-        WLOG(LogLevelType::LOG_LEVEL_ERROR, e->Message);
+        WLOG(LOG_LEVEL_ERROR, e->Message);
         omniSound = nullptr;
       }
 
       if(FAILED(hr))
       {
-        WLOG(LogLevelType::LOG_LEVEL_ERROR, std::wstring(L"Unable to initialize sound. ") + assetName);
+        WLOG(LOG_LEVEL_ERROR, std::wstring(L"Unable to initialize sound. ") + assetName);
         omniSound = nullptr;
         return;
       }
@@ -185,7 +185,7 @@ namespace Valhalla
 
       if(FAILED(hr))
       {
-        WLOG(LogLevelType::LOG_LEVEL_ERROR, std::wstring(L"Unable to set sound environment. ") + assetName);
+        WLOG(LOG_LEVEL_ERROR, std::wstring(L"Unable to set sound environment. ") + assetName);
         omniSound = nullptr;
         return;
       }
@@ -231,13 +231,13 @@ namespace Valhalla
       }
       catch(Platform::Exception^ e)
       {
-        WLOG(LogLevelType::LOG_LEVEL_ERROR, e->Message);
+        WLOG(LOG_LEVEL_ERROR, e->Message);
         cardioidSound = nullptr;
       }
 
       if(FAILED(hr))
       {
-        WLOG(LogLevelType::LOG_LEVEL_ERROR, std::wstring(L"Unable to initialize sound. ") + assetName);
+        WLOG(LOG_LEVEL_ERROR, std::wstring(L"Unable to initialize sound. ") + assetName);
         cardioidSound = nullptr;
         return;
       }
@@ -246,7 +246,7 @@ namespace Valhalla
 
       if(FAILED(hr))
       {
-        WLOG(LogLevelType::LOG_LEVEL_ERROR, std::wstring(L"Unable to set sound environment. ") + assetName);
+        WLOG(LOG_LEVEL_ERROR, std::wstring(L"Unable to set sound environment. ") + assetName);
         cardioidSound = nullptr;
         return;
       }

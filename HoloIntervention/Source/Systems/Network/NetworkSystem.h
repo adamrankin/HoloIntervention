@@ -107,8 +107,8 @@ namespace HoloIntervention
       typedef std::vector<std::shared_ptr<ConnectorEntry>> ConnectorList;
 
     public:
-      virtual concurrency::task<bool> WriteConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
-      virtual concurrency::task<bool> ReadConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
+      virtual concurrency::task<bool> SaveAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
+      virtual concurrency::task<bool> LoadAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
 
     public:
       NetworkSystem(Valhalla::ValhallaCore& core, System::NotificationSystem& notificationSystem, Valhalla::Input::VoiceInput& voiceInput, Valhalla::UI::Icons& icons, Valhalla::Debug& debug);

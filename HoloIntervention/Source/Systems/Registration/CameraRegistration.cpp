@@ -145,7 +145,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<bool> CameraRegistration::WriteConfigurationAsync(XmlDocument^ document)
+    task<bool> CameraRegistration::SaveAsync(XmlDocument^ document)
     {
       return create_task([this, document]()
       {
@@ -177,7 +177,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<bool> CameraRegistration::ReadConfigurationAsync(XmlDocument^ document)
+    task<bool> CameraRegistration::LoadAsync(XmlDocument^ document)
     {
       return create_task([this, document]()
       {
@@ -231,7 +231,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    CameraRegistration::CameraRegistration(HoloInterventionCore& core, System::NotificationSystem& notificationSystem, System::NetworkSystem& networkSystem, Rendering::ModelRenderer& modelRenderer)
+    CameraRegistration::CameraRegistration(ValhallaCore& core, System::NotificationSystem& notificationSystem, System::NetworkSystem& networkSystem, Rendering::ModelRenderer& modelRenderer)
       : IRegistrationMethod(core)
       , m_modelRenderer(modelRenderer)
       , m_notificationSystem(notificationSystem)
@@ -393,7 +393,7 @@ namespace HoloIntervention
                 }
                 catch(const std::exception& e)
                 {
-                  LOG(LogLevelType::LOG_LEVEL_ERROR, e.what());
+                  LOG(LOG_LEVEL_ERROR, e.what());
                   m_tokenSource.cancel();
                   return;
                 }
@@ -406,7 +406,7 @@ namespace HoloIntervention
                 }
                 catch(const std::exception& e)
                 {
-                  LOG(LogLevelType::LOG_LEVEL_ERROR, e.what());
+                  LOG(LOG_LEVEL_ERROR, e.what());
                   m_tokenSource.cancel();
                   return;
                 }
@@ -522,7 +522,7 @@ namespace HoloIntervention
           }
           catch(Platform::Exception^ e)
           {
-            LOG(LogLevelType::LOG_LEVEL_ERROR, e->Message);
+            LOG(LOG_LEVEL_ERROR, e->Message);
           }
           if(worldAnchorToNewAnchorBox != nullptr)
           {
@@ -564,7 +564,7 @@ namespace HoloIntervention
 
       if(!m_transformsAvailable)
       {
-        LOG(LogLevelType::LOG_LEVEL_ERROR, "Unable to process frames. Transform repository was not properly initialized.");
+        LOG(LOG_LEVEL_ERROR, "Unable to process frames. Transform repository was not properly initialized.");
         return;
       }
 
@@ -603,7 +603,7 @@ namespace HoloIntervention
             }
             catch(Platform::Exception^ e)
             {
-              LOG(LogLevelType::LOG_LEVEL_ERROR, L"Exception: " + e->Message);
+              LOG(LOG_LEVEL_ERROR, L"Exception: " + e->Message);
               continue;
             }
             if(cameraToRawWorldAnchorBox != nullptr)
@@ -772,7 +772,7 @@ namespace HoloIntervention
     {
       if(m_sphereToPhantomPoses.size() != PHANTOM_SPHERE_COUNT)
       {
-        LOG(LogLevelType::LOG_LEVEL_ERROR, "Phantom coordinates haven't been received. Can't determine 3D sphere coordinates.");
+        LOG(LOG_LEVEL_ERROR, "Phantom coordinates haven't been received. Can't determine 3D sphere coordinates.");
         return false;
       }
 
@@ -781,14 +781,14 @@ namespace HoloIntervention
       {
         if(videoFrame == nullptr || videoFrame->CameraIntrinsics == nullptr)
         {
-          LOG(LogLevelType::LOG_LEVEL_ERROR, "Camera intrinsics not available. Cannot continue.");
+          LOG(LOG_LEVEL_ERROR, "Camera intrinsics not available. Cannot continue.");
           return false;
         }
         cameraIntrinsics = videoFrame->CameraIntrinsics;
       }
       catch(Platform::Exception^ e)
       {
-        LOG(LogLevelType::LOG_LEVEL_ERROR, e->Message);
+        LOG(LOG_LEVEL_ERROR, e->Message);
         return false;
       }
 
@@ -863,7 +863,7 @@ namespace HoloIntervention
           else if(circles.size() > PHANTOM_SPHERE_COUNT)
           {
             // TODO : is it possible to make our code more robust by identifying 5 circles that make sense? pixel center distances? radii? etc...
-            LOG(LogLevelType::LOG_LEVEL_ERROR, "Too many circles detected.");
+            LOG(LOG_LEVEL_ERROR, "Too many circles detected.");
             result = false;
             goto done;
           }
@@ -906,7 +906,7 @@ namespace HoloIntervention
             // Initialize rvec and tvec with a reasonable guess
             if(!cv::solvePnP(phantomFiducialsCv, circleCentersPixel, intrinsic, distCoeffs, rvec, tvec, false, cv::SOLVEPNP_DLS))
             {
-              LOG(LogLevelType::LOG_LEVEL_ERROR, "Cannot solvePnP initialization.");
+              LOG(LOG_LEVEL_ERROR, "Cannot solvePnP initialization.");
               result = false;
               goto done;
             }
@@ -915,7 +915,7 @@ namespace HoloIntervention
           // Use iterative technique to refine results
           if(!cv::solvePnP(phantomFiducialsCv, circleCentersPixel, intrinsic, distCoeffs, rvec, tvec, true))
           {
-            LOG(LogLevelType::LOG_LEVEL_ERROR, "Cannot solvePnP iteration.");
+            LOG(LOG_LEVEL_ERROR, "Cannot solvePnP iteration.");
             result = false;
             goto done;
           }
@@ -939,7 +939,7 @@ namespace HoloIntervention
           if(!IsPhantomToCameraSane(phantomToCameraTransform))
           {
             // Somethings gone wonky, let's try with a fresh start on the next frame
-            LOG(LogLevelType::LOG_LEVEL_ERROR, "PhantomToCamera isn't sane. Skipping");
+            LOG(LOG_LEVEL_ERROR, "PhantomToCamera isn't sane. Skipping");
             m_pnpNeedsInit = true;
             return false;
           }
@@ -972,7 +972,7 @@ done:
           else
           {
             // Path not found, cannot continue
-            LOG(LogLevelType::LOG_LEVEL_ERROR, L"Cannot extract " + m_sphereCoordinateNames[i]->GetTransformName() + L" transform. Aborting.");
+            LOG(LOG_LEVEL_ERROR, L"Cannot extract " + m_sphereCoordinateNames[i]->GetTransformName() + L" transform. Aborting.");
             return false;
           }
         }
@@ -1133,7 +1133,7 @@ done:
            (greenLinks.size() == 2 && yellowLinks.size() == 2 && tealLinks.size() == 2) ||
            (greenLinks.size() == 2 && yellowLinks.size() == 2 && blueLinks.size() == 2)))
       {
-        LOG(LogLevelType::LOG_LEVEL_ERROR, "No trio of 2. Cannot deduce pattern.");
+        LOG(LOG_LEVEL_ERROR, "No trio of 2. Cannot deduce pattern.");
         return false;
       }
 
@@ -1181,7 +1181,7 @@ done:
 
       if(centerSphereIndex == -1)
       {
-        LOG(LogLevelType::LOG_LEVEL_ERROR, "No index common to all lists.");
+        LOG(LOG_LEVEL_ERROR, "No index common to all lists.");
         return false;
       }
 

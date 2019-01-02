@@ -23,12 +23,14 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "pch.h"
-#include "Common.h"
-#include "Debug.h"
-#include "Icons.h"
-#include "Log.h"
 #include "NetworkSystem.h"
-#include "StepTimer.h"
+
+// Valhalla includes
+#include <Common\Common.h>
+#include <Common\StepTimer.h>
+#include <Debug\Debug.h>
+#include <Log\Log.h>
+#include <UI\Icons.h>
 
 // System includes
 #include "NotificationSystem.h"
@@ -42,6 +44,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <sstream>
 
 using namespace Concurrency;
+using namespace Valhalla;
 using namespace Windows::Data::Xml::Dom;
 using namespace Windows::Media::SpeechRecognition;
 using namespace Windows::Networking::Connectivity;
@@ -60,7 +63,7 @@ namespace HoloIntervention
     const uint32 NetworkSystem::KEEP_ALIVE_INTERVAL_MSEC = 1000;
 
     //----------------------------------------------------------------------------
-    task<bool> NetworkSystem::WriteConfigurationAsync(XmlDocument^ document)
+    task<bool> NetworkSystem::SaveAsync(XmlDocument^ document)
     {
       return create_task([this, document]()
       {
@@ -100,7 +103,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<bool> NetworkSystem::ReadConfigurationAsync(XmlDocument^ document)
+    task<bool> NetworkSystem::LoadAsync(XmlDocument^ document)
     {
       return create_task([this, document]()
       {
@@ -184,8 +187,8 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    NetworkSystem::NetworkSystem(HoloInterventionCore& core, System::NotificationSystem& notificationSystem, Input::VoiceInput& voiceInput, UI::Icons& icons, Debug& debug)
-      : IConfigurable(core)
+    NetworkSystem::NetworkSystem(ValhallaCore& core, System::NotificationSystem& notificationSystem, Input::VoiceInput& voiceInput, UI::Icons& icons, Debug& debug)
+      : ISerializable(core)
       , m_notificationSystem(notificationSystem)
       , m_voiceInput(voiceInput)
       , m_icons(icons)
@@ -202,7 +205,7 @@ namespace HoloIntervention
       }
       catch (const std::exception& e)
       {
-      LOG(LogLevelType::LOG_LEVEL_ERROR, std::string("IGTConnector failed to find servers: ") + e.what());
+      LOG(LOG_LEVEL_ERROR, std::string("IGTConnector failed to find servers: ") + e.what());
       }
       });
       */
@@ -237,7 +240,7 @@ namespace HoloIntervention
           }
           catch(const std::exception& e)
           {
-            LOG(LogLevelType::LOG_LEVEL_ERROR, std::string("IGTConnector failed to connect: ") + e.what());
+            LOG(LOG_LEVEL_ERROR, std::string("IGTConnector failed to connect: ") + e.what());
             return false;
           }
 

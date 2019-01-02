@@ -23,12 +23,12 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-// Local includes
-#include "IConfigurable.h"
-#include "IStabilizedComponent.h"
-#include "IVoiceInput.h"
+// Valhalla includes
+#include <Input\IVoiceInput.h>
+#include <Interfaces\ISerializable.h>
+#include <Interfaces\IStabilizedComponent.h>
 
-namespace HoloIntervention
+namespace Valhalla
 {
   namespace Rendering
   {
@@ -46,14 +46,17 @@ namespace HoloIntervention
   {
     class Icons;
   }
+}
 
+namespace HoloIntervention
+{
   namespace System
   {
     class NetworkSystem;
     class NotificationSystem;
     class RegistrationSystem;
 
-    class ToolSystem : public Input::IVoiceInput, public IStabilizedComponent, public IConfigurable
+    class ToolSystem : public Valhalla::Input::IVoiceInput, public Valhalla::IStabilizedComponent, public Valhalla::ISerializable
     {
     public:
       virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition(Windows::UI::Input::Spatial::SpatialPointerPose^ pose) const;
@@ -61,16 +64,16 @@ namespace HoloIntervention
       virtual float GetStabilizePriority() const;
 
     public:
-      virtual concurrency::task<bool> WriteConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
-      virtual concurrency::task<bool> ReadConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
+      virtual concurrency::task<bool> SaveAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
+      virtual concurrency::task<bool> LoadAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
 
     public:
-      ToolSystem(HoloInterventionCore& core,
+      ToolSystem(Valhalla::ValhallaCore& core,
                  NotificationSystem& notificationSystem,
                  RegistrationSystem& registrationSystem,
-                 Rendering::ModelRenderer& modelRenderer,
+                 Valhalla::Rendering::ModelRenderer& modelRenderer,
                  NetworkSystem& networkSystem,
-                 UI::Icons& icons);
+                 Valhalla::UI::Icons& icons);
       ~ToolSystem();
 
       uint32 GetToolCount() const;
@@ -88,25 +91,25 @@ namespace HoloIntervention
       void Update(const DX::StepTimer& timer, Windows::Perception::Spatial::SpatialCoordinateSystem^ coordSystem);
 
       // IVoiceInput functions
-      virtual void RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap);
+      virtual void RegisterVoiceCallbacks(Valhalla::Input::VoiceInputCallbackMap& callbackMap);
 
       void ShowIcons(bool show);
 
     protected:
       // Cached entries
-      NotificationSystem&                               m_notificationSystem;
-      RegistrationSystem&                               m_registrationSystem;
-      NetworkSystem&                                    m_networkSystem;
-      UI::Icons&                                        m_icons;
-      Rendering::ModelRenderer&                         m_modelRenderer;
+      NotificationSystem&                                 m_notificationSystem;
+      RegistrationSystem&                                 m_registrationSystem;
+      NetworkSystem&                                      m_networkSystem;
+      Valhalla::UI::Icons&                                m_icons;
+      Valhalla::Rendering::ModelRenderer&                 m_modelRenderer;
 
-      std::wstring                                      m_connectionName; // For config saving
-      uint64                                            m_hashedConnectionName;
-      bool                                              m_showIcons = false;
-      double                                            m_latestTimestamp;
-      mutable std::mutex                                m_entriesMutex;
-      std::vector<std::shared_ptr<Tools::Tool>>         m_tools;
-      UWPOpenIGTLink::TransformRepository^              m_transformRepository;
+      std::wstring                                        m_connectionName; // For config saving
+      uint64                                              m_hashedConnectionName;
+      bool                                                m_showIcons = false;
+      double                                              m_latestTimestamp;
+      mutable std::mutex                                  m_entriesMutex;
+      std::vector<std::shared_ptr<Tools::Tool>>           m_tools;
+      UWPOpenIGTLink::TransformRepository^                m_transformRepository;
     };
   }
 }

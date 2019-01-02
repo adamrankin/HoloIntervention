@@ -266,19 +266,19 @@ namespace Valhalla
 
           case SpatialPerceptionAccessStatus::DeniedBySystem:
             {
-              LOG(LogLevelType::LOG_LEVEL_ERROR, "Error: Cannot initialize surface observer because the system denied access to the spatialPerception capability.");
+              LOG(LOG_LEVEL_ERROR, "Error: Cannot initialize surface observer because the system denied access to the spatialPerception capability.");
             }
             break;
 
           case SpatialPerceptionAccessStatus::DeniedByUser:
             {
-              LOG(LogLevelType::LOG_LEVEL_ERROR, "Error: Cannot initialize surface observer because the user denied access to the spatialPerception capability.");
+              LOG(LOG_LEVEL_ERROR, "Error: Cannot initialize surface observer because the user denied access to the spatialPerception capability.");
             }
             break;
 
           case SpatialPerceptionAccessStatus::Unspecified:
             {
-              LOG(LogLevelType::LOG_LEVEL_ERROR, "Error: Cannot initialize surface observer. Access was denied for an unspecified reason.");
+              LOG(LOG_LEVEL_ERROR, "Error: Cannot initialize surface observer. Access was denied for an unspecified reason.");
             }
             break;
 

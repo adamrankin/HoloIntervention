@@ -11,6 +11,7 @@
 
 // Local includes
 #include "pch.h"
+#include "Log\Log.h"
 #include "Rendering\DeviceResources.h"
 #include "Rendering\DirectXHelper.h"
 
@@ -103,7 +104,7 @@ namespace DX
     }
     catch(const std::exception& e)
     {
-      LOG(Valhalla::LogLevelType::LOG_LEVEL_ERROR, e.what());
+      LOG(Valhalla::LOG_LEVEL_ERROR, e.what());
       return;
     }
 

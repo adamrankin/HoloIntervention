@@ -105,7 +105,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<bool> ModelAlignmentRegistration::WriteConfigurationAsync(XmlDocument^ document)
+    task<bool> ModelAlignmentRegistration::SaveAync(XmlDocument^ document)
     {
       return create_task([this, document]()
       {
@@ -136,7 +136,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<bool> ModelAlignmentRegistration::ReadConfigurationAsync(XmlDocument^ document)
+    task<bool> ModelAlignmentRegistration::LoadAsync(XmlDocument^ document)
     {
       return create_task([this, document]()
       {
@@ -144,7 +144,7 @@ namespace HoloIntervention
         if(document->SelectNodes(xpath)->Length != 1)
         {
           // No configuration found, use defaults
-          LOG(LogLevelType::LOG_LEVEL_ERROR, L"No model alignment registration configuration found. Cannot use without key information.");
+          LOG(LOG_LEVEL_ERROR, L"No model alignment registration configuration found. Cannot use without key information.");
           return task_from_result(false);
         }
 
@@ -152,7 +152,7 @@ namespace HoloIntervention
 
         if(!GetAttribute(L"IGTConnection", node, m_connectionName))
         {
-          LOG(LogLevelType::LOG_LEVEL_ERROR, L"Network attribute not defined for model alignment registration. Aborting.");
+          LOG(LOG_LEVEL_ERROR, L"Network attribute not defined for model alignment registration. Aborting.");
           return task_from_result(false);
         }
 

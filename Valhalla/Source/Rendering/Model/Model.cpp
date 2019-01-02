@@ -251,7 +251,7 @@ namespace Valhalla
         }
         catch(const std::exception&)
         {
-          LOG(LogLevelType::LOG_LEVEL_ERROR, "Unable to locate installed folder path.");
+          LOG(LOG_LEVEL_ERROR, "Unable to locate installed folder path.");
           m_failedLoad = true;
           return;
         }
@@ -293,13 +293,13 @@ namespace Valhalla
           }
           catch(Platform::InvalidArgumentException^ e)
           {
-            LOG(LogLevelType::LOG_LEVEL_ERROR, L"InvalidArgumentException: " + e->Message);
+            LOG(LOG_LEVEL_ERROR, L"InvalidArgumentException: " + e->Message);
             m_failedLoad = true;
             return;
           }
           catch(const std::exception& e)
           {
-            LOG(LogLevelType::LOG_LEVEL_ERROR, std::string("Unable to get subfolder: ") + e.what());
+            LOG(LOG_LEVEL_ERROR, std::string("Unable to get subfolder: ") + e.what());
             m_failedLoad = true;
             return;
           }
@@ -330,7 +330,7 @@ namespace Valhalla
               }
               catch(const std::exception& e)
               {
-                LOG(LogLevelType::LOG_LEVEL_ERROR, std::string("Unable to load model. ") + e.what());
+                LOG(LOG_LEVEL_ERROR, std::string("Unable to load model. ") + e.what());
                 m_failedLoad = true;
               }
             }
@@ -362,7 +362,7 @@ namespace Valhalla
       }
       catch(const std::exception& e)
       {
-        LOG(LogLevelType::LOG_LEVEL_ERROR, std::string("Unable to load primitive. ") + e.what());
+        LOG(LOG_LEVEL_ERROR, std::string("Unable to load primitive. ") + e.what());
         m_failedLoad = true;
         return;
       }
@@ -382,7 +382,7 @@ namespace Valhalla
       }
       catch(const std::exception& e)
       {
-        LOG(LogLevelType::LOG_LEVEL_ERROR, std::string("Unable to load primitive. ") + e.what());
+        LOG(LOG_LEVEL_ERROR, std::string("Unable to load primitive. ") + e.what());
         m_failedLoad = true;
         return;
       }
@@ -618,7 +618,7 @@ namespace Valhalla
     {
       if(!m_loadingComplete)
       {
-        LOG(LogLevelType::LOG_LEVEL_ERROR, "Attempting to change rendering state before model is loaded.");
+        LOG(LOG_LEVEL_ERROR, "Attempting to change rendering state before model is loaded.");
         return;
       }
 
@@ -632,7 +632,7 @@ namespace Valhalla
       }
       else
       {
-        LOG(LogLevelType::LOG_LEVEL_ERROR, "Unknown render state requested.");
+        LOG(LOG_LEVEL_ERROR, "Unknown render state requested.");
       }
     }
 

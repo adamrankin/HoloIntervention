@@ -26,17 +26,23 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Local includes
 #include "IRegistrationMethod.h"
 
+// Valhalla includes
+#include <Input\IVoiceInput.h>
+
+namespace Valhalla
+{
+  namespace Algorithm
+  {
+    class LandmarkRegistration;
+  }
+}
+
 namespace HoloIntervention
 {
   namespace System
   {
     class NotificationSystem;
     class NetworkSystem;
-  }
-
-  namespace Algorithm
-  {
-    class LandmarkRegistration;
   }
 
   namespace System
@@ -48,7 +54,7 @@ namespace HoloIntervention
       typedef std::vector<Position> PositionList;
 
     public:
-      virtual void RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap) {};
+      virtual void RegisterVoiceCallbacks(Valhalla::Input::VoiceInputCallbackMap& callbackMap) {};
 
     public:
       virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition(Windows::UI::Input::Spatial::SpatialPointerPose^ pose) const;
@@ -56,8 +62,8 @@ namespace HoloIntervention
       virtual float GetStabilizePriority() const;
 
     public:
-      virtual concurrency::task<bool> WriteConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
-      virtual concurrency::task<bool> ReadConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
+      virtual concurrency::task<bool> SaveAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
+      virtual concurrency::task<bool> LoadAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
 
     public:
       virtual void SetWorldAnchor(Windows::Perception::Spatial::SpatialAnchor^ worldAnchor);
@@ -74,39 +80,39 @@ namespace HoloIntervention
                           Windows::Graphics::Holographic::HolographicCameraPose^ cameraPose);
 
     public:
-      OpticalRegistration(HoloInterventionCore& core, System::NotificationSystem& notificationSystem, System::NetworkSystem& networkSystem);
+      OpticalRegistration(Valhalla::ValhallaCore& core, System::NotificationSystem& notificationSystem, System::NetworkSystem& networkSystem);
       ~OpticalRegistration();
 
     protected:
       // Cached references
-      System::NotificationSystem&                       m_notificationSystem;
-      System::NetworkSystem&                            m_networkSystem;
+      System::NotificationSystem&                                 m_notificationSystem;
+      System::NetworkSystem&                                      m_networkSystem;
 
       // Landmark registration
-      std::shared_ptr<Algorithm::LandmarkRegistration>  m_landmarkRegistration;
+      std::shared_ptr<Valhalla::Algorithm::LandmarkRegistration>  m_landmarkRegistration;
 
       // State variables
-      std::wstring                                      m_connectionName;
-      uint64                                            m_hashedConnectionName;
-      double                                            m_latestTimestamp = 0.0;
-      UWPOpenIGTLink::TransformName^                    m_holoLensToReferenceName;
-      std::atomic_bool                                  m_started = false;
-      std::atomic_bool                                  m_calculating = false;
+      std::wstring                                                m_connectionName;
+      uint64                                                      m_hashedConnectionName;
+      double                                                      m_latestTimestamp = 0.0;
+      UWPOpenIGTLink::TransformName^                              m_holoLensToReferenceName;
+      std::atomic_bool                                            m_started = false;
+      std::atomic_bool                                            m_calculating = false;
 
       // Behavior variables
-      uint32                                            m_poseListRecalcThresholdCount;
-      uint32                                            m_currentNewPointCount = 0;
+      uint32                                                      m_poseListRecalcThresholdCount;
+      uint32                                                      m_currentNewPointCount = 0;
 
       // Point data
-      std::mutex                                        m_pointAccessMutex;
-      PositionList                                      m_opticalPositionList;
-      PositionList                                      m_hololensInAnchorPositionList;
-      Position                                          m_previousOpticalPosition = Position::zero();
-      Position                                          m_previousHoloLensPosition = Position::zero();
+      std::mutex                                                  m_pointAccessMutex;
+      PositionList                                                m_opticalPositionList;
+      PositionList                                                m_hololensInAnchorPositionList;
+      Position                                                    m_previousOpticalPosition = Position::zero();
+      Position                                                    m_previousHoloLensPosition = Position::zero();
 
       // Constants
-      static const uint32                               DEFAULT_LIST_RECALC_THRESHOLD = 100;
-      static const float                                MIN_DISTANCE_BETWEEN_POINTS_METER; // (5mm)
+      static const uint32                                         DEFAULT_LIST_RECALC_THRESHOLD = 100;
+      static const float                                          MIN_DISTANCE_BETWEEN_POINTS_METER; // (5mm)
     };
   }
 }

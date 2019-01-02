@@ -110,19 +110,19 @@ namespace Valhalla
   {
     switch(level)
     {
-      case Valhalla::LogLevelType::LOG_LEVEL_ERROR:
+      case Valhalla::LOG_LEVEL_ERROR:
         return L"LOG_LEVEL_ERROR";
 
-      case Valhalla::LogLevelType::LOG_LEVEL_WARNING:
+      case Valhalla::LOG_LEVEL_WARNING:
         return L"LOG_LEVEL_WARNING";
 
-      case Valhalla::LogLevelType::LOG_LEVEL_INFO:
+      case Valhalla::LOG_LEVEL_INFO:
         return L"LOG_LEVEL_INFO";
 
-      case Valhalla::LogLevelType::LOG_LEVEL_DEBUG:
+      case Valhalla::LOG_LEVEL_DEBUG:
         return L"LOG_LEVEL_DEBUG";
 
-      case Valhalla::LogLevelType::LOG_LEVEL_TRACE:
+      case Valhalla::LOG_LEVEL_TRACE:
         return L"LOG_LEVEL_TRACE";
     }
 
@@ -134,19 +134,19 @@ namespace Valhalla
   {
     switch(level)
     {
-      case Valhalla::LogLevelType::LOG_LEVEL_ERROR:
+      case Valhalla::LOG_LEVEL_ERROR:
         return "LOG_LEVEL_ERROR";
 
-      case Valhalla::LogLevelType::LOG_LEVEL_WARNING:
+      case Valhalla::LOG_LEVEL_WARNING:
         return "LOG_LEVEL_WARNING";
 
-      case Valhalla::LogLevelType::LOG_LEVEL_INFO:
+      case Valhalla::LOG_LEVEL_INFO:
         return "LOG_LEVEL_INFO";
 
-      case Valhalla::LogLevelType::LOG_LEVEL_DEBUG:
+      case Valhalla::LOG_LEVEL_DEBUG:
         return "LOG_LEVEL_DEBUG";
 
-      case Valhalla::LogLevelType::LOG_LEVEL_TRACE:
+      case Valhalla::LOG_LEVEL_TRACE:
         return "LOG_LEVEL_TRACE";
     }
 
@@ -158,27 +158,27 @@ namespace Valhalla
   {
     if(IsEqualInsensitive("LOG_LEVEL_INFO", level))
     {
-      return LogLevelType::LOG_LEVEL_INFO;
+      return LOG_LEVEL_INFO;
     }
     else if(IsEqualInsensitive("LOG_LEVEL_ERROR", level))
     {
-      return LogLevelType::LOG_LEVEL_ERROR;
+      return LOG_LEVEL_ERROR;
     }
     else if(IsEqualInsensitive("LOG_LEVEL_WARNING", level))
     {
-      return LogLevelType::LOG_LEVEL_WARNING;
+      return LOG_LEVEL_WARNING;
     }
     else if(IsEqualInsensitive("LOG_LEVEL_DEBUG", level))
     {
-      return LogLevelType::LOG_LEVEL_DEBUG;
+      return LOG_LEVEL_DEBUG;
     }
     else if(IsEqualInsensitive("LOG_LEVEL_TRACE", level))
     {
-      return LogLevelType::LOG_LEVEL_TRACE;
+      return LOG_LEVEL_TRACE;
     }
     else
     {
-      return LogLevelType::LOG_LEVEL_UNKNOWN;
+      return LOG_LEVEL_UNKNOWN;
     }
   }
 
@@ -187,27 +187,27 @@ namespace Valhalla
   {
     if(IsEqualInsensitive(L"LOG_LEVEL_INFO", level))
     {
-      return LogLevelType::LOG_LEVEL_INFO;
+      return LOG_LEVEL_INFO;
     }
     else if(IsEqualInsensitive(L"LOG_LEVEL_ERROR", level))
     {
-      return LogLevelType::LOG_LEVEL_ERROR;
+      return LOG_LEVEL_ERROR;
     }
     else if(IsEqualInsensitive(L"LOG_LEVEL_WARNING", level))
     {
-      return LogLevelType::LOG_LEVEL_WARNING;
+      return LOG_LEVEL_WARNING;
     }
     else if(IsEqualInsensitive(L"LOG_LEVEL_DEBUG", level))
     {
-      return LogLevelType::LOG_LEVEL_DEBUG;
+      return LOG_LEVEL_DEBUG;
     }
     else if(IsEqualInsensitive(L"LOG_LEVEL_TRACE", level))
     {
-      return LogLevelType::LOG_LEVEL_TRACE;
+      return LOG_LEVEL_TRACE;
     }
     else
     {
-      return LogLevelType::LOG_LEVEL_UNKNOWN;
+      return LOG_LEVEL_UNKNOWN;
     }
   }
 

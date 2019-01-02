@@ -23,30 +23,24 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "pch.h"
-#include "Common.h"
+#include "NetworkSystem.h"
 #include "Tool.h"
 
-// UI includes
-#include "Icons.h"
-
-// System includes
-#include "NetworkSystem.h"
-
-// Rendering includes
-#include "Model.h"
-#include "ModelRenderer.h"
-
-// Algorithm includes
-#include "KalmanFilter.h"
+// Valhalla includes
+#include <Common\Common.h>
+#include <Rendering\Model\Model.h>
+#include <Rendering\Model\ModelRenderer.h>
+#include <UI\Icons.h>
 
 // STL includes
 #include <string>
 #include <sstream>
 
 // OpenCV includes
-#include <opencv2/core/mat.hpp>
+#include <opencv2/core.hpp>
 
 using namespace Concurrency;
+using namespace Valhalla;
 using namespace Windows::Foundation::Collections;
 using namespace Windows::Foundation::Numerics;
 using namespace Windows::UI::Input::Spatial;
@@ -61,7 +55,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float3 Tool::GetStabilizedPosition(SpatialPointerPose^ pose) const
     {
-      if (m_modelEntry != nullptr && m_modelEntry->IsLoaded())
+      if(m_modelEntry != nullptr && m_modelEntry->IsLoaded())
       {
         return transform(float3(0.f, 0.f, 0.f), m_modelEntry->GetCurrentPose());
       }
@@ -71,7 +65,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float3 Tool::GetStabilizedVelocity() const
     {
-      if (m_modelEntry != nullptr && m_modelEntry->IsLoaded())
+      if(m_modelEntry != nullptr && m_modelEntry->IsLoaded())
       {
         return m_modelEntry->GetVelocity();
       }
@@ -81,7 +75,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float Tool::GetStabilizePriority() const
     {
-      if (!m_modelEntry->IsLoaded() || !m_modelEntry->IsInFrustum())
+      if(!m_modelEntry->IsLoaded() || !m_modelEntry->IsInFrustum())
       {
         return PRIORITY_NOT_ACTIVE;
       }
@@ -137,10 +131,10 @@ namespace HoloIntervention
     void Tool::Update(const DX::StepTimer& timer)
     {
       bool registrationTransformValid = m_transformRepository->GetTransformValid(ref new UWPOpenIGTLink::TransformName(m_coordinateFrame->To(), HOLOLENS_COORDINATE_SYSTEM_PNAME));
-      if (!registrationTransformValid)
+      if(!registrationTransformValid)
       {
         m_modelEntry->SetVisible(false);
-        if (m_iconEntry != nullptr)
+        if(m_iconEntry != nullptr)
         {
           m_iconEntry->GetModel()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
         }
@@ -154,7 +148,7 @@ namespace HoloIntervention
       // m_transformRepository has already been initialized with the network transforms for this update
       auto objectToRefTransform = m_networkSystem.GetTransform(m_hashedConnectionName, m_coordinateFrame, m_latestTimestamp);
 
-      if (objectToRefTransform == nullptr)
+      if(objectToRefTransform == nullptr)
       {
         // No new transform since last timestamp
         return;
@@ -165,35 +159,35 @@ namespace HoloIntervention
 
       IKeyValuePair<bool, float4x4>^ result = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(GetModelCoordinateFrameName(), HOLOLENS_COORDINATE_SYSTEM_PNAME));
       m_isValid = result->Key;
-      if (!m_isValid && m_wasValid)
+      if(!m_isValid && m_wasValid)
       {
         m_wasValid = false;
-        if (m_modelEntry != nullptr)
+        if(m_modelEntry != nullptr)
         {
           m_modelEntry->RenderGreyscale();
         }
-        if (m_iconEntry != nullptr)
+        if(m_iconEntry != nullptr)
         {
           m_iconEntry->GetModel()->SetRenderingState(Rendering::RENDERING_GREYSCALE);
         }
         return;
       }
 
-      if (m_isValid)
+      if(m_isValid)
       {
-        if (!m_wasValid)
+        if(!m_wasValid)
         {
-          if (m_iconEntry != nullptr)
+          if(m_iconEntry != nullptr)
           {
             m_iconEntry->GetModel()->SetRenderingState(Rendering::RENDERING_DEFAULT);
           }
-          if (m_modelEntry != nullptr)
+          if(m_modelEntry != nullptr)
           {
             m_modelEntry->RenderDefault();
           }
         }
 
-        if (m_modelEntry != nullptr)
+        if(m_modelEntry != nullptr)
         {
           m_modelEntry->SetDesiredPose(transpose(result->Value));
         }
@@ -206,7 +200,7 @@ namespace HoloIntervention
     {
       return create_task([this, entry]()
       {
-        if (m_modelEntry == entry)
+        if(m_modelEntry == entry)
         {
           return;
         }
@@ -252,7 +246,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void Tool::SetModelToObjectTransform(Windows::Foundation::Numerics::float4x4 transform)
     {
-      if (transform.m41 == 0 && transform.m41 == 0 && transform.m42 == 0 && (transform.m14 != 0 || transform.m24 != 0 || transform.m34 != 0))
+      if(transform.m41 == 0 && transform.m41 == 0 && transform.m42 == 0 && (transform.m14 != 0 || transform.m24 != 0 || transform.m34 != 0))
       {
         // Convert to column major
         transform = transpose(transform);
@@ -273,7 +267,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     uint64 Tool::GetId() const
     {
-      if (m_modelEntry == nullptr)
+      if(m_modelEntry == nullptr)
       {
         return INVALID_TOKEN;
       }
@@ -295,7 +289,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void Tool::ShowIcon(bool show)
     {
-      if (show && m_iconEntry == nullptr)
+      if(show && m_iconEntry == nullptr)
       {
         m_icons.AddEntryAsync(m_modelEntry, 0).then([this](std::shared_ptr<UI::Icon> iconEntry)
         {
@@ -303,7 +297,7 @@ namespace HoloIntervention
           iconEntry->GetModel()->SetVisible(true);
         });
       }
-      else if (!show && m_iconEntry != nullptr)
+      else if(!show && m_iconEntry != nullptr)
       {
         m_icons.RemoveEntry(m_iconEntry->GetId());
         m_iconEntry = nullptr;

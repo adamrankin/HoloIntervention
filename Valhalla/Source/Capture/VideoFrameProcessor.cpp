@@ -102,7 +102,7 @@ namespace Valhalla
           }
           catch(const std::exception& e)
           {
-            LOG(LogLevelType::LOG_LEVEL_ERROR, std::string("Unable to initialize media capture: ") + e.what());
+            LOG(LOG_LEVEL_ERROR, std::string("Unable to initialize media capture: ") + e.what());
             return task_from_result(std::shared_ptr<VideoFrameProcessor>(nullptr));
           }
 

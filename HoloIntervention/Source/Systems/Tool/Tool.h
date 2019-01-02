@@ -24,7 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
-#include "IStabilizedComponent.h"
+#include <Interfaces\IStabilizedComponent.h>
 
 // STL includes
 #include <atomic>
@@ -37,7 +37,7 @@ namespace DX
   class StepTimer;
 }
 
-namespace HoloIntervention
+namespace Valhalla
 {
   namespace UI
   {
@@ -55,15 +55,13 @@ namespace HoloIntervention
     class Model;
     class ModelRenderer;
   }
+}
 
-  namespace Algorithm
-  {
-    class KalmanFilter;
-  }
-
+namespace HoloIntervention
+{
   namespace Tools
   {
-    class Tool : public IStabilizedComponent
+    class Tool : public Valhalla::IStabilizedComponent
     {
     public:
       virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition(Windows::UI::Input::Spatial::SpatialPointerPose^ pose) const;
@@ -71,16 +69,16 @@ namespace HoloIntervention
       virtual float GetStabilizePriority() const;
 
     public:
-      Tool(Rendering::ModelRenderer& modelRenderer,
+      Tool(Valhalla::Rendering::ModelRenderer& modelRenderer,
            System::NetworkSystem& networkSystem,
-           UI::Icons& icons,
+           Valhalla::UI::Icons& icons,
            uint64 hashedConnectionName,
            UWPOpenIGTLink::TransformName^ coordinateFrame,
            UWPOpenIGTLink::TransformRepository^ transformRepository,
            Platform::String^ userId);
-      Tool(Rendering::ModelRenderer& modelRenderer,
+      Tool(Valhalla::Rendering::ModelRenderer& modelRenderer,
            System::NetworkSystem& networkSystem,
-           UI::Icons& icons,
+           Valhalla::UI::Icons& icons,
            uint64 hashedConnectionName,
            const std::wstring& coordinateFrame,
            UWPOpenIGTLink::TransformRepository^ transformRepository,
@@ -89,8 +87,8 @@ namespace HoloIntervention
 
       void Update(const DX::StepTimer& timer);
 
-      Concurrency::task<void> SetModelAsync(std::shared_ptr<Rendering::Model> entry);
-      std::shared_ptr<Rendering::Model> GetModel();
+      Concurrency::task<void> SetModelAsync(std::shared_ptr<Valhalla::Rendering::Model> entry);
+      std::shared_ptr<Valhalla::Rendering::Model> GetModel();
 
       void SetCoordinateFrame(UWPOpenIGTLink::TransformName^ coordFrame);
       UWPOpenIGTLink::TransformName^ GetCoordinateFrame() const;
@@ -113,9 +111,9 @@ namespace HoloIntervention
 
     protected:
       // Cached links to system resources
-      Rendering::ModelRenderer&                   m_modelRenderer;
+      Valhalla::Rendering::ModelRenderer&         m_modelRenderer;
       System::NetworkSystem&                      m_networkSystem;
-      UI::Icons&                                  m_icons;
+      Valhalla::UI::Icons&                        m_icons;
 
       // Tool state
       std::wstring                                m_userId;
@@ -127,12 +125,12 @@ namespace HoloIntervention
       // Model details
       std::atomic_bool                            m_isValid = false;
       std::atomic_bool                            m_wasValid = false;
-      std::shared_ptr<Rendering::Model>           m_modelEntry = nullptr;
+      std::shared_ptr<Valhalla::Rendering::Model> m_modelEntry = nullptr;
       std::atomic_bool                            m_hiddenOverride = false;
       Windows::Foundation::Numerics::float4x4     m_modelToObjectTransform = Windows::Foundation::Numerics::float4x4::identity(); // Column major
 
       // Icon details
-      std::shared_ptr<UI::Icon>                   m_iconEntry = nullptr;
+      std::shared_ptr<Valhalla::UI::Icon>         m_iconEntry = nullptr;
 
       // Coordinate frame details
       Platform::String^                           m_modelCoordinateFrameName = nullptr;

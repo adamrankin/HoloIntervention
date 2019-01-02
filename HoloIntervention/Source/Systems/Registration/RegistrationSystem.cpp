@@ -45,7 +45,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <UI\Icons.h>
 
 // Unnecessary, but removes Intellisense errors
-#include "Log.h"
 #include <WindowsNumerics.h>
 
 using namespace Concurrency;
@@ -130,7 +129,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<bool> RegistrationSystem::WriteConfigurationAsync(XmlDocument^ document)
+    task<bool> RegistrationSystem::SaveAsync(XmlDocument^ document)
     {
       return create_task([this, document]()
       {
@@ -157,7 +156,7 @@ namespace HoloIntervention
           bool result = repo->WriteConfiguration(document);
           if(!result)
           {
-            LOG_ERROR("Unable to write repository configuration in RegistrationSystem::WriteConfigurationAsync");
+            LOG_ERROR("Unable to write repository configuration in RegistrationSystem::SaveAsync");
             return false;
           }
         }
@@ -165,14 +164,14 @@ namespace HoloIntervention
         bool result = true;
         for(auto& pair : m_knownRegistrationMethods)
         {
-          result &= pair.second->WriteConfigurationAsync(document).get();
+          result &= pair.second->SaveAsync(document).get();
         }
         return result;
       });
     }
 
     //----------------------------------------------------------------------------
-    task<bool> RegistrationSystem::ReadConfigurationAsync(XmlDocument^ document)
+    task<bool> RegistrationSystem::LoadAsync(XmlDocument^ document)
     {
       return create_task([this, document]()
       {
@@ -190,16 +189,16 @@ namespace HoloIntervention
           m_cachedReferenceToAnchor = transpose(temp->Value);
         }
 
-        // Test each known registration method ReadConfigurationAsync and store if known
+        // Test each known registration method LoadAsync and store if known
         for(auto pair :
             {
-              std::pair<std::wstring, std::shared_ptr<IRegistrationMethod>>(REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_OPTICAL], std::make_shared<OpticalRegistration>(IConfigurable::m_core, m_notificationSystem, m_networkSystem)),
-              std::pair<std::wstring, std::shared_ptr<IRegistrationMethod>>(REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_MODELALIGNMENT], std::make_shared<ModelAlignmentRegistration>(IConfigurable::m_core, m_notificationSystem, m_networkSystem, m_modelRenderer, m_spatialInput, m_icons, m_debug, m_timer)),
-              std::pair<std::wstring, std::shared_ptr<IRegistrationMethod>>(REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_CAMERA], std::make_shared<CameraRegistration>(IConfigurable::m_core, m_notificationSystem, m_networkSystem, m_modelRenderer)),
-              std::pair<std::wstring, std::shared_ptr<IRegistrationMethod>>(REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_TOOLBASED], std::make_shared<ToolBasedRegistration>(IConfigurable::m_core, m_networkSystem))
+              std::pair<std::wstring, std::shared_ptr<IRegistrationMethod>>(REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_OPTICAL], std::make_shared<OpticalRegistration>(ISerializable::m_core, m_notificationSystem, m_networkSystem)),
+              std::pair<std::wstring, std::shared_ptr<IRegistrationMethod>>(REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_MODELALIGNMENT], std::make_shared<ModelAlignmentRegistration>(ISerializable::m_core, m_notificationSystem, m_networkSystem, m_modelRenderer, m_spatialInput, m_icons, m_debug, m_timer)),
+              std::pair<std::wstring, std::shared_ptr<IRegistrationMethod>>(REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_CAMERA], std::make_shared<CameraRegistration>(ISerializable::m_core, m_notificationSystem, m_networkSystem, m_modelRenderer)),
+              std::pair<std::wstring, std::shared_ptr<IRegistrationMethod>>(REGISTRATION_TYPE_NAMES[REGISTRATIONTYPE_TOOLBASED], std::make_shared<ToolBasedRegistration>(ISerializable::m_core, m_networkSystem))
             })
         {
-          bool result = pair.second->ReadConfigurationAsync(document).get();
+          bool result = pair.second->LoadAsync(document).get();
           if(result)
           {
             m_knownRegistrationMethods[pair.first] = pair.second;
@@ -215,9 +214,9 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    RegistrationSystem::RegistrationSystem(HoloInterventionCore& core, NetworkSystem& networkSystem, Physics::PhysicsAPI& physicsAPI, NotificationSystem& notificationSystem, Rendering::ModelRenderer& modelRenderer, Input::SpatialInput& spatialInput, UI::Icons& icons, Debug& debug, DX::StepTimer& timer)
+    RegistrationSystem::RegistrationSystem(ValhallaCore& core, NetworkSystem& networkSystem, Physics::PhysicsAPI& physicsAPI, NotificationSystem& notificationSystem, Rendering::ModelRenderer& modelRenderer, Input::SpatialInput& spatialInput, UI::Icons& icons, Debug& debug, DX::StepTimer& timer)
       : ILocatable(core)
-      , IConfigurable(core)
+      , ISerializable(core)
       , m_notificationSystem(notificationSystem)
       , m_networkSystem(networkSystem)
       , m_modelRenderer(modelRenderer)
@@ -694,7 +693,7 @@ namespace HoloIntervention
         unscaledMatrix.m42 = translation.y;
         unscaledMatrix.m43 = translation.z;
 
-        LOG(LogLevelType::LOG_LEVEL_INFO, L"Registration matrix scaling: " + scaling.x.ToString() + L", " + scaling.y.ToString() + L", " + scaling.z.ToString());
+        LOG(LOG_LEVEL_INFO, L"Registration matrix scaling: " + scaling.x.ToString() + L", " + scaling.y.ToString() + L", " + scaling.z.ToString());
 
         m_cachedReferenceToAnchor = unscaledMatrix;
       }
@@ -731,7 +730,7 @@ namespace HoloIntervention
         return false;
       }
 
-      LOG(LogLevelType::LOG_LEVEL_DEBUG, "scale: " + scale.x.ToString() + L" " + scale.y.ToString() + L" " + scale.z.ToString());
+      LOG(Valhalla::LOG_LEVEL_DEBUG, "scale: " + scale.x.ToString() + L" " + scale.y.ToString() + L" " + scale.z.ToString());
 
       if(!IsFloatEqual(scale.x, 1.f) || !IsFloatEqual(scale.y, 1.f) || !IsFloatEqual(scale.z, 1.f))
       {

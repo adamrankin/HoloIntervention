@@ -43,17 +43,17 @@ OTHER DEALINGS IN THE SOFTWARE.
 #define WFILE WIDE1(__FILE__)
 
 #define LOG(level, msg) Valhalla::Log::instance().LogMessage(level, msg, __FILE__, __LINE__)
-#define LOG_ERROR(msg) Valhalla::Log::instance().LogMessage(Valhalla::LogLevelType::LOG_LEVEL_ERROR, msg, __FILE__, __LINE__)
-#define LOG_WARNING(msg) Valhalla::Log::instance().LogMessage(Valhalla::LogLevelType::LOG_LEVEL_WARNING, msg, __FILE__, __LINE__)
-#define LOG_INFO(msg) Valhalla::Log::instance().LogMessage(Valhalla::LogLevelType::LOG_LEVEL_INFO, msg, __FILE__, __LINE__)
-#define LOG_DEBUG(msg) Valhalla::Log::instance().LogMessage(Valhalla::LogLevelType::LOG_LEVEL_DEBUG, msg, __FILE__, __LINE__)
-#define LOG_TRACE(msg) Valhalla::Log::instance().LogMessage(Valhalla::LogLevelType::LOG_LEVEL_TRACE, msg, __FILE__, __LINE__)
+#define LOG_ERROR(msg) Valhalla::Log::instance().LogMessage(Valhalla::LOG_LEVEL_ERROR, msg, __FILE__, __LINE__)
+#define LOG_WARNING(msg) Valhalla::Log::instance().LogMessage(Valhalla::LOG_LEVEL_WARNING, msg, __FILE__, __LINE__)
+#define LOG_INFO(msg) Valhalla::Log::instance().LogMessage(Valhalla::LOG_LEVEL_INFO, msg, __FILE__, __LINE__)
+#define LOG_DEBUG(msg) Valhalla::Log::instance().LogMessage(Valhalla::LOG_LEVEL_DEBUG, msg, __FILE__, __LINE__)
+#define LOG_TRACE(msg) Valhalla::Log::instance().LogMessage(Valhalla::LOG_LEVEL_TRACE, msg, __FILE__, __LINE__)
 #define WLOG(level, msg) Valhalla::Log::instance().LogMessage(level, msg, WFILE, __LINE__)
-#define WLOG_ERROR(msg) Valhalla::Log::instance().LogMessage(Valhalla::LogLevelType::LOG_LEVEL_ERROR, msg, WFILE, __LINE__)
-#define WLOG_WARNING(msg) Valhalla::Log::instance().LogMessage(Valhalla::LogLevelType::LOG_LEVEL_WARNING, msg, WFILE, __LINE__)
-#define WLOG_INFO(msg) Valhalla::Log::instance().LogMessage(Valhalla::LogLevelType::LOG_LEVEL_INFO, msg, WFILE, __LINE__)
-#define WLOG_DEBUG(msg) Valhalla::Log::instance().LogMessage(Valhalla::LogLevelType::LOG_LEVEL_DEBUG, msg, WFILE, __LINE__)
-#define WLOG_TRACE(msg) Valhalla::Log::instance().LogMessage(Valhalla::LogLevelType::LOG_LEVEL_TRACE, msg, WFILE, __LINE__)
+#define WLOG_ERROR(msg) Valhalla::Log::instance().LogMessage(Valhalla::LOG_LEVEL_ERROR, msg, WFILE, __LINE__)
+#define WLOG_WARNING(msg) Valhalla::Log::instance().LogMessage(Valhalla::LOG_LEVEL_WARNING, msg, WFILE, __LINE__)
+#define WLOG_INFO(msg) Valhalla::Log::instance().LogMessage(Valhalla::LOG_LEVEL_INFO, msg, WFILE, __LINE__)
+#define WLOG_DEBUG(msg) Valhalla::Log::instance().LogMessage(Valhalla::LOG_LEVEL_DEBUG, msg, WFILE, __LINE__)
+#define WLOG_TRACE(msg) Valhalla::Log::instance().LogMessage(Valhalla::LOG_LEVEL_TRACE, msg, WFILE, __LINE__)
 
 namespace Valhalla
 {

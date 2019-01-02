@@ -85,7 +85,7 @@ namespace HoloIntervention
 
     m_deviceResources = std::make_shared<DX::DeviceResources>();
 
-    m_main = std::make_unique<ValhallaCore>();
+    m_main = std::make_unique<ValhallaCore>(m_deviceResources);
   }
 
   //----------------------------------------------------------------------------

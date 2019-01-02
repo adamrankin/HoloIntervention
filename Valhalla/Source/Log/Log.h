@@ -36,15 +36,13 @@ namespace Valhalla
     class IGTConnector;
   }
 
-  public enum class LogLevelType : int32
-  {
-    LOG_LEVEL_UNKNOWN,
-    LOG_LEVEL_TRACE,
-    LOG_LEVEL_DEBUG,
-    LOG_LEVEL_INFO,
-    LOG_LEVEL_WARNING,
-    LOG_LEVEL_ERROR
-  };
+  typedef int32 LogLevelType;
+  static const int LOG_LEVEL_UNKNOWN = 0;
+  static const int LOG_LEVEL_TRACE = 1;
+  static const int LOG_LEVEL_DEBUG = 2;
+  static const int LOG_LEVEL_INFO = 3;
+  static const int LOG_LEVEL_WARNING = 4;
+  static const int LOG_LEVEL_ERROR = 5;
 
   class Log
   {
@@ -90,7 +88,7 @@ namespace Valhalla
     Windows::Storage::Streams::IRandomAccessStream^ m_logStream;
     Windows::Storage::Streams::DataWriter^          m_logWriter;
 
-    LogLevelType                                    m_logLevel = LogLevelType::LOG_LEVEL_TRACE;
+    LogLevelType                                    m_logLevel = LOG_LEVEL_TRACE;
 
     std::mutex                                      m_messagesMutex;
     std::deque<MessageEntry>                        m_messages;

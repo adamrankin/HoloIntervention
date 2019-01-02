@@ -107,8 +107,8 @@ namespace HoloIntervention
       virtual float GetStabilizePriority() const;
 
     public:
-      virtual concurrency::task<bool> WriteConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
-      virtual concurrency::task<bool> ReadConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
+      virtual concurrency::task<bool> SaveAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
+      virtual concurrency::task<bool> LoadAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
 
     public:
       virtual void SetWorldAnchor(Windows::Perception::Spatial::SpatialAnchor^ worldAnchor);

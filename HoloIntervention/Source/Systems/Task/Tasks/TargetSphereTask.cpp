@@ -23,12 +23,13 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "pch.h"
-#include "Common.h"
 #include "TargetSphereTask.h"
-#include "StepTimer.h"
 
-// UI includes
-#include "Icons.h"
+// Valhalla includes
+#include <Common\Common.h>
+#include <Common\StepTimer.h>
+#include <Rendering\Model\ModelRenderer.h>
+#include <UI\Icons.h>
 
 // System includes
 #include "NetworkSystem.h"
@@ -37,13 +38,11 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "Tool.h"
 #include "ToolSystem.h"
 
-// Rendering includes
-#include "ModelRenderer.h"
-
 // Intellisense errors
 #include <WindowsNumerics.h>
 
 using namespace Concurrency;
+using namespace Valhalla;
 using namespace Windows::Data::Xml::Dom;
 using namespace Windows::Foundation::Collections;
 using namespace Windows::Foundation::Numerics;
@@ -63,12 +62,12 @@ namespace HoloIntervention
       const float TargetSphereTask::STYLUS_CYLINDER_ICON_RADIUS_MM = 5.f;
 
       //----------------------------------------------------------------------------
-      task<bool> TargetSphereTask::WriteConfigurationAsync(XmlDocument^ document)
+      task<bool> TargetSphereTask::SaveAsync(XmlDocument^ document)
       {
         return create_task([this, document]()
         {
           auto xpath = ref new Platform::String(L"/HoloIntervention");
-          if (document->SelectNodes(xpath)->Length != 1)
+          if(document->SelectNodes(xpath)->Length != 1)
           {
             return false;
           }
@@ -97,17 +96,17 @@ namespace HoloIntervention
       }
 
       //----------------------------------------------------------------------------
-      task<bool> TargetSphereTask::ReadConfigurationAsync(XmlDocument^ document)
+      task<bool> TargetSphereTask::LoadAsync(XmlDocument^ document)
       {
         return create_task([this, document]()
         {
           auto xpath = ref new Platform::String(L"/HoloIntervention/TargetSphereTask");
-          if (document->SelectNodes(xpath)->Length == 0)
+          if(document->SelectNodes(xpath)->Length == 0)
           {
             return false;
           }
 
-          if (!m_transformRepository->ReadConfiguration(document))
+          if(!m_transformRepository->ReadConfiguration(document))
           {
             return false;
           }
@@ -115,31 +114,31 @@ namespace HoloIntervention
           // Connection and stylus details
           auto node = document->SelectNodes(xpath)->Item(0);
 
-          if (!HasAttribute(L"IGTConnection", node))
+          if(!HasAttribute(L"IGTConnection", node))
           {
-            LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to locate \"IGTConnection\" attributes. Cannot configure TargetSphereTask.");
+            LOG(LOG_LEVEL_ERROR, L"Unable to locate \"IGTConnection\" attributes. Cannot configure TargetSphereTask.");
             return false;
           }
-          if (!HasAttribute(L"PhantomFrom", node))
+          if(!HasAttribute(L"PhantomFrom", node))
           {
-            LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to locate \"PhantomFrom\" attribute. Cannot configure TargetSphereTask.");
+            LOG(LOG_LEVEL_ERROR, L"Unable to locate \"PhantomFrom\" attribute. Cannot configure TargetSphereTask.");
             return false;
           }
-          if (!HasAttribute(L"PhantomTo", node))
+          if(!HasAttribute(L"PhantomTo", node))
           {
-            LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to locate \"PhantomTo\" attribute. Cannot configure TargetSphereTask.");
+            LOG(LOG_LEVEL_ERROR, L"Unable to locate \"PhantomTo\" attribute. Cannot configure TargetSphereTask.");
             return false;
           }
-          if (!HasAttribute(L"StylusFrom", node))
+          if(!HasAttribute(L"StylusFrom", node))
           {
-            LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to locate \"StylusFrom\" attribute. Cannot configure TargetSphereTask.");
+            LOG(LOG_LEVEL_ERROR, L"Unable to locate \"StylusFrom\" attribute. Cannot configure TargetSphereTask.");
             return false;
           }
 
-          if (HasAttribute(L"NumberOfPoints", node))
+          if(HasAttribute(L"NumberOfPoints", node))
           {
             auto numPointsStr = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"NumberOfPoints")->NodeValue);
-            if (!numPointsStr->IsEmpty())
+            if(!numPointsStr->IsEmpty())
             {
               std::wstringstream wss;
               wss << numPointsStr->Data();
@@ -147,12 +146,12 @@ namespace HoloIntervention
               {
                 wss >> m_numberOfPoints;
               }
-              catch (...) {}
+              catch(...) {}
             }
           }
 
           auto igtConnection = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"IGTConnection")->NodeValue);
-          if (igtConnection->IsEmpty())
+          if(igtConnection->IsEmpty())
           {
             return false;
           }
@@ -161,36 +160,36 @@ namespace HoloIntervention
 
           auto fromName = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"PhantomFrom")->NodeValue);
           auto toName = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"PhantomTo")->NodeValue);
-          if (!fromName->IsEmpty() && !toName->IsEmpty())
+          if(!fromName->IsEmpty() && !toName->IsEmpty())
           {
             try
             {
               m_phantomToReferenceName = ref new UWPOpenIGTLink::TransformName(fromName, toName);
             }
-            catch (Platform::Exception^)
+            catch(Platform::Exception^)
             {
-              LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to construct PhantomTransformName from " + fromName + L" and " + toName + L" attributes. Cannot configure TargetSphereTask.");
+              LOG(LOG_LEVEL_ERROR, L"Unable to construct PhantomTransformName from " + fromName + L" and " + toName + L" attributes. Cannot configure TargetSphereTask.");
               return false;
             }
           }
 
           fromName = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(L"StylusFrom")->NodeValue);
-          if (!fromName->IsEmpty() && !toName->IsEmpty())
+          if(!fromName->IsEmpty() && !toName->IsEmpty())
           {
             try
             {
               m_stylusTipToPhantomName = ref new UWPOpenIGTLink::TransformName(fromName, m_phantomToReferenceName->From());
             }
-            catch (Platform::Exception^)
+            catch(Platform::Exception^)
             {
-              LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to construct StylusTipTransformName from " + fromName + L" and " + m_phantomToReferenceName->From() + L" attributes. Cannot configure TargetSphereTask.");
+              LOG(LOG_LEVEL_ERROR, L"Unable to construct StylusTipTransformName from " + fromName + L" and " + m_phantomToReferenceName->From() + L" attributes. Cannot configure TargetSphereTask.");
               return false;
             }
           }
 
           // Position of targets
           xpath = ref new Platform::String(L"/HoloIntervention/TargetSphereTask/Region");
-          if (document->SelectNodes(xpath)->Length == 0)
+          if(document->SelectNodes(xpath)->Length == 0)
           {
             return false;
           }
@@ -207,11 +206,11 @@ namespace HoloIntervention
             { 4, L"ZMinMeters" },
             { 5, L"ZMaxMeters" }
           };
-          for (auto pair : vals)
+          for(auto pair : vals)
           {
-            if (!HasAttribute(pair.second, node))
+            if(!HasAttribute(pair.second, node))
             {
-              WLOG(LogLevelType::LOG_LEVEL_ERROR, L"Missing " + pair.second + L" attribute in \"Region\" tag. Cannot define task region bounds.");
+              WLOG(LOG_LEVEL_ERROR, L"Missing " + pair.second + L" attribute in \"Region\" tag. Cannot define task region bounds.");
               return false;
             }
             auto value = dynamic_cast<Platform::String^>(node->Attributes->GetNamedItem(ref new Platform::String(pair.second.c_str()))->NodeValue);
@@ -219,15 +218,15 @@ namespace HoloIntervention
             {
               m_boundsMeters[pair.first] = std::stof(std::wstring(value->Data()));
             }
-            catch (...)
+            catch(...)
             {
-              WLOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to parse " + ref new Platform::String(pair.second.c_str()) + L" attribute in \"Region\" tag with value " + value + L". Cannot define task region bounds.");
+              WLOG(LOG_LEVEL_ERROR, L"Unable to parse " + ref new Platform::String(pair.second.c_str()) + L" attribute in \"Region\" tag with value " + value + L". Cannot define task region bounds.");
               return false;
             }
           }
 
           // Validate bounds
-          if (m_boundsMeters[1] < m_boundsMeters[0] || m_boundsMeters[3] < m_boundsMeters[2] || m_boundsMeters[5] < m_boundsMeters[4])
+          if(m_boundsMeters[1] < m_boundsMeters[0] || m_boundsMeters[3] < m_boundsMeters[2] || m_boundsMeters[5] < m_boundsMeters[4])
           {
             LOG_ERROR("Bounds are invalid. Cannot perform phantom task.");
             return false;
@@ -246,7 +245,7 @@ namespace HoloIntervention
       //----------------------------------------------------------------------------
       float3 TargetSphereTask::GetStabilizedPosition(SpatialPointerPose^ pose) const
       {
-        if (m_targetModel != nullptr)
+        if(m_targetModel != nullptr)
         {
           return float3(m_targetModel->GetCurrentPose().m41, m_targetModel->GetCurrentPose().m42, m_targetModel->GetCurrentPose().m43);
         }
@@ -256,7 +255,7 @@ namespace HoloIntervention
       //----------------------------------------------------------------------------
       float3 TargetSphereTask::GetStabilizedVelocity() const
       {
-        if (m_targetModel != nullptr)
+        if(m_targetModel != nullptr)
         {
           return m_targetModel->GetVelocity();
         }
@@ -270,8 +269,8 @@ namespace HoloIntervention
       }
 
       //----------------------------------------------------------------------------
-      TargetSphereTask::TargetSphereTask(HoloInterventionCore& core, NotificationSystem& notificationSystem, NetworkSystem& networkSystem, ToolSystem& toolSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer, UI::Icons& icons)
-        : IConfigurable(core)
+      TargetSphereTask::TargetSphereTask(ValhallaCore& core, NotificationSystem& notificationSystem, NetworkSystem& networkSystem, ToolSystem& toolSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer, UI::Icons& icons)
+        : ISerializable(core)
         , m_notificationSystem(notificationSystem)
         , m_networkSystem(networkSystem)
         , m_registrationSystem(registrationSystem)
@@ -313,18 +312,18 @@ namespace HoloIntervention
       //----------------------------------------------------------------------------
       void TargetSphereTask::Update(SpatialCoordinateSystem^ coordinateSystem, DX::StepTimer& timer)
       {
-        if (!m_componentReady)
+        if(!m_componentReady)
         {
           return;
         }
 
-        if (m_networkSystem.IsConnected(m_hashedConnectionName))
+        if(m_networkSystem.IsConnected(m_hashedConnectionName))
         {
           m_trackedFrame = m_networkSystem.GetTrackedFrame(m_hashedConnectionName, m_latestTimestamp);
-          if (m_trackedFrame == nullptr)
+          if(m_trackedFrame == nullptr)
           {
             auto transform = m_networkSystem.GetTransform(m_hashedConnectionName, m_phantomToReferenceName, m_latestTimestamp);
-            if (transform == nullptr || !m_transformRepository->SetTransform(transform->Name, transform->Matrix, transform->Valid))
+            if(transform == nullptr || !m_transformRepository->SetTransform(transform->Name, transform->Matrix, transform->Valid))
             {
               m_targetModel->RenderGreyscale();
               return;
@@ -332,7 +331,7 @@ namespace HoloIntervention
           }
           else
           {
-            if (!m_transformRepository->SetTransforms(m_trackedFrame))
+            if(!m_transformRepository->SetTransforms(m_trackedFrame))
             {
               m_targetModel->RenderGreyscale();
               return;
@@ -340,17 +339,17 @@ namespace HoloIntervention
           }
 
           float4x4 registration;
-          if (m_registrationSystem.GetReferenceToCoordinateSystemTransformation(coordinateSystem, registration))
+          if(m_registrationSystem.GetReferenceToCoordinateSystemTransformation(coordinateSystem, registration))
           {
             m_transformRepository->SetTransform(ref new UWPOpenIGTLink::TransformName(L"Reference", HOLOLENS_COORDINATE_SYSTEM_PNAME), transpose(registration), true);
             auto result = m_transformRepository->GetTransform(ref new UWPOpenIGTLink::TransformName(L"Sphere", HOLOLENS_COORDINATE_SYSTEM_PNAME));
 
             // Update phantom model rendering
-            if (!result->Key)
+            if(!result->Key)
             {
               m_targetModel->RenderGreyscale();
             }
-            else if (result->Key)
+            else if(result->Key)
             {
               m_targetModel->RenderDefault();
             }
@@ -362,13 +361,13 @@ namespace HoloIntervention
             // Record a data point
             auto stylusTipPose = m_transformRepository->GetTransform(m_stylusTipToPhantomName);
 
-            if (stylusTipPose->Key)
+            if(stylusTipPose->Key)
             {
-              if (m_stylusIcon != nullptr)
+              if(m_stylusIcon != nullptr)
               {
                 m_stylusIcon->GetModel()->RenderDefault();
               }
-              if (m_recordPointOnUpdate)
+              if(m_recordPointOnUpdate)
               {
                 m_notificationSystem.QueueMessage(L"Point recorded. Next one created...");
                 {
@@ -390,7 +389,7 @@ namespace HoloIntervention
                 m_recordPointOnUpdate = false;
 
                 m_pointsCollected++;
-                if (m_pointsCollected >= m_numberOfPoints && m_numberOfPoints != 0)
+                if(m_pointsCollected >= m_numberOfPoints && m_numberOfPoints != 0)
                 {
                   // Task is finished
                   m_notificationSystem.QueueMessage(L"Task finished!");
@@ -416,7 +415,7 @@ namespace HoloIntervention
         else
         {
           m_targetModel->RenderGreyscale();
-          if (m_stylusIcon != nullptr)
+          if(m_stylusIcon != nullptr)
           {
             m_stylusIcon->GetModel()->RenderGreyscale();
           }
@@ -428,7 +427,7 @@ namespace HoloIntervention
       {
         callbackMap[L"start target task"] = [this](SpeechRecognitionResult ^ result)
         {
-          if (m_taskStarted)
+          if(m_taskStarted)
           {
             m_notificationSystem.QueueMessage(L"Task already running.");
             return;
@@ -436,9 +435,12 @@ namespace HoloIntervention
 
           create_task([this]()
           {
-            bool result = wait_until_condition([this]() {return m_toolSystem.GetToolByUserId(L"Stylus") != nullptr; }, 5000, 100);
+            bool result = wait_until_condition([this]()
+            {
+              return m_toolSystem.GetToolByUserId(L"Stylus") != nullptr;
+            }, 5000, 100);
 
-            if (result)
+            if(result)
             {
               return m_toolSystem.GetToolByUserId(L"Stylus");
             }
@@ -448,7 +450,7 @@ namespace HoloIntervention
             }
           }).then([this](std::shared_ptr<Tools::Tool> entry)
           {
-            if (entry == nullptr)
+            if(entry == nullptr)
             {
               LOG_WARNING("Unable to locate stylus tool. Cannot create UI icon. Using cylinder as substitute");
               // Use a cylinder as a substitute
@@ -485,7 +487,7 @@ namespace HoloIntervention
 
         callbackMap[L"target point"] = [this](SpeechRecognitionResult ^ result)
         {
-          if (!m_taskStarted)
+          if(!m_taskStarted)
           {
             m_notificationSystem.QueueMessage(L"Task not running.");
             return;

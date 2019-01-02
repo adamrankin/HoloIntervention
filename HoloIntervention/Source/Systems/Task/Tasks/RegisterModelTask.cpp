@@ -57,7 +57,7 @@ namespace HoloIntervention
     namespace Tasks
     {
       //----------------------------------------------------------------------------
-      task<bool> RegisterModelTask::WriteConfigurationAsync(XmlDocument^ document)
+      task<bool> RegisterModelTask::SaveAsync(XmlDocument^ document)
       {
         return create_task([this, document]()
         {
@@ -83,7 +83,7 @@ namespace HoloIntervention
       }
 
       //----------------------------------------------------------------------------
-      task<bool> RegisterModelTask::ReadConfigurationAsync(XmlDocument^ document)
+      task<bool> RegisterModelTask::LoadAsync(XmlDocument^ document)
       {
         return create_task([this, document]()
         {
@@ -103,27 +103,27 @@ namespace HoloIntervention
 
           if(!HasAttribute(L"IGTConnection", node))
           {
-            LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to locate \"IGTConnection\" attributes. Cannot configure PreOpImageTask.");
+            LOG(LOG_LEVEL_ERROR, L"Unable to locate \"IGTConnection\" attributes. Cannot configure PreOpImageTask.");
             return false;
           }
           if(!HasAttribute(L"ModelFrom", node))
           {
-            LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to locate \"ModelFrom\" attribute. Cannot configure TouchingSphereTask.");
+            LOG(LOG_LEVEL_ERROR, L"Unable to locate \"ModelFrom\" attribute. Cannot configure TouchingSphereTask.");
             return false;
           }
           if(!HasAttribute(L"ModelTo", node))
           {
-            LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to locate \"ModelTo\" attribute. Cannot configure TouchingSphereTask.");
+            LOG(LOG_LEVEL_ERROR, L"Unable to locate \"ModelTo\" attribute. Cannot configure TouchingSphereTask.");
             return false;
           }
           if(!HasAttribute(L"StylusFrom", node))
           {
-            LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to locate \"StylusFrom\" attribute. Cannot configure TouchingSphereTask.");
+            LOG(LOG_LEVEL_ERROR, L"Unable to locate \"StylusFrom\" attribute. Cannot configure TouchingSphereTask.");
             return false;
           }
           if(!HasAttribute(L"ModelName", node))
           {
-            LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to locate \"ModelName\" attributes. Cannot configure PreOpImageTask.");
+            LOG(LOG_LEVEL_ERROR, L"Unable to locate \"ModelName\" attributes. Cannot configure PreOpImageTask.");
             return false;
           }
 
@@ -145,7 +145,7 @@ namespace HoloIntervention
             }
             catch(Platform::Exception^)
             {
-              LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to construct ModelTransformName from " + fromName + L" and " + toName + L" attributes. Cannot configure TouchingSphereTask.");
+              LOG(LOG_LEVEL_ERROR, L"Unable to construct ModelTransformName from " + fromName + L" and " + toName + L" attributes. Cannot configure TouchingSphereTask.");
               return false;
             }
           }
@@ -159,7 +159,7 @@ namespace HoloIntervention
             }
             catch(Platform::Exception^)
             {
-              LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to construct StylusTipTransformName from " + fromName + L" and " + m_modelToReferenceName->To() + L" attributes. Cannot configure TouchingSphereTask.");
+              LOG(LOG_LEVEL_ERROR, L"Unable to construct StylusTipTransformName from " + fromName + L" and " + m_modelToReferenceName->To() + L" attributes. Cannot configure TouchingSphereTask.");
               return false;
             }
           }
@@ -197,7 +197,7 @@ namespace HoloIntervention
 
       //----------------------------------------------------------------------------
       RegisterModelTask::RegisterModelTask(ValhallaCore& core, NotificationSystem& notificationSystem, NetworkSystem& networkSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer, UI::Icons& icons)
-        : IConfigurable(core)
+        : ISerializable(core)
         , m_notificationSystem(notificationSystem)
         , m_networkSystem(networkSystem)
         , m_registrationSystem(registrationSystem)

@@ -23,21 +23,22 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "pch.h"
-#include "Common.h"
-#include "CameraResources.h"
 #include "ToolBasedRegistration.h"
-
-// System includes
 #include "NetworkSystem.h"
+
+// Valhalla includes
+#include <Common\Common.h>
+#include <Rendering\CameraResources.h>
 
 // STL includes
 #include <sstream>
 
-// Intellisense
+// Reduce intellisense errors
 #include <WindowsNumerics.h>
 
 using namespace Concurrency;
 using namespace Platform;
+using namespace Valhalla;
 using namespace Windows::Data::Xml::Dom;
 using namespace Windows::Foundation::Numerics;
 using namespace Windows::Graphics::Holographic;
@@ -49,7 +50,6 @@ namespace HoloIntervention
 {
   namespace System
   {
-
     //----------------------------------------------------------------------------
     void ToolBasedRegistration::RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap)
     {
@@ -83,11 +83,11 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<bool> ToolBasedRegistration::WriteConfigurationAsync(XmlDocument^ document)
+    task<bool> ToolBasedRegistration::SaveAsync(XmlDocument^ document)
     {
       return create_task([this, document]()
       {
-        if (document->SelectNodes(L"/HoloIntervention")->Length != 1)
+        if(document->SelectNodes(L"/HoloIntervention")->Length != 1)
         {
           return false;
         }
@@ -105,24 +105,24 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    task<bool> ToolBasedRegistration::ReadConfigurationAsync(XmlDocument^ document)
+    task<bool> ToolBasedRegistration::LoadAsync(XmlDocument^ document)
     {
       return create_task([this, document]()
       {
-        if (!m_transformRepository->ReadConfiguration(document))
+        if(!m_transformRepository->ReadConfiguration(document))
         {
           return false;
         }
 
         auto xpath = ref new Platform::String(L"/HoloIntervention/ToolBasedRegistration");
-        if (document->SelectNodes(xpath)->Length == 0)
+        if(document->SelectNodes(xpath)->Length == 0)
         {
           throw ref new Platform::Exception(E_INVALIDARG, L"No manual registration defined in the configuration file.");
         }
 
         auto node = document->SelectNodes(xpath)->Item(0);
 
-        if (!HasAttribute(L"IGTConnection", node))
+        if(!HasAttribute(L"IGTConnection", node))
         {
           throw ref new Platform::Exception(E_FAIL, L"Manual registration entry does not contain \"IGTConnection\" attribute.");
         }
@@ -132,14 +132,14 @@ namespace HoloIntervention
 
         std::wstring fromFrameName;
         std::wstring toFrameName;
-        if (!GetAttribute(L"From", node, fromFrameName))
+        if(!GetAttribute(L"From", node, fromFrameName))
         {
-          LOG(LogLevelType::LOG_LEVEL_ERROR, L"FromFrameName attribute not defined for manual registration. Aborting.");
+          LOG(LOG_LEVEL_ERROR, L"FromFrameName attribute not defined for manual registration. Aborting.");
           return false;
         }
-        if (!GetAttribute(L"To", node, toFrameName))
+        if(!GetAttribute(L"To", node, toFrameName))
         {
-          LOG(LogLevelType::LOG_LEVEL_ERROR, L"ToFrameName attribute not defined for manual registration. Aborting.");
+          LOG(LOG_LEVEL_ERROR, L"ToFrameName attribute not defined for manual registration. Aborting.");
           return false;
         }
         m_toolCoordinateFrameName = ref new UWPOpenIGTLink::TransformName(
@@ -159,7 +159,7 @@ namespace HoloIntervention
     }
 
     //----------------------------------------------------------------------------
-    ToolBasedRegistration::ToolBasedRegistration(HoloInterventionCore& core, System::NetworkSystem& networkSystem)
+    ToolBasedRegistration::ToolBasedRegistration(ValhallaCore& core, System::NetworkSystem& networkSystem)
       : IRegistrationMethod(core)
       , m_networkSystem(networkSystem)
     {
@@ -210,14 +210,14 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void ToolBasedRegistration::Update(SpatialPointerPose^ headPose, SpatialCoordinateSystem^ hmdCoordinateSystem, IBox<float4x4>^ anchorToHMDBox, HolographicCameraPose^ cameraPose)
     {
-      if (!m_started)
+      if(!m_started)
       {
         return;
       }
 
       // grab latest network frame
       auto transform = m_networkSystem.GetTransform(m_hashedConnectionName, m_toolCoordinateFrameName, m_latestTimestamp);
-      if (transform == nullptr || !transform->Valid)
+      if(transform == nullptr || !transform->Valid)
       {
         return;
       }
@@ -225,29 +225,29 @@ namespace HoloIntervention
 
       auto opticalPose = transpose(transform->Matrix);
 
-      if (!m_rotationEnabled)
+      if(!m_rotationEnabled)
       {
         opticalPose = make_float4x4_translation(opticalPose.m41, opticalPose.m42, opticalPose.m43);
       }
 
-      if (m_baselineNeeded)
+      if(m_baselineNeeded)
       {
         m_baselinePose = opticalPose;
-        if (!invert(m_baselinePose, &m_baselineInverse))
+        if(!invert(m_baselinePose, &m_baselineInverse))
         {
           m_baselineNeeded = true;
-          LOG(LogLevelType::LOG_LEVEL_ERROR, L"Unable to invert pose transformation. How is this possible?");
+          LOG(LOG_LEVEL_ERROR, L"Unable to invert pose transformation. How is this possible?");
           return;
         }
         m_baselineNeeded = false;
         return;
       }
 
-      if (!invert(opticalPose * m_baselineInverse, &m_accumulatorMatrix))
+      if(!invert(opticalPose * m_baselineInverse, &m_accumulatorMatrix))
       {
         m_baselineNeeded = true;
       }
-      else if (m_completeCallback)
+      else if(m_completeCallback)
       {
         m_completeCallback(m_accumulatorMatrix * m_registrationMatrix);
       }

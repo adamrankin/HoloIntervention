@@ -24,10 +24,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
-#include "Configuration.h"
-#include "IConfigurable.h"
-#include "IStabilizedComponent.h"
-#include "IVoiceInput.h"
+#include <Input\IVoiceInput.h>
+#include <Interfaces\ISerializable.h>
+#include <Interfaces\IStabilizedComponent.h>
 
 // IGT includes
 #include <IGTCommon.h>
@@ -41,7 +40,7 @@ namespace DX
   class StepTimer;
 }
 
-namespace HoloIntervention
+namespace Valhalla
 {
   namespace Rendering
   {
@@ -64,7 +63,10 @@ namespace HoloIntervention
   {
     class IGTConnector;
   }
+}
 
+namespace HoloIntervention
+{
   namespace System
   {
     class NetworkSystem;
@@ -74,11 +76,11 @@ namespace HoloIntervention
 
     namespace Tasks
     {
-      class TargetSphereTask : public IStabilizedComponent, public Input::IVoiceInput, public IConfigurable
+      class TargetSphereTask : public Valhalla::IStabilizedComponent, public Valhalla::Input::IVoiceInput, public Valhalla::ISerializable
       {
       public:
-        virtual concurrency::task<bool> WriteConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
-        virtual concurrency::task<bool> ReadConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
+        virtual concurrency::task<bool> SaveAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
+        virtual concurrency::task<bool> LoadAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
 
       public:
         virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition(Windows::UI::Input::Spatial::SpatialPointerPose^ pose) const;
@@ -86,10 +88,10 @@ namespace HoloIntervention
         virtual float GetStabilizePriority() const;
 
       public:
-        virtual void RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap);
+        virtual void RegisterVoiceCallbacks(Valhalla::Input::VoiceInputCallbackMap& callbackMap);
         virtual void Update(Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem, DX::StepTimer& stepTimer);
 
-        TargetSphereTask(HoloInterventionCore& core, NotificationSystem& notificationSystem, NetworkSystem& networkSystem, ToolSystem& toolSystem, RegistrationSystem& registrationSystem, Rendering::ModelRenderer& modelRenderer, UI::Icons& icons);
+        TargetSphereTask(Valhalla::ValhallaCore& core, NotificationSystem& notificationSystem, NetworkSystem& networkSystem, ToolSystem& toolSystem, RegistrationSystem& registrationSystem, Valhalla::Rendering::ModelRenderer& modelRenderer, Valhalla::UI::Icons& icons);
         ~TargetSphereTask();
 
       protected:
@@ -102,8 +104,8 @@ namespace HoloIntervention
         NetworkSystem&                                          m_networkSystem;
         ToolSystem&                                             m_toolSystem;
         RegistrationSystem&                                     m_registrationSystem;
-        Rendering::ModelRenderer&                               m_modelRenderer;
-        UI::Icons&                                              m_icons;
+        Valhalla::Rendering::ModelRenderer&                     m_modelRenderer;
+        Valhalla::UI::Icons&                                    m_icons;
 
         std::wstring                                            m_connectionName = L"";
         uint64                                                  m_hashedConnectionName = 0;
@@ -111,9 +113,9 @@ namespace HoloIntervention
         double                                                  m_latestTimestamp = 0.0;
 
         // Target rendering variables
-        std::shared_ptr<Rendering::Model>                       m_targetModel = nullptr;
-        std::shared_ptr<Rendering::Model>                       m_cylinderModel = nullptr; // only used in case 'Stylus' tool can't be found
-        std::shared_ptr<UI::Icon>                               m_stylusIcon = nullptr;
+        std::shared_ptr<Valhalla::Rendering::Model>             m_targetModel = nullptr;
+        std::shared_ptr<Valhalla::Rendering::Model>             m_cylinderModel = nullptr; // only used in case 'Stylus' tool can't be found
+        std::shared_ptr<Valhalla::UI::Icon>                     m_stylusIcon = nullptr;
         Windows::Foundation::Numerics::float3                   m_targetPosition = Windows::Foundation::Numerics::float3::zero();
         std::array<float, 6>                                    m_boundsMeters = { 0.f, 0.f, 0.f, 0.f, 0.f, 0.f };
         const Windows::Foundation::Numerics::float3             DISABLE_TARGET_COLOUR = { 0.7f, 0.7f, 0.7f };

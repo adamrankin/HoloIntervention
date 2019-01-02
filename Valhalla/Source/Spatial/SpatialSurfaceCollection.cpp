@@ -382,7 +382,7 @@ namespace Valhalla
         }
         catch(const std::exception& e)
         {
-          LOG(LogLevelType::LOG_LEVEL_ERROR, e.what());
+          LOG(LOG_LEVEL_ERROR, e.what());
           return false;
         }
 
@@ -413,7 +413,7 @@ namespace Valhalla
         }
         catch(const std::exception& e)
         {
-          LOG(LogLevelType::LOG_LEVEL_ERROR, e.what());
+          LOG(LOG_LEVEL_ERROR, e.what());
           return false;
         }
 

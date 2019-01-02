@@ -23,16 +23,16 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-// Local includes
-#include "IStabilizedComponent.h"
-#include "IVoiceInput.h"
+// Valhalla includes
+#include <Input\IVoiceInput.h>
+#include <Interfaces\IStabilizedComponent.h>
 
 namespace DX
 {
   class StepTimer;
 }
 
-namespace HoloIntervention
+namespace Valhalla
 {
   namespace Rendering
   {
@@ -44,12 +44,15 @@ namespace HoloIntervention
   {
     class PhysicsAPI;
   }
+}
 
+namespace HoloIntervention
+{
   namespace System
   {
     class NotificationSystem;
 
-    class GazeSystem : public Input::IVoiceInput, public IStabilizedComponent
+    class GazeSystem : public Valhalla::Input::IVoiceInput, public Valhalla::IStabilizedComponent
     {
     public:
       virtual Windows::Foundation::Numerics::float3 GetStabilizedPosition(Windows::UI::Input::Spatial::SpatialPointerPose^ pose) const;
@@ -57,7 +60,7 @@ namespace HoloIntervention
       virtual float GetStabilizePriority() const;
 
     public:
-      GazeSystem(NotificationSystem& notificationSystem, Physics::PhysicsAPI& physicsAPI, Rendering::ModelRenderer& modelRenderer);
+      GazeSystem(NotificationSystem& notificationSystem, Valhalla::Physics::PhysicsAPI& physicsAPI, Valhalla::Rendering::ModelRenderer& modelRenderer);
       ~GazeSystem();
 
       void Update(const DX::StepTimer& timer, Windows::Perception::Spatial::SpatialCoordinateSystem^ currentCoordinateSystem, Windows::UI::Input::Spatial::SpatialPointerPose^ headPose);
@@ -70,23 +73,23 @@ namespace HoloIntervention
       Windows::Foundation::Numerics::float3 GetHitVelocity() const;
 
       // IVoiceInput functions
-      virtual void RegisterVoiceCallbacks(Input::VoiceInputCallbackMap& callbackMap);
+      virtual void RegisterVoiceCallbacks(Valhalla::Input::VoiceInputCallbackMap& callbackMap);
 
     protected:
       // Cached entries
-      Rendering::ModelRenderer&                 m_modelRenderer;
-      NotificationSystem&                       m_notificationSystem;
-      Physics::PhysicsAPI&                      m_physicsAPI;
+      Valhalla::Rendering::ModelRenderer&         m_modelRenderer;
+      NotificationSystem&                         m_notificationSystem;
+      Valhalla::Physics::PhysicsAPI&              m_physicsAPI;
 
-      std::shared_ptr<Rendering::Model>    m_modelEntry;
-      uint64                                    m_modelToken;
+      std::shared_ptr<Valhalla::Rendering::Model> m_modelEntry;
+      uint64                                      m_modelToken;
 
-      std::atomic_bool                          m_hadHit = false;
-      Windows::Foundation::Numerics::float3     m_currentPosition = { 0.f, 0.f, 0.f };
-      Windows::Foundation::Numerics::float3     m_currentNormal = { 0.f, 0.f, 0.f };
-      Windows::Foundation::Numerics::float3     m_currentEdge = { 0.f, 0.f, 0.f };
-      Windows::Foundation::Numerics::float3     m_lastPosition = { 0.f, 0.f, 0.f };
-      Windows::Foundation::Numerics::float3     m_velocity = { 0.f, 0.f, 0.f };
+      std::atomic_bool                            m_hadHit = false;
+      Windows::Foundation::Numerics::float3       m_currentPosition = { 0.f, 0.f, 0.f };
+      Windows::Foundation::Numerics::float3       m_currentNormal = { 0.f, 0.f, 0.f };
+      Windows::Foundation::Numerics::float3       m_currentEdge = { 0.f, 0.f, 0.f };
+      Windows::Foundation::Numerics::float3       m_lastPosition = { 0.f, 0.f, 0.f };
+      Windows::Foundation::Numerics::float3       m_velocity = { 0.f, 0.f, 0.f };
 
       static const std::wstring GAZE_CURSOR_ASSET_LOCATION;
       static const uint32 FRAMES_UNTIL_HIT_EXPIRES;

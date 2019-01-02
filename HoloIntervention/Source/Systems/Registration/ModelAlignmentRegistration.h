@@ -24,9 +24,11 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 // Local includes
-#include "Common.h"
 #include "IRegistrationMethod.h"
-#include "IVoiceInput.h"
+
+// Valhalla includes
+#include <Common\Common.h>
+#include <Input\IVoiceInput.h>
 
 namespace DX
 {
@@ -90,8 +92,8 @@ namespace HoloIntervention
       virtual float GetStabilizePriority() const;
 
     public:
-      virtual concurrency::task<bool> WriteConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
-      virtual concurrency::task<bool> ReadConfigurationAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
+      virtual concurrency::task<bool> SaveAync(Windows::Data::Xml::Dom::XmlDocument^ document);
+      virtual concurrency::task<bool> LoadAsync(Windows::Data::Xml::Dom::XmlDocument^ document);
 
     public:
       virtual void SetWorldAnchor(Windows::Perception::Spatial::SpatialAnchor^ worldAnchor);
@@ -117,29 +119,29 @@ namespace HoloIntervention
 
     protected:
       // Cached references
-      System::NotificationSystem&                           m_notificationSystem;
-      System::NetworkSystem&                                m_networkSystem;
-      Valhalla::Rendering::ModelRenderer&                   m_modelRenderer;
-      Valhalla::UI::Icons&                                  m_icons;
-      Valhalla::Input::SpatialInput&                        m_spatialInput;
-      Valhalla::Debug&                                      m_debug;
-      DX::StepTimer&                                        m_timer;
+      System::NotificationSystem&                                     m_notificationSystem;
+      System::NetworkSystem&                                          m_networkSystem;
+      Valhalla::Rendering::ModelRenderer&                             m_modelRenderer;
+      Valhalla::UI::Icons&                                            m_icons;
+      Valhalla::Input::SpatialInput&                                  m_spatialInput;
+      Valhalla::Debug&                                                m_debug;
+      DX::StepTimer&                                                  m_timer;
 
       // State variables
-      std::wstring                                          m_connectionName;
-      uint64                                                m_hashedConnectionName;
-      double                                                m_latestSphereTimestamp = 0.0;
-      UWPOpenIGTLink::TransformName^                        m_sphereToReferenceTransformName = ref new UWPOpenIGTLink::TransformName(L"Sphere", L"Reference");
-      std::atomic_bool                                      m_started = false;
-      std::atomic_bool                                      m_calculating = false;
-      std::shared_ptr<UI::Icon>                             m_sphereIconEntry = nullptr;
+      std::wstring                                                    m_connectionName;
+      uint64                                                          m_hashedConnectionName;
+      double                                                          m_latestSphereTimestamp = 0.0;
+      UWPOpenIGTLink::TransformName^                                  m_sphereToReferenceTransformName = ref new UWPOpenIGTLink::TransformName(L"Sphere", L"Reference");
+      std::atomic_bool                                                m_started = false;
+      std::atomic_bool                                                m_calculating = false;
+      std::shared_ptr<Valhalla::UI::Icon>                             m_sphereIconEntry = nullptr;
 
       // Input variables
-      uint64                                                m_sourceObserverId = INVALID_TOKEN;
+      uint64                                                          m_sourceObserverId = Valhalla::INVALID_TOKEN;
 
       // Behaviour variables
-      std::atomic_bool                                      m_pointCaptureRequested = false;
-      Eye                                                   m_currentEye = EYE_LEFT;
+      std::atomic_bool                                                m_pointCaptureRequested = false;
+      Eye                                                             m_currentEye = EYE_LEFT;
 
       // Registration data
       std::mutex                                                      m_registrationAccessMutex;
@@ -149,28 +151,28 @@ namespace HoloIntervention
       float                                                           m_registrationError = 0.f;
 
       // Stored data for back calculation of HMDtoHoloLens
-      std::vector<Windows::Foundation::Numerics::float4x4>  m_sphereToReferenceTransforms;
-      std::vector<Windows::Foundation::Numerics::float4x4>  m_eyeToHMDTransforms;
-      std::vector<Windows::Foundation::Numerics::float4x4>  m_HMDToAnchorTransforms;
+      std::vector<Windows::Foundation::Numerics::float4x4>            m_sphereToReferenceTransforms;
+      std::vector<Windows::Foundation::Numerics::float4x4>            m_eyeToHMDTransforms;
+      std::vector<Windows::Foundation::Numerics::float4x4>            m_HMDToAnchorTransforms;
 
       // Model visualization
-      Valhalla::Rendering::PrimitiveType                    m_primitiveType = Valhalla::Rendering::PrimitiveType_NONE;
-      Windows::Foundation::Numerics::float4                 m_colour = Windows::Foundation::Numerics::float4::one();
-      Windows::Foundation::Numerics::float3                 m_argument = Windows::Foundation::Numerics::float3::zero();
-      size_t                                                m_tessellation = 16;
-      std::atomic_bool                                      m_invertN = false;
-      std::atomic_bool                                      m_rhCoords = true;
-      std::shared_ptr<Valhalla::Rendering::Model>           m_modelEntry = nullptr;
-      uint64                                                m_trackingVisibleMessageId = INVALID_TOKEN;
-      float                                                 m_invalidTrackingTimer = 0.f;
+      Valhalla::Rendering::PrimitiveType                              m_primitiveType = Valhalla::Rendering::PrimitiveType_NONE;
+      Windows::Foundation::Numerics::float4                           m_colour = Windows::Foundation::Numerics::float4::one();
+      Windows::Foundation::Numerics::float3                           m_argument = Windows::Foundation::Numerics::float3::zero();
+      size_t                                                          m_tessellation = 16;
+      std::atomic_bool                                                m_invertN = false;
+      std::atomic_bool                                                m_rhCoords = true;
+      std::shared_ptr<Valhalla::Rendering::Model>                     m_modelEntry = nullptr;
+      uint64                                                          m_trackingVisibleMessageId = Valhalla::INVALID_TOKEN;
+      float                                                           m_invalidTrackingTimer = 0.f;
 
       // Constants
-      static const float                                    MIN_DISTANCE_BETWEEN_POINTS_METER; // (currently 10mm)
-      static const uint32                                   DEFAULT_NUMBER_OF_POINTS_TO_COLLECT = 12;
-      static const float                                    INVALID_TRACKING_TIMEOUT_SEC;
-      static const float                                    HOLOLENS_ICON_PITCH_RAD;
-      static const float                                    HOLOLENS_ICON_YAW_RAD;
-      static const float                                    HOLOLENS_ICON_ROLL_RAD;
+      static const float                                              MIN_DISTANCE_BETWEEN_POINTS_METER; // (currently 10mm)
+      static const uint32                                             DEFAULT_NUMBER_OF_POINTS_TO_COLLECT = 12;
+      static const float                                              INVALID_TRACKING_TIMEOUT_SEC;
+      static const float                                              HOLOLENS_ICON_PITCH_RAD;
+      static const float                                              HOLOLENS_ICON_YAW_RAD;
+      static const float                                              HOLOLENS_ICON_ROLL_RAD;
     };
   }
 }

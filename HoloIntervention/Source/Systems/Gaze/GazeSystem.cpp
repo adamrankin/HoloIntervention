@@ -23,16 +23,14 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Local includes
 #include "pch.h"
-#include "Common.h"
 #include "GazeSystem.h"
-#include "StepTimer.h"
 
-// Physics includes
-#include "PhysicsAPI.h"
-
-// Rendering includes
-#include "Model.h"
-#include "ModelRenderer.h"
+// Valhalla includes
+#include <Common\Common.h>
+#include <Common\StepTimer.h>
+#include <Physics\PhysicsAPI.h>
+#include <Rendering\Model\Model.h>
+#include <Rendering\Model\ModelRenderer.h>
 
 // System includes
 #include "NotificationSystem.h"
@@ -40,6 +38,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 // WinRT includes
 #include <WindowsNumerics.h>
 
+using namespace Valhalla;
 using namespace Windows::Foundation::Numerics;
 using namespace Windows::Media::SpeechRecognition;
 using namespace Windows::Perception::Spatial;
@@ -67,7 +66,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     float GazeSystem::GetStabilizePriority() const
     {
-      if (!m_modelEntry || (IsCursorEnabled() && !m_modelEntry->IsInFrustum()))
+      if(!m_modelEntry || (IsCursorEnabled() && !m_modelEntry->IsInFrustum()))
       {
         return PRIORITY_NOT_ACTIVE;
       }
@@ -102,7 +101,7 @@ namespace HoloIntervention
     {
       const float& deltaTime = static_cast<float>(timer.GetElapsedSeconds());
 
-      if (!IsCursorEnabled())
+      if(!IsCursorEnabled())
       {
         return;
       }
@@ -117,9 +116,9 @@ namespace HoloIntervention
                  outHitNormal,
                  outHitEdge);
 
-      if (hit)
+      if(hit)
       {
-        if (!m_hadHit)
+        if(!m_hadHit)
         {
           m_modelEntry->RenderDefault();
         }
@@ -130,7 +129,7 @@ namespace HoloIntervention
       }
       else
       {
-        if (m_hadHit)
+        if(m_hadHit)
         {
           m_modelEntry->RenderGreyscale();
         }
@@ -157,7 +156,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     void GazeSystem::EnableCursor(bool enable)
     {
-      if (m_modelEntry == nullptr || !m_modelEntry->IsLoaded())
+      if(m_modelEntry == nullptr || !m_modelEntry->IsLoaded())
       {
         return;
       }
@@ -167,7 +166,7 @@ namespace HoloIntervention
     //----------------------------------------------------------------------------
     bool GazeSystem::IsCursorEnabled() const
     {
-      if (m_modelEntry == nullptr || !m_modelEntry->IsLoaded())
+      if(m_modelEntry == nullptr || !m_modelEntry->IsLoaded())
       {
         return false;
       }

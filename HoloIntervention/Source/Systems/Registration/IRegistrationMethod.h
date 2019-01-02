@@ -55,7 +55,6 @@ namespace HoloIntervention
       {
         return m_referenceToAnchor;
       }
-
       virtual Windows::Perception::Spatial::SpatialAnchor^ GetWorldAnchor()
       {
         std::lock_guard<std::mutex> guard(m_anchorLock);
